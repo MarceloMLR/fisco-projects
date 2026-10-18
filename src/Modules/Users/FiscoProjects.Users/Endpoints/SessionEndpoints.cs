@@ -16,6 +16,13 @@ public sealed record SignInOptionsResponse(bool LocalSignIn);
 
 public sealed record LocalSignInRequest(string Email);
 
+/// <summary>Problem types of a refused sign-in, so the sign-in page can tell the person why.</summary>
+public static class SignInProblems
+{
+    public const string NotInDirectory = "urn:fiscoprojects:problem:not-in-demo-directory";
+    public const string Inactive = "urn:fiscoprojects:problem:user-inactive";
+}
+
 /// <summary>
 /// Session routes (ADR-0009, ADR-0054, ADR-0078). They stay open, since they are how a session starts and ends;
 /// the session itself (cookie, timeout, active user) is set up by the host.
@@ -53,15 +60,17 @@ internal static class SessionEndpoints
             case LocalSignInResult.SignedIn signedIn:
                 await http.SignInAsync(UserSession.For(signedIn.UserId));
                 return TypedResults.NoContent();
-            case LocalSignInResult.Refused:
-                return TypedResults.Problem(
-                    statusCode: StatusCodes.Status403Forbidden,
-                    title: "Access not granted",
-                    detail: "No active person of the demo directory uses this e-mail.");
+            case LocalSignInResult.NotInDirectory:
+                return Refused(SignInProblems.NotInDirectory, "No person of the demo directory uses this e-mail.");
+            case LocalSignInResult.Inactive:
+                return Refused(SignInProblems.Inactive, "This user may no longer use the system.");
             default:
                 return TypedResults.NotFound();
         }
     }
+
+    private static ProblemHttpResult Refused(string type, string detail) =>
+        TypedResults.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Access not granted", detail: detail, type: type);
 
     private static async Task<NoContent> SignOutAsync(HttpContext http)
     {

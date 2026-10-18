@@ -29,8 +29,10 @@ public abstract record LocalSignInResult
 
     public sealed record SignedIn(Guid UserId) : LocalSignInResult;
 
-    /// <summary>The e-mail is not in the demo directory, or its user may no longer use the system.</summary>
-    public sealed record Refused : LocalSignInResult;
+    public sealed record NotInDirectory : LocalSignInResult;
+
+    /// <summary>The person is in the directory, but the user may no longer use the system.</summary>
+    public sealed record Inactive : LocalSignInResult;
 
     public sealed record Disabled : LocalSignInResult;
 }
@@ -52,7 +54,7 @@ public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWi
         var person = options.Value.People.FirstOrDefault(person => Normalize(person.Email) == externalId);
         if (person is null)
         {
-            return new LocalSignInResult.Refused();
+            return new LocalSignInResult.NotInDirectory();
         }
 
         var result = await signIn.ExecuteAsync(
@@ -60,7 +62,7 @@ public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWi
         return result switch
         {
             SignInResult.SignedIn signedIn => new LocalSignInResult.SignedIn(signedIn.UserId),
-            _ => new LocalSignInResult.Refused(),
+            _ => new LocalSignInResult.Inactive(),
         };
     }
 

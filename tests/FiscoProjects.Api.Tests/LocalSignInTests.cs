@@ -71,6 +71,7 @@ public sealed class LocalSignInTests(SqlServerFixture sqlServer)
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         response.ShouldHaveMediaType(ResponseAssertions.ProblemJson);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:not-in-demo-directory");
         response.Headers.Contains("Set-Cookie").Should().BeFalse();
         session.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -87,6 +88,7 @@ public sealed class LocalSignInTests(SqlServerFixture sqlServer)
         var response = await SignInAsync(again, Marina);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:user-inactive");
     }
 
     [Fact(DisplayName = "Entrada local desligada")]
@@ -181,6 +183,12 @@ public sealed class LocalSignInTests(SqlServerFixture sqlServer)
         };
         request.Headers.Add("X-CSRF", "1");
         return await client.SendAsync(request, Cancellation);
+    }
+
+    private static async Task<string?> ProblemTypeAsync(HttpResponseMessage response)
+    {
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));
+        return problem.RootElement.GetProperty("type").GetString();
     }
 
     private static async Task<Guid> SessionUserIdAsync(HttpClient client)
