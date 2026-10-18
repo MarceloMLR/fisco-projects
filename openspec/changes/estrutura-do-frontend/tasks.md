@@ -2,8 +2,8 @@
 
 ## 1. Frontend básico
 
-- [ ] 1.1 Criar `web/` com Vite, React, TypeScript estrito, ESLint, Prettier, Vitest e Testing Library (versões exatas, lockfile, `engines` com o Node 24) e a página provisória; verificar que `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passam
-- [ ] 1.2 Configurar o react-i18next com o `pt-BR.json`, as chaves tipadas e a regra de lint de textos; testar "Texto da tela vem da tradução", "Texto escrito direto na tela" e "Chave de tradução inexistente"; verificar com `npm test` e `npm run typecheck`
+- [x] 1.1 Criar `web/` com Vite, React, TypeScript estrito, ESLint, Prettier, Vitest e Testing Library (versões exatas, lockfile, `engines` com o Node 24) e a página provisória; verificar que `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passam
+- [x] 1.2 Configurar o react-i18next com o `pt-BR.json`, as chaves tipadas e a regra de lint de textos; testar "Texto da tela vem da tradução", "Texto escrito direto na tela" e "Chave de tradução inexistente"; verificar com `npm test` e `npm run typecheck`
 
 ## 2. Host serve o frontend
 
