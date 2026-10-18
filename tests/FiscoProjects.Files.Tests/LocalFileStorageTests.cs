@@ -1,0 +1,111 @@
+using System.Text;
+using FiscoProjects.Files.Contracts;
+using FiscoProjects.Files.Infrastructure;
+
+namespace FiscoProjects.Files.Tests;
+
+/// <summary>The local implementation, in a folder of its own for each test, against the contract and the disk.</summary>
+public sealed class LocalFileStorageTests : FileStorageContract, IDisposable
+{
+    private readonly string _parent = Path.Combine(Path.GetTempPath(), $"fiscoprojects-files-{Guid.NewGuid():N}");
+    private readonly string _root;
+
+    public LocalFileStorageTests()
+    {
+        _root = Path.Combine(_parent, "root");
+        Storage = new LocalFileStorage(_root);
+    }
+
+    protected override IFileStorage Storage { get; }
+
+    [Fact(DisplayName = "Id que sai da raiz no disco")]
+    public async Task IdsOutsideTheRoot_AreRefused_AndNothingOutsideIsTouched()
+    {
+        var outside = Path.Combine(_parent, "fora.txt");
+        await File.WriteAllTextAsync(outside, "fora da raiz", Cancellation);
+
+        string[] ids = ["../fora.txt", "Projetos/../../fora.txt", outside, @"..\fora.txt", ".fiscoprojects/versions/x"];
+        foreach (var id in ids)
+        {
+            var open = () => Storage.OpenAsync(id, null, Cancellation);
+            var delete = () => Storage.DeleteFileAsync(id, Cancellation);
+            var deleteFolder = () => Storage.DeleteFolderIfEmptyAsync(id, Cancellation);
+            var upload = () => UploadAsync(id, "x.txt", "x", SameNameAction.NewVersion);
+            await open.Should().ThrowAsync<ArgumentException>(id);
+            await delete.Should().ThrowAsync<ArgumentException>(id);
+            await deleteFolder.Should().ThrowAsync<ArgumentException>(id);
+            await upload.Should().ThrowAsync<ArgumentException>(id);
+        }
+
+        (await File.ReadAllTextAsync(outside, Cancellation)).Should().Be("fora da raiz");
+        Directory.EnumerateFileSystemEntries(_parent).Select(Path.GetFileName).Should().BeEquivalentTo(["root", "fora.txt"]);
+    }
+
+    [Fact(DisplayName = "Implementação local no desenvolvimento")]
+    public async Task Files_LiveInTheConfiguredFolder()
+    {
+        var folder = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN", Cancellation);
+
+        await UploadAsync(folder.Id, "Contrato.pdf", "contrato", SameNameAction.NewVersion);
+
+        (await File.ReadAllTextAsync(Path.Combine(_root, "Projetos", "ERP-FIN", "Contrato.pdf"), Cancellation)).Should().Be("contrato");
+    }
+
+    [Fact(DisplayName = "Envio interrompido não deixa arquivo")]
+    public async Task InterruptedUpload_LeavesNoFile()
+    {
+        var folder = await Storage.EnsureFolderAsync(null, "Projetos", Cancellation);
+
+        var upload = () => Storage.UploadAsync(folder.Id, "Grande.zip", new FailingStream(), SameNameAction.NewVersion, Cancellation);
+
+        await upload.Should().ThrowAsync<IOException>();
+        Directory.EnumerateFiles(Path.Combine(_root, "Projetos")).Should().BeEmpty();
+        Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories).Should().BeEmpty("the temporary file is removed too");
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_parent))
+        {
+            Directory.Delete(_parent, recursive: true);
+        }
+    }
+
+    /// <summary>A content that breaks after the first bytes, as a connection that drops.</summary>
+    private sealed class FailingStream : Stream
+    {
+        private bool _sent;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_sent)
+            {
+                throw new IOException("Connection lost.");
+            }
+
+            _sent = true;
+            Encoding.UTF8.GetBytes("começo").CopyTo(buffer, offset);
+            return Encoding.UTF8.GetByteCount("começo");
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+}
