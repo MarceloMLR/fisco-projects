@@ -2,9 +2,9 @@
 
 ## 1. Solução e configuração de build
 
-- [ ] 1.1 Criar `global.json` (SDK 10.0.100, `rollForward: latestFeature`), `Directory.Build.props`, `Directory.Packages.props` e `.editorconfig` na raiz; verificar que `dotnet --version` na raiz resolve um SDK 10.0
-- [ ] 1.2 Criar `FiscoProjects.slnx` com `src/FiscoProjects.SharedKernel` e `src/FiscoProjects.Api` (com `Program.cs` mínimo); verificar que `dotnet build -warnaserror` passa sem avisos e `dotnet format --verify-no-changes` não aponta nada
-- [ ] 1.3 Atualizar a seção 6 do `CLAUDE.md` com os comandos reais do backend (build, testes, formatação); verificar que cada comando documentado roda como escrito
+- [x] 1.1 Criar `global.json` (SDK 10.0.100, `rollForward: latestFeature`), `Directory.Build.props`, `Directory.Packages.props` e `.editorconfig` na raiz; verificar que `dotnet --version` na raiz resolve um SDK 10.0
+- [x] 1.2 Criar `FiscoProjects.slnx` com `src/FiscoProjects.SharedKernel` e `src/FiscoProjects.Api` (com `Program.cs` mínimo); verificar que `dotnet build -warnaserror` passa sem avisos e `dotnet format --verify-no-changes` não aponta nada
+- [x] 1.3 Atualizar a seção 6 do `CLAUDE.md` com os comandos reais do backend (build, testes, formatação); verificar que cada comando documentado roda como escrito
 
 ## 2. Entidade com GUID versão 7
 
