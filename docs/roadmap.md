@@ -1,0 +1,129 @@
+# Roadmap da v1
+
+As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+
+## Como funciona
+
+- Cada change tem um ID (`Fundação-1`, `Acesso-2`...) e um nome no OpenSpec (`estrutura-do-backend`...).
+- Fluxo de cada change: branch nova a partir da `main` atualizada → proposta e avaliação contra os ADRs e o design técnico e visual → implementação com testes → PR → aprovação de Marcelo → archive na mesma branch → merge → volta para a `main` e apaga a branch. Detalhes no `CLAUDE.md`, seção 9.
+- Correção de uma change já arquivada ganha um subnúmero (`Fundação-2.1`), só quando necessário.
+- Toda change com tela entrega as versões de computador e celular, nos temas claro e escuro. Os dados fictícios de demonstração crescem a cada change.
+- Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
+- Status: Planejada, Em andamento, PR aberto, Concluída.
+
+## Marcos
+
+| Grupo | Changes | Concluídas |
+| --- | --- | --- |
+| 1. Fundação | 7 | 0 |
+| 2. Acesso e administração | 5 | 0 |
+| 3. Projetos | 4 | 0 |
+| 4. Cronograma | 7 | 0 |
+| 5. Chamados | 7 | 0 |
+| 6. Avisos | 3 | 0 |
+| 7. Documentos, links, acessos e termos | 5 | 0 |
+| 8. Telas de síntese | 2 | 0 |
+| 9. Microsoft 365 real | 3 | 0 |
+| 10. Governança e operação | 6 | 0 |
+| **Total** | **49** | **0** |
+
+## 1. Fundação
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Fundação-1 | `estrutura-do-backend` | Solução .NET 10, host da API, estrutura de módulos, testes de arquitetura, `/health`, OpenAPI e Problem Details | 0047, 0060, 0061 | Planejada |
+| Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056 | Planejada |
+| Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Planejada |
+| Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061 | Planejada |
+| Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067 | Planejada |
+| Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Planejada |
+| Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge | 0055 | Planejada |
+
+## 2. Acesso e administração
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Acesso-1 | `entrada-e-sessao` | Página de entrada, login pelo Entra, usuário no primeiro login, recusa de convidados, sessão de 8 h, Sair | 0005, 0007, 0009, 0054 | Planejada |
+| Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Planejada |
+| Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Planejada |
+| Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Planejada |
+| Acesso-5 | `perfil-e-configuracao` | Tema no perfil; nome, logo, cor principal e fuso da instalação | 0003, 0014, 0067 | Planejada |
+
+## 3. Projetos
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Projetos-1 | `calendario`* | Dias úteis, feriados nacionais calculados, pontos facultativos, feriados locais | 0018 | Planejada |
+| Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | Planejada |
+| Projetos-3 | `projetos` | Criação com gerente e líder técnico, lista, status, somente leitura quando encerrado | 0016, 0043, 0072 | Planejada |
+| Projetos-4 | `membros-do-projeto` | Incluir pessoas pelo diretório (versão simulada), papéis no projeto, último gerente protegido | 0040, 0042 | Planejada |
+
+## 4. Cronograma
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Planejada |
+| Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Planejada |
+| Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `CronogramaGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Planejada |
+| Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
+| Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
+| Cronograma-6 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |
+| Cronograma-7 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017 | Planejada |
+
+## 5. Chamados
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Chamados-1 | `abertura-e-lista-de-chamados` | Número único, os dois times, filtros, quem vê o quê | 0022, 0029, 0044, 0068 | Planejada |
+| Chamados-2 | `conversa-do-chamado` | Mensagens, anexos, menções, cores por papel | 0026, 0069 | Planejada |
+| Chamados-3 | `fluxo-de-status` | Fluxo em tabela, responsável pela primeira resposta, fechamento automático | 0024, 0068 | Planejada |
+| Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Planejada |
+| Chamados-5 | `trocas-e-transferencias` | Troca de responsável e solicitante, em lote, transferência entre times, pendências de quem sai | 0027, 0042 | Planejada |
+| Chamados-6 | `chamados-em-fornecedores`* | Cadastro de fornecedores e registros no chamado | 0028 | Planejada |
+| Chamados-7 | `encerramento-do-projeto` | Concluir só com chamados fechados; cancelar fecha os abertos | 0043 | Planejada |
+
+## 6. Avisos
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | Planejada |
+| Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Planejada |
+| Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Planejada |
+
+## 7. Documentos, links, acessos e termos
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045 | Planejada |
+| Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Planejada |
+| Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | Planejada |
+| Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034 | Planejada |
+| Documentos-5 | `termos-de-aceite` | Pedido, resposta com PDF assinado, recusa | 0035, 0045 | Planejada |
+
+## 8. Telas de síntese
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Síntese-1 | `meu-trabalho` | Fila por urgência, meus projetos e próximos marcos | 0070 | Planejada |
+| Síntese-2 | `visao-geral-do-projeto` | "Está no prazo?" | 0073 | Planejada |
+
+## 9. Microsoft 365 real
+
+Até aqui, tudo roda com as implementações locais, sem depender de tenant licenciado.
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| M365-1 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005 | Planejada |
+| M365-2 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030 | Planejada |
+| M365-3 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
+
+## 10. Governança e operação
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Operação-1 | `lgpd-anonimizacao-e-retencao` | Anonimização a pedido e limpezas por prazo | 0058 | Planejada |
+| Operação-2 | `exclusao-de-projeto` | Exclusão definitiva pelo administrador (no fim, porque apaga dados de todos os módulos) | 0041 | Planejada |
+| Operação-3 | `monitoramento-e-alertas` | OpenTelemetry, Application Insights, saúde e alertas | 0057 | Planejada |
+| Operação-4 | `backup-e-restauracao` | Backups ajustados e roteiro de restauração | 0059 | Planejada |
+| Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055 | Planejada |
+| Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint | 0030, 0036, 0053 | Planejada |

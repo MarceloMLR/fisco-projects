@@ -9,6 +9,7 @@ O repositório está na fase de preparação para Spec-Driven Development com Op
 - [Discovery](docs/discovery.md): escopo, fronteiras, governança e referências.
 - [Apresentação](docs/apresentacao.html): visão do projeto para o time, sem jargão técnico.
 - [Decisões (ADR)](docs/adr/README.md): os 73 ADRs do discovery.
+- [Roadmap](docs/roadmap.md): as 49 changes da v1, em 10 grupos, com o status de cada uma.
 - [Requisitos de instalação](docs/instalacao.md) e [custos estimados](docs/custos-estimados.md).
 - [CLAUDE.md](CLAUDE.md) e [openspec/config.yaml](openspec/config.yaml): convenções para o agente de código.
 

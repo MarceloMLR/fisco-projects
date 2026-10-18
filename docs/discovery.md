@@ -5,6 +5,7 @@ Referência textual do discovery, feito de 13 a 17/10/2026 por Marcelo Ribeiro c
 Outros documentos do discovery:
 
 - [Apresentação para o time](apresentacao.html), não técnica.
+- [Roadmap da v1](roadmap.md), com as changes do OpenSpec e o status de cada uma.
 - [Requisitos de instalação](instalacao.md).
 - [Custos estimados no Azure](custos-estimados.md).
 - [Justificativa do design](design-justificativa.md).

@@ -112,4 +112,5 @@ operations:
   archive:
     guidance:
       - Confirmar ADR criado quando houve decisão de arquitetura.
-      - Sincronizar as specs na própria branch, antes de abrir o PR, para um único PR levar código e specs.
+      - Arquivar na própria branch, depois da aprovação do PR por Marcelo e antes do merge, para um único PR levar código e specs.
+      - Atualizar o status da change em docs/roadmap.md.
