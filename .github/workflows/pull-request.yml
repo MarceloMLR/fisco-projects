@@ -43,6 +43,9 @@ jobs:
       - name: format
         if: ${{ !cancelled() }}
         run: bash scripts/ci/format.sh
+      - name: frontend
+        if: ${{ !cancelled() }}
+        run: bash scripts/ci/frontend.sh
       - name: specs
         if: ${{ !cancelled() }}
         run: bash scripts/ci/specs.sh

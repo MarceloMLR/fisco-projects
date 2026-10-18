@@ -15,7 +15,7 @@
 
 ## 4. Verificação no PR
 
-- [ ] 4.1 Criar `scripts/ci/frontend.sh` e a etapa `frontend` no workflow; atualizar os testes do pipeline para "Todas as verificações no pull request", "Pacote do frontend com vulnerabilidade conhecida" e "Dependência do frontend com licença não permitida"; verificar que o script passa e falha com uma licença proibida e um erro de lint, sem versionar a quebra
+- [x] 4.1 Criar `scripts/ci/frontend.sh` e a etapa `frontend` no workflow; atualizar os testes do pipeline para "Todas as verificações no pull request", "Pacote do frontend com vulnerabilidade conhecida" e "Dependência do frontend com licença não permitida"; verificar que o script passa e falha com uma licença proibida e um erro de lint, sem versionar a quebra
 
 ## 5. Documentação e verificação final
 

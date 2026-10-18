@@ -15,7 +15,7 @@
     "test": "vitest run",
     "api:types": "openapi-typescript src/api/openapi.json --output src/api/schema.ts",
     "api:update": "dotnet build ../src/FiscoProjects.Api/FiscoProjects.Api.csproj -p:OpenApiGenerateDocumentsOnBuild=true && npm run api:types",
-    "licenses": "license-checker-rseidelsohn --excludePrivatePackages --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;CC-BY-4.0;BlueOak-1.0.0;Unlicense;MPL-2.0;Python-2.0\""
+    "licenses": "license-checker-rseidelsohn --excludePrivatePackages --onlyAllow \"MIT;MIT-0;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;CC-BY-3.0;CC-BY-4.0;BlueOak-1.0.0;Unlicense;MPL-2.0;Python-2.0\" --summary"
   },
   "dependencies": {
     "i18next": "26.5.2",

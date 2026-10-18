@@ -65,7 +65,7 @@ TypeScript `strict` com `noUncheckedIndexedAccess`, `noImplicitOverride`, `noUnu
 `scripts/ci/frontend.sh`, etapa nova entre `format` e `specs`:
 
 1. `npm ci`;
-2. licenças de todas as dependências, inclusive as de desenvolvimento, com lista permitida: MIT, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, 0BSD, CC0-1.0, CC-BY-4.0, BlueOak-1.0.0, Unlicense, MPL-2.0 e Python-2.0;
+2. licenças de todas as dependências, inclusive as de desenvolvimento, com lista permitida: MIT, MIT-0, ISC, BSD-2-Clause, BSD-3-Clause, Apache-2.0, 0BSD, CC0-1.0, CC-BY-3.0, CC-BY-4.0, BlueOak-1.0.0, Unlicense, MPL-2.0 e Python-2.0 (as CC-BY só aparecem em dados de ferramentas de desenvolvimento);
 3. `npm audit --omit=dev` (só o que vai para o navegador);
 4. Prettier, ESLint, tipos, testes e build.
 
