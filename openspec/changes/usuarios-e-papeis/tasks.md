@@ -17,7 +17,7 @@
 
 ## 4. Verificação final
 
-- [ ] 4.1 Conferir no Chromium, com a API e o banco local, a Administração de ponta a ponta (Paulo como administrador, troca de papel, desativar e reativar, recusa do último administrador e a visão de quem não é administrador), no computador e no celular, nos temas claro e escuro, contra o canvas
+- [x] 4.1 Conferir no Chromium, com a API e o banco local, a Administração de ponta a ponta (Paulo como administrador, troca de papel, desativar e reativar, recusa do último administrador e a visão de quem não é administrador), no computador e no celular, nos temas claro e escuro, contra o canvas
 - [ ] 4.2 Atualizar o glossário, o guia de instalação (primeiro administrador) e o `CLAUDE.md`, rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up

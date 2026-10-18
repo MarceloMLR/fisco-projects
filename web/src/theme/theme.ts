@@ -167,16 +167,19 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           gap: 'var(--space-3)',
+          // MUI drops the minimum height from 600px on; the design system keeps 36px items.
           minHeight: 36,
+          '@media (min-width: 600px)': { minHeight: 36 },
           padding: '0 var(--space-3)',
           color: 'var(--text)',
           fontSize: 14,
           lineHeight: '20px',
           '& > .MuiSvgIcon-root': { fontSize: 'var(--icon-md)', color: 'var(--text-secondary)' },
           '&:hover, &.Mui-focusVisible': { backgroundColor: 'var(--bg-hover)' },
-          '&.Mui-selected, &.Mui-selected:hover, &.Mui-selected.Mui-focusVisible': {
+          // The current option is in bold, with a check, as in fp-menu__item[aria-selected].
+          '&.Mui-selected': { backgroundColor: 'transparent', fontWeight: 500 },
+          '&.Mui-selected:hover, &.Mui-selected.Mui-focusVisible': {
             backgroundColor: 'var(--bg-hover)',
-            fontWeight: 500,
           },
         },
       },

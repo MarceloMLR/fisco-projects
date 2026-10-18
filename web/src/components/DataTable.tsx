@@ -113,6 +113,9 @@ export function DataTable<Row extends GridValidRowModel>({
             fontVariantNumeric: 'tabular-nums',
             '--DataGrid-containerBackground': 'var(--bg-subtle)',
             '--DataGrid-rowBorderColor': 'var(--border)',
+            // Header row in the subtle background, as in fp-gt__row--head.
+            '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeaders .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaders .MuiDataGrid-filler, & .MuiDataGrid-columnHeaders .MuiDataGrid-scrollbarFiller':
+              { backgroundColor: 'var(--bg-subtle)' },
             '& .MuiDataGrid-columnHeader': {
               color: 'var(--text-secondary)',
               fontSize: 13,
@@ -126,8 +129,12 @@ export function DataTable<Row extends GridValidRowModel>({
               display: 'flex',
               alignItems: 'center',
               padding: '0 var(--space-3)',
+              lineHeight: '20px',
               borderTopColor: 'var(--border)',
             },
+            // The empty cell after the last column has no width; with padding it would make the rows wider than
+            // the table, and focusing the last column would scroll the table sideways.
+            '& .MuiDataGrid-cellEmpty': { padding: 0 },
             '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within':
               { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
             '& .MuiDataGrid-row:hover': { backgroundColor: 'var(--bg-hover)' },
@@ -137,6 +144,7 @@ export function DataTable<Row extends GridValidRowModel>({
               borderTop: '1px solid var(--border)',
               justifyContent: 'flex-end',
             },
+            '& .MuiTablePagination-toolbar': { minHeight: 44 },
             '& .MuiTablePagination-root, & .MuiTablePagination-displayedRows': {
               fontSize: 13,
               lineHeight: '18px',
