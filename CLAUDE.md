@@ -110,7 +110,6 @@ dotnet tool restore
 - Entrada local (ADR-0078): sem tenant, a página de entrada aceita, sem senha, o e-mail de uma pessoa do diretório de demonstração (`LocalSignIn:People` no `appsettings.Development.json`), como `marina.costa@empresa.example`. Ela só vale fora da produção: a aplicação não sobe em produção com `LocalSignIn:Enabled` ligado.
 - Papéis (ADR-0006, ADR-0040): quem entra pela primeira vez é Usuário; o primeiro administrador vem de `Users:FirstAdministrator` (no desenvolvimento, `paulo.nogueira@empresa.example`). As rotas só do administrador usam `RequireAuthorization(SystemPolicies.Administrator)`, que lê o papel do banco a cada requisição.
 - Sessão por cookie `HttpOnly` (ADR-0054), que expira depois de `Session:IdleTimeout` sem uso (8 horas). As rotas sob `/api` exigem sessão, salvo as marcadas com `AllowAnonymous`, e toda alteração (POST, PUT, PATCH, DELETE) exige o cabeçalho `X-CSRF: 1`.
-- Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`. `bash scripts/ci/spelling.sh` faz a mesma checagem do CI, com o dicionário de português.
 
 Frontend, em `web/`:
 
@@ -137,9 +136,9 @@ Specs:
 openspec validate --all --strict
 ```
 
-Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `frontend.sh`, `specs.sh` e `spelling.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
+Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
 
-- Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `frontend.sh`, `specs.sh` e `spelling.sh` usam o Node da versão do `.nvmrc`; os dois últimos instalam as próprias ferramentas, fixadas em `scripts/ci/package.json`.
+- Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `frontend.sh` e `specs.sh` usam o Node da versão do `.nvmrc`; o `specs.sh` instala o OpenSpec CLI fixado em `scripts/ci/package.json`.
 - A regra "Protect main" exige a verificação `verify` aprovada. Renomear o job bloqueia o merge até a regra ser atualizada.
 - Pacote do NuGet com vulnerabilidade conhecida, direto ou transitivo, quebra o build. No frontend, `frontend.sh` reprova pacote vulnerável que vai para o navegador e dependência com licença fora da lista do script `licenses` do `web/package.json`.
 
