@@ -2,8 +2,8 @@
 
 ## 1. Scripts de verificação
 
-- [ ] 1.1 Criar `scripts/ci/build.sh`, `test.sh` e `format.sh` e declarar a auditoria do NuGet no `Directory.Build.props`; verificar que os três passam na branch e falham, sem commitar a quebra, com um aviso de compilação, um teste quebrado e um arquivo fora do padrão
-- [ ] 1.2 Criar `scripts/ci/package.json` com lockfile (OpenSpec CLI 1.14.3, `cspell`, `@cspell/dict-pt-br`), `.nvmrc`, `scripts/ci/spelling.json`, `specs.sh` e `spelling.sh`; verificar que passam e falham, sem commitar a quebra, com uma spec inválida e uma palavra errada
+- [x] 1.1 Criar `scripts/ci/build.sh`, `test.sh` e `format.sh` e declarar a auditoria do NuGet no `Directory.Build.props`; verificar que os três passam na branch e falham, sem versionar a quebra, com um aviso de compilação, um teste quebrado e um arquivo fora do padrão
+- [x] 1.2 Criar `scripts/ci/package.json` com lockfile (OpenSpec CLI 1.14.3, `cspell`, `@cspell/dict-pt-br`), `.nvmrc`, `scripts/ci/spelling.json`, `specs.sh` e `spelling.sh`; verificar que passam e falham, sem versionar a quebra, com uma spec inválida e uma palavra errada
 
 ## 2. Workflow
 
