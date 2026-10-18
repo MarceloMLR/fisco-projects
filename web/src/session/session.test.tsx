@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { api } from '../api/client';
@@ -16,8 +16,8 @@ describe('Página de entrada', () => {
     signedOut();
     const { router } = await renderApp('/projects?view=list');
 
-    expect(router.state.location.pathname).toBe('/sign-in');
     expect(await signInHeading()).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/sign-in');
 
     server.use(
       http.post('/api/session/local', () => new Response(null, { status: 204 })),
@@ -65,6 +65,9 @@ describe('Sessão protegida', () => {
     server.use(http.get('/api/session', () => Response.error()));
     const { router } = await renderApp('/');
 
-    expect(router.state.location.pathname).toBe('/sign-in');
+    // The redirect happens right after the check of the session.
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/sign-in');
+    });
   });
 });

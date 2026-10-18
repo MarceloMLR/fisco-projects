@@ -2,6 +2,7 @@ using FiscoProjects.Persistence;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -21,6 +22,23 @@ public static class UsersModule
         services.AddScoped<IUserAccess>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<SignInWithIdentity>();
         services.AddScoped<GetSignedInUser>();
+        services.AddScoped<ChangeSystemRole>();
+        services.AddScoped<DeactivateUser>();
+        services.AddScoped<ReactivateUser>();
+        services.AddScoped<ListUsers>();
+
+        services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
+        services.AddAuthorizationBuilder().AddPolicy(SystemPolicies.Administrator, policy => policy
+            .RequireAuthenticatedUser()
+            .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)));
+
+        services.AddOptions<FirstAdministratorOptions>()
+            .Bind(configuration.GetSection(FirstAdministratorOptions.Section))
+            .Validate(
+                options => options.IsConfigured
+                    || (string.IsNullOrWhiteSpace(options.Provider) && string.IsNullOrWhiteSpace(options.ExternalId)),
+                "Users:FirstAdministrator needs both Provider and ExternalId, or neither.")
+            .ValidateOnStart();
 
         services.AddOptions<LocalSignInOptions>()
             .Bind(configuration.GetSection(LocalSignInOptions.Section))

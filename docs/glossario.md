@@ -7,14 +7,20 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Instalação | Installation | Uma cópia do sistema para uma empresa (ADR-0003) |
-| Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão |
+| Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão; também o papel de menor privilégio (`SystemRole.User`) |
 | Vínculo com o provedor de identidade | IdentityLink | Provedor e identificador externo, separado do usuário (ADR-0009) |
 | Entrada (login) | SignIn | |
 | Entrada local | LocalSignIn | Por e-mail, sem senha, só fora da produção (ADR-0078) |
 | Pessoas da demonstração | LocalSignIn.People | Diretório fictício da entrada local |
 | Sessão | Session | |
 | Sair | SignOut | |
-| Papel no sistema | SystemRole | |
+| Papel no sistema | SystemRole | Administrador, Gerente de projeto ou Usuário (ADR-0040) |
+| Primeiro administrador | FirstAdministrator | Configuração `Users:FirstAdministrator` (ADR-0006) |
+| Último administrador ativo | LastAdministrator | Recusa da troca ou da desativação que deixaria a instalação sem administrador |
+| Desativar acesso, Reativar acesso | Deactivate, Reactivate | |
+| Situação: Ativo, Inativo | UserStatus: Active, Inactive | `IsActive` no domínio |
+| Último acesso | LastSignInAt | |
+| Administração | Administration | Área só do administrador, rotas `/admin` (ADR-0046) |
 | Papel no projeto | ProjectRole | |
 | Administrador | Administrator | |
 | Gerente de projeto | ProjectManager | Papel no sistema e no projeto (ADR-0040) |

@@ -20,5 +20,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Dates on screen use the browser's time zone; the tests fix one, so they pass on any machine.
+    env: { TZ: 'America/Sao_Paulo' },
   },
 });

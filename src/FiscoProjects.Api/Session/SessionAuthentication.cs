@@ -55,7 +55,8 @@ internal static class SessionAuthentication
         var userId = UserSession.UserIdOf(context.Principal);
         var access = context.HttpContext.RequestServices.GetRequiredService<IUserAccess>();
 
-        if (userId is null || !await access.IsActiveAsync(userId.Value, context.HttpContext.RequestAborted))
+        var current = userId is null ? null : await access.FindAsync(userId.Value, context.HttpContext.RequestAborted);
+        if (current is not { IsActive: true })
         {
             context.RejectPrincipal();
             await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

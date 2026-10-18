@@ -22,6 +22,7 @@
     "dotnet",
     "dotnettools",
     "Eleken",
+    "empresa",
     "Fisco",
     "FiscoProjects",
     "focável",
@@ -34,6 +35,7 @@
     "instalacao",
     "integracao",
     "LGPD",
+    "Lívia",
     "MADR",
     "Mapperly",
     "MediatR",
@@ -67,6 +69,7 @@
     "tfvars",
     "Tiptap",
     "topbar",
+    "usuarios",
     "warnaserror",
     "wwwroot",
     "xunit"

@@ -108,6 +108,7 @@ dotnet tool restore
 - No desenvolvimento, a API cria o banco e aplica as migrações ao subir. Migrações novas com `dotnet ef`, conforme `src/Modules/README.md`.
 - `docker compose down` para o banco; os dados ficam no volume `sqlserver-data` (`docker compose down -v` apaga).
 - Entrada local (ADR-0078): sem tenant, a página de entrada aceita, sem senha, o e-mail de uma pessoa do diretório de demonstração (`LocalSignIn:People` no `appsettings.Development.json`), como `marina.costa@empresa.example`. Ela só vale fora da produção: a aplicação não sobe em produção com `LocalSignIn:Enabled` ligado.
+- Papéis (ADR-0006, ADR-0040): quem entra pela primeira vez é Usuário; o primeiro administrador vem de `Users:FirstAdministrator` (no desenvolvimento, `paulo.nogueira@empresa.example`). As rotas só do administrador usam `RequireAuthorization(SystemPolicies.Administrator)`, que lê o papel do banco a cada requisição.
 - Sessão por cookie `HttpOnly` (ADR-0054), que expira depois de `Session:IdleTimeout` sem uso (8 horas). As rotas sob `/api` exigem sessão, salvo as marcadas com `AllowAnonymous`, e toda alteração (POST, PUT, PATCH, DELETE) exige o cabeçalho `X-CSRF: 1`.
 - Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`. `bash scripts/ci/spelling.sh` faz a mesma checagem do CI, com o dicionário de português.
 
@@ -126,7 +127,8 @@ npm run build        # gera src/FiscoProjects.Api/wwwroot, que a API serve
 - Quando a API muda, `npm run api:update` atualiza o contrato (`web/src/api/openapi.json`) e os tipos (`web/src/api/schema.ts`). Os dois são gerados, nunca editados à mão, e vão no commit; os testes reprovam se ficarem desatualizados.
 - `npm run format` corrige a formatação (Prettier).
 - Visual: cores, medidas e fontes vêm de `web/src/theme/tokens.json`, cópia exata do `tokens.json` do design system (para atualizar, copie o arquivo de novo). Componentes próprios usam as variáveis pelo nome do design system (`var(--sidebar-bg)`); cor escrita direto no código reprova os testes.
-- Tela nova: uma rota em `web/src/routes.tsx`, com o título no `handle`, e o componente `Page` de `web/src/shell`. As telas dentro da estrutura só abrem com sessão.
+- Tela nova: uma rota em `web/src/routes.tsx`, com o título no `handle`, e o componente `Page` de `web/src/shell`. As telas dentro da estrutura só abrem com sessão. Telas da Administração ficam sob `/admin`, dentro de `RequireAdministrator` e do `AdminLayout`.
+- Listas em tabela pelo `DataTable` de `web/src/components` (MUI X Data Grid gratuito em pt-BR, com a paginação no servidor). O `overrides` do `web/package.json` fixa o `@mui/x-internals` na versão do Data Grid; ao atualizar o Data Grid, atualize os dois juntos.
 - Chamadas à API pelo cliente `web/src/api/client.ts` (openapi-fetch com os tipos do contrato), que já envia o `X-CSRF`. Nos testes de tela, a API é simulada com o MSW em `web/src/test/server.ts`; chamada não simulada reprova o teste.
 
 Specs:

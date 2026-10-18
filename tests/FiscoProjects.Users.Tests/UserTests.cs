@@ -1,3 +1,4 @@
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
 
 namespace FiscoProjects.Users.Tests;
@@ -30,5 +31,40 @@ public sealed class UserTests
         user.Email.Should().Be("marina.alves@empresa.example");
         user.LastSignInAt.Should().Be(Now.AddHours(1));
         user.CreatedAt.Should().Be(Now);
+    }
+
+    [Fact(DisplayName = "Usuário novo com o papel Usuário")]
+    public void Create_StartsWithTheUserRole()
+    {
+        var user = User.Create("Marina Costa", "marina.costa@empresa.example", Now);
+
+        user.Role.Should().Be(SystemRole.User);
+        user.IsActiveAdministrator.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Papel desconhecido recusado")]
+    public void ChangeRole_RefusesAnUnknownRole()
+    {
+        var user = User.Create("Marina Costa", "marina.costa@empresa.example", Now);
+
+        var change = () => user.ChangeRole((SystemRole)99);
+
+        change.Should().Throw<ArgumentOutOfRangeException>();
+        user.Role.Should().Be(SystemRole.User);
+    }
+
+    [Fact(DisplayName = "Administrador ativo só enquanto ativo")]
+    public void ActiveAdministrator_FollowsRoleAndActivity()
+    {
+        var user = User.Create("Paulo Nogueira", "paulo.nogueira@empresa.example", Now);
+        user.ChangeRole(SystemRole.Administrator);
+
+        var beforeDeactivating = user.IsActiveAdministrator;
+        user.Deactivate();
+        var afterDeactivating = user.IsActiveAdministrator;
+        user.Reactivate();
+
+        (beforeDeactivating, afterDeactivating, user.IsActiveAdministrator).Should().Be((true, false, true));
+        user.Role.Should().Be(SystemRole.Administrator);
     }
 }

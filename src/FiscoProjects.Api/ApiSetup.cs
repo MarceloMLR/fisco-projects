@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FiscoProjects.Api.Session;
 using FiscoProjects.Persistence;
 using FiscoProjects.Users.Endpoints;
@@ -19,6 +20,17 @@ public static class ApiSetup
     public static WebApplicationBuilder AddFiscoProjectsApi(this WebApplicationBuilder builder)
     {
         builder.Services.AddProblemDetails();
+        // A request the API cannot read (a malformed body, an unknown enum value) is the caller's error: 400, not 500.
+        // In Development the framework throws it instead of answering, so the handler keeps its status.
+        builder.Services.AddExceptionHandler(options => options.StatusCodeSelector = exception =>
+            exception is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
+        // Enums travel as their names, so the contract and the frontend types list the values; numbers are only
+        // numbers, so the contract does not type them as "number or text".
+        builder.Services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+            options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+        });
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
         builder.Services.AddFiscoProjectsPersistence();

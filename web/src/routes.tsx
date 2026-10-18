@@ -1,4 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router';
+import { AdminLayout } from './admin/AdminLayout';
+import { RequireAdministrator } from './admin/RequireAdministrator';
+import { UsersPage } from './admin/UsersPage';
 import { HomePage } from './pages/HomePage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SignInPage } from './pages/SignInPage';
@@ -32,6 +35,27 @@ export const routes: RouteObject[] = [
         path: 'tickets',
         element: <TicketsPage />,
         handle: { navigation: 'tickets', titleKey: 'pages.tickets.title' } satisfies PageHandle,
+      },
+      {
+        path: 'admin',
+        element: (
+          <RequireAdministrator>
+            <AdminLayout />
+          </RequireAdministrator>
+        ),
+        handle: { navigation: 'admin', titleKey: 'pages.admin.title' } satisfies PageHandle,
+        children: [
+          { index: true, element: <Navigate to="users" replace /> },
+          {
+            path: 'users',
+            element: <UsersPage />,
+            handle: {
+              navigation: 'admin',
+              titleKey: 'pages.users.title',
+              trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+            } satisfies PageHandle,
+          },
+        ],
       },
     ],
   },

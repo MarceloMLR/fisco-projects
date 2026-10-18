@@ -88,7 +88,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
           paper: { sx: { width: 272, marginTop: '4px' } },
-          list: { 'aria-label': t('shell.accountMenu'), sx: { padding: 'var(--space-1) 0' } },
+          list: { 'aria-label': t('shell.accountMenu') },
         }}
       >
         <Box
@@ -102,25 +102,14 @@ export function AccountMenu({ user }: { user: SessionUser }) {
         >
           <SessionPerson user={user} mutedColor="var(--text-secondary)" />
         </Box>
-        <Divider sx={{ margin: 'var(--space-1) 0', borderColor: 'var(--border)' }} />
+        <Divider sx={{ margin: 'var(--space-1) 0' }} />
         <MenuItem
           onClick={() => {
             setAnchor(null);
             void signOut();
           }}
-          sx={{
-            gap: 'var(--space-3)',
-            minHeight: 36,
-            height: 36,
-            padding: '0 var(--space-3)',
-            color: 'var(--text)',
-            '&:hover, &.Mui-focusVisible': { backgroundColor: 'var(--bg-hover)' },
-          }}
         >
-          <LogoutOutlined
-            aria-hidden
-            sx={{ fontSize: 'var(--icon-md)', color: 'var(--text-secondary)' }}
-          />
+          <LogoutOutlined aria-hidden />
           {t('shell.signOut')}
         </MenuItem>
       </Menu>

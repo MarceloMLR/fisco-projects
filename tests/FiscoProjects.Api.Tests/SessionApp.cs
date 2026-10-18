@@ -84,22 +84,61 @@ internal sealed class SessionApp : IAsyncDisposable
     }
 
     /// <summary>A client with a session open for a new user.</summary>
-    public async Task<(HttpClient Client, Guid UserId)> SignedInClientAsync()
+    public Task<(HttpClient Client, Guid UserId)> SignedInClientAsync() =>
+        SignedInClientAsync("Marina Costa", SystemRole.User);
+
+    /// <summary>A client with a session open for a new user with the given role.</summary>
+    public async Task<(HttpClient Client, Guid UserId)> SignedInClientAsync(string name, SystemRole role)
     {
-        var userId = await CreateUserAsync("Marina Costa", "marina.costa@empresa.example");
+        var userId = await CreateUserAsync(name, role);
+        return (await SignInAsync(userId), userId);
+    }
+
+    /// <summary>A new user, with an e-mail made from the name, and the given role.</summary>
+    public async Task<Guid> CreateUserAsync(string name, SystemRole role)
+    {
+        var email = $"{name.ToLowerInvariant().Replace(' ', '.')}@empresa.example";
+        var userId = await CreateUserAsync(name, email);
+        await ExecuteAsync("UPDATE [users].[users] SET Role = @role WHERE Id = @id", ("@role", role.ToString()), ("@id", userId));
+        return userId;
+    }
+
+    /// <summary>A client with a session open for an existing user.</summary>
+    public async Task<HttpClient> SignInAsync(Guid userId)
+    {
         var client = NewClient();
         var response = await client.PostAsync($"/test/sign-in/{userId}", null, TestContext.Current.CancellationToken);
         response.EnsureSuccessStatusCode();
-        return (client, userId);
+        return client;
     }
 
-    public async Task DeactivateAsync(Guid userId)
+    public Task DeactivateAsync(Guid userId) =>
+        ExecuteAsync("UPDATE [users].[users] SET IsActive = 0 WHERE Id = @id", ("@id", userId));
+
+    /// <summary>Role and situation of a user, read straight from the database.</summary>
+    public async Task<(SystemRole Role, bool IsActive)> StateOfAsync(Guid userId)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE [users].[users] SET IsActive = 0 WHERE Id = @id";
+        command.CommandText = "SELECT Role, IsActive FROM [users].[users] WHERE Id = @id";
         command.Parameters.AddWithValue("@id", userId);
+        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        await reader.ReadAsync(TestContext.Current.CancellationToken);
+        return (Enum.Parse<SystemRole>(reader.GetString(0)), reader.GetBoolean(1));
+    }
+
+    private async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
         await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
     }
 

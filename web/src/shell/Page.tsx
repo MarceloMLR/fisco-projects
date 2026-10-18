@@ -8,10 +8,10 @@ import { theme } from '../theme/theme';
 import { useCurrentPage } from './pages';
 
 /**
- * A screen inside the shell (fp-page): page title and content with the design system margins. On the phone
- * the title is in the top bar, so the heading stays only for screen readers.
+ * A screen inside the shell (fp-page): page title, with an optional count (fp-count), and content with the design
+ * system margins. On the phone the title is in the top bar, so the heading stays only for screen readers.
  */
-export function Page({ children }: { children?: ReactNode }) {
+export function Page({ count, children }: { count?: number; children?: ReactNode }) {
   const { t } = useTranslation();
   const page = useCurrentPage();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
@@ -31,6 +31,20 @@ export function Page({ children }: { children?: ReactNode }) {
     >
       <Typography variant="h1" sx={desktop ? { margin: 0 } : visuallyHidden}>
         {t(page.titleKey)}
+        {count !== undefined && (
+          <Box
+            component="span"
+            sx={{
+              marginLeft: 'var(--space-2)',
+              fontSize: 20,
+              fontWeight: 400,
+              color: 'var(--text-secondary)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {count}
+          </Box>
+        )}
       </Typography>
       {children}
     </Box>
