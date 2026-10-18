@@ -12,7 +12,7 @@ public sealed class ApiGroupTests
     public async Task ModuleRoute_IsServedUnderApiPrefix()
     {
         await using var app = await TestApp.ComposedAsync(TestApp.Production, testApp =>
-            testApp.MapApiGroup().MapGet("/example", () => Results.Text("ok")));
+            testApp.MapApiGroup().MapGet("/example", () => Results.Text("ok")).AllowAnonymous());
         using var client = app.GetTestClient();
 
         var underApi = await client.GetAsync("/api/example", TestContext.Current.CancellationToken);

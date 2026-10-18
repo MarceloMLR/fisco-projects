@@ -6,7 +6,7 @@
 
 ## 2. Sessão e entrada local na API
 
-- [ ] 2.1 Configurar a sessão por cookie no host (expiração de 8 horas sem uso, renovação a cada uso, conferência do usuário ativo, 401 e 403 sem redirecionar, `/api` exigindo sessão) e a proteção `X-CSRF`; testar "Cookie da sessão", "API sem sessão", "Sessão parada por 8 horas", "Uso renova a sessão", "Usuário desativado durante a sessão" e "Alteração sem proteção contra requisição forjada"; verificar com `dotnet test`
+- [x] 2.1 Configurar a sessão por cookie no host (expiração de 8 horas sem uso, renovação a cada uso, conferência do usuário ativo, 401 e 403 sem redirecionar, `/api` exigindo sessão) e a proteção `X-CSRF`; testar "Cookie da sessão", "API sem sessão", "Sessão parada por 8 horas", "Uso renova a sessão", "Usuário desativado durante a sessão" e "Alteração sem proteção contra requisição forjada"; verificar com `dotnet test`
 - [ ] 2.2 Criar as rotas da sessão e a entrada local, com o diretório de demonstração no `appsettings.Development.json`; testar "Entrada com uma pessoa da demonstração", "E-mail fora da demonstração", "Entrada local em produção" e "Sair" (API); atualizar o contrato e os tipos com `npm run api:update`; verificar com `dotnet test` e `npm test`
 
 ## 3. Entrada e sessão nas telas
