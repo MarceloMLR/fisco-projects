@@ -19,7 +19,7 @@
 
 ## 5. Verificação final
 
-- [ ] 5.1 Conferir no Chromium, com a API e o banco local, a auditoria de ponta a ponta (entrada, entrada recusada, troca de papel, desativação e reativação aparecendo na tela, filtros e detalhes; seção escondida de quem não é administrador), no computador e no celular, nos temas claro e escuro, contra o canvas
+- [x] 5.1 Conferir no Chromium, com a API e o banco local, a auditoria de ponta a ponta (entrada, entrada recusada, troca de papel, desativação e reativação aparecendo na tela, filtros e detalhes; seção escondida de quem não é administrador), no computador e no celular, nos temas claro e escuro, contra o canvas
 - [ ] 5.2 Atualizar o glossário, o guia de módulos (marcações de auditoria e alterações só pelo `SaveChangesAsync`) e o `CLAUDE.md`, rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up

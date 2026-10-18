@@ -138,6 +138,22 @@ dotnet ef migrations add <Nome> --project src/Modules/<Modulo>/FiscoProjects.<Mo
 - No desenvolvimento, a API cria o banco e aplica as migrações de todos os módulos ao subir; para desligar, `Database:MigrateOnStartup=false`. Fora do desenvolvimento, as migrações vêm da publicação (ADR-0055).
 - As migrações são código gerado: o `.editorconfig` não aplica regras de estilo nelas, e elas não são editadas à mão depois de publicadas.
 
+### Auditoria
+
+Toda gravação pelo `SaveChangesAsync` do contexto do módulo é auditada pelo contexto base, na mesma transação da alteração (ADR-0039, ADR-0075): criação, alteração e exclusão, com quem fez, quando e os campos com o valor antes e depois. O módulo não escreve código de auditoria; só marca, na configuração das entidades, o que não é o padrão:
+
+```csharp
+user.HasAuditLabel(u => u.Name);                       // o que identifica o item na tela de Auditoria
+user.Property(u => u.LastSignInAt).ExcludeFromAudit(); // campo técnico: fica de fora
+credential.Property(c => c.Password).IsAuditSecret();  // registra só que mudou, nunca o valor (ADR-0033)
+link.ExcludeFromAudit();                                // item técnico inteiro de fora
+```
+
+- Dados de negócio mudam só pelo `SaveChangesAsync`: `ExecuteUpdate`, `ExecuteDelete` e SQL direto não passam pela auditoria. O `SaveChanges` síncrono é recusado.
+- Uma transação aberta pelo módulo (dentro da estratégia de execução) leva junto os registros da auditoria.
+- Eventos de segurança que não são alteração de um item (a entrada, a entrada recusada) vão pelo contrato `ISecurityEvents` do módulo `Audit`.
+- Nos testes de um módulo isolado, sem o módulo `Audit` registrado, o contexto salva sem auditoria.
+
 ### Testes com banco
 
 Os testes usam um SQL Server de verdade em contêiner (Testcontainers, a mesma imagem do `compose.yaml`), por isso precisam do Docker rodando. O projeto de teste do módulo referencia `tests/FiscoProjects.Testing`, declara `[assembly: AssemblyFixture(typeof(SqlServerFixture))]` e recebe o `SqlServerFixture` no construtor; cada teste pede um banco próprio com `NewDatabase()`. O `TestDatabase` registra o módulo como o host faz, aplica as migrações e dá contextos e escopos novos. Exemplos em `tests/FiscoProjects.Users.Tests` e `tests/FiscoProjects.Persistence.Tests`.

@@ -53,7 +53,7 @@ openspec/                             config, specs e changes do OpenSpec
 
 Os arquivos de `.claude/commands/opsx/` e `.claude/skills/openspec-*/` são gerados pelo `openspec init` e atualizados com `openspec update`; não edite à mão.
 
-O primeiro módulo, `Users` (usuários, vínculos com o provedor de identidade e sessão), nasceu na Acesso-1 e serve de exemplo do guia `src/Modules/README.md`. Os módulos previstos (ADR-0047, com os nomes do ADR-0074) são Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration; a lista final é decidida na change que cria cada um.
+O primeiro módulo, `Users` (usuários, vínculos com o provedor de identidade e sessão), nasceu na Acesso-1 e serve de exemplo do guia `src/Modules/README.md`. O `Audit` (Acesso-3) grava a auditoria de todos os módulos: o contexto base registra cada `SaveChangesAsync` na mesma transação, e cada módulo só marca o rótulo do item e os campos técnicos ou secretos (seção "Auditoria" do guia). Os módulos previstos (ADR-0047, com os nomes do ADR-0074) são Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration; a lista final é decidida na change que cria cada um.
 
 ## 4. Convenções e não-negociáveis
 
