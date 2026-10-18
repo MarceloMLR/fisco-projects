@@ -7,7 +7,7 @@
 ## 2. Implementação local
 
 - [x] 2.1 Criar a implementação local em disco (pastas, envio com arquivo temporário, versões na pasta interna, abrir, excluir arquivo com as versões, excluir pasta só vazia, tipo pela extensão, caminhos sempre dentro da raiz) e os testes de contrato reaproveitáveis; testar "Pastas criadas no caminho", "Pasta que já existe", "Listar subpastas", "Enviar um arquivo", "Abrir um arquivo", "Arquivo inexistente", "Nova versão de um arquivo", "Manter os dois arquivos", "Excluir um arquivo", "Excluir uma pasta vazia", "Pasta com conteúdo não é excluída" e "Caminho que sai da raiz"; verificar com `dotnet test`
-- [ ] 2.2 Criar as opções `FileStorage` (provedor e pasta local, validadas ao subir, local recusado em produção), registrar o módulo no host com `App_Data/files` no desenvolvimento e no `.gitignore`; testar "Implementação local no desenvolvimento" e "Implementação local em produção"; verificar com `dotnet test`
+- [x] 2.2 Criar as opções `FileStorage` (provedor e pasta local, validadas ao subir, local recusado em produção), registrar o módulo no host com `App_Data/files` no desenvolvimento e no `.gitignore`; testar "Implementação local no desenvolvimento", "Armazenamento não configurado" e "Implementação local em produção"; verificar com `dotnet test`
 
 ## 3. Verificação final
 

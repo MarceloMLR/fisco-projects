@@ -34,7 +34,7 @@ Regras:
 - O contrato oferece: garantir uma pasta (criando as que faltam), listar as subpastas, enviar um arquivo, abrir um arquivo (a versão atual ou uma anterior), excluir um arquivo com as versões e excluir uma pasta só se estiver vazia.
 - Arquivo com o mesmo nome na mesma pasta: quem envia escolhe entre nova versão, com a anterior guardada (documentos, ADR-0031), e manter os dois, com outro nome (anexos).
 - Nomes de arquivos e pastas são ajustados às regras do SharePoint num lugar só: caracteres não aceitos viram `_`, sem espaços nas pontas nem ponto no fim. Nenhum caminho sai da raiz configurada.
-- A implementação é escolhida na configuração da instalação (`FileStorage:Provider`). A implementação local guarda os arquivos e as versões numa pasta do disco e só vale fora da produção: a aplicação não sobe em produção com ela.
+- A implementação é escolhida na configuração da instalação (`FileStorage:Provider`). Sem implementação configurada, a aplicação sobe, mas usar arquivos falha com uma mensagem que aponta a configuração. A implementação local guarda os arquivos e as versões numa pasta do disco e só vale fora da produção: a aplicação não sobe em produção com ela.
 - Limites de tamanho e tipos de arquivo recusados são regras de cada uso (anexos, logos, documentos) e ficam nas changes desses módulos.
 
 ### Consequências

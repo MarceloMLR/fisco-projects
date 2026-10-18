@@ -63,11 +63,13 @@ Task<bool> DeleteFolderIfEmptyAsync(string folderId, CancellationToken ct);
 
 ### 5. Configuração
 
-- `FileStorage:Provider`: `Local`, por enquanto o único. O SharePoint entra no grupo M365.
+- `FileStorage:Provider`: `Local`, por enquanto o único. O SharePoint entra no grupo M365. O desenvolvimento configura `Local` no `appsettings.Development.json`.
+- Sem provedor configurado, a aplicação sobe, e pedir o `IFileStorage` falha com uma mensagem que aponta `FileStorage:Provider`. É o caso da produção até a implementação do SharePoint, e é o que permite subir a aplicação em produção nos testes.
 - Validação ao subir:
   - provedor conhecido;
   - pasta raiz informada para o local;
   - local recusado em produção, como a entrada local (ADR-0078).
+- Alternativa: `Local` como padrão, recusado em produção. Descartada porque, sem outra implementação, a aplicação não subiria em produção por nenhum motivo.
 - Os arquivos não entram na auditoria: o registro de cada arquivo fica no banco do módulo que o usa e é auditado lá.
 
 ### 6. Testes

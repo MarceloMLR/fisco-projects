@@ -41,7 +41,7 @@ public sealed class LocalFileStorageTests : FileStorageContract, IDisposable
         Directory.EnumerateFileSystemEntries(_parent).Select(Path.GetFileName).Should().BeEquivalentTo(["root", "fora.txt"]);
     }
 
-    [Fact(DisplayName = "Implementação local no desenvolvimento")]
+    [Fact(DisplayName = "Arquivos na pasta configurada")]
     public async Task Files_LiveInTheConfiguredFolder()
     {
         var folder = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN", Cancellation);

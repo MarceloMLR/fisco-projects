@@ -80,11 +80,15 @@ Nomes de arquivos e pastas MUST ser ajustados às regras do SharePoint antes de 
 
 ### Requirement: Implementação escolhida na configuração
 
-A implementação do armazenamento MUST ser escolhida na configuração da instalação. A implementação local, em disco, MUST valer só fora da produção: a aplicação MUST NOT subir em produção com ela (ADR-0004, ADR-0079).
+A implementação do armazenamento MUST ser escolhida na configuração da instalação. Sem implementação configurada, usar arquivos MUST falhar com uma mensagem que diz qual configuração falta. A implementação local, em disco, MUST valer só fora da produção: a aplicação MUST NOT subir em produção com ela (ADR-0004, ADR-0079).
 
 #### Scenario: Implementação local no desenvolvimento
 - **WHEN** a aplicação sobe no desenvolvimento com a implementação local
 - **THEN** os arquivos ficam na pasta local configurada
+
+#### Scenario: Armazenamento não configurado
+- **WHEN** a aplicação sobe sem implementação de arquivos configurada e um módulo pede o armazenamento
+- **THEN** a aplicação sobe, e o pedido falha com uma mensagem que aponta a configuração `FileStorage:Provider`
 
 #### Scenario: Implementação local em produção
 - **WHEN** a aplicação sobe em produção com a implementação local configurada

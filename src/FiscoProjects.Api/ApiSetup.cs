@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using FiscoProjects.Api.Session;
 using FiscoProjects.Audit.Endpoints;
 using FiscoProjects.Audit.Infrastructure;
+using FiscoProjects.Files.Infrastructure;
 using FiscoProjects.Persistence;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
@@ -47,6 +48,7 @@ public static class ApiSetup
         // Each module registers its services from its Infrastructure layer (src/Modules/README.md).
         builder.Services.AddUsersModule(builder.Configuration);
         builder.Services.AddAuditModule(builder.Configuration);
+        builder.Services.AddFilesModule(builder.Configuration);
 
         return builder;
     }
