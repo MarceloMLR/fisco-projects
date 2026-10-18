@@ -1,5 +1,5 @@
 import type {} from '@mui/material/themeCssVarsAugmentation';
-import { createTheme, type Shadows } from '@mui/material/styles';
+import { createTheme, duration, type Shadows } from '@mui/material/styles';
 import { color, fontFamilies, type ColorScheme, textStyle } from './tokens';
 
 declare module '@mui/material/styles' {
@@ -190,6 +190,8 @@ export const theme = createTheme({
     },
     // Menu of the design system (fp-menu): 36px items, section labels and dividers.
     MuiMenu: {
+      // Choosing closes the menu at once, so the screen behind it, already changed, shows without waiting.
+      defaultProps: { transitionDuration: { enter: duration.enteringScreen, exit: 0 } },
       styleOverrides: { list: { padding: 'var(--space-1) 0' } },
     },
     MuiMenuItem: {

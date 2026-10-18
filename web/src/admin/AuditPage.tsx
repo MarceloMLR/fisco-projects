@@ -3,9 +3,11 @@ import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AuditEntry, type AuditItemType, api, auditItemTypes } from '../api/client';
+import { type AuditEntry, type AuditItemType, auditItemTypes } from '../api/client';
+import { auditQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Select } from '../components/Select';
@@ -28,6 +30,7 @@ const defaultDays = 30;
 const count = new Intl.NumberFormat('pt-BR');
 
 type ItemTypeFilter = 'all' | AuditItemType;
+const noEntries = { items: [], total: 0 };
 
 const sub = {
   display: 'block',
@@ -54,49 +57,22 @@ export function AuditPage() {
   const [itemType, setItemType] = useState<ItemTypeFilter>('all');
   const [period, setPeriod] = useState<Period>(() => lastDays(defaultDays));
   const [page, setPage] = useState(1);
-  const [result, setResult] = useState<{ items: readonly AuditEntry[]; total: number }>({
-    items: [],
-    total: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
   const [chosenId, setChosenId] = useState<string>();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    void api
-      .GET('/api/audit', {
-        params: {
-          query: {
-            actorId: person?.id,
-            itemType: itemType === 'all' ? undefined : itemType,
-            from: startOfDayValue(period.from).toISOString(),
-            to: startOfDayValue(nextDayValue(period.to)).toISOString(),
-            page,
-            pageSize,
-          },
-        },
-      })
-      .then(({ data }) => {
-        if (active) {
-          setFailed(data === undefined);
-          if (data !== undefined) {
-            setResult(data);
-          }
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setFailed(true);
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [person, itemType, period, page]);
+  // A filter already seen in the session shows at once; another keeps the rows on screen until it arrives.
+  const { data, isFetching, isError } = useQuery({
+    ...auditQuery({
+      actorId: person?.id,
+      itemType: itemType === 'all' ? undefined : itemType,
+      from: startOfDayValue(period.from).toISOString(),
+      to: startOfDayValue(nextDayValue(period.to)).toISOString(),
+      page,
+      pageSize,
+    }),
+    placeholderData: keepPreviousData,
+  });
+  const result = data ?? noEntries;
 
   // The chosen record; on a wide screen the first one of the page until the administrator chooses another.
   const selected =
@@ -205,8 +181,9 @@ export function AuditPage() {
           page={page}
           pageSize={pageSize}
           onPageChange={setPage}
-          loading={loading}
-          emptyLabel={t(failed ? 'audit.loadFailed' : 'audit.empty')}
+          // Any wait, a new filter or a refresh of the rows on screen, shows the bar if it lasts (DataTable).
+          loading={isFetching}
+          emptyLabel={t(isError ? 'audit.loadFailed' : 'audit.empty')}
           selectedRowId={selected?.id}
           onRowChoose={choose}
           displayedRowsLabel={displayedRows}

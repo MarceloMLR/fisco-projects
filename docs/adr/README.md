@@ -142,3 +142,4 @@ Regras:
 | [0077](0077-rotas-do-frontend-com-react-router.md) | Rotas do frontend com React Router | aceita | 2026-10-18 |
 | [0078](0078-entrada-local-sem-tenant.md) | Entrada local por e-mail no desenvolvimento e nas demonstrações, sem tenant | aceita | 2026-10-18 |
 | [0079](0079-modulo-de-arquivos-com-implementacao-local.md) | Arquivos num módulo próprio, com contrato único e implementação local em disco | aceita | 2026-10-18 |
+| [0080](0080-leituras-da-api-com-tanstack-query.md) | Leituras da API no frontend com TanStack Query, guardadas só na memória da sessão | aceita | 2026-10-18 |

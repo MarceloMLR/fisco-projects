@@ -1,8 +1,8 @@
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { DataTable } from './DataTable';
 import { Select } from './Select';
@@ -64,6 +64,165 @@ describe('Tabela padrão', () => {
       screen.getByRole('button', { name: gridText.paginationItemAriaLabel?.('next') ?? '' }),
     );
     expect(onPageChange).toHaveBeenCalledWith(2);
+  });
+});
+
+/** Waits a real while, as a person would see the screen. */
+function wait(ms: number) {
+  return act(() => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+}
+
+function LoadingTable({ rows }: { rows: Person[] }) {
+  return (
+    <AppThemeProvider>
+      <div style={{ height: 600, display: 'flex' }}>
+        <DataTable
+          label="People"
+          rows={rows}
+          columns={[{ field: 'name', headerName: 'Person', flex: 1 }]}
+          rowCount={rows.length}
+          page={1}
+          pageSize={25}
+          onPageChange={vi.fn()}
+          loading
+          emptyLabel="Nobody here"
+        />
+      </div>
+    </AppThemeProvider>
+  );
+}
+
+describe('Espera nas listas', () => {
+  it('Resposta demorada com indicador', async () => {
+    render(<LoadingTable rows={people} />);
+    const table = screen.getByRole('grid', { name: 'People' });
+
+    // A short wait shows nothing over the rows on screen.
+    await wait(150);
+    expect(within(table).queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(within(table).getByText('Beatriz Lima')).toBeVisible();
+
+    // Past the moment, a bar shows on top, and the rows stay.
+    await waitFor(() => {
+      expect(within(table).getByRole('progressbar')).toBeInTheDocument();
+    });
+    expect(within(table).getByText('Beatriz Lima')).toBeInTheDocument();
+    expect(table.querySelector('.MuiDataGrid-skeletonLoadingOverlay')).toBeNull();
+  });
+
+  it('Primeira abertura da lista', async () => {
+    render(<LoadingTable rows={[]} />);
+    const table = screen.getByRole('grid', { name: 'People' });
+
+    // At first only the header: no skeleton yet, and never the message of an empty list.
+    await wait(150);
+    expect(within(table).getByRole('columnheader', { name: 'Person' })).toBeInTheDocument();
+    expect(table.querySelector('.MuiDataGrid-skeletonLoadingOverlay')).toBeNull();
+    expect(screen.queryByText('Nobody here')).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(table.querySelector('.MuiDataGrid-skeletonLoadingOverlay')).not.toBeNull();
+    });
+    expect(screen.queryByText('Nobody here')).not.toBeInTheDocument();
+  });
+});
+
+describe('Tabela sem redesenho', () => {
+  it('Tela desenhada de novo sem linhas novas', () => {
+    const drawn = vi.fn();
+    const columns = [
+      {
+        field: 'name',
+        headerName: 'Person',
+        flex: 1,
+        renderCell: ({ row }: { row: Person }) => {
+          drawn(row.id);
+          return row.name;
+        },
+      },
+    ];
+    const noPageChange = vi.fn();
+    function Screen() {
+      const [filter, setFilter] = useState('all');
+      return (
+        <AppThemeProvider>
+          <div style={{ height: 600, display: 'flex' }}>
+            <DataTable
+              label="People"
+              rows={people}
+              columns={columns}
+              rowCount={people.length}
+              page={1}
+              pageSize={25}
+              onPageChange={noPageChange}
+              tools={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilter('active');
+                  }}
+                >
+                  {filter}
+                </button>
+              }
+            />
+          </div>
+        </AppThemeProvider>
+      );
+    }
+    render(<Screen />);
+    expect(screen.getByText('Marina Costa')).toBeInTheDocument();
+    drawn.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'all' }));
+
+    expect(screen.getByRole('button', { name: 'active' })).toBeInTheDocument();
+    expect(drawn).not.toHaveBeenCalled();
+  });
+});
+
+describe('Menus fecham na hora', () => {
+  // jsdom lays nothing out; with a height, the menu of MUI would take its usual time to leave.
+  const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+  afterEach(() => {
+    if (height !== undefined) {
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', height);
+    }
+  });
+
+  it('Escolha num campo de seleção', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get: () => 200,
+    });
+    function Choice() {
+      const [value, setValue] = useState<'all' | 'active'>('all');
+      return (
+        <AppThemeProvider>
+          <Select
+            label="Status"
+            value={value}
+            options={[
+              { value: 'all', label: 'Every status' },
+              { value: 'active', label: 'Active' },
+            ]}
+            onChange={setValue}
+          />
+        </AppThemeProvider>
+      );
+    }
+    render(<Choice />);
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Status' }));
+    const option = await screen.findByRole('option', { name: 'Active' });
+    const menu = option.closest('.MuiPaper-root');
+
+    fireEvent.click(option);
+
+    // The menu leaves without an animation, and is gone right after.
+    expect(menu).toHaveStyle({ opacity: '0' });
+    expect((menu as HTMLElement | null)?.style.transition).toMatch(/^opacity 0ms/);
+    await wait(20);
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });
 

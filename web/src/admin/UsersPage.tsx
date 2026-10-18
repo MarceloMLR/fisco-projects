@@ -10,9 +10,11 @@ import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, systemRoles, type SystemRole, type UserRow, userProblems } from '../api/client';
+import { queryKeys, usersQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Select } from '../components/Select';
@@ -28,6 +30,9 @@ const pageSize = 25;
 const searchDelay = 300;
 
 type RoleFilter = 'all' | SystemRole;
+/** An inactive person shows dimmed in the list. */
+const isInactive = (user: UserRow) => user.status === 'Inactive';
+const noUsers = { items: [], total: 0 };
 type StatusFilter = 'all' | UserRow['status'];
 
 /**
@@ -43,45 +48,23 @@ export function UsersPage() {
   const [role, setRole] = useState<RoleFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
-  const [users, setUsers] = useState<{ items: readonly UserRow[]; total: number }>({
-    items: [],
-    total: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [reload, setReload] = useState(0);
   const [message, setMessage] = useState<string>();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; user: UserRow }>();
-  const debouncedSearch = useDebounced(search, searchDelay);
+  const debouncedSearch = useDebounced(search, searchDelay).trim();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let active = true;
-    void api
-      .GET('/api/users', {
-        params: {
-          query: {
-            search: debouncedSearch.trim() === '' ? undefined : debouncedSearch,
-            role: role === 'all' ? undefined : role,
-            status: status === 'all' ? undefined : status,
-            page,
-            pageSize,
-          },
-        },
-      })
-      .then(({ data }) => {
-        if (active && data !== undefined) {
-          setUsers(data);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [debouncedSearch, role, status, page, reload]);
+  // A list already seen in the session shows at once; another filter keeps the rows on screen until it arrives.
+  const { data, isFetching } = useQuery({
+    ...usersQuery({
+      search: debouncedSearch === '' ? undefined : debouncedSearch,
+      role: role === 'all' ? undefined : role,
+      status: status === 'all' ? undefined : status,
+      page,
+      pageSize,
+    }),
+    placeholderData: keepPreviousData,
+  });
+  const users = data ?? noUsers;
 
   const act = useCallback(
     async (user: UserRow, action: 'role' | 'deactivate' | 'reactivate', newRole?: SystemRole) => {
@@ -108,7 +91,9 @@ export function UsersPage() {
                   name: user.name,
                 }),
           );
-          setReload((count) => count + 1);
+          // The lists that show the person, here and in the Audit, are asked again.
+          void queryClient.invalidateQueries({ queryKey: queryKeys.users });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
           // A change of one's own access shows at once: the Administration may no longer be theirs.
           if (session.status === 'signed-in' && session.user.id === user.id) {
             await refresh();
@@ -125,7 +110,7 @@ export function UsersPage() {
         setMessage(t('users.messages.failed'));
       }
     },
-    [refresh, session, t],
+    [queryClient, refresh, session, t],
   );
 
   const columns = useMemo<DataTableColumn<UserRow>[]>(
@@ -238,8 +223,9 @@ export function UsersPage() {
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
-        loading={loading}
-        isRowMuted={(user) => user.status === 'Inactive'}
+        // Any wait, a new filter or a refresh of the rows on screen, shows the bar if it lasts (DataTable).
+        loading={isFetching}
+        isRowMuted={isInactive}
         emptyLabel={t('users.empty')}
         tools={
           <>
