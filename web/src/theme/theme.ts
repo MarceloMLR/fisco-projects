@@ -159,6 +159,35 @@ export const theme = createTheme({
         },
       },
     },
+    // A list of options under a search field looks like the design system menu (fp-menu).
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-menu)',
+        },
+        listbox: { padding: 'var(--space-1) 0' },
+        option: {
+          minHeight: 36,
+          '@media (min-width: 600px)': { minHeight: 36 },
+          padding: '0 var(--space-3)',
+          color: 'var(--text)',
+          fontSize: 14,
+          lineHeight: '20px',
+          '&.Mui-focused, &.Mui-focusVisible': { backgroundColor: 'var(--bg-hover)' },
+          '&[aria-selected="true"]': { backgroundColor: 'transparent', fontWeight: 500 },
+          '&[aria-selected="true"].Mui-focused': { backgroundColor: 'var(--bg-hover)' },
+        },
+        noOptions: {
+          padding: 'var(--space-2) var(--space-3)',
+          color: 'var(--text-secondary)',
+          fontSize: 14,
+          lineHeight: '20px',
+        },
+      },
+    },
     // Menu of the design system (fp-menu): 36px items, section labels and dividers.
     MuiMenu: {
       styleOverrides: { list: { padding: 'var(--space-1) 0' } },

@@ -1,3 +1,4 @@
+using FiscoProjects.Audit.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Users.Application;
@@ -37,7 +38,7 @@ public abstract record LocalSignInResult
     public sealed record Disabled : LocalSignInResult;
 }
 
-public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWithIdentity signIn)
+public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWithIdentity signIn, ISecurityEvents securityEvents)
 {
     public const string Provider = "local";
 
@@ -54,6 +55,7 @@ public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWi
         var person = options.Value.People.FirstOrDefault(person => Normalize(person.Email) == externalId);
         if (person is null)
         {
+            await securityEvents.SignInRefusedAsync(email ?? string.Empty, SignInRefusal.NotInDirectory, cancellationToken);
             return new LocalSignInResult.NotInDirectory();
         }
 

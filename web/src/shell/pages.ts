@@ -39,7 +39,8 @@ export type PageTitleKey =
   | 'pages.projects.title'
   | 'pages.tickets.title'
   | 'pages.admin.title'
-  | 'pages.users.title';
+  | 'pages.users.title'
+  | 'pages.audit.title';
 
 /** A level of the trail above the page: an area that leads to its own address. */
 export interface TrailLevel {

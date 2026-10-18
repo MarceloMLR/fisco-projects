@@ -100,6 +100,15 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Aviso, notificação | Notification | |
 | Resumo diário | DailyDigest | |
 | Fila de e-mails | EmailOutbox | |
-| Auditoria | Audit | |
-| Registro de auditoria | AuditEntry | |
+| Auditoria | Audit | Módulo `Audit`, dono das tabelas da auditoria (schema `audit`) |
+| Registro de auditoria | AuditEntry | Só acrescentado, nunca alterado nem apagado (ADR-0039) |
+| Ação: criou, alterou, excluiu, entrou, recusou uma entrada | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused | |
+| Campo alterado, antes e depois | AuditField: Field, Before, After | Valores em texto invariável; a tela traduz |
+| Autor; Sistema quando não há sessão | ActorId (vazio para Sistema) | |
+| Tipo de item | ItemType | Nome da entidade (`User`) ou `SignIn` para as entradas |
+| Rótulo do item | ItemLabel, `HasAuditLabel` | O que identifica o item na tela, como o nome da pessoa |
+| Campo fora da auditoria | `ExcludeFromAudit` | Campos técnicos, como o último acesso |
+| Campo secreto | `IsAuditSecret` | Registra só que mudou, sem o valor (ADR-0033) |
+| Evento de segurança | ISecurityEvents | Entrada e entrada recusada; troca de papel e situação entram como alteração do usuário |
+| Motivo da recusa: fora do diretório, conta desativada | SignInRefusal: NotInDirectory, Inactive | |
 | Anonimização | Anonymization | |

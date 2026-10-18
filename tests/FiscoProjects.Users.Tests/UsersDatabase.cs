@@ -1,3 +1,4 @@
+using FiscoProjects.Audit.Contracts;
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
@@ -14,13 +15,17 @@ internal sealed class UsersDatabase : IAsyncDisposable
 {
     private readonly TestDatabase _database;
 
-    private UsersDatabase(TestDatabase database, FakeTimeProvider clock)
+    private UsersDatabase(TestDatabase database, FakeTimeProvider clock, RecordedSecurityEvents securityEvents)
     {
         _database = database;
         Clock = clock;
+        SecurityEvents = securityEvents;
     }
 
     public FakeTimeProvider Clock { get; }
+
+    /// <summary>The security events the module reported to the audit.</summary>
+    public RecordedSecurityEvents SecurityEvents { get; }
 
     public static Task<UsersDatabase> CreateAsync(SqlServerFixture sqlServer, ProviderIdentity? firstAdministrator = null) =>
         OpenAsync(sqlServer.NewDatabase(), firstAdministrator);
@@ -32,9 +37,11 @@ internal sealed class UsersDatabase : IAsyncDisposable
     private static async Task<UsersDatabase> OpenAsync(string connectionString, ProviderIdentity? firstAdministrator)
     {
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero));
+        var securityEvents = new RecordedSecurityEvents();
         var database = TestDatabase.Create(connectionString, (services, configuration) =>
         {
             services.AddSingleton<TimeProvider>(clock);
+            services.AddSingleton<ISecurityEvents>(securityEvents);
             services.AddUsersModule(configuration);
             services.Configure<FirstAdministratorOptions>(options =>
             {
@@ -43,7 +50,7 @@ internal sealed class UsersDatabase : IAsyncDisposable
             });
         });
         await database.MigrateAsync();
-        return new UsersDatabase(database, clock);
+        return new UsersDatabase(database, clock, securityEvents);
     }
 
     /// <summary>Runs one use case in a scope of its own, as one request does.</summary>
@@ -78,4 +85,22 @@ internal sealed class UsersDatabase : IAsyncDisposable
     }
 
     public ValueTask DisposeAsync() => _database.DisposeAsync();
+}
+
+/// <summary>Stands in for the Audit module: keeps the security events in the order they came.</summary>
+internal sealed class RecordedSecurityEvents : ISecurityEvents
+{
+    public List<string> Events { get; } = [];
+
+    public Task SignedInAsync(Guid userId, string provider, CancellationToken cancellationToken)
+    {
+        Events.Add($"SignedIn {userId} {provider}");
+        return Task.CompletedTask;
+    }
+
+    public Task SignInRefusedAsync(string identity, SignInRefusal reason, CancellationToken cancellationToken)
+    {
+        Events.Add($"SignInRefused {identity} {reason}");
+        return Task.CompletedTask;
+    }
 }

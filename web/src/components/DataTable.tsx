@@ -1,7 +1,14 @@
 import Box from '@mui/material/Box';
-import { DataGrid, type GridColDef, type GridValidRowModel } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  type GridCellParams,
+  type GridColDef,
+  type GridRowId,
+  type GridRowParams,
+  type GridValidRowModel,
+} from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 export type DataTableColumn<Row extends GridValidRowModel> = GridColDef<Row>;
 
@@ -24,6 +31,12 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   rowHeight?: number;
   /** Message of a table without rows. */
   emptyLabel?: string;
+  /** The row shown as selected (fp-gt__row--selected), such as the record whose details are open. */
+  selectedRowId?: GridRowId;
+  /** Choosing a row, by click or by Enter on one of its cells. */
+  onRowChoose?: (row: Row) => void;
+  /** Text of the footer, such as "1–25 de 312 no período"; by default the Data Grid's own. */
+  displayedRowsLabel?: (range: { from: number; to: number; count: number }) => string;
 }
 
 const localeText = ptBR.components.MuiDataGrid.defaultProps.localeText;
@@ -46,7 +59,38 @@ export function DataTable<Row extends GridValidRowModel>({
   tools,
   rowHeight = 56,
   emptyLabel,
+  selectedRowId,
+  onRowChoose,
+  displayedRowsLabel,
 }: DataTableProps<Row>) {
+  const text = useMemo(
+    () => ({
+      ...localeText,
+      ...(emptyLabel === undefined ? {} : { noRowsLabel: emptyLabel }),
+      ...(displayedRowsLabel === undefined
+        ? {}
+        : {
+            paginationDisplayedRows: ({
+              from,
+              to,
+              count,
+            }: {
+              from: number;
+              to: number;
+              count: number;
+            }) => displayedRowsLabel({ from, to, count }),
+          }),
+    }),
+    [emptyLabel, displayedRowsLabel],
+  );
+  const selection = useMemo(
+    () => ({
+      type: 'include' as const,
+      ids: new Set<GridRowId>(selectedRowId === undefined ? [] : [selectedRowId]),
+    }),
+    [selectedRowId],
+  );
+
   return (
     <Box
       component="section"
@@ -85,8 +129,23 @@ export function DataTable<Row extends GridValidRowModel>({
           columns={columns}
           rowCount={rowCount}
           loading={loading}
-          localeText={
-            emptyLabel === undefined ? localeText : { ...localeText, noRowsLabel: emptyLabel }
+          localeText={text}
+          rowSelectionModel={selection}
+          onRowClick={
+            onRowChoose === undefined
+              ? undefined
+              : (params: GridRowParams<Row>) => {
+                  onRowChoose(params.row);
+                }
+          }
+          onCellKeyDown={
+            onRowChoose === undefined
+              ? undefined
+              : (params: GridCellParams<Row>, event) => {
+                  if (event.key === 'Enter') {
+                    onRowChoose(params.row);
+                  }
+                }
           }
           paginationMode="server"
           paginationModel={{ page: page - 1, pageSize }}
@@ -138,6 +197,10 @@ export function DataTable<Row extends GridValidRowModel>({
             '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within':
               { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
             '& .MuiDataGrid-row:hover': { backgroundColor: 'var(--bg-hover)' },
+            '& .MuiDataGrid-row.Mui-selected, & .MuiDataGrid-row.Mui-selected:hover': {
+              backgroundColor: 'var(--bg-selected)',
+            },
+            '& .MuiDataGrid-row': onRowChoose === undefined ? {} : { cursor: 'pointer' },
             '& .row-muted': { color: 'var(--text-secondary)' },
             '& .MuiDataGrid-footerContainer': {
               minHeight: 44,

@@ -108,6 +108,33 @@ describe('Área de Administração', () => {
     });
   });
 
+  it('Seção Auditoria', async () => {
+    signedInAs('Administrator');
+    await renderApp('/admin/audit');
+
+    const sections = screen.getByRole('navigation', { name: ptBR.admin.sections.label });
+    const audit = within(sections).getByRole('link', { name: ptBR.pages.audit.title });
+    expect(audit).toHaveAttribute('href', '/admin/audit');
+    expect(audit).toHaveAttribute('aria-current', 'page');
+    expect(audit).toHaveTextContent(new RegExp(`^${ptBR.pages.audit.title}$`));
+    const trail = screen.getByRole('navigation', { name: ptBR.shell.breadcrumb });
+    expect(
+      within(trail)
+        .getAllByRole('listitem')
+        .map((level) => level.textContent),
+    ).toEqual([ptBR.pages.admin.title, ptBR.pages.audit.title]);
+  });
+
+  it('Endereço da Auditoria sem ser administrador', async () => {
+    signedInAs('ProjectManager');
+    const { router } = await renderApp('/admin/audit');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: ptBR.pages.home.title }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/');
+  });
+
   it('Área no celular sem a coluna das seções', async () => {
     signedInAs('Administrator');
     await renderApp('/admin/users', phoneWidth);

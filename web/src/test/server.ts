@@ -4,6 +4,7 @@ import type { components } from '../api/schema';
 import type { SessionUser } from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
+type AuditEntryResponse = components['schemas']['AuditEntryResponse'];
 
 // The API, simulated for the screen tests (ADR-0056). By default Marina is signed in and the local sign-in is on;
 // each test changes only what it needs with server.use(...).
@@ -76,10 +77,105 @@ export function usersPage(users: readonly UserResponse[], url: URL) {
   };
 }
 
+const paulo = { id: '0199f5a2-7c1e-7d40-9a1b-000000000001', name: 'Paulo Nogueira' };
+const marinaActor = { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' };
+
+function auditEntry(
+  index: number,
+  occurredAt: string,
+  actor: AuditEntryResponse['actor'],
+  record: Pick<AuditEntryResponse, 'action' | 'itemType'> & Partial<AuditEntryResponse>,
+): AuditEntryResponse {
+  return {
+    id: `0199f5a2-7c1e-7d40-9a1b-1000000000${String(index).padStart(2, '0')}`,
+    occurredAt,
+    actor,
+    itemId: null,
+    itemLabel: null,
+    detail: null,
+    changes: [],
+    ...record,
+  };
+}
+
+/**
+ * Audit records of the simulated installation, newest first, as in the Audit screen of the canvas. In the time
+ * zone of the tests (vite.config.ts), 2026-10-19T13:14:00Z is 10:14 of October 19th.
+ */
+export const demoAuditEntries: AuditEntryResponse[] = [
+  auditEntry(1, '2026-10-19T13:14:00Z', paulo, {
+    action: 'Updated',
+    itemType: 'User',
+    itemId: '0199f5a2-7c1e-7d40-9a1b-000000000003',
+    itemLabel: 'Beatriz Lima',
+    changes: [{ field: 'Role', before: 'User', after: 'ProjectManager', secret: false }],
+  }),
+  auditEntry(2, '2026-10-19T12:58:00Z', marinaActor, {
+    action: 'SignedIn',
+    itemType: 'SignIn',
+    itemId: marinaActor.id,
+    detail: 'local',
+  }),
+  auditEntry(3, '2026-10-19T11:05:00Z', null, {
+    action: 'SignInRefused',
+    itemType: 'SignIn',
+    itemLabel: 'joao.silva@parceiro.example',
+    detail: 'NotInDirectory',
+  }),
+  auditEntry(4, '2026-10-18T14:47:00Z', paulo, {
+    action: 'Updated',
+    itemType: 'User',
+    itemId: '0199f5a2-7c1e-7d40-9a1b-000000000005',
+    itemLabel: 'Lívia Prado',
+    changes: [{ field: 'IsActive', before: 'true', after: 'false', secret: false }],
+  }),
+  auditEntry(5, '2026-10-17T12:02:00Z', null, {
+    action: 'Created',
+    itemType: 'User',
+    itemId: '0199f5a2-7c1e-7d40-9a1b-000000000004',
+    itemLabel: 'Rafael Souza',
+    changes: [
+      { field: 'Email', before: null, after: 'rafael.souza@empresa.example', secret: false },
+      { field: 'IsActive', before: null, after: 'true', secret: false },
+      { field: 'Name', before: null, after: 'Rafael Souza', secret: false },
+      { field: 'Role', before: null, after: 'User', secret: false },
+    ],
+  }),
+  auditEntry(6, '2026-09-10T12:00:00Z', paulo, {
+    action: 'SignedIn',
+    itemType: 'SignIn',
+    itemId: paulo.id,
+    detail: 'local',
+  }),
+];
+
+/** The audit list as the API answers it: by author, item type and period (end excluded), newest first, in pages. */
+export function auditPage(entries: readonly AuditEntryResponse[], url: URL) {
+  const actorId = url.searchParams.get('actorId');
+  const itemType = url.searchParams.get('itemType');
+  const from = url.searchParams.get('from');
+  const to = url.searchParams.get('to');
+  const page = Number(url.searchParams.get('page') ?? '1');
+  const pageSize = Number(url.searchParams.get('pageSize') ?? '25');
+  const matching = entries
+    .filter((entry) => actorId === null || entry.actor?.id === actorId)
+    .filter((entry) => itemType === null || entry.itemType === itemType)
+    .filter((entry) => from === null || Date.parse(entry.occurredAt) >= Date.parse(from))
+    .filter((entry) => to === null || Date.parse(entry.occurredAt) < Date.parse(to))
+    .toSorted((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
+  return {
+    items: matching.slice((page - 1) * pageSize, page * pageSize),
+    total: matching.length,
+  };
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
     HttpResponse.json(usersPage(demoUsers, new URL(request.url))),
+  ),
+  http.get('/api/audit', ({ request }) =>
+    HttpResponse.json(auditPage(demoAuditEntries, new URL(request.url))),
   ),
   http.get('/api/session/sign-in-options', () => HttpResponse.json({ localSignIn: true })),
   http.post('/api/session/sign-out', () => new HttpResponse(null, { status: 204 })),

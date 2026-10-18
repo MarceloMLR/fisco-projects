@@ -4,6 +4,12 @@ import type { components, paths } from './schema';
 export type SessionUser = components['schemas']['SessionUserResponse'];
 export type SystemRole = components['schemas']['SystemRole'];
 export type UserRow = components['schemas']['UserResponse'];
+export type AuditEntry = components['schemas']['AuditEntryResponse'];
+export type AuditField = components['schemas']['AuditFieldResponse'];
+
+/** Item types the Audit screen filters by, in the order of the filter (AuditItemTypes and the module entities). */
+export const auditItemTypes = ['SignIn', 'User'] as const;
+export type AuditItemType = (typeof auditItemTypes)[number];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
 export const systemRoles = [

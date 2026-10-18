@@ -20,6 +20,7 @@ public static class UsersModule
         services.AddScoped<UserStore>();
         services.AddScoped<IUserStore>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<IUserAccess>(provider => provider.GetRequiredService<UserStore>());
+        services.AddScoped<IUserDirectory>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<SignInWithIdentity>();
         services.AddScoped<GetSignedInUser>();
         services.AddScoped<ChangeSystemRole>();

@@ -1,15 +1,20 @@
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
 import { initials } from './initials';
 
 const sizes = {
-  sm: { size: 24, fontSize: 10 },
-  md: { size: 32, fontSize: 12 },
-  lg: { size: 40, fontSize: 14 },
+  sm: { size: 24, fontSize: 10, icon: 14 },
+  md: { size: 32, fontSize: 12, icon: 18 },
+  lg: { size: 40, fontSize: 14, icon: 18 },
 } as const;
 
-/** Round avatar with the initials (Avatar, fp-avatar). Decorative: the name is always written next to it. */
-export function Avatar({ name, size = 'md' }: { name: string; size?: keyof typeof sizes }) {
-  const { size: diameter, fontSize } = sizes[size];
+/**
+ * Round avatar with the initials (Avatar, fp-avatar). Decorative: the name is always written next to it. Without a
+ * name it is the dashed avatar of the design system's empty Person, as for the system on the Audit screen.
+ */
+export function Avatar({ name, size = 'md' }: { name?: string; size?: keyof typeof sizes }) {
+  const { size: diameter, fontSize, icon } = sizes[size];
+  const empty = name === undefined;
 
   return (
     <Box
@@ -19,11 +24,13 @@ export function Avatar({ name, size = 'md' }: { name: string; size?: keyof typeo
         display: 'inline-grid',
         placeItems: 'center',
         flex: 'none',
+        boxSizing: 'border-box',
         width: diameter,
         height: diameter,
         borderRadius: 'var(--radius-full)',
-        backgroundColor: 'var(--avatar-bg)',
-        color: 'var(--avatar-text)',
+        backgroundColor: empty ? 'transparent' : 'var(--avatar-bg)',
+        border: empty ? '1px dashed var(--border-control)' : 0,
+        color: empty ? 'var(--text-secondary)' : 'var(--avatar-text)',
         fontSize,
         lineHeight: 1,
         fontWeight: 500,
@@ -31,7 +38,7 @@ export function Avatar({ name, size = 'md' }: { name: string; size?: keyof typeo
         userSelect: 'none',
       }}
     >
-      {initials(name)}
+      {empty ? <PersonOutlined sx={{ fontSize: icon }} /> : initials(name)}
     </Box>
   );
 }
