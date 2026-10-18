@@ -2,19 +2,19 @@
 
 ## 1. Tabela e menus
 
-- [ ] 1.1 No `DataTable`:
+- [x] 1.1 No `DataTable`:
   - deixar estáveis `pageSizeOptions`, `paginationModel`, `sx`, `onRowClick`, `onCellKeyDown`, `onPaginationModelChange` e `getRowClassName`;
   - na tela Usuários, passar `isRowMuted` como função fora do componente;
   - testar que desenhar a tela de novo com as mesmas linhas não desenha as células.
 
   Verificar com `npm test` e `npm run lint`.
-- [ ] 1.2 No `DataTable`, trocar o overlay de carregamento pelo `DelayedLoadingOverlay`:
+- [x] 1.2 No `DataTable`, trocar o overlay de carregamento pelo `DelayedLoadingOverlay`:
   - nada nos primeiros 300 ms, depois a barra (com linhas) ou o esqueleto (sem linhas);
   - fundo transparente;
   - testar "Resposta demorada com indicador" e "Primeira abertura da lista" com uma tabela isolada.
 
   Verificar com `npm test`.
-- [ ] 1.3 No tema, `MuiMenu` sem animação de saída. Testar "Escolha num campo de seleção" e "Escolha num menu de ações". Verificar com `npm test`.
+- [x] 1.3 No tema, `MuiMenu` sem animação de saída. Testar "Escolha num campo de seleção" e "Escolha num menu de ações". Verificar com `npm test`.
 
 ## 2. Leituras pelo TanStack Query
 

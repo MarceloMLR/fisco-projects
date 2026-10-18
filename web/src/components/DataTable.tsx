@@ -1,14 +1,17 @@
 import Box from '@mui/material/Box';
+import type { SxProps, Theme } from '@mui/material/styles';
 import {
   DataGrid,
   type GridCellParams,
   type GridColDef,
+  type GridRowClassNameParams,
   type GridRowId,
   type GridRowParams,
   type GridValidRowModel,
 } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { type ReactNode, useMemo } from 'react';
+import { type KeyboardEvent, type ReactNode, useCallback, useMemo } from 'react';
+import { DelayedLoadingOverlay } from './DelayedLoadingOverlay';
 
 export type DataTableColumn<Row extends GridValidRowModel> = GridColDef<Row>;
 
@@ -23,8 +26,12 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  /**
+   * Waiting for the rows: the indicator shows only if the wait goes past a moment, as a bar over the rows on screen
+   * or, without rows, as the skeleton of the rows.
+   */
   loading?: boolean;
-  /** Rows shown dimmed, such as an inactive person (fp-gt__row--muted). */
+  /** Rows shown dimmed, such as an inactive person (fp-gt__row--muted). Keep it the same function between renders. */
   isRowMuted?: (row: Row) => boolean;
   /** Search and filters above the table (fp-gt-tools). */
   tools?: ReactNode;
@@ -40,11 +47,100 @@ export interface DataTableProps<Row extends GridValidRowModel> {
 }
 
 const localeText = ptBR.components.MuiDataGrid.defaultProps.localeText;
+const slots = { loadingOverlay: DelayedLoadingOverlay };
+
+const sectionSx: SxProps<Theme> = {
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box',
+  backgroundColor: 'var(--bg-surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+  overflow: 'hidden',
+};
+
+const toolsSx: SxProps<Theme> = {
+  flex: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'var(--space-2)',
+  flexWrap: 'wrap',
+  padding: 'var(--space-3)',
+  borderBottom: '1px solid var(--border)',
+};
+
+const gridAreaSx: SxProps<Theme> = { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' };
+
+const gridSx = {
+  flex: 1,
+  minHeight: 0,
+  border: 0,
+  borderRadius: 0,
+  fontSize: 14,
+  lineHeight: '20px',
+  color: 'var(--text)',
+  fontVariantNumeric: 'tabular-nums',
+  '--DataGrid-containerBackground': 'var(--bg-subtle)',
+  '--DataGrid-rowBorderColor': 'var(--border)',
+  // Header row in the subtle background, as in fp-gt__row--head.
+  '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeaders .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaders .MuiDataGrid-filler, & .MuiDataGrid-columnHeaders .MuiDataGrid-scrollbarFiller':
+    { backgroundColor: 'var(--bg-subtle)' },
+  '& .MuiDataGrid-columnHeader': {
+    color: 'var(--text-secondary)',
+    fontSize: 13,
+    lineHeight: '18px',
+    fontWeight: 500,
+    padding: '0 var(--space-3)',
+  },
+  '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 500 },
+  '& .MuiDataGrid-columnSeparator': { display: 'none' },
+  '& .MuiDataGrid-cell': {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 var(--space-3)',
+    lineHeight: '20px',
+    borderTopColor: 'var(--border)',
+  },
+  // The empty cell after the last column has no width; with padding it would make the rows wider than
+  // the table, and focusing the last column would scroll the table sideways.
+  '& .MuiDataGrid-cellEmpty': { padding: 0 },
+  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within':
+    { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
+  '& .MuiDataGrid-row:hover': { backgroundColor: 'var(--bg-hover)' },
+  '& .MuiDataGrid-row.Mui-selected, & .MuiDataGrid-row.Mui-selected:hover': {
+    backgroundColor: 'var(--bg-selected)',
+  },
+  '& .row-muted': { color: 'var(--text-secondary)' },
+  '& .MuiDataGrid-footerContainer': {
+    minHeight: 44,
+    borderTop: '1px solid var(--border)',
+    justifyContent: 'flex-end',
+  },
+  '& .MuiTablePagination-toolbar': { minHeight: 44 },
+  '& .MuiTablePagination-root, & .MuiTablePagination-displayedRows': {
+    fontSize: 13,
+    lineHeight: '18px',
+    color: 'var(--text-secondary)',
+  },
+  '& .MuiDataGrid-overlay': { backgroundColor: 'var(--bg-surface)' },
+} satisfies SxProps<Theme>;
+
+/** A table whose rows open something shows the pointer over them. */
+const choosableGridSx = {
+  ...gridSx,
+  '& .MuiDataGrid-row': { cursor: 'pointer' },
+} satisfies SxProps<Theme>;
 
 /**
  * Standard table of the application (ADR-0050): the free MUI X Data Grid in pt-BR, with the look of the design
  * system table (fp-gt). It fills the area it is in and scrolls inside, with the pagination at the bottom
  * (ADR-0066). The server sorts, filters and pages; the table only shows a page.
+ *
+ * The Data Grid draws again only when one of its properties changes, so everything given to it here keeps the same
+ * value between renders: a screen that renders again without new rows, such as when a filter changes, does not
+ * draw the cells again.
  */
 export function DataTable<Row extends GridValidRowModel>({
   label,
@@ -90,70 +186,59 @@ export function DataTable<Row extends GridValidRowModel>({
     }),
     [selectedRowId],
   );
+  const paginationModel = useMemo(() => ({ page: page - 1, pageSize }), [page, pageSize]);
+  const pageSizeOptions = useMemo(() => [pageSize], [pageSize]);
+  const onPaginationModelChange = useCallback(
+    (model: { page: number }) => {
+      onPageChange(model.page + 1);
+    },
+    [onPageChange],
+  );
+  const getRowClassName = useCallback(
+    ({ row }: GridRowClassNameParams<Row>) => (isRowMuted?.(row) === true ? 'row-muted' : ''),
+    [isRowMuted],
+  );
+  const onRowClick = useMemo(
+    () =>
+      onRowChoose === undefined
+        ? undefined
+        : (params: GridRowParams<Row>) => {
+            onRowChoose(params.row);
+          },
+    [onRowChoose],
+  );
+  const onCellKeyDown = useMemo(
+    () =>
+      onRowChoose === undefined
+        ? undefined
+        : (params: GridCellParams<Row>, event: KeyboardEvent) => {
+            if (event.key === 'Enter') {
+              onRowChoose(params.row);
+            }
+          },
+    [onRowChoose],
+  );
 
   return (
-    <Box
-      component="section"
-      aria-label={label}
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        boxSizing: 'border-box',
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
-      }}
-    >
-      {tools !== undefined && (
-        <Box
-          sx={{
-            flex: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            flexWrap: 'wrap',
-            padding: 'var(--space-3)',
-            borderBottom: '1px solid var(--border)',
-          }}
-        >
-          {tools}
-        </Box>
-      )}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <Box component="section" aria-label={label} sx={sectionSx}>
+      {tools !== undefined && <Box sx={toolsSx}>{tools}</Box>}
+      <Box sx={gridAreaSx}>
         <DataGrid<Row>
           label={label}
           rows={rows}
           columns={columns}
           rowCount={rowCount}
           loading={loading}
+          slots={slots}
           localeText={text}
           rowSelectionModel={selection}
-          onRowClick={
-            onRowChoose === undefined
-              ? undefined
-              : (params: GridRowParams<Row>) => {
-                  onRowChoose(params.row);
-                }
-          }
-          onCellKeyDown={
-            onRowChoose === undefined
-              ? undefined
-              : (params: GridCellParams<Row>, event) => {
-                  if (event.key === 'Enter') {
-                    onRowChoose(params.row);
-                  }
-                }
-          }
+          onRowClick={onRowClick}
+          onCellKeyDown={onCellKeyDown}
           paginationMode="server"
-          paginationModel={{ page: page - 1, pageSize }}
-          onPaginationModelChange={(model) => {
-            onPageChange(model.page + 1);
-          }}
-          pageSizeOptions={[pageSize]}
-          getRowClassName={({ row }) => (isRowMuted?.(row) === true ? 'row-muted' : '')}
+          paginationModel={paginationModel}
+          onPaginationModelChange={onPaginationModelChange}
+          pageSizeOptions={pageSizeOptions}
+          getRowClassName={getRowClassName}
           rowHeight={rowHeight}
           columnHeaderHeight={40}
           disableColumnMenu
@@ -161,60 +246,7 @@ export function DataTable<Row extends GridValidRowModel>({
           disableColumnResize
           disableRowSelectionOnClick
           hideFooterSelectedRowCount
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            border: 0,
-            borderRadius: 0,
-            fontSize: 14,
-            lineHeight: '20px',
-            color: 'var(--text)',
-            fontVariantNumeric: 'tabular-nums',
-            '--DataGrid-containerBackground': 'var(--bg-subtle)',
-            '--DataGrid-rowBorderColor': 'var(--border)',
-            // Header row in the subtle background, as in fp-gt__row--head.
-            '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeaders .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaders .MuiDataGrid-filler, & .MuiDataGrid-columnHeaders .MuiDataGrid-scrollbarFiller':
-              { backgroundColor: 'var(--bg-subtle)' },
-            '& .MuiDataGrid-columnHeader': {
-              color: 'var(--text-secondary)',
-              fontSize: 13,
-              lineHeight: '18px',
-              fontWeight: 500,
-              padding: '0 var(--space-3)',
-            },
-            '& .MuiDataGrid-columnHeaderTitle': { fontWeight: 500 },
-            '& .MuiDataGrid-columnSeparator': { display: 'none' },
-            '& .MuiDataGrid-cell': {
-              display: 'flex',
-              alignItems: 'center',
-              padding: '0 var(--space-3)',
-              lineHeight: '20px',
-              borderTopColor: 'var(--border)',
-            },
-            // The empty cell after the last column has no width; with padding it would make the rows wider than
-            // the table, and focusing the last column would scroll the table sideways.
-            '& .MuiDataGrid-cellEmpty': { padding: 0 },
-            '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within':
-              { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
-            '& .MuiDataGrid-row:hover': { backgroundColor: 'var(--bg-hover)' },
-            '& .MuiDataGrid-row.Mui-selected, & .MuiDataGrid-row.Mui-selected:hover': {
-              backgroundColor: 'var(--bg-selected)',
-            },
-            '& .MuiDataGrid-row': onRowChoose === undefined ? {} : { cursor: 'pointer' },
-            '& .row-muted': { color: 'var(--text-secondary)' },
-            '& .MuiDataGrid-footerContainer': {
-              minHeight: 44,
-              borderTop: '1px solid var(--border)',
-              justifyContent: 'flex-end',
-            },
-            '& .MuiTablePagination-toolbar': { minHeight: 44 },
-            '& .MuiTablePagination-root, & .MuiTablePagination-displayedRows': {
-              fontSize: 13,
-              lineHeight: '18px',
-              color: 'var(--text-secondary)',
-            },
-            '& .MuiDataGrid-overlay': { backgroundColor: 'var(--bg-surface)' },
-          }}
+          sx={onRowChoose === undefined ? gridSx : choosableGridSx}
         />
       </Box>
     </Box>

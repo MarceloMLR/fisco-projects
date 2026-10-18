@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRow } from '../api/client';
@@ -249,5 +249,33 @@ describe('Tela Usuários', () => {
     expect(within(rowOf('Paulo Nogueira')).getAllByRole('gridcell')[1]).toHaveTextContent(
       text.roles.Administrator,
     );
+  });
+});
+
+// Spec: aplicacao-web, requirement "Menus fecham na hora".
+describe('Menus fecham na hora', () => {
+  // jsdom lays nothing out; with a height, the menu of MUI would take its usual time to leave.
+  const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+  afterEach(() => {
+    if (height !== undefined) {
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', height);
+    }
+  });
+
+  it('Escolha num menu de ações', async () => {
+    await openUsers();
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get: () => 200,
+    });
+    const menu = await openMenuOf('Marina Costa');
+    const paper = menu.closest('.MuiPaper-root');
+
+    // Choosing the role she already has only closes the menu.
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: text.roles.ProjectManager }));
+
+    expect((paper as HTMLElement | null)?.style.transition).toMatch(/^opacity 0ms/);
+    await act(() => new Promise<void>((resolve) => setTimeout(resolve, 20)));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });

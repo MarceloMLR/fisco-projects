@@ -28,6 +28,8 @@ const pageSize = 25;
 const searchDelay = 300;
 
 type RoleFilter = 'all' | SystemRole;
+/** An inactive person shows dimmed in the list. */
+const isInactive = (user: UserRow) => user.status === 'Inactive';
 type StatusFilter = 'all' | UserRow['status'];
 
 /**
@@ -239,7 +241,7 @@ export function UsersPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         loading={loading}
-        isRowMuted={(user) => user.status === 'Inactive'}
+        isRowMuted={isInactive}
         emptyLabel={t('users.empty')}
         tools={
           <>
