@@ -80,7 +80,8 @@ context: |
   anonimização a pedido em todo o sistema, inclusive auditoria; retenção configurável; nada de dado pessoal
   em URL ou log; segredos só no Key Vault, nunca no repo nem no Terraform.
 
-  Idioma: código, identificadores, comentários, commits e PRs em inglês; specs, propostas, ADRs e docs em
+  Idioma: código, identificadores e comentários em inglês; mensagens de commit e títulos e descrições de
+  PR em português do Brasil (tipos do Conventional Commits em inglês); specs, propostas, ADRs e docs em
   português do Brasil; interface e e-mails em pt-BR via arquivos de tradução.
 
 rules:
@@ -111,4 +112,5 @@ operations:
   archive:
     guidance:
       - Confirmar ADR criado quando houve decisão de arquitetura.
-      - Sincronizar as specs na própria branch, antes de abrir o PR, para um único PR levar código e specs.
+      - Arquivar na própria branch, depois da aprovação do PR por Marcelo e antes do merge, para um único PR levar código e specs.
+      - Atualizar o status da change em docs/roadmap.md.

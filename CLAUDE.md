@@ -55,7 +55,7 @@ Hoje o repositório tem só a documentação. As pastas de código nascem nas pr
 
 ## 4. Convenções e não-negociáveis
 
-- Idioma: código, nomes, comentários, commits e PRs em inglês. Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
+- Idioma: código, nomes e comentários em inglês. Mensagens de commit e títulos e descrições de PR em português do Brasil (regra deste projeto, que substitui a do CLAUDE.md global). Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
 - C#: nullable habilitado, avisos tratados como erro, `.editorconfig` com `dotnet format` (ADR-0061).
 - TypeScript em modo estrito, com ESLint e Prettier (ADR-0049, ADR-0061).
 - API REST em JSON sob `/api`, contrato OpenAPI gerado pelo ASP.NET Core, tipos do frontend gerados do contrato, erros em Problem Details (RFC 9457), identificadores GUID v7; o número do chamado é sequencial (ADR-0029, ADR-0061).
@@ -113,17 +113,24 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
 
 ## 9. Fluxo de trabalho
 
-- OpenSpec: toda mudança, inclusive correções pequenas, começa por uma proposta (`/opsx:propose`). Só implemente depois que Marcelo aprovar.
+- OpenSpec: toda mudança, inclusive correções pequenas, começa por uma proposta (`/opsx:propose`).
+  - Changes do roadmap (`docs/roadmap.md`): o agente propõe, avalia a proposta contra os ADRs e o design técnico e visual e, se estiver dentro, implementa (`/opsx:apply`) sem esperar aprovação da proposta. A aprovação de Marcelo é no PR.
+  - Mudanças fora do roadmap: a proposta é aprovada por Marcelo antes de implementar.
+- Quando parar e perguntar: só quando a decisão afeta o design técnico ou visual aprovado, envolve LGPD ou é exclusiva de Marcelo (produto, custo, licença, conta). Nos demais casos, decida, siga e liste as decisões tomadas no resumo final da change.
+- Roadmap: as changes têm um ID por grupo (`Fundação-1`, `Acesso-2`...) e são feitas na ordem. Correção de uma change já arquivada ganha um subnúmero (`Fundação-2.1`), só quando necessário. O status de cada change é atualizado em `docs/roadmap.md` a cada etapa.
 - Changes pequenas, com um objetivo funcional claro, em fatias verticais finas. Cada fatia termina com build sem avisos, testes passando e lint limpo.
 - Decisão com alternativas reais vira ADR em `docs/adr/` antes de implementar. ADR aceito não muda de conteúdo: um ADR novo o substitui (ADR-0001).
 - Testes: crie ou atualize os testes de toda mudança e rode-os antes de concluir. Cada cenário de spec tem um teste rastreável pelo nome; as matrizes de permissão são 100% cobertas (ADR-0056).
-- Git:
-  - Nunca escreva na `main`. Crie a branch a partir da `main` atualizada: `git switch main`, `git pull`, `git switch -c tipo/descricao-curta`.
-  - Ao terminar a implementação, rode o archive do OpenSpec na própria branch, para o PR levar código e specs.
-  - Faça commit, push e abra o PR com `gh pr create`.
-  - Depois do merge: `git switch main`, `git pull`, `git branch -d <branch>` (nunca `-D`) e `git push origin --delete <branch>`.
+- Git, para cada change (esta ordem substitui, neste projeto, a do CLAUDE.md global):
+  1. Sempre uma branch nova a partir da `main` atualizada: `git switch main`, `git pull`, `git switch -c tipo/nome-da-change`. Nunca escreva na `main` (a regra "Protect main" do GitHub também impede).
+  2. Proposta e implementação na branch, com testes; commits pequenos em Conventional Commits.
+  3. Push e PR com `gh pr create`; roadmap com "PR aberto". Avise Marcelo com o resumo.
+  4. Depois da aprovação de Marcelo no chat (o GitHub não deixa o autor aprovar o próprio PR), rode o archive do OpenSpec (`/opsx:archive`) na mesma branch, atualize o roadmap para "Concluída" e faça push, para o PR levar código e specs juntos.
+  5. Faça o merge do PR; se o merge não puder ser feito pela sessão, peça a Marcelo para fazê-lo no GitHub. Depois volte para a `main` (`git switch main`, `git pull`), apague a branch local com `git branch -d <branch>` (nunca `-D`) e a remota com `git push origin --delete <branch>`.
+  6. Só então comece a próxima change, de novo pelo passo 1.
   - Nunca use `push --force` nem reescreva histórico publicado.
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
+- Commits e PRs em português do Brasil: a descrição, o corpo do commit e o título e a descrição do PR. Tipo, `BREAKING CHANGE` e nomes de código continuam em inglês. Exemplo: `feat(chamados): adiciona troca do responsável em lote`.
 - Sem linhas de atribuição: commits sem `Co-Authored-By` nem outros trailers de autoria do Claude, e PRs sem o rodapé "Generated with Claude Code" (preferência de Marcelo).
 
 ## 10. O que não fazer
