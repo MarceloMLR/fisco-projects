@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FiscoProjects.Api/FiscoProjects.Api.csproj" />
+    <Project Path="src/FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FiscoProjects.Api.Tests/FiscoProjects.Api.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.Architecture.Tests/FiscoProjects.Architecture.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.SharedKernel.Tests/FiscoProjects.SharedKernel.Tests.csproj" />
+  </Folder>
+</Solution>

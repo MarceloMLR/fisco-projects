@@ -79,15 +79,31 @@ Hoje o repositório tem só a documentação. As pastas de código nascem nas pr
 
 ## 6. Como rodar, buildar e testar
 
-**A DEFINIR** nas changes de setup do backend, do frontend e da infraestrutura. Os comandos previstos são estes, e esta seção é atualizada quando eles existirem:
+Pré-requisitos: SDK do .NET 10 (o `global.json` aceita qualquer 10.0 a partir do 10.0.100) e o OpenSpec CLI.
+
+Backend, na raiz do repositório:
 
 ```
-dotnet build -warnaserror
-dotnet test
-dotnet format --verify-no-changes
+dotnet build FiscoProjects.slnx -warnaserror
+dotnet test FiscoProjects.slnx
+dotnet format FiscoProjects.slnx --verify-no-changes
+dotnet run --project src/FiscoProjects.Api
+```
+
+- `dotnet format FiscoProjects.slnx` (sem `--verify-no-changes`) corrige a formatação.
+- Com a API rodando no ambiente de desenvolvimento, a saúde fica em `/health` e o contrato em `/openapi/v1.json`.
+
+Specs:
+
+```
+openspec validate --all --strict
+```
+
+Previstos para as próximas changes, e esta seção é atualizada quando existirem:
+
+```
 cd web && npm ci && npm run lint && npm run typecheck && npm test
 terraform -chdir=infra/terraform fmt -check && terraform -chdir=infra/terraform validate
-openspec validate --all
 ```
 
 Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail e arquivos e um tenant Microsoft pessoal, nunca o da empresa (ADR-0002, ADR-0004, ADR-0048).
