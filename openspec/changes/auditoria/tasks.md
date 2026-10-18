@@ -11,7 +11,7 @@
 
 ## 3. API da auditoria
 
-- [ ] 3.1 Criar `GET /api/audit` com os filtros, a paginação e o nome do autor, só para o administrador; testar a matriz de permissões gerada de uma tabela ("Administrador na auditoria", "Gerente de projeto na auditoria" e "Usuário na auditoria"), "Sem rota para alterar ou apagar" e os filtros de ponta a ponta; atualizar o contrato e os tipos com `npm run api:update`; verificar com `dotnet test` e `npm test`
+- [x] 3.1 Criar `GET /api/audit` com os filtros, a paginação e o nome do autor, só para o administrador; testar a matriz de permissões gerada de uma tabela ("Administrador na auditoria", "Gerente de projeto na auditoria" e "Usuário na auditoria"), "Sem rota para alterar ou apagar" e os filtros de ponta a ponta; atualizar o contrato e os tipos com `npm run api:update`; verificar com `dotnet test` e `npm test`
 
 ## 4. Tela de Auditoria
 
