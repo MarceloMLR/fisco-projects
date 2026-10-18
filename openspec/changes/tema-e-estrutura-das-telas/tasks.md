@@ -2,7 +2,7 @@
 
 ## 1. Tema
 
-- [ ] 1.1 Copiar o `tokens.json` do design system, gerar as variáveis CSS e o tema do MUI (claro, escuro, automático) e instalar MUI, Emotion e as fontes `@fontsource` (OFL-1.1 na lista de licenças); testar "Cores dos tokens nos dois temas", "Cor escrita direto no código", "Fonte servida pela aplicação", "Contraste mínimo" e "Tema segue o sistema"; verificar com `npm test`, `npm run lint`, `npm run typecheck` e `npm run build`
+- [x] 1.1 Copiar o `tokens.json` do design system, gerar as variáveis CSS e o tema do MUI (claro, escuro, automático) e instalar MUI, Emotion e as fontes `@fontsource` (OFL-1.1 na lista de licenças); testar "Cores dos tokens nos dois temas", "Cor escrita direto no código", "Fonte servida pela aplicação", "Contraste mínimo" e "Tema segue o sistema"; verificar com `npm test`, `npm run lint`, `npm run typecheck` e `npm run build`
 
 ## 2. Estrutura das telas
 
