@@ -116,3 +116,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Evento de segurança | ISecurityEvents | Entrada e entrada recusada; troca de papel e situação entram como alteração do usuário |
 | Motivo da recusa: fora do diretório, conta desativada | SignInRefusal: NotInDirectory, Inactive | |
 | Anonimização | Anonymization | |
+
+## Telas
+
+| Português | Código | Observação |
+| --- | --- | --- |
+| Gaveta de detalhes | DetailsDrawer | Detalhe de um item escolhido numa lista, à direita, por cima da tela, com o fundo escurecido (ADR-0081) |

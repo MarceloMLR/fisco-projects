@@ -22,7 +22,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção, a Auditoria nos temas claro e escuro, no computador e no celular:
+- [x] 3.1 Conferir no navegador, com o build de produção, a Auditoria nos temas claro e escuro, no computador e no celular:
   - a gaveta com o fundo escurecido;
   - a tabela de mudanças sem palavras quebradas;
   - o filtro de pessoa com reticências.
