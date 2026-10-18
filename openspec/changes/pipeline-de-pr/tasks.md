@@ -7,8 +7,8 @@
 
 ## 2. Workflow
 
-- [ ] 2.1 Criar `.github/workflows/pull-request.yml` com o job `verify`, uma etapa por script, ações fixadas pelo commit, `ubuntu-24.04`, permissão só de leitura e sem segredos
-- [ ] 2.2 Criar `tests/FiscoProjects.Pipeline.Tests` com os cenários "Pull request para a main", "Todas as verificações no pull request", "Comando que falha reprova a verificação", "Pacote com vulnerabilidade conhecida", "Etapas do workflow", "Script chamado de outra pasta", "Sem segredos" e "Versões fixadas"; verificar com `dotnet test`
+- [x] 2.1 Criar `.github/workflows/pull-request.yml` com o job `verify`, uma etapa por script, ações fixadas pelo commit, `ubuntu-24.04`, permissão só de leitura e sem segredos
+- [x] 2.2 Criar `tests/FiscoProjects.Pipeline.Tests` com os cenários "Pull request para a main", "Todas as verificações no pull request", "Comando que falha reprova a verificação", "Pacote com vulnerabilidade conhecida", "Etapas do workflow", "Script chamado de outra pasta", "Sem segredos" e "Versões fixadas"; verificar com `dotnet test`
 
 ## 3. Documentação e verificação final
 
