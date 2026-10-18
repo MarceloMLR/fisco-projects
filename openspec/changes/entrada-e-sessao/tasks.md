@@ -18,7 +18,7 @@
 ## 4. Verificação final
 
 - [x] 4.1 Conferir no Chromium a entrada local de ponta a ponta (página de entrada, recusa, entrada, conta e Sair), no computador e no celular, nos temas claro e escuro, contra o canvas, com a API e o banco local
-- [ ] 4.2 Atualizar a seção 6 do `CLAUDE.md` (entrada local e diretório de demonstração), rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
+- [x] 4.2 Atualizar a seção 6 do `CLAUDE.md` (entrada local e diretório de demonstração), rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up
 
