@@ -17,7 +17,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 7 | 5 |
-| 2. Acesso e administração | 5 | 0 |
+| 2. Acesso e administração | 5 | 1 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
 | 5. Chamados | 7 | 0 |
@@ -26,7 +26,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **50** | **5** |
+| **Total** | **50** | **6** |
 
 ## 1. Fundação
 
@@ -44,7 +44,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Acesso-1 | `entrada-e-sessao` | Página de entrada, entrada local por e-mail (desenvolvimento e demonstração), usuário no primeiro login, sessão de 8 h, Sair | 0005, 0009, 0054, 0078 | PR aberto ([#9](https://github.com/MarceloMLR/fisco-projects/pull/9)) |
+| Acesso-1 | `entrada-e-sessao` | Página de entrada, entrada local por e-mail (desenvolvimento e demonstração), usuário no primeiro login, sessão de 8 h, Sair | 0005, 0009, 0054, 0078 | Concluída em 18/10/2026 ([#9](https://github.com/MarceloMLR/fisco-projects/pull/9), [#10](https://github.com/MarceloMLR/fisco-projects/pull/10)) |
 | Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Planejada |
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Planejada |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Planejada |
