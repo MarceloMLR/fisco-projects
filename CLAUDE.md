@@ -46,7 +46,10 @@ infra/scripts/                        o que o Terraform não cobre (Exchange, Sh
 docs/adr/                             decisões (MADR), leitura obrigatória da área antes de mudar
 docs/                                 discovery, apresentação, instalação, custos, design
 openspec/                             config, specs e changes do OpenSpec
+.claude/                              comandos /opsx e skills do OpenSpec, gerados pelo CLI
 ```
+
+Os arquivos de `.claude/commands/opsx/` e `.claude/skills/openspec-*/` são gerados pelo `openspec init` e atualizados com `openspec update`; não edite à mão.
 
 Hoje o repositório tem só a documentação. As pastas de código nascem nas primeiras changes; a lista final de módulos é fechada na change de setup do backend. Exemplos do ADR-0047: Projetos, Chamados, Documentos, Acessos, Notificacoes, Auditoria, Administracao.
 
@@ -57,7 +60,7 @@ Hoje o repositório tem só a documentação. As pastas de código nascem nas pr
 - TypeScript em modo estrito, com ESLint e Prettier (ADR-0049, ADR-0061).
 - API REST em JSON sob `/api`, contrato OpenAPI gerado pelo ASP.NET Core, tipos do frontend gerados do contrato, erros em Problem Details (RFC 9457), identificadores GUID v7; o número do chamado é sequencial (ADR-0029, ADR-0061).
 - Datas e horas em UTC no banco, exibidas no fuso da instalação (ADR-0013).
-- Versões fixadas: .NET 10; Node 24 até 28/10/2026 e Node 26 depois; números em `global.json`, `.nvmrc` e `engines` (ADR-0060).
+- Versões fixadas: .NET 10; Node 24 até 28/10/2026 e Node 26 depois; números em `global.json`, `.nvmrc` e `engines` (ADR-0060). OpenSpec CLI 1.14.3 (`npm i -g @fission-ai/openspec@1.14.3`), com a telemetria desligada (`openspec config set telemetry.enabled false`).
 - Licenças: só MUI gratuito; nada de FluentAssertions 8 ou superior (use AwesomeAssertions), MediatR ou AutoMapper; nenhuma dependência com licença comercial ou copyleft forte sem ADR (ADR-0050, ADR-0056, ADR-0061).
 - Pacotes `@syncfusion/*` só dentro do componente `CronogramaGantt` (ADR-0051).
 - Visual: siga o design system FiscoProjects e as telas aprovadas; nunca invente cor, espaço ou canto fora dos tokens. Status sempre por ícone, cor e texto, nunca só cor (ADR-0062 a 0067).
@@ -135,4 +138,4 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
 - Não usar dados reais nem fixar nomes de empresa, cliente, fornecedor, pasta, modelo ou prazo no código (ADR-0002, ADR-0003).
 - Não usar recursos, contas ou tenant do empregador (ADR-0002).
 - Não pular a revisão: publicação em produção só pelo workflow manual, depois de revisar o plano (ADR-0055).
-- Não rodar `openspec init` nem trocar versões principais sem pedir (ADR-0060).
+- Não trocar versões principais, inclusive a do OpenSpec CLI, sem pedir (ADR-0060).
