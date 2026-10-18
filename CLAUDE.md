@@ -149,6 +149,8 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
 - Commits e PRs em português do Brasil: a descrição, o corpo do commit e o título e a descrição do PR. Tipo, `BREAKING CHANGE` e nomes de código continuam em inglês. Exemplo: `feat(chamados): adiciona troca do responsável em lote`.
 - Sem linhas de atribuição: commits sem `Co-Authored-By` nem outros trailers de autoria do Claude, e PRs sem o rodapé "Generated with Claude Code" (preferência de Marcelo).
+- Mensagens curtas e naturais, como uma pessoa escreveria: na maioria dos commits, só o título (por exemplo, `feat(api): health check do banco`). Corpo só quando o motivo não é óbvio, em uma ou duas frases. Nada de listar tarefas, IDs de change ou arquivos alterados.
+- Descrição de PR curta: o que muda, o que conferir e como testar, sem relatório. Commits sem assinatura automática do ambiente (`git config commit.gpgsign false` no clone), para não aparecer "Unverified".
 
 ## 10. O que não fazer
 
