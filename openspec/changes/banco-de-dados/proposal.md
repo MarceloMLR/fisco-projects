@@ -36,7 +36,7 @@ Os módulos de negócio, a partir da Acesso-1, precisam gravar dados. Antes diss
 
 ## Impact
 
-- Código novo: `src/FiscoProjects.Persistence`, testes de persistência com SQL Server em contêiner, `compose.yaml`, `.env.example`, `.config/dotnet-tools.json`.
+- Código novo: `src/FiscoProjects.Persistence`, testes de persistência com SQL Server em contêiner, `compose.yaml`, `.env.example`, `dotnet-tools.json`.
 - Código alterado: host da API (registro da persistência, verificação do banco, migração no desenvolvimento), testes de arquitetura e da API.
 - Dependências novas: `Microsoft.EntityFrameworkCore.SqlServer` (MIT), `Microsoft.EntityFrameworkCore.Design` (MIT, só em tempo de desenvolvimento), `Testcontainers.MsSql` (MIT, só nos testes) e a imagem `mcr.microsoft.com/mssql/server` 2022, usada só no desenvolvimento e nos testes.
 - Para rodar os testes é preciso Docker em execução.

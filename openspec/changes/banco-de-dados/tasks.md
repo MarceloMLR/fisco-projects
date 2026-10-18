@@ -8,7 +8,7 @@
 ## 2. Contexto base dos módulos
 
 - [x] 2.1 Criar `ModuleDbContext<TSelf>`, `IModuleSchema`, `AddModuleDbContext<T>`, o registro de contextos, a fábrica de tempo de design e as convenções (UTC e `Id` gerado pela aplicação); verificar que `dotnet build -warnaserror` passa
-- [ ] 2.2 Criar `tests/FiscoProjects.Testing` com o `SqlServerFixture` (Testcontainers, imagem fixada) e os contextos de exemplo `alpha` e `beta` com migrações geradas pelo `dotnet ef` (manifesto de ferramentas em `.config/dotnet-tools.json`); verificar que `dotnet ef migrations list` mostra as migrações dos dois contextos
+- [x] 2.2 Criar `tests/FiscoProjects.Testing` com o `SqlServerFixture` (Testcontainers, imagem fixada) e os contextos de exemplo `alpha` e `beta` com migrações geradas pelo `dotnet ef` (manifesto de ferramentas em `dotnet-tools.json`); verificar que `dotnet ef migrations list` mostra as migrações dos dois contextos
 - [ ] 2.3 Criar `tests/FiscoProjects.Persistence.Tests` com os cenários "Módulo com schema próprio", "Dois módulos no mesmo banco", "Data e hora em UTC", "Data e hora local" e "Entidade gravada"; verificar com `dotnet test`
 
 ## 3. Migrações

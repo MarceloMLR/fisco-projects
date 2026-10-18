@@ -57,7 +57,7 @@ Contexto base, registro (`AddModuleDbContext<T>`), fábrica de tempo de design p
 
 ### 7. Ferramentas
 
-`dotnet-ef` 10.0.13 no manifesto de ferramentas do repositório (`.config/dotnet-tools.json`), instalado com `dotnet tool restore`. `Microsoft.EntityFrameworkCore.Design` entra só com `PrivateAssets` nos projetos que geram migrações.
+`dotnet-ef` 10.0.13 no manifesto de ferramentas do repositório (`dotnet-tools.json`), instalado com `dotnet tool restore`. `Microsoft.EntityFrameworkCore.Design` entra só com `PrivateAssets` nos projetos que geram migrações.
 
 ## Risks / Trade-offs
 
