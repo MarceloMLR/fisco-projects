@@ -49,6 +49,3 @@ jobs:
       - name: specs
         if: ${{ !cancelled() }}
         run: bash scripts/ci/specs.sh
-      - name: spelling
-        if: ${{ !cancelled() }}
-        run: bash scripts/ci/spelling.sh

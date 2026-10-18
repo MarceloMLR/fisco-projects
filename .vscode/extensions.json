@@ -2,8 +2,6 @@
   "recommendations": [
     "ms-dotnettools.csdevkit",
     "editorconfig.editorconfig",
-    "streetsidesoftware.code-spell-checker",
-    "streetsidesoftware.code-spell-checker-portuguese-brazilian",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode"
   ]
