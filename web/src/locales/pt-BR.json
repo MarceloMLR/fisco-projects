@@ -6,7 +6,10 @@
     "mainNavigation": "Navegação principal",
     "breadcrumb": "Trilha",
     "openMenu": "Abrir menu",
-    "menu": "Menu"
+    "menu": "Menu",
+    "account": "Conta de {{name}}",
+    "accountMenu": "Conta",
+    "signOut": "Sair"
   },
   "nav": {
     "home": "Início",
@@ -14,8 +17,40 @@
     "tickets": "Chamados"
   },
   "pages": {
-    "home": { "title": "Meu trabalho" },
-    "projects": { "title": "Projetos" },
-    "tickets": { "title": "Chamados" }
+    "home": {
+      "title": "Meu trabalho"
+    },
+    "projects": {
+      "title": "Projetos"
+    },
+    "tickets": {
+      "title": "Chamados"
+    }
+  },
+  "signIn": {
+    "lead": "Projetos, cronogramas e chamados da equipe em um só lugar.",
+    "sub": "Acompanhe prazos em dias úteis, responda chamados e registre aceites sem trocar de ferramenta.",
+    "title": "Entrar",
+    "hint": "Use o e-mail da empresa.",
+    "hintLocal": "Use o e-mail de uma pessoa da demonstração.",
+    "email": "E-mail",
+    "emailPlaceholder": "nome@empresa.com.br",
+    "submit": "Entrar",
+    "note": "A senha é pedida na página da Microsoft.",
+    "noteLocal": "Entrada de demonstração, sem senha.",
+    "foot": "Sem acesso? Fale com o administrador do sistema.",
+    "refused": {
+      "title": "Acesso não liberado",
+      "notInDirectory": "Nenhuma pessoa da demonstração usa esse e-mail.",
+      "inactive": "Sua conta está desativada. Fale com o administrador do sistema."
+    },
+    "failed": {
+      "title": "Não foi possível entrar",
+      "body": "Tente de novo em instantes."
+    },
+    "errors": {
+      "emailRequired": "Informe o e-mail.",
+      "emailInvalid": "Informe um e-mail válido."
+    }
   }
 }

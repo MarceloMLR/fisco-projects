@@ -1,11 +1,13 @@
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
+import type { SessionUser } from '../api/client';
+import { AccountMenu } from './AccountMenu';
 
 /**
  * Invisible header over the content (TopBar, fp-appbar): same color as the content, no line below, with the
- * page trail. The bell and the account menu join it with their own changes.
+ * page trail and, at the right, the account menu. The bell joins it with the notifications.
  */
-export function TopBar({ title }: { title: string }) {
+export function TopBar({ title, user }: { title: string; user: SessionUser }) {
   const { t } = useTranslation();
 
   return (
@@ -69,6 +71,16 @@ export function TopBar({ title }: { title: string }) {
             </Box>
           </Box>
         </Box>
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-1)',
+          marginLeft: 'var(--space-3)',
+        }}
+      >
+        <AccountMenu user={user} />
       </Box>
     </Box>
   );

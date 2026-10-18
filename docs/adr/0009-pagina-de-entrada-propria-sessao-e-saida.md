@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (login simulado substituído pelo ADR-0078)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---
@@ -39,7 +39,7 @@ Escopo:
 | Senha digitada no FiscoProjects (ROPC) | fora |
 | MFA e acesso condicional | fora do sistema (ficam no Entra) |
 | "Lembrar de mim" | fora (o SSO resolve) |
-| Login simulado do MVP | fora; testes usam autenticação de teste e demonstrações usam um tenant com pessoas fictícias |
+| Login simulado do MVP | fora; testes usam autenticação de teste e demonstrações usam um tenant com pessoas fictícias. Substituído pelo ADR-0078: sem tenant, desenvolvimento e demonstrações usam a entrada local por e-mail |
 
 Regra de modelo de dados:
 

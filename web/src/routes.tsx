@@ -1,14 +1,22 @@
 import { Navigate, type RouteObject } from 'react-router';
 import { HomePage } from './pages/HomePage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { SignInPage } from './pages/SignInPage';
 import { TicketsPage } from './pages/TicketsPage';
+import { RequireSession } from './session/RequireSession';
 import { AppShell } from './shell/AppShell';
 import type { PageHandle } from './shell/pages';
 
 // Every screen and its address (ADR-0077). Paths are in English (ADR-0074).
 export const routes: RouteObject[] = [
+  // The sign-in page is outside the shell; every other screen needs a session (ADR-0009).
+  { path: 'sign-in', element: <SignInPage /> },
   {
-    element: <AppShell />,
+    element: (
+      <RequireSession>
+        <AppShell />
+      </RequireSession>
+    ),
     children: [
       {
         index: true,

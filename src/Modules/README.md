@@ -44,19 +44,26 @@ tests/FiscoProjects.<Modulo>.Tests/    testes do módulo
 
 ## Registro no host
 
-Na camada `Endpoints`, o módulo expõe dois métodos de extensão:
+O módulo expõe dois métodos de extensão, um em cada camada externa, porque `Endpoints` e `Infrastructure` não se usam:
 
 ```csharp
-namespace FiscoProjects.<Modulo>.Endpoints;
+namespace FiscoProjects.<Modulo>.Infrastructure;
 
 public static class <Modulo>Module
 {
     public static IServiceCollection Add<Modulo>Module(this IServiceCollection services, IConfiguration configuration)
     {
-        // casos de uso, repositórios e demais serviços do módulo
+        // contexto do banco, implementações das interfaces da Application e casos de uso
         return services;
     }
+}
+```
 
+```csharp
+namespace FiscoProjects.<Modulo>.Endpoints;
+
+public static class <Modulo>Endpoints
+{
     public static RouteGroupBuilder Map<Modulo>Endpoints(this RouteGroupBuilder api)
     {
         var group = api.MapGroup("/<recurso>");
@@ -66,7 +73,7 @@ public static class <Modulo>Module
 }
 ```
 
-O host chama os dois em `src/FiscoProjects.Api/ApiSetup.cs`: `Add<Modulo>Module` em `AddFiscoProjectsApi` e `Map<Modulo>Endpoints` no grupo `/api` de `UseFiscoProjectsApi`. As rotas do módulo ficam então em `/api/<recurso>`.
+O host chama os dois em `src/FiscoProjects.Api/ApiSetup.cs`: `Add<Modulo>Module` em `AddFiscoProjectsApi` e `Map<Modulo>Endpoints` no grupo `/api` de `UseFiscoProjectsApi`. As rotas do módulo ficam então em `/api/<recurso>`. As rotas recebem os casos de uso da `Application` por injeção de dependência. O relógio é o `TimeProvider` registrado no host, que os testes trocam por um `FakeTimeProvider`.
 
 ## Passo a passo para criar um módulo
 
@@ -78,7 +85,7 @@ O host chama os dois em `src/FiscoProjects.Api/ApiSetup.cs`: `Add<Modulo>Module`
 2. Criar as pastas `Domain`, `Application`, `Infrastructure` e `Endpoints` no projeto do módulo.
 3. Criar `tests/FiscoProjects.<Modulo>.Tests`, no mesmo formato dos outros projetos de teste (xUnit v3, `OutputType` `Exe`).
 4. Adicionar os projetos à solução com `dotnet sln FiscoProjects.slnx add`.
-5. Referenciar o módulo no `FiscoProjects.Api` e registrá-lo em `ApiSetup.cs`.
+5. Referenciar o módulo no `FiscoProjects.Api` e registrá-lo em `ApiSetup.cs`. O `FiscoProjects.Users` é o exemplo de um módulo completo.
 6. Rodar `dotnet build FiscoProjects.slnx -warnaserror` e `dotnet test FiscoProjects.slnx`: os testes de arquitetura passam a verificar o módulo.
 
 ## Banco do módulo
@@ -133,4 +140,4 @@ dotnet ef migrations add <Nome> --project src/Modules/<Modulo>/FiscoProjects.<Mo
 
 ### Testes com banco
 
-Os testes usam um SQL Server de verdade em contêiner (Testcontainers, a mesma imagem do `compose.yaml`), por isso precisam do Docker rodando. O projeto de teste do módulo referencia `tests/FiscoProjects.Testing`, declara `[assembly: AssemblyFixture(typeof(SqlServerFixture))]` e recebe o `SqlServerFixture` no construtor; cada teste pede um banco próprio com `NewDatabase()`. Exemplos em `tests/FiscoProjects.Persistence.Tests`.
+Os testes usam um SQL Server de verdade em contêiner (Testcontainers, a mesma imagem do `compose.yaml`), por isso precisam do Docker rodando. O projeto de teste do módulo referencia `tests/FiscoProjects.Testing`, declara `[assembly: AssemblyFixture(typeof(SqlServerFixture))]` e recebe o `SqlServerFixture` no construtor; cada teste pede um banco próprio com `NewDatabase()`. O `TestDatabase` registra o módulo como o host faz, aplica as migrações e dá contextos e escopos novos. Exemplos em `tests/FiscoProjects.Users.Tests` e `tests/FiscoProjects.Persistence.Tests`.

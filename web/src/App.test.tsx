@@ -5,8 +5,8 @@ import { renderApp } from './test/renderApp';
 
 // Spec: aplicacao-web.
 describe('Textos da interface em arquivos de tradução', () => {
-  it('Texto da tela vem da tradução', () => {
-    renderApp('/');
+  it('Texto da tela vem da tradução', async () => {
+    await renderApp('/');
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(ptBR.pages.home.title);
     const navigation = screen.getByRole('navigation', { name: ptBR.shell.mainNavigation });

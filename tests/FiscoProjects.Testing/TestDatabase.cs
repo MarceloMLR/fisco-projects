@@ -1,11 +1,12 @@
-using FiscoProjects.Testing;
+using FiscoProjects.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
-namespace FiscoProjects.Persistence.Tests;
+namespace FiscoProjects.Testing;
 
 /// <summary>A database of its own for one test, with the module contexts registered as the host does.</summary>
-internal sealed class TestDatabase : IAsyncDisposable
+public sealed class TestDatabase : IAsyncDisposable
 {
     private readonly ServiceProvider _services;
 
@@ -37,6 +38,9 @@ internal sealed class TestDatabase : IAsyncDisposable
     /// <summary>A fresh context, so reads come from the database and not from the change tracker.</summary>
     public TContext NewContext<TContext>()
         where TContext : notnull => _services.CreateScope().ServiceProvider.GetRequiredService<TContext>();
+
+    /// <summary>A scope of its own, as one request of the host has.</summary>
+    public AsyncServiceScope NewScope() => _services.CreateAsyncScope();
 
     public Task<IReadOnlyList<(string Schema, string Table)>> TablesAsync() =>
         SqlServerQueries.TablesAsync(ConnectionString, TestContext.Current.CancellationToken);
