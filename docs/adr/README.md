@@ -141,3 +141,4 @@ Regras:
 | [0076](0076-vite-e-tipos-gerados-com-openapi-typescript.md) | Frontend com Vite e tipos da API gerados pelo openapi-typescript | aceita | 2026-10-18 |
 | [0077](0077-rotas-do-frontend-com-react-router.md) | Rotas do frontend com React Router | aceita | 2026-10-18 |
 | [0078](0078-entrada-local-sem-tenant.md) | Entrada local por e-mail no desenvolvimento e nas demonstrações, sem tenant | aceita | 2026-10-18 |
+| [0079](0079-modulo-de-arquivos-com-implementacao-local.md) | Arquivos num módulo próprio, com contrato único e implementação local em disco | proposta | 2026-10-18 |

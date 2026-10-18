@@ -83,6 +83,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 
 | Português | Código | Observação |
 | --- | --- | --- |
+| Arquivos (módulo) | Files | Contrato `IFileStorage`; sem tabelas (ADR-0079) |
+| Armazenamento de arquivos | FileStorage | SharePoint em produção; pasta local no desenvolvimento |
+| Pasta, arquivo guardado | StoredFolder, StoredFile | Identificados por ids opacos, guardados por quem usa |
+| Mesmo nome: nova versão, manter os dois | SameNameAction: NewVersion, KeepBoth | |
 | Documento | Document | |
 | Versão do documento | DocumentVersion | |
 | Status do documento: Rascunho, Em revisão, Aprovado, Obsoleto | DocumentStatus: Draft, InReview, Approved, Obsolete | |
