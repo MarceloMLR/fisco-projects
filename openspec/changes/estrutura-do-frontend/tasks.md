@@ -20,7 +20,7 @@
 ## 5. Documentação e verificação final
 
 - [x] 5.1 Atualizar a seção 6 do `CLAUDE.md`, o `.editorconfig`, o `cspell.json` e as extensões recomendadas do VS Code; verificar que os comandos documentados rodam como escritos
-- [ ] 5.2 Rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
+- [x] 5.2 Rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up
 
