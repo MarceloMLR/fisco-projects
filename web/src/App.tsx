@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-// Temporary page until the screen structure arrives with the design system (Fundação-5).
+// Temporary page, replaced by the screen structure that comes with the design system.
 export function App() {
     const { t } = useTranslation();
 
