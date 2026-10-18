@@ -139,3 +139,4 @@ Regras:
 | [0074](0074-nomes-de-codigo-em-ingles-com-glossario.md) | Nomes de código em inglês, inclusive módulos e termos do negócio, com glossário português–inglês | aceita | 2026-10-17 |
 | [0075](0075-projeto-compartilhado-de-persistencia.md) | Projeto compartilhado de persistência para os módulos | aceita | 2026-10-17 |
 | [0076](0076-vite-e-tipos-gerados-com-openapi-typescript.md) | Frontend com Vite e tipos da API gerados pelo openapi-typescript | aceita | 2026-10-18 |
+| [0077](0077-rotas-do-frontend-com-react-router.md) | Rotas do frontend com React Router | aceita | 2026-10-18 |

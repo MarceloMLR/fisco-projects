@@ -6,6 +6,7 @@
     "anonimização",
     "Anonymization",
     "aplicacao",
+    "appbar",
     "ASPNETCORE",
     "azuread",
     "azurerm",
@@ -21,8 +22,11 @@
     "Eleken",
     "Fisco",
     "FiscoProjects",
+    "focável",
     "Gantt",
+    "gantt",
     "glossario",
+    "gstatic",
     "healthcheck",
     "instalacao",
     "integracao",
@@ -30,10 +34,13 @@
     "MADR",
     "Mapperly",
     "MediatR",
+    "Menlo",
     "monolito",
     "nameof",
     "nullable",
     "nvarchar",
+    "oklab",
+    "oklch",
     "openspec",
     "opsx",
     "persistencia",
@@ -41,14 +48,18 @@
     "Plex",
     "QUOTENAME",
     "recolhível",
+    "rgba",
     "rseidelsohn",
+    "Segoe",
     "slnx",
     "subnúmero",
     "subtarefas",
     "Syncfusion",
+    "techlead",
     "Testcontainers",
     "tfvars",
     "Tiptap",
+    "topbar",
     "warnaserror",
     "wwwroot",
     "xunit"
@@ -118,7 +129,8 @@
     },
     {
       "filename": [
-        "web/src/locales/**/*.json"
+        "web/src/locales/**/*.json",
+        "web/src/theme/tokens.json"
       ],
       "language": "pt-BR,en"
     }

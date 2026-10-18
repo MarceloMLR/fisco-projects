@@ -1,6 +1,21 @@
 {
   "app": {
-    "name": "FiscoProjects",
-    "underConstruction": "A interface está em construção."
+    "name": "FiscoProjects"
+  },
+  "shell": {
+    "mainNavigation": "Navegação principal",
+    "breadcrumb": "Trilha",
+    "openMenu": "Abrir menu",
+    "menu": "Menu"
+  },
+  "nav": {
+    "home": "Início",
+    "projects": "Projetos",
+    "tickets": "Chamados"
+  },
+  "pages": {
+    "home": { "title": "Meu trabalho" },
+    "projects": { "title": "Projetos" },
+    "tickets": { "title": "Chamados" }
   }
 }

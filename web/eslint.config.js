@@ -28,6 +28,18 @@ export default defineConfig([
     files: ['src/**/*.tsx'],
     ignores: ['src/**/*.test.tsx'],
     plugins: { i18next },
-    rules: { 'i18next/no-literal-string': ['error', { mode: 'jsx-only' }] },
+    rules: {
+      'i18next/no-literal-string': [
+        'error',
+        {
+          mode: 'jsx-only',
+          // Text in JSX and in the attributes people see or hear; styles, ids and routes are not text.
+          'jsx-attributes': {
+            include: ['^(aria-label|aria-description|title|alt|placeholder|label|helperText)$'],
+            exclude: ['.*'],
+          },
+        },
+      ],
+    },
   },
 ]);
