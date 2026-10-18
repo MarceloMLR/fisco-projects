@@ -137,3 +137,4 @@ Regras:
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
 | [0074](0074-nomes-de-codigo-em-ingles-com-glossario.md) | Nomes de código em inglês, inclusive módulos e termos do negócio, com glossário português–inglês | aceita | 2026-10-17 |
+| [0075](0075-projeto-compartilhado-de-persistencia.md) | Projeto compartilhado de persistência para os módulos | proposta | 2026-10-17 |

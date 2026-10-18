@@ -2,7 +2,7 @@
 
 ## 1. Persistência compartilhada e regras de arquitetura
 
-- [ ] 1.1 Criar `src/FiscoProjects.Persistence` com os pacotes do EF Core e do SQL Server, referenciado pelo host, e incluir o ADR-0075 no índice de ADRs; verificar que `dotnet build -warnaserror` passa
+- [x] 1.1 Criar `src/FiscoProjects.Persistence` com os pacotes do EF Core e do SQL Server, referenciado pelo host, e incluir o ADR-0075 no índice de ADRs; verificar que `dotnet build -warnaserror` passa
 - [ ] 1.2 Atualizar os testes de arquitetura: `Persistence` e `Testing` não são módulos, `Domain` e `Application` não usam `FiscoProjects.Persistence`, e ela não usa módulos; testar os cenários "Domínio usa a persistência compartilhada", "Persistência compartilhada usa um módulo" e "Assemblies que não são módulos" com exemplos; verificar com `dotnet test`
 
 ## 2. Contexto base dos módulos
