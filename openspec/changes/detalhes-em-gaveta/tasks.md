@@ -2,7 +2,7 @@
 
 ## 1. Gaveta de detalhes
 
-- [ ] 1.1 Criar o `DetailsDrawer` em `web/src/components`:
+- [x] 1.1 Criar o `DetailsDrawer` em `web/src/components`:
   - gaveta à direita, modal, com o fundo `overlay`, o papel em `bg-elevated` e `shadow-dialog`, e até 640 px de largura (a largura toda no celular);
   - botão Fechar e conteúdo que rola por dentro;
   - testar "Detalhes abertos por cima da lista", "Fechar os detalhes" (botão, Esc e clique fora, com o foco de volta) e "Detalhes no celular".
@@ -11,14 +11,14 @@
 
 ## 2. Auditoria
 
-- [ ] 2.1 Na `AuditPage`:
+- [x] 2.1 Na `AuditPage`:
   - tirar a coluna fixa e o registro escolhido de início, e usar o `DetailsDrawer` ao escolher uma linha;
   - a linha fica marcada só com a gaveta aberta;
   - no `AuditDetails`, quebrar só textos maiores que a coluna;
   - atualizar os testes "Lista da auditoria" e "Detalhes de um registro" e o do celular.
 
   Verificar com `npm test`.
-- [ ] 2.2 No `PersonFilter`, 240 px e reticências no nome que não cabe. Atualizar o teste "Filtro por pessoa". Verificar com `npm test`.
+- [x] 2.2 No `PersonFilter`, 240 px e reticências no nome que não cabe. Atualizar o teste "Filtro por pessoa". Verificar com `npm test`.
 
 ## 3. Verificação final
 

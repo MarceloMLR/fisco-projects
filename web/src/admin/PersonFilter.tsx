@@ -87,6 +87,8 @@ export function PersonFilter({
             ...fieldControl('sm', width),
             padding: '0 var(--space-2) 0 var(--space-3)',
             '& input::placeholder': { color: 'var(--text)', opacity: 1 },
+            // A name that does not fit ends in an ellipsis instead of being cut.
+            '& input': { textOverflow: 'ellipsis' },
             '& .MuiAutocomplete-endAdornment': {
               position: 'static',
               display: 'flex',
