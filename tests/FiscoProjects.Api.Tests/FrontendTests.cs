@@ -5,7 +5,7 @@ namespace FiscoProjects.Api.Tests;
 // Spec: aplicacao-web, requirement "Frontend servido pela aplicação".
 public sealed class FrontendTests : IDisposable
 {
-    private readonly FakeFrontendBuild build = new();
+    private readonly FakeFrontendBuild _build = new();
 
     [Fact(DisplayName = "Página inicial")]
     public async Task Root_ReturnsTheMainPage_WithoutCache()
@@ -39,11 +39,11 @@ public sealed class FrontendTests : IDisposable
         response.Headers.CacheControl.Extensions.Select(e => e.Name).Should().Contain("immutable");
     }
 
-    public void Dispose() => build.Dispose();
+    public void Dispose() => _build.Dispose();
 
     private async Task<HttpResponseMessage> GetAsync(string path)
     {
-        await using var factory = TestApp.RealHost(TestApp.Production, webRoot: build.Folder);
+        await using var factory = TestApp.RealHost(TestApp.Production, webRoot: _build.Folder);
         using var client = factory.CreateClient();
         return await client.GetAsync(path, TestContext.Current.CancellationToken);
     }
