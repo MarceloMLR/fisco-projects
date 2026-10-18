@@ -48,5 +48,5 @@ O contrato da API MUST ser gerado a partir do próprio código, no formato OpenA
 As rotas que os módulos expõem MUST ficar sob o caminho `/api`. O endereço de saúde fica fora desse caminho.
 
 #### Scenario: Rota de um módulo
-- **WHEN** um módulo registra uma rota `/exemplo` no grupo da API
-- **THEN** a rota responde em `/api/exemplo` e não responde em `/exemplo`
+- **WHEN** um módulo registra uma rota `/example` no grupo da API
+- **THEN** a rota responde em `/api/example` e não responde em `/example`

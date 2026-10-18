@@ -102,4 +102,4 @@ Não há migração: é o primeiro código do repositório. Para desfazer, basta
 
 ## Open Questions
 
-- Idioma dos nomes dos módulos de negócio. O ADR-0047 usa nomes em português (`FiscoProjects.Chamados`), e o `CLAUDE.md` pede nomes de código em inglês. Não afeta esta change, que não cria módulos; precisa ser decidido antes da Acesso-1.
+Nenhuma. O idioma dos nomes dos módulos foi decidido por Marcelo em 17/10/2026, durante a revisão desta change: tudo em inglês, com glossário português–inglês (ADR-0074).

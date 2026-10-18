@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (nome do componente substituído pelo ADR-0074: `ScheduleGantt`)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
@@ -34,7 +34,7 @@ Regras:
 - O Gantt da v1 usa o Syncfusion React Gantt, sob a licença comunitária de Marcelo.
 - Critérios da licença comunitária: faturamento anual abaixo de US$ 1 milhão, até 5 desenvolvedores, até 10 funcionários no total e nunca ter recebido mais de US$ 3 milhões de investimento externo. As licenças não são transferíveis: quem adquirir o código precisa da própria licença (comunitária, se se enquadrar, ou paga).
 - A chave de licença do Syncfusion fica fora do repositório, na configuração ou nos segredos do ambiente.
-- Isolamento: o restante do sistema usa apenas o componente próprio `CronogramaGantt`, com propriedades e eventos definidos pelo FiscoProjects; só esse componente importa pacotes do Syncfusion.
+- Isolamento: o restante do sistema usa apenas o componente próprio `CronogramaGantt` (`ScheduleGantt`, pelo ADR-0074), com propriedades e eventos definidos pelo FiscoProjects; só esse componente importa pacotes do Syncfusion.
 - O servidor é a fonte da verdade das datas: dias úteis, feriados, dependências empurradas e caminho crítico são calculados no backend (ADR-0018, ADR-0019); o Gantt exibe e envia as alterações.
 - A exportação no formato XML do MS Project é gerada preferencialmente no servidor, para não depender do componente.
 - O visual do Gantt segue o tema do MUI (tokens do design system), usando um tema do Syncfusion no estilo Material como base.

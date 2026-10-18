@@ -1,0 +1,92 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "anonimização",
+    "Anonymization",
+    "azuread",
+    "azurerm",
+    "buildar",
+    "chdir",
+    "csdevkit",
+    "dotnet",
+    "dotnettools",
+    "Eleken",
+    "Fisco",
+    "FiscoProjects",
+    "Gantt",
+    "glossario",
+    "instalacao",
+    "LGPD",
+    "MADR",
+    "Mapperly",
+    "MediatR",
+    "monolito",
+    "nameof",
+    "nullable",
+    "openspec",
+    "opsx",
+    "Plex",
+    "recolhível",
+    "slnx",
+    "subnúmero",
+    "subtarefas",
+    "Syncfusion",
+    "Testcontainers",
+    "tfvars",
+    "Tiptap",
+    "warnaserror",
+    "xunit"
+  ],
+  "ignorePaths": [
+    "**/bin/**",
+    "**/obj/**",
+    "**/node_modules/**",
+    ".claude/**",
+    "docs/adr/**",
+    "*.slnx",
+    "global.json"
+  ],
+  "patterns": [
+    {
+      "name": "spec-scenario-name",
+      "pattern": "/DisplayName = \"[^\"]*\"/g"
+    },
+    {
+      "name": "spec-reference-comment",
+      "pattern": "/^\\s*\\/\\/ (Spec:|and \").*$/gm"
+    },
+    {
+      "name": "markdown-inline-code",
+      "pattern": "/`[^`\\n]*`/g"
+    },
+    {
+      "name": "markdown-code-block",
+      "pattern": "/^\\s*```[\\s\\S]*?^\\s*```/gm"
+    }
+  ],
+  "overrides": [
+    {
+      "filename": [
+        "**/*.cs"
+      ],
+      "ignoreRegExpList": [
+        "spec-scenario-name",
+        "spec-reference-comment"
+      ]
+    },
+    {
+      "filename": [
+        "**/*.md",
+        "openspec/**/*.yaml",
+        "docs/**/*.html"
+      ],
+      "language": "pt-BR,en",
+      "ignoreRegExpList": [
+        "markdown-inline-code",
+        "markdown-code-block"
+      ]
+    }
+  ]
+}

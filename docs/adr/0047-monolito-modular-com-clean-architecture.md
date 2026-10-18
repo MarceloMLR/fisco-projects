@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (nomes dos módulos em português substituídos pelo ADR-0074)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
@@ -47,6 +47,8 @@ src/
 web/                                    React + TypeScript
 tests/
 ```
+
+Pelo ADR-0074, os nomes de código ficam em inglês: `FiscoProjects.Tickets` no lugar de `FiscoProjects.Chamados`, e os módulos do exemplo passam a ser Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration.
 
 Regras:
 

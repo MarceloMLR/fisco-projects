@@ -15,7 +15,7 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 7 | 0 |
+| 1. Fundação | 7 | 1 |
 | 2. Acesso e administração | 5 | 0 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
@@ -25,13 +25,13 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 3 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **49** | **0** |
+| **Total** | **49** | **1** |
 
 ## 1. Fundação
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Fundação-1 | `estrutura-do-backend` | Solução .NET 10, host da API, estrutura de módulos, testes de arquitetura, `/health`, OpenAPI e Problem Details | 0047, 0060, 0061 | PR aberto ([#3](https://github.com/MarceloMLR/fisco-projects/pull/3)) |
+| Fundação-1 | `estrutura-do-backend` | Solução .NET 10, host da API, estrutura de módulos, testes de arquitetura, `/health`, OpenAPI e Problem Details | 0047, 0060, 0061, 0074 | Concluída em 17/10/2026 ([#3](https://github.com/MarceloMLR/fisco-projects/pull/3), [#4](https://github.com/MarceloMLR/fisco-projects/pull/4)) |
 | Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056 | Planejada |
 | Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Planejada |
 | Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061 | Planejada |
@@ -64,7 +64,7 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | --- | --- | --- | --- | --- |
 | Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Planejada |
 | Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Planejada |
-| Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `CronogramaGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Planejada |
+| Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Planejada |
 | Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
 | Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
 | Cronograma-6 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |

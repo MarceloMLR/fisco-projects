@@ -6,6 +6,7 @@ Outros documentos do discovery:
 
 - [Apresentação para o time](apresentacao.html), não técnica.
 - [Roadmap da v1](roadmap.md), com as changes do OpenSpec e o status de cada uma.
+- [Glossário português–inglês](glossario.md) dos nomes de código.
 - [Requisitos de instalação](instalacao.md).
 - [Custos estimados no Azure](custos-estimados.md).
 - [Justificativa do design](design-justificativa.md).
@@ -36,7 +37,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 | Entrada e acesso | Página de entrada própria, login pelo Entra ID, criação do usuário no primeiro login, recusa de convidados e desativados, sessão de 8 h, "Sair" só do FiscoProjects | Módulo de identidade e host da API (BFF com cookie) | 0004, 0005, 0007, 0009, 0054 |
 | Meu trabalho | Fila única por urgência (chamados, tarefas, aceites), saúde dos projetos e próximos marcos | Tela do frontend que consome os contratos dos módulos | 0010, 0070 |
 | Projetos e clientes | Código, nome, cliente opcional, status, datas e progresso calculados, gerente e líder técnico na criação, exclusão só pelo administrador | Módulo Projetos | 0015, 0016, 0041, 0072, 0073 |
-| Cronograma | Dois níveis (fases, tarefas e marcos), dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto | Módulo Projetos (cálculo no servidor) e componente `CronogramaGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071 |
+| Cronograma | Dois níveis (fases, tarefas e marcos), dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071 |
 | Chamados | Sempre ligados a um projeto, para os times Funcional e Desenvolvimento, fluxo de status em tabela, prazos em dias úteis, conversa com anexos e menções, troca de responsável e solicitante, chamados em fornecedores | Módulo Chamados | 0022 a 0029, 0068, 0069 |
 | Documentos | Pastas padrão configuráveis, versões, status manual, vínculo com o cronograma, visualização no navegador | Módulo Documentos, arquivos no SharePoint atrás de `IFileStorage` | 0030, 0031 |
 | Links | Links do projeto por categoria | Módulo Documentos ou Projetos (definir na change) | 0032 |
@@ -166,7 +167,7 @@ Uso esperado: 5 a 6 pessoas por instalação, não simultâneas, em horário com
 | Backend | ASP.NET Core no .NET 10 (LTS), EF Core com SQL Server | 0047, 0060 |
 | Arquitetura | Monolito modular, com Clean Architecture dentro de cada módulo | 0047 |
 | Frontend | React com TypeScript estrito, MUI (só pacotes gratuitos), React Hook Form com Zod, Tiptap, react-i18next | 0049, 0050 |
-| Cronograma na tela | Syncfusion React Gantt (licença comunitária), isolado no componente `CronogramaGantt` | 0051 |
+| Cronograma na tela | Syncfusion React Gantt (licença comunitária), isolado no componente `ScheduleGantt` | 0051 |
 | Autenticação | BFF com cookie de sessão; tokens da Microsoft nunca chegam ao navegador | 0054 |
 | API | REST com OpenAPI, Problem Details, GUID v7; tipos do frontend gerados do contrato | 0061 |
 | Banco | Azure SQL: provisionado em produção, oferta gratuita no desenvolvimento | 0048 |
@@ -256,7 +257,7 @@ Regras:
 
 Números para conferência:
 
-- 73 ADRs (0001 a 0073).
+- 73 ADRs do discovery (0001 a 0073); os seguintes nascem durante a construção.
 - Status do chamado: 6 (Aberto, Em triagem, Em andamento, Aguardando solicitante, Resolvido, Fechado), com 10 transições no fluxo padrão (ADR-0024).
 - Prioridades: 4, com prazos de resolução padrão de 10, 5, 2 e 1 dias úteis e primeira resposta em 1 dia útil (ADR-0025).
 - Times de destino: 2, Funcional e Desenvolvimento (ADR-0068).

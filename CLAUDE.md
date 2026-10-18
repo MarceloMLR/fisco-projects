@@ -51,18 +51,18 @@ openspec/                             config, specs e changes do OpenSpec
 
 Os arquivos de `.claude/commands/opsx/` e `.claude/skills/openspec-*/` são gerados pelo `openspec init` e atualizados com `openspec update`; não edite à mão.
 
-Hoje o repositório tem só a documentação. As pastas de código nascem nas primeiras changes; a lista final de módulos é fechada na change de setup do backend. Exemplos do ADR-0047: Projetos, Chamados, Documentos, Acessos, Notificacoes, Auditoria, Administracao.
+Ainda não há módulo de negócio; o primeiro nasce na Acesso-1, seguindo o guia `src/Modules/README.md`. Os módulos previstos (ADR-0047, com os nomes do ADR-0074) são Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration; a lista final é decidida na change que cria cada um.
 
 ## 4. Convenções e não-negociáveis
 
-- Idioma: código, nomes e comentários em inglês. Mensagens de commit e títulos e descrições de PR em português do Brasil (regra deste projeto, que substitui a do CLAUDE.md global). Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
+- Idioma: código, nomes e comentários em inglês, inclusive módulos, termos do negócio, tabelas e rotas; a tradução de cada termo fica em `docs/glossario.md` (ADR-0074). Mensagens de commit e títulos e descrições de PR em português do Brasil (regra deste projeto, que substitui a do CLAUDE.md global). Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
 - C#: nullable habilitado, avisos tratados como erro, `.editorconfig` com `dotnet format` (ADR-0061).
 - TypeScript em modo estrito, com ESLint e Prettier (ADR-0049, ADR-0061).
 - API REST em JSON sob `/api`, contrato OpenAPI gerado pelo ASP.NET Core, tipos do frontend gerados do contrato, erros em Problem Details (RFC 9457), identificadores GUID v7; o número do chamado é sequencial (ADR-0029, ADR-0061).
 - Datas e horas em UTC no banco, exibidas no fuso da instalação (ADR-0013).
 - Versões fixadas: .NET 10; Node 24 até 28/10/2026 e Node 26 depois; números em `global.json`, `.nvmrc` e `engines` (ADR-0060). OpenSpec CLI 1.14.3 (`npm i -g @fission-ai/openspec@1.14.3`), com a telemetria desligada (`openspec config set telemetry.enabled false`).
 - Licenças: só MUI gratuito; nada de FluentAssertions 8 ou superior (use AwesomeAssertions), MediatR ou AutoMapper; nenhuma dependência com licença comercial ou copyleft forte sem ADR (ADR-0050, ADR-0056, ADR-0061).
-- Pacotes `@syncfusion/*` só dentro do componente `CronogramaGantt` (ADR-0051).
+- Pacotes `@syncfusion/*` só dentro do componente `ScheduleGantt` (ADR-0051).
 - Visual: siga o design system FiscoProjects e as telas aprovadas; nunca invente cor, espaço ou canto fora dos tokens. Status sempre por ícone, cor e texto, nunca só cor (ADR-0062 a 0067).
 - IBM Plex Sans servida pela própria aplicação, sem Google Fonts (ADR-0064).
 
@@ -92,6 +92,7 @@ dotnet run --project src/FiscoProjects.Api
 
 - `dotnet format FiscoProjects.slnx` (sem `--verify-no-changes`) corrige a formatação.
 - Com a API rodando no ambiente de desenvolvimento, a saúde fica em `/health` e o contrato em `/openapi/v1.json`.
+- Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`.
 
 Specs:
 
