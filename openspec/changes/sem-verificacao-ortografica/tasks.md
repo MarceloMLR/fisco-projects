@@ -7,7 +7,7 @@
 
 ## 2. Verificação final
 
-- [ ] 2.1 Rodar os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions, já sem a etapa de ortografia
+- [x] 2.1 Rodar os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions, já sem a etapa de ortografia
 
 ## Workflow follow-up
 
