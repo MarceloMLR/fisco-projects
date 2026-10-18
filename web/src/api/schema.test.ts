@@ -8,7 +8,8 @@ import versionedTypes from './schema.ts?raw';
 describe('Tipos da API gerados do contrato', () => {
   it('Tipos do frontend desatualizados', async () => {
     // Same output as the openapi-typescript CLI used by `npm run api:types`.
-    const generatedTypes = COMMENT_HEADER + astToString(await openapiTS(contract as OpenAPI3));
+    const generatedTypes =
+      COMMENT_HEADER + astToString(await openapiTS(contract as unknown as OpenAPI3));
 
     expect(versionedTypes, 'Types are stale: run `npm run api:types` in web/.').toBe(
       generatedTypes,

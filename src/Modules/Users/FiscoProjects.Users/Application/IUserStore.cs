@@ -11,6 +11,8 @@ public interface IUserStore
 
     Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken);
 
+    Task<UserListPage> ListAsync(UserListQuery query, CancellationToken cancellationToken);
+
     Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken);
 
     /// <summary>

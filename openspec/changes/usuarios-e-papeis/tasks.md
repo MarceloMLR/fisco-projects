@@ -7,7 +7,7 @@
 
 ## 2. API da administração de usuários
 
-- [ ] 2.1 Criar a política `Administrator` e as rotas de lista (busca sem acentos, filtros, paginação), troca de papel, desativar e reativar, com o papel na rota da sessão e os enums em texto no JSON; testar a matriz de permissões gerada de uma tabela ("Administrador na administração de usuários", "Gerente de projeto na administração de usuários" e "Usuário na administração de usuários"), "Troca de papel na sessão aberta", "Desativar acesso", "Reativar acesso", a busca e os filtros; atualizar o contrato e os tipos com `npm run api:update`; verificar com `dotnet test` e `npm test`
+- [x] 2.1 Criar a política `Administrator` e as rotas de lista (busca sem acentos, filtros, paginação), troca de papel, desativar e reativar, com o papel na rota da sessão e os enums em texto no JSON; testar a matriz de permissões gerada de uma tabela ("Administrador na administração de usuários", "Gerente de projeto na administração de usuários" e "Usuário na administração de usuários"), "Troca de papel na sessão aberta", "Desativar acesso", "Reativar acesso", a busca e os filtros; atualizar o contrato e os tipos com `npm run api:update`; verificar com `dotnet test` e `npm test`
 
 ## 3. Administração nas telas
 

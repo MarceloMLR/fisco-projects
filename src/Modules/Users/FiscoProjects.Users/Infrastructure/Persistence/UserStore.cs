@@ -8,6 +8,8 @@ namespace FiscoProjects.Users.Infrastructure.Persistence;
 
 internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 {
+    private const string AccentInsensitive = "Latin1_General_100_CI_AI";
+
     // The session check and the authorization of one request ask for the same user: one query is enough.
     private readonly Dictionary<Guid, UserAccess?> _accessOfThisRequest = [];
 
@@ -30,6 +32,37 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 
     public Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken) =>
         db.Users.AnyAsync(user => user.IsActive && user.Role == SystemRole.Administrator, cancellationToken);
+
+    public async Task<UserListPage> ListAsync(UserListQuery query, CancellationToken cancellationToken)
+    {
+        var users = db.Users.AsNoTracking();
+        if (query.Search is { } search)
+        {
+            // Without telling uppercase, lowercase and accents apart: "livia" finds "Lívia".
+            users = users.Where(user =>
+                EF.Functions.Collate(user.Name, AccentInsensitive).Contains(search)
+                || EF.Functions.Collate(user.Email, AccentInsensitive).Contains(search));
+        }
+
+        if (query.Role is { } role)
+        {
+            users = users.Where(user => user.Role == role);
+        }
+
+        if (query.IsActive is { } isActive)
+        {
+            users = users.Where(user => user.IsActive == isActive);
+        }
+
+        var total = await users.CountAsync(cancellationToken);
+        var items = await users
+            .OrderBy(user => user.Name).ThenBy(user => user.Email)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(user => new UserListItem(user.Id, user.Name, user.Email, user.Role, user.IsActive, user.LastSignInAt))
+            .ToListAsync(cancellationToken);
+        return new UserListPage(items, total);
+    }
 
     public Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken) =>
         db.Users.AnyAsync(

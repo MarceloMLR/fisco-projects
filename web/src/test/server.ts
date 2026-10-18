@@ -9,6 +9,7 @@ export const marina: SessionUser = {
   id: '0199f5a2-7c1e-7d40-9a1b-2f3c4d5e6f70',
   name: 'Marina Costa',
   email: 'marina.costa@empresa.example',
+  role: 'User',
 };
 
 export const handlers = [

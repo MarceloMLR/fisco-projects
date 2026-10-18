@@ -101,7 +101,7 @@ public sealed class SignInWithIdentityTests(SqlServerFixture sqlServer)
         var user = await database.RunAsync<GetSignedInUser, SignedInUser?>(useCase =>
             useCase.ExecuteAsync(userId, TestContext.Current.CancellationToken));
 
-        user.Should().Be(new SignedInUser(userId, "Marina Costa", "marina.costa@empresa.example"));
+        user.Should().Be(new SignedInUser(userId, "Marina Costa", "marina.costa@empresa.example", SystemRole.User));
     }
 
     private static Task<SignInResult> SignInAsync(UsersDatabase database, ProviderIdentity identity) =>

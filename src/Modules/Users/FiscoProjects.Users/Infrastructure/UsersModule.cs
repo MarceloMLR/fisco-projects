@@ -2,6 +2,7 @@ using FiscoProjects.Persistence;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,6 +25,12 @@ public static class UsersModule
         services.AddScoped<ChangeSystemRole>();
         services.AddScoped<DeactivateUser>();
         services.AddScoped<ReactivateUser>();
+        services.AddScoped<ListUsers>();
+
+        services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
+        services.AddAuthorizationBuilder().AddPolicy(SystemPolicies.Administrator, policy => policy
+            .RequireAuthenticatedUser()
+            .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)));
 
         services.AddOptions<FirstAdministratorOptions>()
             .Bind(configuration.GetSection(FirstAdministratorOptions.Section))
