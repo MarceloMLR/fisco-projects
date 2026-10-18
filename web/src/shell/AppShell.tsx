@@ -23,6 +23,7 @@ export function AppShell() {
   const page = useCurrentPage();
   const { session } = useSession();
   const title = t(page.titleKey);
+  const trail = (page.trail ?? []).map((level) => ({ title: t(level.titleKey), path: level.path }));
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -48,7 +49,7 @@ export function AppShell() {
           '& > nav': { gridColumn: 1, gridRow: '1 / -1' },
         }}
       >
-        <TopBar title={title} user={user} />
+        <TopBar title={title} trail={trail} user={user} />
         <Sidebar />
         <Box
           component="main"

@@ -14,7 +14,8 @@
   "nav": {
     "home": "Início",
     "projects": "Projetos",
-    "tickets": "Chamados"
+    "tickets": "Chamados",
+    "admin": "Administração"
   },
   "pages": {
     "home": {
@@ -25,6 +26,12 @@
     },
     "tickets": {
       "title": "Chamados"
+    },
+    "admin": {
+      "title": "Administração"
+    },
+    "users": {
+      "title": "Usuários"
     }
   },
   "signIn": {

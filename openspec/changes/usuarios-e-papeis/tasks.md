@@ -11,7 +11,7 @@
 
 ## 3. Administração nas telas
 
-- [ ] 3.1 Acrescentar o papel na sessão do frontend, o item Administração só para o administrador (barra lateral e menu do celular), as rotas `/admin` com `RequireAdministrator` e a trilha com os níveis acima da página; testar "Administração na barra lateral", "Endereço da Administração sem ser administrador" e "Trilha de uma página dentro de uma área"; verificar com `npm test`, `npm run lint` e `npm run typecheck`
+- [x] 3.1 Acrescentar o papel na sessão do frontend, o item Administração só para o administrador (barra lateral e menu do celular), as rotas `/admin` com `RequireAdministrator` e a trilha com os níveis acima da página; testar "Administração na barra lateral", "Endereço da Administração sem ser administrador" e "Trilha de uma página dentro de uma área"; verificar com `npm test`, `npm run lint` e `npm run typecheck`
 - [ ] 3.2 Criar os componentes `DataTable` (MUI X Data Grid em pt-BR, visual do `fp-gt`), `Select` e `StatusBadge`, o estilo de menus e Snackbar no tema e a área de Administração com a navegação das seções; testar a tabela (paginação e linha esmaecida) e os componentes; verificar com `npm test`
 - [ ] 3.3 Criar a tela Usuários do canvas, com a busca, os filtros, o menu de papel e acesso e os avisos; testar "Lista de usuários", "Busca por nome ou e-mail", "Filtro por papel e situação", "Trocar o papel na tela", "Desativar e reativar na tela" e "Recusa do último administrador na tela"; verificar com `npm test`
 

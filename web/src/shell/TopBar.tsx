@@ -1,13 +1,33 @@
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import type { SessionUser } from '../api/client';
 import { AccountMenu } from './AccountMenu';
 
+const crumb = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  height: 32,
+  padding: '0 var(--space-2)',
+  borderRadius: 'var(--radius-md)',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+} as const;
+
 /**
  * Invisible header over the content (TopBar, fp-appbar): same color as the content, no line below, with the
- * page trail and, at the right, the account menu. The bell joins it with the notifications.
+ * page trail (the areas above the page lead to their addresses) and, at the right, the account menu. The bell
+ * joins it with the notifications.
  */
-export function TopBar({ title, user }: { title: string; user: SessionUser }) {
+export function TopBar({
+  title,
+  trail = [],
+  user,
+}: {
+  title: string;
+  trail?: readonly { title: string; path: string }[];
+  user: SessionUser;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -51,21 +71,31 @@ export function TopBar({ title, user }: { title: string; user: SessionUser }) {
             },
           }}
         >
+          {trail.map((level) => (
+            <Box
+              component="li"
+              key={level.path}
+              sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}
+            >
+              <Box
+                component={Link}
+                to={level.path}
+                sx={{
+                  ...crumb,
+                  color: 'var(--text-secondary)',
+                  textDecoration: 'none',
+                  '&:hover': { backgroundColor: 'var(--bg-hover)', color: 'var(--text)' },
+                }}
+              >
+                {level.title}
+              </Box>
+            </Box>
+          ))}
           <Box component="li" sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
             <Box
               component="span"
               aria-current="page"
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                height: 32,
-                padding: '0 var(--space-2)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--text)',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
+              sx={{ ...crumb, color: 'var(--text)', fontWeight: 500 }}
             >
               {title}
             </Box>

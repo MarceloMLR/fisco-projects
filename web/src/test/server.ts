@@ -27,6 +27,11 @@ export function problem(status: number, type?: string) {
   );
 }
 
+/** Marina is signed in with the given role in the system. */
+export function signedInAs(role: SessionUser['role']): void {
+  server.use(http.get('/api/session', () => HttpResponse.json({ ...marina, role })));
+}
+
 /** Nobody is signed in: the API answers 401 to "who is in the session". */
 export function signedOut(): void {
   server.use(http.get('/api/session', () => problem(401)));

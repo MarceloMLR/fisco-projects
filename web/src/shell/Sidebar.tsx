@@ -2,7 +2,7 @@ import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
-import { mainNavigation } from './pages';
+import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
 
@@ -18,6 +18,7 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
+  const navigation = useMainNavigation();
 
   return (
     <Box
@@ -99,7 +100,7 @@ export function Sidebar({
           listStyle: 'none',
         }}
       >
-        {mainNavigation.map(({ key, path, labelKey, icon: Icon }) => (
+        {navigation.map(({ key, path, labelKey, icon: Icon }) => (
           <li key={key}>
             <Box
               component={NavLink}

@@ -1,21 +1,57 @@
+import AdminPanelSettingsOutlined from '@mui/icons-material/AdminPanelSettingsOutlined';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import { useMatches } from 'react-router';
+import { useSession } from '../session/SessionContext';
 
 /** The main navigation, in the order of the sidebar (ADR-0011, ADR-0066). */
 export const mainNavigation = [
-  { key: 'home', path: '/', labelKey: 'nav.home', icon: HomeOutlined },
-  { key: 'projects', path: '/projects', labelKey: 'nav.projects', icon: FolderOutlined },
-  { key: 'tickets', path: '/tickets', labelKey: 'nav.tickets', icon: ConfirmationNumberOutlined },
+  { key: 'home', path: '/', labelKey: 'nav.home', icon: HomeOutlined, administratorOnly: false },
+  {
+    key: 'projects',
+    path: '/projects',
+    labelKey: 'nav.projects',
+    icon: FolderOutlined,
+    administratorOnly: false,
+  },
+  {
+    key: 'tickets',
+    path: '/tickets',
+    labelKey: 'nav.tickets',
+    icon: ConfirmationNumberOutlined,
+    administratorOnly: false,
+  },
+  // The Administration belongs to the Administrator only (ADR-0046).
+  {
+    key: 'admin',
+    path: '/admin',
+    labelKey: 'nav.admin',
+    icon: AdminPanelSettingsOutlined,
+    administratorOnly: true,
+  },
 ] as const;
 
 export type NavigationKey = (typeof mainNavigation)[number]['key'];
 
-/** What a route tells the shell about its page: the sidebar item it belongs to and its title. */
+export type PageTitleKey =
+  | 'pages.home.title'
+  | 'pages.projects.title'
+  | 'pages.tickets.title'
+  | 'pages.admin.title'
+  | 'pages.users.title';
+
+/** A level of the trail above the page: an area that leads to its own address. */
+export interface TrailLevel {
+  titleKey: PageTitleKey;
+  path: string;
+}
+
+/** What a route tells the shell about its page: the sidebar item it belongs to, its title and the trail above it. */
 export interface PageHandle {
   navigation: NavigationKey;
-  titleKey: 'pages.home.title' | 'pages.projects.title' | 'pages.tickets.title';
+  titleKey: PageTitleKey;
+  trail?: readonly TrailLevel[];
 }
 
 function isPageHandle(handle: unknown): handle is PageHandle {
@@ -33,4 +69,16 @@ export function useCurrentPage(): PageHandle {
     throw new Error('The current route has no page handle.');
   }
   return page;
+}
+
+/** Whether the person in the session is the Administrator. */
+export function useIsAdministrator(): boolean {
+  const { session } = useSession();
+  return session.status === 'signed-in' && session.user.role === 'Administrator';
+}
+
+/** The items of the main navigation the person in the session may see. */
+export function useMainNavigation() {
+  const isAdministrator = useIsAdministrator();
+  return mainNavigation.filter((item) => !item.administratorOnly || isAdministrator);
 }
