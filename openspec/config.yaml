@@ -1,0 +1,114 @@
+schema: spec-driven
+
+context: |
+  FiscoProjects — projetos, cronogramas e chamados da equipe em um só lugar, apoiado no Microsoft 365
+  da empresa. Uma instalação por empresa (single-tenant, ADR-0003); projeto pessoal de Marcelo Ribeiro,
+  sem recursos do empregador (ADR-0002). Decisões em docs/adr/ (73 ADRs, MADR); resumo em docs/discovery.md.
+
+  Capacidades v1: entrada e acesso (Entra ID, página própria, BFF); Meu trabalho (fila por urgência);
+  projetos e clientes; cronograma (fases > tarefas e marcos, dias úteis com feriados, dependência
+  termina→começa que empurra, linha de base, caminho crítico, desfazer, PDF e XML do MS Project, modelos);
+  chamados (sempre num projeto, times Funcional e Desenvolvimento, fluxo de status em tabela, prazos em
+  dias úteis com pausa, conversa com anexos e menções, troca de responsável e solicitante, chamados em
+  fornecedores); documentos (SharePoint, versões, status manual); links; acessos (senha cifrada);
+  termos de aceite (PDF assinado fora do sistema); membros e permissões; avisos (e-mail e sino);
+  auditoria e LGPD; administração; perfil e tema.
+  NÃO faz: service desk geral nem chamado sem projeto; usuários externos (v1); filas compartilhadas;
+  aceite por clique; horas, orçamento, custos; integração com sistemas de fornecedores; dependências
+  entre projetos; importação do MS Project; .mpp nativo; Teams; busca global; senha Microsoft no sistema.
+
+  Stack: .NET 10 (LTS) ASP.NET Core, EF Core com SQL Server; React + TypeScript estrito, MUI só gratuito
+  (@mui/material, icons-material, X Data Grid e Date Pickers MIT), React Hook Form + Zod, Tiptap,
+  react-i18next; Syncfusion React Gantt (licença comunitária) só dentro de CronogramaGantt; Azure SQL
+  (provisionado em produção, oferta gratuita em dev), App Service Linux em Brazil South, Key Vault,
+  identidade gerenciada, Application Insights + OpenTelemetry; Terraform (azurerm, azuread) em
+  infra/terraform; GitHub Actions chamando scripts do repositório. Node 24 até 28/10/2026, depois Node 26.
+
+  Arquitetura: monolito modular com Clean Architecture em cada módulo (ADR-0047). Estrutura:
+  src/FiscoProjects.Api (host; serve a API e o build do React), src/FiscoProjects.SharedKernel,
+  src/Modules/<Modulo>/FiscoProjects.<Modulo>/{Domain,Application,Infrastructure,Endpoints} e
+  FiscoProjects.<Modulo>.Contracts; web/ (React); tests/; infra/terraform; infra/scripts.
+  Regra de dependência: Domain não depende de nada externo; Application depende só de Domain;
+  Infrastructure e Endpoints dependem das internas. Entre módulos, só Contracts ou eventos internos;
+  cada módulo é dono das próprias tabelas num schema próprio, sem ler tabelas de outro.
+  Testes de arquitetura (NetArchTest ou ArchUnitNET) garantem as regras.
+
+  Integrações: Entra ID (OIDC, single-tenant; papéis nunca por App Roles); Microsoft Graph (usuários do
+  diretório, SharePoint com Sites.Selected só escrita, e-mail por caixa compartilhada com RBAC do Exchange,
+  sem Mail.Send no Entra); Azure; Syncfusion (chave fora do repo); Teams depois.
+
+  Padrões recorrentes (REUSE, não reinvente):
+  - Microsoft 365 atrás de interfaces (IEmailSender, IFileStorage) com implementações locais para dev e testes.
+  - Outbox no banco para e-mails, com envio em segundo plano e novas tentativas; ação do usuário não depende do envio.
+  - Canais de aviso atrás de uma interface (e-mail, sino, depois Teams); regras de destinatário não conhecem o canal.
+  - Calendário único da instalação (dias úteis, feriados nacionais calculados atrás de interface, locais
+    cadastrados, pontos facultativos) usado no cronograma e nos prazos dos chamados.
+  - Servidor como fonte da verdade das datas do cronograma; o Gantt só exibe e envia alterações.
+  - Fluxo de status dos chamados lido de tabela, com validação de integridade.
+  - Auditoria automática num ponto único da camada de dados (ao salvar), nunca em cada módulo.
+  - Autorização por relação com o item (gestores, quem atende, solicitante, outros membros) e matrizes
+    dos ADR-0043 a 0046, testadas por tabela.
+  - Processos em segundo plano dentro da aplicação (fila de e-mails, resumo diário, fechamento automático, prazos, limpeza).
+  - Configuração da instalação e cadastros para tudo o que varia por empresa.
+
+  Diretrizes de código: async/await de ponta a ponta com CancellationToken; DI nativa do ASP.NET Core;
+  casos de uso como classes simples (sem MediatR); mapeamento à mão ou Mapperly (sem AutoMapper); SOLID;
+  componentes e wrappers reutilizáveis no frontend (tema central do MUI com os tokens do design system,
+  tabela padrão em pt-BR); sem duplicação; nomes claros; nullable habilitado e avisos como erro;
+  REST JSON sob /api com OpenAPI gerado e tipos do frontend gerados do contrato; erros em Problem Details
+  (RFC 9457); IDs GUID v7 (número do chamado sequencial); datas em UTC no banco e exibidas no fuso da
+  instalação; textos visíveis só em arquivos de tradução (chaves em inglês); IBM Plex Sans servida pela
+  aplicação; nenhuma dependência com licença comercial ou copyleft forte sem ADR (nada de FluentAssertions 8+,
+  MediatR, AutoMapper, pacotes Pro/Premium do MUI).
+
+  Fontes de verdade: regras nos ADRs e, depois, em openspec/specs; pessoas no Entra ID; papéis no banco;
+  arquivos no SharePoint; valores visuais no design system FiscoProjects (Claude Design) e telas no canvas
+  aprovado em 17/10/2026. NÃO inventar regras, dados ou valores: o que não está em ADR ou spec vira pergunta.
+  Nunca dados reais; dados de demonstração e testes fictícios, só no seed e nos testes; nenhum nome de empresa,
+  cliente, fornecedor, pasta, modelo ou prazo fixo no código.
+  Sanity-check: 6 status de chamado e 10 transições padrão; 4 prioridades (10, 5, 2 e 1 dias úteis;
+  primeira resposta em 1); 2 times; 3 papéis no sistema e 5 no projeto; 5 status de projeto; 4 de documento;
+  5 do chamado no fornecedor; 6 pastas padrão; 5 categorias de links; sessão de 8 h; anexos até 15 MB;
+  fechamento automático e fornecedor parado em 5 dias úteis; auditoria 5 anos; sino 90 dias; e-mails 30 dias.
+
+  Ler antes de implementar: docs/discovery.md (seção "Documentação de referência") e os ADRs da área;
+  docs/instalacao.md em mudanças de infraestrutura e setup.
+
+  Governança relevante ao código: senhas dos acessos cifradas com Data Protection (propósito exclusivo,
+  chaves no banco, nunca apagadas), mascaradas, nunca em e-mail, log ou auditoria; nenhum token no navegador
+  (cookie HttpOnly, Secure, SameSite, anti-CSRF); usuário ativo e papéis conferidos a cada requisição;
+  anonimização a pedido em todo o sistema, inclusive auditoria; retenção configurável; nada de dado pessoal
+  em URL ou log; segredos só no Key Vault, nunca no repo nem no Terraform.
+
+  Idioma: código, identificadores, comentários, commits e PRs em inglês; specs, propostas, ADRs e docs em
+  português do Brasil; interface e e-mails em pt-BR via arquivos de tradução.
+
+rules:
+  proposal:
+    - Sempre incluir uma seção "Non-goals".
+    - Citar os ADRs que a change implementa ou toca; se contrariar um ADR aceito, propor primeiro um ADR novo que o substitua.
+    - Respeitar a regra de dependência (Domain ← Application ← Infrastructure/Endpoints; entre módulos só Contracts ou eventos).
+    - Escopo reduzido por change, com um objetivo funcional claro; não agrupar capacidades não relacionadas numa mesma change; não incluir mudanças fora do objetivo da change.
+    - Decisão com alternativas reais (biblioteca, padrão, regra de negócio nova) exige ADR em docs/adr/ antes de implementar.
+    - Reusar padrões existentes; não criar esquema novo para o que já existe.
+    - Usar só as fontes oficiais; nunca dados reais; dados de demonstração fictícios e só no seed.
+    - Nada específico de uma empresa fixo no código; o que varia vira configuração ou cadastro.
+  specs:
+    - Cada requisito com cenários testáveis; o nome do cenário vira o nome do teste (ADR-0056).
+    - Requisitos de permissão listam permitido e negado para cada papel da matriz correspondente.
+  tasks:
+    - Fatias verticais finas; cada fatia termina com build verde sem avisos, testes passando e lint/format limpos.
+    - Toda fatia cria ou atualiza testes (unitário, integração, arquitetura, permissões ou frontend, conforme a área).
+    - Fatias de UI seguem o design system e as telas aprovadas, nos temas claro e escuro, em computador e celular.
+
+operations:
+  apply:
+    guidance:
+      - Rodar build (avisos como erro), testes, dotnet format, ESLint, Prettier e checagem de tipos antes de concluir; terraform fmt e validate quando tocar infra/.
+      - Não versionar segredos; não colocar dado sensível em log, URL ou auditoria.
+      - Consultar a documentação de referência e a documentação atual das bibliotecas (Context7) antes de implementar.
+      - Testes nunca acessam o Microsoft 365 real; usar as implementações locais ou simuladas.
+  archive:
+    guidance:
+      - Confirmar ADR criado quando houve decisão de arquitetura.
+      - Sincronizar as specs na própria branch, antes de abrir o PR, para um único PR levar código e specs.
