@@ -7,6 +7,9 @@ namespace FiscoProjects.Users.Infrastructure.Persistence;
 
 internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 {
+    // The session check and the authorization of one request ask for the same user: one query is enough.
+    private readonly Dictionary<Guid, UserAccess?> _accessOfThisRequest = [];
+
     public Task<User?> FindByIdentityAsync(string provider, string externalId, CancellationToken cancellationToken) =>
         db.Users
             .Where(user => db.IdentityLinks.Any(link =>
@@ -24,6 +27,20 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 
-    public Task<bool> IsActiveAsync(Guid userId, CancellationToken cancellationToken) =>
-        db.Users.AnyAsync(user => user.Id == userId && user.IsActive, cancellationToken);
+    public Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken) =>
+        db.Users.AnyAsync(user => user.IsActive && user.Role == SystemRole.Administrator, cancellationToken);
+
+    async Task<UserAccess?> IUserAccess.FindAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        if (!_accessOfThisRequest.TryGetValue(userId, out var access))
+        {
+            access = await db.Users.AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new UserAccess(user.Id, user.IsActive, user.Role))
+                .SingleOrDefaultAsync(cancellationToken);
+            _accessOfThisRequest[userId] = access;
+        }
+
+        return access;
+    }
 }

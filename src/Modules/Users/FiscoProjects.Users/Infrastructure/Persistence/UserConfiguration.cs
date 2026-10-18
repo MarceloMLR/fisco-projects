@@ -1,3 +1,4 @@
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,6 +13,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         user.Property(u => u.Name).HasMaxLength(200);
         user.Property(u => u.Email).HasMaxLength(320);
         user.HasIndex(u => u.Email);
+        // Stored as text; people who signed in before roles existed become User.
+        user.Property(u => u.Role).HasConversion<string>().HasMaxLength(32).HasDefaultValue(SystemRole.User).HasSentinel(default(SystemRole));
+        user.HasIndex(u => u.Name);
     }
 }
 

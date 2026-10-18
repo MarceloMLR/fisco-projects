@@ -22,6 +22,14 @@ public static class UsersModule
         services.AddScoped<SignInWithIdentity>();
         services.AddScoped<GetSignedInUser>();
 
+        services.AddOptions<FirstAdministratorOptions>()
+            .Bind(configuration.GetSection(FirstAdministratorOptions.Section))
+            .Validate(
+                options => options.IsConfigured
+                    || (string.IsNullOrWhiteSpace(options.Provider) && string.IsNullOrWhiteSpace(options.ExternalId)),
+                "Users:FirstAdministrator needs both Provider and ExternalId, or neither.")
+            .ValidateOnStart();
+
         services.AddOptions<LocalSignInOptions>()
             .Bind(configuration.GetSection(LocalSignInOptions.Section))
             .ValidateOnStart();

@@ -9,6 +9,8 @@ public interface IUserStore
 
     Task<User?> FindAsync(Guid userId, CancellationToken cancellationToken);
 
+    Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken);
+
     void Add(User user, IdentityLink link);
 
     Task SaveChangesAsync(CancellationToken cancellationToken);

@@ -1,4 +1,6 @@
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
+using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Users.Application;
 
@@ -16,15 +18,19 @@ public abstract record SignInResult
 }
 
 /// <summary>
-/// Signs in an identity: creates the user and the provider link on the first sign-in (ADR-0005), and recognizes
-/// the same user afterwards, refreshing name and e-mail.
+/// Signs in an identity: creates the user and the provider link on the first sign-in, with the least privileged
+/// role (ADR-0005, ADR-0006), and recognizes the same user afterwards, refreshing name and e-mail. The configured
+/// first administrator becomes Administrator when created, or later while the installation has no active
+/// administrator; a role chosen on the Users screen is never undone by the configuration.
 /// </summary>
-public sealed class SignInWithIdentity(IUserStore store, TimeProvider time)
+public sealed class SignInWithIdentity(
+    IUserStore store, TimeProvider time, IOptions<FirstAdministratorOptions> firstAdministrator)
 {
     public async Task<SignInResult> ExecuteAsync(ProviderIdentity identity, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow().UtcDateTime;
         var user = await store.FindByIdentityAsync(identity.Provider, identity.ExternalId, cancellationToken);
+        var created = user is null;
 
         if (user is null)
         {
@@ -38,6 +44,13 @@ public sealed class SignInWithIdentity(IUserStore store, TimeProvider time)
         else
         {
             user.RecordSignIn(identity.Name, identity.Email, now);
+        }
+
+        if (firstAdministrator.Value.Matches(identity)
+            && user.Role != SystemRole.Administrator
+            && (created || !await store.AnyActiveAdministratorAsync(cancellationToken)))
+        {
+            user.ChangeRole(SystemRole.Administrator);
         }
 
         await store.SaveChangesAsync(cancellationToken);
