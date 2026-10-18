@@ -93,3 +93,28 @@ describe('Administração só do administrador', () => {
     }
   });
 });
+
+describe('Área de Administração', () => {
+  it('Navegação das seções', async () => {
+    signedInAs('Administrator');
+    await renderApp('/admin/users');
+
+    const sections = screen.getByRole('navigation', { name: ptBR.admin.sections.label });
+    expect(within(sections).getByText(ptBR.admin.sections.people)).toBeInTheDocument();
+    const users = within(sections).getByRole('link', { name: new RegExp(ptBR.pages.users.title) });
+    expect(users).toHaveAttribute('aria-current', 'page');
+    await waitFor(() => {
+      expect(users).toHaveTextContent(`${ptBR.pages.users.title}5`);
+    });
+  });
+
+  it('Área no celular sem a coluna das seções', async () => {
+    signedInAs('Administrator');
+    await renderApp('/admin/users', phoneWidth);
+
+    expect(
+      screen.queryByRole('navigation', { name: ptBR.admin.sections.label }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('banner')).toHaveTextContent(ptBR.pages.users.title);
+  });
+});

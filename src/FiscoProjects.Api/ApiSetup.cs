@@ -24,9 +24,13 @@ public static class ApiSetup
         // In Development the framework throws it instead of answering, so the handler keeps its status.
         builder.Services.AddExceptionHandler(options => options.StatusCodeSelector = exception =>
             exception is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
-        // Enums travel as their names, so the contract and the frontend types list the values.
+        // Enums travel as their names, so the contract and the frontend types list the values; numbers are only
+        // numbers, so the contract does not type them as "number or text".
         builder.Services.ConfigureHttpJsonOptions(options =>
-            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+            options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+        });
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
         builder.Services.AddFiscoProjectsPersistence();

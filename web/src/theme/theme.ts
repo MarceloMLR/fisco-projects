@@ -159,6 +159,62 @@ export const theme = createTheme({
         },
       },
     },
+    // Menu of the design system (fp-menu): 36px items, section labels and dividers.
+    MuiMenu: {
+      styleOverrides: { list: { padding: 'var(--space-1) 0' } },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          gap: 'var(--space-3)',
+          minHeight: 36,
+          padding: '0 var(--space-3)',
+          color: 'var(--text)',
+          fontSize: 14,
+          lineHeight: '20px',
+          '& > .MuiSvgIcon-root': { fontSize: 'var(--icon-md)', color: 'var(--text-secondary)' },
+          '&:hover, &.Mui-focusVisible': { backgroundColor: 'var(--bg-hover)' },
+          '&.Mui-selected, &.Mui-selected:hover, &.Mui-selected.Mui-focusVisible': {
+            backgroundColor: 'var(--bg-hover)',
+            fontWeight: 500,
+          },
+        },
+      },
+    },
+    MuiListSubheader: {
+      styleOverrides: {
+        root: {
+          padding: 'var(--space-2) var(--space-3) var(--space-1)',
+          backgroundColor: 'transparent',
+          color: 'var(--text-secondary)',
+          fontSize: 12,
+          lineHeight: '16px',
+          fontWeight: 500,
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: { root: { borderColor: 'var(--border)' } },
+    },
+    // Snackbar of the design system (fp-snackbar): inverse colors, short message, optional action.
+    MuiSnackbarContent: {
+      styleOverrides: {
+        root: {
+          gap: 'var(--space-3)',
+          boxSizing: 'border-box',
+          minHeight: 44,
+          maxWidth: 480,
+          padding: 'var(--space-2) var(--space-2) var(--space-2) var(--space-4)',
+          borderRadius: 'var(--radius-lg)',
+          backgroundColor: 'var(--bg-inverse)',
+          color: 'var(--text-inverse)',
+          boxShadow: 'var(--shadow-menu)',
+          fontSize: 14,
+          lineHeight: '20px',
+        },
+        message: { padding: 0 },
+      },
+    },
     MuiDialog: {
       styleOverrides: {
         paper: {

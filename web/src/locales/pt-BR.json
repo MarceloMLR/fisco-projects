@@ -59,5 +59,11 @@
       "emailRequired": "Informe o e-mail.",
       "emailInvalid": "Informe um e-mail válido."
     }
+  },
+  "admin": {
+    "sections": {
+      "label": "Seções da administração",
+      "people": "Pessoas e segurança"
+    }
   }
 }

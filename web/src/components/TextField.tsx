@@ -1,5 +1,7 @@
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import Box from '@mui/material/Box';
+import type SvgIcon from '@mui/material/SvgIcon';
+import { visuallyHidden } from '@mui/utils';
 import { type ComponentProps, useId } from 'react';
 
 export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'size'> {
@@ -8,6 +10,11 @@ export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'size'> {
   error?: string;
   helper?: string;
   size?: 'sm' | 'md' | 'lg';
+  /** Icon at the start of the control, such as the search icon. */
+  icon?: typeof SvgIcon;
+  /** Keeps the label only for screen readers, as in the search above a table. */
+  hideLabel?: boolean;
+  width?: number;
 }
 
 /** Text field of the design system (TextField, fp-field): label above, control, helper or error below. */
@@ -16,6 +23,9 @@ export function TextField({
   error,
   helper,
   size = 'md',
+  icon: Icon,
+  hideLabel = false,
+  width,
   id,
   ref,
   ...input
@@ -27,11 +37,17 @@ export function TextField({
   const accent = error === undefined ? 'var(--focus-ring)' : 'var(--status-danger-text)';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', minWidth: 0 }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', minWidth: 0, width }}
+    >
       <Box
         component="label"
         htmlFor={inputId}
-        sx={{ fontSize: 13, lineHeight: '18px', fontWeight: 500, color: 'var(--text)' }}
+        sx={
+          hideLabel
+            ? visuallyHidden
+            : { fontSize: 13, lineHeight: '18px', fontWeight: 500, color: 'var(--text)' }
+        }
       >
         {label}
       </Box>
@@ -54,6 +70,9 @@ export function TextField({
           '&:focus-within': { borderColor: accent, boxShadow: `inset 0 0 0 1px ${accent}` },
         }}
       >
+        {Icon !== undefined && (
+          <Icon aria-hidden sx={{ fontSize: 'var(--icon-md)', color: 'var(--text-secondary)' }} />
+        )}
         <Box
           component="input"
           id={inputId}
