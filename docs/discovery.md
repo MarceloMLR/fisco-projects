@@ -222,7 +222,7 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 - O sistema impede remover o último administrador ativo e o último gerente de um projeto (ADR-0006, ADR-0042).
 - O líder técnico não altera o cronograma nem os termos de aceite; só gestores trocam o responsável de um chamado (ADR-0040, ADR-0068).
 - Publicação em produção só por workflow manual, depois de revisar o plano do Terraform (ADR-0055).
-- `main` recebe código só por PR com as verificações aprovadas (ADR-0055). Em repositório privado no GitHub Free não há proteção de branch; até migrar para o GitHub Pro (ou superior), a regra é cumprida por disciplina.
+- `main` recebe código só por PR com as verificações aprovadas (ADR-0055). Desde 17/10/2026 o repositório é público e a regra "Protect main" do GitHub está ativa, sem exceções, nem para administradores: só entra código por PR, e a `main` não pode ser apagada nem reescrita. Quando o CI existir, as verificações passam a ser exigidas na mesma regra.
 
 ### Gestão de segredos
 
@@ -324,6 +324,6 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 - Confirmar na documentação do Syncfusion o ajuste da linha do tempo ao espaço disponível antes de implementar o cronograma (ADR-0071).
 - Divergência a corrigir: o ADR-0065 cita "Material Symbols", mas o design system usa Material Icons no estilo Outlined (variantes `…Outlined` do `@mui/icons-material`).
 - Levar os tokens do design system para o repositório na change do tema do MUI.
-- Proteção da `main` no GitHub: exige GitHub Pro (ou superior) em repositório privado (ADR-0055).
+- Exigir as verificações do CI na regra "Protect main" quando os workflows existirem (ADR-0055).
 - Reconsultar os preços do Azure antes de apresentar os custos.
 - Em caso de venda: migrar repositório e pipelines para o Azure DevOps da compradora (ADR-0055).

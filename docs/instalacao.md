@@ -41,7 +41,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 ## CI/CD
 
 - Identidade federada (OIDC) entre o GitHub Actions e a assinatura Azure da instalação (ADR-0055).
-- `main` protegida, recebendo código só por PR com verificações aprovadas (ADR-0055). Em repositório privado, a proteção de branch exige GitHub Pro ou superior; no plano Free, a regra é cumprida por disciplina.
+- `main` protegida por uma regra do GitHub (ruleset), recebendo código só por PR com verificações aprovadas, sem exceções e sem poder ser apagada ou reescrita (ADR-0055). Em repositório público a regra é gratuita; em repositório privado, exige GitHub Pro ou superior.
 - Dependabot com alertas e correções de segurança (ADR-0060).
 
 ## Licenças de terceiros
