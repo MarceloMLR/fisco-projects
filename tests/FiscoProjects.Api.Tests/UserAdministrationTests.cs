@@ -134,6 +134,23 @@ public sealed class UserAdministrationTests(SqlServerFixture sqlServer)
         responses.Select(response => response.StatusCode).Should().AllBeEquivalentTo(HttpStatusCode.NotFound);
     }
 
+    [Fact(DisplayName = "Sem criar nem excluir usuários")]
+    public async Task ThereIsNoWayToCreateOrDeleteUsers()
+    {
+        await using var app = await SessionApp.StartAsync(sqlServer);
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        var marinaId = await app.CreateUserAsync("Marina Costa", SystemRole.User);
+
+        var create = await SendAsync(admin, HttpMethod.Post, "/api/users", new { name = "Someone", email = "someone@empresa.example" });
+        var delete = await SendAsync(admin, HttpMethod.Delete, $"/api/users/{marinaId}");
+        var list = await admin.GetFromJsonAsync<JsonElement>("/api/users", Cancellation);
+
+        create.StatusCode.Should().BeOneOf(HttpStatusCode.MethodNotAllowed, HttpStatusCode.NotFound);
+        delete.StatusCode.Should().BeOneOf(HttpStatusCode.MethodNotAllowed, HttpStatusCode.NotFound);
+        list.GetProperty("total").GetInt32().Should().Be(2);
+    }
+
     [Fact(DisplayName = "Papel desconhecido recusado pela API")]
     public async Task UnknownRole_IsABadRequest()
     {

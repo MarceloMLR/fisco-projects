@@ -22,6 +22,8 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   /** Search and filters above the table (fp-gt-tools). */
   tools?: ReactNode;
   rowHeight?: number;
+  /** Message of a table without rows. */
+  emptyLabel?: string;
 }
 
 const localeText = ptBR.components.MuiDataGrid.defaultProps.localeText;
@@ -43,6 +45,7 @@ export function DataTable<Row extends GridValidRowModel>({
   isRowMuted,
   tools,
   rowHeight = 56,
+  emptyLabel,
 }: DataTableProps<Row>) {
   return (
     <Box
@@ -82,7 +85,9 @@ export function DataTable<Row extends GridValidRowModel>({
           columns={columns}
           rowCount={rowCount}
           loading={loading}
-          localeText={localeText}
+          localeText={
+            emptyLabel === undefined ? localeText : { ...localeText, noRowsLabel: emptyLabel }
+          }
           paginationMode="server"
           paginationModel={{ page: page - 1, pageSize }}
           onPaginationModelChange={(model) => {

@@ -15,13 +15,16 @@ export const marina: SessionUser = {
   role: 'User',
 };
 
-/** People of the simulated installation, as the Users screen of the canvas shows them. */
+/**
+ * People of the simulated installation, as the Users screen of the canvas shows them. The tests run in the time
+ * zone set in vite.config.ts, where 2026-10-19T15:00:00Z is 12:00.
+ */
 export const demoUsers: UserResponse[] = [
-  person(1, 'Paulo Nogueira', 'Administrator', 'Active', '2026-10-19T12:00:00Z'),
-  person(2, 'Marina Costa', 'ProjectManager', 'Active', '2026-10-19T09:12:00Z'),
-  person(3, 'Beatriz Lima', 'ProjectManager', 'Active', '2026-10-19T08:47:00Z'),
-  person(4, 'Rafael Souza', 'User', 'Active', '2026-10-18T17:30:00Z'),
-  person(5, 'Lívia Prado', 'User', 'Inactive', '2026-08-28T15:00:00Z'),
+  person(1, 'Paulo Nogueira', 'Administrator', 'Active', '2026-10-19T15:00:00Z'),
+  person(2, 'Marina Costa', 'ProjectManager', 'Active', '2026-10-19T12:12:00Z'),
+  person(3, 'Beatriz Lima', 'ProjectManager', 'Active', '2026-10-19T11:47:00Z'),
+  person(4, 'Rafael Souza', 'User', 'Active', '2026-10-18T20:30:00Z'),
+  person(5, 'Lívia Prado', 'User', 'Inactive', '2026-08-28T18:00:00Z'),
 ];
 
 function person(

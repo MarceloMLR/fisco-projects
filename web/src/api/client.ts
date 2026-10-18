@@ -2,11 +2,25 @@ import createClient, { type Middleware } from 'openapi-fetch';
 import type { components, paths } from './schema';
 
 export type SessionUser = components['schemas']['SessionUserResponse'];
+export type SystemRole = components['schemas']['SystemRole'];
+export type UserRow = components['schemas']['UserResponse'];
+
+/** System roles, in the order the screens list them (as in the canvas menu). */
+export const systemRoles = [
+  'Administrator',
+  'ProjectManager',
+  'User',
+] as const satisfies readonly SystemRole[];
 
 /** Problem types the API returns when it refuses a sign-in (SignInProblems in the Users module). */
 export const signInProblems = {
   notInDirectory: 'urn:fiscoprojects:problem:not-in-demo-directory',
   inactive: 'urn:fiscoprojects:problem:user-inactive',
+} as const;
+
+/** Problem types of the user administration (UserProblems in the Users module). */
+export const userProblems = {
+  lastAdministrator: 'urn:fiscoprojects:problem:last-administrator',
 } as const;
 
 type Listener = () => void;

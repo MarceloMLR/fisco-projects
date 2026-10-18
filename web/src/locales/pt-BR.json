@@ -65,5 +65,50 @@
       "label": "Seções da administração",
       "people": "Pessoas e segurança"
     }
+  },
+  "users": {
+    "table": "Lista de usuários",
+    "search": "Buscar por nome ou e-mail",
+    "filters": {
+      "role": "Papel no sistema",
+      "status": "Situação",
+      "allRoles": "Todos os papéis",
+      "allStatuses": "Todas as situações"
+    },
+    "columns": {
+      "person": "Pessoa",
+      "role": "Papel no sistema",
+      "status": "Situação",
+      "lastAccess": "Último acesso",
+      "actions": "Ações"
+    },
+    "roles": {
+      "Administrator": "Administrador",
+      "ProjectManager": "Gerente de projeto",
+      "User": "Usuário"
+    },
+    "status": {
+      "Active": "Ativo",
+      "Inactive": "Inativo"
+    },
+    "empty": "Nenhuma pessoa encontrada com esses filtros.",
+    "menu": {
+      "button": "Papel e acesso de {{name}}",
+      "role": "Papel no sistema",
+      "deactivate": "Desativar acesso",
+      "reactivate": "Reativar acesso"
+    },
+    "messages": {
+      "roleChanged": "Papel de {{name}} alterado para {{role}}.",
+      "deactivated": "Acesso de {{name}} desativado.",
+      "reactivated": "Acesso de {{name}} reativado.",
+      "lastAdministrator": "A instalação precisa de pelo menos um administrador ativo.",
+      "failed": "Não foi possível salvar. Tente de novo."
+    }
+  },
+  "dates": {
+    "now": "Agora",
+    "today": "Hoje, {{time}}",
+    "yesterday": "Ontem, {{time}}"
   }
 }
