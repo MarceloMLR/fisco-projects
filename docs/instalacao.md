@@ -60,7 +60,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Nome, logo e cor principal exibidos; a cor principal pinta as ações, o item ativo da barra lateral e o painel da página de entrada, e só é aceita se passar nas verificações de contraste descritas no design system (ADR-0003, ADR-0009, ADR-0050, ADR-0063, ADR-0067).
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
-- Local dos arquivos no SharePoint (ADR-0030).
+- Local dos arquivos no SharePoint (ADR-0030), com o armazenamento escolhido em `FileStorage:Provider`. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
 - Endereço da caixa de envio (ADR-0036).
 - Horário do resumo diário de e-mails (ADR-0037).
 - Prazo de guarda das notificações do sino, padrão 90 dias (ADR-0038).
@@ -69,6 +69,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 ## Desenvolvimento
 
 - Usar um tenant Microsoft próprio, nunca o da empresa; sem tenant licenciado, usar as implementações locais de e-mail e arquivos (ADR-0002, ADR-0004).
+- Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).
 - Licença comunitária do Syncfusion em nome de Marcelo (ADR-0051).

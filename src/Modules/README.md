@@ -154,6 +154,15 @@ link.ExcludeFromAudit();                                // item técnico inteiro
 - Eventos de segurança que não são alteração de um item (a entrada, a entrada recusada) vão pelo contrato `ISecurityEvents` do módulo `Audit`.
 - Nos testes de um módulo isolado, sem o módulo `Audit` registrado, o contexto salva sem auditoria.
 
+### Arquivos
+
+Arquivos (anexos, documentos, termos, logos) vão sempre pelo contrato `IFileStorage` do módulo `Files` (ADR-0079), nunca direto para o disco ou o Microsoft Graph:
+
+- O módulo guarda no próprio banco os ids devolvidos (pasta e arquivo) e o que importa para ele (quem enviou, a que item pertence, status); o `Files` não tem tabelas.
+- `EnsureFolderAsync` cria as pastas que faltam no caminho; `UploadAsync` escolhe, para o mesmo nome, entre `NewVersion` (documentos) e `KeepBoth` (anexos).
+- Limite de tamanho e tipos recusados são regras de cada uso e ficam no módulo que recebe o arquivo.
+- Para excluir, `DeleteFileAsync` remove o arquivo com as versões, e `DeleteFolderIfEmptyAsync` só remove pasta vazia, para nunca apagar o que o FiscoProjects não criou (ADR-0041).
+
 ### Testes com banco
 
 Os testes usam um SQL Server de verdade em contêiner (Testcontainers, a mesma imagem do `compose.yaml`), por isso precisam do Docker rodando. O projeto de teste do módulo referencia `tests/FiscoProjects.Testing`, declara `[assembly: AssemblyFixture(typeof(SqlServerFixture))]` e recebe o `SqlServerFixture` no construtor; cada teste pede um banco próprio com `NewDatabase()`. O `TestDatabase` registra o módulo como o host faz, aplica as migrações e dá contextos e escopos novos. Exemplos em `tests/FiscoProjects.Users.Tests` e `tests/FiscoProjects.Persistence.Tests`.

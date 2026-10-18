@@ -53,7 +53,7 @@ openspec/                             config, specs e changes do OpenSpec
 
 Os arquivos de `.claude/commands/opsx/` e `.claude/skills/openspec-*/` são gerados pelo `openspec init` e atualizados com `openspec update`; não edite à mão.
 
-O primeiro módulo, `Users` (usuários, vínculos com o provedor de identidade e sessão), nasceu na Acesso-1 e serve de exemplo do guia `src/Modules/README.md`. O `Audit` (Acesso-3) grava a auditoria de todos os módulos: o contexto base registra cada `SaveChangesAsync` na mesma transação, e cada módulo só marca o rótulo do item e os campos técnicos ou secretos (seção "Auditoria" do guia). Os módulos previstos (ADR-0047, com os nomes do ADR-0074) são Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration; a lista final é decidida na change que cria cada um.
+O primeiro módulo, `Users` (usuários, vínculos com o provedor de identidade e sessão), nasceu na Acesso-1 e serve de exemplo do guia `src/Modules/README.md`. O `Files` (Acesso-4) guarda os arquivos de todos os módulos pelo contrato `IFileStorage`, sem tabelas: o registro de cada arquivo fica no módulo que o usa. O `Audit` (Acesso-3) grava a auditoria de todos os módulos: o contexto base registra cada `SaveChangesAsync` na mesma transação, e cada módulo só marca o rótulo do item e os campos técnicos ou secretos (seção "Auditoria" do guia). Os módulos previstos (ADR-0047, com os nomes do ADR-0074) são Tickets, Projects, Documents, Credentials, Notifications, Audit e Administration; a lista final é decidida na change que cria cada um.
 
 ## 4. Convenções e não-negociáveis
 
@@ -108,6 +108,7 @@ dotnet tool restore
 - No desenvolvimento, a API cria o banco e aplica as migrações ao subir. Migrações novas com `dotnet ef`, conforme `src/Modules/README.md`.
 - `docker compose down` para o banco; os dados ficam no volume `sqlserver-data` (`docker compose down -v` apaga).
 - Entrada local (ADR-0078): sem tenant, a página de entrada aceita, sem senha, o e-mail de uma pessoa do diretório de demonstração (`LocalSignIn:People` no `appsettings.Development.json`), como `marina.costa@empresa.example`. Ela só vale fora da produção: a aplicação não sobe em produção com `LocalSignIn:Enabled` ligado.
+- Arquivos (ADR-0079): no desenvolvimento ficam em `src/FiscoProjects.Api/App_Data/files` (`FileStorage:Provider` = `Local`), fora do Git. Os testes de um armazenamento herdam `FileStorageContract` de `tests/FiscoProjects.Files.Tests`.
 - Papéis (ADR-0006, ADR-0040): quem entra pela primeira vez é Usuário; o primeiro administrador vem de `Users:FirstAdministrator` (no desenvolvimento, `paulo.nogueira@empresa.example`). As rotas só do administrador usam `RequireAuthorization(SystemPolicies.Administrator)`, que lê o papel do banco a cada requisição.
 - Sessão por cookie `HttpOnly` (ADR-0054), que expira depois de `Session:IdleTimeout` sem uso (8 horas). As rotas sob `/api` exigem sessão, salvo as marcadas com `AllowAnonymous`, e toda alteração (POST, PUT, PATCH, DELETE) exige o cabeçalho `X-CSRF: 1`.
 
