@@ -47,7 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | --- | --- | --- | --- | --- |
 | Acesso-1 | `entrada-e-sessao` | Página de entrada, entrada local por e-mail (desenvolvimento e demonstração), usuário no primeiro login, sessão de 8 h, Sair | 0005, 0009, 0054, 0078 | Concluída em 18/10/2026 ([#9](https://github.com/MarceloMLR/fisco-projects/pull/9), [#10](https://github.com/MarceloMLR/fisco-projects/pull/10)) |
 | Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Concluída em 18/10/2026 ([#11](https://github.com/MarceloMLR/fisco-projects/pull/11)) |
-| Acesso-2.1 | `listas-mais-rapidas` | Listas sem espera aparente: leituras guardadas na sessão (TanStack Query), indicador só depois de 300 ms, menus que fecham na hora e tabela sem redesenho inútil, a pedido de Marcelo | 0049, 0050, 0080 | Proposta |
+| Acesso-2.1 | `listas-mais-rapidas` | Listas sem espera aparente: leituras guardadas na sessão (TanStack Query), indicador só depois de 300 ms, menus que fecham na hora e tabela sem redesenho inútil, a pedido de Marcelo | 0049, 0050, 0080 | PR aberto ([#15](https://github.com/MarceloMLR/fisco-projects/pull/15)) |
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Concluída em 18/10/2026 ([#13](https://github.com/MarceloMLR/fisco-projects/pull/13)) |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Concluída em 18/10/2026 ([#14](https://github.com/MarceloMLR/fisco-projects/pull/14)) |
 | Acesso-5 | `perfil-e-configuracao` | Tema no perfil; nome, logo, cor principal e fuso da instalação | 0003, 0014, 0067 | Planejada |
