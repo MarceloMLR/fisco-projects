@@ -11,7 +11,7 @@
 
 ## 3. Contrato e tipos
 
-- [ ] 3.1 Gerar o contrato no build do host sob demanda e os tipos com o openapi-typescript (`npm run api:update`); testar "Contrato versionado desatualizado" e "Tipos do frontend desatualizados"; verificar que os dois testes reprovam com os arquivos alterados, sem versionar a quebra
+- [x] 3.1 Gerar o contrato no build do host sob demanda e os tipos com o openapi-typescript (`npm run api:update`); testar "Contrato versionado desatualizado" e "Tipos do frontend desatualizados"; verificar que os dois testes reprovam com os arquivos alterados, sem versionar a quebra
 
 ## 4. Verificação no PR
 
