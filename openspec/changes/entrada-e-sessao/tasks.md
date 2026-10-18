@@ -2,7 +2,7 @@
 
 ## 1. Módulo de usuários
 
-- [ ] 1.1 Criar o módulo `Users` (domínio, caso de uso `SignInWithIdentity`, `UsersDbContext` com a migração inicial, `IUserAccess` em `Contracts`) e registrá-lo no host, com o termo no glossário; testar "Primeira entrada" e "Entradas seguintes"; verificar com `dotnet build -warnaserror` e `dotnet test`
+- [x] 1.1 Criar o módulo `Users` (domínio, caso de uso `SignInWithIdentity`, `UsersDbContext` com a migração inicial, `IUserAccess` em `Contracts`) e registrá-lo no host, com o termo no glossário; testar "Primeira entrada" e "Entradas seguintes"; verificar com `dotnet build -warnaserror` e `dotnet test`
 
 ## 2. Sessão e entrada local na API
 

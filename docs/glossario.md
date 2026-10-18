@@ -7,7 +7,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Instalação | Installation | Uma cópia do sistema para uma empresa (ADR-0003) |
-| Usuário | User | |
+| Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão |
+| Vínculo com o provedor de identidade | IdentityLink | Provedor e identificador externo, separado do usuário (ADR-0009) |
+| Entrada (login) | SignIn | |
+| Entrada local | LocalSignIn | Por e-mail, sem senha, só fora da produção (ADR-0078) |
+| Pessoas da demonstração | LocalSignIn.People | Diretório fictício da entrada local |
+| Sessão | Session | |
+| Sair | SignOut | |
 | Papel no sistema | SystemRole | |
 | Papel no projeto | ProjectRole | |
 | Administrador | Administrator | |

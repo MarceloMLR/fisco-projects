@@ -1,4 +1,6 @@
 using FiscoProjects.Persistence;
+using FiscoProjects.Users.Endpoints;
+using FiscoProjects.Users.Infrastructure;
 
 namespace FiscoProjects.Api;
 
@@ -18,14 +20,15 @@ public static class ApiSetup
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
         builder.Services.AddFiscoProjectsPersistence();
+        builder.Services.AddSingleton(TimeProvider.System);
 
         if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Database:MigrateOnStartup", true))
         {
             builder.Services.AddHostedService<DevelopmentDatabaseMigration>();
         }
 
-        // Modules register their services here, e.g. builder.Services.AddTicketsModule(builder.Configuration),
-        // which calls services.AddModuleDbContext<TicketsDbContext>(configuration).
+        // Each module registers its services from its Infrastructure layer (src/Modules/README.md).
+        builder.Services.AddUsersModule(builder.Configuration);
 
         return builder;
     }
@@ -44,8 +47,9 @@ public static class ApiSetup
 
         app.MapHealthChecks(HealthPath);
 
-        // Modules map their routes on this group, e.g. api.MapTicketsEndpoints().
-        _ = app.MapApiGroup();
+        // Each module maps its routes on this group, from its Endpoints layer.
+        _ = app.MapApiGroup()
+            .MapUsersEndpoints();
 
         app.MapFrontendFallback();
 

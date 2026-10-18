@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="../FiscoProjects.Persistence/FiscoProjects.Persistence.csproj" />
     <ProjectReference Include="../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+    <ProjectReference Include="../Modules/Users/FiscoProjects.Users/FiscoProjects.Users.csproj" />
   </ItemGroup>
 
 </Project>
