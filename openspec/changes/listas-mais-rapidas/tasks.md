@@ -37,7 +37,7 @@
 ## 3. Verificação final
 
 - [x] 3.1 Medir no navegador, com o build de produção, a troca de filtro da Auditoria e a volta para Usuários, antes e depois, nos temas claro e escuro e no celular. Conferir que não há pisca nem menu por cima da tabela.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - atualizar o `CLAUDE.md` (§6, leituras pelo TanStack Query) e o roadmap (Acesso-2.1);
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions.
