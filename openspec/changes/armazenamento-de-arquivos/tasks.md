@@ -11,7 +11,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Atualizar o ADR-0079 no índice, o glossário, o guia de instalação (configuração dos arquivos), o guia de módulos e o `CLAUDE.md`; rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
+- [x] 3.1 Atualizar o ADR-0079 no índice, o glossário, o guia de instalação (configuração dos arquivos), o guia de módulos e o `CLAUDE.md`; rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up
 
