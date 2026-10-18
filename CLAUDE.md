@@ -81,7 +81,7 @@ Ainda não há módulo de negócio; o primeiro nasce na Acesso-1, seguindo o gui
 
 ## 6. Como rodar, buildar e testar
 
-Pré-requisitos: SDK do .NET 10 (o `global.json` aceita qualquer 10.0 a partir do 10.0.100), Docker em execução (banco local e testes) e o OpenSpec CLI.
+Pré-requisitos: SDK do .NET 10 (o `global.json` aceita qualquer 10.0 a partir do 10.0.100), Node da versão do `.nvmrc`, Docker em execução (banco local e testes) e o OpenSpec CLI.
 
 Backend, na raiz do repositório:
 
@@ -109,22 +109,36 @@ dotnet tool restore
 - `docker compose down` para o banco; os dados ficam no volume `sqlserver-data` (`docker compose down -v` apaga).
 - Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`. `bash scripts/ci/spelling.sh` faz a mesma checagem do CI, com o dicionário de português.
 
+Frontend, em `web/`:
+
+```
+npm ci
+npm run dev          # http://localhost:5173, repassa /api, /health e /openapi para a API em 5175
+npm run lint
+npm run typecheck
+npm test
+npm run build        # gera src/FiscoProjects.Api/wwwroot, que a API serve
+```
+
+- Textos visíveis só em `web/src/locales/pt-BR.json`, com chaves em inglês: texto escrito direto num componente reprova o lint, e chave inexistente reprova a checagem de tipos.
+- Quando a API muda, `npm run api:update` atualiza o contrato (`web/src/api/openapi.json`) e os tipos (`web/src/api/schema.ts`). Os dois são gerados, nunca editados à mão, e vão no commit; os testes reprovam se ficarem desatualizados.
+- `npm run format` corrige a formatação (Prettier).
+
 Specs:
 
 ```
 openspec validate --all --strict
 ```
 
-Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `specs.sh` e `spelling.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
+Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `frontend.sh`, `specs.sh` e `spelling.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
 
-- Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `specs.sh` e `spelling.sh` usam o Node da versão do `.nvmrc` e instalam as próprias ferramentas, fixadas em `scripts/ci/package.json`.
+- Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `frontend.sh`, `specs.sh` e `spelling.sh` usam o Node da versão do `.nvmrc`; os dois últimos instalam as próprias ferramentas, fixadas em `scripts/ci/package.json`.
 - A regra "Protect main" exige a verificação `verify` aprovada. Renomear o job bloqueia o merge até a regra ser atualizada.
-- Pacote do NuGet com vulnerabilidade conhecida, direto ou transitivo, quebra o build.
+- Pacote do NuGet com vulnerabilidade conhecida, direto ou transitivo, quebra o build. No frontend, `frontend.sh` reprova pacote vulnerável que vai para o navegador e dependência com licença fora da lista do script `licenses` do `web/package.json`.
 
-Previstos para as próximas changes, que entram nos scripts de `scripts/ci` quando existirem:
+Previsto para a Fundação-6, que entra nos scripts de `scripts/ci`:
 
 ```
-cd web && npm ci && npm run lint && npm run typecheck && npm test
 terraform -chdir=infra/terraform fmt -check && terraform -chdir=infra/terraform validate
 ```
 

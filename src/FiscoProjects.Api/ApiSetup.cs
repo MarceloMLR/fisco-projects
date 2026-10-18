@@ -4,7 +4,7 @@ namespace FiscoProjects.Api;
 
 /// <summary>
 /// Common HTTP behavior of the API: health (including the database), Problem Details errors, OpenAPI contract,
-/// the /api route group and the shared persistence services.
+/// the /api route group, the shared persistence services and the frontend build.
 /// Program.cs and the integration tests compose the application through these two methods.
 /// </summary>
 public static class ApiSetup
@@ -35,6 +35,7 @@ public static class ApiSetup
         // Same error behavior in every environment: Problem Details, never exception details.
         app.UseExceptionHandler();
         app.UseStatusCodePages();
+        app.UseStaticFiles(FrontendHosting.StaticFiles);
 
         if (app.Environment.IsDevelopment())
         {
@@ -45,6 +46,8 @@ public static class ApiSetup
 
         // Modules map their routes on this group, e.g. api.MapTicketsEndpoints().
         _ = app.MapApiGroup();
+
+        app.MapFrontendFallback();
 
         return app;
     }

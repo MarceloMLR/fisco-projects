@@ -15,7 +15,7 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 7 | 3 |
+| 1. Fundação | 7 | 4 |
 | 2. Acesso e administração | 5 | 0 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
@@ -25,7 +25,7 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 3 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **49** | **3** |
+| **Total** | **49** | **4** |
 
 ## 1. Fundação
 
@@ -34,10 +34,10 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-1 | `estrutura-do-backend` | Solução .NET 10, host da API, estrutura de módulos, testes de arquitetura, `/health`, OpenAPI e Problem Details | 0047, 0060, 0061, 0074 | Concluída em 17/10/2026 ([#3](https://github.com/MarceloMLR/fisco-projects/pull/3), [#4](https://github.com/MarceloMLR/fisco-projects/pull/4)) |
 | Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056, 0075 | Concluída em 18/10/2026 ([#5](https://github.com/MarceloMLR/fisco-projects/pull/5)) |
 | Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Concluída em 18/10/2026 ([#6](https://github.com/MarceloMLR/fisco-projects/pull/6)) |
-| Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061 | Planejada |
+| Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061, 0076 | Concluída em 18/10/2026 ([#7](https://github.com/MarceloMLR/fisco-projects/pull/7)) |
 | Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067 | Planejada |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Planejada |
-| Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge | 0055 | Planejada |
+| Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Planejada |
 
 ## 2. Acesso e administração
 

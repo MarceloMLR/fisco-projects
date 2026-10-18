@@ -5,13 +5,16 @@
   "words": [
     "anonimização",
     "Anonymization",
+    "aplicacao",
     "ASPNETCORE",
     "azuread",
     "azurerm",
     "buildar",
+    "buildtransitive",
     "chdir",
     "clusterizada",
     "clusterizado",
+    "contentfiles",
     "csdevkit",
     "dotnet",
     "dotnettools",
@@ -38,6 +41,7 @@
     "Plex",
     "QUOTENAME",
     "recolhível",
+    "rseidelsohn",
     "slnx",
     "subnúmero",
     "subtarefas",
@@ -46,6 +50,7 @@
     "tfvars",
     "Tiptap",
     "warnaserror",
+    "wwwroot",
     "xunit"
   ],
   "ignorePaths": [
@@ -73,6 +78,10 @@
     {
       "name": "markdown-code-block",
       "pattern": "/^\\s*```[\\s\\S]*?^\\s*```/gm"
+    },
+    {
+      "name": "vitest-test-name",
+      "pattern": "/\\b(?:describe|it|test)\\(\\s*'[^']*'/g"
     }
   ],
   "overrides": [
@@ -87,6 +96,16 @@
     },
     {
       "filename": [
+        "web/src/**/*.test.ts",
+        "web/src/**/*.test.tsx"
+      ],
+      "ignoreRegExpList": [
+        "vitest-test-name",
+        "spec-reference-comment"
+      ]
+    },
+    {
+      "filename": [
         "**/*.md",
         "openspec/**/*.yaml",
         "docs/**/*.html"
@@ -96,6 +115,12 @@
         "markdown-inline-code",
         "markdown-code-block"
       ]
+    },
+    {
+      "filename": [
+        "web/src/locales/**/*.json"
+      ],
+      "language": "pt-BR,en"
     }
   ]
 }

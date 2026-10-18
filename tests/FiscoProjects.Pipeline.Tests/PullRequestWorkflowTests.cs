@@ -5,7 +5,7 @@ namespace FiscoProjects.Pipeline.Tests;
 // Spec: integracao-continua. The workflow keeps a simple, fixed layout so these checks can read it as text.
 public sealed partial class PullRequestWorkflowTests
 {
-    private static readonly string[] Checks = ["build", "test", "format", "specs", "spelling"];
+    private static readonly string[] Checks = ["build", "test", "format", "frontend", "specs", "spelling"];
 
     [Fact(DisplayName = "Pull request para a main")]
     public void Workflow_RunsOnPullRequestsToMain()

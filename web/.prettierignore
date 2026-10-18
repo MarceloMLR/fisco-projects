@@ -1,0 +1,3 @@
+# Generated from the API contract (npm run api:update).
+src/api/openapi.json
+src/api/schema.ts
