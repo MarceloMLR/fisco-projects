@@ -14,8 +14,8 @@
 
 - [x] 3.1 Atualizar a seção 6 do `CLAUDE.md` com os scripts de verificação e o nome da verificação exigida; verificar que os comandos documentados rodam como escritos
 - [x] 3.2 Rodar todos os scripts de `scripts/ci` na branch, sem erro
-- [ ] 3.3 Abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
-- [ ] 3.4 Com a autorização de Marcelo, exigir a verificação `verify` na regra "Protect main" e conferir pela API
+- [x] 3.3 Abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
+- [x] 3.4 Com a autorização de Marcelo, exigir a verificação `verify` na regra "Protect main" e conferir pela API
 
 ## Workflow follow-up
 
