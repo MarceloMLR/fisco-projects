@@ -92,9 +92,54 @@ export const theme = createTheme({
   components: {
     // Short, discreet motion only (design system): no ripple; the keyboard focus ring comes from the global styles.
     MuiButtonBase: { defaultProps: { disableRipple: true } },
+    // Button of the design system (fp-btn): heights of the control sizes, medium weight, no uppercase.
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { borderRadius: 'var(--radius-md)' } },
+      styleOverrides: {
+        root: {
+          gap: 'var(--space-2)',
+          minWidth: 0,
+          boxSizing: 'border-box',
+          height: 'var(--control-md)',
+          padding: '0 var(--space-4)',
+          borderRadius: 'var(--radius-md)',
+          fontSize: 14,
+          lineHeight: '20px',
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
+          transition:
+            'background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out',
+          '&.Mui-disabled': {
+            backgroundColor: 'var(--bg-subtle)',
+            borderColor: 'transparent',
+            color: 'var(--text-disabled)',
+          },
+          variants: [
+            {
+              props: { size: 'small' },
+              style: {
+                height: 'var(--control-sm)',
+                padding: '0 var(--space-3)',
+                fontSize: 13,
+                lineHeight: '18px',
+              },
+            },
+            {
+              props: { size: 'large' },
+              style: { height: 'var(--control-lg)', padding: '0 var(--space-5)' },
+            },
+            {
+              props: { variant: 'contained', color: 'primary' },
+              style: {
+                backgroundColor: 'var(--action)',
+                color: 'var(--on-action)',
+                '&:hover': { backgroundColor: 'var(--action-hover)' },
+                '&:active': { backgroundColor: 'var(--action-pressed)' },
+              },
+            },
+          ],
+        },
+      },
     },
     MuiPaper: {
       defaultProps: { elevation: 0 },

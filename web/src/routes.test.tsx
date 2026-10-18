@@ -5,12 +5,12 @@ import { renderApp } from './test/renderApp';
 
 // Spec: estrutura-das-telas.
 describe('Endereços das telas', () => {
-  it('Endereço de uma página', () => {
+  it('Endereço de uma página', async () => {
     for (const [path, title] of [
       ['/projects', ptBR.pages.projects.title],
       ['/tickets', ptBR.pages.tickets.title],
     ] as const) {
-      const { unmount } = renderApp(path);
+      const { unmount } = await renderApp(path);
 
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title);
       unmount();
@@ -18,7 +18,7 @@ describe('Endereços das telas', () => {
   });
 
   it('Endereço desconhecido', async () => {
-    const { router } = renderApp('/does-not-exist');
+    const { router } = await renderApp('/does-not-exist');
 
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
       ptBR.pages.home.title,

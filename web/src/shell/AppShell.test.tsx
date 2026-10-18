@@ -7,8 +7,8 @@ const navigationName = ptBR.shell.mainNavigation;
 
 // Spec: estrutura-das-telas.
 describe('Barra lateral no computador', () => {
-  it('Navegação principal', () => {
-    renderApp('/');
+  it('Navegação principal', async () => {
+    await renderApp('/');
 
     const sidebar = screen.getByRole('navigation', { name: navigationName });
     expect(within(sidebar).getByText(ptBR.app.name)).toBeInTheDocument();
@@ -18,13 +18,13 @@ describe('Barra lateral no computador', () => {
     expect(items).toEqual([ptBR.app.name, ptBR.nav.home, ptBR.nav.projects, ptBR.nav.tickets]);
   });
 
-  it('Item da página atual', () => {
+  it('Item da página atual', async () => {
     for (const [path, item] of [
       ['/', ptBR.nav.home],
       ['/projects', ptBR.nav.projects],
       ['/tickets', ptBR.nav.tickets],
     ] as const) {
-      const { unmount } = renderApp(path);
+      const { unmount } = await renderApp(path);
 
       const sidebar = screen.getByRole('navigation', { name: navigationName });
       const current = within(sidebar)
@@ -38,8 +38,8 @@ describe('Barra lateral no computador', () => {
 });
 
 describe('Cabeçalho com a trilha', () => {
-  it('Trilha da página', () => {
-    renderApp('/tickets');
+  it('Trilha da página', async () => {
+    await renderApp('/tickets');
 
     const trail = screen.getByRole('navigation', { name: ptBR.shell.breadcrumb });
     const levels = within(trail).getAllByRole('listitem');
@@ -52,9 +52,9 @@ describe('Cabeçalho com a trilha', () => {
 });
 
 describe('Conteúdo na altura da janela', () => {
-  it('Janela sem rolagem', () => {
+  it('Janela sem rolagem', async () => {
     for (const width of [1440, phoneWidth]) {
-      const { unmount } = renderApp('/', width);
+      const { unmount } = await renderApp('/', width);
 
       const frame = getComputedStyle(screen.getByTestId('app-frame'));
       expect(frame.height).toBe('100dvh');
@@ -67,7 +67,7 @@ describe('Conteúdo na altura da janela', () => {
 
 describe('Estrutura no celular', () => {
   it('Menu no celular', async () => {
-    renderApp('/', phoneWidth);
+    await renderApp('/', phoneWidth);
     expect(screen.queryByRole('navigation', { name: navigationName })).not.toBeInTheDocument();
     expect(screen.getByRole('banner')).toHaveTextContent(ptBR.pages.home.title);
 
