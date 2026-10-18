@@ -42,6 +42,6 @@ Nenhuma (não há specs anteriores).
 
 - Código novo: `src/FiscoProjects.Api`, `src/FiscoProjects.SharedKernel`, `src/Modules/README.md`, `tests/FiscoProjects.Architecture.Tests`, `tests/FiscoProjects.Api.Tests`, `tests/FiscoProjects.SharedKernel.Tests`.
 - Arquivos de build na raiz: `FiscoProjects.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `.editorconfig`.
-- Dependências novas, todas com licença permitida pelo ADR-0061: `Microsoft.AspNetCore.OpenApi` (MIT), xUnit v3 (Apache 2.0), AwesomeAssertions (Apache 2.0), NSubstitute (BSD), ArchUnitNET (Apache 2.0), `Microsoft.AspNetCore.Mvc.Testing` (MIT).
+- Dependências novas, todas com licença permitida pelo ADR-0061: `Microsoft.AspNetCore.OpenApi` (MIT), xUnit v3 (Apache 2.0), AwesomeAssertions (Apache 2.0), NSubstitute (BSD), ArchUnitNET (Apache 2.0), `Microsoft.AspNetCore.Mvc.Testing` (MIT) e `Microsoft.Extensions.DependencyModel` (MIT). Só o primeiro vai para a aplicação; os demais são usados apenas nos testes.
 - `CLAUDE.md`, seção 6, passa a ter os comandos do backend.
 - ADRs implementados: 0047, 0060, 0061. ADRs seguidos: 0056 (testes) e 0057 (endereço de saúde).

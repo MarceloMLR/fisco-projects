@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FiscoProjects.Api.Tests/FiscoProjects.Api.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.Architecture.Tests/FiscoProjects.Architecture.Tests.csproj" />
     <Project Path="tests/FiscoProjects.SharedKernel.Tests/FiscoProjects.SharedKernel.Tests.csproj" />
   </Folder>
 </Solution>

@@ -68,7 +68,7 @@ O ADR-0056 permite NetArchTest ou ArchUnitNET. Escolhido o ArchUnitNET (Apache 2
 
 As regras ficam em funções reaproveitáveis que recebem o namespace raiz de um módulo e são aplicadas de duas formas:
 
-- a todo módulo real, descoberto pelo nome do assembly (`FiscoProjects.<Modulo>` e `FiscoProjects.<Modulo>.Contracts`, excluindo `Api`, `SharedKernel` e testes), a partir das referências do host;
+- a todo módulo real, descoberto pelo nome do assembly (`FiscoProjects.<Modulo>` e `FiscoProjects.<Modulo>.Contracts`, excluindo `Api`, `SharedKernel` e testes). A lista de assemblies vem do manifesto de dependências do projeto de testes (`Microsoft.Extensions.DependencyModel`), que inclui o host e tudo o que ele referencia, e não da pasta `bin`, que pode ter arquivos antigos de módulos removidos;
 - a exemplos de módulos válidos e inválidos, escritos no próprio projeto de testes, que provam que cada regra aceita o certo e pega a violação. Isso também cobre o período em que ainda não há módulo de negócio.
 
 As bibliotecas proibidas em `Domain` e `Application` são identificadas por namespace: `Microsoft.EntityFrameworkCore`, `Microsoft.AspNetCore`, `Microsoft.Graph`, `Azure` e `Microsoft.Data.SqlClient`.

@@ -20,7 +20,7 @@ Cada módulo do backend MUST ser formado por um projeto principal (`FiscoProject
 
 ### Requirement: Camadas dependem só das camadas internas
 
-Dentro de um módulo, a camada `Domain` MUST NOT depender de nenhuma outra camada; `Application` MUST depender só de `Domain`; `Infrastructure` e `Endpoints` MUST depender só das camadas internas, nunca uma da outra.
+Todo tipo do projeto principal de um módulo MUST ficar numa das camadas `Domain`, `Application`, `Infrastructure` ou `Endpoints`. A camada `Domain` MUST NOT depender de nenhuma outra camada; `Application` MUST depender só de `Domain`; `Infrastructure` e `Endpoints` MUST depender só das camadas internas, nunca uma da outra.
 
 #### Scenario: Módulo que segue as camadas
 - **WHEN** os testes de arquitetura rodam sobre um módulo em que cada camada usa apenas as camadas internas
@@ -37,6 +37,10 @@ Dentro de um módulo, a camada `Domain` MUST NOT depender de nenhuma outra camad
 #### Scenario: Endpoints usam infraestrutura direto
 - **WHEN** um tipo da camada `Endpoints` usa um tipo de `Infrastructure`
 - **THEN** a regra de camadas falha e aponta o tipo que causou a violação
+
+#### Scenario: Tipo fora das camadas
+- **WHEN** um tipo do projeto principal de um módulo fica fora das pastas `Domain`, `Application`, `Infrastructure` e `Endpoints`
+- **THEN** a regra de camadas falha e aponta o tipo
 
 ### Requirement: Regras de negócio sem tecnologia externa
 

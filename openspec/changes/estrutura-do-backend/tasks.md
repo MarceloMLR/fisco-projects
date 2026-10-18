@@ -19,8 +19,8 @@
 
 ## 4. Regras de arquitetura
 
-- [ ] 4.1 Criar o projeto `tests/FiscoProjects.Architecture.Tests` com as regras de camadas, de independência tecnológica, de fronteira entre módulos, de contratos e do núcleo compartilhado, e os exemplos de módulos válidos e inválidos; testar cada cenário de `arquitetura-modular` (exceto os de identificador) nos dois sentidos; verificar com `dotnet test`
-- [ ] 4.2 Implementar a descoberta de módulos pelo nome do assembly e aplicar as regras aos módulos reais e ao `SharedKernel` real; testar os cenários "Novo módulo segue a convenção de nomes" e "Assemblies que não são módulos"; verificar com `dotnet test`
+- [x] 4.1 Criar o projeto `tests/FiscoProjects.Architecture.Tests` com as regras de camadas, de independência tecnológica, de fronteira entre módulos, de contratos e do núcleo compartilhado, e os exemplos de módulos válidos e inválidos; testar cada cenário de `arquitetura-modular` (exceto os de identificador) nos dois sentidos; verificar com `dotnet test`
+- [x] 4.2 Implementar a descoberta de módulos pelo nome do assembly e aplicar as regras aos módulos reais e ao `SharedKernel` real; testar os cenários "Novo módulo segue a convenção de nomes" e "Assemblies que não são módulos"; verificar com `dotnet test`
 - [ ] 4.3 Escrever `src/Modules/README.md` com a convenção de módulos (projetos, pastas das camadas, contratos e registro no host); verificar que os nomes e regras descritos batem com os testes de arquitetura
 
 ## 5. Verificação final
