@@ -2,7 +2,7 @@
 
 ## 1. Captura das alterações no contexto base
 
-- [ ] 1.1 Criar no `FiscoProjects.Persistence` a captura das alterações (`AuditedChange`, valores em texto invariável), as marcações `HasAuditLabel`, `ExcludeFromAudit` e `IsAuditSecret`, a interface `IChangeAuditor` e a gravação com auditoria em `ModuleDbContext.SaveChangesAsync` (mesma transação, reaproveitando a do módulo, dentro da estratégia de novas tentativas; `SaveChanges` síncrono recusado); testar com SQL Server "Criar um item", "Alterar um item", "Excluir um item", "Campo técnico fora da auditoria", "Senha alterada", "Alteração que não é salva" e "Registro que não é gravado"; verificar com `dotnet build -warnaserror` e `dotnet test`
+- [x] 1.1 Criar no `FiscoProjects.Persistence` a captura das alterações (`AuditedChange`, valores em texto invariável), as marcações `HasAuditLabel`, `ExcludeFromAudit` e `IsAuditSecret`, a interface `IChangeAuditor` e a gravação com auditoria em `ModuleDbContext.SaveChangesAsync` (mesma transação, reaproveitando a do módulo, dentro da estratégia de novas tentativas; `SaveChanges` síncrono recusado); testar com SQL Server "Criar um item", "Alterar um item", "Excluir um item", "Campo técnico fora da auditoria", "Senha alterada", "Alteração que não é salva" e "Registro que não é gravado"; verificar com `dotnet build -warnaserror` e `dotnet test`
 
 ## 2. Módulo de auditoria
 
