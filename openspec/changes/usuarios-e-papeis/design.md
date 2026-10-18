@@ -53,10 +53,11 @@ Motivação em proposal.md. O módulo `Users` (Acesso-1) já tem o usuário com 
 | `POST /api/users/{id}/deactivate` | administrador | 204; 404; 409 `last-administrator` |
 | `POST /api/users/{id}/reactivate` | administrador | 204; 404 |
 
-- Paginação começando em 1, com `pageSize` de até 100 (padrão 25). `status` é `active` ou `inactive`.
+- Paginação começando em 1, com `pageSize` de até 100 (padrão 25). `status` é `Active` ou `Inactive`, e os papéis vão pelo nome (`User`, `ProjectManager`, `Administrator`).
 - A busca compara nome e e-mail com a collation `Latin1_General_100_CI_AI`, sem diferenciar maiúsculas e acentos: uma busca sem acento encontra o nome com acento.
 - Enums em JSON como texto (`JsonStringEnumConverter` no host), para o contrato OpenAPI e os tipos do frontend terem os valores.
 - O 409 traz o tipo `urn:fiscoprojects:problem:last-administrator`, como os tipos da recusa da entrada.
+- Um corpo que a API não consegue ler (um papel desconhecido, por exemplo) recebe 400 também no desenvolvimento, onde o ASP.NET Core lança a exceção em vez de responder: o tratador de exceções do host usa o status da `BadHttpRequestException`.
 
 ### 6. Frontend
 
