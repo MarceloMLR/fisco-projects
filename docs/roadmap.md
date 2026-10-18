@@ -1,6 +1,6 @@
 # Roadmap da v1
 
-As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -9,7 +9,8 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Correção de uma change já arquivada ganha um subnúmero (`Fundação-2.1`), só quando necessário.
 - Toda change com tela entrega as versões de computador e celular, nos temas claro e escuro. Os dados fictícios de demonstração crescem a cada change.
 - Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
-- Status: Planejada, Em andamento, PR aberto, Concluída.
+- Status: Planejada, Em andamento, PR aberto, Concluída, Adiada (com o motivo).
+- Em 18/10/2026, Marcelo adiou a Fundação-6 e a Fundação-7 até existir a assinatura do Azure, e o login pelo Entra foi para o grupo 9 (M365-1): sem tenant, desenvolvimento e demonstrações usam a entrada local (ADR-0078).
 
 ## Marcos
 
@@ -23,9 +24,9 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 6. Avisos | 3 | 0 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
-| 9. Microsoft 365 real | 3 | 0 |
+| 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **49** | **5** |
+| **Total** | **50** | **5** |
 
 ## 1. Fundação
 
@@ -36,14 +37,14 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Concluída em 18/10/2026 ([#6](https://github.com/MarceloMLR/fisco-projects/pull/6)) |
 | Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061, 0076 | Concluída em 18/10/2026 ([#7](https://github.com/MarceloMLR/fisco-projects/pull/7)) |
 | Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067, 0077 | Concluída em 18/10/2026 ([#8](https://github.com/MarceloMLR/fisco-projects/pull/8)) |
-| Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Planejada |
-| Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Planejada |
+| Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Adiada: aguarda a assinatura do Azure |
+| Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Adiada: aguarda a assinatura do Azure |
 
 ## 2. Acesso e administração
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Acesso-1 | `entrada-e-sessao` | Página de entrada, login pelo Entra, usuário no primeiro login, recusa de convidados, sessão de 8 h, Sair | 0005, 0007, 0009, 0054 | Planejada |
+| Acesso-1 | `entrada-e-sessao` | Página de entrada, entrada local por e-mail (desenvolvimento e demonstração), usuário no primeiro login, sessão de 8 h, Sair | 0005, 0009, 0054, 0078 | Em andamento |
 | Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Planejada |
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Planejada |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Planejada |
@@ -113,9 +114,10 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| M365-1 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005 | Planejada |
-| M365-2 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030 | Planejada |
-| M365-3 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
+| M365-1 | `entrada-pelo-entra` | Login pelo Entra ID, recusa de convidados e recusa sem atribuição no Entra | 0004, 0007, 0009 | Planejada |
+| M365-2 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005 | Planejada |
+| M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030 | Planejada |
+| M365-4 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
 
 ## 10. Governança e operação
 
