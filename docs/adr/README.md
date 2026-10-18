@@ -140,4 +140,4 @@ Regras:
 | [0075](0075-projeto-compartilhado-de-persistencia.md) | Projeto compartilhado de persistência para os módulos | aceita | 2026-10-17 |
 | [0076](0076-vite-e-tipos-gerados-com-openapi-typescript.md) | Frontend com Vite e tipos da API gerados pelo openapi-typescript | aceita | 2026-10-18 |
 | [0077](0077-rotas-do-frontend-com-react-router.md) | Rotas do frontend com React Router | aceita | 2026-10-18 |
-| [0078](0078-entrada-local-sem-tenant.md) | Entrada local por e-mail no desenvolvimento e nas demonstrações, sem tenant | proposta | 2026-10-18 |
+| [0078](0078-entrada-local-sem-tenant.md) | Entrada local por e-mail no desenvolvimento e nas demonstrações, sem tenant | aceita | 2026-10-18 |
