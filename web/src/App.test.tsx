@@ -5,10 +5,10 @@ import ptBR from './locales/pt-BR.json';
 
 // Spec: aplicacao-web.
 describe('Textos da interface em arquivos de tradução', () => {
-    it('Texto da tela vem da tradução', () => {
-        render(<App />);
+  it('Texto da tela vem da tradução', () => {
+    render(<App />);
 
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(ptBR.app.name);
-        expect(screen.getByText(ptBR.app.underConstruction)).toBeInTheDocument();
-    });
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(ptBR.app.name);
+    expect(screen.getByText(ptBR.app.underConstruction)).toBeInTheDocument();
+  });
 });

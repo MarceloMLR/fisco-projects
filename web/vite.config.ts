@@ -5,20 +5,20 @@ import { defineConfig } from 'vitest/config';
 const api = 'http://localhost:5175';
 
 export default defineConfig({
-    plugins: [react()],
-    build: {
-        // The API host serves the build from its static files folder (ADR-0047).
-        outDir: '../src/FiscoProjects.Api/wwwroot',
-        emptyOutDir: true,
-    },
-    server: {
-        port: 5173,
-        strictPort: true,
-        // The browser sees a single address, as in production (ADR-0054).
-        proxy: { '/api': api, '/health': api, '/openapi': api },
-    },
-    test: {
-        environment: 'jsdom',
-        setupFiles: ['./src/test/setup.ts'],
-    },
+  plugins: [react()],
+  build: {
+    // The API host serves the build from its static files folder (ADR-0047).
+    outDir: '../src/FiscoProjects.Api/wwwroot',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+    // The browser sees a single address, as in production (ADR-0054).
+    proxy: { '/api': api, '/health': api, '/openapi': api },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+  },
 });

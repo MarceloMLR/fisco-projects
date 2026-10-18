@@ -4,5 +4,5 @@ import { afterEach } from 'vitest';
 import '../i18n';
 
 afterEach(() => {
-    cleanup();
+  cleanup();
 });

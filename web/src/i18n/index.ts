@@ -6,11 +6,11 @@ import ptBR from '../locales/pt-BR.json';
 export const language = 'pt-BR';
 
 void i18n.use(initReactI18next).init({
-    lng: language,
-    fallbackLng: language,
-    resources: { [language]: { translation: ptBR } },
-    initAsync: false,
-    interpolation: { escapeValue: false }, // React already escapes the values.
+  lng: language,
+  fallbackLng: language,
+  resources: { [language]: { translation: ptBR } },
+  initAsync: false,
+  interpolation: { escapeValue: false }, // React already escapes the values.
 });
 
 export default i18n;
