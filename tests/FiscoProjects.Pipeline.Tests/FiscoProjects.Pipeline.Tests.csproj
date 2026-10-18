@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../FiscoProjects.Testing/FiscoProjects.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="AwesomeAssertions" />
     <Using Include="Xunit" />
   </ItemGroup>
