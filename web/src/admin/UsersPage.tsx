@@ -54,7 +54,7 @@ export function UsersPage() {
   const queryClient = useQueryClient();
 
   // A list already seen in the session shows at once; another filter keeps the rows on screen until it arrives.
-  const { data, isFetching, isPlaceholderData } = useQuery({
+  const { data, isFetching } = useQuery({
     ...usersQuery({
       search: debouncedSearch === '' ? undefined : debouncedSearch,
       role: role === 'all' ? undefined : role,
@@ -65,7 +65,6 @@ export function UsersPage() {
     placeholderData: keepPreviousData,
   });
   const users = data ?? noUsers;
-  const loading = isFetching && (data === undefined || isPlaceholderData);
 
   const act = useCallback(
     async (user: UserRow, action: 'role' | 'deactivate' | 'reactivate', newRole?: SystemRole) => {
@@ -224,7 +223,8 @@ export function UsersPage() {
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
-        loading={loading}
+        // Any wait, a new filter or a refresh of the rows on screen, shows the bar if it lasts (DataTable).
+        loading={isFetching}
         isRowMuted={isInactive}
         emptyLabel={t('users.empty')}
         tools={

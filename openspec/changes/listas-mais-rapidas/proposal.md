@@ -18,7 +18,7 @@ Como as próximas telas (Meu trabalho, projetos, chamados) usam o mesmo padrão,
 - **Dados descartados ao sair** ou quando a sessão termina.
 - **Espera nas listas:**
   - Durante a troca de filtro ou de página, a tabela continua mostrando as linhas atuais.
-  - Se a espera passar de 300 ms, aparece uma barra de progresso no topo da tabela.
+  - Se a espera passar de 300 ms, aparece uma barra de progresso no topo da tabela. Isso vale também para a atualização de uma lista já vista, que aparece na hora a partir do cache.
   - Na primeira abertura, a tabela mostra o cabeçalho e só mostra o esqueleto se a espera passar de 300 ms. Nunca mostra a mensagem de lista vazia antes da resposta.
 - **Menus fecham na hora** ao escolher uma opção, sem animação de saída. Isso vale para os menus e campos de seleção. A abertura continua com a animação de hoje.
 - **Tabela sem redesenho inútil.** O `DataTable` passa ao Data Grid propriedades estáveis, então uma mudança na tela que não troca as linhas não redesenha as células.

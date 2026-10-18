@@ -126,6 +126,19 @@ describe('Dados da API guardados durante a sessão', () => {
     expect(within(grid(ptBR.users.table)).queryByRole('progressbar')).not.toBeInTheDocument();
     // And the list is asked again, to bring it up to date.
     expect(callsTo('/api/users', isList)).toBe(before + 1);
+
+    // The answer takes long: past 300 ms, the bar says the list is being brought up to date, over the same rows.
+    await waitFor(() => {
+      expect(within(grid(ptBR.users.table)).getByRole('progressbar')).toBeInTheDocument();
+    });
+    expect(rowsOf(ptBR.users.table)).toHaveLength(people.length);
+    // And it leaves when the answer arrives.
+    await waitFor(
+      () => {
+        expect(within(grid(ptBR.users.table)).queryByRole('progressbar')).not.toBeInTheDocument();
+      },
+      { timeout: 2000 },
+    );
   });
 
   it('Alteração atualiza as listas', async () => {

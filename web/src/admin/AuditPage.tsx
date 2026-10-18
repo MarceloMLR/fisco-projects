@@ -61,7 +61,7 @@ export function AuditPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   // A filter already seen in the session shows at once; another keeps the rows on screen until it arrives.
-  const { data, isFetching, isPlaceholderData, isError } = useQuery({
+  const { data, isFetching, isError } = useQuery({
     ...auditQuery({
       actorId: person?.id,
       itemType: itemType === 'all' ? undefined : itemType,
@@ -73,7 +73,6 @@ export function AuditPage() {
     placeholderData: keepPreviousData,
   });
   const result = data ?? noEntries;
-  const loading = isFetching && (data === undefined || isPlaceholderData);
 
   // The chosen record; on a wide screen the first one of the page until the administrator chooses another.
   const selected =
@@ -182,7 +181,8 @@ export function AuditPage() {
           page={page}
           pageSize={pageSize}
           onPageChange={setPage}
-          loading={loading}
+          // Any wait, a new filter or a refresh of the rows on screen, shows the bar if it lasts (DataTable).
+          loading={isFetching}
           emptyLabel={t(isError ? 'audit.loadFailed' : 'audit.empty')}
           selectedRowId={selected?.id}
           onRowChoose={choose}

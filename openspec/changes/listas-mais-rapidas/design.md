@@ -72,9 +72,12 @@ O `DataTable` recebe `loading` e troca o slot `loadingOverlay` do Data Grid por 
 
 O timer começa quando o overlay monta, isto é, quando `loading` passa a `true`, e é desfeito quando ele sai.
 
-Cada tela passa `loading = isFetching && (data === undefined || isPlaceholderData)`. A espera mostra o indicador em dois casos: na primeira carga e quando a tabela está com as linhas de outro filtro. A atualização em segundo plano de dados guardados para a mesma chave não mostra indicador nenhum.
+Cada tela passa `loading = isFetching`, isto é, qualquer espera: a primeira carga, um filtro novo (com as linhas do filtro anterior na tela) ou a atualização em segundo plano das linhas de uma lista já vista. Se a espera for curta, nada aparece. Se passar de 300 ms, a barra avisa que a lista está mudando, inclusive quando as linhas na tela vieram do cache e podem estar desatualizadas.
 
-Alternativa: mostrar o indicador sempre que houver pedido em andamento. Foi descartada porque é exatamente o pisca que se quer tirar.
+Alternativas:
+
+- **Indicador sempre que houver pedido em andamento, sem a espera de 300 ms:** descartada, porque é exatamente o pisca que se quer tirar.
+- **Nenhum indicador na atualização em segundo plano:** foi a primeira versão. Numa rede lenta, porém, a pessoa olharia dados antigos sem saber, então Marcelo pediu a barra também nesse caso.
 
 ### 5. Menus sem animação de saída
 

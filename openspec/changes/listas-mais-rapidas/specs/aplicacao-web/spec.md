@@ -11,7 +11,7 @@ As respostas da API que as telas leem MUST ficar guardadas só na memória da p�
 
 #### Scenario: Volta a uma lista já vista
 - **WHEN** a pessoa volta a uma lista, ou a um filtro dela, que já abriu na sessão
-- **THEN** as linhas da última vez aparecem na hora, sem indicador de carregamento, e a lista é pedida de novo à API para se atualizar
+- **THEN** as linhas da última vez aparecem na hora, sem indicador de carregamento, e a lista é pedida de novo à API; se a resposta passar de 300 ms, a barra de progresso aparece no topo até a lista se atualizar
 
 #### Scenario: Alteração atualiza as listas
 - **WHEN** o administrador troca o papel de uma pessoa, a desativa ou a reativa
@@ -27,7 +27,7 @@ As respostas da API que as telas leem MUST ficar guardadas só na memória da p�
 
 ### Requirement: Espera nas listas
 
-Ao trocar o filtro ou a página de uma lista, a tabela MUST continuar mostrando as linhas atuais até a resposta chegar. O indicador de carregamento MUST aparecer só se a espera passar de 300 ms. Na primeira abertura da lista, a tabela MUST mostrar o cabeçalho e, só depois de 300 ms de espera, o esqueleto das linhas. A mensagem de lista vazia MUST aparecer só depois da resposta.
+Ao trocar o filtro ou a página de uma lista, a tabela MUST continuar mostrando as linhas atuais até a resposta chegar. O indicador de carregamento MUST aparecer só se a espera passar de 300 ms, tanto numa lista nova quanto na atualização das linhas que já estão na tela. Na primeira abertura da lista, a tabela MUST mostrar o cabeçalho e, só depois de 300 ms de espera, o esqueleto das linhas. A mensagem de lista vazia MUST aparecer só depois da resposta.
 
 #### Scenario: Resposta rápida sem indicador
 - **WHEN** a pessoa troca o filtro de uma lista e a resposta chega em menos de 300 ms
