@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 using FiscoProjects.Api.Session;
+using FiscoProjects.Audit.Endpoints;
+using FiscoProjects.Audit.Infrastructure;
 using FiscoProjects.Persistence;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
@@ -44,6 +46,7 @@ public static class ApiSetup
 
         // Each module registers its services from its Infrastructure layer (src/Modules/README.md).
         builder.Services.AddUsersModule(builder.Configuration);
+        builder.Services.AddAuditModule(builder.Configuration);
 
         return builder;
     }
@@ -67,7 +70,8 @@ public static class ApiSetup
 
         // Each module maps its routes on this group, from its Endpoints layer.
         _ = app.MapApiGroup()
-            .MapUsersEndpoints();
+            .MapUsersEndpoints()
+            .MapAuditEndpoints();
 
         app.MapFrontendFallback();
 

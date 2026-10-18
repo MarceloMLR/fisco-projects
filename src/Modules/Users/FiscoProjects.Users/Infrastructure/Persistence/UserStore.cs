@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Users.Infrastructure.Persistence;
 
-internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
+internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IUserDirectory
 {
     private const string AccentInsensitive = "Latin1_General_100_CI_AI";
 
@@ -96,4 +96,10 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 
         return access;
     }
+
+    public async Task<IReadOnlyDictionary<Guid, string>> NamesAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
+        await db.Users.AsNoTracking()
+            .Where(user => userIds.Contains(user.Id))
+            .ToDictionaryAsync(user => user.Id, user => user.Name, cancellationToken);
 }

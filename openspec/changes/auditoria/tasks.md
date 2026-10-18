@@ -6,7 +6,7 @@
 
 ## 2. Módulo de auditoria
 
-- [ ] 2.1 Criar o módulo `Audit` (contratos, `AuditEntry`, contexto só de inclusão com a migração `Initial` no schema `audit`, `IChangeAuditor` com o autor da sessão, `ISecurityEvents`, consulta `ListAuditEntries`) e registrá-lo no host; acrescentar `IUserDirectory` ao contrato do `Users`; testar "Gravação só acrescenta", a consulta com filtros, ordem e paginação e a gravação na mesma transação; verificar com `dotnet test` e os testes de arquitetura
+- [x] 2.1 Criar o módulo `Audit` (contratos, `AuditEntry`, contexto só de inclusão com a migração `Initial` no schema `audit`, `IChangeAuditor` com o autor da sessão, `ISecurityEvents`, consulta `ListAuditEntries`) e registrá-lo no host; acrescentar `IUserDirectory` ao contrato do `Users`; testar "Gravação só acrescenta", a consulta com filtros, ordem e paginação e a gravação na mesma transação; verificar com `dotnet test` e os testes de arquitetura
 - [ ] 2.2 Marcar a auditoria no `Users` (rótulo, `LastSignInAt` e `CreatedAt` fora, vínculo fora) e registrar a entrada e as recusas em `SignInWithIdentity` e `SignInLocally`; testar "Autor da alteração", "Alteração sem sessão", "Entrada registrada", "Entrada recusada registrada", "Troca de papel registrada" e "Desativação e reativação registradas"; verificar com `dotnet test`
 
 ## 3. API da auditoria
