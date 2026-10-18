@@ -7,7 +7,7 @@ Regras:
 - Um ADR por decisão, numerado com quatro dígitos: `NNNN-titulo-em-kebab-case.md`.
 - ADR aceito não muda de conteúdo. Mudar de ideia gera um ADR novo que diz o que substitui; o ADR antigo ganha a indicação no status e uma nota no item substituído.
 - Quando um ADR cita `claude/...` (por exemplo, `claude/custos-estimados.md`), o arquivo correspondente está em `docs/` (por exemplo, `docs/custos-estimados.md`). As citações ficam como foram aprovadas.
-- Os ADRs 0001 a 0073 foram decididos no discovery, de 13 a 17/10/2026, e movidos do projeto do Claude para este repositório no setup (ADR-0001).
+- Os ADRs 0001 a 0073 foram decididos no discovery, de 13 a 17/10/2026, e movidos do projeto do Claude para este repositório no setup (ADR-0001). Os seguintes nascem durante a construção da v1.
 
 ## Fundamentos, acesso e entrada
 
@@ -94,11 +94,11 @@ Regras:
 
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
-| [0047](0047-monolito-modular-com-clean-architecture.md) | Monolito modular com Clean Architecture em cada módulo | aceita | 2026-10-15 |
+| [0047](0047-monolito-modular-com-clean-architecture.md) | Monolito modular com Clean Architecture em cada módulo | aceita (nomes dos módulos em português substituídos pelo ADR-0074) | 2026-10-15 |
 | [0048](0048-azure-sql-provisionado-em-producao.md) | Azure SQL como banco, provisionado em produção e gratuito no desenvolvimento | aceita | 2026-10-15 |
 | [0049](0049-frontend-react-typescript.md) | Frontend em React com TypeScript | aceita | 2026-10-15 |
 | [0050](0050-mui-como-biblioteca-de-componentes.md) | Material UI (MUI) como biblioteca de componentes, só com pacotes gratuitos | aceita | 2026-10-15 |
-| [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | aceita | 2026-10-15 |
+| [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | aceita (nome do componente substituído pelo ADR-0074: `ScheduleGantt`) | 2026-10-15 |
 | [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
 | [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
@@ -131,3 +131,9 @@ Regras:
 | [0071](0071-cronograma-na-tela.md) | Cronograma na tela, com Linha do tempo que se ajusta ao espaço, Expandir e faixa de fases nos projetos | aceita | 2026-10-17 |
 | [0072](0072-gerente-e-lider-tecnico-na-criacao.md) | Gerente e líder técnico definidos na criação do projeto e mostrados no cabeçalho | aceita | 2026-10-17 |
 | [0073](0073-visao-geral-do-projeto.md) | Visão geral do projeto responde "está no prazo?" | aceita | 2026-10-17 |
+
+## Construção da v1
+
+| ADR | Título | Status | Data |
+| --- | --- | --- | --- |
+| [0074](0074-nomes-de-codigo-em-ingles-com-glossario.md) | Nomes de código em inglês, inclusive módulos e termos do negócio, com glossário português–inglês | aceita | 2026-10-17 |

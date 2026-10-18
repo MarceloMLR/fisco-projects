@@ -3,7 +3,7 @@ schema: spec-driven
 context: |
   FiscoProjects — projetos, cronogramas e chamados da equipe em um só lugar, apoiado no Microsoft 365
   da empresa. Uma instalação por empresa (single-tenant, ADR-0003); projeto pessoal de Marcelo Ribeiro,
-  sem recursos do empregador (ADR-0002). Decisões em docs/adr/ (73 ADRs, MADR); resumo em docs/discovery.md.
+  sem recursos do empregador (ADR-0002). Decisões em docs/adr/ (MADR); resumo em docs/discovery.md.
 
   Capacidades v1: entrada e acesso (Entra ID, página própria, BFF); Meu trabalho (fila por urgência);
   projetos e clientes; cronograma (fases > tarefas e marcos, dias úteis com feriados, dependência
@@ -19,7 +19,7 @@ context: |
 
   Stack: .NET 10 (LTS) ASP.NET Core, EF Core com SQL Server; React + TypeScript estrito, MUI só gratuito
   (@mui/material, icons-material, X Data Grid e Date Pickers MIT), React Hook Form + Zod, Tiptap,
-  react-i18next; Syncfusion React Gantt (licença comunitária) só dentro de CronogramaGantt; Azure SQL
+  react-i18next; Syncfusion React Gantt (licença comunitária) só dentro de ScheduleGantt; Azure SQL
   (provisionado em produção, oferta gratuita em dev), App Service Linux em Brazil South, Key Vault,
   identidade gerenciada, Application Insights + OpenTelemetry; Terraform (azurerm, azuread) em
   infra/terraform; GitHub Actions chamando scripts do repositório. Node 24 até 28/10/2026, depois Node 26.
@@ -80,7 +80,8 @@ context: |
   anonimização a pedido em todo o sistema, inclusive auditoria; retenção configurável; nada de dado pessoal
   em URL ou log; segredos só no Key Vault, nunca no repo nem no Terraform.
 
-  Idioma: código, identificadores e comentários em inglês; mensagens de commit e títulos e descrições de
+  Idioma: código, identificadores e comentários em inglês, inclusive módulos, termos do negócio, tabelas e rotas
+  (glossário em docs/glossario.md, ADR-0074); mensagens de commit e títulos e descrições de
   PR em português do Brasil (tipos do Conventional Commits em inglês); specs, propostas, ADRs e docs em
   português do Brasil; interface e e-mails em pt-BR via arquivos de tradução.
 

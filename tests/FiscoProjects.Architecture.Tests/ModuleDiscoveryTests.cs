@@ -7,9 +7,9 @@ public sealed class ModuleDiscoveryTests
     public void ModuleAssemblies_AreFoundByName()
     {
         var modules = ModuleCatalog.FindModules(
-            ["FiscoProjects.Chamados", "FiscoProjects.Chamados.Contracts", "FiscoProjects.Projetos.Contracts"]);
+            ["FiscoProjects.Tickets", "FiscoProjects.Tickets.Contracts", "FiscoProjects.Projects.Contracts"]);
 
-        modules.Select(module => module.Namespace).Should().Equal("FiscoProjects.Chamados", "FiscoProjects.Projetos");
+        modules.Select(module => module.Namespace).Should().Equal("FiscoProjects.Projects", "FiscoProjects.Tickets");
     }
 
     [Fact(DisplayName = "Assemblies que não são módulos")]

@@ -15,7 +15,7 @@ src/Modules/<Modulo>/
 tests/FiscoProjects.<Modulo>.Tests/    testes do módulo
 ```
 
-- `<Modulo>` é uma palavra só, em PascalCase, sem pontos (por exemplo, `Chamados`). Os testes só reconhecem como módulo os assemblies `FiscoProjects.<Modulo>` e `FiscoProjects.<Modulo>.Contracts`; `Api` e `SharedKernel` não são módulos.
+- `<Modulo>` é uma palavra só, em inglês, em PascalCase e sem pontos (por exemplo, `Tickets`). Os nomes de código ficam em inglês, com a tradução dos termos em `docs/glossario.md` (ADR-0074). Os testes só reconhecem como módulo os assemblies `FiscoProjects.<Modulo>` e `FiscoProjects.<Modulo>.Contracts`; `Api` e `SharedKernel` não são módulos.
 - O namespace acompanha a pasta: `FiscoProjects.<Modulo>.Domain`, `FiscoProjects.<Modulo>.Application`, e assim por diante. Todo tipo do módulo fica numa das quatro camadas.
 
 ## Regras verificadas pelos testes
