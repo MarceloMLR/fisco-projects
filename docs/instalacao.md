@@ -56,7 +56,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## Configuração da instalação no FiscoProjects
 
-- Identificador (`oid`) do primeiro administrador (ADR-0006).
+- Primeiro administrador, em `Users:FirstAdministrator`: `Provider` `entra` e, em `ExternalId`, o identificador (`oid`) da pessoa no Entra ID. Ela recebe o papel Administrador na primeira entrada, ou na entrada seguinte se a instalação estiver sem administrador ativo; depois disso, os papéis são trocados na tela Usuários (ADR-0006).
 - Nome, logo e cor principal exibidos; a cor principal pinta as ações, o item ativo da barra lateral e o painel da página de entrada, e só é aceita se passar nas verificações de contraste descritas no design system (ADR-0003, ADR-0009, ADR-0050, ADR-0063, ADR-0067).
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
