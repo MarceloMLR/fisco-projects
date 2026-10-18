@@ -19,6 +19,17 @@ public sealed class DevelopmentMigrationTests(SqlServerFixture sqlServer)
         tables.Should().Contain(("alpha", "records"));
     }
 
+    [Fact(DisplayName = "Banco ainda não criado no desenvolvimento")]
+    public async Task Development_CreatesTheDatabaseEvenWithoutModules()
+    {
+        var connectionString = sqlServer.NewDatabase();
+
+        await using var app = await TestApp.ComposedAsync(TestApp.Development, _ => { },
+            builder => builder.Configuration[TestApp.ConnectionStringKey] = connectionString);
+
+        (await SqlServerQueries.DatabaseExistsAsync(connectionString, TestContext.Current.CancellationToken)).Should().BeTrue();
+    }
+
     [Fact(DisplayName = "API sobe em produção")]
     public async Task Production_DoesNotTouchTheDatabaseOnStartup()
     {

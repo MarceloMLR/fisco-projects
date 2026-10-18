@@ -19,10 +19,8 @@ internal static class TestApp
         new WebApplicationFactory<Program>().WithWebHostBuilder(host =>
         {
             host.UseEnvironment(environment);
-            if (connectionString is not null)
-            {
-                host.UseSetting(ConnectionStringKey, connectionString);
-            }
+            // Always set, so a developer's user secrets never point a test at their local database.
+            host.UseSetting(ConnectionStringKey, connectionString ?? string.Empty);
         });
 
     public static async Task<WebApplication> ComposedAsync(

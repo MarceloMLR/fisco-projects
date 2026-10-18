@@ -40,7 +40,7 @@ Contexto base, registro (`AddModuleDbContext<T>`), fábrica de tempo de design p
 ### 4. Aplicação das migrações
 
 - `ModuleMigrator` aplica, em sequência, as migrações pendentes de todos os contextos registrados. O EF Core cria o banco se não existir e usa uma trava para evitar duas aplicações ao mesmo tempo.
-- No desenvolvimento, um serviço de inicialização do host chama o `ModuleMigrator` antes de a API atender (registrado só quando o ambiente é `Development`, podendo ser desligado com `Database:MigrateOnStartup=false`).
+- No desenvolvimento, um serviço de inicialização do host cria o banco, se ainda não existir (`DatabaseCreator`), e chama o `ModuleMigrator` antes de a API atender (registrado só quando o ambiente é `Development`, podendo ser desligado com `Database:MigrateOnStartup=false`). Sem connection string, ele só registra um aviso, e a API sobe com o `/health` não saudável. No Azure, o banco é criado pela infraestrutura (Fundação-6).
 - Fora do desenvolvimento, o host nunca altera o banco ao subir; a publicação aplica um pacote de migração (migration bundle) do EF Core (Fundação-7, ADR-0055).
 - Alternativa: migrar ao subir também em produção. Mais simples, mas mistura publicação e execução e esconde falhas de migração atrás de uma API que não sobe.
 

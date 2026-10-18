@@ -32,11 +32,15 @@ A aplicação MUST conseguir aplicar, de uma vez, as migrações pendentes de to
 
 ### Requirement: Migração automática só no desenvolvimento
 
-Ao subir no ambiente de desenvolvimento, a API MUST aplicar as migrações pendentes de todos os módulos. Fora do desenvolvimento, a API MUST NOT alterar o banco ao subir; as migrações são aplicadas pela publicação.
+Ao subir no ambiente de desenvolvimento, a API MUST criar o banco, se ainda não existir, e aplicar as migrações pendentes de todos os módulos. Fora do desenvolvimento, a API MUST NOT criar nem alterar o banco ao subir; o banco vem da infraestrutura e as migrações, da publicação.
 
 #### Scenario: API sobe no desenvolvimento
 - **WHEN** a API sobe no ambiente de desenvolvimento com o banco acessível e migrações pendentes
 - **THEN** as migrações são aplicadas antes de a API atender requisições
+
+#### Scenario: Banco ainda não criado no desenvolvimento
+- **WHEN** a API sobe no ambiente de desenvolvimento e o banco configurado ainda não existe
+- **THEN** o banco é criado antes de a API atender requisições
 
 #### Scenario: API sobe em produção
 - **WHEN** a API sobe em produção com migrações pendentes
