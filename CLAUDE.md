@@ -123,6 +123,8 @@ npm run build        # gera src/FiscoProjects.Api/wwwroot, que a API serve
 - Textos visíveis só em `web/src/locales/pt-BR.json`, com chaves em inglês: texto escrito direto num componente reprova o lint, e chave inexistente reprova a checagem de tipos.
 - Quando a API muda, `npm run api:update` atualiza o contrato (`web/src/api/openapi.json`) e os tipos (`web/src/api/schema.ts`). Os dois são gerados, nunca editados à mão, e vão no commit; os testes reprovam se ficarem desatualizados.
 - `npm run format` corrige a formatação (Prettier).
+- Visual: cores, medidas e fontes vêm de `web/src/theme/tokens.json`, cópia exata do `tokens.json` do design system (para atualizar, copie o arquivo de novo). Componentes próprios usam as variáveis pelo nome do design system (`var(--sidebar-bg)`); cor escrita direto no código reprova os testes.
+- Tela nova: uma rota em `web/src/routes.tsx`, com o título no `handle`, e o componente `Page` de `web/src/shell`.
 
 Specs:
 

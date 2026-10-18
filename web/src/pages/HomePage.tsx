@@ -1,6 +1,6 @@
 import { Page } from '../shell/Page';
 
-// Meu trabalho (ADR-0070): the queue arrives with Síntese-1.
+// Home page, the person's work queue (ADR-0070); its content comes with the summary screens.
 export function HomePage() {
   return <Page />;
 }

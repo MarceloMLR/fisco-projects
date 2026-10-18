@@ -27,6 +27,6 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-  // An address that matches no screen goes to Início.
+  // An address that matches no screen goes to the home page.
   { path: '*', element: <Navigate to="/" replace /> },
 ];

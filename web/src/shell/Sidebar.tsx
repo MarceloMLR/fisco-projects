@@ -104,7 +104,7 @@ export function Sidebar({
             <Box
               component={NavLink}
               to={path}
-              // Início is current only on its own address; the others also inside their pages (a project, a ticket).
+              // Home is current only on its own address; the others also inside their pages (a project, a ticket).
               end={path === '/'}
               onClick={onNavigate}
               sx={{
