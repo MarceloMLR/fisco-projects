@@ -1,13 +1,8 @@
-import { useTranslation } from 'react-i18next';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { routes } from './routes';
 
-// Temporary page, replaced by the screen structure that comes with the design system.
+const router = createBrowserRouter(routes);
+
 export function App() {
-  const { t } = useTranslation();
-
-  return (
-    <main>
-      <h1>{t('app.name')}</h1>
-      <p>{t('app.underConstruction')}</p>
-    </main>
-  );
+  return <RouterProvider router={router} />;
 }
