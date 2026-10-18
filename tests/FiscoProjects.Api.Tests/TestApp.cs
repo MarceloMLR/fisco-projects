@@ -15,10 +15,16 @@ internal static class TestApp
 
     public const string ConnectionStringKey = "ConnectionStrings:FiscoProjects";
 
-    public static WebApplicationFactory<Program> RealHost(string environment, string? connectionString = null) =>
+    public static WebApplicationFactory<Program> RealHost(
+        string environment, string? connectionString = null, string? webRoot = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(host =>
         {
             host.UseEnvironment(environment);
+            if (webRoot is not null)
+            {
+                host.UseWebRoot(webRoot);
+            }
+
             // Always set, so a developer's user secrets never point a test at their local database.
             host.UseSetting(ConnectionStringKey, connectionString ?? string.Empty);
         });

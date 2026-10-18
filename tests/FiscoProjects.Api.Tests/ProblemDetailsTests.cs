@@ -12,12 +12,14 @@ public sealed class ProblemDetailsTests
     [Theory(DisplayName = "Rota inexistente")]
     [InlineData(TestApp.Development)]
     [InlineData(TestApp.Production)]
-    public async Task UnknownRoute_ReturnsNotFoundProblemDetails(string environment)
+    public async Task UnknownApiRoute_ReturnsNotFoundProblemDetails(string environment)
     {
-        await using var factory = TestApp.RealHost(environment);
+        // With a frontend build present, so the main page does not answer for API routes.
+        using var build = new FakeFrontendBuild();
+        await using var factory = TestApp.RealHost(environment, webRoot: build.Folder);
         using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/does-not-exist", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/does-not-exist", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         response.ShouldHaveMediaType(ResponseAssertions.ProblemJson);

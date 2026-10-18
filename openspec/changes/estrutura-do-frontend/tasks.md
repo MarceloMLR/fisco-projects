@@ -7,7 +7,7 @@
 
 ## 2. Host serve o frontend
 
-- [ ] 2.1 Servir o build no host (arquivos estáticos com cache, página principal para os caminhos de tela e 404 em Problem Details sob `/api`), com o build do Vite indo para o `wwwroot` e o proxy do Vite no desenvolvimento; testar "Página inicial", "Rota do frontend", "Arquivo do build" e "Rota inexistente"; verificar com `dotnet test` e abrindo a aplicação pelo host
+- [x] 2.1 Servir o build no host (arquivos estáticos com cache, página principal para os caminhos de tela e 404 em Problem Details sob `/api`), com o build do Vite indo para o `wwwroot` e o proxy do Vite no desenvolvimento; testar "Página inicial", "Rota do frontend", "Arquivo do build" e "Rota inexistente"; verificar com `dotnet test` e abrindo a aplicação pelo host
 
 ## 3. Contrato e tipos
 
