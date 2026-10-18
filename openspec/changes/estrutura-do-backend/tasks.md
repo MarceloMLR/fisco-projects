@@ -12,10 +12,10 @@
 
 ## 3. Comportamento comum da API
 
-- [ ] 3.1 Criar `AddFiscoProjectsApi` e `UseFiscoProjectsApi` no host, com o endereço `/health`, e o projeto `tests/FiscoProjects.Api.Tests` com o teste do cenário "Aplicação no ar"; verificar com `dotnet test`
-- [ ] 3.2 Configurar Problem Details para rota inexistente e erro inesperado; testar os cenários "Rota inexistente" e "Erro inesperado numa rota" nos ambientes de desenvolvimento e produção; verificar com `dotnet test`
-- [ ] 3.3 Publicar o contrato OpenAPI 3.1 só no desenvolvimento; testar os cenários "Contrato no ambiente de desenvolvimento" e "Contrato fora do desenvolvimento"; verificar com `dotnet test`
-- [ ] 3.4 Criar o grupo de rotas `/api` que o host entrega aos módulos; testar o cenário "Rota de um módulo"; verificar com `dotnet test`
+- [x] 3.1 Criar `AddFiscoProjectsApi` e `UseFiscoProjectsApi` no host, com o endereço `/health`, e o projeto `tests/FiscoProjects.Api.Tests` com o teste do cenário "Aplicação no ar"; verificar com `dotnet test`
+- [x] 3.2 Configurar Problem Details para rota inexistente e erro inesperado; testar os cenários "Rota inexistente" e "Erro inesperado numa rota" nos ambientes de desenvolvimento e produção; verificar com `dotnet test`
+- [x] 3.3 Publicar o contrato OpenAPI 3.1 só no desenvolvimento; testar os cenários "Contrato no ambiente de desenvolvimento" e "Contrato fora do desenvolvimento"; verificar com `dotnet test`
+- [x] 3.4 Criar o grupo de rotas `/api` que o host entrega aos módulos; testar o cenário "Rota de um módulo"; verificar com `dotnet test`
 
 ## 4. Regras de arquitetura
 
