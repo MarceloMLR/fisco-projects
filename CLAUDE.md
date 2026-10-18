@@ -125,8 +125,8 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
   1. Sempre uma branch nova a partir da `main` atualizada: `git switch main`, `git pull`, `git switch -c tipo/nome-da-change`. Nunca escreva na `main` (a regra "Protect main" do GitHub também impede).
   2. Proposta e implementação na branch, com testes; commits pequenos em Conventional Commits.
   3. Push e PR com `gh pr create`; roadmap com "PR aberto". Avise Marcelo com o resumo.
-  4. Depois da aprovação de Marcelo, rode o archive do OpenSpec (`/opsx:archive`) na mesma branch, atualize o roadmap para "Concluída" e faça push, para o PR levar código e specs juntos.
-  5. Faça o merge do PR, volte para a `main` (`git switch main`, `git pull`), apague a branch local com `git branch -d <branch>` (nunca `-D`) e a remota com `git push origin --delete <branch>`.
+  4. Depois da aprovação de Marcelo no chat (o GitHub não deixa o autor aprovar o próprio PR), rode o archive do OpenSpec (`/opsx:archive`) na mesma branch, atualize o roadmap para "Concluída" e faça push, para o PR levar código e specs juntos.
+  5. Faça o merge do PR; se o merge não puder ser feito pela sessão, peça a Marcelo para fazê-lo no GitHub. Depois volte para a `main` (`git switch main`, `git pull`), apague a branch local com `git branch -d <branch>` (nunca `-D`) e a remota com `git push origin --delete <branch>`.
   6. Só então comece a próxima change, de novo pelo passo 1.
   - Nunca use `push --force` nem reescreva histórico publicado.
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
