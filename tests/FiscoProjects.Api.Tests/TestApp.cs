@@ -13,13 +13,24 @@ internal static class TestApp
     public const string Development = "Development";
     public const string Production = "Production";
 
-    public static WebApplicationFactory<Program> RealHost(string environment) =>
-        new WebApplicationFactory<Program>().WithWebHostBuilder(host => host.UseEnvironment(environment));
+    public const string ConnectionStringKey = "ConnectionStrings:FiscoProjects";
 
-    public static async Task<WebApplication> ComposedAsync(string environment, Action<WebApplication> mapTestRoutes)
+    public static WebApplicationFactory<Program> RealHost(string environment, string? connectionString = null) =>
+        new WebApplicationFactory<Program>().WithWebHostBuilder(host =>
+        {
+            host.UseEnvironment(environment);
+            if (connectionString is not null)
+            {
+                host.UseSetting(ConnectionStringKey, connectionString);
+            }
+        });
+
+    public static async Task<WebApplication> ComposedAsync(
+        string environment, Action<WebApplication> mapTestRoutes, Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
+        configure?.Invoke(builder);
         builder.AddFiscoProjectsApi();
 
         var app = builder.Build();

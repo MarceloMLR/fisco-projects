@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+using FiscoProjects.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,39 +38,11 @@ internal sealed class TestDatabase : IAsyncDisposable
     public TContext NewContext<TContext>()
         where TContext : notnull => _services.CreateScope().ServiceProvider.GetRequiredService<TContext>();
 
-    public async Task<IReadOnlyList<(string Schema, string Table)>> TablesAsync()
-    {
-        await using var connection = new SqlConnection(ConnectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT TABLE_SCHEMA, TABLE_NAME FROM INFORMATION_SCHEMA.TABLES ORDER BY 1, 2";
-        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+    public Task<IReadOnlyList<(string Schema, string Table)>> TablesAsync() =>
+        SqlServerQueries.TablesAsync(ConnectionString, TestContext.Current.CancellationToken);
 
-        var tables = new List<(string, string)>();
-        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
-        {
-            tables.Add((reader.GetString(0), reader.GetString(1)));
-        }
-
-        return tables;
-    }
-
-    public async Task<IReadOnlyList<string>> AppliedMigrationsAsync(string schema)
-    {
-        await using var connection = new SqlConnection(ConnectionString);
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT MigrationId FROM [{schema}].[__EFMigrationsHistory] ORDER BY MigrationId";
-        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
-
-        var migrations = new List<string>();
-        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
-        {
-            migrations.Add(reader.GetString(0));
-        }
-
-        return migrations;
-    }
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string schema) =>
+        SqlServerQueries.AppliedMigrationsAsync(ConnectionString, schema, TestContext.Current.CancellationToken);
 
     public ValueTask DisposeAsync() => _services.DisposeAsync();
 }

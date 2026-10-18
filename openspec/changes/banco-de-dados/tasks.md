@@ -14,11 +14,11 @@
 ## 3. Migrações
 
 - [x] 3.1 Criar o `ModuleMigrator` para aplicar as migrações de todos os contextos registrados; testar "Banco vazio" e "Migrações já aplicadas"; verificar com `dotnet test`
-- [ ] 3.2 Aplicar as migrações ao subir a API só no desenvolvimento; testar "API sobe no desenvolvimento" e "API sobe em produção"; verificar com `dotnet test`
+- [x] 3.2 Aplicar as migrações ao subir a API só no desenvolvimento; testar "API sobe no desenvolvimento" e "API sobe em produção"; verificar com `dotnet test`
 
 ## 4. Saúde do banco
 
-- [ ] 4.1 Criar o `DatabaseHealthCheck` e registrá-lo no `/health`; ajustar o teste "Aplicação no ar" para usar o banco do contêiner e testar "Banco fora do ar" e "Banco não configurado"; verificar com `dotnet test`
+- [x] 4.1 Criar o `DatabaseHealthCheck` e registrá-lo no `/health`; ajustar o teste "Aplicação no ar" para usar o banco do contêiner e testar "Banco fora do ar" e "Banco não configurado"; verificar com `dotnet test`
 
 ## 5. Desenvolvimento local e documentação
 

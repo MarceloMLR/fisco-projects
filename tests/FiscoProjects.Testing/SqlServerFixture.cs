@@ -19,6 +19,22 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await _container.DisposeAsync();
 
+    /// <summary>Connection string to an empty database of its own, already created.</summary>
+    public async Task<string> CreateDatabaseAsync(CancellationToken cancellationToken)
+    {
+        var connectionString = NewDatabase();
+        var builder = new SqlConnectionStringBuilder(connectionString);
+        var database = builder.InitialCatalog;
+        builder.InitialCatalog = "master";
+
+        await using var connection = new SqlConnection(builder.ConnectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"CREATE DATABASE [{database}]";
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        return connectionString;
+    }
+
     /// <summary>Connection string to a database of its own. The database is created by the first migration.</summary>
     public string NewDatabase()
     {

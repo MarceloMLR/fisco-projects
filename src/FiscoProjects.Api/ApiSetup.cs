@@ -1,7 +1,10 @@
+using FiscoProjects.Persistence;
+
 namespace FiscoProjects.Api;
 
 /// <summary>
-/// Common HTTP behavior of the API: health, Problem Details errors, OpenAPI contract and the /api route group.
+/// Common HTTP behavior of the API: health (including the database), Problem Details errors, OpenAPI contract,
+/// the /api route group and the shared persistence services.
 /// Program.cs and the integration tests compose the application through these two methods.
 /// </summary>
 public static class ApiSetup
@@ -13,9 +16,16 @@ public static class ApiSetup
     {
         builder.Services.AddProblemDetails();
         builder.Services.AddOpenApi();
-        builder.Services.AddHealthChecks();
+        builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
+        builder.Services.AddFiscoProjectsPersistence();
 
-        // Modules register their services here, e.g. builder.Services.AddTicketsModule(builder.Configuration).
+        if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue("Database:MigrateOnStartup", true))
+        {
+            builder.Services.AddHostedService<DevelopmentDatabaseMigration>();
+        }
+
+        // Modules register their services here, e.g. builder.Services.AddTicketsModule(builder.Configuration),
+        // which calls services.AddModuleDbContext<TicketsDbContext>(configuration).
 
         return builder;
     }
