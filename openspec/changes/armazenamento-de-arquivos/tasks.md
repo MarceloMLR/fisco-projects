@@ -2,7 +2,7 @@
 
 ## 1. Contrato e regras de nomes
 
-- [ ] 1.1 Criar o módulo `Files` (projetos, solução e host) com o contrato `IFileStorage` e os dados devolvidos em `Files.Contracts`, e as regras de `FileNames` na `Application`; testar "Nome com caracteres não aceitos", nomes reservados, corte do nome e caminhos recusados; verificar com `dotnet build -warnaserror`, `dotnet test` e os testes de arquitetura
+- [x] 1.1 Criar o módulo `Files` (projetos, solução e host) com o contrato `IFileStorage` e os dados devolvidos em `Files.Contracts`, e as regras de `FileNames` na `Application`; testar "Nome com caracteres não aceitos", nomes reservados, corte do nome e caminhos recusados; verificar com `dotnet build -warnaserror`, `dotnet test` e os testes de arquitetura
 
 ## 2. Implementação local
 
