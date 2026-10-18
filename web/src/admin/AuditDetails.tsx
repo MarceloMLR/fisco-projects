@@ -121,7 +121,7 @@ export function AuditDetails({ entry }: { entry: AuditEntry }) {
           >
             <thead>
               <tr>
-                <Box component="th" scope="col" sx={{ width: 104 }}>
+                <Box component="th" scope="col" sx={{ width: '30%' }}>
                   {t('audit.details.field')}
                 </Box>
                 <th scope="col">{t('audit.details.before')}</th>

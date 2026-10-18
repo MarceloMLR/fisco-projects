@@ -52,7 +52,7 @@ O design system já tem o que a gaveta precisa:
 
 ### 3. Tabela de mudanças sem quebrar palavras
 
-`overflowWrap: 'break-word'` no lugar de `'anywhere'`. Com isso, a largura mínima de cada coluna é a da maior palavra, e só um texto maior que a coluna quebra no meio, como um e-mail longo. As três colunas dividem a largura da gaveta (`table-layout: auto`).
+`overflowWrap: 'break-word'` no lugar de `'anywhere'`: uma palavra só quebra no meio quando é maior que a coluna, como um e-mail longo. A tabela continua com `table-layout: fixed`. A coluna Campo passa de 104 px para 30% da largura, para "Papel no sistema" caber numa linha, e Antes e Depois dividem o resto, cerca de 200 px cada na gaveta de 640 px.
 
 ### 4. Filtro de pessoa
 
