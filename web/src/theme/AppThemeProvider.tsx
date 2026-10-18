@@ -30,7 +30,12 @@ body {
  */
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider theme={theme} defaultMode="system" storageManager={null}>
+    <ThemeProvider
+      theme={theme}
+      defaultMode="system"
+      storageManager={null}
+      disableTransitionOnChange
+    >
       <CssBaseline enableColorScheme />
       <GlobalStyles styles={globalStyles} />
       {children}

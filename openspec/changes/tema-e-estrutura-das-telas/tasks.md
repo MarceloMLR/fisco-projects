@@ -12,7 +12,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir as telas no Chromium, no computador e no celular, nos temas claro e escuro, contra o canvas aprovado, e registrar as capturas para o resumo
+- [x] 3.1 Conferir as telas no Chromium, no computador e no celular, nos temas claro e escuro, contra o canvas aprovado, e registrar as capturas para o resumo
 - [ ] 3.2 Rodar todos os scripts de `scripts/ci` sem erro, abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions
 
 ## Workflow follow-up
