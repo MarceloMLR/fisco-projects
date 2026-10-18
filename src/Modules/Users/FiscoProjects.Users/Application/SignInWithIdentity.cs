@@ -1,3 +1,4 @@
+using FiscoProjects.Audit.Contracts;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
 using Microsoft.Extensions.Options;
@@ -21,10 +22,11 @@ public abstract record SignInResult
 /// Signs in an identity: creates the user and the provider link on the first sign-in, with the least privileged
 /// role (ADR-0005, ADR-0006), and recognizes the same user afterwards, refreshing name and e-mail. The configured
 /// first administrator becomes Administrator when created, or later while the installation has no active
-/// administrator; a role chosen on the Users screen is never undone by the configuration.
+/// administrator; a role chosen on the Users screen is never undone by the configuration. The sign-in and the
+/// refusal of a deactivated user are security events of the audit (ADR-0039).
 /// </summary>
 public sealed class SignInWithIdentity(
-    IUserStore store, TimeProvider time, IOptions<FirstAdministratorOptions> firstAdministrator)
+    IUserStore store, TimeProvider time, IOptions<FirstAdministratorOptions> firstAdministrator, ISecurityEvents securityEvents)
 {
     public async Task<SignInResult> ExecuteAsync(ProviderIdentity identity, CancellationToken cancellationToken)
     {
@@ -39,6 +41,7 @@ public sealed class SignInWithIdentity(
         }
         else if (!user.IsActive)
         {
+            await securityEvents.SignInRefusedAsync(identity.Email, SignInRefusal.Inactive, cancellationToken);
             return new SignInResult.Inactive();
         }
         else
@@ -54,6 +57,7 @@ public sealed class SignInWithIdentity(
         }
 
         await store.SaveChangesAsync(cancellationToken);
+        await securityEvents.SignedInAsync(user.Id, identity.Provider, cancellationToken);
         return new SignInResult.SignedIn(user.Id);
     }
 }
