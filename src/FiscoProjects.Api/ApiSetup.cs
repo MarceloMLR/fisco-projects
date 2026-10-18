@@ -15,7 +15,7 @@ public static class ApiSetup
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks();
 
-        // Modules register their services here, e.g. builder.Services.AddChamadosModule(builder.Configuration).
+        // Modules register their services here, e.g. builder.Services.AddTicketsModule(builder.Configuration).
 
         return builder;
     }
@@ -33,7 +33,7 @@ public static class ApiSetup
 
         app.MapHealthChecks(HealthPath);
 
-        // Modules map their routes on this group, e.g. api.MapChamadosEndpoints().
+        // Modules map their routes on this group, e.g. api.MapTicketsEndpoints().
         _ = app.MapApiGroup();
 
         return app;
