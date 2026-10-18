@@ -6,9 +6,9 @@
 
 ## 2. Estrutura das telas
 
-- [ ] 2.1 Criar as rotas com React Router e as páginas Início, Projetos e Chamados com o título; testar "Endereço de uma página" e "Endereço desconhecido"; verificar com `npm test`
-- [ ] 2.2 Criar a estrutura no computador (barra lateral, cabeçalho com a trilha e conteúdo na altura da janela); testar "Navegação principal", "Item da página atual", "Trilha da página" e "Janela sem rolagem"; verificar com `npm test`
-- [ ] 2.3 Criar a estrutura no celular (barra superior e menu); testar "Menu no celular"; verificar com `npm test`
+- [x] 2.1 Criar as rotas com React Router e as páginas Início, Projetos e Chamados com o título; testar "Endereço de uma página" e "Endereço desconhecido"; verificar com `npm test`
+- [x] 2.2 Criar a estrutura no computador (barra lateral, cabeçalho com a trilha e conteúdo na altura da janela); testar "Navegação principal", "Item da página atual", "Trilha da página" e "Janela sem rolagem"; verificar com `npm test`
+- [x] 2.3 Criar a estrutura no celular (barra superior e menu); testar "Menu no celular"; verificar com `npm test`
 
 ## 3. Verificação final
 

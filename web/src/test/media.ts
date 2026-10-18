@@ -41,6 +41,10 @@ export function resetDevice(): void {
 }
 
 export function installMatchMedia(): void {
+  // Tests that run in the Node environment (no DOM) have no window to patch.
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.matchMedia = (query: string): MediaQueryList => ({
     media: query,
     matches: matches(query),
