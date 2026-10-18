@@ -21,7 +21,7 @@ Regras:
 | [0006](0006-papeis-gerenciados-no-banco-da-aplicacao.md) | Papéis globais e por projeto gerenciados no banco da aplicação | aceita | 2026-10-13 |
 | [0007](0007-somente-usuarios-da-empresa-na-v1.md) | Somente usuários da empresa na v1, com contas de convidado recusadas | aceita | 2026-10-13 |
 | [0008](0008-administracao-de-usuarios-na-v1.md) | Escopo da administração de usuários na v1, com desativação no sistema | aceita | 2026-10-13 |
-| [0009](0009-pagina-de-entrada-propria-sessao-e-saida.md) | Página de entrada própria com login pelo Entra ID, sessão e saída | aceita | 2026-10-13 |
+| [0009](0009-pagina-de-entrada-propria-sessao-e-saida.md) | Página de entrada própria com login pelo Entra ID, sessão e saída | aceita (login simulado substituído pelo ADR-0078) | 2026-10-13 |
 
 ## Telas gerais, clientes e projetos
 
@@ -140,3 +140,4 @@ Regras:
 | [0075](0075-projeto-compartilhado-de-persistencia.md) | Projeto compartilhado de persistência para os módulos | aceita | 2026-10-17 |
 | [0076](0076-vite-e-tipos-gerados-com-openapi-typescript.md) | Frontend com Vite e tipos da API gerados pelo openapi-typescript | aceita | 2026-10-18 |
 | [0077](0077-rotas-do-frontend-com-react-router.md) | Rotas do frontend com React Router | aceita | 2026-10-18 |
+| [0078](0078-entrada-local-sem-tenant.md) | Entrada local por e-mail no desenvolvimento e nas demonstrações, sem tenant | proposta | 2026-10-18 |
