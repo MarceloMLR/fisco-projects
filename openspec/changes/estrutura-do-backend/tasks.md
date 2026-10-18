@@ -8,7 +8,7 @@
 
 ## 2. Entidade com GUID versão 7
 
-- [ ] 2.1 Criar `Entity` no `SharedKernel` com `Id` em GUID versão 7, e o projeto `tests/FiscoProjects.SharedKernel.Tests` com os testes dos cenários "Entidade nova" e "Duas entidades"; verificar com `dotnet test`
+- [x] 2.1 Criar `Entity` no `SharedKernel` com `Id` em GUID versão 7, e o projeto `tests/FiscoProjects.SharedKernel.Tests` com os testes dos cenários "Entidade nova" e "Duas entidades"; verificar com `dotnet test`
 
 ## 3. Comportamento comum da API
 

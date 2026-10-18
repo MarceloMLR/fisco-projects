@@ -75,7 +75,7 @@ As bibliotecas proibidas em `Domain` e `Application` são identificadas por name
 
 ### 8. Ferramentas de teste
 
-xUnit v3, AwesomeAssertions e NSubstitute (ADR-0056), com `Microsoft.AspNetCore.Mvc.Testing` para os testes de integração. O nome do método de teste fica em inglês; o `DisplayName` do teste é o nome exato do cenário da spec, para rastrear spec e teste (ADR-0056).
+xUnit v3, AwesomeAssertions e NSubstitute (ADR-0056), com `Microsoft.AspNetCore.Mvc.Testing` para os testes de integração. Os testes rodam no Microsoft Testing Platform, ligado no `global.json`: o xUnit v3 atual não roda mais no `dotnet test` antigo (VSTest) com o SDK do .NET 10. O NSubstitute entra no primeiro teste que precisar de dublê. O nome do método de teste fica em inglês; o `DisplayName` do teste é o nome exato do cenário da spec, para rastrear spec e teste (ADR-0056).
 
 ### 9. Configuração de build na raiz
 
