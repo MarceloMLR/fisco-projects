@@ -22,12 +22,12 @@
 
 ## 5. Desenvolvimento local e documentação
 
-- [ ] 5.1 Criar `compose.yaml` e `.env.example` com o SQL Server local e os user secrets da API; verificar que `docker compose up -d` sobe o banco e que a API no desenvolvimento responde 200 em `/health`
-- [ ] 5.2 Atualizar o guia de módulos (contexto, schema, migrações, transações) e a seção 6 do `CLAUDE.md` (Docker, banco local, `dotnet ef`); verificar que os comandos documentados rodam como escritos
+- [x] 5.1 Criar `compose.yaml` e `.env.example` com o SQL Server local e os user secrets da API; verificar que `docker compose up -d` sobe o banco e que a API no desenvolvimento responde 200 em `/health`
+- [x] 5.2 Atualizar o guia de módulos (contexto, schema, migrações, transações) e a seção 6 do `CLAUDE.md` (Docker, banco local, `dotnet ef`); verificar que os comandos documentados rodam como escritos
 
 ## 6. Verificação final
 
-- [ ] 6.1 Rodar `dotnet build -warnaserror`, `dotnet test`, `dotnet format --verify-no-changes`, `openspec validate --all --strict` e o `cspell`, todos sem erro
+- [x] 6.1 Rodar `dotnet build -warnaserror`, `dotnet test`, `dotnet format --verify-no-changes`, `openspec validate --all --strict` e o `cspell`, todos sem erro
 
 ## Workflow follow-up
 
