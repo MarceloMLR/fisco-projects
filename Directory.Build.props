@@ -10,5 +10,9 @@
     <!-- Needed so unused usings (IDE0005) are reported by the build; XML docs are not required. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- Known vulnerabilities in direct or transitive packages fail the build (warnings as errors). -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
   </PropertyGroup>
 </Project>

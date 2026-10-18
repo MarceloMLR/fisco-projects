@@ -44,6 +44,7 @@ web/                                  React + TypeScript
 tests/                                testes do backend (unitários, integração, arquitetura, permissões)
 infra/terraform/                      módulos e configuração por instalação e ambiente
 infra/scripts/                        o que o Terraform não cobre (Exchange, SharePoint)
+scripts/ci/                           verificações do PR, chamadas pelo GitHub Actions (.github/workflows)
 docs/adr/                             decisões (MADR), leitura obrigatória da área antes de mudar
 docs/                                 discovery, apresentação, instalação, custos, design
 openspec/                             config, specs e changes do OpenSpec
@@ -106,7 +107,7 @@ dotnet tool restore
 
 - No desenvolvimento, a API cria o banco e aplica as migrações ao subir. Migrações novas com `dotnet ef`, conforme `src/Modules/README.md`.
 - `docker compose down` para o banco; os dados ficam no volume `sqlserver-data` (`docker compose down -v` apaga).
-- Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`.
+- Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`. `bash scripts/ci/spelling.sh` faz a mesma checagem do CI, com o dicionário de português.
 
 Specs:
 
@@ -114,7 +115,13 @@ Specs:
 openspec validate --all --strict
 ```
 
-Previstos para as próximas changes, e esta seção é atualizada quando existirem:
+Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `specs.sh` e `spelling.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
+
+- Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `specs.sh` e `spelling.sh` usam o Node da versão do `.nvmrc` e instalam as próprias ferramentas, fixadas em `scripts/ci/package.json`.
+- A regra "Protect main" exige a verificação `verify` aprovada. Renomear o job bloqueia o merge até a regra ser atualizada.
+- Pacote do NuGet com vulnerabilidade conhecida, direto ou transitivo, quebra o build.
+
+Previstos para as próximas changes, que entram nos scripts de `scripts/ci` quando existirem:
 
 ```
 cd web && npm ci && npm run lint && npm run typecheck && npm test

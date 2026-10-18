@@ -1,0 +1,10 @@
+{
+  "name": "fisco-projects-ci-tools",
+  "private": true,
+  "description": "Node tools used by the scripts in scripts/ci, pinned with the lockfile.",
+  "devDependencies": {
+    "@cspell/dict-pt-br": "2.4.4",
+    "@fission-ai/openspec": "1.14.3",
+    "cspell": "10.4.0"
+  }
+}
