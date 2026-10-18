@@ -34,9 +34,10 @@ function lastRequest() {
   return url.searchParams;
 }
 
+/** The rows of the list, also while the details drawer is open over it (and the list is hidden from readers). */
 function bodyRows() {
-  return within(screen.getByRole('grid', { name: text.table }))
-    .getAllByRole('row')
+  return within(screen.getByRole('grid', { name: text.table, hidden: true }))
+    .getAllByRole('row', { hidden: true })
     .slice(1);
 }
 
@@ -101,6 +102,9 @@ describe('Tela de Auditoria', () => {
     expect(
       screen.getByRole('button', { name: 'Período de 20/09/2026 a 19/10/2026' }),
     ).toHaveTextContent('20/09 – 19/10');
+    // No details until the administrator chooses a record.
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+    expect(bodyRows().map((row) => row.getAttribute('aria-selected'))).not.toContain('true');
   });
 
   it('Troca de papel na lista', async () => {
@@ -129,6 +133,10 @@ describe('Tela de Auditoria', () => {
       expect(rowTexts().map((cells) => cells[1])).toEqual(['Paulo Nogueira', 'Paulo Nogueira']);
     });
     expect(lastRequest().get('page')).toBe('1');
+    // The chosen name stays in the field; one that does not fit ends in an ellipsis.
+    const field = screen.getByRole('combobox', { name: text.filters.person });
+    expect(field).toHaveValue('Paulo Nogueira');
+    expect(field).toHaveStyle({ textOverflow: 'ellipsis' });
   });
 
   it('Filtro por tipo de item', async () => {
@@ -173,9 +181,10 @@ describe('Tela de Auditoria', () => {
 
   it('Detalhes de um registro', async () => {
     await openAudit();
-    const details = screen.getByRole('complementary', { name: text.details.label });
 
-    // The first record of the page, until another one is chosen.
+    fireEvent.click(rowOf(text.actions.User.RoleChanged));
+    const details = await screen.findByRole('dialog', { name: text.details.label });
+
     expect(within(details).getByRole('heading', { level: 2 })).toHaveTextContent(
       'Paulo Nogueira trocou um papel',
     );
@@ -187,29 +196,99 @@ describe('Tela de Auditoria', () => {
         .getAllByRole('row')
         .map((row) => row.textContent),
     ).toEqual(['CampoAntesDepois', 'Papel no sistemaUsuárioGerente de projeto']);
+    // Values break only where they do not fit, never in the middle of a word that does.
+    expect(within(changes).getAllByRole('cell')[1]).toHaveStyle({ overflowWrap: 'break-word' });
     expect(rowOf(text.actions.User.RoleChanged)).toHaveAttribute('aria-selected', 'true');
 
-    fireEvent.click(rowOf(text.actions.SignIn.SignInRefused));
-
+    fireEvent.click(within(details).getByRole('button', { name: ptBR.details.close }));
     await waitFor(() => {
-      expect(within(details).getByRole('heading', { level: 2 })).toHaveTextContent(
-        'Sistema recusou uma entrada',
-      );
+      expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
     });
-    expect(within(details).getByText('joao.silva@parceiro.example')).toBeInTheDocument();
-    expect(within(details).getByText(text.refusals.NotInDirectory)).toBeInTheDocument();
-    expect(within(details).queryByRole('table')).not.toBeInTheDocument();
+    expect(rowOf(text.actions.User.RoleChanged)).toHaveAttribute('aria-selected', 'false');
+
+    fireEvent.click(rowOf(text.actions.SignIn.SignInRefused));
+    const refused = await screen.findByRole('dialog', { name: text.details.label });
+    expect(within(refused).getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Sistema recusou uma entrada',
+    );
+    expect(within(refused).getByText('joao.silva@parceiro.example')).toBeInTheDocument();
+    expect(within(refused).getByText(text.refusals.NotInDirectory)).toBeInTheDocument();
+    expect(within(refused).queryByRole('table')).not.toBeInTheDocument();
     expect(rowOf(text.actions.SignIn.SignInRefused)).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Detalhes em gaveta sobreposta".
+describe('Detalhes em gaveta sobreposta', () => {
+  it('Detalhes abertos por cima da lista', async () => {
+    await openAudit();
+    const table = screen.getByRole('grid', { name: text.table });
+    // No column beside the list.
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+
+    fireEvent.click(rowOf(text.actions.User.Deactivated));
+    const details = await screen.findByRole('dialog', { name: text.details.label });
+
+    // Over the screen, modal, with the dimmed background behind it, and the list as it was.
+    expect(details).toHaveAttribute('aria-modal', 'true');
+    expect(document.querySelector('.MuiBackdrop-root')).toHaveStyle({
+      backgroundColor: 'var(--overlay)',
+    });
+    expect(details).toHaveStyle({ backgroundColor: 'var(--bg-elevated)' });
+    expect(screen.getByRole('grid', { name: text.table, hidden: true })).toBe(table);
+    expect(within(details).getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Paulo Nogueira desativou um usuário',
+    );
+  });
+
+  it('Fechar os detalhes', async () => {
+    await openAudit();
+    const close = () =>
+      waitFor(() => {
+        expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+      });
+
+    // By the keyboard: Enter on the row opens, Esc closes, and the focus goes back to the row.
+    const cell = within(rowOf(text.actions.User.Created)).getAllByRole('gridcell')[0];
+    if (cell === undefined) {
+      throw new Error('The row has no cells.');
+    }
+    cell.focus();
+    fireEvent.keyDown(cell, { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('dialog', { name: text.details.label }), {
+      key: 'Escape',
+    });
+    await close();
+    expect(cell).toHaveFocus();
+
+    // By a click outside it.
+    fireEvent.click(rowOf(text.actions.User.Created));
+    await screen.findByRole('dialog', { name: text.details.label });
+    const backdrop = document.querySelector('.MuiBackdrop-root');
+    if (backdrop === null) {
+      throw new Error('The drawer has no backdrop.');
+    }
+    fireEvent.click(backdrop);
+    await close();
+
+    // By its button.
+    fireEvent.click(rowOf(text.actions.User.Created));
+    fireEvent.click(
+      within(await screen.findByRole('dialog', { name: text.details.label })).getByRole('button', {
+        name: ptBR.details.close,
+      }),
+    );
+    await close();
   });
 
   it('Detalhes no celular', async () => {
     await openAudit(phoneWidth);
 
-    expect(
-      screen.queryByRole('complementary', { name: text.details.label }),
-    ).not.toBeInTheDocument();
     fireEvent.click(rowOf(text.actions.User.Deactivated));
     const details = await screen.findByRole('dialog', { name: text.details.label });
+
+    // The whole width of the screen, up to the widest the drawer gets on a computer.
+    expect(details).toHaveStyle({ width: '100%', maxWidth: '640px' });
 
     expect(within(details).getByRole('heading', { level: 2 })).toHaveTextContent(
       'Paulo Nogueira desativou um usuário',
@@ -220,7 +299,7 @@ describe('Tela de Auditoria', () => {
         .map((row) => row.textContent),
     ).toEqual(['CampoAntesDepois', 'SituaçãoAtivoInativo']);
 
-    fireEvent.click(within(details).getByRole('button', { name: text.details.close }));
+    fireEvent.click(within(details).getByRole('button', { name: ptBR.details.close }));
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
     });

@@ -74,7 +74,12 @@ export function PersonFilter({
       noOptionsText={t('audit.filters.noPeople')}
       popupIcon={<ExpandMoreOutlined />}
       slotProps={{ paper: { sx: { marginTop: 'var(--space-1)' } } }}
-      sx={{ width }}
+      sx={{
+        width,
+        // MUI keeps room on the right for icons it positions over the field; here they sit in the row, at the end.
+        '&.MuiAutocomplete-hasPopupIcon .MuiAutocomplete-inputRoot, &.MuiAutocomplete-hasClearIcon .MuiAutocomplete-inputRoot':
+          { paddingRight: 'var(--space-2)' },
+      }}
       renderInput={({ slotProps: { input, htmlInput } }) => (
         <InputBase
           ref={input.ref}
@@ -87,6 +92,8 @@ export function PersonFilter({
             ...fieldControl('sm', width),
             padding: '0 var(--space-2) 0 var(--space-3)',
             '& input::placeholder': { color: 'var(--text)', opacity: 1 },
+            // A name that does not fit ends in an ellipsis instead of being cut.
+            '& input': { textOverflow: 'ellipsis' },
             '& .MuiAutocomplete-endAdornment': {
               position: 'static',
               display: 'flex',

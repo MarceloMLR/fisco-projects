@@ -18,11 +18,11 @@ const cell = {
   borderTop: '1px solid var(--border)',
   textAlign: 'left',
   verticalAlign: 'top',
-  overflowWrap: 'anywhere',
+  overflowWrap: 'break-word',
 } as const;
 
 /**
- * Details of an audit record, as the side pane of the canvas: when, who did what, the item and the table of the
+ * Details of an audit record, shown in the details drawer (ADR-0081): when, who did what, the item and the table of the
  * changed fields, before and after.
  */
 export function AuditDetails({ entry }: { entry: AuditEntry }) {
@@ -121,7 +121,7 @@ export function AuditDetails({ entry }: { entry: AuditEntry }) {
           >
             <thead>
               <tr>
-                <Box component="th" scope="col" sx={{ width: 104 }}>
+                <Box component="th" scope="col" sx={{ width: '30%' }}>
                   {t('audit.details.field')}
                 </Box>
                 <th scope="col">{t('audit.details.before')}</th>

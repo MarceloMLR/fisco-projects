@@ -114,6 +114,9 @@
     "today": "Hoje, {{time}}",
     "yesterday": "Ontem, {{time}}"
   },
+  "details": {
+    "close": "Fechar"
+  },
   "audit": {
     "table": "Registros de auditoria",
     "columns": {
@@ -169,7 +172,6 @@
     },
     "details": {
       "label": "Registro selecionado",
-      "close": "Fechar",
       "changes": "Mudanças",
       "field": "Campo",
       "before": "Antes",
