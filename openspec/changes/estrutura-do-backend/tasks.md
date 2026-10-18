@@ -25,7 +25,7 @@
 
 ## 5. Verificação final
 
-- [ ] 5.1 Rodar `dotnet build -warnaserror`, `dotnet test`, `dotnet format --verify-no-changes` e `openspec validate --all --strict` na raiz, todos sem erro
+- [x] 5.1 Rodar `dotnet build -warnaserror`, `dotnet test`, `dotnet format --verify-no-changes` e `openspec validate --all --strict` na raiz, todos sem erro
 
 ## Workflow follow-up
 
