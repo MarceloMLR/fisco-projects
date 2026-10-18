@@ -21,6 +21,9 @@ public static class UsersModule
         services.AddScoped<IUserAccess>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<SignInWithIdentity>();
         services.AddScoped<GetSignedInUser>();
+        services.AddScoped<ChangeSystemRole>();
+        services.AddScoped<DeactivateUser>();
+        services.AddScoped<ReactivateUser>();
 
         services.AddOptions<FirstAdministratorOptions>()
             .Bind(configuration.GetSection(FirstAdministratorOptions.Section))

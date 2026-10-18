@@ -3,7 +3,7 @@
 ## 1. Papéis no módulo de usuários
 
 - [x] 1.1 Acrescentar o papel no sistema (`SystemRole` no contrato, `Role` no usuário, migração `SystemRoles`), o papel Usuário na primeira entrada e o primeiro administrador pela configuração (`Users:FirstAdministrator`, validada ao subir), com Paulo Nogueira no `appsettings.Development.json`; trocar `IUserAccess.IsActiveAsync` por `FindAsync`, guardado durante a requisição; testar "Papel na primeira entrada", "Primeiro administrador configurado", "Configuração depois da primeira entrada" e "Troca feita na tela respeitada"; verificar com `dotnet build -warnaserror` e `dotnet test`
-- [ ] 1.2 Criar os casos de uso de trocar o papel, desativar e reativar, com a proteção do último administrador ativo numa transação `Serializable`; testar "Trocar o papel do último administrador", "Desativar o último administrador", "Outro administrador ativo" e duas trocas simultâneas entre os dois últimos administradores, com SQL Server; verificar com `dotnet test`
+- [x] 1.2 Criar os casos de uso de trocar o papel, desativar e reativar, com a proteção do último administrador ativo numa transação `Serializable`; testar "Trocar o papel do último administrador", "Desativar o último administrador", "Outro administrador ativo" e duas trocas simultâneas entre os dois últimos administradores, com SQL Server; verificar com `dotnet test`
 
 ## 2. API da administração de usuários
 

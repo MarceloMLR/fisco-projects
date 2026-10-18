@@ -1,3 +1,4 @@
+using System.Data;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
@@ -29,6 +30,25 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess
 
     public Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken) =>
         db.Users.AnyAsync(user => user.IsActive && user.Role == SystemRole.Administrator, cancellationToken);
+
+    public Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.Users.AnyAsync(
+            user => user.Id != userId && user.IsActive && user.Role == SystemRole.Administrator, cancellationToken);
+
+    public Task<TResult> InSerializableTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> work, CancellationToken cancellationToken)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async token =>
+        {
+            // A repeated attempt starts from what is in the database, not from the changes of the failed one.
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
+            var result = await work(token);
+            await transaction.CommitAsync(token);
+            return result;
+        }, cancellationToken);
+    }
 
     async Task<UserAccess?> IUserAccess.FindAsync(Guid userId, CancellationToken cancellationToken)
     {
