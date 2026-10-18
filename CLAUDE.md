@@ -55,7 +55,7 @@ Hoje o repositório tem só a documentação. As pastas de código nascem nas pr
 
 ## 4. Convenções e não-negociáveis
 
-- Idioma: código, nomes, comentários, commits e PRs em inglês. Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
+- Idioma: código, nomes e comentários em inglês. Mensagens de commit e títulos e descrições de PR em português do Brasil (regra deste projeto, que substitui a do CLAUDE.md global). Specs, propostas, ADRs e docs em português do Brasil. Textos da interface e dos e-mails só em arquivos de tradução, com chaves em inglês (ADR-0013).
 - C#: nullable habilitado, avisos tratados como erro, `.editorconfig` com `dotnet format` (ADR-0061).
 - TypeScript em modo estrito, com ESLint e Prettier (ADR-0049, ADR-0061).
 - API REST em JSON sob `/api`, contrato OpenAPI gerado pelo ASP.NET Core, tipos do frontend gerados do contrato, erros em Problem Details (RFC 9457), identificadores GUID v7; o número do chamado é sequencial (ADR-0029, ADR-0061).
@@ -124,6 +124,7 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
   - Depois do merge: `git switch main`, `git pull`, `git branch -d <branch>` (nunca `-D`) e `git push origin --delete <branch>`.
   - Nunca use `push --force` nem reescreva histórico publicado.
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
+- Commits e PRs em português do Brasil: a descrição, o corpo do commit e o título e a descrição do PR. Tipo, `BREAKING CHANGE` e nomes de código continuam em inglês. Exemplo: `feat(chamados): adiciona troca do responsável em lote`.
 - Sem linhas de atribuição: commits sem `Co-Authored-By` nem outros trailers de autoria do Claude, e PRs sem o rodapé "Generated with Claude Code" (preferência de Marcelo).
 
 ## 10. O que não fazer
