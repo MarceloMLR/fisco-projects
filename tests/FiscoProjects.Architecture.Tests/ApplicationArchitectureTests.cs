@@ -32,6 +32,11 @@ public sealed class ApplicationArchitectureTests
         violations.Should().BeEmpty();
     }
 
+    [Fact(DisplayName = "Persistência compartilhada da aplicação não usa módulos")]
+    public void SharedPersistence_DoesNotUseModules() =>
+        ArchitectureRules.PersistenceIsIndependent(Application, ModuleCatalog.PersistenceNamespace, Modules)
+            .Should().BeEmpty();
+
     [Fact(DisplayName = "Núcleo compartilhado da aplicação é independente")]
     public void SharedKernel_IsIndependent() =>
         ArchitectureRules.SharedKernelIsIndependent(Application, ModuleCatalog.SharedKernelNamespace, Modules)

@@ -12,7 +12,9 @@ internal static partial class ModuleCatalog
 {
     public const string SharedKernelNamespace = "FiscoProjects.SharedKernel";
 
-    private static readonly HashSet<string> NotModules = ["Api", "SharedKernel"];
+    public const string PersistenceNamespace = "FiscoProjects.Persistence";
+
+    private static readonly HashSet<string> NotModules = ["Api", "SharedKernel", "Persistence", "Testing"];
 
     public static IReadOnlyList<ModuleRoot> FindModules(IEnumerable<string> assemblyNames) =>
         [.. assemblyNames

@@ -34,6 +34,15 @@ public sealed class BoundaryRulesTests
         violations.Should().ContainSingle().Which.Should().Contain("Contracts.TicketSummary").And.Contain("Domain.Ticket");
     }
 
+    [Fact(DisplayName = "Persistência compartilhada usa um módulo")]
+    public void SharedPersistenceUsingModule_IsReported()
+    {
+        var violations = ArchitectureRules.PersistenceIsIndependent(
+            Fixtures, FixtureModules.BrokenPersistenceNamespace, FixtureModules.All);
+
+        violations.Should().ContainSingle().Which.Should().Contain("BrokenPersistence.CustomerStore").And.Contain("OtherModule.Domain.Customer");
+    }
+
     [Fact(DisplayName = "Núcleo compartilhado usa um módulo")]
     public void SharedKernelUsingModuleOrWebFramework_IsReported()
     {

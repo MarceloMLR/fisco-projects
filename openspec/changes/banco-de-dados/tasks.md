@@ -3,11 +3,11 @@
 ## 1. Persistência compartilhada e regras de arquitetura
 
 - [x] 1.1 Criar `src/FiscoProjects.Persistence` com os pacotes do EF Core e do SQL Server, referenciado pelo host, e incluir o ADR-0075 no índice de ADRs; verificar que `dotnet build -warnaserror` passa
-- [ ] 1.2 Atualizar os testes de arquitetura: `Persistence` e `Testing` não são módulos, `Domain` e `Application` não usam `FiscoProjects.Persistence`, e ela não usa módulos; testar os cenários "Domínio usa a persistência compartilhada", "Persistência compartilhada usa um módulo" e "Assemblies que não são módulos" com exemplos; verificar com `dotnet test`
+- [x] 1.2 Atualizar os testes de arquitetura: `Persistence` e `Testing` não são módulos, `Domain` e `Application` não usam `FiscoProjects.Persistence`, e ela não usa módulos; testar os cenários "Domínio usa a persistência compartilhada", "Persistência compartilhada usa um módulo" e "Assemblies que não são módulos" com exemplos; verificar com `dotnet test`
 
 ## 2. Contexto base dos módulos
 
-- [ ] 2.1 Criar `ModuleDbContext<TSelf>`, `IModuleSchema`, `AddModuleDbContext<T>`, o registro de contextos, a fábrica de tempo de design e as convenções (UTC e `Id` gerado pela aplicação); verificar que `dotnet build -warnaserror` passa
+- [x] 2.1 Criar `ModuleDbContext<TSelf>`, `IModuleSchema`, `AddModuleDbContext<T>`, o registro de contextos, a fábrica de tempo de design e as convenções (UTC e `Id` gerado pela aplicação); verificar que `dotnet build -warnaserror` passa
 - [ ] 2.2 Criar `tests/FiscoProjects.Testing` com o `SqlServerFixture` (Testcontainers, imagem fixada) e os contextos de exemplo `alpha` e `beta` com migrações geradas pelo `dotnet ef` (manifesto de ferramentas em `.config/dotnet-tools.json`); verificar que `dotnet ef migrations list` mostra as migrações dos dois contextos
 - [ ] 2.3 Criar `tests/FiscoProjects.Persistence.Tests` com os cenários "Módulo com schema próprio", "Dois módulos no mesmo banco", "Data e hora em UTC", "Data e hora local" e "Entidade gravada"; verificar com `dotnet test`
 
