@@ -26,5 +26,7 @@ export function DelayedLoadingOverlay(props: GridLoadingOverlayProps) {
     return null;
   }
   // Transparent, so the bar does not hide the rows of the list being replaced.
-  return <GridLoadingOverlay {...props} style={{ ...props.style, backgroundColor: 'transparent' }} />;
+  return (
+    <GridLoadingOverlay {...props} style={{ ...props.style, backgroundColor: 'transparent' }} />
+  );
 }

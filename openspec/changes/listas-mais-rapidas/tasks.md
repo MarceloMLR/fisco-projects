@@ -18,14 +18,14 @@
 
 ## 2. Leituras pelo TanStack Query
 
-- [ ] 2.1 Preparar o TanStack Query:
+- [x] 2.1 Preparar o TanStack Query:
   - adicionar `@tanstack/react-query` 5.104.1 com versão fixa;
-  - criar `queryClient.ts` (configuração e novas tentativas) e `queries.ts` (`fetchOrThrow`, `ApiError`, `usersQuery`, `userSearchQuery`, `auditQuery`);
+  - criar `queryClient.ts` (configuração e novas tentativas) e `queries.ts` (`dataOf`, `ApiError`, `usersQuery`, `auditQuery`);
   - colocar o `QueryClientProvider` no `App` e no `renderApp`, com um cliente novo por teste;
   - limpar o cache no `SessionProvider` quando a sessão termina.
 
   Verificar com `npm run typecheck`, `npm test` e o `licenses` do `frontend.sh`.
-- [ ] 2.2 Passar `UsersPage`, `AdminLayout`, `AuditPage` e `PersonFilter` para as consultas, com `keepPreviousData` nas listas, o `loading` da regra do design e a invalidação de `['users']` e `['audit']` depois das ações. Testar:
+- [x] 2.2 Passar `UsersPage`, `AdminLayout`, `AuditPage` e `PersonFilter` para as consultas, com `keepPreviousData` nas listas, o `loading` da regra do design e a invalidação de `['users']` e `['audit']` depois das ações. Testar:
   - "Volta a uma lista já vista";
   - "Alteração atualiza as listas";
   - "Saída descarta os dados guardados";

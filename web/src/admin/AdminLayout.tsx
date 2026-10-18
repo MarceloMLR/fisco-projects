@@ -2,10 +2,10 @@ import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
-import { api } from '../api/client';
+import { usersQuery } from '../api/queries';
 import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
 
@@ -32,22 +32,8 @@ const sections = [
 export function AdminLayout() {
   const { t } = useTranslation();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
-  const [usersTotal, setUsersTotal] = useState<number | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void api
-      .GET('/api/users', { params: { query: { pageSize: 1 } } })
-      .then(({ data }) => {
-        if (active && data !== undefined) {
-          setUsersTotal(data.total);
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Only the count of the people, for the section Users and the title of its page.
+  const usersTotal = useQuery(usersQuery({ pageSize: 1 })).data?.total ?? null;
 
   const context: AdminContext = { usersTotal };
 

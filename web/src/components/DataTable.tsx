@@ -71,7 +71,12 @@ const toolsSx: SxProps<Theme> = {
   borderBottom: '1px solid var(--border)',
 };
 
-const gridAreaSx: SxProps<Theme> = { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' };
+const gridAreaSx: SxProps<Theme> = {
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+};
 
 const gridSx = {
   flex: 1,

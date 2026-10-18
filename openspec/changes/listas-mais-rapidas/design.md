@@ -36,7 +36,7 @@ Medições feitas no build de produção:
   - Nenhuma para respostas 4xx: 401, 403 e 422 não mudam ao repetir. O 401 já leva à entrada pelo middleware do cliente.
   - Uma para falha de rede ou 5xx.
   - Nos testes, nenhuma.
-- **Erros.** As consultas usam um `fetchOrThrow` que lança `ApiError` (status e Problem Details) quando o `openapi-fetch` não traz `data`. É assim que o TanStack Query reconhece o erro.
+- **Erros.** As consultas usam um `dataOf` que lança `ApiError` (status e Problem Details) quando o `openapi-fetch` não traz `data`. É assim que o TanStack Query reconhece o erro.
 - **Uma instância por aplicação.** O `App` cria uma na carga do módulo, e o `renderApp` dos testes cria uma nova a cada teste, para que um teste não veja o cache de outro.
 
 **Alternativas:**
@@ -49,9 +49,10 @@ Medições feitas no build de produção:
 
 `web/src/api/queries.ts` reúne as consultas com `queryOptions`. Cada função monta a chave, chama o cliente `api` com o `signal` do TanStack Query (cancela a chamada se a tela sai) e devolve os dados:
 
-- `usersQuery(params)` com a chave `['users', 'list', params]`, usada pela tela Usuários e pela contagem da Administração (`pageSize: 1`);
-- `userSearchQuery(search)` com a chave `['users', 'search', search]`, usada pelo filtro de pessoa e só pedida com o menu aberto (`enabled`);
+- `usersQuery(params)` com a chave `['users', 'list', params]`, usada pela tela Usuários, pela contagem da Administração (`pageSize: 1`) e pelo filtro de pessoa (`pageSize: 20`, só pedida com a lista aberta, por `enabled`);
 - `auditQuery(params)` com a chave `['audit', 'list', params]`.
+
+Os tipos dos parâmetros vêm do contrato gerado (`operations['ListUsers']`), sem tipos escritos à mão.
 
 Os parâmetros entram na chave já normalizados: busca sem espaços, `undefined` para "todos", o período em ISO. Assim, o mesmo filtro dá a mesma chave. Depois de trocar o papel, desativar ou reativar, a tela Usuários invalida `['users']` e `['audit']`. Isso refaz a lista, a contagem e a auditoria, e as que não estão abertas são refeitas quando voltarem à tela. Duas partes da tela que peçam a mesma chave ao mesmo tempo geram um pedido só. Isso também acaba com o pedido em dobro do `StrictMode` no desenvolvimento.
 

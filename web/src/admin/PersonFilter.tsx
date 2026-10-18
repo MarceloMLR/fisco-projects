@@ -1,9 +1,10 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Autocomplete from '@mui/material/Autocomplete';
 import InputBase from '@mui/material/InputBase';
-import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client';
+import { usersQuery } from '../api/queries';
 import { fieldControl } from '../components/fieldControl';
 import { useDebounced } from '../hooks/useDebounced';
 
@@ -31,30 +32,19 @@ export function PersonFilter({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [options, setOptions] = useState<PersonOption[]>([]);
   const search = useDebounced(input, searchDelay);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    let active = true;
-    // The typed text is the search, unless it is just the name of the person already chosen.
-    const term = value !== null && search === value.name ? '' : search.trim();
-    void api
-      .GET('/api/users', {
-        params: { query: { search: term === '' ? undefined : term, pageSize: optionsShown } },
-      })
-      .then(({ data }) => {
-        if (active && data !== undefined) {
-          setOptions(data.items.map(({ id, name }) => ({ id, name })));
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [open, search, value]);
+  // The typed text is the search, unless it is just the name of the person already chosen.
+  const term = value !== null && search === value.name ? '' : search.trim();
+  // Asked only with the list open; while the administrator types, the last options stay until the new ones arrive.
+  const { data } = useQuery({
+    ...usersQuery({ search: term === '' ? undefined : term, pageSize: optionsShown }),
+    enabled: open,
+    placeholderData: keepPreviousData,
+  });
+  const options = useMemo<PersonOption[]>(
+    () => data?.items.map(({ id, name }) => ({ id, name })) ?? [],
+    [data],
+  );
 
   return (
     <Autocomplete<PersonOption>

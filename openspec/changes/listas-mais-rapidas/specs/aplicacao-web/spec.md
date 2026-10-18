@@ -15,7 +15,7 @@ As respostas da API que as telas leem MUST ficar guardadas só na memória da p�
 
 #### Scenario: Alteração atualiza as listas
 - **WHEN** o administrador troca o papel de uma pessoa, a desativa ou a reativa
-- **THEN** a lista de usuários, a contagem da Administração e a Auditoria são pedidas de novo à API
+- **THEN** a lista de usuários e a contagem da Administração são pedidas de novo à API, e a Auditoria, aberta em seguida, mostra o registro da alteração
 
 #### Scenario: Saída descarta os dados guardados
 - **WHEN** a pessoa sai, ou a sessão termina, e alguém entra em seguida no mesmo navegador
