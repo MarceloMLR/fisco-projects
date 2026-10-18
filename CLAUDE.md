@@ -35,6 +35,7 @@ Monolito modular com Clean Architecture dentro de cada módulo, num único deplo
 src/
   FiscoProjects.Api/                  host: API, autenticação BFF, serve o build do React
   FiscoProjects.SharedKernel/         o mínimo comum (tipos base, eventos)
+  FiscoProjects.Persistence/          contexto base do EF Core, migrações e saúde do banco (ADR-0075)
   Modules/
     <Modulo>/
       FiscoProjects.<Modulo>/         Domain/ Application/ Infrastructure/ Endpoints/
@@ -79,7 +80,7 @@ Ainda não há módulo de negócio; o primeiro nasce na Acesso-1, seguindo o gui
 
 ## 6. Como rodar, buildar e testar
 
-Pré-requisitos: SDK do .NET 10 (o `global.json` aceita qualquer 10.0 a partir do 10.0.100) e o OpenSpec CLI.
+Pré-requisitos: SDK do .NET 10 (o `global.json` aceita qualquer 10.0 a partir do 10.0.100), Docker em execução (banco local e testes) e o OpenSpec CLI.
 
 Backend, na raiz do repositório:
 
@@ -91,7 +92,20 @@ dotnet run --project src/FiscoProjects.Api
 ```
 
 - `dotnet format FiscoProjects.slnx` (sem `--verify-no-changes`) corrige a formatação.
+- Os testes sobem o próprio SQL Server em contêiner (Testcontainers); sem o Docker rodando, os testes de banco e da API falham.
 - Com a API rodando no ambiente de desenvolvimento, a saúde fica em `/health` e o contrato em `/openapi/v1.json`.
+
+Banco local (uma vez por máquina; depois, só o `docker compose up -d`):
+
+```
+cp .env.example .env                  # e troque a senha
+docker compose up -d --wait
+dotnet user-secrets set "ConnectionStrings:FiscoProjects" "Server=localhost,1433;Database=FiscoProjects;User Id=sa;Password=<senha do .env>;TrustServerCertificate=True" --project src/FiscoProjects.Api
+dotnet tool restore
+```
+
+- No desenvolvimento, a API cria o banco e aplica as migrações ao subir. Migrações novas com `dotnet ef`, conforme `src/Modules/README.md`.
+- `docker compose down` para o banco; os dados ficam no volume `sqlserver-data` (`docker compose down -v` apaga).
 - Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`.
 
 Specs:
@@ -149,6 +163,8 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
 - Commits e PRs em português do Brasil: a descrição, o corpo do commit e o título e a descrição do PR. Tipo, `BREAKING CHANGE` e nomes de código continuam em inglês. Exemplo: `feat(chamados): adiciona troca do responsável em lote`.
 - Sem linhas de atribuição: commits sem `Co-Authored-By` nem outros trailers de autoria do Claude, e PRs sem o rodapé "Generated with Claude Code" (preferência de Marcelo).
+- Mensagens curtas e naturais, como uma pessoa escreveria: na maioria dos commits, só o título (por exemplo, `feat(api): health check do banco`). Corpo só quando o motivo não é óbvio, em uma ou duas frases. Nada de listar tarefas, IDs de change ou arquivos alterados.
+- Descrição de PR curta: o que muda, o que conferir e como testar, sem relatório. Commits sem assinatura automática do ambiente (`git config commit.gpgsign false` no clone), para não aparecer "Unverified".
 
 ## 10. O que não fazer
 

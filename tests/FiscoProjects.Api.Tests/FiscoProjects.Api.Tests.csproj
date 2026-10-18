@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/FiscoProjects.Api/FiscoProjects.Api.csproj" />
+    <ProjectReference Include="../FiscoProjects.Testing/FiscoProjects.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

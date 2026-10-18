@@ -18,6 +18,7 @@ internal static class ArchitectureRules
         "Microsoft.Graph",
         "Microsoft.Identity",
         "Azure",
+        ModuleCatalog.PersistenceNamespace,
     ];
 
     public static IReadOnlyList<string> LayersDependInward(ArchUnitNET.Domain.Architecture architecture, ModuleRoot module) =>
@@ -67,6 +68,14 @@ internal static class ArchitectureRules
         return Violations(architecture, sharedKernelNamespace,
             target => modules.Any(module => NamespaceRules.IsWithin(target, module.Namespace))
                 || IsAnyWithin(target, "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore", "Microsoft.Data.SqlClient"));
+    }
+
+    public static IReadOnlyList<string> PersistenceIsIndependent(
+        ArchUnitNET.Domain.Architecture architecture, string persistenceNamespace, IEnumerable<ModuleRoot> allModules)
+    {
+        var modules = allModules.ToList();
+        return Violations(architecture, persistenceNamespace,
+            target => modules.Any(module => NamespaceRules.IsWithin(target, module.Namespace)));
     }
 
     private static List<string> Violations(

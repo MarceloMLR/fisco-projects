@@ -15,7 +15,7 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 7 | 1 |
+| 1. Fundação | 7 | 2 |
 | 2. Acesso e administração | 5 | 0 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
@@ -25,14 +25,14 @@ As 49 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 3 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **49** | **1** |
+| **Total** | **49** | **2** |
 
 ## 1. Fundação
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Fundação-1 | `estrutura-do-backend` | Solução .NET 10, host da API, estrutura de módulos, testes de arquitetura, `/health`, OpenAPI e Problem Details | 0047, 0060, 0061, 0074 | Concluída em 17/10/2026 ([#3](https://github.com/MarceloMLR/fisco-projects/pull/3), [#4](https://github.com/MarceloMLR/fisco-projects/pull/4)) |
-| Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056 | Planejada |
+| Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056, 0075 | Concluída em 18/10/2026 ([#5](https://github.com/MarceloMLR/fisco-projects/pull/5)) |
 | Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Planejada |
 | Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061 | Planejada |
 | Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067 | Planejada |

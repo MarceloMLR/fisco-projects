@@ -48,6 +48,14 @@ public sealed class LayerRulesTests
         violations.Should().ContainSingle().Which.Should().Contain("Domain.Report").And.Contain("Microsoft.AspNetCore.Http.HttpContext");
     }
 
+    [Fact(DisplayName = "Domínio usa a persistência compartilhada")]
+    public void DomainUsingSharedPersistence_IsReported()
+    {
+        var violations = ArchitectureRules.BusinessLayersWithoutTechnology(Fixtures, FixtureModules.DomainUsesPersistence);
+
+        violations.Should().ContainSingle().Which.Should().Contain("Domain.Archive").And.Contain("FiscoProjects.Persistence.ModuleMigrator");
+    }
+
     [Fact(DisplayName = "Tipo fora das camadas")]
     public void TypeOutsideLayers_IsReported()
     {

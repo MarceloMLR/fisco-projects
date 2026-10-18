@@ -15,11 +15,13 @@ internal static class FixtureModules
     public static readonly ModuleRoot TypeOutsideLayers = new($"{Root}.TypeOutsideLayers");
 
     public const string BrokenKernelNamespace = $"{Root}.BrokenKernel";
+    public const string BrokenPersistenceNamespace = $"{Root}.BrokenPersistence";
+    public static readonly ModuleRoot DomainUsesPersistence = new($"{Root}.DomainUsesPersistence");
 
     public static readonly IReadOnlyList<ModuleRoot> All =
     [
         Valid, Other, DomainUsesApplication, ApplicationUsesInfrastructure, EndpointsUseInfrastructure,
-        DomainUsesTechnology, UsesOtherModuleInterior, ContractUsesInterior, TypeOutsideLayers,
+        DomainUsesTechnology, UsesOtherModuleInterior, ContractUsesInterior, TypeOutsideLayers, DomainUsesPersistence,
     ];
 
     public static readonly ArchUnitNET.Domain.Architecture Architecture =

@@ -19,6 +19,8 @@ public sealed class ModuleDiscoveryTests
         [
             "FiscoProjects.Api",
             "FiscoProjects.SharedKernel",
+            "FiscoProjects.Persistence",
+            "FiscoProjects.Testing",
             "FiscoProjects.Api.Tests",
             "FiscoProjects.Architecture.Tests",
             "Microsoft.AspNetCore.OpenApi",
