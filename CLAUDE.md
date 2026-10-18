@@ -92,6 +92,7 @@ dotnet run --project src/FiscoProjects.Api
 
 - `dotnet format FiscoProjects.slnx` (sem `--verify-no-changes`) corrige a formatação.
 - Com a API rodando no ambiente de desenvolvimento, a saúde fica em `/health` e o contrato em `/openapi/v1.json`.
+- Ortografia: o `cspell.json` configura o Code Spell Checker (código em inglês; documentação em português e inglês). As extensões recomendadas do VS Code, inclusive o dicionário de português, estão em `.vscode/extensions.json`. Palavras do projeto entram na lista `words` do `cspell.json`.
 
 Specs:
 
