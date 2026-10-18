@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FiscoProjects — Visão do Projeto</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  :root{--verde:#1f9d55;--vermelho:#e3342f;--ink:#1a2233;--muted:#5b6472;--bg:#f6f8fb;--card:#fff;--line:#e5e9f0}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+  .wrap{max-width:960px;margin:0 auto;padding:32px}
+  header{border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:24px}
+  h1{margin:0 0 4px;font-size:28px} .pitch{color:var(--muted);font-size:17px}
+  h2{font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:32px 0 12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+  .card p{margin:0 0 8px} .card p:last-child{margin-bottom:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .box{border-radius:10px;padding:16px 18px;border:1px solid var(--line);background:var(--card)}
+  .faz{border-top:4px solid var(--verde)} .nao{border-top:4px solid var(--vermelho)}
+  .faz h3{color:var(--verde)} .nao h3{color:var(--vermelho)} .box h3{margin:0 0 8px;font-size:16px}
+  .box h4{margin:12px 0 4px;font-size:14px;color:var(--muted)}
+  ul{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px} .chip{background:#eef2f8;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px}
+  .metas{display:grid;grid-template-columns:repeat(3,1fr);gap:16px} .meta{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+  .meta b{display:block;font-size:22px;color:var(--ink)} .meta span{color:var(--muted);font-size:13px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top} th{background:#eef2f8}
+  td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .flow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;text-align:center;overflow-x:auto}
+  .note{color:var(--muted);font-size:13px;margin:8px 0 0}
+  .todo{display:inline-block;background:#fff4e5;border:1px solid #f0c27a;color:#7a4b00;border-radius:4px;padding:0 6px;font-size:13px}
+  footer{margin-top:32px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
+  @media (max-width:720px){.wrap{padding:20px 16px}.grid2{grid-template-columns:1fr}.metas{grid-template-columns:1fr 1fr}}
+  @media print{body{background:#fff}.card,.box,.meta,table,.flow{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FiscoProjects</h1>
+    <div class="pitch">Projetos, cronogramas e chamados da equipe em um só lugar.</div>
+  </header>
+
+  <h2>O problema</h2>
+  <div class="card">
+    <p>Hoje, cada parte de um projeto vive num lugar diferente: o cronograma no MS Project ou em planilhas, os acessos aos portais dos clientes num Excel, os documentos soltos no SharePoint e os pedidos entre a equipe e os fornecedores sem um registro com prazo e responsável.</p>
+    <p>Fica difícil saber o que está atrasado, quem precisa responder o quê e se o projeto está no prazo. O FiscoProjects junta tudo isso por projeto, usando o Microsoft 365 que a empresa já tem.</p>
+  </div>
+
+  <h2>Como funciona</h2>
+  <div class="flow">
+    <pre class="mermaid">
+flowchart TD
+  A["Pessoa da empresa entra<br/>com a conta Microsoft"] --> B["Meu trabalho:<br/>o que pede ação hoje"]
+  B --> C["Projeto"]
+  C --> D["Cronograma:<br/>fases, tarefas e marcos"]
+  C --> E["Chamados para o time<br/>Funcional ou Desenvolvimento"]
+  C --> F["Documentos, links<br/>e acessos"]
+  D --> G["Marco pede<br/>termo de aceite"]
+  G --> H["PDF assinado:<br/>marco atingido"]
+  E --> I["Primeira resposta do time<br/>define o responsável"]
+  I --> J["Resolvido e confirmado<br/>por quem abriu"]
+  D --> K["Avisos por e-mail<br/>e no sino"]
+  E --> K
+  G --> K
+    </pre>
+  </div>
+
+  <h2>Escopo</h2>
+  <div class="grid2">
+    <div class="box faz"><h3>Faz</h3><ul>
+      <li>Entrada com a conta Microsoft da empresa, numa página própria do FiscoProjects</li>
+      <li>Meu trabalho: chamados, tarefas e aceites de cada pessoa, do mais urgente ao menos urgente</li>
+      <li>Projetos com cliente opcional, datas e progresso tirados do cronograma</li>
+      <li>Cronograma em dias úteis, com feriados, dependências, linha de base, caminho crítico e exportação para o MS Project</li>
+      <li>Chamados dentro de cada projeto, com prazos, conversa, anexos, menções e registro dos chamados abertos em fornecedores</li>
+      <li>Documentos no SharePoint, com versões e status</li>
+      <li>Links e acessos a portais do projeto, com senha protegida e importação da planilha atual</li>
+      <li>Termos de aceite por PDF assinado</li>
+      <li>Avisos por e-mail e no sino do sistema</li>
+      <li>Registro de todas as alterações e administração da instalação</li>
+      <li>Uso no computador e no celular, com tema claro e escuro</li>
+    </ul></div>
+    <div class="box nao"><h3>NÃO faz (nesta versão)</h3>
+      <h4>Fora do produto</h4>
+      <ul>
+        <li>Suporte geral sem projeto (catálogo de serviços, base de conhecimento)</li>
+        <li>Aceite por clique: todo aceite tem PDF assinado</li>
+        <li>Horas trabalhadas, orçamento e custos do projeto</li>
+        <li>Integração automática com o sistema de chamados dos fornecedores</li>
+      </ul>
+      <h4>Fica para depois</h4>
+      <ul>
+        <li>Clientes e fornecedores entrando no sistema</li>
+        <li>Filas compartilhadas, como a da TI da empresa</li>
+        <li>Importar arquivos do MS Project</li>
+        <li>Avisos pelo Teams</li>
+        <li>Painel de indicadores para a gestão</li>
+        <li>Versão em inglês</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Capacidades</h2>
+  <div class="chips">
+    <span class="chip">Entrada e acesso</span>
+    <span class="chip">Meu trabalho</span>
+    <span class="chip">Projetos e clientes</span>
+    <span class="chip">Cronograma</span>
+    <span class="chip">Chamados</span>
+    <span class="chip">Chamados em fornecedores</span>
+    <span class="chip">Documentos</span>
+    <span class="chip">Links</span>
+    <span class="chip">Acessos</span>
+    <span class="chip">Termos de aceite</span>
+    <span class="chip">Membros e permissões</span>
+    <span class="chip">Avisos</span>
+    <span class="chip">Auditoria</span>
+    <span class="chip">Administração</span>
+  </div>
+
+  <h2>Metas de sucesso</h2>
+  <div class="metas">
+    <div class="meta"><b>100%</b><span>dos projetos em andamento com cronograma no sistema, em até 3 meses</span></div>
+    <div class="meta"><b>1 mês</b><span>para tirar todos os acessos dos projetos ativos da planilha</span></div>
+    <div class="meta"><b>80%</b><span>das pessoas usando o sistema toda semana</span></div>
+    <div class="meta"><b>90%</b><span>dos chamados com primeira resposta no prazo</span></div>
+    <div class="meta"><b>85%</b><span>dos chamados resolvidos no prazo</span></div>
+    <div class="meta"><b>80%</b><span>dos marcos atingidos na data planejada</span></div>
+  </div>
+  <p class="note">Metas iniciais, num padrão usual de mercado, revistas depois de 3 meses de uso.</p>
+
+  <h2>Quanto custa</h2>
+  <table>
+    <thead><tr><th>Cenário</th><th>O que inclui</th><th>Por mês</th></tr></thead>
+    <tbody>
+      <tr><td>Recomendado</td><td>Servidor da aplicação e banco de dados com folga para crescer</td><td class="num">≈ R$ 170</td></tr>
+      <tr><td>Econômico</td><td>Mesmo servidor, banco menor (cresce depois sem migração)</td><td class="num">≈ R$ 107</td></tr>
+      <tr><td>Demonstração</td><td>Servidor da aplicação com banco na oferta gratuita</td><td class="num">≈ R$ 76</td></tr>
+      <tr><td>Equipe maior</td><td>Servidor e banco um nível acima</td><td class="num">≈ R$ 342</td></tr>
+      <tr><td>Sem parada nas atualizações</td><td>Servidor que publica versões novas sem tirar o sistema do ar</td><td class="num">≈ R$ 609</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Preços de tabela da Microsoft para servidores no Brasil, consultados em 15/10/2026, sem impostos. As licenças do Microsoft 365 não entram na conta, porque a empresa já as tem. Reconsultar os preços antes de cada apresentação.</p>
+
+  <h2>Governança e compliance</h2>
+  <div class="card"><ul>
+    <li>Só pessoas da empresa entram, com a conta Microsoft delas; convidados de fora são recusados.</li>
+    <li>O FiscoProjects nunca vê nem guarda a senha da conta Microsoft de ninguém.</li>
+    <li>As senhas dos portais ficam protegidas, aparecem escondidas na tela e nunca vão por e-mail.</li>
+    <li>Toda alteração fica registrada: quem fez, quando e o que mudou. O registro é guardado por 5 anos (prazo ajustável) e ninguém altera nem apaga esse registro pelo sistema.</li>
+    <li>Quem sai da empresa pode ter nome e e-mail removidos do sistema sem perder o histórico dos projetos (LGPD).</li>
+    <li>Os dados e as cópias de segurança ficam no Brasil, e a recuperação das cópias é testada a cada 3 meses.</li>
+    <li>Se algo grave acontecer, o sistema volta ao ar em até 4 horas, perdendo no máximo alguns minutos de dados.</li>
+    <li>Os termos de aceite só são vistos pelo gerente do projeto, pelos administradores e por quem assina.</li>
+    <li>Só o administrador exclui um projeto, depois de ver o que será apagado e digitar o código do projeto.</li>
+    <li>Prazos de guarda e validade das assinaturas: <span class="todo">a validar</span> com a assessoria jurídica de cada empresa.</li>
+  </ul></div>
+
+  <h2>Quem decide</h2>
+  <table><thead><tr><th>Papel</th><th>Pessoa/Time</th><th>Aprova</th></tr></thead>
+  <tbody>
+    <tr><td>Dono do produto</td><td>Marcelo Ribeiro</td><td>Decisões do produto, telas, cada mudança antes de ser construída e cada publicação</td></tr>
+    <tr><td>Administrador do sistema</td><td>Definido em cada empresa</td><td>Pessoas e papéis, cadastros, configurações e exclusão de projetos</td></tr>
+    <tr><td>Gerente de projeto</td><td>Em cada projeto</td><td>Cronograma, situação do projeto, termos de aceite, documentos e equipe</td></tr>
+    <tr><td>Líder técnico</td><td>Em cada projeto</td><td>Quem atende cada chamado, equipe técnica e documentos</td></tr>
+    <tr><td>TI da empresa</td><td>Administrador do Microsoft 365</td><td>Quem pode entrar, acesso direto ao SharePoint e caixa de envio dos e-mails</td></tr>
+    <tr><td>Jurídico</td><td>Advogado</td><td>Contrato antes de vender o sistema, assinaturas dos termos e prazos de guarda dos dados</td></tr>
+  </tbody></table>
+
+  <footer>Gerado a partir do discovery do projeto — documento de alinhamento, não técnico. Discovery encerrado em 17/10/2026.</footer>
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:"neutral"});</script>
+</body>
+</html>

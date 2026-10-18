@@ -1,0 +1,64 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.rsuser
+.vs/
+TestResults/
+*.trx
+coverage/
+coverage*.xml
+*.coverage
+artifacts/
+
+# Node / React
+node_modules/
+web/dist/
+web/build/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Terraform (keep .terraform.lock.hcl and *.tfvars without secrets)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Secrets and local configuration (never commit)
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+*.p12
+*.pem
+*.key
+secrets.json
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+.DS_Store
+Thumbs.db
