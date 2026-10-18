@@ -1,7 +1,9 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
+import { marina, problem, server } from '../test/server';
 
 const navigationName = ptBR.shell.mainNavigation;
 
@@ -73,6 +75,8 @@ describe('Estrutura no celular', () => {
 
     fireEvent.click(screen.getByRole('button', { name: ptBR.shell.openMenu }));
     const menu = await screen.findByRole('dialog', { name: ptBR.shell.menu });
+    expect(menu).toHaveTextContent(marina.name);
+    expect(menu).toHaveTextContent(marina.email);
     const items = within(menu)
       .getAllByRole('link')
       .map((link) => link.textContent);
@@ -84,5 +88,48 @@ describe('Estrutura no celular', () => {
       expect(screen.queryByRole('dialog', { name: ptBR.shell.menu })).not.toBeInTheDocument();
     });
     expect(screen.getByRole('banner')).toHaveTextContent(ptBR.pages.projects.title);
+  });
+});
+
+describe('Conta no cabeçalho', () => {
+  it('Conta no cabeçalho', async () => {
+    await renderApp('/');
+
+    const account = screen.getByRole('button', {
+      name: ptBR.shell.account.replace('{{name}}', marina.name),
+    });
+    expect(account).toHaveTextContent('MC');
+    expect(account).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(account);
+
+    const menu = await screen.findByRole('menu', { name: ptBR.shell.accountMenu });
+    expect(account).toHaveAttribute('aria-expanded', 'true');
+    expect(menu).toHaveTextContent(marina.name);
+    expect(menu).toHaveTextContent(marina.email);
+    expect(within(menu).getByRole('menuitem', { name: ptBR.shell.signOut })).toBeInTheDocument();
+  });
+
+  it('Sair', async () => {
+    let signedOutCalls = 0;
+    server.use(
+      http.post('/api/session/sign-out', ({ request }) => {
+        signedOutCalls++;
+        expect(request.headers.get('X-CSRF')).toBe('1');
+        server.use(http.get('/api/session', () => problem(401)));
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { router } = await renderApp('/projects');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: ptBR.shell.account.replace('{{name}}', marina.name) }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: ptBR.shell.signOut }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: ptBR.signIn.title }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect(signedOutCalls).toBe(1);
   });
 });

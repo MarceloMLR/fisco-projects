@@ -4,7 +4,9 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router';
+import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
+import { SessionPerson } from './AccountMenu';
 import { MobileTopBar } from './MobileTopBar';
 import { useCurrentPage } from './pages';
 import { Sidebar } from './Sidebar';
@@ -19,9 +21,16 @@ const menuId = 'main-menu';
 export function AppShell() {
   const { t } = useTranslation();
   const page = useCurrentPage();
+  const { session } = useSession();
   const title = t(page.titleKey);
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // The shell is only reached through RequireSession.
+  if (session.status !== 'signed-in') {
+    return null;
+  }
+  const { user } = session;
 
   if (desktop) {
     return (
@@ -39,7 +48,7 @@ export function AppShell() {
           '& > nav': { gridColumn: 1, gridRow: '1 / -1' },
         }}
       >
-        <TopBar title={title} />
+        <TopBar title={title} user={user} />
         <Sidebar />
         <Box
           component="main"
@@ -107,6 +116,18 @@ export function AppShell() {
           backdrop: { sx: { backgroundColor: 'var(--overlay)' } },
         }}
       >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-3)',
+            flex: 'none',
+            padding: '16px 16px 8px',
+            color: 'var(--sidebar-text-active)',
+          }}
+        >
+          <SessionPerson user={user} mutedColor="var(--sidebar-muted)" />
+        </Box>
         <Sidebar brand={false} onNavigate={closeMenu} />
       </Drawer>
       <Box

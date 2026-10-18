@@ -13,7 +13,7 @@
 
 - [x] 3.1 Criar o cliente HTTP (openapi-fetch, `X-CSRF`), a sessão no frontend e a proteção das rotas, com MSW nos testes; testar "Tela aberta sem sessão", "Página de entrada com sessão" e "Sessão expirada na tela"; verificar com `npm test`, `npm run lint` e `npm run typecheck`
 - [x] 3.2 Criar a página de entrada do canvas, com o e-mail lembrado e as mensagens de recusa; testar "E-mail lembrado" e a entrada e a recusa na tela; verificar com `npm test`
-- [ ] 3.3 Acrescentar o avatar com o menu da conta no cabeçalho e o bloco da pessoa no menu do celular; testar "Conta no cabeçalho", "Menu no celular" e "Sair" (tela); verificar com `npm test`
+- [x] 3.3 Acrescentar o avatar com o menu da conta no cabeçalho e o bloco da pessoa no menu do celular; testar "Conta no cabeçalho", "Menu no celular" e "Sair" (tela); verificar com `npm test`
 
 ## 4. Verificação final
 
