@@ -32,6 +32,9 @@
     },
     "users": {
       "title": "Usuários"
+    },
+    "audit": {
+      "title": "Auditoria"
     }
   },
   "signIn": {
@@ -110,5 +113,84 @@
     "now": "Agora",
     "today": "Hoje, {{time}}",
     "yesterday": "Ontem, {{time}}"
+  },
+  "audit": {
+    "table": "Registros de auditoria",
+    "columns": {
+      "when": "Quando",
+      "who": "Quem",
+      "what": "O quê"
+    },
+    "system": "Sistema",
+    "filters": {
+      "person": "Pessoa",
+      "allPeople": "Todas as pessoas",
+      "noPeople": "Nenhuma pessoa encontrada",
+      "type": "Tipo de item",
+      "allTypes": "Todos os tipos",
+      "period": "Período",
+      "periodValue": "Período de {{from}} a {{to}}",
+      "from": "De",
+      "to": "Até"
+    },
+    "itemTypes": {
+      "SignIn": "Entradas",
+      "User": "Usuários"
+    },
+    "displayedRows": "{{from}}–{{to}} de {{total}} no período",
+    "empty": "Nenhum registro no período com esses filtros.",
+    "loadFailed": "Não foi possível carregar a auditoria. Tente de novo.",
+    "actions": {
+      "User": {
+        "Created": "Criou um usuário",
+        "Updated": "Alterou um usuário",
+        "Deleted": "Excluiu um usuário",
+        "RoleChanged": "Trocou um papel",
+        "Deactivated": "Desativou um usuário",
+        "Reactivated": "Reativou um usuário"
+      },
+      "SignIn": {
+        "SignedIn": "Entrou no sistema",
+        "SignInRefused": "Recusou uma entrada"
+      },
+      "Other": {
+        "Created": "Criou um item",
+        "Updated": "Alterou um item",
+        "Deleted": "Excluiu um item"
+      }
+    },
+    "providers": {
+      "local": "Entrada local",
+      "entra": "Conta Microsoft"
+    },
+    "refusals": {
+      "NotInDirectory": "fora do diretório",
+      "Inactive": "conta desativada"
+    },
+    "details": {
+      "label": "Registro selecionado",
+      "close": "Fechar",
+      "changes": "Mudanças",
+      "field": "Campo",
+      "before": "Antes",
+      "after": "Depois",
+      "identity": "Identidade",
+      "reason": "Motivo",
+      "provider": "Forma de entrada",
+      "item": {
+        "User": "Usuário",
+        "Other": "Item"
+      },
+      "secret": "Alterado",
+      "none": "—"
+    },
+    "fields": {
+      "User": {
+        "Name": "Nome",
+        "Email": "E-mail",
+        "Role": "Papel no sistema",
+        "IsActive": "Situação"
+      }
+    }
   }
 }

@@ -19,6 +19,7 @@ import { Select } from '../components/Select';
 import { StatusBadge } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
 import { formatLastAccess } from '../format/dates';
+import { useDebounced } from '../hooks/useDebounced';
 import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
 import { useAdminContext } from './adminContext';
@@ -28,20 +29,6 @@ const searchDelay = 300;
 
 type RoleFilter = 'all' | SystemRole;
 type StatusFilter = 'all' | UserRow['status'];
-
-/** The value after the person stops typing for a moment, so the list is not asked again on every key. */
-function useDebounced<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebounced(value);
-    }, delay);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-  return debounced;
-}
 
 /**
  * Users of the Administration, as in the canvas (ADR-0008): people in alphabetical order, with search, filters by

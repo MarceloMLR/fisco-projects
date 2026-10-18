@@ -110,4 +110,46 @@ describe('Situação', () => {
     expect(badge.querySelector('svg')).not.toBeNull();
     expect(getComputedStyle(badge).backgroundColor).not.toBe('');
   });
+
+  it('Linha escolhida e texto do rodapé', () => {
+    const onRowChoose = vi.fn();
+    render(
+      <AppThemeProvider>
+        <div style={{ height: 600, display: 'flex' }}>
+          <DataTable
+            label="People"
+            rows={people}
+            columns={[{ field: 'name', headerName: 'Person', flex: 1 }]}
+            rowCount={312}
+            page={1}
+            pageSize={3}
+            onPageChange={vi.fn()}
+            selectedRowId="2"
+            onRowChoose={onRowChoose}
+            displayedRowsLabel={({ from, to, count }) =>
+              `${String(from)}-${String(to)} of ${String(count)} in the period`
+            }
+          />
+        </div>
+      </AppThemeProvider>,
+    );
+
+    const rows = within(screen.getByRole('grid', { name: 'People' }))
+      .getAllByRole('row')
+      .slice(1);
+    expect(rows.map((row) => row.getAttribute('aria-selected'))).toEqual([
+      'false',
+      'true',
+      'false',
+    ]);
+    expect(screen.getByText('1-3 of 312 in the period')).toBeInTheDocument();
+
+    fireEvent.click(within(rows[2] ?? document.body).getByText('Marina Costa'));
+    fireEvent.keyDown(within(rows[0] ?? document.body).getByRole('gridcell'), { key: 'Enter' });
+
+    expect(onRowChoose.mock.calls.map(([person]) => (person as Person).name)).toEqual([
+      'Marina Costa',
+      'Beatriz Lima',
+    ]);
+  });
 });

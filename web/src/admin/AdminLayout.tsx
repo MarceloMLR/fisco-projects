@@ -1,4 +1,5 @@
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
+import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useEffect, useState } from 'react';
@@ -11,14 +12,22 @@ import type { AdminContext } from './adminContext';
 const sections = [
   {
     labelKey: 'admin.sections.people',
-    items: [{ path: '/admin/users', labelKey: 'pages.users.title', icon: GroupOutlined }],
+    items: [
+      { path: '/admin/users', labelKey: 'pages.users.title', icon: GroupOutlined, counted: true },
+      {
+        path: '/admin/audit',
+        labelKey: 'pages.audit.title',
+        icon: HistoryOutlined,
+        counted: false,
+      },
+    ],
   },
 ] as const;
 
 /**
- * Administration area, as in the Users screen of the canvas: the sections in a column on the left (fp-nav2 in a
- * fp-pane--nav) and the section on the right. Each section joins it with its own change. On the phone the
- * column is left out, since there is a single section.
+ * Administration area, as in the canvas: the sections in a column on the left (fp-nav2 in a fp-pane--nav) and the
+ * section on the right. Each section joins it with its own change. On the phone the column is left out, and each
+ * section is reached from the address; the canvas has no phone version of the Administration.
  */
 export function AdminLayout() {
   const { t } = useTranslation();
@@ -92,7 +101,7 @@ export function AdminLayout() {
               >
                 {t(section.labelKey)}
               </Box>,
-              ...section.items.map(({ path, labelKey, icon: Icon }) => (
+              ...section.items.map(({ path, labelKey, icon: Icon, counted }) => (
                 <li key={path}>
                   <Box
                     component={NavLink}
@@ -130,7 +139,7 @@ export function AdminLayout() {
                     >
                       {t(labelKey)}
                     </Box>
-                    {usersTotal !== null && (
+                    {counted && usersTotal !== null && (
                       <Box
                         component="span"
                         sx={{

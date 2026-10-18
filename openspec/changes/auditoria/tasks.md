@@ -15,7 +15,7 @@
 
 ## 4. Tela de Auditoria
 
-- [ ] 4.1 Acrescentar à `DataTable` a linha selecionada e o texto do rodapé, e o avatar de Sistema; criar a seção Auditoria na Administração (rota `/admin/audit`, trilha, item "Auditoria" em "Pessoas e segurança") e a tela do canvas, com os filtros de pessoa, tipo e período, o painel de detalhes (gaveta abaixo de 1200px) e os textos dos registros num lugar só; testar "Lista da auditoria", "Troca de papel na lista", "Filtro por pessoa", "Filtro por tipo de item", "Filtro por período" e "Detalhes de um registro"; verificar com `npm test`, `npm run lint` e `npm run typecheck`
+- [x] 4.1 Acrescentar à `DataTable` a linha selecionada e o texto do rodapé, e o avatar de Sistema; criar a seção Auditoria na Administração (rota `/admin/audit`, trilha, item "Auditoria" em "Pessoas e segurança") e a tela do canvas, com os filtros de pessoa, tipo e período, o painel de detalhes (gaveta abaixo de 1200px) e os textos dos registros num lugar só; testar "Lista da auditoria", "Troca de papel na lista", "Filtro por pessoa", "Filtro por tipo de item", "Filtro por período" e "Detalhes de um registro"; verificar com `npm test`, `npm run lint` e `npm run typecheck`
 
 ## 5. Verificação final
 
