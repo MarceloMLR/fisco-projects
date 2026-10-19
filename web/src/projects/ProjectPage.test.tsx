@@ -33,6 +33,7 @@ beforeEach(() => {
     canChangeStatus: true,
     canManagePeople: true,
     canManageManagers: true,
+    canEditSchedule: true,
   };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
@@ -105,7 +106,7 @@ describe('Cabeçalho do projeto', () => {
     expect(meta).toHaveTextContent('Alfa Distribuidora');
     expect(meta).toHaveTextContent(`${text.header.manager} Marina Costa`);
     expect(meta).toHaveTextContent(`${text.header.techLead} Rafael Souza`);
-    expect(meta).toHaveTextContent(text.noSchedule);
+    expect(meta).toHaveTextContent('05/10 – 03/11/2026');
     expect(screen.getByTestId('project-logo').querySelector('img')).toHaveAttribute(
       'src',
       '/api/clients/0199f5a2-7c1e-7d40-9a1b-300000000001/logo?v=1',
@@ -125,6 +126,19 @@ describe('Cabeçalho do projeto', () => {
       'aria-selected',
       'true',
     );
+  });
+
+  it('Datas do cronograma no cabeçalho', async () => {
+    const erp = projects[0];
+    if (erp === undefined) {
+      throw new Error('No ERP-FIN.');
+    }
+    erp.scheduleEnd = '2026-11-13';
+    await openProject();
+
+    const meta = screen.getByTestId('project-meta');
+    expect(meta).toHaveTextContent('05/10 – 13/11/2026');
+    expect(meta).not.toHaveTextContent(text.noSchedule);
   });
 
   it('Visão geral com a descrição e a equipe', async () => {
@@ -152,6 +166,7 @@ describe('Cabeçalho do projeto', () => {
     await openProject('0199f5a2-7c1e-7d40-9a1b-400000000003');
 
     expect(screen.getByTestId('project-meta')).toHaveTextContent(text.internal);
+    expect(screen.getByTestId('project-meta')).toHaveTextContent(text.noSchedule);
     expect(screen.getByTestId('project-logo')).toHaveTextContent('PF');
     expect(screen.getByRole('region', { name: text.overview.description })).toHaveTextContent(
       text.overview.noDescription,
@@ -181,6 +196,7 @@ describe('Ações do projeto', () => {
       canChangeStatus: false,
       canManagePeople: true,
       canManageManagers: false,
+      canEditSchedule: false,
     };
     await openProject();
 
@@ -300,6 +316,7 @@ describe('Ações do projeto', () => {
       canChangeStatus: false,
       canManagePeople: false,
       canManageManagers: false,
+      canEditSchedule: false,
     };
     await openProject();
 

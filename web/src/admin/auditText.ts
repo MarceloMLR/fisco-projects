@@ -7,6 +7,7 @@ import {
   type ProjectRole,
   projectStatuses,
   type ProjectStatus,
+  type ScheduleItemKind,
   systemRoles,
   type SystemRole,
   weekdays,
@@ -85,6 +86,62 @@ const projectMemberFields: readonly string[] = [
 
 const isProjectMemberField = (field: string): field is ProjectMemberField =>
   projectMemberFields.includes(field);
+
+type SchedulePhaseField = 'ProjectId' | 'Name';
+const schedulePhaseFields: readonly string[] = ['ProjectId', 'Name'] satisfies SchedulePhaseField[];
+
+const isSchedulePhaseField = (field: string): field is SchedulePhaseField =>
+  schedulePhaseFields.includes(field);
+
+type ScheduleItemField =
+  | 'ProjectId'
+  | 'PhaseId'
+  | 'Kind'
+  | 'Name'
+  | 'Start'
+  | 'Duration'
+  | 'End'
+  | 'Progress'
+  | 'OwnerId'
+  | 'CompletedOn';
+const scheduleItemFields: readonly string[] = [
+  'ProjectId',
+  'PhaseId',
+  'Kind',
+  'Name',
+  'Start',
+  'Duration',
+  'End',
+  'Progress',
+  'OwnerId',
+  'CompletedOn',
+] satisfies ScheduleItemField[];
+
+const isScheduleItemField = (field: string): field is ScheduleItemField =>
+  scheduleItemFields.includes(field);
+
+type ScheduleDependencyField = 'ProjectId' | 'PredecessorId' | 'SuccessorId';
+const scheduleDependencyFields: readonly string[] = [
+  'ProjectId',
+  'PredecessorId',
+  'SuccessorId',
+] satisfies ScheduleDependencyField[];
+
+const isScheduleDependencyField = (field: string): field is ScheduleDependencyField =>
+  scheduleDependencyFields.includes(field);
+
+const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
+
+/** A record of a phase, a task or milestone, or a dependency of a schedule. */
+const isSchedule = (
+  entry: AuditEntry,
+): entry is AuditEntry & { itemType: (typeof scheduleTypes)[number] } =>
+  scheduleTypes.some((type) => type === entry.itemType);
+
+const isScheduleItemKind = (value: string | null | undefined): value is ScheduleItemKind =>
+  value === 'Task' || value === 'Milestone';
+
+const scheduleDays: readonly string[] = ['Start', 'End', 'CompletedOn'];
 const isProjectStatus = (value: string | null): value is ProjectStatus =>
   projectStatuses.some((status) => status === value);
 const isProjectRole = (value: string | null): value is ProjectRole =>
@@ -140,6 +197,12 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'ProjectMember' && field === 'Role' && isProjectRole(value)) {
     return t(`projects.roles.${value}`);
   }
+  if (entry.itemType === 'ScheduleItem' && field === 'Kind' && isScheduleItemKind(value)) {
+    return t(`projects.schedule.kinds.${value}`);
+  }
+  if (entry.itemType === 'ScheduleItem' && scheduleDays.includes(field)) {
+    return formatDayText(value);
+  }
   return value;
 }
 
@@ -179,6 +242,15 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   }
   if (entry.itemType === 'ProjectMember' && isProjectMemberField(field)) {
     return t(`audit.fields.ProjectMember.${field}`);
+  }
+  if (entry.itemType === 'SchedulePhase' && isSchedulePhaseField(field)) {
+    return t(`audit.fields.SchedulePhase.${field}`);
+  }
+  if (entry.itemType === 'ScheduleItem' && isScheduleItemField(field)) {
+    return t(`audit.fields.ScheduleItem.${field}`);
+  }
+  if (entry.itemType === 'ScheduleDependency' && isScheduleDependencyField(field)) {
+    return t(`audit.fields.ScheduleDependency.${field}`);
   }
   return field;
 }
@@ -221,6 +293,9 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'ProjectMember') {
     return t(`audit.actions.ProjectMember.${entry.action}`);
   }
+  if (isSchedule(entry)) {
+    return scheduleTitleOf(entry, t);
+  }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
   }
@@ -258,7 +333,26 @@ function projectTitleOf(entry: AuditEntry, t: TFunction): string {
     : t('audit.actions.Project.StatusChanged');
 }
 
-/** The project a person was included in, removed from or had the role changed in, by name. */
+/** A change of a schedule says whether it was a phase, a task, a milestone or a dependency. */
+function scheduleTitleOf(entry: AuditEntry, t: TFunction): string {
+  const action =
+    entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated';
+  if (entry.itemType === 'SchedulePhase') {
+    return t(`audit.actions.SchedulePhase.${action}`);
+  }
+  if (entry.itemType === 'ScheduleDependency') {
+    return t(`audit.actions.ScheduleDependency.${action}`);
+  }
+  // The kind comes in every record of an item (IsAuditContext in the API).
+  const kind = changeOf(entry, 'Kind');
+  const value = kind?.after ?? kind?.before;
+  return t(`audit.actions.ScheduleItem.${isScheduleItemKind(value) ? value : 'Task'}.${action}`);
+}
+
+/**
+ * The project a person was included in, removed from or had the role changed in, or of a change of a schedule, by
+ * name.
+ */
 function projectOfMember(entry: AuditEntry): string {
   const project = changeOf(entry, 'ProjectId');
   return project?.after ?? project?.before ?? '';
@@ -295,6 +389,15 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
       projectOfMember(entry),
     );
   }
+  // A dependency says which item comes first; every change of a schedule says the project.
+  if (entry.itemType === 'ScheduleDependency') {
+    const predecessor = changeOf(entry, 'PredecessorId');
+    const name = predecessor?.after ?? predecessor?.before ?? null;
+    return join(label, name === null ? '' : t('audit.dependsOn', { name }), projectOfMember(entry));
+  }
+  if (isSchedule(entry) && entry.action !== 'Updated') {
+    return join(label, projectOfMember(entry));
+  }
   if (entry.action !== 'Updated') {
     return label;
   }
@@ -315,7 +418,8 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (isHoliday(entry) && considerationOf(entry) !== undefined) {
     return label;
   }
-  const change = entry.changes[0];
+  // The first field that changed, not one that only says where the item is.
+  const change = entry.changes.find((candidate) => !isContext(entry, candidate));
   if (change === undefined) {
     return label;
   }
@@ -366,6 +470,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }
+  if (isSchedule(entry)) {
+    return [
+      { label: t(`audit.details.item.${entry.itemType}`), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
   return [
     {
       label: t(entry.itemType === 'User' ? 'audit.details.item.User' : 'audit.details.item.Other'),
@@ -374,8 +484,27 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   ];
 }
 
+/**
+ * The fields of a task or milestone in the order of its form, not in the alphabetical order the API keeps them: the
+ * start before the end.
+ */
+function inFormOrder(entry: AuditEntry): AuditEntry {
+  if (entry.itemType !== 'ScheduleItem') {
+    return entry;
+  }
+  const place = (field: string) => {
+    const index = scheduleItemFields.indexOf(field);
+    return index === -1 ? scheduleItemFields.length : index;
+  };
+  return {
+    ...entry,
+    changes: entry.changes.toSorted((one, other) => place(one.field) - place(other.field)),
+  };
+}
+
 /** Everything the Audit screen says about a record, in one place. */
-export function describeAuditEntry(entry: AuditEntry, t: TFunction): AuditDescription {
+export function describeAuditEntry(record: AuditEntry, t: TFunction): AuditDescription {
+  const entry = inFormOrder(record);
   const title = titleOf(entry, t);
   const author = entry.actor?.name ?? t('audit.system');
   return {

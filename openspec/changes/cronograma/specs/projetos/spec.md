@@ -50,4 +50,4 @@ Na lista, a coluna Cronograma MUST mostrar a faixa de fases, com a parte conclu√
 
 #### Scenario: Projeto sem cronograma na lista
 - **WHEN** um projeto n√£o tem tarefas nem marcos
-- **THEN** a linha do projeto mostra "Sem cronograma" e "Sem data"
+- **THEN** a linha do projeto mostra "Sem cronograma" e fica sem prazo final

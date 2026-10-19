@@ -22,29 +22,29 @@
 
 ## 4. Componentes da interface
 
-- [ ] 4.1 Criar `ProgressBar` (fp-progress) e `ScheduleStrip` (fp-strip, com fases, parte concluída, fases atrasadas, marcos e hoje pelos tokens do cronograma); verificar com testes de componente e a regra de cores
-- [ ] 4.2 Criar `MultiSelect` (Autocomplete múltiplo no visual fp-field) e a opção `groupRowsChoosable` do `DataTable`; verificar com testes de componente
+- [x] 4.1 Criar `ProgressBar` (fp-progress) e `ScheduleStrip` (fp-strip, com fases, parte concluída, fases atrasadas, marcos e hoje pelos tokens do cronograma); verificar com testes de componente e a regra de cores
+- [x] 4.2 Criar `MultiSelect` (Autocomplete múltiplo no visual fp-field) e a opção `groupRowsChoosable` do `DataTable`; verificar com testes de componente
 
 ## 5. Lista de projetos e cabeçalho
 
-- [ ] 5.1 Mostrar na lista de Projetos a faixa de fases com o progresso e a fase atual, "Começa em", a conclusão, o prazo final e as tarefas atrasadas, ou "Sem cronograma"; verificar com "Cronograma na lista", "Projeto que ainda não começou" e "Projeto sem cronograma na lista"
-- [ ] 5.2 Mostrar no cabeçalho as datas do cronograma e a aba Cronograma, entre Visão geral e Membros; verificar com "Datas do cronograma no cabeçalho" e o teste das abas
+- [x] 5.1 Mostrar na lista de Projetos a faixa de fases com o progresso e a fase atual, "Começa em", a conclusão, o prazo final e as tarefas atrasadas, ou "Sem cronograma"; verificar com "Cronograma na lista", "Projeto que ainda não começou" e "Projeto sem cronograma na lista"
+- [x] 5.2 Mostrar no cabeçalho as datas do cronograma e a aba Cronograma, entre Visão geral e Membros; verificar com "Datas do cronograma no cabeçalho" e o teste das abas
 
 ## 6. Aba Cronograma
 
-- [ ] 6.1 Criar a rota `projects/:projectId/schedule` com a Lista: fases em linhas de grupo, itens recuados, bandeira do marco, "Atrasada" com ícone e cor, progresso, responsável, dependências, o resumo e o estado vazio; verificar com "Cronograma pela tela" e "Cronograma vazio"
-- [ ] 6.2 Criar "Nova fase", o diálogo da fase (renomear e excluir com confirmação), "Nova tarefa" e o detalhe na gaveta com o formulário único do item, a mensagem de itens empurrados e o modo só leitura; verificar com "Nova tarefa pela tela", "Empurrar pela tela", "Excluir fase pela tela" e "Cronograma sem editar pela tela"
-- [ ] 6.3 Avisar na confirmação da remoção de uma pessoa que as tarefas dela ficam sem responsável e invalidar o cronograma depois das mudanças de pessoas; verificar com o teste da tela Membros
-- [ ] 6.4 Incluir os textos da auditoria (títulos de tarefa e marco, campos, valores e os três tipos no filtro); verificar com os testes de `auditText`
+- [x] 6.1 Criar a rota `projects/:projectId/schedule` com a Lista: fases em linhas de grupo, itens recuados, bandeira do marco, "Atrasada" com ícone e cor, progresso, responsável, dependências, o resumo e o estado vazio; verificar com "Cronograma pela tela" e "Cronograma vazio"
+- [x] 6.2 Criar "Nova fase", o diálogo da fase (renomear e excluir com confirmação), "Nova tarefa" e o detalhe na gaveta com o formulário único do item, a mensagem de itens empurrados e o modo só leitura; verificar com "Nova tarefa pela tela", "Empurrar pela tela", "Excluir fase pela tela" e "Cronograma sem editar pela tela"
+- [x] 6.3 Avisar na confirmação da remoção de uma pessoa que as tarefas dela ficam sem responsável e invalidar o cronograma depois das mudanças de pessoas; verificar com o teste da tela Membros
+- [x] 6.4 Incluir os textos da auditoria (títulos de tarefa e marco, campos, valores e os três tipos no filtro); verificar com os testes de `auditText`
 
 ## 7. Documentação
 
-- [ ] 7.1 Atualizar o glossário, o `CLAUDE.md`, o guia `src/Modules/README.md` (se a auditoria ou os módulos mudarem) e o roadmap; verificar lendo os trechos alterados
+- [x] 7.1 Atualizar o glossário, o `CLAUDE.md`, o guia `src/Modules/README.md` (se a auditoria ou os módulos mudarem) e o roadmap; verificar lendo os trechos alterados
 
 ## 8. Verificação
 
-- [ ] 8.1 Rodar `scripts/ci` (build, testes, formato, frontend e specs) sem erros nem avisos
-- [ ] 8.2 Conferir as telas no navegador, nos temas claro e escuro, no computador e no celular (Projetos, cabeçalho, aba Cronograma, diálogo e gaveta), e guardar as capturas para o resumo
+- [x] 8.1 Rodar `scripts/ci` (build, testes, formato, frontend e specs) sem erros nem avisos
+- [x] 8.2 Conferir as telas no navegador, nos temas claro e escuro, no computador e no celular (Projetos, cabeçalho, aba Cronograma, diálogo e gaveta), e guardar as capturas para o resumo
 
 ## Workflow follow-up
 

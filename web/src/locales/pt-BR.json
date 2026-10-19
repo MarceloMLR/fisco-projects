@@ -57,6 +57,9 @@
     },
     "projectMembers": {
       "title": "Membros"
+    },
+    "projectSchedule": {
+      "title": "Cronograma"
     }
   },
   "signIn": {
@@ -190,7 +193,10 @@
       "LocalHoliday": "Feriados locais",
       "Client": "Clientes",
       "Project": "Projetos",
-      "ProjectMember": "Pessoas dos projetos"
+      "ProjectMember": "Pessoas dos projetos",
+      "SchedulePhase": "Fases dos cronogramas",
+      "ScheduleItem": "Tarefas e marcos",
+      "ScheduleDependency": "Dependências"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -246,6 +252,28 @@
         "Created": "Incluiu uma pessoa num projeto",
         "Updated": "Trocou o papel de uma pessoa num projeto",
         "Deleted": "Removeu uma pessoa de um projeto"
+      },
+      "SchedulePhase": {
+        "Created": "Incluiu uma fase num cronograma",
+        "Updated": "Renomeou uma fase de um cronograma",
+        "Deleted": "Excluiu uma fase de um cronograma"
+      },
+      "ScheduleItem": {
+        "Task": {
+          "Created": "Incluiu uma tarefa",
+          "Updated": "Alterou uma tarefa",
+          "Deleted": "Excluiu uma tarefa"
+        },
+        "Milestone": {
+          "Created": "Incluiu um marco",
+          "Updated": "Alterou um marco",
+          "Deleted": "Excluiu um marco"
+        }
+      },
+      "ScheduleDependency": {
+        "Created": "Incluiu uma dependência",
+        "Updated": "Alterou uma dependência",
+        "Deleted": "Excluiu uma dependência"
       }
     },
     "providers": {
@@ -273,7 +301,10 @@
         "Holiday": "Feriado",
         "Client": "Cliente",
         "Project": "Projeto",
-        "ProjectMember": "Pessoa"
+        "ProjectMember": "Pessoa",
+        "SchedulePhase": "Fase",
+        "ScheduleItem": "Tarefa ou marco",
+        "ScheduleDependency": "Seguinte"
       },
       "secret": "Alterado",
       "none": "—",
@@ -320,8 +351,30 @@
         "ProjectId": "Projeto",
         "UserId": "Pessoa",
         "Role": "Papel no projeto"
+      },
+      "SchedulePhase": {
+        "ProjectId": "Projeto",
+        "Name": "Nome"
+      },
+      "ScheduleItem": {
+        "ProjectId": "Projeto",
+        "PhaseId": "Fase",
+        "Kind": "Tipo",
+        "Name": "Nome",
+        "Start": "Início",
+        "Duration": "Duração em dias úteis",
+        "End": "Fim",
+        "Progress": "Progresso (%)",
+        "OwnerId": "Responsável",
+        "CompletedOn": "Concluída em"
+      },
+      "ScheduleDependency": {
+        "ProjectId": "Projeto",
+        "PredecessorId": "Anterior",
+        "SuccessorId": "Seguinte"
       }
-    }
+    },
+    "dependsOn": "depende de {{name}}"
   },
   "settings": {
     "brand": "Marca",
@@ -709,8 +762,8 @@
       },
       "remove": {
         "title": "Remover do projeto",
-        "text": "{{name}} perde o acesso ao projeto {{project}} na hora.",
-        "self": "Você perde o acesso ao projeto {{project}} na hora.",
+        "text": "{{name}} perde o acesso ao projeto {{project}} na hora. As tarefas dessa pessoa no cronograma ficam sem responsável.",
+        "self": "Você perde o acesso ao projeto {{project}} na hora. As suas tarefas no cronograma ficam sem responsável.",
         "confirm": "Remover do projeto",
         "back": "Voltar"
       },
@@ -726,6 +779,148 @@
         "roleChanged": "{{name}} agora é {{role}}.",
         "removed": "{{name}} saiu do projeto.",
         "failed": "Não foi possível salvar. Tente de novo."
+      }
+    },
+    "schedule": {
+      "table": "Cronograma do projeto",
+      "empty": "O cronograma ainda não tem fases. Inclua uma fase para começar.",
+      "emptyPhase": "Nenhuma tarefa nesta fase.",
+      "newPhase": "Nova fase",
+      "newItem": "Nova tarefa",
+      "progress": "Progresso do projeto",
+      "lateTasks_one": "{{count}} tarefa atrasada",
+      "lateTasks_other": "{{count}} tarefas atrasadas",
+      "late": "Atrasada",
+      "noOwner": "Sem responsável",
+      "none": "—",
+      "phases_one": "{{count}} fase",
+      "phases_other": "{{count}} fases",
+      "items_one": "{{count}} tarefa ou marco",
+      "items_other": "{{count}} tarefas e marcos",
+      "footer": "{{phases}} · {{items}}",
+      "columns": {
+        "name": "Nome",
+        "start": "Início",
+        "end": "Fim",
+        "duration": "Duração",
+        "owner": "Responsável",
+        "progress": "Progresso",
+        "dependsOn": "Depende de"
+      },
+      "duration_one": "{{count}} dia útil",
+      "duration_other": "{{count}} dias úteis",
+      "kinds": {
+        "Task": "Tarefa",
+        "Milestone": "Marco"
+      },
+      "itemProgress": "Progresso de {{name}}",
+      "phaseProgress": "Progresso da fase {{name}}",
+      "summary": {
+        "phase": "{{progress}}% · {{phase}}",
+        "progress": "{{progress}}%",
+        "starts": "Começa em {{day}}",
+        "completed": "100% · concluído em {{day}}"
+      },
+      "strip": "Fases do cronograma de {{start}} a {{end}}",
+      "form": {
+        "kind": "Tipo",
+        "name": "Nome",
+        "phase": "Fase",
+        "start": "Início",
+        "day": "Data",
+        "dayPlaceholder": "dd/mm/aaaa",
+        "duration": "Duração em dias úteis",
+        "durationHelp": "O fim é calculado pelo sistema.",
+        "endsOn": "Termina em {{day}}.",
+        "owner": "Responsável",
+        "progress": "Progresso (%)",
+        "dependsOn": "Depende de",
+        "dependsOnHelp": "Começa depois que essas terminam.",
+        "dependsOnPlaceholder": "Nenhuma",
+        "noItems": "Nenhuma tarefa ou marco para escolher",
+        "optional": "(opcional)",
+        "title": "Nova tarefa ou marco",
+        "create": {
+          "Task": "Incluir tarefa",
+          "Milestone": "Incluir marco"
+        },
+        "cancel": "Cancelar",
+        "save": "Salvar",
+        "remove": {
+          "Task": "Excluir tarefa",
+          "Milestone": "Excluir marco"
+        }
+      },
+      "errors": {
+        "nameRequired": "Informe o nome.",
+        "nameTooLong": "Use até 200 caracteres.",
+        "phaseRequired": "Escolha a fase.",
+        "startInvalid": "Informe uma data válida, como 13/10/2026.",
+        "durationInvalid": "Informe de 1 a 999 dias úteis.",
+        "progressInvalid": "Informe de 0 a 100.",
+        "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",
+        "predecessorsInvalid": "Escolha tarefas e marcos deste cronograma.",
+        "cycle": "Essa dependência formaria um ciclo: uma das escolhidas já depende desta."
+      },
+      "details": {
+        "label": "Tarefa ou marco selecionado",
+        "phase": "Fase",
+        "start": "Início",
+        "end": "Fim",
+        "day": "Data",
+        "duration": "Duração",
+        "owner": "Responsável",
+        "progress": "Progresso",
+        "dependsOn": "Depende de",
+        "completedOn": "Concluída em"
+      },
+      "phaseDialog": {
+        "newTitle": "Nova fase",
+        "editTitle": "Fase do cronograma",
+        "name": "Nome da fase",
+        "create": "Incluir fase",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "remove": "Excluir fase",
+        "nameRequired": "Informe o nome da fase.",
+        "nameTooLong": "Use até 150 caracteres."
+      },
+      "removePhase": {
+        "title": "Excluir a fase?",
+        "text": "A fase {{name}} sai do cronograma.",
+        "withItems_one": "A fase {{name}} sai do cronograma, com a tarefa ou marco dela.",
+        "withItems_other": "A fase {{name}} sai do cronograma, com as {{count}} tarefas e marcos dela.",
+        "back": "Voltar",
+        "confirm": "Excluir fase"
+      },
+      "removeItem": {
+        "title": {
+          "Task": "Excluir a tarefa?",
+          "Milestone": "Excluir o marco?"
+        },
+        "text": "{{name}} sai do cronograma com as dependências; nenhuma outra tarefa muda de data.",
+        "back": "Voltar"
+      },
+      "messages": {
+        "phaseAdded": "Fase {{name}} incluída.",
+        "phaseRenamed": "Fase renomeada para {{name}}.",
+        "phaseRemoved": "Fase {{name}} excluída.",
+        "itemAdded": {
+          "Task": "Tarefa {{name}} incluída.",
+          "Milestone": "Marco {{name}} incluído."
+        },
+        "itemSaved": {
+          "Task": "Tarefa {{name}} salva.",
+          "Milestone": "Marco {{name}} salvo."
+        },
+        "itemRemoved": {
+          "Task": "Tarefa {{name}} excluída.",
+          "Milestone": "Marco {{name}} excluído."
+        },
+        "pushed_one": "{{saved}} {{count}} item foi empurrado.",
+        "pushed_other": "{{saved}} {{count}} itens foram empurrados.",
+        "failed": "Não foi possível salvar o cronograma. Tente de novo.",
+        "closed": "O projeto está encerrado: reabra-o para mudar o cronograma."
       }
     }
   }

@@ -99,6 +99,15 @@ export function projectMembersQuery(id: string) {
   });
 }
 
+/** The schedule of a project: phases, tasks and milestones with the dates and delays computed by the API. */
+export function projectScheduleQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'schedule'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/schedule', { params: { path: { id } }, signal })),
+  });
+}
+
 /**
  * The people of the company to choose, such as the manager or the tech lead of a project or a person to include in
  * it: the active users and the people of the directory who never signed in (ADR-0005).

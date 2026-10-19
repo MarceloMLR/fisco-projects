@@ -46,6 +46,7 @@ export type PageTitleKey =
   | 'pages.clients.title'
   | 'pages.newProject.title'
   | 'pages.project.title'
+  | 'pages.projectSchedule.title'
   | 'pages.projectMembers.title'
   | 'pages.profile.title';
 

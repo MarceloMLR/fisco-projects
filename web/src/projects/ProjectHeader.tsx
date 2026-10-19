@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
 import { initials } from '../components/initials';
+import { formatPeriodText } from '../format/dates';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 
@@ -18,7 +19,7 @@ const namesWith = (project: Project, role: Project['members'][number]['role']) =
     .join(', ');
 
 /** The tabs of a project, each at its own address under the project. */
-export type ProjectTab = 'overview' | 'members';
+export type ProjectTab = 'overview' | 'schedule' | 'members';
 
 const tabSx = {
   position: 'relative',
@@ -70,8 +71,9 @@ const countSx = {
 
 /**
  * The header of a project in every tab (canvas ProjetoCabecalho, fp-proj): the logo of the client or the initials,
- * the name and the status, the code, the client, the manager and the tech lead (ADR-0072), the dates, "Ações do
- * projeto" and the tabs, each a link to its address, Membros with the number of people.
+ * the name and the status, the code, the client, the manager and the tech lead (ADR-0072), the dates of the schedule
+ * ("Sem cronograma" without tasks and milestones), "Ações do projeto" and the tabs, each a link to its address, Membros
+ * with the number of people.
  */
 export function ProjectHeader({
   project,
@@ -198,7 +200,13 @@ export function ProjectHeader({
                 {t('projects.header.techLead')} <b>{techLeads}</b>
               </span>
             )}
-            <span>{t('projects.noSchedule')}</span>
+            {project.scheduleStart === null || project.scheduleEnd === null ? (
+              <span>{t('projects.noSchedule')}</span>
+            ) : (
+              <Box component="span" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatPeriodText(project.scheduleStart, project.scheduleEnd)}
+              </Box>
+            )}
           </Box>
         </Box>
         {desktop && onOpenActions !== undefined && (
@@ -246,6 +254,17 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.project.title')}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/schedule`}
+          role="tab"
+          id="project-tab-schedule"
+          aria-selected={tab === 'schedule'}
+          aria-controls={tab === 'schedule' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectSchedule.title')}
         </Box>
         <Box
           component={Link}

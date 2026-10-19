@@ -11,6 +11,7 @@ import { HomePage } from './pages/HomePage';
 import { NewProjectPage } from './projects/NewProjectPage';
 import { ProjectLayout } from './projects/ProjectLayout';
 import { ProjectMembersPage } from './projects/ProjectMembersPage';
+import { ProjectSchedulePage } from './projects/ProjectSchedulePage';
 import { ProjectOverview } from './projects/ProjectOverview';
 import { ProjectsPage } from './projects/ProjectsPage';
 import { RequireProjectCreator } from './projects/RequireProjectCreator';
@@ -73,6 +74,18 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'projects',
                   titleKey: 'pages.project.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'schedule',
+                element: <ProjectSchedulePage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectSchedule.title',
                   trail: [
                     { titleKey: 'pages.projects.title', path: '/projects' },
                     { project: true },

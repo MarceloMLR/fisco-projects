@@ -577,3 +577,218 @@ describe('Mudanças das pessoas na auditoria', () => {
     ]);
   });
 });
+
+// Spec: cronograma, requirement "Mudanças do cronograma na auditoria".
+describe('Mudanças do cronograma na auditoria', () => {
+  const project = 'Implantação do ERP financeiro';
+  const marinaCosta = { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' };
+  const context = (field: string, value: string, reference: string | null = null) => ({
+    field,
+    before: value,
+    after: value,
+    secret: false,
+    reference,
+  });
+
+  it('Tarefa empurrada na auditoria', () => {
+    const pushed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ScheduleItem',
+        actor: marinaCosta,
+        itemLabel: 'Aceite da homologação',
+        // In the alphabetical order the API keeps the fields; the screen shows the start first.
+        changes: [
+          {
+            field: 'End',
+            before: '2026-11-03',
+            after: '2026-11-04',
+            secret: false,
+            reference: null,
+          },
+          context('Kind', 'Milestone'),
+          context('ProjectId', project, 'Project'),
+          {
+            field: 'Start',
+            before: '2026-11-03',
+            after: '2026-11-04',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+    const task = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ScheduleItem',
+        actor: marinaCosta,
+        itemLabel: 'Validar cadastro de produtos',
+        changes: [
+          context('ProjectId', project, 'Project'),
+          context('Kind', 'Task'),
+          {
+            field: 'OwnerId',
+            before: 'Diego Torres',
+            after: null,
+            secret: false,
+            reference: 'User',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(pushed).toEqual({
+      title: 'Alterou um marco',
+      summary: 'Aceite da homologação · início 03/11/2026 → 04/11/2026',
+      sentence: 'Marina Costa alterou um marco',
+      properties: [
+        { label: 'Tarefa ou marco', value: 'Aceite da homologação' },
+        { label: 'Projeto', value: project },
+      ],
+      changes: [
+        { field: 'Início', before: '03/11/2026', after: '04/11/2026' },
+        { field: 'Fim', before: '03/11/2026', after: '04/11/2026' },
+      ],
+    });
+    expect(task.title).toBe('Alterou uma tarefa');
+    expect(task.changes).toEqual([{ field: 'Responsável', before: 'Diego Torres', after: '—' }]);
+  });
+
+  it('Tarefa incluída e excluída na auditoria', () => {
+    const fields = (after: boolean) =>
+      (
+        [
+          ['ProjectId', project, 'Project'],
+          ['PhaseId', 'Configuração', 'SchedulePhase'],
+          ['Kind', 'Task', null],
+          ['Name', 'Parametrizar regras de ICMS', null],
+          ['Start', '2026-10-13', null],
+          ['Duration', '8', null],
+          ['End', '2026-10-22', null],
+          ['Progress', '0', null],
+        ] satisfies [string, string, string | null][]
+      ).map(([field, value, reference]) => ({
+        field,
+        before: after ? null : value,
+        after: after ? value : null,
+        secret: false,
+        reference,
+      }));
+    const created = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ScheduleItem',
+        itemLabel: 'Parametrizar regras de ICMS',
+        changes: fields(true),
+      }),
+      t,
+    );
+    const removed = describeAuditEntry(
+      entry({
+        action: 'Deleted',
+        itemType: 'ScheduleItem',
+        itemLabel: 'Parametrizar regras de ICMS',
+        changes: fields(false),
+      }),
+      t,
+    );
+
+    expect(created.title).toBe('Incluiu uma tarefa');
+    expect(created.summary).toBe(`Parametrizar regras de ICMS · ${project}`);
+    expect(created.changes).toEqual([
+      { field: 'Projeto', before: '—', after: project },
+      { field: 'Fase', before: '—', after: 'Configuração' },
+      { field: 'Tipo', before: '—', after: 'Tarefa' },
+      { field: 'Nome', before: '—', after: 'Parametrizar regras de ICMS' },
+      { field: 'Início', before: '—', after: '13/10/2026' },
+      { field: 'Duração em dias úteis', before: '—', after: '8' },
+      { field: 'Fim', before: '—', after: '22/10/2026' },
+      { field: 'Progresso (%)', before: '—', after: '0' },
+    ]);
+    expect(removed.title).toBe('Excluiu uma tarefa');
+  });
+
+  it('Fase renomeada na auditoria', () => {
+    const renamed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'SchedulePhase',
+        itemLabel: 'Diagnóstico',
+        changes: [
+          context('ProjectId', project, 'Project'),
+          {
+            field: 'Name',
+            before: 'Levantamento',
+            after: 'Diagnóstico',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(renamed.title).toBe('Renomeou uma fase de um cronograma');
+    expect(renamed.summary).toBe('Diagnóstico · nome Levantamento → Diagnóstico');
+    expect(renamed.properties).toEqual([
+      { label: 'Fase', value: 'Diagnóstico' },
+      { label: 'Projeto', value: project },
+    ]);
+  });
+
+  it('Dependência na auditoria', () => {
+    const changes = (after: boolean) =>
+      (
+        [
+          ['ProjectId', project, 'Project'],
+          ['PredecessorId', 'Parametrizar regras de ICMS', 'ScheduleItem'],
+          ['SuccessorId', 'Testes integrados', 'ScheduleItem'],
+        ] satisfies [string, string, string][]
+      ).map(([field, value, reference]) => ({
+        field,
+        before: after ? null : value,
+        after: after ? value : null,
+        secret: false,
+        reference,
+      }));
+    const included = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ScheduleDependency',
+        itemLabel: 'Testes integrados',
+        changes: changes(true),
+      }),
+      t,
+    );
+    const removed = describeAuditEntry(
+      entry({
+        action: 'Deleted',
+        itemType: 'ScheduleDependency',
+        itemLabel: 'Testes integrados',
+        changes: changes(false),
+      }),
+      t,
+    );
+
+    expect(included.title).toBe('Incluiu uma dependência');
+    expect(included.summary).toBe(
+      `Testes integrados · depende de Parametrizar regras de ICMS · ${project}`,
+    );
+    expect(included.properties).toEqual([
+      { label: 'Seguinte', value: 'Testes integrados' },
+      { label: 'Projeto', value: project },
+    ]);
+    expect(included.changes).toEqual([
+      { field: 'Projeto', before: '—', after: project },
+      { field: 'Anterior', before: '—', after: 'Parametrizar regras de ICMS' },
+      { field: 'Seguinte', before: '—', after: 'Testes integrados' },
+    ]);
+    expect(removed.title).toBe('Excluiu uma dependência');
+    expect(removed.summary).toBe(
+      `Testes integrados · depende de Parametrizar regras de ICMS · ${project}`,
+    );
+  });
+});

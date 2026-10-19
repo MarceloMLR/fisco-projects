@@ -15,7 +15,10 @@ import type {
   Project,
   ProjectMember,
   ProjectRow,
+  ProjectScheduleSummary,
   ProjectStatus,
+  Schedule,
+  ScheduleItem,
   SessionUser,
 } from '../api/client';
 
@@ -157,7 +160,12 @@ export function clientChoicesOf(clients: readonly ClientRow[]): ClientChoice[] {
 export interface DemoProject extends Project {
   /** Whether Marina is in the project, so it shows in her list. */
   mine: boolean;
+  /** The numbers of its schedule in the list of projects; none without tasks and milestones. */
+  schedule: ProjectScheduleSummary | null;
 }
+
+/** Today in the simulated installation, the day the schedules are seen on (as in the canvas). */
+export const demoToday = '2026-10-16';
 
 /** The people of the projects; Marina is the person in the session. */
 export const demoPeople = {
@@ -274,10 +282,178 @@ function demoProject(
       canChangeStatus: true,
       canManagePeople: status !== 'Completed' && status !== 'Cancelled',
       canManageManagers: status !== 'Completed' && status !== 'Cancelled',
+      canEditSchedule: status !== 'Completed' && status !== 'Cancelled',
     },
+    scheduleStart: null,
+    scheduleEnd: null,
     mine,
+    schedule: null,
   };
 }
+
+/** A project with the numbers of its schedule, and its dates in the header. */
+function withSchedule(project: DemoProject, schedule: ProjectScheduleSummary): DemoProject {
+  return { ...project, schedule, scheduleStart: schedule.start, scheduleEnd: schedule.end };
+}
+
+/** A task or milestone of the demonstration schedule. */
+function demoItem(
+  index: number,
+  phaseId: string,
+  item: Pick<ScheduleItem, 'name' | 'start' | 'end'> & Partial<ScheduleItem>,
+): ScheduleItem {
+  return {
+    id: `0199f5a2-7c1e-7d40-9a1b-6000000000${String(index).padStart(2, '0')}`,
+    kind: 'Task',
+    phaseId,
+    duration: 1,
+    progress: 0,
+    completedOn: null,
+    late: false,
+    owner: null,
+    predecessorIds: [],
+    ...item,
+  };
+}
+
+const phaseIds = {
+  survey: '0199f5a2-7c1e-7d40-9a1b-500000000001',
+  configuration: '0199f5a2-7c1e-7d40-9a1b-500000000002',
+  approval: '0199f5a2-7c1e-7d40-9a1b-500000000003',
+  production: '0199f5a2-7c1e-7d40-9a1b-500000000004',
+} as const;
+
+/**
+ * The schedule of ERP-FIN on 16/10/2026, as the canvas ProjetoCronograma, in business days with 12/10 and 02/11 as
+ * holidays: Levantamento, late by Validar cadastro de produtos; Configuração; Homologação, with the milestone; and
+ * Entrada em produção, still without items.
+ */
+export function demoSchedule(): Schedule {
+  const marinaOwner = { id: demoPeople.marina.id, name: demoPeople.marina.name };
+  const rafaelOwner = { id: demoPeople.rafael.id, name: demoPeople.rafael.name };
+  const opening = demoItem(1, phaseIds.survey, {
+    name: 'Reunião de abertura',
+    start: '2026-10-05',
+    end: '2026-10-05',
+    progress: 100,
+    completedOn: '2026-10-05',
+    owner: marinaOwner,
+  });
+  const mapping = demoItem(2, phaseIds.survey, {
+    name: 'Mapear processos fiscais',
+    start: '2026-10-06',
+    end: '2026-10-09',
+    duration: 4,
+    progress: 100,
+    completedOn: '2026-10-09',
+    owner: rafaelOwner,
+    predecessorIds: [opening.id],
+  });
+  const validating = demoItem(3, phaseIds.survey, {
+    name: 'Validar cadastro de produtos',
+    start: '2026-10-13',
+    end: '2026-10-15',
+    duration: 3,
+    progress: 80,
+    late: true,
+    owner: rafaelOwner,
+    predecessorIds: [mapping.id],
+  });
+  const icms = demoItem(4, phaseIds.configuration, {
+    name: 'Parametrizar regras de ICMS',
+    start: '2026-10-13',
+    end: '2026-10-22',
+    duration: 8,
+    progress: 50,
+    owner: rafaelOwner,
+    predecessorIds: [mapping.id],
+  });
+  const invoices = demoItem(5, phaseIds.configuration, {
+    name: 'Integrar emissão de NF-e',
+    start: '2026-10-19',
+    end: '2026-10-28',
+    duration: 8,
+    progress: 20,
+  });
+  const tests = demoItem(6, phaseIds.configuration, {
+    name: 'Testes integrados',
+    start: '2026-10-23',
+    end: '2026-10-29',
+    duration: 5,
+    owner: marinaOwner,
+    predecessorIds: [icms.id],
+  });
+  const clientTests = demoItem(7, phaseIds.approval, {
+    name: 'Testes com a equipe do cliente',
+    start: '2026-10-30',
+    end: '2026-11-03',
+    duration: 2,
+    predecessorIds: [tests.id],
+  });
+  const acceptance = demoItem(8, phaseIds.approval, {
+    kind: 'Milestone',
+    name: 'Aceite da homologação',
+    start: '2026-11-03',
+    end: '2026-11-03',
+    duration: 0,
+    predecessorIds: [clientTests.id],
+  });
+  return {
+    today: demoToday,
+    start: '2026-10-05',
+    end: '2026-11-03',
+    progress: 42,
+    lateTasks: 1,
+    phases: [
+      {
+        id: phaseIds.survey,
+        name: 'Levantamento',
+        start: '2026-10-05',
+        end: '2026-10-15',
+        progress: 93,
+        late: true,
+        items: [opening, mapping, validating],
+      },
+      {
+        id: phaseIds.configuration,
+        name: 'Configuração',
+        start: '2026-10-13',
+        end: '2026-10-29',
+        progress: 27,
+        late: false,
+        items: [icms, invoices, tests],
+      },
+      {
+        id: phaseIds.approval,
+        name: 'Homologação',
+        start: '2026-10-30',
+        end: '2026-11-03',
+        progress: 0,
+        late: false,
+        items: [clientTests, acceptance],
+      },
+      {
+        id: phaseIds.production,
+        name: 'Entrada em produção',
+        start: null,
+        end: null,
+        progress: 0,
+        late: false,
+        items: [],
+      },
+    ],
+  };
+}
+
+/** A schedule without phases, as a new project has. */
+export const emptySchedule: Schedule = {
+  today: demoToday,
+  start: null,
+  end: null,
+  progress: 0,
+  lateTasks: 0,
+  phases: [],
+};
 
 /**
  * Projects of the simulated installation, as the Projects screen of the canvas shows them: Marina manages most of them;
@@ -294,22 +470,100 @@ export function demoProjects(): DemoProject[] {
     role: 'TechLead' as const,
   });
   return [
-    {
-      ...demoProject(1, 'ERP-FIN', 'Implantação do ERP financeiro', alfa ?? null, 'InProgress', [
+    withSchedule(
+      {
+        ...demoProject(1, 'ERP-FIN', 'Implantação do ERP financeiro', alfa ?? null, 'InProgress', [
+          manager(demoPeople.marina),
+          techLead(demoPeople.rafael),
+        ]),
+        description: 'Implantação do ERP na matriz, com o financeiro e a contabilidade.',
+      },
+      {
+        start: '2026-10-05',
+        end: '2026-11-03',
+        progress: 42,
+        lateTasks: 1,
+        currentPhase: 'Levantamento',
+        completedOn: null,
+        phases: [
+          {
+            name: 'Levantamento',
+            start: '2026-10-05',
+            end: '2026-10-15',
+            progress: 93,
+            late: true,
+          },
+          {
+            name: 'Configuração',
+            start: '2026-10-13',
+            end: '2026-10-29',
+            progress: 27,
+            late: false,
+          },
+          { name: 'Homologação', start: '2026-10-30', end: '2026-11-03', progress: 0, late: false },
+        ],
+        milestones: ['2026-11-03'],
+      },
+    ),
+    withSchedule(
+      demoProject(2, 'TRIB-RS', 'Revisão tributária da filial RS', beta ?? null, 'Planning', [
         manager(demoPeople.marina),
-        techLead(demoPeople.rafael),
       ]),
-      description: 'Implantação do ERP na matriz, com o financeiro e a contabilidade.',
-    },
-    demoProject(2, 'TRIB-RS', 'Revisão tributária da filial RS', beta ?? null, 'Planning', [
-      manager(demoPeople.marina),
-    ]),
+      {
+        start: '2026-10-26',
+        end: '2027-01-29',
+        progress: 0,
+        lateTasks: 0,
+        currentPhase: null,
+        completedOn: null,
+        phases: [
+          { name: 'Diagnóstico', start: '2026-10-26', end: '2026-11-20', progress: 0, late: false },
+          { name: 'Apuração', start: '2026-11-23', end: '2026-12-30', progress: 0, late: false },
+          { name: 'Entrega', start: '2027-01-04', end: '2027-01-29', progress: 0, late: false },
+        ],
+        milestones: ['2027-01-29'],
+      },
+    ),
     demoProject(3, 'PORTAL-NF', 'Portal de notas para fornecedores', null, 'Paused', [
       manager(demoPeople.marina),
     ]),
-    demoProject(4, 'WMS-ALFA', 'Implantação do WMS', alfa ?? null, 'Completed', [
-      manager(demoPeople.marina),
-    ]),
+    withSchedule(
+      demoProject(4, 'WMS-ALFA', 'Implantação do WMS', alfa ?? null, 'Completed', [
+        manager(demoPeople.marina),
+      ]),
+      {
+        start: '2026-06-01',
+        end: '2026-08-28',
+        progress: 100,
+        lateTasks: 0,
+        currentPhase: 'Entrada em produção',
+        completedOn: '2026-08-28',
+        phases: [
+          {
+            name: 'Levantamento',
+            start: '2026-06-01',
+            end: '2026-06-26',
+            progress: 100,
+            late: false,
+          },
+          {
+            name: 'Configuração',
+            start: '2026-06-29',
+            end: '2026-08-07',
+            progress: 100,
+            late: false,
+          },
+          {
+            name: 'Entrada em produção',
+            start: '2026-08-10',
+            end: '2026-08-28',
+            progress: 100,
+            late: false,
+          },
+        ],
+        milestones: ['2026-08-28'],
+      },
+    ),
     demoProject(5, 'CONC-BAN', 'Conciliação bancária automática', gama ?? null, 'Cancelled', [
       manager(demoPeople.marina),
     ]),
@@ -343,17 +597,21 @@ export function projectsPage(projects: readonly DemoProject[], url: URL) {
     .filter((project) => clientId === null || project.client?.id === clientId)
     .filter((project) => situation === 'All' || (situation === 'Closed') === closed(project.status))
     .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  const rows: ProjectRow[] = matching.map(({ id, code, name, client, status, members }) => ({
-    id,
-    code,
-    name,
-    client,
-    status,
-    managers: members.filter((member) => member.role === 'Manager'),
-  }));
+  const rows: ProjectRow[] = matching.map(
+    ({ id, code, name, client, status, members, schedule }) => ({
+      id,
+      code,
+      name,
+      client,
+      status,
+      managers: members.filter((member) => member.role === 'Manager'),
+      schedule,
+    }),
+  );
   return {
     items: rows.slice((page - 1) * pageSize, page * pageSize),
     total: rows.length,
+    today: demoToday,
   };
 }
 
@@ -620,9 +878,10 @@ export const handlers = [
   ),
   http.get('/api/clients/choices', () => HttpResponse.json(clientChoicesOf(demoClients()))),
   // Without projects by default: the screens of projects simulate their own.
-  http.get('/api/projects', () => HttpResponse.json({ items: [], total: 0 })),
+  http.get('/api/projects', () => HttpResponse.json({ items: [], total: 0, today: demoToday })),
   http.get('/api/people', () => HttpResponse.json([])),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
+  http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
 ];
 
 export const server = setupServer(...handlers);
