@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { delay, http, HttpResponse } from 'msw';
+import { beforeEach, describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
 import { server } from '../test/server';
@@ -25,6 +25,11 @@ async function sidebarBrand(name: string) {
 // Spec: configuracao-da-instalacao, requirements "Nome da instalação", "Logo da instalação" and "Marca visível sem
 // sessão" (screens that show the brand).
 describe('Marca da instalação', () => {
+  beforeEach(() => {
+    // The tab title is of the document, which the tests share.
+    document.title = '';
+  });
+
   it('Nome padrão', async () => {
     await renderApp('/');
 
@@ -70,7 +75,13 @@ describe('Marca da instalação', () => {
 
   it('Marca na página de entrada', async () => {
     signedOut();
-    installation('Consultoria Fictícia', logoUrl);
+    // The brand comes after the answer that there is no session, as in a browser.
+    server.use(
+      http.get('/api/installation', async () => {
+        await delay(50);
+        return HttpResponse.json({ name: 'Consultoria Fictícia', logoUrl });
+      }),
+    );
 
     await renderApp('/sign-in');
 

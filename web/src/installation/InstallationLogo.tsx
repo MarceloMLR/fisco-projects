@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 /**
- * The logo the installation sent (fp-sidebar__logo): it takes the place of the badge, never taller than the badge.
+ * The logo the installation sent (fp-sidebar__logo): it takes the place of the badge, at the height of the badge.
  * It is decoration beside the name, which says the same.
  */
 export function InstallationLogo({
@@ -18,7 +18,15 @@ export function InstallationLogo({
       component="img"
       src={src}
       alt=""
-      sx={{ display: 'block', flex: 'none', maxHeight, maxWidth, objectFit: 'contain' }}
+      // A fixed height, since an SVG without its own size would have none; a wide logo stops at the width.
+      sx={{
+        display: 'block',
+        flex: 'none',
+        height: maxHeight,
+        width: 'auto',
+        maxWidth,
+        objectFit: 'contain',
+      }}
     />
   );
 }

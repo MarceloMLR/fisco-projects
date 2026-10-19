@@ -237,7 +237,8 @@ export function SettingsPage() {
                   <Box
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      // The logo takes what its buttons need, and the name the rest (fp-form-row).
+                      gridTemplateColumns: 'minmax(0, 1fr) auto',
                       gap: 'var(--space-4)',
                       [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
                     }}
