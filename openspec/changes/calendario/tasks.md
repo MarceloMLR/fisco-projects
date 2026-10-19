@@ -2,7 +2,7 @@
 
 ## 1. Backend
 
-- [ ] 1.1 Criar o módulo `Calendar` e o `Contracts`, com:
+- [x] 1.1 Criar o módulo `Calendar` e o `Contracts`, com:
   - `WorkCalendar`, `CalculatedHoliday` e `LocalHoliday`;
   - `INationalCalendar` com `BrazilianNationalCalendar`;
   - `BusinessDays`;
@@ -22,27 +22,30 @@
   - calendário do ano;
   - dias de trabalho;
   - escolha de feriado calculado;
+  - marcar e desmarcar várias datas de uma vez;
   - incluir, alterar e excluir feriado local.
 
   Testar com `dotnet test`:
   - a matriz de permissões (administrador, gerente de projeto, usuário e sem sessão);
   - os 400 e 404 de cada rota;
   - a escolha valendo em todos os anos;
+  - "Marcar todos" com tudo ou nada;
   - a auditoria de cada mudança.
 
   Depois, atualizar o contrato com `npm run api:update`.
 
 ## 2. Frontend
 
-- [ ] 2.1 Depois da aprovação do desenho por Marcelo, criar a tela Calendário e feriados, como no canvas:
+- [ ] 2.1 Criar a tela Calendário e feriados, como no canvas aprovado:
   - rota e item na Administração;
   - dias de trabalho e "Considerado" gravando na hora;
   - ano anterior e próximo;
   - filtro por tipo;
+  - "Marcar todos" e "Desmarcar todos";
   - lista com linhas apagadas e rodapé;
   - versão do celular.
 
-  Testar com `npm test` os cenários da tela: "Calendário e feriados na Administração", "Trocar o ano", "Filtrar por tipo", "Marcar considerado na lista", o último dia de trabalho desabilitado e o erro ao salvar.
+  Testar com `npm test` os cenários da tela: "Calendário e feriados na Administração", "Trocar o ano", "Filtrar por tipo", "Marcar considerado na lista", "Marcar todos", "Marcar todos de um tipo", "Desmarcar todos", o último dia de trabalho desabilitado e o erro ao salvar.
 - [ ] 2.2 Criar os diálogos "Novo feriado", "Editar feriado" e a confirmação de exclusão, e os textos da Auditoria para os três tipos de item, com o filtro.
 
   Testar com `npm test` e `npm run lint`:

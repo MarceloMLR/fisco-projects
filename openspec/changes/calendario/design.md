@@ -7,7 +7,7 @@
 - **Administração no frontend:** `AdminLayout` com a coluna de seções (Pessoas e segurança, Instalação), rotas sob `/admin` dentro de `RequireAdministrator`. No celular, a coluna some e a seção é aberta pelo endereço.
 - **Listas:** `DataTable` (MUI X Data Grid gratuito em pt-BR, paginação no servidor) e `isRowMuted` para linhas apagadas.
 - **Datas:** `useDates()` formata no fuso da instalação. Aqui as datas são dias (`DateOnly`), sem hora e sem fuso.
-- **Canvas:** telas AdminCalendario, AdminCalendarioNovoFeriado e CelularCalendario, nos dois temas (19/10/2026, a aprovar).
+- **Canvas:** telas AdminCalendario, AdminCalendarioNovoFeriado e CelularCalendario, nos dois temas, aprovadas por Marcelo em 19/10/2026 com o pedido do "Marcar todos".
 - **Regras:** ADR-0018 e ADR-0083 (proposto).
 
 ## Goals / Non-Goals
@@ -70,6 +70,7 @@ Alternativas:
   - `GetCalendarYear(year)`: dias de trabalho e a lista do ano em ordem de data, com chave ou id, nome, tipo, repetição e se é considerado;
   - `ChangeWorkingDays`;
   - `ChooseCalculatedHoliday(key, isConsidered)`;
+  - `ConsiderHolidays(keys, ids, isConsidered)`, o "Marcar todos": confere todos os feriados antes de mudar e salva uma vez, numa transação, com um registro de auditoria por feriado;
   - `AddLocalHoliday`, `ChangeLocalHoliday` e `RemoveLocalHoliday`.
 
   Os de feriado local devolvem os campos inválidos, como o `UpdateInstallation`.
@@ -84,6 +85,7 @@ Rotas em `/api/calendar`, todas com `RequireAuthorization(SystemPolicies.Adminis
 | `GET /{year}` | — | 200 `{ year, workingDays: DayOfWeek[], days: [{ date, kind, key, id, name, repeatsEveryYear, isConsidered }] }`; 400 com ano fora do intervalo |
 | `PUT /working-days` | `{ workingDays: DayOfWeek[] }` | 204; 400 sem nenhum dia |
 | `PUT /calculated-holidays/{key}` | `{ isConsidered }` | 204; 404 com chave desconhecida |
+| `PUT /considered` | `{ isConsidered, calculatedHolidays: string[], localHolidays: Guid[] }` | 204; 404 com um feriado que não existe, sem nada mudar |
 | `POST /local-holidays` | `{ name, date, repeatsEveryYear }` | 201 `{ id }`; 400 com os campos |
 | `PUT /local-holidays/{id}` | `{ name, date, repeatsEveryYear, isConsidered }` | 204; 400; 404 |
 | `DELETE /local-holidays/{id}` | — | 204; 404 |
@@ -120,6 +122,7 @@ O contexto base audita sozinho. O módulo só marca os rótulos:
   - Em sucesso, um aviso curto diz "Calendário salvo".
   - Depois, invalida `['calendar']` e `['audit']`.
   - O último dia de trabalho marcado fica desabilitado.
+- **Marcar todos:** um botão na barra da lista (`done_all`), que manda numa chamada só as datas da lista mostrada, no ano e no tipo escolhidos. Com todas já consideradas, o botão vira "Desmarcar todos". A atualização é otimista, como a das caixas. No celular, o botão fica no topo da lista, o tipo vai para a linha do ano e "Novo feriado" fica embaixo, na largura toda.
 - **Lista:** o `DataTable`, com todas as datas do ano numa página (são menos de 50) e o rodapé "21 datas em 2026 · 19 consideradas".
   - Linhas desconsideradas apagadas (`isRowMuted`).
   - O filtro por tipo é feito na tela, sobre a lista do ano.

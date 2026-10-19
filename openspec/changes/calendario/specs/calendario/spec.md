@@ -11,7 +11,7 @@ Define o calendário único da instalação, que diz quais dias são úteis para
 Só o administrador MUST poder ler e alterar o calendário da instalação pela API e abrir a seção Calendário e feriados da Administração. O gerente de projeto e o usuário MUST receber a recusa (403), e quem não tem sessão MUST receber 401, sem nada mudar (ADR-0046).
 
 #### Scenario: Administrador altera o calendário
-- **WHEN** o administrador lê o calendário de um ano, muda os dias de trabalho, desconsidera um feriado nacional e inclui, altera e exclui um feriado local
+- **WHEN** o administrador lê o calendário de um ano, muda os dias de trabalho, desconsidera um feriado nacional, marca todos e inclui, altera e exclui um feriado local
 - **THEN** todas as ações são aceitas
 
 #### Scenario: Gerente de projeto não altera o calendário
@@ -88,6 +88,26 @@ O administrador MUST poder considerar ou desconsiderar cada feriado nacional e c
 
 #### Scenario: Feriado calculado desconhecido
 - **WHEN** alguém pede para considerar um feriado que o sistema não calcula
+- **THEN** a API responde 404 e nada muda
+
+### Requirement: Marcar todos
+
+O administrador MUST poder considerar de uma vez todas as datas da lista mostrada, no ano e no tipo escolhidos, para depois desmarcar as que não quer. Com todas as datas da lista já consideradas, o mesmo botão MUST desconsiderar todas. A mudança MUST ser gravada de uma vez: todas as datas ou nenhuma.
+
+#### Scenario: Marcar todos
+- **WHEN** o administrador escolhe "Marcar todos" na lista de 2026
+- **THEN** todas as datas da lista passam a consideradas, e ele pode desmarcar uma a uma as que não quer
+
+#### Scenario: Marcar todos de um tipo
+- **WHEN** o filtro está em Pontos facultativos e o administrador escolhe "Marcar todos"
+- **THEN** só os pontos facultativos passam a considerados
+
+#### Scenario: Desmarcar todos
+- **WHEN** todas as datas da lista já estão consideradas
+- **THEN** o botão diz "Desmarcar todos" e desconsidera todas as datas da lista
+
+#### Scenario: Marcar todos com um feriado que não existe
+- **WHEN** o pedido traz um feriado calculado ou local que não existe
 - **THEN** a API responde 404 e nada muda
 
 ### Requirement: Feriados locais
@@ -184,7 +204,7 @@ A seção Instalação da coluna da Administração MUST ter Calendário e feria
 
 #### Scenario: Calendário no celular
 - **WHEN** o administrador abre Calendário e feriados no celular
-- **THEN** os dias de trabalho ficam em duas linhas, o tipo é escolhido numa lista, e as datas aparecem em lista com o nome, a data, o tipo e "Considerado"
+- **THEN** os dias de trabalho ficam em duas linhas, o tipo é escolhido numa lista, as datas aparecem em lista com o nome, a data, o tipo e "Considerado", com "Marcar todos" no topo da lista e "Novo feriado" embaixo
 
 ### Requirement: Mudanças do calendário na auditoria
 

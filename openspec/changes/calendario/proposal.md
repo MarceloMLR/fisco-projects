@@ -10,16 +10,18 @@ O cronograma e os prazos dos chamados contam dias úteis, pulando fins de semana
   - **dias de trabalho** da semana, com o padrão de segunda a sexta e pelo menos um dia marcado;
   - **feriados nacionais e pontos facultativos calculados** pelo próprio sistema, atrás de uma interface (ADR-0018). A Páscoa é calculada, e a lista e os padrões seguem o ADR-0083 (proposto): os feriados nacionais começam considerados e os pontos facultativos, desconsiderados;
   - **a escolha de considerar** cada feriado nacional ou ponto facultativo, que vale para todos os anos;
+  - **marcar todos** de uma vez, a pedido de Marcelo: todas as datas da lista mostrada passam a consideradas, para depois desmarcar as que não se quer, ou desconsideradas, quando já estão todas marcadas;
   - **feriados locais** cadastrados, com nome, data, "Repete todo ano" e a escolha de considerar. Podem ser incluídos, alterados e excluídos;
   - **a conta de dias úteis** no contrato `IWorkCalendar` (é dia útil, somar e contar dias úteis), para o cronograma e os prazos que vêm depois.
 - **API, só do administrador** (ADR-0046), sob `/api/calendar`:
   - o calendário de um ano;
   - os dias de trabalho;
   - a escolha de um feriado calculado;
+  - marcar ou desmarcar várias datas de uma vez;
   - incluir, alterar e excluir feriados locais.
-- **Tela Calendário e feriados** na seção Instalação da Administração, como no canvas (desenho de 19/10/2026, a aprovar):
+- **Tela Calendário e feriados** na seção Instalação da Administração, como no canvas (desenho aprovado por Marcelo em 19/10/2026, com o "Marcar todos" pedido por ele):
   - "Dias de trabalho" no topo;
-  - a lista do ano escolhido, com o tipo, a repetição e a coluna "Considerado", que grava na hora;
+  - a lista do ano escolhido, com o tipo, a repetição e a coluna "Considerado", que grava na hora, e o botão "Marcar todos";
   - o diálogo "Novo feriado", a edição e a exclusão com confirmação;
   - no celular, uma lista no lugar da tabela.
 - **Auditoria:** os dias de trabalho, as escolhas e os feriados locais entram na Auditoria, com textos próprios.

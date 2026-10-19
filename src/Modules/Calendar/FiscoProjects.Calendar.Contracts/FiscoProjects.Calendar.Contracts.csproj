@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>
