@@ -2,18 +2,18 @@
 
 ## 1. Backend
 
-- [ ] 1.1 Criar o módulo `Administration` com Contracts, testes e registro no `ApiSetup`:
+- [x] 1.1 Criar o módulo `Administration` com Contracts, testes e registro no `ApiSetup`:
   - `InstallationSettings` (nome e logo), com `Rename`, `ReplaceLogo` e `RemoveLogo`;
   - a migração `Initial`, com a linha padrão "FiscoProjects";
   - a auditoria: `Name` e `LogoFileName` entram, os campos técnicos ficam de fora.
 
   Verificar com `dotnet build -warnaserror`, os testes de arquitetura (o módulo novo passa a ser verificado) e os testes do domínio.
-- [ ] 1.2 Criar os casos de uso:
+- [x] 1.2 Criar os casos de uso:
   - `GetInstallation` e `RenameInstallation`;
   - `ReplaceInstallationLogo` e `RemoveInstallationLogo`, com a conferência do `LogoFile` (PNG, SVG seguro, até 1 MB) e o `IFileStorage`.
 
   Testar a conferência (PNG, SVG, JPG, arquivo grande, SVG com script, DTD, `on*`, `javascript:`), a troca de PNG por SVG e o arquivo excluído quando o banco falha. Verificar com `dotnet test`.
-- [ ] 1.3 Criar as rotas:
+- [x] 1.3 Criar as rotas:
   - `GET /api/installation` e `GET /api/installation/logo`, sem sessão, com os cabeçalhos de segurança e de cache;
   - `PUT /api/installation`, `PUT` e `DELETE /api/installation/logo`, só do administrador.
 
