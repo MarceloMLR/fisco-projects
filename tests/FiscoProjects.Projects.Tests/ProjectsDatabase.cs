@@ -1,3 +1,5 @@
+using FiscoProjects.Administration.Contracts;
+using FiscoProjects.Calendar.Contracts;
 using FiscoProjects.Files.Contracts;
 using FiscoProjects.Projects.Infrastructure;
 using FiscoProjects.Projects.Infrastructure.Persistence;
@@ -9,8 +11,8 @@ using Microsoft.Extensions.Time.Testing;
 namespace FiscoProjects.Projects.Tests;
 
 /// <summary>
-/// A migrated database with the Projects module registered as the host does, files in memory and the people of the
-/// installation in a list the test fills.
+/// A migrated database with the Projects module registered as the host does, files in memory, the people of the
+/// installation in a list the test fills, and the calendar and time zone of <see cref="TestInstallation"/>.
 /// </summary>
 internal sealed class ProjectsDatabase : IAsyncDisposable
 {
@@ -35,6 +37,7 @@ internal sealed class ProjectsDatabase : IAsyncDisposable
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero));
         var files = new MemoryFileStorage();
         var people = new PeopleOfTheTest();
+        var installation = new TestInstallation();
         var database = TestDatabase.Create(sqlServer.NewDatabase(), (services, configuration) =>
         {
             services.AddSingleton<TimeProvider>(clock);
@@ -42,6 +45,8 @@ internal sealed class ProjectsDatabase : IAsyncDisposable
             services.AddSingleton<IUserAccess>(people);
             services.AddSingleton<IUserDirectory>(people);
             services.AddSingleton<IUserProvisioning>(people);
+            services.AddSingleton<IWorkCalendar>(installation);
+            services.AddSingleton<IInstallationSettings>(installation);
             services.AddProjectsModule(configuration);
         });
         await database.MigrateAsync();

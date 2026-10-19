@@ -85,6 +85,19 @@ internal static class MemberChecks
         return project.IsClosed ? MemberOutcome.Closed : null;
     }
 
+    /// <summary>
+    /// The tasks of a person who left the project or became a viewer lose the owner, in the same change (ADR-0042,
+    /// ADR-0043).
+    /// </summary>
+    public static async Task UnassignAsync(
+        IScheduleStore schedules, Guid projectId, Guid userId, CancellationToken cancellationToken)
+    {
+        if (await schedules.FindAsync(projectId, cancellationToken) is { } schedule)
+        {
+            schedule.Unassign(userId);
+        }
+    }
+
     /// <summary>Only an active Administrator or Project manager is a manager of a project (ADR-0085).</summary>
     public static async Task<bool> MayBeManagerAsync(IUserAccess access, Guid userId, CancellationToken cancellationToken) =>
         await access.FindAsync(userId, cancellationToken) is { IsActive: true } person && SystemRoles.ManagesProjects(person.Role);
@@ -176,10 +189,11 @@ public sealed class AddProjectMember(IProjectStore store, IUserAccess access, IU
 
 /// <summary>
 /// Changes the role of a person in a project (ADR-0042): the tech lead does not change the role of a manager nor makes
-/// someone a manager (ADR-0043); a manager has the system role to be one (ADR-0085); the last manager keeps the role.
-/// Run in a serializable transaction, so two changes at once never leave the project without a manager.
+/// someone a manager (ADR-0043); a manager has the system role to be one (ADR-0085); the last manager keeps the role; a
+/// viewer is in charge of no task, so the tasks of a person who becomes one lose the owner. Run in a serializable
+/// transaction, so two changes at once never leave the project without a manager.
 /// </summary>
-public sealed class ChangeProjectMemberRole(IProjectStore store, IUserAccess access)
+public sealed class ChangeProjectMemberRole(IProjectStore store, IScheduleStore schedules, IUserAccess access)
 {
     public async Task<MemberOutcome> ExecuteAsync(
         Guid projectId, Guid userId, ProjectRole role, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -221,6 +235,11 @@ public sealed class ChangeProjectMemberRole(IProjectStore store, IUserAccess acc
                 return MemberOutcome.LastManager;
             }
 
+            if (role == ProjectRole.Viewer)
+            {
+                await MemberChecks.UnassignAsync(schedules, projectId, userId, token);
+            }
+
             await store.SaveChangesAsync(token);
             return MemberOutcome.Done;
         }, cancellationToken);
@@ -229,10 +248,11 @@ public sealed class ChangeProjectMemberRole(IProjectStore store, IUserAccess acc
 
 /// <summary>
 /// Removes a person from a project, who stops seeing it from the next request on (ADR-0042); what the person did keeps
-/// the name. The tech lead does not remove managers (ADR-0043), and the last manager stays. Run in a serializable
-/// transaction, so two removals at once never leave the project without a manager.
+/// the name, and the tasks of the person lose the owner. The tech lead does not remove managers (ADR-0043), and the
+/// last manager stays. Run in a serializable transaction, so two removals at once never leave the project without a
+/// manager.
 /// </summary>
-public sealed class RemoveProjectMember(IProjectStore store)
+public sealed class RemoveProjectMember(IProjectStore store, IScheduleStore schedules)
 {
     public async Task<MemberOutcome> ExecuteAsync(
         Guid projectId, Guid userId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -262,6 +282,7 @@ public sealed class RemoveProjectMember(IProjectStore store)
                 return MemberOutcome.LastManager;
             }
 
+            await MemberChecks.UnassignAsync(schedules, projectId, userId, token);
             await store.SaveChangesAsync(token);
             return MemberOutcome.Done;
         }, cancellationToken);

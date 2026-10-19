@@ -21,3 +21,21 @@ internal sealed class ClientReferenceNames(IClientStore clients) : IAuditReferen
     public Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
         clients.NamesAsync(ids, cancellationToken);
 }
+
+/// <summary>The names of the phases of the schedules that audit records point to (ADR-0084).</summary>
+internal sealed class SchedulePhaseReferenceNames(IScheduleStore schedules) : IAuditReferenceNames
+{
+    public string Kind => ProjectsAudit.SchedulePhaseReference;
+
+    public Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        schedules.PhaseNamesAsync(ids, cancellationToken);
+}
+
+/// <summary>The names of the tasks and milestones of the schedules that audit records point to (ADR-0084).</summary>
+internal sealed class ScheduleItemReferenceNames(IScheduleStore schedules) : IAuditReferenceNames
+{
+    public string Kind => ProjectsAudit.ScheduleItemReference;
+
+    public Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        schedules.ItemNamesAsync(ids, cancellationToken);
+}

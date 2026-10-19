@@ -161,6 +161,137 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:LabelReference", "User");
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("schedules", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PredecessorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<Guid>("SuccessorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("SuccessorId");
+
+                    b.HasIndex("PredecessorId", "SuccessorId")
+                        .IsUnique();
+
+                    b.ToTable("schedule_dependencies", "projects");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "SuccessorId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "ScheduleItem");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("CompletedOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.Property<Guid>("PhaseId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "SchedulePhase");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("PhaseId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("schedule_items", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.SchedulePhase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("schedule_phases", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
                 {
                     b.HasOne("FiscoProjects.Projects.Domain.Client", null)
@@ -178,9 +309,72 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Project", null)
+                        .WithOne()
+                        .HasForeignKey("FiscoProjects.Projects.Domain.Schedule", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.ScheduleItem", null)
+                        .WithMany()
+                        .HasForeignKey("PredecessorId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+
+                    b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithMany("Dependencies")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FiscoProjects.Projects.Domain.ScheduleItem", null)
+                        .WithMany()
+                        .HasForeignKey("SuccessorId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleItem", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.SchedulePhase", null)
+                        .WithMany()
+                        .HasForeignKey("PhaseId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+
+                    b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithMany("Items")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.SchedulePhase", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithMany("Phases")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
+                {
+                    b.Navigation("Dependencies");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("Phases");
                 });
 #pragma warning restore 612, 618
         }

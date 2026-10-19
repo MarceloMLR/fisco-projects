@@ -9,16 +9,16 @@
 
 ## 2. Persistência e auditoria
 
-- [ ] 2.1 Configurar as tabelas `schedules`, `schedule_phases`, `schedule_items` e `schedule_dependencies` (cascata só da raiz, índices, datas como `date`), as marcas da auditoria (rótulos, referências, contexto `ProjectId` e `Kind`, `Position` fora, raiz fora) e criar a migração `Schedule`; verificar com `dotnet ef migrations` sem mudanças pendentes e o teste de migração do desenvolvimento
-- [ ] 2.2 Criar `IScheduleStore` (`FindAsync`, `GetOrAddAsync`, leitura das fases e itens de vários projetos) e as fontes de nomes `SchedulePhase` e `ScheduleItem` (ADR-0084), com as constantes em `ProjectsAudit`; verificar com testes de integração do repositório
+- [x] 2.1 Configurar as tabelas `schedules`, `schedule_phases`, `schedule_items` e `schedule_dependencies` (cascata só da raiz, índices, datas como `date`), as marcas da auditoria (rótulos, referências, contexto `ProjectId` e `Kind`, `Position` fora, raiz fora) e criar a migração `Schedule`; verificar com `dotnet ef migrations` sem mudanças pendentes e o teste de migração do desenvolvimento
+- [x] 2.2 Criar `IScheduleStore` (`FindAsync`, `GetOrAddAsync`, leitura das fases e itens de vários projetos) e as fontes de nomes `SchedulePhase` e `ScheduleItem` (ADR-0084), com as constantes em `ProjectsAudit`; verificar com testes de integração do repositório
 
 ## 3. Casos de uso e API do cronograma
 
-- [ ] 3.1 Criar `InstallationClock` (hoje no fuso da instalação) e os casos de uso `GetSchedule`, `AddSchedulePhase`, `RenameSchedulePhase`, `RemoveSchedulePhase`, `AddScheduleItem`, `ChangeScheduleItem` e `RemoveScheduleItem`, na transação serializável, com validação dos campos, responsável do projeto que não é leitor, 403, 404 e 409; verificar com os testes de casos de uso, inclusive "Fase sem nome", "Tarefa inválida", "Responsável do projeto", "Leitor ou pessoa de fora como responsável", "Alterar tarefa num projeto concluído" e duas edições ao mesmo tempo
-- [ ] 3.2 Mapear as rotas `/api/projects/{id}/schedule` (GET, fases e itens), com Problem Details e o tipo de problema do ciclo; verificar com os testes da API gerados da tabela de permissões ("Gerente edita o cronograma", "Administrador fora do projeto edita o cronograma", "Líder técnico só vê o cronograma", "Colaborador, desenvolvedor e leitor só veem o cronograma", "Cronograma de um projeto de fora", "Cronograma sem sessão")
-- [ ] 3.3 Deixar as tarefas sem responsável ao remover a pessoa ou trocá-la para leitor; verificar com "Remover o responsável de tarefas" e "Responsável passa a leitor" (casos de uso e API, com a auditoria)
-- [ ] 3.4 Incluir o resumo do cronograma na lista de projetos (`schedule` e `today`) e as datas e `canEditSchedule` no projeto; verificar com testes da API da lista e do projeto
-- [ ] 3.5 Verificar a auditoria pela API com "Tarefa empurrada na auditoria" e "Dependência na auditoria", e atualizar o contrato (`npm run api:update`), conferindo o teste do contrato
+- [x] 3.1 Criar `InstallationClock` (hoje no fuso da instalação) e os casos de uso `GetSchedule`, `AddSchedulePhase`, `RenameSchedulePhase`, `RemoveSchedulePhase`, `AddScheduleItem`, `ChangeScheduleItem` e `RemoveScheduleItem`, na transação serializável, com validação dos campos, responsável do projeto que não é leitor, 403, 404 e 409; verificar com os testes de casos de uso, inclusive "Fase sem nome", "Tarefa inválida", "Responsável do projeto", "Leitor ou pessoa de fora como responsável", "Alterar tarefa num projeto concluído" e duas edições ao mesmo tempo
+- [x] 3.2 Mapear as rotas `/api/projects/{id}/schedule` (GET, fases e itens), com Problem Details e o tipo de problema do ciclo; verificar com os testes da API gerados da tabela de permissões ("Gerente edita o cronograma", "Administrador fora do projeto edita o cronograma", "Líder técnico só vê o cronograma", "Colaborador, desenvolvedor e leitor só veem o cronograma", "Cronograma de um projeto de fora", "Cronograma sem sessão")
+- [x] 3.3 Deixar as tarefas sem responsável ao remover a pessoa ou trocá-la para leitor; verificar com "Remover o responsável de tarefas" e "Responsável passa a leitor" (casos de uso e API, com a auditoria)
+- [x] 3.4 Incluir o resumo do cronograma na lista de projetos (`schedule` e `today`) e as datas e `canEditSchedule` no projeto; verificar com testes da API da lista e do projeto
+- [x] 3.5 Verificar a auditoria pela API com "Tarefa empurrada na auditoria" e "Dependência na auditoria", e atualizar o contrato (`npm run api:update`), conferindo o teste do contrato
 
 ## 4. Componentes da interface
 

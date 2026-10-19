@@ -1,0 +1,381 @@
+using FiscoProjects.Projects.Application;
+using FiscoProjects.Projects.Domain;
+using FiscoProjects.Testing;
+using FiscoProjects.Users.Contracts;
+
+namespace FiscoProjects.Projects.Tests;
+
+// Spec: cronograma (module side): "Quem vê e quem edita o cronograma", "Fases do cronograma", "Tarefas e marcos",
+// "Responsável da tarefa", "Dependências", "Dependências que empurram" and "Cronograma de um projeto encerrado";
+// membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos" and
+// "Cabeçalho do projeto".
+public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLifetime
+{
+    private ProjectsDatabase _database = null!;
+    private Guid _paulo;
+    private Guid _marina;
+    private Guid _rafael;
+    private Guid _diego;
+    private Guid _carla;
+    private Guid _lucas;
+    private Guid _beatriz;
+    private Guid _project;
+    private Guid _phase;
+
+    private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
+
+    private static DateOnly D(int month, int day) => new(2026, month, day);
+
+    private ProjectViewer Paulo => new(_paulo, IsAdministrator: true);
+
+    private ProjectViewer Marina => new(_marina, IsAdministrator: false);
+
+    private ProjectViewer Rafael => new(_rafael, IsAdministrator: false);
+
+    public async ValueTask InitializeAsync()
+    {
+        _database = await ProjectsDatabase.CreateAsync(sqlServer);
+        _paulo = _database.People.Add("Paulo Nogueira", SystemRole.Administrator);
+        _marina = _database.People.Add("Marina Costa", SystemRole.ProjectManager);
+        _rafael = _database.People.Add("Rafael Souza", SystemRole.User);
+        _diego = _database.People.Add("Diego Torres", SystemRole.User);
+        _carla = _database.People.Add("Carla Mendes", SystemRole.User);
+        _lucas = _database.People.Add("Lucas Prado", SystemRole.User);
+        _beatriz = _database.People.Add("Beatriz Lima", SystemRole.ProjectManager);
+        var created = await _database.RunAsync<CreateProject, ProjectSaveResult>(create => create.ExecuteAsync(
+            new NewProject("ERP-FIN", "Implantação do ERP financeiro", null, null, null, _rafael), _marina, Cancellation));
+        _project = created.Id!.Value;
+        await AddMemberAsync(_diego, ProjectRole.Developer);
+        await AddMemberAsync(_carla, ProjectRole.Contributor);
+        await AddMemberAsync(_lucas, ProjectRole.Viewer);
+        _phase = (await AddPhaseAsync(Marina, "Configuração")).Id!.Value;
+    }
+
+    public ValueTask DisposeAsync() => _database.DisposeAsync();
+
+    private static ScheduleItemForm Form(
+        Guid phase, string name, DateOnly start, int duration, Guid? owner = null, int progress = 0, params Guid[] after) =>
+        new(phase, name, start, duration, owner, progress, after);
+
+    private ScheduleItemForm TaskForm(string name, DateOnly start, int duration, Guid? owner = null, params Guid[] after) =>
+        Form(_phase, name, start, duration, owner, 0, after);
+
+    private Task<MemberAdded> AddMemberAsync(Guid userId, ProjectRole role) =>
+        _database.RunAsync<AddProjectMember, MemberAdded>(add => add.ExecuteAsync(
+            _project, new NewProjectMember(userId, null, role), Paulo, Cancellation));
+
+    private Task<ScheduleResult> AddPhaseAsync(ProjectViewer viewer, string? name) =>
+        _database.RunAsync<AddSchedulePhase, ScheduleResult>(add => add.ExecuteAsync(_project, name, viewer, Cancellation));
+
+    private Task<ScheduleResult> RenamePhaseAsync(ProjectViewer viewer, Guid phaseId, string? name) =>
+        _database.RunAsync<RenameSchedulePhase, ScheduleResult>(rename => rename.ExecuteAsync(_project, phaseId, name, viewer, Cancellation));
+
+    private Task<ScheduleResult> RemovePhaseAsync(ProjectViewer viewer, Guid phaseId) =>
+        _database.RunAsync<RemoveSchedulePhase, ScheduleResult>(remove => remove.ExecuteAsync(_project, phaseId, viewer, Cancellation));
+
+    private Task<ScheduleResult> AddItemAsync(ProjectViewer viewer, ScheduleItemForm form, ScheduleItemKind kind = ScheduleItemKind.Task) =>
+        _database.RunAsync<AddScheduleItem, ScheduleResult>(add => add.ExecuteAsync(_project, kind, form, viewer, Cancellation));
+
+    private Task<ScheduleResult> ChangeItemAsync(ProjectViewer viewer, Guid itemId, ScheduleItemForm form) =>
+        _database.RunAsync<ChangeScheduleItem, ScheduleResult>(change => change.ExecuteAsync(_project, itemId, form, viewer, Cancellation));
+
+    private Task<ScheduleResult> RemoveItemAsync(ProjectViewer viewer, Guid itemId) =>
+        _database.RunAsync<RemoveScheduleItem, ScheduleResult>(remove => remove.ExecuteAsync(_project, itemId, viewer, Cancellation));
+
+    private Task<ScheduleView?> GetAsync(ProjectViewer viewer) =>
+        _database.RunAsync<GetSchedule, ScheduleView?>(get => get.ExecuteAsync(_project, viewer, Cancellation));
+
+    private async Task<ScheduleItemView> ItemAsync(Guid itemId)
+    {
+        var view = (await GetAsync(Paulo))!;
+        var item = view.Figures.Phases.SelectMany(phase => phase.Items).Single(item => item.Id == itemId);
+        return new ScheduleItemView(item, view.Predecessors.TryGetValue(itemId, out var before) ? before : []);
+    }
+
+    private sealed record ScheduleItemView(ScheduleItem Item, IReadOnlyList<Guid> Predecessors);
+
+    private async Task<Guid> AddTaskAsync(string name, DateOnly start, int duration, params Guid[] after) =>
+        (await AddItemAsync(Marina, TaskForm(name, start, duration, null, after))).Id!.Value;
+
+    [Fact(DisplayName = "Gerente edita o cronograma")]
+    public async Task Manager_ChangesTheSchedule()
+    {
+        var phase = await AddPhaseAsync(Marina, "Levantamento");
+        var task = await AddItemAsync(Marina, Form(phase.Id!.Value, "Mapear processos", D(10, 5), 5, _diego));
+        var milestone = await AddItemAsync(Marina, Form(phase.Id!.Value, "Processos mapeados", D(10, 9), 0), ScheduleItemKind.Milestone);
+        var changed = await ChangeItemAsync(Marina, task.Id!.Value, Form(phase.Id!.Value, "Mapear processos fiscais", D(10, 5), 6, _diego, 50));
+        var removed = await RemoveItemAsync(Marina, milestone.Id!.Value);
+
+        new[] { phase, task, milestone, changed, removed }.Should().OnlyContain(result => result.Outcome == ScheduleOutcome.Done);
+        var view = (await GetAsync(Marina))!;
+        var levantamento = view.Figures.Phases.Single(p => p.Phase.Name == "Levantamento");
+        levantamento.Items.Should().ContainSingle().Which.Should().Match<ScheduleItem>(item =>
+            item.Name == "Mapear processos fiscais" && item.Duration == 6 && item.End == D(10, 13) && item.Progress == 50);
+        view.OwnerNames[_diego].Should().Be("Diego Torres");
+    }
+
+    [Fact(DisplayName = "Administrador fora do projeto edita o cronograma")]
+    public async Task Administrator_ChangesTheSchedule()
+    {
+        (await GetAsync(Paulo)).Should().NotBeNull();
+        (await AddItemAsync(Paulo, TaskForm("Configurar plano de contas", D(10, 14), 3))).Outcome.Should().Be(ScheduleOutcome.Done);
+    }
+
+    [Fact(DisplayName = "Líder técnico só vê o cronograma")]
+    public async Task TechLead_OnlySeesTheSchedule()
+    {
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 5);
+
+        (await GetAsync(Rafael)).Should().NotBeNull();
+        (await AddPhaseAsync(Rafael, "Homologação")).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await RenamePhaseAsync(Rafael, _phase, "Outra")).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await RemovePhaseAsync(Rafael, _phase)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await AddItemAsync(Rafael, TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await ChangeItemAsync(Rafael, task, TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await RemoveItemAsync(Rafael, task)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+
+        var view = (await GetAsync(Paulo))!;
+        view.Figures.Phases.Should().ContainSingle().Which.Items.Should().ContainSingle().Which.Name.Should().Be("Parametrizar ICMS");
+    }
+
+    [Theory(DisplayName = "Colaborador, desenvolvedor e leitor só veem o cronograma")]
+    [InlineData("Carla")]
+    [InlineData("Diego")]
+    [InlineData("Lucas")]
+    public async Task OtherRoles_OnlySeeTheSchedule(string person)
+    {
+        var viewer = new ProjectViewer(person switch { "Carla" => _carla, "Diego" => _diego, _ => _lucas }, false);
+        var owned = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, person == "Lucas" ? null : viewer.UserId))).Id!.Value;
+
+        (await GetAsync(viewer)).Should().NotBeNull();
+        (await ChangeItemAsync(viewer, owned, TaskForm("Integrar NF-e", D(10, 19), 5, null))).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await AddPhaseAsync(viewer, "Homologação")).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+    }
+
+    [Fact(DisplayName = "Cronograma de um projeto de fora")]
+    public async Task Outsider_FindsNoSchedule()
+    {
+        var beatriz = new ProjectViewer(_beatriz, false);
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 5);
+
+        (await GetAsync(beatriz)).Should().BeNull();
+        (await AddPhaseAsync(beatriz, "Homologação")).Outcome.Should().Be(ScheduleOutcome.NotFound);
+        (await ChangeItemAsync(beatriz, task, TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.NotFound);
+        (await ChangeItemAsync(Marina, Guid.CreateVersion7(), TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.NotFound);
+        (await RemovePhaseAsync(Marina, Guid.CreateVersion7())).Outcome.Should().Be(ScheduleOutcome.NotFound);
+    }
+
+    [Fact(DisplayName = "Cronograma sem tarefas")]
+    public async Task ScheduleWithoutItems_HasNoDates()
+    {
+        var view = (await GetAsync(Marina))!;
+
+        view.Figures.Start.Should().BeNull();
+        view.Figures.Today.Should().Be(D(10, 19));
+        view.Figures.Phases.Should().ContainSingle().Which.Phase.Name.Should().Be("Configuração");
+    }
+
+    [Fact(DisplayName = "Fase sem nome")]
+    public async Task Phase_WithoutAName_IsRefused()
+    {
+        (await AddPhaseAsync(Marina, "  ")).Should().BeEquivalentTo(ScheduleResult.InvalidFields([ScheduleField.Name]));
+        (await AddPhaseAsync(Marina, new string('a', 151))).Outcome.Should().Be(ScheduleOutcome.Invalid);
+        (await RenamePhaseAsync(Marina, _phase, null)).Outcome.Should().Be(ScheduleOutcome.Invalid);
+
+        (await GetAsync(Marina))!.Figures.Phases.Should().ContainSingle();
+    }
+
+    [Fact(DisplayName = "Criar e renomear fase")]
+    public async Task Phase_IsCreated_AndRenamed()
+    {
+        var phase = (await AddPhaseAsync(Marina, "Levantamento")).Id!.Value;
+
+        (await RenamePhaseAsync(Marina, phase, " Diagnóstico ")).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        (await GetAsync(Marina))!.Figures.Phases.Select(p => p.Phase.Name).Should().Equal("Configuração", "Diagnóstico");
+    }
+
+    [Fact(DisplayName = "Excluir fase com tarefas")]
+    public async Task RemovingAPhase_RemovesItsItems()
+    {
+        var survey = (await AddPhaseAsync(Marina, "Levantamento")).Id!.Value;
+        var first = (await AddItemAsync(Marina, Form(survey, "Mapear processos", D(10, 5), 5))).Id!.Value;
+        var next = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 3, first);
+
+        (await RemovePhaseAsync(Marina, survey)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        var item = await ItemAsync(next);
+        (item.Item.Start, item.Item.End).Should().Be((D(10, 13), D(10, 15)));
+        item.Predecessors.Should().BeEmpty();
+        (await GetAsync(Marina))!.Figures.Phases.Should().ContainSingle();
+    }
+
+    [Fact(DisplayName = "Tarefa inválida")]
+    public async Task InvalidItems_AreRefused()
+    {
+        var other = Guid.CreateVersion7();
+
+        (await AddItemAsync(Marina, Form(other, " ", D(10, 5), 0, progress: 101)))
+            .Invalid.Should().BeEquivalentTo([ScheduleField.Name, ScheduleField.Phase, ScheduleField.Duration, ScheduleField.Progress]);
+        (await AddItemAsync(Marina, Form(_phase, "Aceite", D(10, 5), 0, _diego), ScheduleItemKind.Milestone))
+            .Invalid.Should().Equal(ScheduleField.Owner);
+        (await AddItemAsync(Marina, Form(_phase, "Tarefa", new DateOnly(1999, 12, 31), 1, after: Guid.CreateVersion7())))
+            .Invalid.Should().Equal(ScheduleField.Start, ScheduleField.Predecessors);
+
+        (await GetAsync(Marina))!.Figures.Phases.Single().Items.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Criar tarefa")]
+    public async Task Task_IsSavedWithItsEnd()
+    {
+        var id = await AddTaskAsync(" Levantar cadastros ", D(10, 8), 3);
+
+        var item = (await ItemAsync(id)).Item;
+        (item.Name, item.Start, item.End, item.Duration, item.Kind).Should().Be(("Levantar cadastros", D(10, 8), D(10, 13), 3, ScheduleItemKind.Task));
+    }
+
+    [Fact(DisplayName = "Responsável do projeto")]
+    public async Task Owner_IsAPersonOfTheProject()
+    {
+        var id = await AddTaskAsync("Integrar NF-e", D(10, 19), 5);
+
+        var result = await ChangeItemAsync(Marina, id, TaskForm("Integrar NF-e", D(10, 19), 5, _diego));
+
+        result.Outcome.Should().Be(ScheduleOutcome.Done);
+        (await ItemAsync(id)).Item.OwnerId.Should().Be(_diego);
+    }
+
+    [Fact(DisplayName = "Leitor ou pessoa de fora como responsável")]
+    public async Task Viewer_OrOutsider_IsNoOwner()
+    {
+        var id = await AddTaskAsync("Integrar NF-e", D(10, 19), 5);
+
+        (await ChangeItemAsync(Marina, id, TaskForm("Integrar NF-e", D(10, 19), 5, _lucas))).Invalid.Should().Equal(ScheduleField.Owner);
+        (await ChangeItemAsync(Marina, id, TaskForm("Integrar NF-e", D(10, 19), 5, _beatriz))).Invalid.Should().Equal(ScheduleField.Owner);
+
+        (await ItemAsync(id)).Item.OwnerId.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Dependência circular")]
+    public async Task Cycle_IsRefused()
+    {
+        var a = await AddTaskAsync("A", D(10, 5), 1);
+        var b = await AddTaskAsync("B", D(10, 6), 1, a);
+        var c = await AddTaskAsync("C", D(10, 7), 1, b);
+
+        var result = await ChangeItemAsync(Marina, a, TaskForm("A", D(10, 5), 1, null, c));
+        var itself = await ChangeItemAsync(Marina, a, TaskForm("A", D(10, 5), 1, null, a));
+
+        result.Outcome.Should().Be(ScheduleOutcome.Cycle);
+        itself.Invalid.Should().Equal(ScheduleField.Predecessors);
+        (await ItemAsync(a)).Predecessors.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Atrasar empurra a cadeia")]
+    public async Task LaterEnd_PushesTheChain()
+    {
+        var a = await AddTaskAsync("A", D(10, 5), 5);
+        var b = await AddTaskAsync("B", D(10, 13), 2, a);
+        var c = await AddTaskAsync("C", D(10, 15), 1, b);
+
+        var result = await ChangeItemAsync(Marina, a, TaskForm("A", D(10, 5), 6));
+
+        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 2));
+        (await ItemAsync(a)).Predecessors.Should().BeEmpty();
+        ((await ItemAsync(b)).Item.Start, (await ItemAsync(c)).Item.Start).Should().Be((D(10, 14), D(10, 16)));
+    }
+
+    [Fact(DisplayName = "Duas edições ao mesmo tempo")]
+    public async Task TwoChangesAtOnce_KeepTheChain()
+    {
+        var a = await AddTaskAsync("A", D(10, 5), 5);
+        var b = await AddTaskAsync("B", D(10, 13), 2, a);
+        var c = await AddTaskAsync("C", D(10, 15), 1, b);
+
+        var results = await System.Threading.Tasks.Task.WhenAll(
+            ChangeItemAsync(Marina, a, TaskForm("A", D(10, 5), 8)),
+            ChangeItemAsync(Paulo, b, TaskForm("B", D(10, 13), 4, null, a)));
+
+        results.Should().OnlyContain(result => result.Outcome == ScheduleOutcome.Done);
+        var (itemA, itemB, itemC) = ((await ItemAsync(a)).Item, (await ItemAsync(b)).Item, (await ItemAsync(c)).Item);
+        (itemA.End, itemB.Duration).Should().Be((D(10, 15), 4));
+        itemB.Start.Should().Be(D(10, 16), "B starts the next business day after A ends");
+        itemC.Start.Should().Be(TestBusinessDays.Of2026.AddBusinessDays(itemB.End, 1));
+    }
+
+    [Fact(DisplayName = "Alterar tarefa num projeto concluído")]
+    public async Task ClosedProject_KeepsItsSchedule()
+    {
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 5);
+        await _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change =>
+            change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation));
+
+        (await ChangeItemAsync(Marina, task, TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.Closed);
+        (await AddPhaseAsync(Paulo, "Homologação")).Outcome.Should().Be(ScheduleOutcome.Closed);
+
+        (await ItemAsync(task)).Item.Name.Should().Be("Parametrizar ICMS");
+        (await GetAsync(Rafael)).Should().NotBeNull();
+    }
+
+    [Fact(DisplayName = "Remover o responsável de tarefas")]
+    public async Task RemovedPerson_LeavesTheTasksWithoutOwner()
+    {
+        var first = (await AddItemAsync(Marina, Form(_phase, "Integrar NF-e", D(10, 19), 5, _diego, 40))).Id!.Value;
+        var second = (await AddItemAsync(Marina, TaskForm("Ajustar relatórios", D(10, 26), 3, _diego))).Id!.Value;
+        var other = (await AddItemAsync(Marina, TaskForm("Testes integrados", D(10, 26), 3, _carla))).Id!.Value;
+
+        (await _database.RunAsync<RemoveProjectMember, MemberOutcome>(remove =>
+            remove.ExecuteAsync(_project, _diego, Marina, Cancellation))).Should().Be(MemberOutcome.Done);
+
+        var firstItem = (await ItemAsync(first)).Item;
+        (firstItem.OwnerId, firstItem.Start, firstItem.End, firstItem.Progress).Should().Be(((Guid?)null, D(10, 19), D(10, 23), 40));
+        (await ItemAsync(second)).Item.OwnerId.Should().BeNull();
+        (await ItemAsync(other)).Item.OwnerId.Should().Be(_carla);
+    }
+
+    [Fact(DisplayName = "Responsável passa a leitor")]
+    public async Task PersonWhoBecomesAViewer_LeavesTheTasksWithoutOwner()
+    {
+        var task = (await AddItemAsync(Marina, TaskForm("Testes integrados", D(10, 26), 3, _carla))).Id!.Value;
+        var other = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, _diego))).Id!.Value;
+
+        (await _database.RunAsync<ChangeProjectMemberRole, MemberOutcome>(change =>
+            change.ExecuteAsync(_project, _carla, ProjectRole.Viewer, Marina, Cancellation))).Should().Be(MemberOutcome.Done);
+        (await _database.RunAsync<ChangeProjectMemberRole, MemberOutcome>(change =>
+            change.ExecuteAsync(_project, _diego, ProjectRole.Contributor, Marina, Cancellation))).Should().Be(MemberOutcome.Done);
+
+        (await ItemAsync(task)).Item.OwnerId.Should().BeNull();
+        (await ItemAsync(other)).Item.OwnerId.Should().Be(_diego);
+    }
+
+    [Fact(DisplayName = "Cronograma na lista")]
+    public async Task List_ShowsTheNumbersOfTheSchedules()
+    {
+        var late = await AddTaskAsync("Validar cadastro", D(10, 13), 3);
+        await ChangeItemAsync(Marina, late, Form(_phase, "Validar cadastro", D(10, 13), 3, progress: 80));
+        await AddItemAsync(Marina, Form(_phase, "Aceite", D(11, 3), 0), ScheduleItemKind.Milestone);
+        await _database.RunAsync<CreateProject, ProjectSaveResult>(create => create.ExecuteAsync(
+            new NewProject("SPED-27", "Adequação do SPED Fiscal 2027", null, null, null, null), _marina, Cancellation));
+
+        var page = await _database.RunAsync<ListProjects, ProjectListPage>(list => list.ExecuteAsync(
+            new ProjectListQuery(null, null, ProjectSituation.Active, false, 1, 25), Marina, Cancellation));
+
+        page.Today.Should().Be(D(10, 19));
+        var erp = page.Items.Single(item => item.Code == "ERP-FIN").Schedule!;
+        (erp.Start, erp.End, erp.Progress, erp.LateTasks, erp.CurrentPhase!.Name).Should().Be((D(10, 13), D(11, 3), 80, 1, "Configuração"));
+        erp.Milestones.Should().Equal(D(11, 3));
+        page.Items.Single(item => item.Code == "SPED-27").Schedule.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Datas do cronograma no cabeçalho")]
+    public async Task Project_ComesWithTheDatesOfItsSchedule()
+    {
+        await AddTaskAsync("Parametrizar ICMS", D(10, 13), 5);
+        await AddItemAsync(Marina, Form(_phase, "Aceite", D(11, 13), 0), ScheduleItemKind.Milestone);
+
+        var details = await _database.RunAsync<GetProject, ProjectDetails?>(get => get.ExecuteAsync(_project, Rafael, Cancellation));
+
+        details!.Schedule.Should().Be(new SchedulePeriod(D(10, 13), D(11, 13)));
+        details.Permissions.CanEditSchedule.Should().BeFalse();
+    }
+}
