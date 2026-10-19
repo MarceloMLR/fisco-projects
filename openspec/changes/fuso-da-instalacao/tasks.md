@@ -25,7 +25,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção, num navegador em outro fuso:
+- [x] 3.1 Conferir no navegador, com o build de produção, num navegador em outro fuso:
   - as Configurações gerais com o fuso, nos temas claro e escuro;
   - as horas da Auditoria e dos Usuários no fuso da instalação;
   - a troca do fuso.
