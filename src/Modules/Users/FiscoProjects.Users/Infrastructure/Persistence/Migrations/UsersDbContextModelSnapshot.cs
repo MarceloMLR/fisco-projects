@@ -70,7 +70,7 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("LastSignInAt")
+                    b.Property<DateTime?>("LastSignInAt")
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 

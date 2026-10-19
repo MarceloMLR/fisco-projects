@@ -15,3 +15,13 @@ public enum SystemRole
     /// <summary>Everything, including the Administration.</summary>
     Administrator = 3,
 }
+
+/// <summary>What each system role allows beyond the project roles.</summary>
+public static class SystemRoles
+{
+    /// <summary>
+    /// Whether a person with the role may be the manager of a project: the Administrator and the Project manager
+    /// (ADR-0072, ADR-0085).
+    /// </summary>
+    public static bool ManagesProjects(SystemRole role) => role is SystemRole.Administrator or SystemRole.ProjectManager;
+}

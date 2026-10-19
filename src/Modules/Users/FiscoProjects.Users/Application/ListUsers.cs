@@ -9,7 +9,7 @@ public sealed record UserListQuery(string? Search, SystemRole? Role, bool? IsAct
 }
 
 public sealed record UserListItem(
-    Guid Id, string Name, string Email, SystemRole Role, bool IsActive, DateTime LastSignInAt);
+    Guid Id, string Name, string Email, SystemRole Role, bool IsActive, DateTime? LastSignInAt);
 
 public sealed record UserListPage(IReadOnlyList<UserListItem> Items, int Total);
 

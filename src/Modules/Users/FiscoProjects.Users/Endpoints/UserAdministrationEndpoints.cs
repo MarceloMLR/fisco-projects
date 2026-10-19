@@ -16,7 +16,7 @@ public enum UserStatus
 
 /// <summary>One person on the Users screen.</summary>
 public sealed record UserResponse(
-    Guid Id, string Name, string Email, SystemRole Role, UserStatus Status, DateTime LastSignInAt);
+    Guid Id, string Name, string Email, SystemRole Role, UserStatus Status, DateTime? LastSignInAt);
 
 public sealed record UserPageResponse(IReadOnlyList<UserResponse> Items, int Total);
 
