@@ -149,8 +149,10 @@ credential.Property(c => c.Password).IsAuditSecret();  // registra só que mudou
 link.ExcludeFromAudit();                                // item técnico inteiro de fora
 project.Property(p => p.ClientId).IsAuditReference(ProjectsAudit.ClientReference); // outro item: a tela mostra o nome atual
 member.HasAuditLabelReference(m => m.UserId, UserAudit.Reference);                  // rótulo que é outro item (ADR-0084)
+member.Property(m => m.ProjectId).IsAuditContext();                                 // onde o item está: vai em toda mudança
 ```
 
+- Um campo de contexto é gravado em toda criação, alteração e exclusão do item, mesmo sem mudar (antes igual ao depois), para o registro dizer onde a mudança aconteceu, como o projeto na troca do papel de uma pessoa. A tela de Auditoria o usa no texto do registro, fora da tabela de mudanças. Uma alteração que só teria o contexto não é gravada.
 - Uma referência guarda o identificador e o tipo (`"User"`, `"Client"`, `"Project"`), não o nome: a lista da Auditoria pede o nome atual à fonte `IAuditReferenceNames` (`SharedKernel`) registrada pelo módulo dono do tipo. Um item que não existe mais aparece sem nome. O tipo de cada referência fica no `Contracts` do módulo dono, como `UserAudit.Reference`.
 
 - Dados de negócio mudam só pelo `SaveChangesAsync`: `ExecuteUpdate`, `ExecuteDelete` e SQL direto não passam pela auditoria. O `SaveChanges` síncrono é recusado.

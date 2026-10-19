@@ -28,6 +28,10 @@ public static class ProjectsModule
         services.AddScoped<CreateProject>();
         services.AddScoped<ChangeProject>();
         services.AddScoped<ChangeProjectStatus>();
+        services.AddScoped<ListProjectMembers>();
+        services.AddScoped<AddProjectMember>();
+        services.AddScoped<ChangeProjectMemberRole>();
+        services.AddScoped<RemoveProjectMember>();
         services.AddScoped<ListClients>();
         services.AddScoped<AddClient>();
         services.AddScoped<ChangeClient>();

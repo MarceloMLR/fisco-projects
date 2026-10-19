@@ -92,13 +92,17 @@ export function NewProjectPage() {
       name: '',
       description: '',
       clientId: noClient,
-      manager: me === undefined ? null : { id: me.id, name: me.name },
+      manager:
+        me === undefined
+          ? null
+          : { id: me.id, directoryId: null, name: me.name, canBeManager: true },
       techLead: null,
     },
   });
 
   const manager = useWatch({ control, name: 'manager' });
   const otherManager = manager !== null && me !== undefined && manager.id !== me.id;
+  const techLead = useWatch({ control, name: 'techLead' });
   const errorText = (message: string | undefined) =>
     isProjectFieldError(message) ? t(message) : undefined;
   const codeError =
@@ -115,7 +119,9 @@ export function NewProjectPage() {
           description: values.description.trim() === '' ? null : values.description.trim(),
           clientId: values.clientId === noClient ? null : values.clientId,
           managerId: values.manager?.id ?? null,
+          // The tech lead may be a person of the directory who never signed in (ADR-0005).
           techLeadId: values.techLead?.id ?? null,
+          techLeadDirectoryId: values.techLead?.directoryId ?? null,
         },
       });
       if (data !== undefined) {
@@ -136,6 +142,7 @@ export function NewProjectPage() {
         clientId: ['clientId', projectFieldErrors.clientInvalid],
         managerId: ['manager', projectFieldErrors.managerInvalid],
         techLeadId: ['techLead', projectFieldErrors.techLeadInvalid],
+        techLeadDirectoryId: ['techLead', projectFieldErrors.techLeadInvalid],
       } as const;
       let known = false;
       for (const [field, [name, message]] of Object.entries(byField)) {
@@ -248,6 +255,8 @@ export function NewProjectPage() {
                     onChange={field.onChange}
                     managersOnly
                     youId={me?.id}
+                    // The manager and the tech lead are two people (ADR-0072).
+                    exclude={techLead?.id == null ? undefined : [techLead.id]}
                     error={errorText(errors.manager?.message)}
                     helper={otherManager ? t('projects.form.notMember') : undefined}
                   />
@@ -264,6 +273,7 @@ export function NewProjectPage() {
                     onChange={field.onChange}
                     placeholder={t('projects.form.noTechLead')}
                     youId={me?.id}
+                    exclude={manager?.id == null ? undefined : [manager.id]}
                     error={errorText(errors.techLead?.message)}
                   />
                 )}

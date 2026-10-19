@@ -46,7 +46,7 @@ public sealed class SignInWithIdentityTests(SqlServerFixture sqlServer)
         var user = await db.Users.SingleAsync(TestContext.Current.CancellationToken);
         user.Name.Should().Be("Marina Costa Alves");
         user.LastSignInAt.Should().Be(database.Clock.GetUtcNow().UtcDateTime);
-        user.CreatedAt.Should().Be(user.LastSignInAt.AddDays(-2));
+        user.CreatedAt.Should().Be(user.LastSignInAt!.Value.AddDays(-2));
         (await db.IdentityLinks.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
     }
 

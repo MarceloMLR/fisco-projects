@@ -54,6 +54,9 @@
     },
     "project": {
       "title": "Visão geral"
+    },
+    "projectMembers": {
+      "title": "Membros"
     }
   },
   "signIn": {
@@ -133,7 +136,8 @@
   "dates": {
     "now": "Agora",
     "today": "Hoje, {{time}}",
-    "yesterday": "Ontem, {{time}}"
+    "yesterday": "Ontem, {{time}}",
+    "never": "Nunca entrou"
   },
   "details": {
     "close": "Fechar"
@@ -660,6 +664,69 @@
       "failed": "Não foi possível salvar. Tente de novo."
     },
     "notFound": "Projeto não encontrado. Ele não existe ou você não está nele.",
-    "loadFailed": "Não foi possível carregar o projeto. Tente de novo."
+    "loadFailed": "Não foi possível carregar o projeto. Tente de novo.",
+    "members": {
+      "table": "Pessoas do projeto",
+      "search": "Buscar pessoa",
+      "grouping": "Agrupar",
+      "groupings": {
+        "team": "Por time",
+        "name": "Por nome"
+      },
+      "include": "Incluir pessoa",
+      "columns": {
+        "person": "Pessoa",
+        "role": "Papel no projeto",
+        "lastAccess": "Último acesso"
+      },
+      "teams": {
+        "management": "Gestão",
+        "functional": "Funcional",
+        "development": "Desenvolvimento",
+        "viewers": "Leitores"
+      },
+      "teamsOf": "{{first}} e {{second}}",
+      "total_zero": "{{count}} pessoas",
+      "total_one": "{{count}} pessoa",
+      "total_other": "{{count}} pessoas",
+      "empty": "Nenhuma pessoa encontrada com essa busca.",
+      "details": {
+        "label": "Pessoa selecionada",
+        "role": "Papel no projeto",
+        "team": "Time",
+        "since": "No projeto desde",
+        "lastAccess": "Último acesso",
+        "remove": "Remover do projeto"
+      },
+      "dialog": {
+        "title": "Incluir pessoa",
+        "person": "Pessoa",
+        "personPlaceholder": "Buscar pelo nome ou e-mail",
+        "role": "Papel no projeto",
+        "notManager": "Só administradores e gerentes de projeto podem ser gerentes.",
+        "submit": "Incluir pessoa",
+        "cancel": "Cancelar"
+      },
+      "remove": {
+        "title": "Remover do projeto",
+        "text": "{{name}} perde o acesso ao projeto {{project}} na hora.",
+        "self": "Você perde o acesso ao projeto {{project}} na hora.",
+        "confirm": "Remover do projeto",
+        "back": "Voltar"
+      },
+      "errors": {
+        "personRequired": "Escolha a pessoa.",
+        "personInvalid": "Escolha uma pessoa ativa da empresa.",
+        "roleInvalid": "Só administradores e gerentes de projeto podem ser gerentes.",
+        "exists": "Essa pessoa já está no projeto.",
+        "lastManager": "O projeto precisa de um gerente. Inclua outro gerente antes."
+      },
+      "messages": {
+        "included": "{{name}} entrou no projeto.",
+        "roleChanged": "{{name}} agora é {{role}}.",
+        "removed": "{{name}} saiu do projeto.",
+        "failed": "Não foi possível salvar. Tente de novo."
+      }
+    }
   }
 }

@@ -13,6 +13,7 @@ import type {
   Person,
   Profile,
   Project,
+  ProjectMember,
   ProjectRow,
   ProjectStatus,
   SessionUser,
@@ -158,31 +159,97 @@ export interface DemoProject extends Project {
   mine: boolean;
 }
 
-const demoPeople = {
+/** The people of the projects; Marina is the person in the session. */
+export const demoPeople = {
   paulo: { id: '0199f5a2-7c1e-7d40-9a1b-000000000001', name: 'Paulo Nogueira' },
-  marina: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
+  marina: { id: marina.id, name: marina.name },
   beatriz: { id: '0199f5a2-7c1e-7d40-9a1b-000000000003', name: 'Beatriz Lima' },
   rafael: { id: '0199f5a2-7c1e-7d40-9a1b-000000000004', name: 'Rafael Souza' },
+  carla: { id: '0199f5a2-7c1e-7d40-9a1b-000000000005', name: 'Carla Mendes' },
+  diego: { id: '0199f5a2-7c1e-7d40-9a1b-000000000006', name: 'Diego Torres' },
 } as const;
 
-/** The people to choose as manager or tech lead, as the API answers them. */
-export const demoPeopleChoices: (Person & { manager: boolean })[] = [
-  { ...demoPeople.beatriz, email: 'beatriz.lima@empresa.example', manager: true },
-  { ...demoPeople.marina, email: 'marina.costa@empresa.example', manager: true },
-  { ...demoPeople.paulo, email: 'paulo.nogueira@empresa.example', manager: true },
-  { ...demoPeople.rafael, email: 'rafael.souza@empresa.example', manager: false },
+/** The e-mail of a person of the demonstration, from the name. */
+export const emailOf = (name: string) =>
+  `${withoutAccents(name).replace(' ', '.')}@empresa.example`;
+
+/** When the people last signed in; who is not here never did. */
+const lastSignIns: Record<string, string> = {
+  [demoPeople.paulo.id]: '2026-10-19T15:00:00Z',
+  [demoPeople.marina.id]: '2026-10-19T12:12:00Z',
+  [demoPeople.beatriz.id]: '2026-10-19T11:47:00Z',
+  [demoPeople.rafael.id]: '2026-10-18T20:30:00Z',
+  [demoPeople.diego.id]: '2026-10-14T13:00:00Z',
+};
+
+const managers = new Set<string>([
+  demoPeople.paulo.id,
+  demoPeople.marina.id,
+  demoPeople.beatriz.id,
+]);
+
+/** A user to choose. */
+const user = (person: { id: string; name: string }): Person => ({
+  ...person,
+  directoryId: null,
+  email: emailOf(person.name),
+  canBeManager: managers.has(person.id),
+});
+
+/**
+ * The people to choose, as the API answers them: the users and, in the directory, Lucas Prado and Sofia Martins, who
+ * never signed in.
+ */
+export const demoPeopleChoices: Person[] = [
+  user(demoPeople.beatriz),
+  user(demoPeople.carla),
+  user(demoPeople.diego),
+  {
+    id: null,
+    directoryId: 'local:lucas.prado@empresa.example',
+    name: 'Lucas Prado',
+    email: 'lucas.prado@empresa.example',
+    canBeManager: false,
+  },
+  user(demoPeople.marina),
+  user(demoPeople.paulo),
+  user(demoPeople.rafael),
+  {
+    id: null,
+    directoryId: 'local:sofia.martins@empresa.example',
+    name: 'Sofia Martins',
+    email: 'sofia.martins@empresa.example',
+    canBeManager: false,
+  },
 ];
 
 /** The people to choose as the API answers them: by name without accents, only the managers when asked. */
 export function peopleOf(url: URL): Person[] {
   const search = withoutAccents(url.searchParams.get('search') ?? '');
-  const managers = url.searchParams.get('managers') === 'true';
+  const onlyManagers = url.searchParams.get('managers') === 'true';
   const limit = Number(url.searchParams.get('limit') ?? '20');
   return demoPeopleChoices
-    .filter((person) => !managers || person.manager)
-    .filter((person) => withoutAccents(person.name).includes(search))
-    .slice(0, limit)
-    .map(({ id, name, email }) => ({ id, name, email }));
+    .filter((person) => !onlyManagers || person.canBeManager)
+    .filter(
+      (person) => withoutAccents(person.name).includes(search) || person.email.includes(search),
+    )
+    .slice(0, limit);
+}
+
+/**
+ * The people of a project as the Members tab reads them (GET /api/projects/{id}/members): by name, with the e-mail, when
+ * they joined, the last access and whether they may be managers.
+ */
+export function membersOf(project: Project): ProjectMember[] {
+  return project.members
+    .map((member) => ({
+      ...member,
+      email: emailOf(member.name),
+      addedAt: '2026-10-05T12:00:00Z',
+      lastSignInAt: lastSignIns[member.id] ?? null,
+      canBeManager: managers.has(member.id),
+    }))
+    .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 function demoProject(
@@ -205,6 +272,8 @@ function demoProject(
     permissions: {
       canEdit: status !== 'Completed' && status !== 'Cancelled',
       canChangeStatus: true,
+      canManagePeople: status !== 'Completed' && status !== 'Cancelled',
+      canManageManagers: status !== 'Completed' && status !== 'Cancelled',
     },
     mine,
   };
@@ -553,6 +622,7 @@ export const handlers = [
   // Without projects by default: the screens of projects simulate their own.
   http.get('/api/projects', () => HttpResponse.json({ items: [], total: 0 })),
   http.get('/api/people', () => HttpResponse.json([])),
+  http.get('/api/projects/:id/members', () => HttpResponse.json([])),
 ];
 
 export const server = setupServer(...handlers);

@@ -25,7 +25,8 @@ public sealed class GetProfile(IUserStore store)
         }
 
         var providers = await store.SignInProvidersAsync(userId, cancellationToken);
-        return new Profile(user.Id, user.Name, user.Email, user.Role, user.Theme, user.LastSignInAt, providers);
+        // The person in the session has signed in; only a user from the directory has no sign-in yet.
+        return new Profile(user.Id, user.Name, user.Email, user.Role, user.Theme, user.LastSignInAt ?? user.CreatedAt, providers);
     }
 }
 

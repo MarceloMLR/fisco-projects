@@ -39,6 +39,7 @@ namespace FiscoProjects.Testing.Samples.Migrations.Gamma
 
                     b.Property<Guid?>("RecordId")
                         .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
                         .HasAnnotation("FiscoProjects:Audit:Reference", "Record");
 
                     b.HasKey("Id");

@@ -5,6 +5,7 @@ import {
   type GridCellParams,
   type GridColDef,
   type GridRowClassNameParams,
+  type GridRowHeightParams,
   type GridRowId,
   type GridRowParams,
   type GridValidRowModel,
@@ -33,6 +34,12 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   loading?: boolean;
   /** Rows shown dimmed, such as an inactive person (fp-gt__row--muted). Keep it the same function between renders. */
   isRowMuted?: (row: Row) => boolean;
+  /**
+   * Rows that name a group of the rows below, such as a team of a project (fp-group-row): lower, in the subtle
+   * background and never chosen. Their first column spans the whole row (colSpan in its definition). Keep it the
+   * same function between renders.
+   */
+  isGroupRow?: (row: Row) => boolean;
   /** Search and filters above the table (fp-gt-tools). */
   tools?: ReactNode;
   rowHeight?: number;
@@ -72,6 +79,9 @@ const toolsSx: SxProps<Theme> = {
   padding: 'var(--space-3)',
   borderBottom: '1px solid var(--border)',
 };
+
+/** Height of a group row (fp-group-row). */
+const groupRowHeight = 36;
 
 const gridAreaSx: SxProps<Theme> = {
   flex: 1,
@@ -120,6 +130,18 @@ const gridSx = {
     backgroundColor: 'var(--bg-selected)',
   },
   '& .row-muted': { color: 'var(--text-secondary)' },
+  // A group of the rows below (fp-group-row), with its count (fp-count) in the secondary color.
+  '& .MuiDataGrid-row.row-group, & .MuiDataGrid-row.row-group:hover, & .MuiDataGrid-row.row-group.Mui-selected':
+    {
+      backgroundColor: 'var(--bg-subtle)',
+      cursor: 'default',
+    },
+  '& .row-group .MuiDataGrid-cell': {
+    fontSize: 13,
+    lineHeight: '18px',
+    fontWeight: 500,
+    color: 'var(--text)',
+  },
   '& .MuiDataGrid-footerContainer': {
     minHeight: 44,
     borderTop: '1px solid var(--border)',
@@ -137,7 +159,7 @@ const gridSx = {
 /** A table whose rows open something shows the pointer over them. */
 const choosableGridSx = {
   ...gridSx,
-  '& .MuiDataGrid-row': { cursor: 'pointer' },
+  '& .MuiDataGrid-row:not(.row-group)': { cursor: 'pointer' },
 } satisfies SxProps<Theme>;
 
 /**
@@ -159,6 +181,7 @@ export function DataTable<Row extends GridValidRowModel>({
   onPageChange,
   loading = false,
   isRowMuted,
+  isGroupRow,
   tools,
   rowHeight = 56,
   emptyLabel,
@@ -203,28 +226,38 @@ export function DataTable<Row extends GridValidRowModel>({
     [onPageChange],
   );
   const getRowClassName = useCallback(
-    ({ row }: GridRowClassNameParams<Row>) => (isRowMuted?.(row) === true ? 'row-muted' : ''),
-    [isRowMuted],
+    ({ row }: GridRowClassNameParams<Row>) =>
+      isGroupRow?.(row) === true ? 'row-group' : isRowMuted?.(row) === true ? 'row-muted' : '',
+    [isRowMuted, isGroupRow],
+  );
+  const getRowHeight = useMemo(
+    () =>
+      isGroupRow === undefined
+        ? undefined
+        : ({ model }: GridRowHeightParams) => (isGroupRow(model as Row) ? groupRowHeight : null),
+    [isGroupRow],
   );
   const onRowClick = useMemo(
     () =>
       onRowChoose === undefined
         ? undefined
         : (params: GridRowParams<Row>) => {
-            onRowChoose(params.row);
+            if (isGroupRow?.(params.row) !== true) {
+              onRowChoose(params.row);
+            }
           },
-    [onRowChoose],
+    [onRowChoose, isGroupRow],
   );
   const onCellKeyDown = useMemo(
     () =>
       onRowChoose === undefined
         ? undefined
         : (params: GridCellParams<Row>, event: KeyboardEvent) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && isGroupRow?.(params.row) !== true) {
               onRowChoose(params.row);
             }
           },
-    [onRowChoose],
+    [onRowChoose, isGroupRow],
   );
 
   return (
@@ -248,6 +281,7 @@ export function DataTable<Row extends GridValidRowModel>({
           onPaginationModelChange={onPaginationModelChange}
           pageSizeOptions={pageSizeOptions}
           getRowClassName={getRowClassName}
+          getRowHeight={getRowHeight}
           rowHeight={rowHeight}
           columnHeaderHeight={40}
           disableColumnMenu

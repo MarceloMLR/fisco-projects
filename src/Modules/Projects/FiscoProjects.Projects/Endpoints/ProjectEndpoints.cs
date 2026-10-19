@@ -27,10 +27,11 @@ public sealed record ProjectListItemResponse(
 public sealed record ProjectPageResponse(IReadOnlyList<ProjectListItemResponse> Items, int Total);
 
 /// <summary>
-/// What the person may do in the project (ADR-0043): change the data, only while the project is open, and change the
-/// status, including reopening it.
+/// What the person may do in the project (ADR-0043): change the data, only while the project is open; change the
+/// status, including reopening it; and, while the project is open, include, change and remove people, and do it also
+/// with the managers (ADR-0042).
 /// </summary>
-public sealed record ProjectPermissionsResponse(bool CanEdit, bool CanChangeStatus);
+public sealed record ProjectPermissionsResponse(bool CanEdit, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers);
 
 /// <summary>A project as its page shows it, with the people in it and what the person may do.</summary>
 public sealed record ProjectResponse(
@@ -45,10 +46,17 @@ public sealed record ProjectResponse(
 
 /// <summary>
 /// The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
-/// project), the manager (the person who creates it, when none) and, optionally, the tech lead.
+/// project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
+/// the company directory who never signed in, by the <c>directoryId</c> of the people search (ADR-0005).
 /// </summary>
 public sealed record NewProjectRequest(
-    string? Code, string? Name, string? Description, Guid? ClientId, Guid? ManagerId, Guid? TechLeadId);
+    string? Code,
+    string? Name,
+    string? Description,
+    Guid? ClientId,
+    Guid? ManagerId,
+    Guid? TechLeadId,
+    string? TechLeadDirectoryId = null);
 
 /// <summary>The data of a project that may change after its creation.</summary>
 public sealed record ProjectRequest(string? Code, string? Name, string? Description, Guid? ClientId);
@@ -65,6 +73,12 @@ public static class ProjectProblems
 
     /// <summary>The project is completed or cancelled: reopen it to change it (ADR-0016).</summary>
     public const string Closed = "urn:fiscoprojects:problem:project-closed";
+
+    /// <summary>The person is already in the project: change the role instead (ADR-0042).</summary>
+    public const string MemberExists = "urn:fiscoprojects:problem:project-member-exists";
+
+    /// <summary>The change would leave the project without a manager (ADR-0042).</summary>
+    public const string LastManager = "urn:fiscoprojects:problem:project-last-manager";
 }
 
 /// <summary>
@@ -90,6 +104,7 @@ internal static class ProjectEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapPut("/{id:guid}/status", ChangeStatusAsync).WithName("ChangeProjectStatus")
             .ProducesProblem(StatusCodes.Status403Forbidden);
+        projects.MapProjectMemberEndpoints();
     }
 
     private static async Task<Results<Ok<ProjectPageResponse>, ValidationProblem>> ListAsync(
@@ -141,7 +156,9 @@ internal static class ProjectEndpoints
         var creatorId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("Projects are created in a session.");
         var result = await createProject.ExecuteAsync(
-            new NewProject(request.Code, request.Name, request.Description, request.ClientId, request.ManagerId, request.TechLeadId),
+            new NewProject(
+                request.Code, request.Name, request.Description, request.ClientId, request.ManagerId, request.TechLeadId,
+                request.TechLeadDirectoryId),
             creatorId,
             cancellationToken);
         return result.Outcome switch
@@ -178,7 +195,9 @@ internal static class ProjectEndpoints
             [.. details.Members.Select(PersonOf)],
             new ProjectPermissionsResponse(
                 CanEdit: details.Permissions.CanEditData && !project.IsClosed,
-                CanChangeStatus: details.Permissions.CanChangeStatus)));
+                CanChangeStatus: details.Permissions.CanChangeStatus,
+                CanManagePeople: details.Permissions.CanManagePeople && !project.IsClosed,
+                CanManageManagers: details.Permissions.CanManageManagers && !project.IsClosed)));
     }
 
     private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> ChangeAsync(
@@ -197,11 +216,7 @@ internal static class ProjectEndpoints
             ProjectSaveOutcome.Saved => TypedResults.NoContent(),
             ProjectSaveOutcome.NotFound => TypedResults.NotFound(),
             ProjectSaveOutcome.Forbidden => TypedResults.Forbid(),
-            ProjectSaveOutcome.Closed => TypedResults.Problem(
-                statusCode: StatusCodes.Status409Conflict,
-                title: "Project closed",
-                detail: "A completed or cancelled project is read-only until it is reopened.",
-                type: ProjectProblems.Closed),
+            ProjectSaveOutcome.Closed => Closed(),
             ProjectSaveOutcome.CodeInUse => CodeInUse(result.CodeInUseBy),
             _ => Invalid(result.Invalid),
         };
@@ -225,7 +240,7 @@ internal static class ProjectEndpoints
     }
 
     /// <summary>The person of the session, and whether the person is the Administrator, read from the database now.</summary>
-    private static async Task<ProjectViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
+    internal static async Task<ProjectViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
     {
         var userId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("The projects are read in a session.");
@@ -263,6 +278,13 @@ internal static class ProjectEndpoints
                     _ => "The tech lead is an active person other than the manager.",
                 },
             }));
+
+    internal static ProblemHttpResult Closed() =>
+        TypedResults.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Project closed",
+            detail: "A completed or cancelled project is read-only until it is reopened.",
+            type: ProjectProblems.Closed);
 
     private static ProblemHttpResult CodeInUse(string? projectName) =>
         TypedResults.Problem(

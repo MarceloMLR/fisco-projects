@@ -22,6 +22,8 @@ describe('Último acesso', () => {
     expect(formatLastAccess('2026-10-19T02:55:00Z', t, now)).toBe(yesterday('23:55'));
     expect(formatLastAccess('2026-10-18T20:30:00Z', t, now)).toBe(yesterday('17:30'));
     expect(formatLastAccess('2026-08-28T18:00:00Z', t, now)).toBe('28/08/2026');
+    expect(formatLastAccess(null, t, now)).toBe(ptBR.dates.never);
+    expect(brasilia.formatDate('2026-10-19T02:55:00Z')).toBe('18/10/2026');
   });
 
   it('Hoje e ontem no fuso da instalação, não no do navegador', () => {

@@ -30,6 +30,8 @@ public static class UsersModule
         services.AddScoped<ReactivateUser>();
         services.AddScoped<ListUsers>();
         services.AddScoped<ListPeople>();
+        services.AddScoped<IPeopleDirectory, LocalPeopleDirectory>();
+        services.AddScoped<IUserProvisioning, UserFromDirectory>();
         services.AddScoped<GetProfile>();
         services.AddScoped<ChooseTheme>();
 

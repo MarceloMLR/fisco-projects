@@ -147,3 +147,4 @@ Regras:
 | [0082](0082-tokens-da-marca-derivados-da-cor-principal.md) | Tokens da marca derivados da cor principal em OKLCH, com a cor recusada sem contraste | aceita | 2026-10-18 |
 | [0083](0083-pontos-facultativos-calculados-e-feriados-desconsiderados.md) | Pontos facultativos calculados pela portaria federal, contados como dia inteiro e escolhidos para todos os anos | aceita | 2026-10-19 |
 | [0084](0084-referencias-na-auditoria-pelo-nome-atual.md) | Referências a outros itens na auditoria, guardadas pelo identificador e mostradas pelo nome atual | aceita | 2026-10-19 |
+| [0085](0085-gerente-do-projeto-com-papel-no-sistema.md) | Gerente do projeto sempre com o papel no sistema Gerente de projeto ou Administrador | aceita | 2026-10-19 |

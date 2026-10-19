@@ -15,6 +15,7 @@ public static class AuditModelBuilderExtensions
     internal const string Label = "FiscoProjects:Audit:Label";
     internal const string Reference = "FiscoProjects:Audit:Reference";
     internal const string LabelReference = "FiscoProjects:Audit:LabelReference";
+    internal const string Context = "FiscoProjects:Audit:Context";
 
     /// <summary>The item type stays out of the audit, such as a technical link.</summary>
     public static EntityTypeBuilder<TEntity> ExcludeFromAudit<TEntity>(this EntityTypeBuilder<TEntity> entity)
@@ -50,9 +51,19 @@ public static class AuditModelBuilderExtensions
         where TEntity : class =>
         entity.HasAnnotation(Label, PropertyName(property)).HasAnnotation(LabelReference, kind);
 
+    /// <summary>
+    /// The field says where the item is, such as the project of a person in it: the audit records it in every creation,
+    /// change and removal of the item, also when it does not change, with the same value before and after. The Audit
+    /// screen uses it to say where the change happened, out of the table of the changes.
+    /// </summary>
+    public static PropertyBuilder<TProperty> IsAuditContext<TProperty>(this PropertyBuilder<TProperty> property) =>
+        property.HasAnnotation(Context, true);
+
     internal static bool IsExcludedFromAudit(this IReadOnlyAnnotatable item) => item.FindAnnotation(Excluded)?.Value is true;
 
     internal static bool IsAuditSecret(this IReadOnlyProperty property) => property.FindAnnotation(Secret)?.Value is true;
+
+    internal static bool IsAuditContext(this IReadOnlyProperty property) => property.FindAnnotation(Context)?.Value is true;
 
     internal static string? AuditLabel(this IReadOnlyEntityType entityType) => entityType.FindAnnotation(Label)?.Value as string;
 

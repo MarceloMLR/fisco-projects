@@ -6,7 +6,7 @@ namespace FiscoProjects.Testing.Samples;
 
 /// <summary>
 /// Example module context with the audit markers: a label, a secret, a technical field, an item left out and an item
-/// that points to others.
+/// that points to others, one of them where the item is (a context field).
 /// </summary>
 public sealed class GammaDbContext(DbContextOptions<GammaDbContext> options)
     : ModuleDbContext<GammaDbContext>(options), IModuleSchema
@@ -46,7 +46,7 @@ public sealed class GammaDbContext(DbContextOptions<GammaDbContext> options)
             link.ToTable("links");
             link.HasAuditLabelReference(l => l.PersonId, PersonReference);
             link.Property(l => l.PersonId).IsAuditReference(PersonReference);
-            link.Property(l => l.RecordId).IsAuditReference(RecordReference);
+            link.Property(l => l.RecordId).IsAuditReference(RecordReference).IsAuditContext();
             link.Property(l => l.Kind).HasMaxLength(20);
         });
     }

@@ -35,7 +35,7 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
     [Fact(DisplayName = "Líder técnico altera os dados")]
     public Task TechLead_ChangesTheData_ButNotTheStatus() => AssertRowAsync(
         scene => SignInAsync(scene, scene.Rafael),
-        Allowed with { Create = HttpStatusCode.Forbidden, ChangeStatus = HttpStatusCode.Forbidden, People = HttpStatusCode.Forbidden },
+        Allowed with { Create = HttpStatusCode.Forbidden, ChangeStatus = HttpStatusCode.Forbidden },
         listsTheProject: true);
 
     [Theory(DisplayName = "Colaborador, desenvolvedor e leitor não alteram o projeto")]
@@ -44,7 +44,7 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
     [InlineData("Viewer")]
     public Task OtherRoles_SeeTheProject_ButDoNotChangeIt(string role) => AssertRowAsync(
         scene => SignInAsync(scene, scene.Carla),
-        new Row(HttpStatusCode.Forbidden, HttpStatusCode.OK, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden),
+        new Row(HttpStatusCode.Forbidden, HttpStatusCode.OK, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden, HttpStatusCode.OK),
         listsTheProject: true,
         carlasRole: role);
 
@@ -193,17 +193,29 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
         choice.GetProperty("name").GetString().Should().Be("Alfa Distribuidora");
     }
 
-    [Fact(DisplayName = "Pessoas para escolher")]
-    public async Task People_ComeActive_AndOnlyManagersWhenAsked()
+    // Spec: usuarios-e-papeis, requirement "Pessoas da empresa para escolher". Diego Torres, Lucas Prado and Sofia
+    // Martins are in the demo directory of the development settings and never signed in; Carla is in it with an
+    // inactive user.
+    [Fact(DisplayName = "Pessoas do sistema e do diretório")]
+    public async Task People_ComeActive_WithTheDirectory_AndOnlyManagersWhenAsked()
     {
         var scene = await StartAsync();
         await using var app = scene.App;
         await app.DeactivateAsync(scene.Carla);
+        using var rafael = await SignInAsync(scene, scene.Rafael);
 
-        var everyone = await scene.Admin.GetFromJsonAsync<JsonElement>("/api/people", Cancellation);
+        var everyone = await rafael.GetFromJsonAsync<JsonElement>("/api/people", Cancellation);
         var managers = await scene.Admin.GetFromJsonAsync<JsonElement>("/api/people?managers=true&search=a", Cancellation);
 
-        Names(everyone).Should().Equal("Beatriz Lima", "Marina Costa", "Paulo Nogueira", "Rafael Souza");
+        Names(everyone).Should().Equal(
+            "Beatriz Lima", "Diego Torres", "Lucas Prado", "Marina Costa", "Paulo Nogueira", "Rafael Souza", "Sofia Martins");
+        var diego = everyone.EnumerateArray().Single(person => person.GetProperty("name").GetString() == "Diego Torres");
+        diego.GetProperty("id").ValueKind.Should().Be(JsonValueKind.Null);
+        diego.GetProperty("directoryId").GetString().Should().Be("local:diego.torres@empresa.example");
+        diego.GetProperty("canBeManager").GetBoolean().Should().BeFalse();
+        everyone.EnumerateArray().Where(person => person.GetProperty("canBeManager").GetBoolean())
+            .Select(person => person.GetProperty("name").GetString())
+            .Should().Equal("Beatriz Lima", "Marina Costa", "Paulo Nogueira");
         Names(managers).Should().Equal("Beatriz Lima", "Marina Costa", "Paulo Nogueira");
     }
 

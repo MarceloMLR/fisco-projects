@@ -9,7 +9,9 @@ import { UsersPage } from './admin/UsersPage';
 import { InstallationRoot } from './installation/InstallationRoot';
 import { HomePage } from './pages/HomePage';
 import { NewProjectPage } from './projects/NewProjectPage';
-import { ProjectPage } from './projects/ProjectPage';
+import { ProjectLayout } from './projects/ProjectLayout';
+import { ProjectMembersPage } from './projects/ProjectMembersPage';
+import { ProjectOverview } from './projects/ProjectOverview';
 import { ProjectsPage } from './projects/ProjectsPage';
 import { RequireProjectCreator } from './projects/RequireProjectCreator';
 import { ProfilePage } from './profile/ProfilePage';
@@ -60,14 +62,36 @@ export const routes: RouteObject[] = [
               trail: [{ titleKey: 'pages.projects.title', path: '/projects' }],
             } satisfies PageHandle,
           },
+          // The page of a project, with a tab at each address (ProjectLayout).
           {
             path: 'projects/:projectId',
-            element: <ProjectPage />,
-            handle: {
-              navigation: 'projects',
-              titleKey: 'pages.project.title',
-              trail: [{ titleKey: 'pages.projects.title', path: '/projects' }, { project: true }],
-            } satisfies PageHandle,
+            element: <ProjectLayout />,
+            children: [
+              {
+                index: true,
+                element: <ProjectOverview />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.project.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'members',
+                element: <ProjectMembersPage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectMembers.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+            ],
           },
           {
             path: 'tickets',

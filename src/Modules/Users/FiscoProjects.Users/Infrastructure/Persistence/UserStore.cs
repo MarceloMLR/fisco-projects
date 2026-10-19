@@ -2,6 +2,7 @@ using System.Data;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Users.Infrastructure.Persistence;
@@ -34,6 +35,21 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
     {
         db.Users.Add(user);
         db.IdentityLinks.Add(link);
+    }
+
+    public bool IsDuplicateIdentity(Exception exception) =>
+        exception is DbUpdateException { InnerException: SqlException { Number: 2601 or 2627 } sql }
+        && sql.Message.Contains("IX_identity_links_Provider_ExternalId", StringComparison.Ordinal);
+
+    public void Forget(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        foreach (var link in db.ChangeTracker.Entries<IdentityLink>().Where(entry => entry.Entity.UserId == user.Id).ToList())
+        {
+            link.State = EntityState.Detached;
+        }
+
+        db.Entry(user).State = EntityState.Detached;
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
@@ -90,9 +106,18 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
         return await people
             .OrderBy(user => user.Name).ThenBy(user => user.Email)
             .Take(query.Limit)
-            .Select(user => new PersonItem(user.Id, user.Name, user.Email))
+            .Select(user => new PersonItem(
+                user.Id, null, user.Name, user.Email,
+                user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<string>> LinkedExternalIdsAsync(
+        string provider, IReadOnlyCollection<string> externalIds, CancellationToken cancellationToken) =>
+        await db.IdentityLinks.AsNoTracking()
+            .Where(link => link.Provider == provider && externalIds.Contains(link.ExternalId))
+            .Select(link => link.ExternalId)
+            .ToListAsync(cancellationToken);
 
     public Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken) =>
         db.Users.AnyAsync(
@@ -132,4 +157,13 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
         await db.Users.AsNoTracking()
             .Where(user => userIds.Contains(user.Id))
             .ToDictionaryAsync(user => user.Id, user => user.Name, cancellationToken);
+
+    public async Task<IReadOnlyList<PersonInfo>> PeopleAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
+        await db.Users.AsNoTracking()
+            .Where(user => userIds.Contains(user.Id))
+            .Select(user => new PersonInfo(
+                user.Id, user.Name, user.Email, user.LastSignInAt, user.IsActive,
+                user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager)))
+            .ToListAsync(cancellationToken);
 }

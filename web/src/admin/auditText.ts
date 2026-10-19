@@ -96,6 +96,10 @@ const isWeekday = (value: string): value is (typeof weekdays)[number] =>
 const isRole = (value: string | null): value is SystemRole =>
   systemRoles.some((role) => role === value);
 
+/** A field recorded unchanged in a change of the item, to say where it is (IsAuditContext in the API). */
+const isContext = (entry: AuditEntry, change: AuditField) =>
+  entry.action === 'Updated' && !change.secret && change.before === change.after;
+
 function changeOf(entry: AuditEntry, field: string): AuditField | undefined {
   return entry.changes.find((change) => change.field === field);
 }
@@ -379,14 +383,18 @@ export function describeAuditEntry(entry: AuditEntry, t: TFunction): AuditDescri
     summary: summaryOf(entry, t),
     sentence: `${author} ${title.charAt(0).toLowerCase()}${title.slice(1)}`,
     properties: propertiesOf(entry, t),
-    changes: entry.changes.map((change) => ({
-      field: fieldLabel(entry, change.field, t),
-      before: change.secret
-        ? t('audit.details.none')
-        : valueOf(entry, change.field, change.before, t),
-      after: change.secret
-        ? t('audit.details.secret')
-        : valueOf(entry, change.field, change.after, t),
-    })),
+    // A field that says where the item is comes unchanged in a change, such as the project of a person whose role
+    // changed: it goes in the text of the record, not in the table of the changes.
+    changes: entry.changes
+      .filter((change) => !isContext(entry, change))
+      .map((change) => ({
+        field: fieldLabel(entry, change.field, t),
+        before: change.secret
+          ? t('audit.details.none')
+          : valueOf(entry, change.field, change.before, t),
+        after: change.secret
+          ? t('audit.details.secret')
+          : valueOf(entry, change.field, change.after, t),
+      })),
   };
 }

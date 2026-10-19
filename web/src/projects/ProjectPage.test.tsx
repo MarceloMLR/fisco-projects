@@ -28,7 +28,12 @@ const closed = (status: ProjectStatus) => status === 'Completed' || status === '
 beforeEach(() => {
   projects = demoProjects();
   requests.length = 0;
-  permissions = { canEdit: true, canChangeStatus: true };
+  permissions = {
+    canEdit: true,
+    canChangeStatus: true,
+    canManagePeople: true,
+    canManageManagers: true,
+  };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
   signedInAs('ProjectManager');
@@ -44,7 +49,12 @@ beforeEach(() => {
       }
       return HttpResponse.json({
         ...project,
-        permissions: { ...permissions, canEdit: permissions.canEdit && !closed(project.status) },
+        permissions: {
+          ...permissions,
+          canEdit: permissions.canEdit && !closed(project.status),
+          canManagePeople: permissions.canManagePeople && !closed(project.status),
+          canManageManagers: permissions.canManageManagers && !closed(project.status),
+        },
       });
     }),
     http.put('/api/projects/:id', async ({ request, params }) => {
@@ -166,7 +176,12 @@ describe('Cabeçalho do projeto', () => {
 describe('Ações do projeto', () => {
   it('Editar dados pela tela', async () => {
     // The tech lead changes the data, but not the status (ADR-0043).
-    permissions = { canEdit: true, canChangeStatus: false };
+    permissions = {
+      canEdit: true,
+      canChangeStatus: false,
+      canManagePeople: true,
+      canManageManagers: false,
+    };
     await openProject();
 
     const menu = await openActions();
@@ -280,7 +295,12 @@ describe('Ações do projeto', () => {
   });
 
   it('Leitor sem ações', async () => {
-    permissions = { canEdit: false, canChangeStatus: false };
+    permissions = {
+      canEdit: false,
+      canChangeStatus: false,
+      canManagePeople: false,
+      canManageManagers: false,
+    };
     await openProject();
 
     expect(screen.queryByRole('button', { name: text.actions.button })).not.toBeInTheDocument();

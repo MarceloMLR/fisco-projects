@@ -16,8 +16,12 @@ public interface IUserStore
 
     Task<UserListPage> ListAsync(UserListQuery query, CancellationToken cancellationToken);
 
-    /// <summary>The active people to choose, in alphabetical order (<see cref="PeopleQuery"/>).</summary>
+    /// <summary>The active users to choose, in alphabetical order (<see cref="PeopleQuery"/>).</summary>
     Task<IReadOnlyList<PersonItem>> ListPeopleAsync(PeopleQuery query, CancellationToken cancellationToken);
+
+    /// <summary>Which of the ids of a provider already have a user, active or not.</summary>
+    Task<IReadOnlyList<string>> LinkedExternalIdsAsync(
+        string provider, IReadOnlyCollection<string> externalIds, CancellationToken cancellationToken);
 
     Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken);
 
@@ -29,6 +33,12 @@ public interface IUserStore
         Func<CancellationToken, Task<TResult>> work, CancellationToken cancellationToken);
 
     void Add(User user, IdentityLink link);
+
+    /// <summary>Whether a save failed because another user already has the identity link.</summary>
+    bool IsDuplicateIdentity(Exception exception);
+
+    /// <summary>Drops a user added and not saved, with the link, so the next save does not try it again.</summary>
+    void Forget(User user);
 
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

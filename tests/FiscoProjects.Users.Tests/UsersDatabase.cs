@@ -6,6 +6,9 @@ using FiscoProjects.Users.Infrastructure;
 using FiscoProjects.Users.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace FiscoProjects.Users.Tests;
@@ -27,14 +30,17 @@ internal sealed class UsersDatabase : IAsyncDisposable
     /// <summary>The security events the module reported to the audit.</summary>
     public RecordedSecurityEvents SecurityEvents { get; }
 
-    public static Task<UsersDatabase> CreateAsync(SqlServerFixture sqlServer, ProviderIdentity? firstAdministrator = null) =>
-        OpenAsync(sqlServer.NewDatabase(), firstAdministrator);
+    /// <summary>A new database; the directory holds the people of the demo directory, with the local sign-in on.</summary>
+    public static Task<UsersDatabase> CreateAsync(
+        SqlServerFixture sqlServer, ProviderIdentity? firstAdministrator = null, IReadOnlyList<LocalPerson>? directory = null) =>
+        OpenAsync(sqlServer.NewDatabase(), firstAdministrator, directory);
 
     /// <summary>The same database, as the host would see it with another first administrator configured.</summary>
     public Task<UsersDatabase> WithFirstAdministratorAsync(ProviderIdentity firstAdministrator) =>
-        OpenAsync(_database.ConnectionString, firstAdministrator);
+        OpenAsync(_database.ConnectionString, firstAdministrator, null);
 
-    private static async Task<UsersDatabase> OpenAsync(string connectionString, ProviderIdentity? firstAdministrator)
+    private static async Task<UsersDatabase> OpenAsync(
+        string connectionString, ProviderIdentity? firstAdministrator, IReadOnlyList<LocalPerson>? directory)
     {
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero));
         var securityEvents = new RecordedSecurityEvents();
@@ -47,6 +53,12 @@ internal sealed class UsersDatabase : IAsyncDisposable
             {
                 options.Provider = firstAdministrator?.Provider;
                 options.ExternalId = firstAdministrator?.ExternalId;
+            });
+            services.TryAddSingleton<IHostEnvironment>(new HostingEnvironment { EnvironmentName = Environments.Development });
+            services.Configure<LocalSignInOptions>(options =>
+            {
+                options.Enabled = directory is not null;
+                options.People = [.. directory ?? []];
             });
         });
         await database.MigrateAsync();

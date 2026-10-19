@@ -1,3 +1,4 @@
+using System.Data;
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Domain;
 using Microsoft.Data.SqlClient;
@@ -105,5 +106,20 @@ internal sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
             // The changes stay as they were tried; the request ends here, with its own context.
             throw new ProjectCodeInUseException(exception);
         }
+    }
+
+    public Task<TOutcome> InSerializableTransactionAsync<TOutcome>(
+        Func<CancellationToken, Task<TOutcome>> work, CancellationToken cancellationToken)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async token =>
+        {
+            // A repeated attempt starts from what is in the database, not from the changes of the failed one.
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
+            var result = await work(token);
+            await transaction.CommitAsync(token);
+            return result;
+        }, cancellationToken);
     }
 }

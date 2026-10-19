@@ -7,26 +7,18 @@ import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router';
-import {
-  api,
-  isClosedStatus,
-  type Project,
-  type ProjectPerson,
-  type ProjectStatus,
-} from '../api/client';
+import { Outlet, useMatch, useParams } from 'react-router';
+import { api, isClosedStatus, type Project, type ProjectStatus } from '../api/client';
 import { ApiError, projectQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
-import { Avatar } from '../components/Avatar';
 import { Dialog } from '../components/Dialog';
 import { Page } from '../shell/Page';
-import { theme } from '../theme/theme';
 import { ProjectDialog } from './ProjectDialog';
 import { ProjectHeader } from './ProjectHeader';
+import type { ProjectOutlet } from './projectOutlet';
 import { projectStatusLook } from './projectStatus';
 
 const openStatuses = [
@@ -38,58 +30,26 @@ const ReopenIcon = projectStatusLook.InProgress.icon;
 const CompleteIcon = projectStatusLook.Completed.icon;
 const CancelIcon = projectStatusLook.Cancelled.icon;
 
-const cardSx = {
-  boxSizing: 'border-box',
-  backgroundColor: 'var(--bg-surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  overflow: 'hidden',
-} as const;
-
-const cardHeadSx = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 'var(--space-3)',
-  minHeight: 48,
-  padding: 'var(--space-2) var(--space-2) var(--space-2) var(--space-4)',
-  borderBottom: '1px solid var(--border)',
-} as const;
-
-const cardTitleSx = {
-  margin: 0,
-  fontSize: 15,
-  lineHeight: '22px',
-  fontWeight: 500,
-  color: 'var(--text)',
-} as const;
-
-/** The teams of a project (ADR-0040, ADR-0068): Gestão, Funcional and Desenvolvimento. */
-function teamsOf(members: readonly ProjectPerson[]) {
-  const withRole = (...roles: ProjectPerson['role'][]) =>
-    members.filter((member) => roles.includes(member.role));
-  return [
-    { key: 'management', people: withRole('Manager', 'TechLead') },
-    { key: 'functional', people: withRole('Contributor') },
-    { key: 'development', people: withRole('TechLead', 'Developer') },
-  ] as const;
-}
-
 /**
- * The page of a project: the header (ProjectHeader) and the tab Visão geral, with the description and the team, until
- * the overview of Síntese-2. "Ações do projeto" offers to edit the data and to change the status, as the person may
- * (ADR-0043); a closed project says it is read-only (ADR-0016).
+ * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral or Membros, each at its own
+ * address. "Ações do projeto", in every tab, offers to edit the data and to change the status, as the person may
+ * (ADR-0043); a closed project says it is read-only (ADR-0016). The tabs get the project and the message at the bottom
+ * (useProjectOutlet).
  */
-export function ProjectPage() {
+export function ProjectLayout() {
   const { t } = useTranslation();
   const { projectId = '' } = useParams();
-  const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  const tab = useMatch('/projects/:projectId/members') === null ? 'overview' : 'members';
   const queryClient = useQueryClient();
   const { data: project, error, isPending } = useQuery(projectQuery(projectId));
   const [menu, setMenu] = useState<HTMLElement>();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();
   const [message, setMessage] = useState<string>();
+  const outlet = useMemo<ProjectOutlet | undefined>(
+    () => (project === undefined ? undefined : { project, notify: setMessage }),
+    [project],
+  );
 
   const changeStatus = useMutation({
     mutationFn: async ({ status }: { status: ProjectStatus; project: Project }) => {
@@ -119,7 +79,7 @@ export function ProjectPage() {
     },
   });
 
-  if (project === undefined) {
+  if (project === undefined || outlet === undefined) {
     return (
       <Page>
         {!isPending && (
@@ -149,6 +109,7 @@ export function ProjectPage() {
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <ProjectHeader
         project={project}
+        tab={tab}
         onOpenActions={
           hasActions
             ? (event) => {
@@ -160,8 +121,8 @@ export function ProjectPage() {
       <Page withTitle={false}>
         <Box
           role="tabpanel"
-          id="project-panel-overview"
-          aria-labelledby="project-tab-overview"
+          id="project-panel"
+          aria-labelledby={`project-tab-${tab}`}
           sx={{
             flex: 1,
             minHeight: 0,
@@ -178,84 +139,7 @@ export function ProjectPage() {
               </Alert>
             </Box>
           )}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: desktop ? 'minmax(0, 2fr) minmax(320px, 1fr)' : 'minmax(0, 1fr)',
-              gap: 'var(--space-4)',
-              alignItems: 'start',
-            }}
-          >
-            <Box component="section" aria-labelledby="project-description" sx={cardSx}>
-              <Box sx={cardHeadSx}>
-                <Box component="h2" id="project-description" sx={cardTitleSx}>
-                  {t('projects.overview.description')}
-                </Box>
-              </Box>
-              <Box
-                sx={{
-                  padding: 'var(--space-4)',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                  color: project.description === null ? 'var(--text-secondary)' : 'var(--text)',
-                }}
-              >
-                {project.description ?? t('projects.overview.noDescription')}
-              </Box>
-            </Box>
-            <Box component="section" aria-labelledby="project-team" sx={cardSx}>
-              <Box sx={cardHeadSx}>
-                <Box component="h2" id="project-team" sx={cardTitleSx}>
-                  {t('projects.overview.team')}
-                </Box>
-              </Box>
-              <Box component="ul" sx={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                {teamsOf(project.members).map((team) => (
-                  <Box
-                    component="li"
-                    key={team.key}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-3)',
-                      padding: '10px var(--space-4)',
-                      borderBottom: '1px solid var(--border)',
-                      '&:last-of-type': { borderBottom: 0 },
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ fontWeight: 500, color: 'var(--text)' }}>
-                        {t(`projects.overview.teams.${team.key}`)}
-                      </Box>
-                      <Box
-                        sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
-                      >
-                        {team.key === 'management' && team.people.length > 0
-                          ? team.people.map((person) => person.name).join(', ')
-                          : t('projects.overview.people', { count: team.people.length })}
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {team.people.map((person, index) => (
-                        <Box
-                          key={person.id}
-                          component="span"
-                          sx={{
-                            display: 'inline-flex',
-                            marginLeft: index === 0 ? 0 : '-6px',
-                            borderRadius: 'var(--radius-full)',
-                            boxShadow: '0 0 0 2px var(--bg-surface)',
-                          }}
-                        >
-                          <Avatar name={person.name} size="sm" />
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          </Box>
+          <Outlet context={outlet} />
         </Box>
       </Page>
       <Menu

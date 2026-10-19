@@ -93,5 +93,10 @@ internal sealed class AuditDatabase : IAsyncDisposable
             IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyDictionary<Guid, string>>(
                 names.Where(name => userIds.Contains(name.Key)).ToDictionary(name => name.Key, name => name.Value));
+
+        public Task<IReadOnlyList<PersonInfo>> PeopleAsync(IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<PersonInfo>>([.. names
+                .Where(name => userIds.Contains(name.Key))
+                .Select(name => new PersonInfo(name.Key, name.Value, string.Empty, null, IsActive: true, CanBeManager: false))]);
     }
 }

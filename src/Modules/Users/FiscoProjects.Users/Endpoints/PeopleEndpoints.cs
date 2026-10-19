@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using FiscoProjects.Users.Application;
-using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -8,20 +7,22 @@ using Microsoft.AspNetCore.Routing;
 
 namespace FiscoProjects.Users.Endpoints;
 
-/// <summary>A person to choose, such as the manager of a project.</summary>
-public sealed record PersonResponse(Guid Id, string Name, string Email);
+/// <summary>
+/// A person to choose, such as the manager of a project or a person to include in it: a user (<c>id</c>) or a person of
+/// the company directory who never signed in (<c>directoryId</c>), who becomes a user when included (ADR-0005). Only an
+/// active Administrator or Project manager can be a manager (ADR-0085).
+/// </summary>
+public sealed record PersonResponse(Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager);
 
 /// <summary>
-/// The people to choose when a project is created (ADR-0072): the Administrator and the Project manager create projects,
-/// so only they ask.
+/// The people of the company to choose (ADR-0005, ADR-0072). Anyone with a session asks: the tech lead of a project also
+/// includes people, and the names of the company are known to the people of the company (ADR-0007).
 /// </summary>
 internal static class PeopleEndpoints
 {
     public static void MapPeopleEndpoints(this RouteGroupBuilder api) =>
         api.MapGet("/people", ListAsync).WithName("ListPeople").WithTags("Users")
-            .RequireAuthorization(SystemPolicies.ProjectCreators)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
     private static async Task<Results<Ok<IReadOnlyList<PersonResponse>>, ValidationProblem>> ListAsync(
         ListPeople listPeople,
@@ -40,6 +41,7 @@ internal static class PeopleEndpoints
 
         var people = await listPeople.ExecuteAsync(new PeopleQuery(search, managers, limit), cancellationToken);
         return TypedResults.Ok<IReadOnlyList<PersonResponse>>(
-            [.. people.Select(person => new PersonResponse(person.Id, person.Name, person.Email))]);
+            [.. people.Select(person => new PersonResponse(
+                person.Id, person.DirectoryId, person.Name, person.Email, person.CanBeManager))]);
     }
 }

@@ -41,6 +41,7 @@ internal sealed class ProjectsDatabase : IAsyncDisposable
             services.AddSingleton<IFileStorage>(files);
             services.AddSingleton<IUserAccess>(people);
             services.AddSingleton<IUserDirectory>(people);
+            services.AddSingleton<IUserProvisioning>(people);
             services.AddProjectsModule(configuration);
         });
         await database.MigrateAsync();

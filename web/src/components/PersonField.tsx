@@ -1,5 +1,6 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Autocomplete from '@mui/material/Autocomplete';
+import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useId, useMemo, useState } from 'react';
@@ -9,18 +10,29 @@ import { useDebounced } from '../hooks/useDebounced';
 import { fieldControl } from './fieldControl';
 import { FormField } from './FormField';
 
+/**
+ * A person to choose: a user (id) or a person of the company directory who never signed in (directoryId), who becomes
+ * a user when included in a project (ADR-0005).
+ */
 export interface PersonChoice {
-  id: string;
+  id: string | null;
+  directoryId: string | null;
   name: string;
+  /** An active Administrator or Project manager, who may manage a project (ADR-0085). */
+  canBeManager: boolean;
 }
+
+/** The same person, by the user or by the directory. */
+const samePerson = (one: PersonChoice, other: PersonChoice) =>
+  one.id === null ? one.directoryId === other.directoryId : one.id === other.id;
 
 const searchDelay = 300;
 const optionsShown = 20;
 
 /**
  * A person to choose in a form, such as the manager of a project: looks like the design system select and searches
- * the active people as the person types, so it works with any number of people. The person in the session is marked
- * "(você)".
+ * the active people and the company directory as the person types, so it works with any number of people. The person
+ * in the session is marked "(você)", and a person of the directory says "Nunca entrou".
  */
 export function PersonField({
   label,
@@ -30,6 +42,7 @@ export function PersonField({
   managersOnly = false,
   placeholder,
   youId,
+  exclude,
   error,
   helper,
 }: {
@@ -44,6 +57,8 @@ export function PersonField({
   placeholder?: string;
   /** The person in the session, marked "(você)". */
   youId?: string;
+  /** Users not offered, such as the people already in the project. */
+  exclude?: readonly string[];
   error?: string;
   helper?: string;
 }) {
@@ -67,8 +82,16 @@ export function PersonField({
     placeholderData: keepPreviousData,
   });
   const options = useMemo<PersonChoice[]>(
-    () => data?.map(({ id, name }) => ({ id, name })) ?? [],
-    [data],
+    () =>
+      (data ?? [])
+        .filter((person) => person.id === null || !(exclude ?? []).includes(person.id))
+        .map(({ id, directoryId, name, canBeManager }) => ({
+          id,
+          directoryId,
+          name,
+          canBeManager,
+        })),
+    [data, exclude],
   );
   const describedBy = error !== undefined || helper !== undefined ? helpId : undefined;
 
@@ -99,7 +122,23 @@ export function PersonField({
         // The API already searched; the options are kept as they came, in alphabetical order.
         filterOptions={(people) => people}
         getOptionLabel={nameOf}
-        isOptionEqualToValue={(option, chosen) => option.id === chosen.id}
+        getOptionKey={(person) => person.id ?? person.directoryId ?? person.name}
+        isOptionEqualToValue={samePerson}
+        renderOption={({ key, ...props }, person) => (
+          <Box component="li" key={key} {...props}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span>{nameOf(person)}</span>
+              {person.id === null && (
+                <Box
+                  component="span"
+                  sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
+                >
+                  {t('dates.never')}
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
         noOptionsText={t('projects.form.noPeople')}
         popupIcon={<ExpandMoreOutlined />}
         slotProps={{ paper: { sx: { marginTop: 'var(--space-1)' } } }}

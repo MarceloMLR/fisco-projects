@@ -4,12 +4,13 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Users.Domain;
 
 /// <summary>
-/// A person who uses the system. Created on the first sign-in from the identity provider data (ADR-0005); the
-/// link to the provider is a separate record, so other providers can be added later (ADR-0009).
+/// A person who uses the system. Created on the first sign-in from the identity provider data, or from the company
+/// directory when someone includes the person in a project before the first sign-in (ADR-0005); the link to the
+/// provider is a separate record, so other providers can be added later (ADR-0009).
 /// </summary>
 public sealed class User : Entity
 {
-    private User(string name, string email, SystemRole role, bool isActive, DateTime createdAt, DateTime lastSignInAt)
+    private User(string name, string email, SystemRole role, bool isActive, DateTime createdAt, DateTime? lastSignInAt)
     {
         Name = name;
         Email = email;
@@ -30,13 +31,21 @@ public sealed class User : Entity
 
     public DateTime CreatedAt { get; private init; }
 
-    public DateTime LastSignInAt { get; private set; }
+    /// <summary>The last sign-in; null for a person included from the directory who never signed in.</summary>
+    public DateTime? LastSignInAt { get; private set; }
 
     /// <summary>Theme of the person's screens, kept in the profile so it follows them to any browser (ADR-0014).</summary>
     public ThemePreference Theme { get; private set; }
 
     public static User Create(string name, string email, DateTime now) =>
         new(name.Trim(), email.Trim(), SystemRole.User, isActive: true, createdAt: now, lastSignInAt: now);
+
+    /// <summary>
+    /// A person of the company directory included in a project before the first sign-in (ADR-0005): active, with the
+    /// least privileged role and no sign-in yet.
+    /// </summary>
+    public static User FromDirectory(string name, string email, DateTime now) =>
+        new(name.Trim(), email.Trim(), SystemRole.User, isActive: true, createdAt: now, lastSignInAt: null);
 
     public bool IsActiveAdministrator => IsActive && Role == SystemRole.Administrator;
 

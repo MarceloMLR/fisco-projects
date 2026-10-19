@@ -484,6 +484,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListProjectMembers"];
+        put?: never;
+        post: operations["AddProjectMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/members/{userId}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeProjectMemberRole"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RemoveProjectMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -664,8 +712,19 @@ export interface components {
             email: string;
         };
         /**
+         * @description The person to include, by `userId` or, for a person of the company directory who never signed in, by the
+         *     `directoryId` of the people search (ADR-0005), and the role in the project.
+         */
+        NewProjectMemberRequest: {
+            /** Format: uuid */
+            userId: null | string;
+            directoryId: null | string;
+            role: components["schemas"]["ProjectRole"];
+        };
+        /**
          * @description The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
-         *     project), the manager (the person who creates it, when none) and, optionally, the tech lead.
+         *     project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
+         *     the company directory who never signed in, by the `directoryId` of the people search (ADR-0005).
          */
         NewProjectRequest: {
             code: null | string;
@@ -677,13 +736,20 @@ export interface components {
             managerId: null | string;
             /** Format: uuid */
             techLeadId: null | string;
+            techLeadDirectoryId?: null | string;
         };
-        /** @description A person to choose, such as the manager of a project. */
+        /**
+         * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
+         *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
+         *     active Administrator or Project manager can be a manager (ADR-0085).
+         */
         PersonResponse: {
             /** Format: uuid */
-            id: string;
+            id: null | string;
+            directoryId: null | string;
             name: string;
             email: string;
+            canBeManager: boolean;
         };
         ProblemDetails: {
             type?: null | string;
@@ -729,18 +795,45 @@ export interface components {
             status: components["schemas"]["ProjectStatus"];
             managers: components["schemas"]["ProjectPersonResponse"][];
         };
+        /** @description The user now in the project; a person of the directory got this user when included. */
+        ProjectMemberCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /**
+         * @description A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in
+         *     (null for who never signed in) and whether the person may be a manager of a project (ADR-0085).
+         */
+        ProjectMemberResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: string;
+            role: components["schemas"]["ProjectRole"];
+            /** Format: date-time */
+            addedAt: string;
+            /** Format: date-time */
+            lastSignInAt: null | string;
+            canBeManager: boolean;
+        };
+        ProjectMemberRoleRequest: {
+            role: components["schemas"]["ProjectRole"];
+        };
         ProjectPageResponse: {
             items: components["schemas"]["ProjectListItemResponse"][];
             /** Format: int32 */
             total: number;
         };
         /**
-         * @description What the person may do in the project (ADR-0043): change the data, only while the project is open, and change the
-         *     status, including reopening it.
+         * @description What the person may do in the project (ADR-0043): change the data, only while the project is open; change the
+         *     status, including reopening it; and, while the project is open, include, change and remove people, and do it also
+         *     with the managers (ADR-0042).
          */
         ProjectPermissionsResponse: {
             canEdit: boolean;
             canChangeStatus: boolean;
+            canManagePeople: boolean;
+            canManageManagers: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -834,7 +927,7 @@ export interface components {
             role: components["schemas"]["SystemRole"];
             status: components["schemas"]["UserStatus"];
             /** Format: date-time */
-            lastSignInAt: string;
+            lastSignInAt: null | string;
         };
         /** @enum {unknown} */
         UserStatus: "Active" | "Inactive";
@@ -1272,15 +1365,6 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2664,6 +2748,245 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ListProjectMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMemberResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddProjectMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewProjectMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMemberCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeProjectMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectMemberRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveProjectMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
