@@ -102,6 +102,23 @@ async function openMenuOf(name: string) {
 
 // Spec: usuarios-e-papeis, requirement "Tela Usuários".
 describe('Tela Usuários', () => {
+  // Spec: usuarios-e-papeis, requirement "Tela Usuários".
+  it('Pessoa que nunca entrou', async () => {
+    people.push({
+      id: '0199f5a2-7c1e-7d40-9a1b-000000000009',
+      name: 'Carla Mendes',
+      email: 'carla.mendes@empresa.example',
+      role: 'User',
+      status: 'Active',
+      lastSignInAt: null,
+    });
+    await openUsers();
+
+    expect(within(rowOf('Carla Mendes')).getAllByRole('gridcell')[3]).toHaveTextContent(
+      ptBR.dates.never,
+    );
+  });
+
   it('Lista de usuários', async () => {
     await openUsers();
 

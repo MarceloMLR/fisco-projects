@@ -27,6 +27,7 @@ interface ProjectBody {
   clientId: string | null;
   managerId: string | null;
   techLeadId: string | null;
+  techLeadDirectoryId: string | null;
 }
 
 let projects: DemoProject[];
@@ -58,7 +59,7 @@ beforeEach(() => {
     http.post('/api/projects', async ({ request }) => {
       const body = (await request.json()) as ProjectBody;
       requests.push(
-        `POST ${body.code} ${body.name} ${String(body.clientId)} ${String(body.managerId)} ${String(body.techLeadId)}`,
+        `POST ${body.code} ${body.name} ${String(body.clientId)} ${String(body.managerId)} ${String(body.techLeadId)}${body.techLeadDirectoryId === null ? '' : ` ${body.techLeadDirectoryId}`}`,
       );
       const owner = current.find((project) => project.code === body.code);
       if (owner !== undefined) {
@@ -87,8 +88,26 @@ beforeEach(() => {
           ...(body.techLeadId === null
             ? []
             : [{ id: body.techLeadId, name: nameOf(body.techLeadId), role: 'TechLead' as const }]),
+          // A tech lead of the directory becomes a user (ADR-0005).
+          ...(body.techLeadDirectoryId === null
+            ? []
+            : [
+                {
+                  id: '0199f5a2-7c1e-7d40-9a1b-000000000099',
+                  name:
+                    demoPeopleChoices.find(
+                      (person) => person.directoryId === body.techLeadDirectoryId,
+                    )?.name ?? '',
+                  role: 'TechLead' as const,
+                },
+              ]),
         ],
-        permissions: { canEdit: true, canChangeStatus: true },
+        permissions: {
+          canEdit: true,
+          canChangeStatus: true,
+          canManagePeople: true,
+          canManageManagers: true,
+        },
         mine: true,
       });
       return HttpResponse.json({ id: newId }, { status: 201 });
@@ -279,8 +298,43 @@ describe('Gerente e cliente no Novo projeto', () => {
     const options = await screen.findAllByRole('option');
     expect(options.map((option) => option.textContent)).toEqual([
       'Beatriz Lima',
-      'Marina Costa',
+      form.you.replace('{{name}}', marina.name),
       'Paulo Nogueira',
     ]);
+  });
+
+  // Spec: projetos, requirement "Gerente e líder técnico na criação" (ADR-0005).
+  it('Líder técnico do diretório na criação', async () => {
+    await openNewProject();
+
+    fill(form.code, 'TRIB-MG');
+    fill(form.name, 'Revisão tributária da filial MG');
+    fireEvent.change(screen.getByRole('combobox', { name: form.techLead }), {
+      target: { value: 'sofia' },
+    });
+    const sofia = await screen.findByRole('option', { name: /Sofia Martins/ });
+    expect(sofia).toHaveTextContent(`Sofia Martins${ptBR.dates.never}`);
+    fireEvent.click(sofia);
+    create();
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Revisão tributária da filial MG' }),
+    ).toBeVisible();
+    expect(screen.getByTestId('project-meta')).toHaveTextContent(
+      `${text.header.techLead} Sofia Martins`,
+    );
+    expect(requests).toEqual([
+      `POST TRIB-MG Revisão tributária da filial MG null ${marina.id} null local:sofia.martins@empresa.example`,
+    ]);
+  });
+
+  it('Gerente e líder técnico são pessoas diferentes', async () => {
+    await openNewProject();
+
+    fireEvent.change(screen.getByRole('combobox', { name: form.techLead }), {
+      target: { value: 'marina' },
+    });
+
+    expect(await screen.findByText(form.noPeople)).toBeVisible();
   });
 });

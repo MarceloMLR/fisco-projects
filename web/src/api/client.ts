@@ -20,6 +20,7 @@ export type Person = components['schemas']['PersonResponse'];
 export type ProjectRow = components['schemas']['ProjectListItemResponse'];
 export type Project = components['schemas']['ProjectResponse'];
 export type ProjectPerson = components['schemas']['ProjectPersonResponse'];
+export type ProjectMember = components['schemas']['ProjectMemberResponse'];
 export type ProjectStatus = components['schemas']['ProjectStatus'];
 export type ProjectRole = components['schemas']['ProjectRole'];
 export type ProjectSituation = components['schemas']['ProjectSituation'];
@@ -120,6 +121,8 @@ export const clientProblems = {
 export const projectProblems = {
   codeInUse: 'urn:fiscoprojects:problem:project-code-in-use',
   closed: 'urn:fiscoprojects:problem:project-closed',
+  memberExists: 'urn:fiscoprojects:problem:project-member-exists',
+  lastManager: 'urn:fiscoprojects:problem:project-last-manager',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

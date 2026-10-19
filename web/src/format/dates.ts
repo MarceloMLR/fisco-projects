@@ -42,8 +42,13 @@ function addDays(day: DayValue, days: number): DayValue {
 /** The dates of the screens in one time zone. Each function keeps its identity, so tables do not draw again. */
 export interface Dates {
   timeZone: string;
-  /** Last access of a person: now, today with the time, yesterday with the time, or the date (14/10/2026). */
-  formatLastAccess: (isoUtc: string, t: TFunction, now?: Date) => string;
+  /**
+   * Last access of a person: now, today with the time, yesterday with the time, or the date (14/10/2026); "Nunca
+   * entrou" for a person included from the directory who never signed in.
+   */
+  formatLastAccess: (isoUtc: string | null, t: TFunction, now?: Date) => string;
+  /** The date of a moment (19/10/2026), as when a person joined a project. */
+  formatDate: (isoUtc: string) => string;
   /** Day and month (16/10), as in the Audit list. */
   formatDayMonth: (isoUtc: string) => string;
   /** Time of day (09:58). */
@@ -143,6 +148,9 @@ function create(timeZone: string): Dates {
   return {
     timeZone,
     formatLastAccess: (isoUtc, t, now = new Date()) => {
+      if (isoUtc === null) {
+        return t('dates.never');
+      }
       const moment = new Date(isoUtc);
       if (now.getTime() - moment.getTime() < 60_000) {
         return t('dates.now');
@@ -156,6 +164,7 @@ function create(timeZone: string): Dates {
       }
       return date.format(moment);
     },
+    formatDate: (isoUtc) => date.format(new Date(isoUtc)),
     formatDayMonth: (isoUtc) => dayMonth.format(new Date(isoUtc)),
     formatTime: (isoUtc) => time.format(new Date(isoUtc)),
     formatDateTime: (isoUtc) => {

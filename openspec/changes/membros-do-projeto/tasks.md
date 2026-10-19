@@ -42,7 +42,7 @@
 
 ## 3. Frontend
 
-- [ ] 3.1 Página do projeto com abas:
+- [x] 3.1 Página do projeto com abas:
   - `ProjectLayout`, com as abas Visão geral e Membros como rotas e o número de pessoas;
   - `DataTable` com linhas de grupo;
   - `PersonField` com as pessoas do diretório e `exclude`;
@@ -53,7 +53,7 @@
   - "Abas do projeto";
   - o líder técnico do diretório no Novo projeto;
   - "Pessoa que nunca entrou".
-- [ ] 3.2 Aba Membros:
+- [x] 3.2 Aba Membros:
   - lista por time e por nome, com busca;
   - "Incluir pessoa";
   - detalhe na gaveta, com a troca do papel e "Remover do projeto";

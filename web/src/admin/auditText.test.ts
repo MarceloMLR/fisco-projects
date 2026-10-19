@@ -508,3 +508,72 @@ describe('Mudanças dos projetos na auditoria', () => {
     ]);
   });
 });
+
+// Spec: membros-do-projeto, requirement "Mudanças das pessoas na auditoria".
+describe('Mudanças das pessoas na auditoria', () => {
+  it('Papel trocado e pessoa removida na auditoria', () => {
+    const project = 'Implantação do ERP financeiro';
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ProjectMember',
+        actor: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
+        itemLabel: 'Diego Torres',
+        changes: [
+          {
+            field: 'ProjectId',
+            before: project,
+            after: project,
+            secret: false,
+            reference: 'Project',
+          },
+          {
+            field: 'Role',
+            before: 'Developer',
+            after: 'Contributor',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+    const removed = describeAuditEntry(
+      entry({
+        action: 'Deleted',
+        itemType: 'ProjectMember',
+        itemLabel: 'Diego Torres',
+        changes: [
+          { field: 'ProjectId', before: project, after: null, secret: false, reference: 'Project' },
+          { field: 'Role', before: 'Contributor', after: null, secret: false, reference: null },
+          {
+            field: 'UserId',
+            before: 'Diego Torres',
+            after: null,
+            secret: false,
+            reference: 'User',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed).toEqual({
+      title: 'Trocou o papel de uma pessoa num projeto',
+      summary: `Diego Torres · Colaborador · ${project}`,
+      sentence: 'Marina Costa trocou o papel de uma pessoa num projeto',
+      properties: [
+        { label: 'Pessoa', value: 'Diego Torres' },
+        { label: 'Projeto', value: project },
+      ],
+      changes: [{ field: 'Papel no projeto', before: 'Desenvolvedor', after: 'Colaborador' }],
+    });
+    expect(removed.title).toBe('Removeu uma pessoa de um projeto');
+    expect(removed.summary).toBe(`Diego Torres · Colaborador · ${project}`);
+    expect(removed.changes).toEqual([
+      { field: 'Projeto', before: project, after: '—' },
+      { field: 'Papel no projeto', before: 'Colaborador', after: '—' },
+      { field: 'Pessoa', before: 'Diego Torres', after: '—' },
+    ]);
+  });
+});

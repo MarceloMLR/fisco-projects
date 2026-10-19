@@ -7,6 +7,8 @@ import { fieldControl } from './fieldControl';
 export interface SelectOption<Value extends string> {
   value: Value;
   label: string;
+  /** Shown but not chosen, such as a role the person may not have. */
+  disabled?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export function Select<Value extends string>({
   width,
   invalid = false,
   describedBy,
+  disabled = false,
 }: {
   /** Accessible name. */
   label: string;
@@ -34,10 +37,13 @@ export function Select<Value extends string>({
   invalid?: boolean;
   /** Id of the helper or the error that describes the field. */
   describedBy?: string;
+  /** Shown but not changed, such as a role the person may not change. */
+  disabled?: boolean;
 }) {
   return (
     <MuiSelect<Value>
       value={value}
+      disabled={disabled}
       onChange={(event) => {
         onChange(event.target.value as Value);
       }}
@@ -71,7 +77,7 @@ export function Select<Value extends string>({
       }}
     >
       {options.map((option) => (
-        <MenuItem key={option.value} value={option.value}>
+        <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
           {option.label}
         </MenuItem>
       ))}

@@ -90,7 +90,19 @@ export function projectQuery(id: string) {
   });
 }
 
-/** The active people to choose as the manager or the tech lead of a project. */
+/** The people of a project, by name, with their role, when they joined and their last access. */
+export function projectMembersQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'members'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/members', { params: { path: { id } }, signal })),
+  });
+}
+
+/**
+ * The people of the company to choose, such as the manager or the tech lead of a project or a person to include in
+ * it: the active users and the people of the directory who never signed in (ADR-0005).
+ */
 export function peopleQuery(params: PeopleParams) {
   return queryOptions({
     queryKey: [...queryKeys.people, params] as const,

@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import type { Project } from '../api/client';
 import { initials } from '../components/initials';
 import { theme } from '../theme/theme';
@@ -16,16 +17,69 @@ const namesWith = (project: Project, role: Project['members'][number]['role']) =
     .map((member) => member.name)
     .join(', ');
 
+/** The tabs of a project, each at its own address under the project. */
+export type ProjectTab = 'overview' | 'members';
+
+const tabSx = {
+  position: 'relative',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 'var(--space-2)',
+  height: 44,
+  padding: '0 var(--space-3)',
+  color: 'var(--text-secondary)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 14,
+  lineHeight: '20px',
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+  textDecoration: 'none',
+  '&:hover': { color: 'var(--text)' },
+  '&:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
+  '&[aria-selected="true"]': {
+    color: 'var(--action-text)',
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      left: 'var(--space-3)',
+      right: 'var(--space-3)',
+      bottom: -1,
+      height: 2,
+      backgroundColor: 'var(--action-text)',
+      borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+    },
+  },
+} as const;
+
+/** The count beside the name of a tab (fp-count). */
+const countSx = {
+  display: 'inline-grid',
+  placeItems: 'center',
+  minWidth: 20,
+  height: 20,
+  padding: '0 6px',
+  boxSizing: 'border-box',
+  borderRadius: 'var(--radius-full)',
+  backgroundColor: 'var(--bg-subtle)',
+  color: 'var(--text-secondary)',
+  fontSize: 12,
+  lineHeight: '16px',
+  fontWeight: 500,
+  fontVariantNumeric: 'tabular-nums',
+} as const;
+
 /**
  * The header of a project in every tab (canvas ProjetoCabecalho, fp-proj): the logo of the client or the initials,
  * the name and the status, the code, the client, the manager and the tech lead (ADR-0072), the dates, "Ações do
- * projeto" and the tabs.
+ * projeto" and the tabs, each a link to its address, Membros with the number of people.
  */
 export function ProjectHeader({
   project,
+  tab,
   onOpenActions,
 }: {
   project: Project;
+  tab: ProjectTab;
   /** Opens the menu of the actions; none when the person can do nothing in the project. */
   onOpenActions?: (event: MouseEvent<HTMLElement>) => void;
 }) {
@@ -183,41 +237,29 @@ export function ProjectHeader({
         }}
       >
         <Box
-          component="button"
-          type="button"
+          component={Link}
+          to={`/projects/${project.id}`}
           role="tab"
           id="project-tab-overview"
-          aria-selected="true"
-          aria-controls="project-panel-overview"
-          tabIndex={0}
-          sx={{
-            position: 'relative',
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: 44,
-            padding: '0 var(--space-3)',
-            border: 0,
-            backgroundColor: 'transparent',
-            color: 'var(--action-text)',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 14,
-            lineHeight: '20px',
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            cursor: 'default',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              left: 'var(--space-3)',
-              right: 'var(--space-3)',
-              bottom: -1,
-              height: 2,
-              backgroundColor: 'var(--action-text)',
-              borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
-            },
-          }}
+          aria-selected={tab === 'overview'}
+          aria-controls={tab === 'overview' ? 'project-panel' : undefined}
+          sx={tabSx}
         >
           {t('pages.project.title')}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/members`}
+          role="tab"
+          id="project-tab-members"
+          aria-selected={tab === 'members'}
+          aria-controls={tab === 'members' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectMembers.title')}
+          <Box component="span" sx={countSx}>
+            {project.members.length}
+          </Box>
         </Box>
       </Box>
     </Box>
