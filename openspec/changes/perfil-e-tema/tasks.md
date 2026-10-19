@@ -41,7 +41,7 @@
   - o tema mantido depois de entrar em outro navegador.
 
   Mandar as capturas para Marcelo.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - atualizar o glossário (tema, perfil), o `CLAUDE.md` se preciso e o roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions.
