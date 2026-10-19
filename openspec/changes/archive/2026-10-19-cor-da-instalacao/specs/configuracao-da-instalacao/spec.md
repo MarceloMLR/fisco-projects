@@ -36,18 +36,11 @@ O nome, o logo e a cor principal da instalação MUST poder ser lidos sem sessã
 
 ### Requirement: Tela Configurações gerais
 
-A seção Instalação da coluna da Administração MUST ter Configurações gerais, com:
-
-- a seção Marca: nome exibido; logo, com a dica "PNG ou SVG, até 1 MB"; e cor principal, com a amostra, o campo hexadecimal, "Voltar ao padrão" e o resultado do contraste;
-- a seção Regras gerais, com o fuso horário e busca;
-- a Prévia da barra lateral e do painel da entrada como vão ficar;
-- a barra de ações com Descartar e Salvar alterações, habilitados só quando algo mudou.
-
-Descartar MUST voltar aos valores salvos.
+A seção Instalação da coluna da Administração MUST ter Configurações gerais, com as seções Marca (nome exibido, logo e cor principal) e Regras gerais (fuso horário), a Prévia da barra lateral e do painel da entrada como vão ficar e a barra de ações com Descartar e Salvar alterações, habilitados só quando algo mudou. Descartar MUST voltar aos valores salvos.
 
 #### Scenario: Configurações gerais na Administração
 - **WHEN** o administrador escolhe Configurações gerais na coluna da Administração
-- **THEN** a tela mostra a seção Marca com o nome, o logo e a cor atuais, a seção Regras gerais com o fuso atual e a Prévia
+- **THEN** a tela mostra a seção Marca com o nome, o logo (com a dica "PNG ou SVG, até 1 MB") e a cor atuais (com a amostra, o campo hexadecimal, "Voltar ao padrão" e o resultado do contraste), a seção Regras gerais com o fuso atual e busca, e a Prévia
 
 #### Scenario: Prévia antes de salvar
 - **WHEN** o administrador digita outro nome, escolhe um logo ou digita outra cor
