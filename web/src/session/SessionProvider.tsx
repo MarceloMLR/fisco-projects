@@ -5,8 +5,8 @@ import { api, onUnauthorized, type ThemePreference } from '../api/client';
 import { queryKeys } from '../api/queries';
 import { type Session, SessionContext } from './SessionContext';
 
-/** Queries of public data, read with or without a session. */
-const publicQueries: readonly string[] = [queryKeys.installation[0]];
+/** Queries of public data, read with or without a session: only the brand, not the rules under its key. */
+const publicQueries: readonly string[] = [JSON.stringify(queryKeys.installation)];
 
 /** The mode of the theme for a preference of the profile; Automatic follows the operating system. */
 const modeOf = (theme: ThemePreference) =>
@@ -44,7 +44,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (session.status === 'signed-out') {
       queryClient.removeQueries({
-        predicate: (query) => !publicQueries.includes(String(query.queryKey[0])),
+        predicate: (query) => !publicQueries.includes(JSON.stringify(query.queryKey)),
       });
       queryClient.getMutationCache().clear();
     }

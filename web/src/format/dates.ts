@@ -1,91 +1,183 @@
 import type { TFunction } from 'i18next';
 
-// Dates on screen (design system: 14/10/2026 and 09:42). Until the installation has its own time zone setting,
-// they use the browser's.
+// Dates on screen (design system: 14/10/2026 and 09:42), in the time zone of the installation (ADR-0013): the API
+// keeps them in UTC, and the screens show them as the company sees them, whatever the time zone of the browser.
 
-const time = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' });
-const date = new Intl.DateTimeFormat('pt-BR', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
+/** The time zone of a new installation, and of the screens if its rules cannot be read (ADR-0013). */
+export const defaultTimeZone = 'America/Sao_Paulo';
 
-function startOfDay(moment: Date): number {
-  return new Date(moment.getFullYear(), moment.getMonth(), moment.getDate()).getTime();
-}
-
-/** Last access of a person: now, today with the time, yesterday with the time, or the date (14/10/2026). */
-export function formatLastAccess(isoUtc: string, t: TFunction, now: Date = new Date()): string {
-  const moment = new Date(isoUtc);
-  if (now.getTime() - moment.getTime() < 60_000) {
-    return t('dates.now');
-  }
-  const days = Math.round((startOfDay(now) - startOfDay(moment)) / 86_400_000);
-  if (days === 0) {
-    return t('dates.today', { time: time.format(moment) });
-  }
-  if (days === 1) {
-    return t('dates.yesterday', { time: time.format(moment) });
-  }
-  return date.format(moment);
-}
-
-const dayMonth = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' });
-
-/** Day and month (16/10), as in the Audit list. */
-export function formatDayMonth(isoUtc: string): string {
-  return dayMonth.format(new Date(isoUtc));
-}
-
-/** Time of day (09:58). */
-export function formatTime(isoUtc: string): string {
-  return time.format(new Date(isoUtc));
-}
-
-/** Date and time (16/10/2026 09:58), as in the details of an audit record. */
-export function formatDateTime(isoUtc: string): string {
-  const moment = new Date(isoUtc);
-  return `${date.format(moment)} ${time.format(moment)}`;
-}
-
-/** A day as the date field of the browser keeps it (2026-10-16), in the browser's time zone. */
+/** A day as the date field of the browser keeps it (2026-10-16), a day of the time zone of the installation. */
 export type DayValue = string;
+
+const dayLength = 86_400_000;
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-export function toDayValue(moment: Date): DayValue {
-  return `${String(moment.getFullYear())}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`;
+function dayValueOf(year: number, month: number, day: number): DayValue {
+  return `${String(year)}-${pad(month)}-${pad(day)}`;
 }
 
-/** Midnight at the start of the day, in the browser's time zone. */
-export function startOfDayValue(day: DayValue): Date {
+function partsOf(day: DayValue): [number, number, number] {
   const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
-  return new Date(year, month - 1, dayOfMonth);
+  return [year, month, dayOfMonth];
 }
 
-/** The day after, as the end of a period that includes its last day. */
-export function nextDayValue(day: DayValue): DayValue {
-  const start = startOfDayValue(day);
-  return toDayValue(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1));
+/** The number of the day since 1970, to count days between two dates of the calendar. */
+function dayNumber(day: DayValue): number {
+  const [year, month, dayOfMonth] = partsOf(day);
+  return Date.UTC(year, month - 1, dayOfMonth) / dayLength;
 }
 
-/** The last days up to today, today included: 30 days by default. */
-export function lastDays(
-  count: number,
-  today: Date = new Date(),
-): { from: DayValue; to: DayValue } {
-  const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (count - 1));
-  return { from: toDayValue(from), to: toDayValue(today) };
+/** The calendar day a number of days after (or before) another. */
+function addDays(day: DayValue, days: number): DayValue {
+  const moment = new Date((dayNumber(day) + days) * dayLength);
+  return dayValueOf(moment.getUTCFullYear(), moment.getUTCMonth() + 1, moment.getUTCDate());
 }
 
-/** A period as the Audit filter shows it (01/10 – 16/10). */
-export function formatPeriod(from: DayValue, to: DayValue): string {
-  return `${dayMonth.format(startOfDayValue(from))} – ${dayMonth.format(startOfDayValue(to))}`;
+/** The dates of the screens in one time zone. Each function keeps its identity, so tables do not draw again. */
+export interface Dates {
+  timeZone: string;
+  /** Last access of a person: now, today with the time, yesterday with the time, or the date (14/10/2026). */
+  formatLastAccess: (isoUtc: string, t: TFunction, now?: Date) => string;
+  /** Day and month (16/10), as in the Audit list. */
+  formatDayMonth: (isoUtc: string) => string;
+  /** Time of day (09:58). */
+  formatTime: (isoUtc: string) => string;
+  /** Date and time (16/10/2026 09:58), as in the details of an audit record. */
+  formatDateTime: (isoUtc: string) => string;
+  /** The day of a moment. */
+  toDayValue: (moment: Date) => DayValue;
+  /** Midnight at the start of the day. */
+  startOfDayValue: (day: DayValue) => Date;
+  /** The day after, as the end of a period that includes its last day. */
+  nextDayValue: (day: DayValue) => DayValue;
+  /** The last days up to today, today included: 30 days by default. */
+  lastDays: (count: number, today?: Date) => { from: DayValue; to: DayValue };
+  /** A period as the Audit filter shows it (01/10 – 16/10). */
+  formatPeriod: (from: DayValue, to: DayValue) => string;
+  /** A day in full (01/10/2026), as the accessible name of the period says it. */
+  formatDayValue: (day: DayValue) => string;
 }
 
-/** A day in full (01/10/2026), as the accessible name of the period says it. */
-export function formatDayValue(day: DayValue): string {
-  return date.format(startOfDayValue(day));
+function create(timeZone: string): Dates {
+  const time = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone });
+  const date = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone,
+  });
+  const dayMonth = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', timeZone });
+  // Every part of a moment in the time zone, to find the day and the offset from UTC.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    timeZone,
+  });
+
+  const fieldsOf = (moment: Date) => {
+    const fields: Record<string, number> = {};
+    for (const part of parts.formatToParts(moment)) {
+      if (part.type !== 'literal') {
+        fields[part.type] = Number(part.value);
+      }
+    }
+    return {
+      year: fields.year ?? 0,
+      month: fields.month ?? 1,
+      day: fields.day ?? 1,
+      hour: fields.hour ?? 0,
+      minute: fields.minute ?? 0,
+      second: fields.second ?? 0,
+    };
+  };
+
+  /** How far the clock of the time zone is from UTC at a moment, in milliseconds. */
+  const offsetAt = (instant: number) => {
+    const local = fieldsOf(new Date(instant));
+    const asUtc = Date.UTC(
+      local.year,
+      local.month - 1,
+      local.day,
+      local.hour,
+      local.minute,
+      local.second,
+    );
+    return asUtc - Math.floor(instant / 1000) * 1000;
+  };
+
+  const toDayValue = (moment: Date): DayValue => {
+    const local = fieldsOf(moment);
+    return dayValueOf(local.year, local.month, local.day);
+  };
+
+  const startOfDayValue = (day: DayValue): Date => {
+    const [year, month, dayOfMonth] = partsOf(day);
+    const midnight = Date.UTC(year, month - 1, dayOfMonth);
+    // The offset may change that day. Asked again at the first guess, it gives midnight; when the clock jumps over
+    // midnight, that moment is still the day before, and the day starts at the first guess.
+    const first = midnight - offsetAt(midnight);
+    const second = midnight - offsetAt(first);
+    return new Date(toDayValue(new Date(second)) === day ? second : first);
+  };
+
+  const nextDayValue = (day: DayValue): DayValue => addDays(day, 1);
+
+  const formatDayValue = (day: DayValue): string => {
+    const [year, month, dayOfMonth] = partsOf(day);
+    return `${pad(dayOfMonth)}/${pad(month)}/${String(year)}`;
+  };
+
+  return {
+    timeZone,
+    formatLastAccess: (isoUtc, t, now = new Date()) => {
+      const moment = new Date(isoUtc);
+      if (now.getTime() - moment.getTime() < 60_000) {
+        return t('dates.now');
+      }
+      const days = dayNumber(toDayValue(now)) - dayNumber(toDayValue(moment));
+      if (days === 0) {
+        return t('dates.today', { time: time.format(moment) });
+      }
+      if (days === 1) {
+        return t('dates.yesterday', { time: time.format(moment) });
+      }
+      return date.format(moment);
+    },
+    formatDayMonth: (isoUtc) => dayMonth.format(new Date(isoUtc)),
+    formatTime: (isoUtc) => time.format(new Date(isoUtc)),
+    formatDateTime: (isoUtc) => {
+      const moment = new Date(isoUtc);
+      return `${date.format(moment)} ${time.format(moment)}`;
+    },
+    toDayValue,
+    startOfDayValue,
+    nextDayValue,
+    lastDays: (count, today = new Date()) => {
+      const to = toDayValue(today);
+      return { from: addDays(to, -(count - 1)), to };
+    },
+    formatPeriod: (from, to) =>
+      `${formatDayValue(from).slice(0, 5)} – ${formatDayValue(to).slice(0, 5)}`,
+    formatDayValue,
+  };
+}
+
+const byTimeZone = new Map<string, Dates>();
+
+/** The dates of the screens in a time zone, the same object for the same time zone. */
+export function datesIn(timeZone: string): Dates {
+  let dates = byTimeZone.get(timeZone);
+  if (dates === undefined) {
+    dates = create(timeZone);
+    byTimeZone.set(timeZone, dates);
+  }
+  return dates;
 }

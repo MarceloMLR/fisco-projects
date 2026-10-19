@@ -8,13 +8,7 @@ import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Select } from '../components/Select';
-import {
-  formatDayMonth,
-  formatTime,
-  lastDays,
-  nextDayValue,
-  startOfDayValue,
-} from '../format/dates';
+import { useDates } from '../format/useDates';
 import { Page } from '../shell/Page';
 import { AuditDetails } from './AuditDetails';
 import { describeAuditEntry } from './auditText';
@@ -48,9 +42,12 @@ const ellipsis = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'no
  */
 export function AuditPage() {
   const { t } = useTranslation();
+  const dates = useDates();
+  const { startOfDayValue, nextDayValue } = dates;
   const [person, setPerson] = useState<PersonOption | null>(null);
   const [itemType, setItemType] = useState<ItemTypeFilter>('all');
-  const [period, setPeriod] = useState<Period>(() => lastDays(defaultDays));
+  // The shell shows the screens only once the time zone is known, so the days are already of the installation.
+  const [period, setPeriod] = useState<Period>(() => dates.lastDays(defaultDays));
   const [page, setPage] = useState(1);
   // The record whose details are open; kept even if the list behind it is brought up to date.
   const [chosen, setChosen] = useState<AuditEntry>();
@@ -95,10 +92,10 @@ export function AuditPage() {
         renderCell: ({ row }) => (
           <Box sx={{ minWidth: 0, fontVariantNumeric: 'tabular-nums' }}>
             <Box component="span" sx={{ display: 'block' }}>
-              {formatDayMonth(row.occurredAt)}
+              {dates.formatDayMonth(row.occurredAt)}
             </Box>
             <Box component="span" sx={sub}>
-              {formatTime(row.occurredAt)}
+              {dates.formatTime(row.occurredAt)}
             </Box>
           </Box>
         ),
@@ -149,7 +146,7 @@ export function AuditPage() {
         },
       },
     ],
-    [t],
+    [t, dates],
   );
 
   const displayedRows = useCallback(

@@ -11,6 +11,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
 | Marca da instalação | Installation | Nome e logo, lidos sem sessão (`GET /api/installation`) |
+| Regras gerais | GeneralRules | Configurações da instalação que as telas usam com sessão (`GET /api/installation/rules`); hoje, o fuso |
+| Fuso horário | TimeZone | Identificador IANA da instalação, padrão America/Sao_Paulo; as datas das telas aparecem nele (ADR-0013) |
 | Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão; também o papel de menor privilégio (`SystemRole.User`) |
 | Vínculo com o provedor de identidade | IdentityLink | Provedor e identificador externo, separado do usuário (ADR-0009) |
 | Entrada (login) | SignIn | |

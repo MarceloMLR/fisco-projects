@@ -29,7 +29,9 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
     [
         new("Read the brand", client => client.GetAsync("/api/installation", Cancellation), HttpStatusCode.OK,
             [SystemRole.Administrator, SystemRole.ProjectManager, SystemRole.User]),
-        new("Change the name", client => SendAsync(client, HttpMethod.Put, "/api/installation", new { name = NewName }),
+        new("Read the general rules", client => client.GetAsync("/api/installation/rules", Cancellation), HttpStatusCode.OK,
+            [SystemRole.Administrator, SystemRole.ProjectManager, SystemRole.User]),
+        new("Change the name", client => SendAsync(client, HttpMethod.Put, "/api/installation", Form(NewName)),
             HttpStatusCode.NoContent, [SystemRole.Administrator]),
         new("Send the logo", client => SendLogoAsync(client, Png, "marca.png"), HttpStatusCode.NoContent,
             [SystemRole.Administrator]),
@@ -52,7 +54,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         await using var app = await StartAsync();
         using var anonymous = app.NewClient();
 
-        var rename = await SendAsync(anonymous, HttpMethod.Put, "/api/installation", new { name = NewName });
+        var rename = await SendAsync(anonymous, HttpMethod.Put, "/api/installation", Form(NewName));
         var logo = await SendLogoAsync(anonymous, Png, "marca.png");
         var remove = await SendAsync(anonymous, HttpMethod.Delete, "/api/installation/logo");
 
@@ -71,7 +73,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 
         foreach (var name in new[] { "", "   ", new string('a', 61) })
         {
-            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", new { name });
+            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(name));
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
@@ -79,6 +81,54 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         }
 
         (await BrandAsync(admin)).Name.Should().Be("FiscoProjects");
+    }
+
+    [Fact(DisplayName = "Fuso inválido")]
+    public async Task InvalidTimeZone_IsABadRequest()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        foreach (var timeZone in new[] { "Mars/Olympus_Mons", "E. South America Standard Time", "" })
+        {
+            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName, timeZone));
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+            problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("timeZone");
+        }
+
+        (await BrandAsync(admin)).Name.Should().Be("FiscoProjects");
+        (await RulesAsync(admin)).Should().Be("America/Sao_Paulo");
+    }
+
+    [Fact(DisplayName = "Trocar o fuso")]
+    public async Task TimeZone_IsSaved_ForEveryoneInASession()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        var (marina, _) = await app.SignedInClientAsync("Marina Costa", SystemRole.User);
+        using var _marina = marina;
+
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", "America/Manaus"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await RulesAsync(marina)).Should().Be("America/Manaus");
+    }
+
+    [Fact(DisplayName = "Fuso só com sessão")]
+    public async Task WithoutASession_TheTimeZoneIsNotRead()
+    {
+        await using var app = await StartAsync();
+        using var anonymous = app.NewClient();
+
+        var rules = await anonymous.GetAsync("/api/installation/rules", Cancellation);
+        var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
+
+        rules.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        brand.TryGetProperty("timeZone", out _).Should().BeFalse();
     }
 
     [Fact(DisplayName = "Marca na página de entrada")]
@@ -90,7 +140,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         using var anonymous = app.NewClient();
         (await BrandAsync(anonymous)).Should().Be(("FiscoProjects", null));
 
-        await SendAsync(admin, HttpMethod.Put, "/api/installation", new { name = NewName });
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName));
         await SendLogoAsync(admin, Png, "marca.png");
 
         var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
@@ -172,6 +222,20 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         unversioned.Headers.CacheControl!.NoCache.Should().BeTrue();
     }
 
+    [Fact(DisplayName = "Troca do fuso na auditoria")]
+    public async Task ChangeOfTheTimeZone_IsAudited()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", "America/Manaus"));
+
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
+        var entry = page.GetProperty("items").EnumerateArray().Should().ContainSingle().Subject;
+        Fields(entry).Should().Equal(("TimeZone", "America/Sao_Paulo", "America/Manaus"));
+    }
+
     [Fact(DisplayName = "Troca do nome na auditoria")]
     public async Task ChangesOfTheSettings_AreAudited()
     {
@@ -179,7 +243,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (admin, adminId) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         using var _admin = admin;
 
-        await SendAsync(admin, HttpMethod.Put, "/api/installation", new { name = NewName });
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName));
         app.Clock.Advance(TimeSpan.FromMinutes(1));
         await SendLogoAsync(admin, Png, "marca.png");
 
@@ -226,6 +290,12 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 
         (await BrandAsync(client)).Name.Should().Be(role == SystemRole.Administrator ? NewName : "FiscoProjects");
     }
+
+    /// <summary>The General settings form, with the default time zone unless another is given.</summary>
+    private static object Form(string name, string timeZone = "America/Sao_Paulo") => new { name, timeZone };
+
+    private static async Task<string?> RulesAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("timeZone").GetString();
 
     private static async Task<(string Name, string? LogoUrl)> BrandAsync(HttpClient client)
     {

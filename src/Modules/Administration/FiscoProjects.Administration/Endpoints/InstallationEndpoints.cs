@@ -15,8 +15,11 @@ namespace FiscoProjects.Administration.Endpoints;
 /// </summary>
 public sealed record InstallationResponse(string Name, string? LogoUrl);
 
-/// <summary>The General settings form; it grows with the time zone and the main color.</summary>
-public sealed record UpdateInstallationRequest(string Name);
+/// <summary>The General settings form, saved as a whole: the name shown and the IANA time zone.</summary>
+public sealed record UpdateInstallationRequest(string Name, string TimeZone);
+
+/// <summary>The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013).</summary>
+public sealed record GeneralRulesResponse(string TimeZone);
 
 /// <summary>Problem types of the logo, so the screen can tell the reason.</summary>
 public static class InstallationProblems
@@ -43,6 +46,9 @@ internal static class InstallationEndpoints
         var installation = api.MapGroup("/installation").WithTags("Installation");
 
         installation.MapGet("/", GetAsync).WithName("GetInstallation").AllowAnonymous();
+        // The time zone is no part of the brand: only with a session, as every route of the group.
+        installation.MapGet("/rules", GetRulesAsync).WithName("GetGeneralRules")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
         installation.MapGet("/logo", GetLogoAsync).WithName("GetInstallationLogo").AllowAnonymous()
             .Produces(StatusCodes.Status200OK, contentType: "image/png", additionalContentTypes: "image/svg+xml");
 
@@ -92,14 +98,23 @@ internal static class InstallationEndpoints
         return TypedResults.Stream(logo.File.Content, logo.ContentType);
     }
 
+    private static async Task<Ok<GeneralRulesResponse>> GetRulesAsync(
+        GetGeneralRules getRules, CancellationToken cancellationToken) =>
+        TypedResults.Ok(new GeneralRulesResponse((await getRules.ExecuteAsync(cancellationToken)).TimeZone));
+
     private static async Task<Results<NoContent, ValidationProblem>> UpdateAsync(
-        UpdateInstallationRequest request, RenameInstallation renameInstallation, CancellationToken cancellationToken) =>
-        await renameInstallation.ExecuteAsync(request.Name, cancellationToken)
+        UpdateInstallationRequest request, UpdateInstallation updateInstallation, CancellationToken cancellationToken)
+    {
+        var invalid = await updateInstallation.ExecuteAsync(
+            new InstallationChanges(request.Name, request.TimeZone), cancellationToken);
+        return invalid.Count == 0
             ? TypedResults.NoContent()
-            : TypedResults.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = ["The name is needed and has up to 60 characters."],
-            });
+            : TypedResults.ValidationProblem(invalid.ToDictionary(
+                field => field == InstallationField.Name ? "name" : "timeZone",
+                field => field == InstallationField.Name
+                    ? new[] { "The name is needed and has up to 60 characters." }
+                    : ["Choose an IANA time zone, such as America/Sao_Paulo."]));
+    }
 
     private static async Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceLogoAsync(
         IFormFile? file, ReplaceInstallationLogo replaceLogo, CancellationToken cancellationToken)

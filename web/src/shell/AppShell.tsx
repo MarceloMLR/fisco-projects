@@ -1,9 +1,12 @@
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router';
+import { generalRulesQuery } from '../api/queries';
+import { SessionPending } from '../session/RequireSession';
 import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
 import { SessionPerson } from './AccountMenu';
@@ -26,10 +29,16 @@ export function AppShell() {
   const trail = (page.trail ?? []).map((level) => ({ title: t(level.titleKey), path: level.path }));
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [menuOpen, setMenuOpen] = useState(false);
+  // No screen shows a date before the time zone of the installation is known (ADR-0013).
+  const rules = useQuery(generalRulesQuery());
 
   // The shell is only reached through RequireSession.
   if (session.status !== 'signed-in') {
     return null;
+  }
+  // Only the first answer, or the first failure, is waited for: a later reading never takes the screen away.
+  if (!rules.isFetched) {
+    return <SessionPending />;
   }
   const { user } = session;
 

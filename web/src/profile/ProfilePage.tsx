@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { profileQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
-import { formatLastAccess } from '../format/dates';
+import { useDates } from '../format/useDates';
 import { useSession } from '../session/SessionContext';
 import { ThemeOptions } from './ThemeOptions';
 import { useThemeChoice } from './themeChoice';
@@ -26,6 +26,7 @@ const isKnown = (method: string): method is KnownSignInMethod =>
  */
 export function ProfilePage() {
   const { t } = useTranslation();
+  const { formatLastAccess } = useDates();
   const { session, signOut } = useSession();
   const { theme, choose, message, dismiss } = useThemeChoice();
   const profile = useQuery(profileQuery()).data;

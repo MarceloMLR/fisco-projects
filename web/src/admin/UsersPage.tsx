@@ -20,7 +20,7 @@ import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Select } from '../components/Select';
 import { StatusBadge } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
-import { formatLastAccess } from '../format/dates';
+import { useDates } from '../format/useDates';
 import { useDebounced } from '../hooks/useDebounced';
 import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
@@ -42,6 +42,7 @@ type StatusFilter = 'all' | UserRow['status'];
  */
 export function UsersPage() {
   const { t } = useTranslation();
+  const { formatLastAccess } = useDates();
   const { usersTotal } = useAdminContext();
   const { session, refresh } = useSession();
   const [search, setSearch] = useState('');
@@ -210,7 +211,7 @@ export function UsersPage() {
         ),
       },
     ],
-    [t],
+    [t, formatLastAccess],
   );
 
   return (

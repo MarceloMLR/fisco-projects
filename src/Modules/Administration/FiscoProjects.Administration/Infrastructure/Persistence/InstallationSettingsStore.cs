@@ -12,12 +12,9 @@ internal sealed class InstallationSettingsStore(AdministrationDbContext db) : II
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 
-    async Task<InstallationInfo> IInstallationSettings.GetAsync(CancellationToken cancellationToken)
-    {
-        var name = await db.InstallationSettings.AsNoTracking()
+    Task<InstallationInfo> IInstallationSettings.GetAsync(CancellationToken cancellationToken) =>
+        db.InstallationSettings.AsNoTracking()
             .Where(settings => settings.Id == InstallationSettings.SingleId)
-            .Select(settings => settings.Name)
+            .Select(settings => new InstallationInfo(settings.Name, settings.TimeZone))
             .SingleAsync(cancellationToken);
-        return new InstallationInfo(name);
-    }
 }

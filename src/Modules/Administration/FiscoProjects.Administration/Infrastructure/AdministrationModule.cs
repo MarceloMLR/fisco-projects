@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FiscoProjects.Administration.Infrastructure;
 
-/// <summary>Services of the Administration module: for now, the settings of the installation (ADR-0003, ADR-0046).</summary>
+/// <summary>Services of the Administration module: the settings of the installation (ADR-0003, ADR-0046).</summary>
 public static class AdministrationModule
 {
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services, IConfiguration configuration)
@@ -20,7 +20,8 @@ public static class AdministrationModule
         services.AddScoped<IInstallationSettings>(provider => provider.GetRequiredService<InstallationSettingsStore>());
         services.AddScoped<GetInstallation>();
         services.AddScoped<GetInstallationLogo>();
-        services.AddScoped<RenameInstallation>();
+        services.AddScoped<GetGeneralRules>();
+        services.AddScoped<UpdateInstallation>();
         services.AddScoped<ReplaceInstallationLogo>();
         services.AddScoped<RemoveInstallationLogo>();
         return services;

@@ -17,7 +17,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 8 | 6 |
-| 2. Acesso e administração | 10 | 8 |
+| 2. Acesso e administração | 10 | 9 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
 | 5. Chamados | 7 | 0 |
@@ -26,7 +26,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **56** | **14** |
+| **Total** | **56** | **15** |
 
 ## 1. Fundação
 
@@ -53,7 +53,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Concluída em 18/10/2026 ([#14](https://github.com/MarceloMLR/fisco-projects/pull/14)) |
 | Acesso-5 | `perfil-e-tema` | Tema no perfil e tela Meu perfil (separada da configuração da instalação a pedido de Marcelo) | 0014, 0066 | Concluída em 18/10/2026 ([#17](https://github.com/MarceloMLR/fisco-projects/pull/17)) |
 | Acesso-6 | `configuracao-da-instalacao` | Tela Configurações gerais com o nome e o logo da instalação, exibidos na barra lateral, na entrada e na aba (separada do fuso e da cor a pedido de Marcelo) | 0003, 0009, 0030, 0046, 0066 | Concluída em 19/10/2026 ([#18](https://github.com/MarceloMLR/fisco-projects/pull/18)) |
-| Acesso-7 | `fuso-da-instalacao` | Fuso horário nas Configurações gerais; datas e filtros de período no fuso da instalação | 0013 | Planejada |
+| Acesso-7 | `fuso-da-instalacao` | Fuso horário nas Configurações gerais; datas e filtros de período no fuso da instalação | 0013 | Concluída em 19/10/2026 ([#19](https://github.com/MarceloMLR/fisco-projects/pull/19)) |
 | Acesso-8 | `cor-da-instalacao` | Cor principal nas Configurações gerais, com os tokens da marca derivados nos dois temas e a checagem de contraste | 0003, 0050, 0063, 0067 | Planejada |
 
 ## 3. Projetos

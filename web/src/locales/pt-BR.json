@@ -227,7 +227,8 @@
       },
       "InstallationSettings": {
         "Name": "Nome exibido",
-        "LogoFileName": "Logo"
+        "LogoFileName": "Logo",
+        "TimeZone": "Fuso horário"
       }
     }
   },
@@ -241,12 +242,17 @@
     "sendLogo": "Enviar logo",
     "replaceLogo": "Trocar logo",
     "removeLogo": "Remover logo",
+    "rules": "Regras gerais",
+    "timeZone": "Fuso horário",
+    "noTimeZones": "Nenhum fuso encontrado",
     "errors": {
       "nameRequired": "Informe o nome exibido.",
       "nameTooLong": "Use até 60 caracteres.",
       "logoFormat": "Envie o logo em PNG ou SVG.",
       "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor.",
-      "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles."
+      "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles.",
+      "timeZoneRequired": "Escolha o fuso horário.",
+      "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",

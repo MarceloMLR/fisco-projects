@@ -20,19 +20,32 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
         installation.Should().Be(new Installation("FiscoProjects", null));
-        info.Should().Be(new InstallationInfo("FiscoProjects"));
+        info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo"));
     }
 
-    [Fact(DisplayName = "Trocar o nome")]
-    public async Task Rename_KeepsTheNameWithoutTheSpacesAtTheEnds()
+    [Fact(DisplayName = "Fuso padrão")]
+    public async Task NewInstallation_ShowsDatesInTheTimeZoneOfBrasilia()
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var renamed = await database.RunAsync<RenameInstallation, bool>(rename =>
-            rename.ExecuteAsync("  Consultoria Fictícia ", Cancellation));
+        var rules = await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation));
 
-        renamed.Should().BeTrue();
-        (await NameAsync(database)).Should().Be("Consultoria Fictícia");
+        rules.Should().Be(new GeneralRules("America/Sao_Paulo"));
+    }
+
+    [Fact(DisplayName = "Trocar o nome e o fuso")]
+    public async Task Update_KeepsTheNameWithoutTheSpacesAtTheEnds_AndTheTimeZone()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, "  Consultoria Fictícia ", "America/Manaus");
+
+        invalid.Should().BeEmpty();
+        var settings = await SettingsAsync(database);
+        settings.Name.Should().Be("Consultoria Fictícia");
+        settings.TimeZone.Should().Be("America/Manaus");
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .Should().Be(new InstallationInfo("Consultoria Fictícia", "America/Manaus"));
     }
 
     [Theory(DisplayName = "Nome inválido")]
@@ -43,10 +56,27 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var renamed = await database.RunAsync<RenameInstallation, bool>(rename => rename.ExecuteAsync(name, Cancellation));
+        var invalid = await UpdateAsync(database, name, "America/Manaus");
 
-        renamed.Should().BeFalse();
-        (await NameAsync(database)).Should().Be(InstallationSettings.DefaultName);
+        invalid.Should().Equal(InstallationField.Name);
+        var settings = await SettingsAsync(database);
+        settings.Name.Should().Be(InstallationSettings.DefaultName);
+        settings.TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
+    }
+
+    [Theory(DisplayName = "Fuso inválido")]
+    [InlineData("Mars/Olympus_Mons")]
+    [InlineData("E. South America Standard Time")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task InvalidTimeZone_ChangesNothing(string? timeZone)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, "", timeZone);
+
+        invalid.Should().Equal(InstallationField.Name, InstallationField.TimeZone);
+        (await SettingsAsync(database)).TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
     }
 
     [Fact(DisplayName = "Enviar o logo")]
@@ -121,6 +151,11 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         (await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(Cancellation))).Should().BeNull();
     }
 
+    private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
+        AdministrationDatabase database, string? name, string? timeZone) =>
+        database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(new InstallationChanges(name, timeZone), Cancellation));
+
     private static Task<LogoRefusal?> SendAsync(AdministrationDatabase database, string fileName, byte[] content) =>
         database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>
             replace.ExecuteAsync(fileName, new MemoryStream(content), Cancellation));
@@ -130,6 +165,4 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         await using var db = database.NewContext();
         return await db.InstallationSettings.AsNoTracking().SingleAsync(Cancellation);
     }
-
-    private static async Task<string> NameAsync(AdministrationDatabase database) => (await SettingsAsync(database)).Name;
 }

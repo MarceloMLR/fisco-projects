@@ -616,6 +616,36 @@
         }
       }
     },
+    "/api/installation/rules": {
+      "get": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "GetGeneralRules",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneralRulesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/installation/logo": {
       "get": {
         "tags": [
@@ -899,6 +929,18 @@
           }
         }
       },
+      "GeneralRulesResponse": {
+        "required": [
+          "timeZone"
+        ],
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013)."
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -1114,15 +1156,19 @@
       },
       "UpdateInstallationRequest": {
         "required": [
-          "name"
+          "name",
+          "timeZone"
         ],
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
           }
         },
-        "description": "The General settings form; it grows with the time zone and the main color."
+        "description": "The General settings form, saved as a whole: the name shown and the IANA time zone."
       },
       "UserPageResponse": {
         "required": [

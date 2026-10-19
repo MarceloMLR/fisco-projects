@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import type { AuditEntry } from '../api/client';
-import { formatDateTime } from '../format/dates';
+import { useDates } from '../format/useDates';
 import { describeAuditEntry } from './auditText';
 
 const section = {
@@ -27,6 +27,7 @@ const cell = {
  */
 export function AuditDetails({ entry }: { entry: AuditEntry }) {
   const { t } = useTranslation();
+  const { formatDateTime } = useDates();
   const description = describeAuditEntry(entry, t);
 
   return (
