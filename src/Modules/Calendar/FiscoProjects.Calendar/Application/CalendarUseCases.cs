@@ -123,6 +123,34 @@ public sealed class ChooseCalculatedHoliday(ICalendarStore store)
     }
 }
 
+/// <summary>
+/// Considers or disregards many dates at once, the "Marcar todos" of the screen: every holiday asked for, in one save,
+/// or nothing when one of them does not exist.
+/// </summary>
+public sealed class ConsiderHolidays(ICalendarStore store)
+{
+    /// <returns>False, with nothing changed, when a calculated or local holiday asked for does not exist.</returns>
+    public async Task<bool> ExecuteAsync(
+        IEnumerable<string> keys, IEnumerable<Guid> localHolidayIds, bool isConsidered, CancellationToken cancellationToken)
+    {
+        var wantedKeys = keys.ToHashSet(StringComparer.Ordinal);
+        var wantedIds = localHolidayIds.ToHashSet();
+        var calculated = (await store.GetCalculatedHolidaysAsync(cancellationToken))
+            .Where(holiday => wantedKeys.Contains(holiday.Key)).ToList();
+        var local = (await store.GetLocalHolidaysAsync(cancellationToken))
+            .Where(holiday => wantedIds.Contains(holiday.Id)).ToList();
+        if (calculated.Count != wantedKeys.Count || local.Count != wantedIds.Count)
+        {
+            return false;
+        }
+
+        calculated.ForEach(holiday => holiday.Consider(isConsidered));
+        local.ForEach(holiday => holiday.Consider(isConsidered));
+        await store.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
 /// <summary>A field of the local holiday form.</summary>
 public enum LocalHolidayField
 {

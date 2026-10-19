@@ -18,7 +18,7 @@
   - feriado desconsiderado;
   - dias de trabalho, inclusive a recusa da semana vazia;
   - os testes de arquitetura passando com o módulo novo.
-- [ ] 1.2 Criar os casos de uso e a API `/api/calendar`, só do administrador:
+- [x] 1.2 Criar os casos de uso e a API `/api/calendar`, só do administrador:
   - calendário do ano;
   - dias de trabalho;
   - escolha de feriado calculado;

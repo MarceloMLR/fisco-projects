@@ -20,6 +20,7 @@ public static class CalendarModule
         services.AddScoped<GetCalendarYear>();
         services.AddScoped<ChangeWorkingDays>();
         services.AddScoped<ChooseCalculatedHoliday>();
+        services.AddScoped<ConsiderHolidays>();
         services.AddScoped<AddLocalHoliday>();
         services.AddScoped<ChangeLocalHoliday>();
         services.AddScoped<RemoveLocalHoliday>();

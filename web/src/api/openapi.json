@@ -757,10 +757,425 @@
           }
         }
       }
+    },
+    "/api/calendar/{year}": {
+      "get": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "GetCalendarYear",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarYearResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calendar/working-days": {
+      "put": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "ChangeWorkingDays",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkingDaysRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calendar/calculated-holidays/{key}": {
+      "put": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "ChooseCalculatedHoliday",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalculatedHolidayChoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/calendar/considered": {
+      "put": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "ConsiderHolidays",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsiderHolidaysRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/calendar/local-holidays": {
+      "post": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "AddLocalHoliday",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLocalHolidayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalHolidayCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/calendar/local-holidays/{id}": {
+      "put": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "ChangeLocalHoliday",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeLocalHolidayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Calendar"
+        ],
+        "operationId": "RemoveLocalHoliday",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AddLocalHolidayRequest": {
+        "required": [
+          "name",
+          "date",
+          "repeatsEveryYear"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "repeatsEveryYear": {
+            "type": "boolean"
+          }
+        },
+        "description": "A new local holiday: the name, the date and whether it repeats every year."
+      },
       "AuditAction": {
         "enum": [
           "Created",
@@ -907,6 +1322,130 @@
           }
         }
       },
+      "CalculatedHolidayChoiceRequest": {
+        "required": [
+          "isConsidered"
+        ],
+        "type": "object",
+        "properties": {
+          "isConsidered": {
+            "type": "boolean"
+          }
+        },
+        "description": "Whether a calculated holiday is considered, in every year."
+      },
+      "CalendarDayKind": {
+        "enum": [
+          "NationalHoliday",
+          "OptionalHoliday",
+          "LocalHoliday"
+        ],
+        "description": "The kinds of dates of the calendar."
+      },
+      "CalendarDayResponse": {
+        "required": [
+          "date",
+          "kind",
+          "key",
+          "id",
+          "name",
+          "repeatsEveryYear",
+          "isConsidered"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CalendarDayKind"
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "repeatsEveryYear": {
+            "type": "boolean"
+          },
+          "isConsidered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CalendarYearResponse": {
+        "required": [
+          "year",
+          "workingDays",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "workingDays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarDayResponse"
+            }
+          }
+        },
+        "description": "The calendar of a year: the working days, from Monday to Sunday, and the dates in order. A calculated holiday has\nits key (the screen names it); a local holiday has its id and name."
+      },
+      "ChangeLocalHolidayRequest": {
+        "required": [
+          "name",
+          "date",
+          "repeatsEveryYear",
+          "isConsidered"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "repeatsEveryYear": {
+            "type": "boolean"
+          },
+          "isConsidered": {
+            "type": "boolean"
+          }
+        },
+        "description": "A local holiday as a whole: the name, the date, the repetition and whether it is considered."
+      },
       "ChangeRoleRequest": {
         "required": [
           "role"
@@ -928,6 +1467,50 @@
             "$ref": "#/components/schemas/ThemePreference"
           }
         }
+      },
+      "ConsiderHolidaysRequest": {
+        "required": [
+          "isConsidered",
+          "calculatedHolidays",
+          "localHolidays"
+        ],
+        "type": "object",
+        "properties": {
+          "isConsidered": {
+            "type": "boolean"
+          },
+          "calculatedHolidays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "localHolidays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "Many dates considered or disregarded at once: the keys of calculated holidays and the ids of local ones."
+      },
+      "DayOfWeek": {
+        "enum": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ]
       },
       "GeneralRulesResponse": {
         "required": [
@@ -1015,6 +1598,18 @@
           }
         },
         "description": "The brand of the installation: the name shown, the address of the logo (null without one) and the main color as\n#RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the\nbrowser may keep it."
+      },
+      "LocalHolidayCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "LocalSignInRequest": {
         "required": [
@@ -1242,6 +1837,24 @@
           "Active",
           "Inactive"
         ]
+      },
+      "WorkingDaysRequest": {
+        "required": [
+          "workingDays"
+        ],
+        "type": "object",
+        "properties": {
+          "workingDays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            }
+          }
+        },
+        "description": "The days of the week the installation works; at least one."
       }
     }
   },
@@ -1260,6 +1873,9 @@
     },
     {
       "name": "Installation"
+    },
+    {
+      "name": "Calendar"
     }
   ]
 }

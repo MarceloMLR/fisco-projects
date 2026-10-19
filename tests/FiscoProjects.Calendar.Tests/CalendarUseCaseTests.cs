@@ -121,6 +121,50 @@ public sealed class CalendarUseCaseTests(SqlServerFixture sqlServer)
         (await ChooseAsync(database, "FoundationDay", true)).Should().BeFalse();
     }
 
+    [Fact(DisplayName = "Marcar todos")]
+    public async Task ManyDates_AreConsideredAtOnce()
+    {
+        await using var database = await CalendarDatabase.CreateAsync(sqlServer);
+        var magna = await AddAsync(database, "Data magna do estado", new DateOnly(2026, 7, 9), repeats: true);
+        await ChangeAsync(database, magna.Id!.Value, "Data magna do estado", new DateOnly(2026, 7, 9), false, repeats: true);
+        var year = await YearAsync(database, 2026);
+
+        var considered = await database.RunAsync<ConsiderHolidays, bool>(consider => consider.ExecuteAsync(
+            year.Days.Select(day => day.Key).OfType<string>(), [magna.Id!.Value], true, Cancellation));
+
+        considered.Should().BeTrue();
+        (await YearAsync(database, 2026)).Days.Should().HaveCount(18).And.OnlyContain(day => day.IsConsidered);
+    }
+
+    [Fact(DisplayName = "Desmarcar todos")]
+    public async Task ManyDates_AreDisregardedAtOnce()
+    {
+        await using var database = await CalendarDatabase.CreateAsync(sqlServer);
+
+        await database.RunAsync<ConsiderHolidays, bool>(consider => consider.ExecuteAsync(
+            [BrazilianNationalCalendar.NewYearsDay, BrazilianNationalCalendar.ChristmasDay], [], false, Cancellation));
+
+        var days = await BusinessDaysAsync(database);
+        days.IsBusinessDay(new DateOnly(2027, 1, 1)).Should().BeTrue();
+        days.IsBusinessDay(new DateOnly(2026, 12, 25)).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Marcar todos com um feriado que não existe")]
+    public async Task MarkingAll_WithAMissingHoliday_ChangesNothing()
+    {
+        await using var database = await CalendarDatabase.CreateAsync(sqlServer);
+
+        var unknownKey = await database.RunAsync<ConsiderHolidays, bool>(consider => consider.ExecuteAsync(
+            [BrazilianNationalCalendar.CarnivalMonday, "FoundationDay"], [], true, Cancellation));
+        var unknownId = await database.RunAsync<ConsiderHolidays, bool>(consider => consider.ExecuteAsync(
+            [BrazilianNationalCalendar.CarnivalMonday], [Guid.CreateVersion7()], true, Cancellation));
+
+        unknownKey.Should().BeFalse();
+        unknownId.Should().BeFalse();
+        (await YearAsync(database, 2026)).Days.Should().ContainSingle(day => day.Key == BrazilianNationalCalendar.CarnivalMonday)
+            .Which.IsConsidered.Should().BeFalse();
+    }
+
     [Fact(DisplayName = "Incluir feriado local")]
     public async Task LocalHoliday_IsIncluded_Considered()
     {

@@ -23,6 +23,10 @@ public sealed record WorkingDaysRequest(IReadOnlyList<DayOfWeek>? WorkingDays);
 /// <summary>Whether a calculated holiday is considered, in every year.</summary>
 public sealed record CalculatedHolidayChoiceRequest(bool IsConsidered);
 
+/// <summary>Many dates considered or disregarded at once: the keys of calculated holidays and the ids of local ones.</summary>
+public sealed record ConsiderHolidaysRequest(
+    bool IsConsidered, IReadOnlyList<string>? CalculatedHolidays, IReadOnlyList<Guid>? LocalHolidays);
+
 /// <summary>A new local holiday: the name, the date and whether it repeats every year.</summary>
 public sealed record AddLocalHolidayRequest(string? Name, DateOnly? Date, bool RepeatsEveryYear);
 
@@ -45,6 +49,7 @@ public static class CalendarEndpoints
         calendar.MapGet("/{year:int}", GetYearAsync).WithName("GetCalendarYear");
         calendar.MapPut("/working-days", ChangeWorkingDaysAsync).WithName("ChangeWorkingDays");
         calendar.MapPut("/calculated-holidays/{key}", ChooseAsync).WithName("ChooseCalculatedHoliday");
+        calendar.MapPut("/considered", ConsiderAsync).WithName("ConsiderHolidays");
         calendar.MapPost("/local-holidays", AddAsync).WithName("AddLocalHoliday");
         calendar.MapPut("/local-holidays/{id:guid}", ChangeAsync).WithName("ChangeLocalHoliday");
         calendar.MapDelete("/local-holidays/{id:guid}", RemoveAsync).WithName("RemoveLocalHoliday");
@@ -76,6 +81,13 @@ public static class CalendarEndpoints
     private static async Task<Results<NoContent, NotFound>> ChooseAsync(
         string key, CalculatedHolidayChoiceRequest request, ChooseCalculatedHoliday choose, CancellationToken cancellationToken) =>
         await choose.ExecuteAsync(key, request.IsConsidered, cancellationToken) ? TypedResults.NoContent() : TypedResults.NotFound();
+
+    private static async Task<Results<NoContent, NotFound>> ConsiderAsync(
+        ConsiderHolidaysRequest request, ConsiderHolidays considerHolidays, CancellationToken cancellationToken) =>
+        await considerHolidays.ExecuteAsync(
+            request.CalculatedHolidays ?? [], request.LocalHolidays ?? [], request.IsConsidered, cancellationToken)
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
 
     private static async Task<Results<Created<LocalHolidayCreatedResponse>, ValidationProblem>> AddAsync(
         AddLocalHolidayRequest request, AddLocalHoliday addLocalHoliday, CancellationToken cancellationToken)
