@@ -72,8 +72,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Meus projetos | `mine=true` | Projetos ativos em que a pessoa está, na barra lateral |
 | Cronograma | Schedule | Um por projeto, com o mesmo id; rota `/projects/{id}/schedule` e aba Cronograma (ADR-0019) |
 | Lista (visualização do cronograma) | ProjectSchedulePage | As fases em linhas de grupo e, abaixo, as tarefas e os marcos (ADR-0071) |
-| Linha do tempo (visualização do cronograma) | Timeline | Na interface não aparece a palavra "Gantt" (ADR-0071) |
-| Componente do Gantt | ScheduleGantt | Único que usa o Syncfusion (ADR-0051, ADR-0074) |
+| Linha do tempo (visualização do cronograma) | Timeline | `ScheduleTimeline`, aberta no computador; `?view=list` abre a Lista. Na interface não aparece a palavra "Gantt" (ADR-0071) |
+| Componente do Gantt | ScheduleGantt | Único que usa o Syncfusion, em `web/src/schedule-gantt` (ADR-0051, ADR-0074) |
+| Escala: Dias, Semanas, Meses | GanttScale: days, weeks, months | `?scale=` no endereço; o período ocupa a largura disponível (ADR-0071) |
+| Expandir, Recolher | Expand, Collapse | A Linha do tempo em tela quase inteira, com a tabela completa (ADR-0071) |
+| Novas datas (arrastar ou puxar a borda) | Reschedule | `PUT /schedule/items/{itemId}/dates`, com o início e, numa tarefa, o fim |
+| Dias não úteis | NonWorkingDays | Do calendário da instalação, no `GET /schedule`, só para o sombreado da Linha do tempo |
+| Configurações do navegador | ClientSettings | `GET /api/client-settings`, com a chave do Syncfusion (`timelineLicense`, ADR-0087) |
 | Fase | SchedulePhase | Nome e, dentro dela, tarefas e marcos; as datas e o progresso vêm deles |
 | Tarefa ou marco (item do cronograma) | ScheduleItem | Rota `/schedule/items`; o tipo não muda depois da criação |
 | Tipo: tarefa, marco | ScheduleItemKind: Task, Milestone | O marco é uma data, sem duração, responsável nem progresso (ADR-0018, ADR-0020) |

@@ -46,7 +46,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## Licenças de terceiros
 
-- Syncfusion: chave de licença válida do titular da instalação (comunitária, se se enquadrar nos critérios, ou paga), configurada fora do repositório (ADR-0051).
+- Syncfusion: chave de licença válida do titular da instalação (comunitária, se se enquadrar nos critérios, ou paga), configurada fora do repositório (ADR-0051). A aplicação a lê de `Syncfusion:LicenseKey`, vinda do Key Vault em produção, e a entrega à Linha do tempo pelo `GET /api/client-settings`, só com sessão; sem ela, a Linha do tempo mostra o aviso de avaliação do Syncfusion (ADR-0087).
 - IBM Plex Sans e IBM Plex Mono: SIL Open Font License, distribuída junto com os arquivos das fontes (ADR-0064).
 
 ## Segurança
@@ -72,5 +72,5 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).
-- Licença comunitária do Syncfusion em nome de Marcelo (ADR-0051).
+- Licença comunitária do Syncfusion em nome de Marcelo (ADR-0051), nos segredos do usuário: `dotnet user-secrets set "Syncfusion:LicenseKey" "<chave>" --project src/FiscoProjects.Api` (ADR-0087).
 - Terraform CLI e Azure CLI instalados (ADR-0053).
