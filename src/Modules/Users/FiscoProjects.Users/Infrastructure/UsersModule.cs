@@ -1,4 +1,5 @@
 using FiscoProjects.Persistence;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure.Persistence;
@@ -21,6 +22,7 @@ public static class UsersModule
         services.AddScoped<IUserStore>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<IUserAccess>(provider => provider.GetRequiredService<UserStore>());
         services.AddScoped<IUserDirectory>(provider => provider.GetRequiredService<UserStore>());
+        services.AddScoped<IAuditReferenceNames, UserReferenceNames>();
         services.AddScoped<SignInWithIdentity>();
         services.AddScoped<GetSignedInUser>();
         services.AddScoped<ChangeSystemRole>();

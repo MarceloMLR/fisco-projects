@@ -1,6 +1,7 @@
 using FiscoProjects.Audit.Infrastructure;
 using FiscoProjects.Audit.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Testing;
 using FiscoProjects.Testing.Samples;
 using FiscoProjects.Users.Contracts;
@@ -12,7 +13,8 @@ namespace FiscoProjects.Audit.Tests;
 
 /// <summary>
 /// A migrated database with the Audit module registered as the host does, a sample module (gamma) whose saves
-/// are audited, a directory of names and a clock the test controls.
+/// are audited, a directory of names, which also names the people the gamma links point to, and a clock the test
+/// controls. The gamma records have no source of names.
 /// </summary>
 internal sealed class AuditDatabase : IAsyncDisposable
 {
@@ -38,6 +40,7 @@ internal sealed class AuditDatabase : IAsyncDisposable
         {
             services.AddSingleton<TimeProvider>(clock);
             services.AddSingleton<IUserDirectory>(new Directory(names));
+            services.AddSingleton<IAuditReferenceNames>(new PersonNames(new Directory(names)));
             services.AddAuditModule(configuration);
             services.AddModuleDbContext<GammaDbContext>(configuration);
         });
@@ -75,6 +78,14 @@ internal sealed class AuditDatabase : IAsyncDisposable
     public AuditDbContext NewAuditContext() => _database.NewContext<AuditDbContext>();
 
     public ValueTask DisposeAsync() => _database.DisposeAsync();
+
+    private sealed class PersonNames(IUserDirectory directory) : IAuditReferenceNames
+    {
+        public string Kind => GammaDbContext.PersonReference;
+
+        public Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+            directory.NamesAsync(ids, cancellationToken);
+    }
 
     private sealed class Directory(Dictionary<Guid, string> names) : IUserDirectory
     {

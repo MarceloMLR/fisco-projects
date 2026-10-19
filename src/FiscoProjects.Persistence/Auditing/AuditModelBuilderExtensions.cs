@@ -13,6 +13,8 @@ public static class AuditModelBuilderExtensions
     internal const string Excluded = "FiscoProjects:Audit:Excluded";
     internal const string Secret = "FiscoProjects:Audit:Secret";
     internal const string Label = "FiscoProjects:Audit:Label";
+    internal const string Reference = "FiscoProjects:Audit:Reference";
+    internal const string LabelReference = "FiscoProjects:Audit:LabelReference";
 
     /// <summary>The item type stays out of the audit, such as a technical link.</summary>
     public static EntityTypeBuilder<TEntity> ExcludeFromAudit<TEntity>(this EntityTypeBuilder<TEntity> entity)
@@ -32,13 +34,34 @@ public static class AuditModelBuilderExtensions
         where TEntity : class =>
         entity.HasAnnotation(Label, PropertyName(property));
 
+    /// <summary>
+    /// The field points to another item of the given type, such as <c>User</c>: the audit keeps the id and the type,
+    /// and the Audit screen shows the current name of the item (ADR-0084).
+    /// </summary>
+    public static PropertyBuilder<TProperty> IsAuditReference<TProperty>(this PropertyBuilder<TProperty> property, string kind) =>
+        property.HasAnnotation(Reference, kind);
+
+    /// <summary>
+    /// The item is identified on the Audit screen by another item it points to, such as the person included in a
+    /// project, shown by the current name (ADR-0084).
+    /// </summary>
+    public static EntityTypeBuilder<TEntity> HasAuditLabelReference<TEntity>(
+        this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, Guid>> property, string kind)
+        where TEntity : class =>
+        entity.HasAnnotation(Label, PropertyName(property)).HasAnnotation(LabelReference, kind);
+
     internal static bool IsExcludedFromAudit(this IReadOnlyAnnotatable item) => item.FindAnnotation(Excluded)?.Value is true;
 
     internal static bool IsAuditSecret(this IReadOnlyProperty property) => property.FindAnnotation(Secret)?.Value is true;
 
     internal static string? AuditLabel(this IReadOnlyEntityType entityType) => entityType.FindAnnotation(Label)?.Value as string;
 
-    private static string PropertyName<TEntity>(Expression<Func<TEntity, string?>> property) =>
+    internal static string? AuditLabelReference(this IReadOnlyEntityType entityType) =>
+        entityType.FindAnnotation(LabelReference)?.Value as string;
+
+    internal static string? AuditReference(this IReadOnlyProperty property) => property.FindAnnotation(Reference)?.Value as string;
+
+    private static string PropertyName<TEntity, TProperty>(Expression<Func<TEntity, TProperty>> property) =>
         property.Body is MemberExpression member
             ? member.Member.Name
             : throw new ArgumentException("Use a property of the item, such as x => x.Name.", nameof(property));

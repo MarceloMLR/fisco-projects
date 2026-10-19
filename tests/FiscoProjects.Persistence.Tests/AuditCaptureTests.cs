@@ -130,6 +130,30 @@ public sealed class AuditCaptureTests(SqlServerFixture sqlServer) : IAsyncLifeti
             .Should().NotContain(field => field.Before == "s3cret" || field.After == "s3cret" || field.After == "outra-senha");
     }
 
+    // Spec: auditoria, requirement "Referências a outros itens".
+    [Fact(DisplayName = "Referência gravada pelo identificador")]
+    public async Task ReferenceFields_AndLabel_KeepTheIdAndTheType()
+    {
+        var record = await CreateAsync();
+        var personId = Guid.CreateVersion7();
+        await using (var db = _database.NewContext<GammaDbContext>())
+        {
+            db.Links.Add(new GammaLink { PersonId = personId, RecordId = record.Id, Kind = "Dono" });
+            await db.SaveChangesAsync(Cancellation);
+        }
+
+        var change = _auditor.Recorded.Last();
+        change.ItemType.Should().Be(nameof(GammaLink));
+        change.ItemLabel.Should().Be(personId.ToString());
+        change.ItemLabelReference.Should().Be(GammaDbContext.PersonReference);
+        change.Fields.Should().BeEquivalentTo(
+        [
+            new AuditedField("Kind", null, "Dono", false),
+            new AuditedField("PersonId", null, personId.ToString(), false, GammaDbContext.PersonReference),
+            new AuditedField("RecordId", null, record.Id.ToString(), false, GammaDbContext.RecordReference),
+        ]);
+    }
+
     [Fact(DisplayName = "Alteração que não é salva")]
     public async Task FailedSave_WritesNoRecord()
     {

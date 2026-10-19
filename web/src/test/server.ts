@@ -171,7 +171,9 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemType: 'User',
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000003',
     itemLabel: 'Beatriz Lima',
-    changes: [{ field: 'Role', before: 'User', after: 'ProjectManager', secret: false }],
+    changes: [
+      { field: 'Role', before: 'User', after: 'ProjectManager', secret: false, reference: null },
+    ],
   }),
   auditEntry(2, '2026-10-19T12:58:00Z', marinaActor, {
     action: 'SignedIn',
@@ -190,7 +192,9 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemType: 'User',
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000005',
     itemLabel: 'Lívia Prado',
-    changes: [{ field: 'IsActive', before: 'true', after: 'false', secret: false }],
+    changes: [
+      { field: 'IsActive', before: 'true', after: 'false', secret: false, reference: null },
+    ],
   }),
   auditEntry(5, '2026-10-17T12:02:00Z', null, {
     action: 'Created',
@@ -198,10 +202,16 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000004',
     itemLabel: 'Rafael Souza',
     changes: [
-      { field: 'Email', before: null, after: 'rafael.souza@empresa.example', secret: false },
-      { field: 'IsActive', before: null, after: 'true', secret: false },
-      { field: 'Name', before: null, after: 'Rafael Souza', secret: false },
-      { field: 'Role', before: null, after: 'User', secret: false },
+      {
+        field: 'Email',
+        before: null,
+        after: 'rafael.souza@empresa.example',
+        secret: false,
+        reference: null,
+      },
+      { field: 'IsActive', before: null, after: 'true', secret: false, reference: null },
+      { field: 'Name', before: null, after: 'Rafael Souza', secret: false, reference: null },
+      { field: 'Role', before: null, after: 'User', secret: false, reference: null },
     ],
   }),
   auditEntry(6, '2026-09-10T12:00:00Z', paulo, {

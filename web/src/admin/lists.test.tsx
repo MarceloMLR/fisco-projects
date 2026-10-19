@@ -68,7 +68,7 @@ function roleChange(person: UserRow, role: UserRow['role']): AuditEntry {
     occurredAt: '2026-10-19T15:00:00Z',
     itemId: person.id,
     itemLabel: person.name,
-    changes: [{ field: 'Role', before: person.role, after: role, secret: false }],
+    changes: [{ field: 'Role', before: person.role, after: role, secret: false, reference: null }],
   };
 }
 

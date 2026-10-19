@@ -1806,7 +1806,8 @@
           "field",
           "before",
           "after",
-          "secret"
+          "secret",
+          "reference"
         ],
         "type": "object",
         "properties": {
@@ -1827,9 +1828,15 @@
           },
           "secret": {
             "type": "boolean"
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "A changed field: the value before and after as invariant text, or none for a secret."
+        "description": "A changed field: the value before and after as invariant text, or none for a secret. A field that points to another\nitem, of the type in Reference (such as User), comes with the item's current name, or none when\nthe item no longer exists (ADR-0084)."
       },
       "AuditPageResponse": {
         "required": [

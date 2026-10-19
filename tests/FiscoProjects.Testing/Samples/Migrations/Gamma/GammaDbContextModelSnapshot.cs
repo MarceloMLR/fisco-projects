@@ -23,6 +23,33 @@ namespace FiscoProjects.Testing.Samples.Migrations.Gamma
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FiscoProjects.Testing.Samples.GammaLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Person");
+
+                    b.Property<Guid?>("RecordId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Record");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("links", "gamma");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "PersonId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "Person");
+                });
+
             modelBuilder.Entity("FiscoProjects.Testing.Samples.GammaNote", b =>
                 {
                     b.Property<Guid>("Id")

@@ -12,8 +12,12 @@ namespace FiscoProjects.Audit.Endpoints;
 /// <summary>Who did it; null on the record means the system.</summary>
 public sealed record AuditActorResponse(Guid Id, string? Name);
 
-/// <summary>A changed field: the value before and after as invariant text, or none for a secret.</summary>
-public sealed record AuditFieldResponse(string Field, string? Before, string? After, bool Secret);
+/// <summary>
+/// A changed field: the value before and after as invariant text, or none for a secret. A field that points to another
+/// item, of the type in <paramref name="Reference"/> (such as User), comes with the item's current name, or none when
+/// the item no longer exists (ADR-0084).
+/// </summary>
+public sealed record AuditFieldResponse(string Field, string? Before, string? After, bool Secret, string? Reference);
 
 /// <summary>One record of the Audit screen.</summary>
 public sealed record AuditEntryResponse(
@@ -80,8 +84,8 @@ public static class AuditEndpoints
             entry.Action,
             entry.ItemType,
             entry.ItemId,
-            entry.ItemLabel,
+            view.ItemLabel,
             entry.Detail,
-            [.. entry.Changes.Select(field => new AuditFieldResponse(field.Field, field.Before, field.After, field.Secret))]);
+            [.. view.Changes.Select(field => new AuditFieldResponse(field.Field, field.Before, field.After, field.Secret, field.Reference))]);
     }
 }

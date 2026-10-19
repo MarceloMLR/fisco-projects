@@ -442,12 +442,17 @@ export interface components {
             detail: null | string;
             changes: components["schemas"]["AuditFieldResponse"][];
         };
-        /** @description A changed field: the value before and after as invariant text, or none for a secret. */
+        /**
+         * @description A changed field: the value before and after as invariant text, or none for a secret. A field that points to another
+         *     item, of the type in Reference (such as User), comes with the item's current name, or none when
+         *     the item no longer exists (ADR-0084).
+         */
         AuditFieldResponse: {
             field: string;
             before: null | string;
             after: null | string;
             secret: boolean;
+            reference: null | string;
         };
         AuditPageResponse: {
             items: components["schemas"]["AuditEntryResponse"][];

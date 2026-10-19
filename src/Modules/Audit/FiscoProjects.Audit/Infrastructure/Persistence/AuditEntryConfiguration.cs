@@ -14,6 +14,7 @@ internal sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEn
         entry.Property(e => e.ItemLabel).HasMaxLength(AuditEntry.ItemLabelMaxLength);
         entry.Property(e => e.Detail).HasMaxLength(AuditEntry.DetailMaxLength);
         entry.Property(e => e.Module).HasMaxLength(AuditEntry.ModuleMaxLength);
+        entry.Property(e => e.ItemLabelReference).HasMaxLength(AuditEntry.ReferenceMaxLength);
 
         // The changed fields of a record, before and after, in a JSON column.
         entry.Ignore(e => e.Changes);

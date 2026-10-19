@@ -296,7 +296,13 @@ describe('Configurações na auditoria', () => {
         itemLabel: null,
         detail: null,
         changes: [
-          { field: 'Name', before: 'FiscoProjects', after: 'Consultoria Fictícia', secret: false },
+          {
+            field: 'Name',
+            before: 'FiscoProjects',
+            after: 'Consultoria Fictícia',
+            secret: false,
+            reference: null,
+          },
         ],
       },
     ];

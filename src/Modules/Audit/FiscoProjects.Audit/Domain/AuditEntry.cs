@@ -12,8 +12,11 @@ public enum AuditAction
     SignInRefused = 5,
 }
 
-/// <summary>One field of a change: the value before and after, as invariant text, or only that a secret changed.</summary>
-public sealed record AuditField(string Field, string? Before, string? After, bool Secret);
+/// <summary>
+/// One field of a change: the value before and after, as invariant text, or only that a secret changed. A field that
+/// points to another item keeps its id, with the type of the item in <paramref name="Reference"/> (ADR-0084).
+/// </summary>
+public sealed record AuditField(string Field, string? Before, string? After, bool Secret, string? Reference = null);
 
 /// <summary>Item types of the audit that are not an entity of a module.</summary>
 public static class AuditItemTypes
@@ -31,6 +34,7 @@ public sealed class AuditEntry : Entity
     public const int ItemLabelMaxLength = 256;
     public const int DetailMaxLength = 64;
     public const int ModuleMaxLength = 64;
+    public const int ReferenceMaxLength = 64;
 
     private AuditEntry()
     {
@@ -47,6 +51,9 @@ public sealed class AuditEntry : Entity
     public Guid? ItemId { get; private init; }
 
     public string? ItemLabel { get; private init; }
+
+    /// <summary>The type of item the label points to, such as <c>User</c>; the label is then its id (ADR-0084).</summary>
+    public string? ItemLabelReference { get; private init; }
 
     /// <summary>The identity provider of a sign-in, or why a sign-in was refused.</summary>
     public string? Detail { get; private init; }
@@ -67,7 +74,8 @@ public sealed class AuditEntry : Entity
         Guid itemId,
         AuditAction action,
         string? itemLabel,
-        IEnumerable<AuditField> changes)
+        IEnumerable<AuditField> changes,
+        string? itemLabelReference = null)
     {
         if (action is not (AuditAction.Created or AuditAction.Updated or AuditAction.Deleted))
         {
@@ -83,6 +91,7 @@ public sealed class AuditEntry : Entity
             ItemId = itemId,
             Action = action,
             ItemLabel = Shorten(itemLabel, ItemLabelMaxLength),
+            ItemLabelReference = itemLabelReference,
             _changes = [.. changes],
         };
     }
