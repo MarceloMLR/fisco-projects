@@ -35,7 +35,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção:
+- [x] 3.1 Conferir no navegador, com o build de produção:
   - o menu da conta e a tela Meu perfil, nos temas claro e escuro, no computador e no celular;
   - a troca de tema;
   - o tema mantido depois de entrar em outro navegador.
