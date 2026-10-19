@@ -23,7 +23,7 @@
 ## 4. Documentação e verificação
 
 - [x] 4.1 Atualizar o glossário, o `CLAUDE.md`, `docs/instalacao.md` (a chave) e o roadmap; verificar lendo os trechos alterados
-- [ ] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir a Linha do tempo nos temas claro e escuro, em 1440×900, 1920×1080 e no celular, guardando as capturas para o resumo
+- [x] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir a Linha do tempo nos temas claro e escuro, em 1440×900, 1920×1080 e no celular, guardando as capturas para o resumo
 
 ## Workflow follow-up
 

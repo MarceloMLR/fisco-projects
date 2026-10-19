@@ -149,5 +149,5 @@ Regras:
 | [0084](0084-referencias-na-auditoria-pelo-nome-atual.md) | Referências a outros itens na auditoria, guardadas pelo identificador e mostradas pelo nome atual | aceita | 2026-10-19 |
 | [0085](0085-gerente-do-projeto-com-papel-no-sistema.md) | Gerente do projeto sempre com o papel no sistema Gerente de projeto ou Administrador | aceita | 2026-10-19 |
 | [0086](0086-iniciar-pede-o-percentual-e-marco-atrasado.md) | "Iniciar" pede o percentual, e o marco não atingido depois da data fica atrasado | aceita | 2026-10-19 |
-| [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | proposta | 2026-10-19 |
+| [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
 | [0088](0088-subtarefas-na-v1.md) | Subtarefas na v1, em um nível, com a tarefa-resumo calculada e dependências só entre quem faz o trabalho | proposta | 2026-10-19 |
