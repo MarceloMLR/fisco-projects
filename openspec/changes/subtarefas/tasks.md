@@ -21,8 +21,8 @@
 
 ## 4. Documentação e verificação
 
-- [ ] 4.1 Atualizar `docs/discovery.md`, o glossário, o `CLAUDE.md` e o roadmap; verificar lendo os trechos alterados
-- [ ] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir a Lista e a Linha do tempo com subtarefas nos temas claro e escuro, guardando as capturas para o resumo
+- [x] 4.1 Atualizar `docs/discovery.md`, o glossário, o `CLAUDE.md` e o roadmap; verificar lendo os trechos alterados
+- [x] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir a Lista e a Linha do tempo com subtarefas nos temas claro e escuro, guardando as capturas para o resumo
 
 ## Workflow follow-up
 

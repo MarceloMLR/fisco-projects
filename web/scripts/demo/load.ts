@@ -197,6 +197,13 @@ async function loadProject(
 
   const builder = personOf(manager).api;
   const ids = new Map<string, string>();
+  const idOf = (name: string, by: string) => {
+    const found = ids.get(name);
+    if (found === undefined) {
+      throw new Error(`${by} usa ${name}, que ainda não existe em ${project.code}.`);
+    }
+    return found;
+  };
   for (const phase of project.phases) {
     const phaseId = must(
       await builder.POST('/api/projects/{id}/schedule/phases', {
@@ -217,15 +224,8 @@ async function loadProject(
             duration: item.duration,
             ownerId: item.owner === undefined ? null : personOf(item.owner).id,
             progress: 0,
-            predecessorIds: (item.after ?? []).map((name) => {
-              const before = ids.get(name);
-              if (before === undefined) {
-                throw new Error(
-                  `${item.name} depende de ${name}, que ainda não existe em ${project.code}.`,
-                );
-              }
-              return before;
-            }),
+            predecessorIds: (item.after ?? []).map((name) => idOf(name, item.name)),
+            parentId: item.inside === undefined ? null : idOf(item.inside, item.name),
           },
         }),
         `Item ${item.name} de ${project.code}`,
