@@ -34,7 +34,7 @@
   - a volta ao padrão.
 
   Mandar as capturas para Marcelo.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - ADR-0082 na lista;
   - atualizar o glossário (cor principal), o `CLAUDE.md` e o roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
