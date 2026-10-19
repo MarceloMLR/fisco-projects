@@ -38,7 +38,7 @@
   - a barra lateral e a entrada no celular.
 
   Mandar as capturas para Marcelo.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - atualizar o glossário (configurações gerais, nome exibido, logo), o guia dos módulos, o `CLAUDE.md` e o roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions.
