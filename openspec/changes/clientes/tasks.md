@@ -16,7 +16,7 @@
   - inativar, reativar e excluir com o logo;
   - busca sem acentos e por CNPJ;
   - testes de arquitetura com o módulo novo.
-- [ ] 1.2 Criar a API `/api/clients`.
+- [x] 1.2 Criar a API `/api/clients`.
 
   Testar com `dotnet test`:
   - a matriz de permissões (administrador, gerente de projeto, usuário e sem sessão);
