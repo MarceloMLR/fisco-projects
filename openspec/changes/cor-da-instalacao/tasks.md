@@ -28,7 +28,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção, com uma cor verde e uma vinho:
+- [x] 3.1 Conferir no navegador, com o build de produção, com uma cor verde e uma vinho:
   - a estrutura, a entrada e as Configurações gerais, nos temas claro e escuro;
   - a recusa de um amarelo;
   - a volta ao padrão.

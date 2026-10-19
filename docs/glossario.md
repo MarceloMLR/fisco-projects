@@ -10,6 +10,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Configurações gerais | InstallationSettings | As configurações da instalação na Administração (`/admin/settings`), numa linha só do módulo `Administration` |
 | Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
+| Cor principal | MainColor | Cor da marca da instalação em `#RRGGBB`, vazia para a do design system; os tokens da marca são derivados dela (ADR-0082) |
 | Marca da instalação | Installation | Nome e logo, lidos sem sessão (`GET /api/installation`) |
 | Regras gerais | GeneralRules | Configurações da instalação que as telas usam com sessão (`GET /api/installation/rules`); hoje, o fuso |
 | Fuso horário | TimeZone | Identificador IANA da instalação, padrão America/Sao_Paulo; as datas das telas aparecem nele (ADR-0013) |
