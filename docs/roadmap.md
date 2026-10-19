@@ -61,7 +61,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Projetos-1 | `calendario`* | Dias úteis, feriados nacionais calculados, pontos facultativos, feriados locais | 0018, 0083 | Concluída em 19/10/2026 ([#21](https://github.com/MarceloMLR/fisco-projects/pull/21)) |
-| Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | Em andamento |
+| Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | PR aberto ([#22](https://github.com/MarceloMLR/fisco-projects/pull/22)) |
 | Projetos-3 | `projetos` | Criação com gerente e líder técnico, lista, status, somente leitura quando encerrado | 0016, 0043, 0072 | Planejada |
 | Projetos-4 | `membros-do-projeto` | Incluir pessoas pelo diretório (versão simulada), papéis no projeto, último gerente protegido | 0040, 0042 | Planejada |
 

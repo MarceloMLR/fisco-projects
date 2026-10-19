@@ -54,7 +54,7 @@
   - nos temas claro e escuro, no computador e no celular.
 
   Mandar as capturas para Marcelo.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - glossário, `CLAUDE.md` (módulo `Projects`) e roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar a verificação `verify`.
