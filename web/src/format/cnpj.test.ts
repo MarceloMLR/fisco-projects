@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanCnpj, formatCnpj, isValidCnpj, maskTypedCnpj } from './cnpj';
+import { cleanCnpj, cnpjProblem, formatCnpj, isValidCnpj, maskTypedCnpj } from './cnpj';
 
 // Spec: clientes, requirement "CNPJ do cliente" (screen side, the same cases as the Projects module).
 describe('CNPJ do cliente', () => {
@@ -27,6 +27,17 @@ describe('CNPJ do cliente', () => {
     ]) {
       expect(isValidCnpj(cnpj), cnpj).toBe(false);
     }
+  });
+
+  it('Motivo do CNPJ inválido', () => {
+    expect(cnpjProblem('11222333000181')).toBeNull();
+    expect(cnpjProblem('12ABC34501DE35')).toBeNull();
+    expect(cnpjProblem('1122233300011')).toBe('incomplete');
+    expect(cnpjProblem('1234567890123456')).toBe('incomplete');
+    expect(cnpjProblem('11111111111111')).toBe('repeated');
+    expect(cnpjProblem('00000000000000')).toBe('repeated');
+    expect(cnpjProblem('11222333000180')).toBe('digits');
+    expect(cnpjProblem('12ABC34501DE3A')).toBe('digits');
   });
 
   it('CNPJ formatado', () => {

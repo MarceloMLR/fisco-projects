@@ -591,7 +591,9 @@
     "errors": {
       "nameRequired": "Informe o nome do cliente.",
       "nameTooLong": "Use até 150 caracteres.",
-      "cnpjInvalid": "Confira o CNPJ: os dígitos verificadores não conferem.",
+      "cnpjInvalid": "Esse CNPJ não existe: os dois últimos dígitos não batem com os anteriores. Confira o número.",
+      "cnpjIncomplete": "O CNPJ tem 14 caracteres. Confira se falta algum.",
+      "cnpjRepeated": "Esse CNPJ não existe: um CNPJ não tem todos os caracteres iguais.",
       "cnpjInUse": "Este CNPJ já é do cliente {{name}}.",
       "observationTooLong": "Use até 500 caracteres.",
       "logoFormat": "Envie o logo em PNG ou JPG.",

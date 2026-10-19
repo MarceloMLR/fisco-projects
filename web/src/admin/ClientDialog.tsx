@@ -14,7 +14,13 @@ import { Dialog } from '../components/Dialog';
 import { LogoTile } from '../components/LogoTile';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
-import { cleanCnpj, formatCnpj, isValidCnpj, maskTypedCnpj } from '../format/cnpj';
+import {
+  cleanCnpj,
+  type CnpjProblem,
+  cnpjProblem,
+  formatCnpj,
+  maskTypedCnpj,
+} from '../format/cnpj';
 
 /** Up to 1 MB, PNG or JPG, as the API checks by the content (ClientLogo in the Projects module). */
 const logoMaxBytes = 1024 * 1024;
@@ -25,6 +31,8 @@ const fieldErrors = {
   nameRequired: 'clients.errors.nameRequired',
   nameTooLong: 'clients.errors.nameTooLong',
   cnpjInvalid: 'clients.errors.cnpjInvalid',
+  cnpjIncomplete: 'clients.errors.cnpjIncomplete',
+  cnpjRepeated: 'clients.errors.cnpjRepeated',
   observationTooLong: 'clients.errors.observationTooLong',
 } as const;
 
@@ -35,21 +43,28 @@ type LogoError = 'logoFormat' | 'logoTooLarge';
 type LogoChoice =
   { kind: 'saved' } | { kind: 'new'; file: File; picture: string } | { kind: 'removed' };
 
-// The data as the API keeps them: the name up to 150 characters, the CNPJ empty or by the rule of the Receita, and
-// the observation up to 500 characters, all without the spaces at the ends.
+/** What the field says of each rule a CNPJ breaks (ADR-0015). */
+const cnpjErrors = {
+  incomplete: fieldErrors.cnpjIncomplete,
+  repeated: fieldErrors.cnpjRepeated,
+  digits: fieldErrors.cnpjInvalid,
+} as const satisfies Record<CnpjProblem, FieldError>;
+
+// The data as the API keeps them: the name up to 150 characters, the CNPJ empty or by the rule of the Receita, with
+// the rule it breaks, and the observation up to 500 characters, all without the spaces at the ends.
 const form = z.object({
   name: z
     .string()
     .trim()
     .min(1, { error: fieldErrors.nameRequired })
     .max(150, { error: fieldErrors.nameTooLong }),
-  cnpj: z.string().refine(
-    (value) => {
-      const cnpj = cleanCnpj(value);
-      return cnpj === '' || isValidCnpj(cnpj);
-    },
-    { error: fieldErrors.cnpjInvalid },
-  ),
+  cnpj: z.string().superRefine((value, context) => {
+    const cnpj = cleanCnpj(value);
+    const problem = cnpj === '' ? null : cnpjProblem(cnpj);
+    if (problem !== null) {
+      context.addIssue({ code: 'custom', message: cnpjErrors[problem] });
+    }
+  }),
   observation: z.string().trim().max(500, { error: fieldErrors.observationTooLong }),
 });
 
@@ -236,7 +251,7 @@ export function ClientDialog({
           setError('name', { message: fieldErrors.nameRequired });
         }
         if (fields.includes('cnpj')) {
-          setError('cnpj', { message: fieldErrors.cnpjInvalid });
+          setError('cnpj', { message: cnpjErrors[cnpjProblem(cnpj) ?? 'digits'] });
         }
         if (fields.includes('observation')) {
           setError('observation', { message: fieldErrors.observationTooLong });

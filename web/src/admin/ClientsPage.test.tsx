@@ -457,6 +457,25 @@ describe('Diálogo do cliente', () => {
     expect(requests).toEqual([]);
   });
 
+  it('Motivo do CNPJ inválido', async () => {
+    await openClients();
+
+    fireEvent.click(screen.getByRole('button', { name: text.newClient }));
+    const dialog = await screen.findByRole('dialog', { name: text.newClient });
+    fireEvent.change(field(dialog, text.name), { target: { value: 'Delta Comércio' } });
+    // A character short, the last two digits that do not follow from the others, and all of them the same.
+    for (const [typed, reason] of [
+      ['11.222.333/0001', text.errors.cnpjIncomplete],
+      ['11.222.333/0001-80', text.errors.cnpjInvalid],
+      ['11.111.111/1111-11', text.errors.cnpjRepeated],
+    ] as const) {
+      fireEvent.change(field(dialog, cnpjLabel), { target: { value: typed } });
+      fireEvent.click(within(dialog).getByRole('button', { name: text.include }));
+      expect(await within(dialog).findByText(reason)).toBeVisible();
+    }
+    expect(requests).toEqual([]);
+  });
+
   it('Logo do cliente recusado pela tela', async () => {
     await openClients();
 

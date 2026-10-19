@@ -12,7 +12,7 @@
 
 - [x] 3.1 `ScheduleGantt` limpa a seleção quando o detalhe fecha, e a aba informa a fase aberta; teste "Reabrir o detalhe pela linha do tempo"
 - [x] 3.2 Abas do projeto sem rolagem vertical; teste "Abas sem barra de rolagem"
-- [ ] 3.3 `cnpjProblem` e as mensagens do motivo no `ClientDialog`; testes "CNPJ inválido" e "Motivo do CNPJ inválido"
+- [x] 3.3 `cnpjProblem` e as mensagens do motivo no `ClientDialog`; testes "CNPJ inválido" e "Motivo do CNPJ inválido"
 
 ## 4. Subtarefas mais claras
 
