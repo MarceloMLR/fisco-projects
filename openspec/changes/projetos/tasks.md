@@ -29,7 +29,7 @@
   - a matriz de permissões;
   - a visibilidade;
   - o cliente com projetos.
-- [ ] 2.2 API `/api/projects`, `/api/people` e `/api/clients/choices`.
+- [x] 2.2 API `/api/projects`, `/api/people` e `/api/clients/choices`.
 
   Testar com `dotnet test`:
   - a matriz de permissões, com administrador, gerente, líder técnico, colaborador, desenvolvedor, leitor, pessoa de fora e sem sessão;

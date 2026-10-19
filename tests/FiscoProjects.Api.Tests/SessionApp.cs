@@ -112,6 +112,18 @@ internal sealed class SessionApp : IAsyncDisposable
         return client;
     }
 
+    /// <summary>
+    /// Puts a person in a project with a role, straight in the database, as the members screen (Projetos-4) will do.
+    /// </summary>
+    public Task AddProjectMemberAsync(Guid projectId, Guid userId, string role) =>
+        ExecuteAsync(
+            "INSERT INTO [projects].[project_members] (Id, ProjectId, UserId, Role, AddedAt) VALUES (@id, @project, @user, @role, @at)",
+            ("@id", Guid.CreateVersion7()),
+            ("@project", projectId),
+            ("@user", userId),
+            ("@role", role),
+            ("@at", Clock.GetUtcNow().UtcDateTime));
+
     public Task DeactivateAsync(Guid userId) =>
         ExecuteAsync("UPDATE [users].[users] SET IsActive = 0 WHERE Id = @id", ("@id", userId));
 

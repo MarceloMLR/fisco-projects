@@ -80,20 +80,20 @@ Rotas em `/api/projects`:
 | --- | --- | --- |
 | `GET /?search=&clientId=&situation=&mine=&page=&pageSize=` | sessão | 200 `{ items: [{ id, code, name, client, status, managers }], total }` |
 | `POST /` `{ code, name, description, clientId, managerId, techLeadId }` | ProjectCreators | 201 `{ id }`; 400 com os campos; 409 `project-code-in-use` com `projectName` |
-| `GET /{id}` | quem vê | 200 `{ id, code, name, description, client, status, managers, techLeads, members, permissions }`; 404 |
+| `GET /{id}` | quem vê | 200 `{ id, code, name, description, client, status, members, permissions }`; 404 |
 | `PUT /{id}` `{ code, name, description, clientId }` | quem altera | 204; 400; 403; 404; 409 `project-code-in-use` ou `project-closed` |
 | `PUT /{id}/status` `{ status }` | quem muda o status | 204; 403; 404 |
 
 Outras rotas:
 
-- **`GET /api/people?search=&managers=&pageSize=`:** ProjectCreators. Pessoas ativas `{ id, name, email }`, em ordem alfabética; com `managers=true`, só administradores e gerentes de projeto. Vive no `Users`.
+- **`GET /api/people?search=&managers=&limit=`:** ProjectCreators. Pessoas ativas `{ id, name, email }`, em ordem alfabética, até 100; com `managers=true`, só administradores e gerentes de projeto. Vive no `Users`.
 - **`GET /api/clients/choices`:** qualquer sessão. Todos os clientes `{ id, name, logoUrl, status }`, em ordem alfabética, para o campo Cliente e o filtro da lista.
 - **`DELETE /api/clients/{id}`:** passa a responder 409 `client-has-projects`.
 
 Detalhes:
 
 - `client` é `{ id, name, logoUrl }` ou `null`.
-- `managers`, `techLeads` e `members` trazem `{ id, name, role }`.
+- `managers` (na lista) e `members` (no projeto) trazem `{ id, name, role }`; a tela tira do `members` o gerente e o líder técnico.
 - `permissions` é `{ canEdit, canChangeStatus }`.
 
 ### 4. Referências na auditoria (ADR-0084)
@@ -136,7 +136,7 @@ Detalhes:
   - Cancelado: neutro, `block`.
 - **Novo projeto (`/projects/new`):**
   - a seção "Dados do projeto" do canvas, sem número e sem a prévia, até o cronograma existir;
-  - Código (200 px) e Nome; Cliente com "Cadastrar cliente"; Gerente e Líder técnico em `Select`, com as pessoas de `/api/people`; Descrição em `TextArea` de 4 linhas;
+  - Código (200 px) e Nome; Cliente com "Cadastrar cliente"; Gerente e Líder técnico num campo com a aparência do `Select` que busca em `/api/people` enquanto a pessoa digita, como o filtro de pessoa da Auditoria, para servir a qualquer número de pessoas; Descrição em `TextArea` de 4 linhas;
   - barra de ações com Cancelar e "Criar projeto";
   - o `ClientDialog` da Projetos-2 com `canSendLogo` só para o administrador.
 - **Página do projeto (`/projects/:projectId`):**
