@@ -458,7 +458,7 @@ export function ProjectSchedulePage() {
           schedule={schedule}
           scale={scale}
           editable={canEdit && desktop}
-          selectedId={chosen?.item.id}
+          selectedId={chosen?.item.id ?? phaseDialog?.phase?.id}
           ganttRef={timeline}
           onChoose={chooseInTimeline}
           notify={notify}
@@ -532,7 +532,7 @@ export function ProjectSchedulePage() {
             scale={scale}
             editable={canEdit}
             detailed
-            selectedId={chosen?.item.id}
+            selectedId={chosen?.item.id ?? phaseDialog?.phase?.id}
             ganttRef={expandedTimeline}
             onChoose={chooseInTimeline}
             notify={notify}

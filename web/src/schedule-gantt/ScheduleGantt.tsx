@@ -327,6 +327,14 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
         (row.target.kind === 'item' ? row.target.item.id : row.target.phase.id) === selectedId,
     );
 
+    // With the details closed, no line stays chosen: Syncfusion keeps it otherwise, and choosing the bar of a chosen
+    // line again would not open the details (ADR-0081).
+    useEffect(() => {
+      if (selectedId === undefined) {
+        gantt.current?.clearSelection();
+      }
+    }, [selectedId]);
+
     return (
       <div
         ref={area}
