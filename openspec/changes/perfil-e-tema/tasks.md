@@ -2,14 +2,14 @@
 
 ## 1. Backend
 
-- [ ] 1.1 No módulo `Users`:
+- [x] 1.1 No módulo `Users`:
   - criar `ThemePreference` e `User.ChooseTheme`;
   - mapear a coluna `Theme` (texto, padrão `Automatic`, `ExcludeFromAudit`) e criar a migração `ProfileTheme`;
   - criar os casos de uso `GetProfile` e `ChooseTheme`, com `IUserStore.SignInProvidersAsync`;
   - testar os casos de uso e "Tema fora da auditoria".
 
   Verificar com `dotnet build -warnaserror` e `dotnet test`.
-- [ ] 1.2 Na API:
+- [x] 1.2 Na API:
   - `Theme` na resposta da sessão;
   - `GET /api/profile` e `PUT /api/profile/theme`, com sessão e `X-CSRF`;
   - testar "Troca de tema sem sessão", tema inválido (400), tema salvo e devolvido pela sessão e pelo perfil;

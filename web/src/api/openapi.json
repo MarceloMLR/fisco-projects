@@ -104,6 +104,79 @@
         }
       }
     },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "GetProfile",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile/theme": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "ChooseTheme",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseThemeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -632,6 +705,17 @@
           }
         }
       },
+      "ChooseThemeRequest": {
+        "required": [
+          "theme"
+        ],
+        "type": "object",
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/ThemePreference"
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -724,12 +808,15 @@
           }
         }
       },
-      "SessionUserResponse": {
+      "ProfileResponse": {
         "required": [
           "id",
           "name",
           "email",
-          "role"
+          "role",
+          "theme",
+          "lastSignInAt",
+          "signInMethods"
         ],
         "type": "object",
         "properties": {
@@ -745,9 +832,51 @@
           },
           "role": {
             "$ref": "#/components/schemas/SystemRole"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/ThemePreference"
+          },
+          "lastSignInAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signInMethods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
-        "description": "The person in the session, with the role in the system."
+        "description": "My profile: who the person is, how they sign in and the theme they chose. Sign-in providers come as their codes\n(\"local\", and \"entra\" later); the screen says them in words."
+      },
+      "SessionUserResponse": {
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "theme"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/SystemRole"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/ThemePreference"
+          }
+        },
+        "description": "The person in the session, with the role in the system and the theme of their screens."
       },
       "SignInOptionsResponse": {
         "required": [
@@ -768,6 +897,14 @@
           "Administrator"
         ],
         "description": "Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a\nvalid role."
+      },
+      "ThemePreference": {
+        "enum": [
+          "Automatic",
+          "Light",
+          "Dark"
+        ],
+        "description": "The theme a person chose in the profile (ADR-0014); Automatic follows the operating system."
       },
       "UserPageResponse": {
         "required": [
@@ -833,6 +970,9 @@
   "tags": [
     {
       "name": "Session"
+    },
+    {
+      "name": "Profile"
     },
     {
       "name": "Users"

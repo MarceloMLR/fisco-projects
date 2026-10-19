@@ -1,6 +1,7 @@
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
+using FiscoProjects.Users.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Users.Tests;
@@ -101,7 +102,8 @@ public sealed class SignInWithIdentityTests(SqlServerFixture sqlServer)
         var user = await database.RunAsync<GetSignedInUser, SignedInUser?>(useCase =>
             useCase.ExecuteAsync(userId, TestContext.Current.CancellationToken));
 
-        user.Should().Be(new SignedInUser(userId, "Marina Costa", "marina.costa@empresa.example", SystemRole.User));
+        user.Should().Be(new SignedInUser(
+            userId, "Marina Costa", "marina.costa@empresa.example", SystemRole.User, ThemePreference.Automatic));
     }
 
     private static Task<SignInResult> SignInAsync(UsersDatabase database, ProviderIdentity identity) =>

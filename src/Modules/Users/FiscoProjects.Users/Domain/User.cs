@@ -32,6 +32,9 @@ public sealed class User : Entity
 
     public DateTime LastSignInAt { get; private set; }
 
+    /// <summary>Theme of the person's screens, kept in the profile so it follows them to any browser (ADR-0014).</summary>
+    public ThemePreference Theme { get; private set; }
+
     public static User Create(string name, string email, DateTime now) =>
         new(name.Trim(), email.Trim(), SystemRole.User, isActive: true, createdAt: now, lastSignInAt: now);
 
@@ -57,6 +60,16 @@ public sealed class User : Entity
         }
 
         Role = role;
+    }
+
+    public void ChooseTheme(ThemePreference theme)
+    {
+        if (!Enum.IsDefined(theme))
+        {
+            throw new ArgumentOutOfRangeException(nameof(theme), theme, "Unknown theme.");
+        }
+
+        Theme = theme;
     }
 
     /// <summary>Blocks the access from the next request on; name, e-mail, role and history stay (ADR-0008).</summary>

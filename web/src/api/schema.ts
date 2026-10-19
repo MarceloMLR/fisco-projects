@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/theme": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChooseTheme"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -194,6 +226,9 @@ export interface components {
         ChangeRoleRequest: {
             role: components["schemas"]["SystemRole"];
         };
+        ChooseThemeRequest: {
+            theme: components["schemas"]["ThemePreference"];
+        };
         HttpValidationProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -216,13 +251,29 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
         };
-        /** @description The person in the session, with the role in the system. */
+        /**
+         * @description My profile: who the person is, how they sign in and the theme they chose. Sign-in providers come as their codes
+         *     ("local", and "entra" later); the screen says them in words.
+         */
+        ProfileResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: string;
+            role: components["schemas"]["SystemRole"];
+            theme: components["schemas"]["ThemePreference"];
+            /** Format: date-time */
+            lastSignInAt: string;
+            signInMethods: string[];
+        };
+        /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
             /** Format: uuid */
             id: string;
             name: string;
             email: string;
             role: components["schemas"]["SystemRole"];
+            theme: components["schemas"]["ThemePreference"];
         };
         /** @description How the sign-in page may sign people in. */
         SignInOptionsResponse: {
@@ -234,6 +285,11 @@ export interface components {
          * @enum {unknown}
          */
         SystemRole: "User" | "ProjectManager" | "Administrator";
+        /**
+         * @description The theme a person chose in the profile (ADR-0014); Automatic follows the operating system.
+         * @enum {unknown}
+         */
+        ThemePreference: "Automatic" | "Light" | "Dark";
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
             /** Format: int32 */
@@ -363,6 +419,75 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GetProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChooseTheme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChooseThemeRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
