@@ -43,16 +43,27 @@ function Bar({
 }
 
 /**
- * The Preview of General settings (canvas AdminConfiguracoes): the brand as it will be, before saving. A small
- * picture of the application, the top of the sidebar at its real size and the panel of the sign-in page.
+ * The Preview of General settings (canvas AdminConfiguracoes): the brand as it will be, before saving, with the colors
+ * of the color being typed. A small picture of the application, the top of the sidebar at its real size and the
+ * panel of the sign-in page.
  */
-export function BrandPreview({ name, logo }: { name: string; logo: string | null }) {
+export function BrandPreview({
+  name,
+  logo,
+  colors,
+}: {
+  name: string;
+  logo: string | null;
+  /** The brand tokens of the color being typed, so the Preview shows it before saving. */
+  colors?: Record<string, string>;
+}) {
   const { t } = useTranslation();
 
   return (
     <Box
       component="aside"
       aria-label={t('settings.previewLabel')}
+      style={colors}
       sx={{
         minWidth: 0,
         overflow: 'hidden',

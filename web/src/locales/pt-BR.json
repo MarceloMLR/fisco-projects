@@ -228,7 +228,8 @@
       "InstallationSettings": {
         "Name": "Nome exibido",
         "LogoFileName": "Logo",
-        "TimeZone": "Fuso horário"
+        "TimeZone": "Fuso horário",
+        "MainColor": "Cor principal"
       }
     }
   },
@@ -242,6 +243,11 @@
     "sendLogo": "Enviar logo",
     "replaceLogo": "Trocar logo",
     "removeLogo": "Remover logo",
+    "mainColor": "Cor principal",
+    "mainColorHex": "Cor principal em hexadecimal",
+    "defaultColor": "Voltar ao padrão",
+    "contrastApproved": "Contraste aprovado",
+    "contrastLow": "Contraste insuficiente",
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
@@ -252,7 +258,9 @@
       "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor.",
       "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles.",
       "timeZoneRequired": "Escolha o fuso horário.",
-      "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro."
+      "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro.",
+      "colorFormat": "Use uma cor em hexadecimal, como {{example}}.",
+      "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",

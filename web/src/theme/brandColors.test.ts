@@ -1,0 +1,146 @@
+import { describe, expect, it } from 'vitest';
+import {
+  brandStyleSheet,
+  brandTokenNames,
+  brandTokens,
+  brandVariables,
+  contrast,
+  defaultMainColor,
+  hasContrast,
+  normalizeHex,
+} from './brandColors';
+import { color, colorSchemes } from './tokens';
+
+// Colors as the Administrator types them, without "#": colors in the code come only from tokens.json, and these are
+// what someone types in General settings, not colors of the screens.
+const typed = (value: string) => `#${value.toLowerCase()}`;
+
+/** Main colors with contrast with white, of many hues: teal, wine, violet, brown, graphite, black and red. */
+const accepted = ['0F766E', '7A1F3D', '5B21B6', '8A4B08', '374151', '000000', 'B4232A'];
+
+// Spec: configuracao-da-instalacao, requirement "Cor principal" (ADR-0082).
+describe('Cores da marca', () => {
+  it('Cor padrão', () => {
+    for (const mainColor of [null, defaultMainColor(), defaultMainColor().toLowerCase()]) {
+      const values = brandTokens(mainColor);
+      for (const scheme of colorSchemes) {
+        for (const name of brandTokenNames) {
+          expect(values[scheme][name], `${scheme} ${name}`).toBe(color(name, scheme));
+        }
+      }
+    }
+  });
+
+  it('A cor escolhida no tema claro', () => {
+    const light = brandTokens('0f766e').light;
+
+    for (const name of [
+      'action',
+      'action-text',
+      'control-selected',
+      'focus-ring',
+      'sidebar-indicator',
+      'avatar-owner',
+      'brand-panel-bg-2',
+    ] as const) {
+      expect(light[name], name).toBe(typed('0f766e'));
+    }
+    // The hover is darker than the color, as the default one is darker than the default color.
+    expect(contrast(light['action-hover'], color('on-action', 'light'))).toBeGreaterThan(
+      contrast(light.action, color('on-action', 'light')),
+    );
+  });
+
+  it('Contraste nos dois temas', () => {
+    for (const mainColor of accepted) {
+      expect(hasContrast(mainColor), mainColor).toBe(true);
+      const values = brandTokens(mainColor);
+      for (const scheme of colorSchemes) {
+        const token = (name: string) => color(name, scheme);
+        const brand = values[scheme];
+        const pairs: [string, string, string, number][] = [
+          ['on-action / action', token('on-action'), brand.action, 4.5],
+          ['on-action / action-hover', token('on-action'), brand['action-hover'], 4.5],
+          ['on-action / action-pressed', token('on-action'), brand['action-pressed'], 4.5],
+          ['action-text / bg-surface', brand['action-text'], token('bg-surface'), 4.5],
+          ['action-text / bg-page', brand['action-text'], token('bg-page'), 4.5],
+          [
+            'sidebar-text-active / sidebar-active-bg',
+            brand['sidebar-text-active'],
+            brand['sidebar-active-bg'],
+            4.5,
+          ],
+          ['control-selected / bg-surface', brand['control-selected'], token('bg-surface'), 3],
+          ['focus-ring / bg-page', brand['focus-ring'], token('bg-page'), 3],
+          ['on-avatar-role / avatar-owner', token('on-avatar-role'), brand['avatar-owner'], 4.5],
+          [
+            'brand-panel-text / brand-panel-bg',
+            token('brand-panel-text'),
+            brand['brand-panel-bg'],
+            4.5,
+          ],
+          [
+            'brand-panel-muted / brand-panel-bg',
+            brand['brand-panel-muted'],
+            brand['brand-panel-bg'],
+            4.5,
+          ],
+        ];
+        for (const [pair, text, background, minimum] of pairs) {
+          expect(
+            contrast(text, background),
+            `${mainColor} ${scheme}: ${pair}`,
+          ).toBeGreaterThanOrEqual(minimum);
+        }
+      }
+    }
+  });
+
+  it('Tokens sempre hexadecimais', () => {
+    for (const mainColor of [...accepted, '00FF66', '2200FF']) {
+      for (const scheme of colorSchemes) {
+        for (const value of Object.values(brandTokens(mainColor)[scheme])) {
+          expect(value, `${mainColor} ${scheme}`).toMatch(/^#[0-9a-f]{6}$/);
+        }
+      }
+    }
+  });
+
+  it('Cores de status iguais', () => {
+    const sheet = brandStyleSheet('7A1F3D');
+
+    expect(sheet).not.toMatch(/--(status|success|warning|danger|notify|text|bg|border)-/);
+    expect(Object.keys(brandVariables('7A1F3D', 'dark'))).toEqual([
+      ...brandTokenNames.map((name) => `--${name}`),
+      '--mui-palette-primary-main',
+      '--mui-palette-primary-dark',
+      '--mui-palette-primary-mainChannel',
+      '--mui-palette-primary-darkChannel',
+    ]);
+  });
+
+  it('Cor sem contraste', () => {
+    expect(hasContrast('FFD400')).toBe(false);
+    expect(hasContrast('808080')).toBe(false);
+    expect(hasContrast('767676')).toBe(true);
+    expect(hasContrast('azul')).toBe(false);
+  });
+
+  it('Formato da cor', () => {
+    expect(normalizeHex('0f766e')).toBe(typed('0F766E').toUpperCase());
+    expect(normalizeHex(' 7a1f3d ')).toBe(typed('7A1F3D').toUpperCase());
+    expect(normalizeHex('7a1f3')).toBeUndefined();
+    expect(normalizeHex('verde')).toBeUndefined();
+  });
+
+  it('Folha de estilo que vale sobre a do tema', () => {
+    const sheet = brandStyleSheet('0F766E');
+
+    expect(sheet).toContain(
+      ':root:not([data-theme="dark"]), [data-theme="light"][data-theme="light"] {',
+    );
+    expect(sheet).toContain('[data-theme="dark"][data-theme="dark"] {');
+    expect(sheet).toContain(`  --action: ${typed('0f766e')};`);
+    expect(sheet).toContain('  --mui-palette-primary-mainChannel: 15 118 110;');
+  });
+});

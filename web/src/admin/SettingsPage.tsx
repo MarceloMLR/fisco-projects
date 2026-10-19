@@ -3,6 +3,7 @@ import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useId, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -14,7 +15,9 @@ import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
+import { brandVariables, defaultMainColor, hasContrast, normalizeHex } from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
+import { MainColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
@@ -26,6 +29,8 @@ const fieldErrors = {
   nameTooLong: 'settings.errors.nameTooLong',
   timeZoneRequired: 'settings.errors.timeZoneRequired',
   timeZoneInvalid: 'settings.errors.timeZoneInvalid',
+  colorFormat: 'settings.errors.colorFormat',
+  colorContrast: 'settings.errors.colorContrast',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
@@ -37,6 +42,15 @@ const form = z.object({
     .min(1, { error: fieldErrors.nameRequired })
     .max(60, { error: fieldErrors.nameTooLong }),
   timeZone: z.string().min(1, { error: fieldErrors.timeZoneRequired }),
+  // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
+  mainColor: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || normalizeHex(value) !== undefined, {
+      error: fieldErrors.colorFormat,
+    })
+    .refine((value) => value === '' || hasContrast(value), { error: fieldErrors.colorContrast })
+    .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
 });
 
 type LogoError = 'logoFormat' | 'logoTooLarge' | 'logoUnsafe';
@@ -130,17 +144,31 @@ export function SettingsPage() {
     formState: { errors, isDirty, isSubmitting },
   } = useForm<z.input<typeof form>, unknown, z.output<typeof form>>({
     resolver: zodResolver(form),
-    defaultValues: { name: '', timeZone: '' },
+    defaultValues: { name: '', timeZone: '', mainColor: '' },
     values:
       installation === undefined || rules === undefined
         ? undefined
-        : { name: installation.name, timeZone: rules.timeZone },
+        : {
+            name: installation.name,
+            timeZone: rules.timeZone,
+            mainColor: installation.mainColor ?? '',
+          },
   });
 
   const savedLogo = installation?.logoUrl ?? null;
   const shownLogo = logo.kind === 'new' ? logo.picture : logo.kind === 'removed' ? null : savedLogo;
   const changed = isDirty || logo.kind !== 'saved';
   const typedName = useWatch({ control, name: 'name' });
+  const typedColor = useWatch({ control, name: 'mainColor' }).trim();
+  // The Preview shows the color as it is typed once it is a color that may be saved; until then, the saved one.
+  const typedHex = normalizeHex(typedColor);
+  const previewColor =
+    typedColor === ''
+      ? null
+      : typedHex !== undefined && hasContrast(typedHex)
+        ? typedHex
+        : (installation?.mainColor ?? null);
+  const { colorScheme } = useColorScheme();
 
   const chooseLogo = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -167,7 +195,7 @@ export function SettingsPage() {
     setLogoError(undefined);
   };
 
-  const save = handleSubmit(async ({ name, timeZone }) => {
+  const save = handleSubmit(async ({ name, timeZone, mainColor }) => {
     // The new logo stays on screen until the brand is read again, so the old one never flashes back.
     let logoSaved = false;
     try {
@@ -195,13 +223,16 @@ export function SettingsPage() {
 
       if (isDirty) {
         const { error, response } = await api.PUT('/api/installation', {
-          body: { name, timeZone },
+          body: { name, timeZone, mainColor },
         });
         if (response.status === 400) {
           // The screen checks the name before sending; the time zone only the server can check.
           const invalid = invalidFields(error);
           if (invalid.includes('name')) {
             setError('name', { message: fieldErrors.nameRequired });
+          }
+          if (invalid.includes('mainColor')) {
+            setError('mainColor', { message: fieldErrors.colorContrast });
           }
           if (invalid.includes('timeZone') || invalid.length === 0) {
             setError('timeZone', { message: fieldErrors.timeZoneInvalid });
@@ -228,6 +259,7 @@ export function SettingsPage() {
 
   const nameError = errors.name?.message as FieldError | undefined;
   const timeZoneError = errors.timeZone?.message as FieldError | undefined;
+  const colorError = errors.mainColor?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -394,6 +426,22 @@ export function SettingsPage() {
                       </Box>
                     </Box>
                   </Box>
+                  <Controller
+                    control={control}
+                    name="mainColor"
+                    render={({ field }) => (
+                      <MainColorField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={
+                          colorError === undefined
+                            ? undefined
+                            : t(colorError, { example: defaultMainColor() })
+                        }
+                      />
+                    )}
+                  />
                 </Box>
                 <Box component="section" aria-labelledby="settings-rules" sx={sectionSx}>
                   <Box component="h2" id="settings-rules" sx={sectionTitleSx}>
@@ -420,6 +468,7 @@ export function SettingsPage() {
               <BrandPreview
                 name={typedName.trim() === '' ? (installation?.name ?? '') : typedName.trim()}
                 logo={shownLogo}
+                colors={brandVariables(previewColor, colorScheme ?? 'light')}
               />
             </Box>
           )}

@@ -2,7 +2,7 @@
 
 ## 1. Backend
 
-- [ ] 1.1 No módulo `Administration`:
+- [x] 1.1 No módulo `Administration`:
   - `MainColor` em `InstallationSettings`, com `ChangeMainColor` (formato `#RRGGBB` e contraste de 4,5:1 com o branco) e a migração `InstallationMainColor`;
   - a cor no `UpdateInstallation`;
   - `mainColor` em `GET /api/installation` e no `PUT`.
@@ -11,14 +11,14 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Criar `web/src/theme/brandColors.ts` (conversão OKLCH, derivação, ajuste e conferência de contraste e folha de estilo) e o `BrandColors` na rota raiz. Testar:
+- [x] 2.1 Criar `web/src/theme/brandColors.ts` (conversão OKLCH, derivação, ajuste e conferência de contraste e folha de estilo) e o `BrandColors` na rota raiz. Testar:
   - "Cor padrão" (devolve o `tokens.json`);
   - "Contraste nos dois temas" para várias cores;
   - as cores de status iguais e os tokens sempre hexadecimais válidos;
   - "Trocar a cor principal" na estrutura e na entrada.
 
   Verificar com `npm test`.
-- [ ] 2.2 Na seção Marca das Configurações gerais, criar a cor principal (amostra, campo, "Voltar ao padrão" e selo de contraste), com a Prévia na cor digitada e "Cor principal" na Auditoria. Testar:
+- [x] 2.2 Na seção Marca das Configurações gerais, criar a cor principal (amostra, campo, "Voltar ao padrão" e selo de contraste), com a Prévia na cor digitada e "Cor principal" na Auditoria. Testar:
   - "Prévia antes de salvar" com a cor;
   - "Cor sem contraste";
   - "Voltar ao padrão";
