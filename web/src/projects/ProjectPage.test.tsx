@@ -128,6 +128,15 @@ describe('Cabeçalho do projeto', () => {
     );
   });
 
+  it('Abas sem barra de rolagem', async () => {
+    await openProject();
+
+    // The mark of the chosen tab sits on the line of the header, and nothing is left to scroll up and down; only
+    // sideways, when the tabs do not fit.
+    const tabs = screen.getByRole('tablist', { name: text.header.tabs });
+    expect(tabs).toHaveStyle({ overflowX: 'auto', overflowY: 'hidden', marginBottom: '-1px' });
+  });
+
   it('Datas do cronograma no cabeçalho', async () => {
     const erp = projects[0];
     if (erp === undefined) {
