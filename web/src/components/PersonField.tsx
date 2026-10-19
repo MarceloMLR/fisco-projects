@@ -103,8 +103,10 @@ export function PersonField({
         noOptionsText={t('projects.form.noPeople')}
         popupIcon={<ExpandMoreOutlined />}
         slotProps={{ paper: { sx: { marginTop: 'var(--space-1)' } } }}
+        // The buttons sit in the flow of the field (position static), so the room MUI keeps for them on the right
+        // is taken back, also with both the arrow and the clear button (an optional field with a person chosen).
         sx={{
-          '&.MuiAutocomplete-hasPopupIcon .MuiAutocomplete-inputRoot, &.MuiAutocomplete-hasClearIcon .MuiAutocomplete-inputRoot':
+          '&.MuiAutocomplete-hasPopupIcon .MuiAutocomplete-inputRoot, &.MuiAutocomplete-hasClearIcon .MuiAutocomplete-inputRoot, &.MuiAutocomplete-hasPopupIcon.MuiAutocomplete-hasClearIcon .MuiAutocomplete-inputRoot':
             { paddingRight: 'var(--space-2)' },
         }}
         renderInput={({ slotProps: { input: inputSlot, htmlInput } }) => (
