@@ -21,7 +21,7 @@
 ## 4. Documentação e verificação
 
 - [x] 4.1 Atualizar o glossário, o `CLAUDE.md` e o roadmap; verificar lendo os trechos alterados
-- [ ] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir as telas nos temas claro e escuro, no computador e no celular, guardando as capturas para o resumo
+- [x] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir as telas nos temas claro e escuro, no computador e no celular, guardando as capturas para o resumo
 
 ## Workflow follow-up
 

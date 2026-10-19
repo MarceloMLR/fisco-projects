@@ -70,7 +70,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Concluída em 19/10/2026 ([#25](https://github.com/MarceloMLR/fisco-projects/pull/25)) |
-| Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Em andamento |
+| Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | PR aberto ([#26](https://github.com/MarceloMLR/fisco-projects/pull/26)) |
 | Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Planejada |
 | Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
 | Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
