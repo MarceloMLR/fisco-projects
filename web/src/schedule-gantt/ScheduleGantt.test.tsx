@@ -2,7 +2,7 @@ import { cleanup, render, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Schedule } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { demoSchedule } from '../test/server';
+import { demoSchedule, demoScheduleWithSubtasks } from '../test/server';
 import { ScheduleGantt } from './ScheduleGantt';
 
 const text = ptBR.projects;
@@ -40,7 +40,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function drawTimeline(schedule: Schedule, editable = false) {
+async function drawTimeline(schedule: Schedule, editable = false, lines = 12) {
   const view = render(
     <ScheduleGantt
       schedule={schedule}
@@ -56,7 +56,7 @@ async function drawTimeline(schedule: Schedule, editable = false) {
   // The cells of FiscoProjects come a moment after the rows of Syncfusion.
   await vi.waitFor(() => {
     const rows = view.container.querySelectorAll('.e-row');
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(lines);
     expect(rows[0]?.textContent).not.toBe('');
   }, 5000);
   return view.container;
@@ -137,5 +137,26 @@ describe('Linha do tempo', () => {
     // Who edits drags the bars; who does not, and the phone, only see them (ADR-0043).
     expect(await cursors(true)).toEqual(['move']);
     expect(await cursors(false)).toEqual(['default']);
+  });
+
+  it('Tarefa-resumo como resumo', async () => {
+    // Spec: cronograma, requirement "Subtarefas pela tela" (ADR-0088).
+    const container = await drawTimeline(demoScheduleWithSubtasks(), true, 14);
+
+    const summary = barOf(container, 'Testes integrados');
+    // Drawn as the bar of a phase, from 23/10 to 29/10, with its subtasks under it.
+    expect(summary?.querySelector('.e-manualparent-main-container')).not.toBeNull();
+    expect(summary?.classList.contains('fp-gantt-summary')).toBe(true);
+    const names = [...container.querySelectorAll('.e-row')].map((row) => row.textContent);
+    expect(names.slice(7, 10)).toEqual([
+      'Testes integrados0%',
+      'Roteiro de testes0%',
+      'Executar testes0%',
+    ]);
+    // Only the tasks with dates of their own move (ADR-0088).
+    expect(
+      container.querySelector<HTMLElement>('.fp-gantt-task[aria-label^="Name Roteiro de testes "]')
+        ?.style.cursor,
+    ).toBe('move');
   });
 });

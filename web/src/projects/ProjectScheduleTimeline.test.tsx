@@ -11,6 +11,7 @@ import {
   type DemoProject,
   demoProjects,
   demoSchedule,
+  demoScheduleWithSubtasks,
   problem,
   projectsPage,
   server,
@@ -319,6 +320,8 @@ describe('Ligar duas barras', () => {
         ownerId: tests.owner?.id,
         progress: null,
         predecessorIds: [itemNamed('Parametrizar regras de ICMS').id, invoices.id],
+        // It stays where it is, right in the phase (ADR-0088).
+        parentId: null,
       },
     ]);
     await waitFor(() => {
@@ -355,6 +358,60 @@ describe('Ligar duas barras', () => {
     expect(itemNamed('Parametrizar regras de ICMS').predecessorIds).toEqual([
       itemNamed('Mapear processos fiscais').id,
     ]);
+  });
+});
+
+// Spec: cronograma, requirement "Subtarefas pela tela" (ADR-0088).
+describe('Subtarefas na linha do tempo', () => {
+  it('Ligar a uma tarefa-resumo', async () => {
+    schedule = demoScheduleWithSubtasks();
+    const sent: unknown[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openTimeline();
+
+    act(() => {
+      received().onLink(
+        itemNamed('Testes integrados').id,
+        itemNamed('Testes com a equipe do cliente').id,
+      );
+    });
+
+    expect(
+      await screen.findByText(
+        text.timeline.messages.summaryLink.replace('{{name}}', 'Testes integrados'),
+      ),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([]);
+  });
+
+  it('Ligar subtarefas mantém a tarefa', async () => {
+    schedule = demoScheduleWithSubtasks();
+    const sent: Record<string, unknown>[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openTimeline();
+
+    act(() => {
+      received().onLink(itemNamed('Integrar emissão de NF-e').id, itemNamed('Executar testes').id);
+    });
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        expect.objectContaining({
+          name: 'Executar testes',
+          parentId: itemNamed('Testes integrados').id,
+        }),
+      ]);
+    });
   });
 });
 

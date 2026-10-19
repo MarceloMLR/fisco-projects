@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { demoSchedule } from '../test/server';
+import { demoSchedule, demoScheduleWithSubtasks } from '../test/server';
 import { dateOfDay, dayOfDate, endOfDay, ganttRowsOf, lastDayOf } from './ganttRows';
 
 // Spec: cronograma, requirement "Linha do tempo": the lines and the dates the timeline draws come from the API.
@@ -63,5 +63,19 @@ describe('Linhas da linha do tempo', () => {
     expect(lastDayOf(endOfDay('2026-10-16'))).toBe('2026-10-16');
     // The Gantt may end a bar at the end of the working day, before midnight: the day is the same.
     expect(lastDayOf(new Date(2026, 9, 16, 17, 0))).toBe('2026-10-16');
+  });
+
+  it('Subtarefas na linha do tempo', () => {
+    // Spec: cronograma, requirement "Subtarefas pela tela" (ADR-0088).
+    const rows = ganttRowsOf(demoScheduleWithSubtasks());
+    const row = (name: string) => rows.find((candidate) => candidate.name === name);
+
+    const summary = row('Testes integrados');
+    expect(summary?.parentKey).toBe(row('Configuração')?.key);
+    expect(summary?.cssClass).toBe('fp-gantt-summary');
+    expect(row('Roteiro de testes')?.parentKey).toBe(summary?.key);
+    expect(row('Executar testes')?.parentKey).toBe(summary?.key);
+    expect(row('Executar testes')?.predecessor).toBe(`${String(row('Roteiro de testes')?.key)}FS`);
+    expect(row('Integrar emissão de NF-e')?.cssClass).toBe('fp-gantt-task');
   });
 });
