@@ -43,21 +43,58 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
     }
 }
 
-/// <summary>Changes the name shown of the installation (ADR-0003).</summary>
-public sealed class RenameInstallation(IInstallationSettingsStore store)
+/// <summary>The rules of the installation every person in a session needs: the time zone of the screens.</summary>
+public sealed record GeneralRules(string TimeZone);
+
+public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
-    /// <returns>False when the name is empty or longer than 60 characters; nothing changes then.</returns>
-    public async Task<bool> ExecuteAsync(string? name, CancellationToken cancellationToken)
+    public async Task<GeneralRules> ExecuteAsync(CancellationToken cancellationToken) =>
+        new((await store.GetAsync(cancellationToken)).TimeZone);
+}
+
+/// <summary>A field of the General settings form.</summary>
+public enum InstallationField
+{
+    Name = 1,
+    TimeZone = 2,
+}
+
+/// <summary>The General settings form, saved as a whole: the name shown and the time zone.</summary>
+public sealed record InstallationChanges(string? Name, string? TimeZone);
+
+/// <summary>
+/// Saves the General settings form (ADR-0003, ADR-0013): every field valid, or nothing changes. One save, so one
+/// audit record.
+/// </summary>
+public sealed class UpdateInstallation(IInstallationSettingsStore store)
+{
+    /// <returns>The invalid fields; empty when the form was saved.</returns>
+    public async Task<IReadOnlyList<InstallationField>> ExecuteAsync(
+        InstallationChanges changes, CancellationToken cancellationToken)
     {
-        if (InstallationSettings.ValidName(name) is not { } valid)
+        ArgumentNullException.ThrowIfNull(changes);
+        var name = InstallationSettings.ValidName(changes.Name);
+        var invalid = new List<InstallationField>();
+        if (name is null)
         {
-            return false;
+            invalid.Add(InstallationField.Name);
+        }
+
+        if (!InstallationSettings.IsValidTimeZone(changes.TimeZone))
+        {
+            invalid.Add(InstallationField.TimeZone);
+        }
+
+        if (name is null || invalid.Count > 0)
+        {
+            return invalid;
         }
 
         var settings = await store.GetAsync(cancellationToken);
-        settings.Rename(valid);
+        settings.Rename(name);
+        settings.ChangeTimeZone(changes.TimeZone!);
         await store.SaveChangesAsync(cancellationToken);
-        return true;
+        return [];
     }
 }
 

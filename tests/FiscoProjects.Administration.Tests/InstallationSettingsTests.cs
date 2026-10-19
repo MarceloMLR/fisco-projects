@@ -23,4 +23,19 @@ public sealed class InstallationSettingsTests
         InstallationSettings.ValidName(new string('a', 60)).Should().HaveLength(60);
         InstallationSettings.ValidName(new string('a', 61)).Should().BeNull();
     }
+
+    [Theory(DisplayName = "Fuso IANA conhecido")]
+    [InlineData("America/Sao_Paulo")]
+    [InlineData("America/Manaus")]
+    [InlineData("Europe/Lisbon")]
+    public void KnownIanaTimeZone_IsValid(string timeZone) =>
+        InstallationSettings.IsValidTimeZone(timeZone).Should().BeTrue();
+
+    [Theory(DisplayName = "Fuso desconhecido ou do Windows")]
+    [InlineData("Mars/Olympus_Mons")]
+    [InlineData("E. South America Standard Time")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void UnknownOrWindowsTimeZone_IsInvalid(string? timeZone) =>
+        InstallationSettings.IsValidTimeZone(timeZone).Should().BeFalse();
 }

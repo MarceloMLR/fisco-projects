@@ -51,6 +51,13 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasDefaultValue("America/Sao_Paulo");
+
                     b.HasKey("Id");
 
                     b.ToTable("installation_settings", "administration");
@@ -59,7 +66,8 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("0199f2a0-6b5c-7d1e-9a42-3c8e5f7a1b20"),
-                            Name = "FiscoProjects"
+                            Name = "FiscoProjects",
+                            TimeZone = "America/Sao_Paulo"
                         });
                 });
 #pragma warning restore 612, 618
