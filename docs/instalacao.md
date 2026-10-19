@@ -69,6 +69,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 ## Desenvolvimento
 
 - Usar um tenant Microsoft próprio, nunca o da empresa; sem tenant licenciado, usar as implementações locais de e-mail e arquivos (ADR-0002, ADR-0004).
+- Dados de demonstração: com a API rodando, `npm run demo:data` em `web/` (ou `npm run demo:data -- <endereço da API>`) carrega pessoas, clientes, projetos e cronogramas fictícios pela própria API. Só funciona com a entrada local ligada, portanto nunca em produção (ADR-0078, ADR-0089).
 - Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).
