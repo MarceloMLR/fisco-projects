@@ -17,7 +17,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 8 | 6 |
-| 2. Acesso e administração | 8 | 6 |
+| 2. Acesso e administração | 8 | 7 |
 | 3. Projetos | 4 | 0 |
 | 4. Cronograma | 7 | 0 |
 | 5. Chamados | 7 | 0 |
@@ -26,7 +26,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **54** | **12** |
+| **Total** | **54** | **13** |
 
 ## 1. Fundação
 
@@ -51,7 +51,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Concluída em 18/10/2026 ([#13](https://github.com/MarceloMLR/fisco-projects/pull/13)) |
 | Acesso-3.1 | `detalhes-em-gaveta` | Detalhes da Auditoria numa gaveta sobreposta com o fundo escurecido, padrão de todas as telas de lista com detalhe, e filtro de pessoa sem cortar o nome, a pedido de Marcelo | 0066, 0081 | Concluída em 18/10/2026 ([#16](https://github.com/MarceloMLR/fisco-projects/pull/16)) |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Concluída em 18/10/2026 ([#14](https://github.com/MarceloMLR/fisco-projects/pull/14)) |
-| Acesso-5 | `perfil-e-tema` | Tema no perfil e tela Meu perfil (separada da configuração da instalação a pedido de Marcelo) | 0014, 0066 | PR aberto (#17) |
+| Acesso-5 | `perfil-e-tema` | Tema no perfil e tela Meu perfil (separada da configuração da instalação a pedido de Marcelo) | 0014, 0066 | Concluída em 18/10/2026 ([#17](https://github.com/MarceloMLR/fisco-projects/pull/17)) |
 | Acesso-6 | `configuracao-da-instalacao` | Nome, logo, cor principal e fuso da instalação | 0003, 0013, 0067 | Planejada |
 
 ## 3. Projetos
