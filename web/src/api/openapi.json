@@ -2957,6 +2957,178 @@
           }
         }
       }
+    },
+    "/api/projects/{id}/schedule/items/{itemId}/progress": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "UpdateScheduleItemProgress",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleProgressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/items/{itemId}/reached": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "SetMilestoneReached",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MilestoneReachedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3577,6 +3749,18 @@
           }
         }
       },
+      "MilestoneReachedRequest": {
+        "required": [
+          "reached"
+        ],
+        "type": "object",
+        "properties": {
+          "reached": {
+            "type": "boolean"
+          }
+        },
+        "description": "Whether a milestone was reached."
+      },
       "NewProjectMemberRequest": {
         "required": [
           "userId",
@@ -4186,6 +4370,7 @@
           "end",
           "progress",
           "lateTasks",
+          "lateMilestones",
           "currentPhase",
           "completedOn",
           "phases",
@@ -4206,6 +4391,10 @@
             "format": "int32"
           },
           "lateTasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lateMilestones": {
             "type": "integer",
             "format": "int32"
           },
@@ -4236,7 +4425,7 @@
             }
           }
         },
-        "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase\n(the first late one or, without delays, the last that has started; none before the start), the day the last task\nwas completed when all are at 100%, the phases with items and the days of the milestones."
+        "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late\n(ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the\nstart), the day the last task was completed when all are at 100%, the phases with items and the days of the\nmilestones."
       },
       "ProjectSituation": {
         "enum": [
@@ -4337,7 +4526,10 @@
             "format": "uuid"
           },
           "progress": {
-            "type": "integer",
+            "type": [
+              "null",
+              "integer"
+            ],
             "format": "int32"
           },
           "predecessorIds": {
@@ -4351,7 +4543,7 @@
             }
           }
         },
-        "description": "A change of a task or a milestone, whose kind stays."
+        "description": "A change of a task or a milestone, whose kind stays; without the progress, it stays as it is."
       },
       "ScheduleItemResponse": {
         "required": [
@@ -4364,7 +4556,9 @@
           "duration",
           "progress",
           "completedOn",
+          "reachedOn",
           "late",
+          "canUpdateProgress",
           "owner",
           "predecessorIds"
         ],
@@ -4407,7 +4601,17 @@
             ],
             "format": "date"
           },
+          "reachedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
           "late": {
+            "type": "boolean"
+          },
+          "canUpdateProgress": {
             "type": "boolean"
           },
           "owner": {
@@ -4428,7 +4632,7 @@
             }
           }
         },
-        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day it reached 100%, whether it is late, the owner and the ids of\nthe items it depends on."
+        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late, whether the person may update its progress now (only a task, while the project is open), the owner and the\nids of the items it depends on."
       },
       "ScheduleOwnerResponse": {
         "required": [
@@ -4539,7 +4743,20 @@
             "type": "boolean"
           }
         },
-        "description": "A phase in the strip of phases: its dates, its progress and whether a task of it is late."
+        "description": "A phase in the strip of phases: its dates, its progress and whether a task or a milestone of it is late."
+      },
+      "ScheduleProgressRequest": {
+        "required": [
+          "progress"
+        ],
+        "type": "object",
+        "properties": {
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The progress of a task, from 0 to 100."
       },
       "ScheduleResponse": {
         "required": [
@@ -4548,6 +4765,7 @@
           "end",
           "progress",
           "lateTasks",
+          "lateMilestones",
           "phases"
         ],
         "type": "object",
@@ -4578,6 +4796,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "lateMilestones": {
+            "type": "integer",
+            "format": "int32"
+          },
           "phases": {
             "type": "array",
             "items": {
@@ -4585,7 +4807,7 @@
             }
           }
         },
-        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks are late, and the phases in order."
+        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, and the phases in order."
       },
       "SessionUserResponse": {
         "required": [

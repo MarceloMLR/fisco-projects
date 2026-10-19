@@ -50,12 +50,13 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 
 /// <summary>
 /// A schedule as the Schedule tab shows it: the numbers of the day (<see cref="ScheduleFigures"/>), the names of the
-/// owners and the items each item depends on.
+/// owners, the items each item depends on and the tasks whose progress the person may update now (ADR-0043).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
     IReadOnlyDictionary<Guid, string> OwnerNames,
-    IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors);
+    IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors,
+    IReadOnlySet<Guid> ProgressUpdatable);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules, IUserDirectory users, InstallationClock clock)
@@ -64,7 +65,8 @@ public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules
     public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
     {
         var project = await projects.FindAsync(projectId, cancellationToken);
-        if (project is null || !ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId)).CanView)
+        var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
+        if (project is null || permissions is not { CanView: true })
         {
             return null;
         }
@@ -78,7 +80,13 @@ public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules
             names,
             schedule.Dependencies
                 .GroupBy(dependency => dependency.SuccessorId)
-                .ToDictionary(group => group.Key, group => (IReadOnlyList<Guid>)[.. group.Select(dependency => dependency.PredecessorId)]));
+                .ToDictionary(group => group.Key, group => (IReadOnlyList<Guid>)[.. group.Select(dependency => dependency.PredecessorId)]),
+            project.IsClosed
+                ? new HashSet<Guid>()
+                : schedule.Items
+                    .Where(item => item.Kind == ScheduleItemKind.Task && ScheduleEditing.MayUpdateProgress(permissions, item, viewer))
+                    .Select(item => item.Id)
+                    .ToHashSet());
     }
 }
 
@@ -108,6 +116,9 @@ public enum ScheduleField
     Progress = 5,
     Owner = 6,
     Predecessors = 7,
+
+    /// <summary>Only a milestone is reached; a task has a progress (ADR-0020).</summary>
+    Reached = 8,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -121,21 +132,41 @@ public sealed record ScheduleResult(ScheduleOutcome Outcome, Guid? Id, int Pushe
 }
 
 /// <summary>
-/// The common part of the changes of a schedule: only the Administrator and the manager change it, while the project
-/// is open (ADR-0016, ADR-0043). The change runs in a serializable transaction, so two changes at once never break a
-/// chain of dependencies, and a person leaving the project never leaves an owner who is no longer in it.
+/// The common part of the changes of a schedule: by default only the Administrator and the manager change it, while
+/// the project is open (ADR-0016, ADR-0043). The change runs in a serializable transaction, so two changes at once never
+/// break a chain of dependencies, and a person leaving the project never leaves an owner who is no longer in it. The
+/// refusals come in the same order for every change: 404, 403, 409 and then the fields (400).
 /// </summary>
 internal static class ScheduleEditing
 {
-    public static async Task<ScheduleResult> RunAsync(
+    /// <summary>A change only the Administrator and the manager make.</summary>
+    public static Task<ScheduleResult> RunAsync(
         IProjectStore projects,
         IScheduleStore schedules,
         Guid projectId,
         ProjectViewer viewer,
         Func<Project, Schedule, ScheduleResult> change,
+        CancellationToken cancellationToken) =>
+        RunAsync(projects, schedules, projectId, viewer, mayChange: null, change, cancellationToken);
+
+    /// <summary>
+    /// A change that whoever <paramref name="mayChange"/> allows makes, looking at the schedule (the owner of a task).
+    /// The check runs before the transaction, so a refusal opens none, and again in it, on what is in the database then.
+    /// </summary>
+    public static async Task<ScheduleResult> RunAsync(
+        IProjectStore projects,
+        IScheduleStore schedules,
+        Guid projectId,
+        ProjectViewer viewer,
+        Func<ProjectPermissions, Schedule, bool>? mayChange,
+        Func<Project, Schedule, ScheduleResult> change,
         CancellationToken cancellationToken)
     {
-        if (Refusal(await projects.FindAsync(projectId, cancellationToken), viewer) is { } refusal)
+        var before = await projects.FindAsync(projectId, cancellationToken);
+        var scheduleBefore = mayChange is null || before is null
+            ? null
+            : await schedules.FindAsync(projectId, cancellationToken) ?? new Schedule(projectId);
+        if (Refusal(before, viewer, permissions => Allows(mayChange, permissions, scheduleBefore)) is { } refusal)
         {
             return refusal;
         }
@@ -143,12 +174,13 @@ internal static class ScheduleEditing
         return await projects.InSerializableTransactionAsync(async token =>
         {
             var project = await projects.FindAsync(projectId, token);
-            if (Refusal(project, viewer) is { } late)
+            var schedule = project is null ? null : await schedules.GetOrAddAsync(projectId, token);
+            if (Refusal(project, viewer, permissions => Allows(mayChange, permissions, schedule)) is { } late)
             {
                 return late;
             }
 
-            var result = change(project!, await schedules.GetOrAddAsync(projectId, token));
+            var result = change(project!, schedule!);
             if (result.Outcome == ScheduleOutcome.Done)
             {
                 await projects.SaveChangesAsync(token);
@@ -162,7 +194,14 @@ internal static class ScheduleEditing
     public static bool MayOwn(Project project, Guid? ownerId) =>
         ownerId is not { } id || project.RoleOf(id) is { } role && role != ProjectRole.Viewer;
 
-    private static ScheduleResult? Refusal(Project? project, ProjectViewer viewer)
+    /// <summary>Whether the person may update the progress of the item, by being in charge of it or editing the schedule.</summary>
+    public static bool MayUpdateProgress(ProjectPermissions permissions, ScheduleItem item, ProjectViewer viewer) =>
+        permissions.MayUpdateProgress(item.OwnerId == viewer.UserId);
+
+    private static bool Allows(Func<ProjectPermissions, Schedule, bool>? mayChange, ProjectPermissions permissions, Schedule? schedule) =>
+        mayChange is null ? permissions.CanEditSchedule : mayChange(permissions, schedule!);
+
+    private static ScheduleResult? Refusal(Project? project, ProjectViewer viewer, Func<ProjectPermissions, bool> allowed)
     {
         var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
         if (project is null || permissions is not { CanView: true })
@@ -170,7 +209,7 @@ internal static class ScheduleEditing
             return ScheduleResult.Of(ScheduleOutcome.NotFound);
         }
 
-        if (!permissions.CanEditSchedule)
+        if (!allowed(permissions))
         {
             return ScheduleResult.Of(ScheduleOutcome.Forbidden);
         }
@@ -219,7 +258,8 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 
 /// <summary>
 /// The form of a task or milestone: the phase, the name, the start, the duration in business days (zero for a
-/// milestone), the owner (none for a milestone), the progress (zero for a milestone) and the items it depends on.
+/// milestone), the owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a
+/// new item) and the items it depends on.
 /// </summary>
 public sealed record ScheduleItemForm(
     Guid PhaseId,
@@ -227,7 +267,7 @@ public sealed record ScheduleItemForm(
     DateOnly Start,
     int Duration,
     Guid? OwnerId,
-    int Progress,
+    int? Progress,
     IReadOnlyCollection<Guid>? PredecessorIds);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
@@ -259,7 +299,7 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Duration);
         }
 
-        if (!Schedule.IsValidProgress(kind, form.Progress))
+        if (form.Progress is { } progress && !Schedule.IsValidProgress(kind, progress))
         {
             invalid.Add(ScheduleField.Progress);
         }
@@ -336,6 +376,72 @@ public sealed class ChangeScheduleItem(IProjectStore projects, IScheduleStore sc
             {
                 return ScheduleResult.Of(ScheduleOutcome.Cycle);
             }
+        }, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Updates the progress of a task (ADR-0020): the Administrator and the manager of any task, the tech lead, the
+/// contributor and the developer of the ones they are in charge of (ADR-0043). At 100% the task keeps today as the day
+/// it was completed; below it, the day goes away.
+/// </summary>
+public sealed class UpdateScheduleItemProgress(IProjectStore projects, IScheduleStore schedules, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, int progress, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(
+            projects,
+            schedules,
+            projectId,
+            viewer,
+            // An item that is not there passes, to get its 404 below.
+            (permissions, schedule) =>
+                schedule.ItemOf(itemId) is not { } item || ScheduleEditing.MayUpdateProgress(permissions, item, viewer),
+            (_, schedule) =>
+            {
+                if (schedule.ItemOf(itemId) is not { } item)
+                {
+                    return ScheduleResult.Of(ScheduleOutcome.NotFound);
+                }
+
+                if (!Schedule.IsValidProgress(item.Kind, progress) || item.Kind != ScheduleItemKind.Task)
+                {
+                    return ScheduleResult.InvalidFields([ScheduleField.Progress]);
+                }
+
+                schedule.UpdateProgress(itemId, progress, today);
+                return ScheduleResult.Done();
+            },
+            cancellationToken);
+    }
+}
+
+/// <summary>
+/// Marks a milestone as reached, keeping today as the day, or as not reached (ADR-0020, ADR-0086); only the
+/// Administrator and the manager do it (ADR-0043).
+/// </summary>
+public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore schedules, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, bool reached, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+        {
+            if (schedule.ItemOf(itemId) is not { } item)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.NotFound);
+            }
+
+            if (item.Kind != ScheduleItemKind.Milestone)
+            {
+                return ScheduleResult.InvalidFields([ScheduleField.Reached]);
+            }
+
+            schedule.SetReached(itemId, reached, today);
+            return ScheduleResult.Done();
         }, cancellationToken);
     }
 }

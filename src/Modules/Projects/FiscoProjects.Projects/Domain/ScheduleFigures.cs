@@ -2,7 +2,8 @@ namespace FiscoProjects.Projects.Domain;
 
 /// <summary>
 /// A phase as the screens show it: the dates from the first start to the last end of its items (none without items),
-/// the progress weighted by the duration of its tasks, whether a task of it is late, and its items in order.
+/// the progress weighted by the duration of its tasks, whether a task or a milestone of it is late, and its items in
+/// order.
 /// </summary>
 public sealed record PhaseFigures(
     SchedulePhase Phase, DateOnly? Start, DateOnly? End, int Progress, bool IsLate, IReadOnlyList<ScheduleItem> Items);
@@ -16,6 +17,7 @@ public sealed record PhaseFigures(
 /// <param name="End">The last end of the schedule; null without items.</param>
 /// <param name="Progress">The progress of the project, weighted by the duration of the tasks; milestones do not count.</param>
 /// <param name="LateTasks">How many tasks are late.</param>
+/// <param name="LateMilestones">How many milestones are late (ADR-0086).</param>
 /// <param name="CurrentPhase">The first late phase or, without delays, the last phase that has started; null before the start.</param>
 /// <param name="CompletedOn">With every task at 100%, the day the last one was completed.</param>
 /// <param name="Phases">The phases in order: by start, then the ones without items in the order they were created.</param>
@@ -26,6 +28,7 @@ public sealed record ScheduleFigures(
     DateOnly? End,
     int Progress,
     int LateTasks,
+    int LateMilestones,
     SchedulePhase? CurrentPhase,
     DateOnly? CompletedOn,
     IReadOnlyList<PhaseFigures> Phases,
@@ -59,6 +62,7 @@ public sealed record ScheduleFigures(
             all.Count == 0 ? null : all.Max(item => item.End),
             WeightedProgress(tasks),
             tasks.Count(task => task.IsLate(today)),
+            all.Count(item => item.Kind == ScheduleItemKind.Milestone && item.IsLate(today)),
             current?.Phase,
             completed,
             phaseFigures,

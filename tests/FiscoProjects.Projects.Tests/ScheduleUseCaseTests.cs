@@ -6,9 +6,9 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (module side): "Quem vê e quem edita o cronograma", "Fases do cronograma", "Tarefas e marcos",
-// "Responsável da tarefa", "Dependências", "Dependências que empurram" and "Cronograma de um projeto encerrado";
-// membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos" and
-// "Cabeçalho do projeto".
+// "Responsável da tarefa", "Dependências", "Dependências que empurram", "Cronograma de um projeto encerrado",
+// "Progresso das tarefas", "Quem atualiza o progresso" and "Marco atingido"; membros-do-projeto: "Tarefas de quem sai
+// ou passa a leitor"; projetos: "Cronograma na lista de projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLifetime
 {
     private ProjectsDatabase _database = null!;
@@ -82,6 +82,13 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
     private Task<ScheduleResult> RemoveItemAsync(ProjectViewer viewer, Guid itemId) =>
         _database.RunAsync<RemoveScheduleItem, ScheduleResult>(remove => remove.ExecuteAsync(_project, itemId, viewer, Cancellation));
 
+    private Task<ScheduleResult> UpdateProgressAsync(ProjectViewer viewer, Guid itemId, int progress) =>
+        _database.RunAsync<UpdateScheduleItemProgress, ScheduleResult>(update =>
+            update.ExecuteAsync(_project, itemId, progress, viewer, Cancellation));
+
+    private Task<ScheduleResult> SetReachedAsync(ProjectViewer viewer, Guid itemId, bool reached) =>
+        _database.RunAsync<SetMilestoneReached, ScheduleResult>(set => set.ExecuteAsync(_project, itemId, reached, viewer, Cancellation));
+
     private Task<ScheduleView?> GetAsync(ProjectViewer viewer) =>
         _database.RunAsync<GetSchedule, ScheduleView?>(get => get.ExecuteAsync(_project, viewer, Cancellation));
 
@@ -96,6 +103,16 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
     private async Task<Guid> AddTaskAsync(string name, DateOnly start, int duration, params Guid[] after) =>
         (await AddItemAsync(Marina, TaskForm(name, start, duration, null, after))).Id!.Value;
+
+    private async Task<Guid> AddMilestoneAsync(string name, DateOnly day) =>
+        (await AddItemAsync(Marina, Form(_phase, name, day, 0), ScheduleItemKind.Milestone)).Id!.Value;
+
+    private Task<ProjectStatusOutcome> CompleteProjectAsync() =>
+        _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change =>
+            change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation));
+
+    private ProjectViewer ViewerOf(string person) =>
+        new(person switch { "Rafael" => _rafael, "Carla" => _carla, "Diego" => _diego, _ => _lucas }, false);
 
     [Fact(DisplayName = "Gerente edita o cronograma")]
     public async Task Manager_ChangesTheSchedule()
@@ -307,8 +324,7 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
     public async Task ClosedProject_KeepsItsSchedule()
     {
         var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 5);
-        await _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change =>
-            change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation));
+        await CompleteProjectAsync();
 
         (await ChangeItemAsync(Marina, task, TaskForm("Outra", D(10, 13), 1))).Outcome.Should().Be(ScheduleOutcome.Closed);
         (await AddPhaseAsync(Paulo, "Homologação")).Outcome.Should().Be(ScheduleOutcome.Closed);
@@ -346,6 +362,161 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         (await ItemAsync(task)).Item.OwnerId.Should().BeNull();
         (await ItemAsync(other)).Item.OwnerId.Should().Be(_diego);
+    }
+
+    [Fact(DisplayName = "Gerente atualiza qualquer tarefa")]
+    public async Task Manager_UpdatesTheProgressOfAnyTask()
+    {
+        var diegos = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, _diego))).Id!.Value;
+        var nobodys = await AddTaskAsync("Ajustar relatórios", D(10, 26), 3);
+
+        (await UpdateProgressAsync(Marina, diegos, 40)).Outcome.Should().Be(ScheduleOutcome.Done);
+        (await UpdateProgressAsync(Paulo, nobodys, 100)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        (await ItemAsync(diegos)).Item.Progress.Should().Be(40);
+        (await ItemAsync(nobodys)).Item.Should().Match<ScheduleItem>(item => item.Progress == 100 && item.CompletedOn == D(10, 19));
+        (await GetAsync(Marina))!.ProgressUpdatable.Should().BeEquivalentTo([diegos, nobodys]);
+    }
+
+    [Theory(DisplayName = "Responsável atualiza a própria tarefa")]
+    [InlineData("Rafael")]
+    [InlineData("Carla")]
+    [InlineData("Diego")]
+    public async Task Owner_UpdatesTheProgressOfTheirOwnTask(string person)
+    {
+        var viewer = ViewerOf(person);
+        var own = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, viewer.UserId))).Id!.Value;
+        var others = (await AddItemAsync(Marina, TaskForm("Testes integrados", D(10, 26), 3, person == "Diego" ? _carla : _diego))).Id!.Value;
+
+        (await UpdateProgressAsync(viewer, own, 30)).Outcome.Should().Be(ScheduleOutcome.Done);
+        (await UpdateProgressAsync(viewer, others, 30)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+
+        ((await ItemAsync(own)).Item.Progress, (await ItemAsync(others)).Item.Progress).Should().Be((30, 0));
+        (await GetAsync(viewer))!.ProgressUpdatable.Should().Equal(own);
+        (await UpdateProgressAsync(viewer, Guid.CreateVersion7(), 30)).Outcome.Should().Be(ScheduleOutcome.NotFound);
+    }
+
+    [Fact(DisplayName = "Leitor não atualiza o progresso")]
+    public async Task Viewer_DoesNotUpdateTheProgress()
+    {
+        var task = (await AddItemAsync(Marina, Form(_phase, "Integrar NF-e", D(10, 19), 5, _diego, 20))).Id!.Value;
+        var lucas = ViewerOf("Lucas");
+
+        (await UpdateProgressAsync(lucas, task, 50)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await UpdateProgressAsync(new ProjectViewer(_beatriz, false), task, 50)).Outcome.Should().Be(ScheduleOutcome.NotFound);
+
+        (await ItemAsync(task)).Item.Progress.Should().Be(20);
+        (await GetAsync(lucas))!.ProgressUpdatable.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Progresso de um marco")]
+    public async Task Milestone_HasNoProgress()
+    {
+        var milestone = await AddMilestoneAsync("Aceite da configuração", D(10, 30));
+        var task = await AddTaskAsync("Integrar NF-e", D(10, 19), 5);
+
+        (await UpdateProgressAsync(Marina, milestone, 0)).Should().BeEquivalentTo(ScheduleResult.InvalidFields([ScheduleField.Progress]));
+        (await UpdateProgressAsync(Marina, task, 101)).Invalid.Should().Equal(ScheduleField.Progress);
+        (await UpdateProgressAsync(Marina, task, -1)).Invalid.Should().Equal(ScheduleField.Progress);
+
+        (await ItemAsync(task)).Item.Progress.Should().Be(0);
+        (await GetAsync(Marina))!.ProgressUpdatable.Should().Equal(task);
+    }
+
+    [Fact(DisplayName = "Progresso num projeto encerrado")]
+    public async Task ClosedProject_KeepsTheProgress()
+    {
+        var task = (await AddItemAsync(Marina, Form(_phase, "Integrar NF-e", D(10, 19), 5, _diego, 20))).Id!.Value;
+        var milestone = await AddMilestoneAsync("Aceite da configuração", D(10, 30));
+        await CompleteProjectAsync();
+
+        (await UpdateProgressAsync(ViewerOf("Diego"), task, 50)).Outcome.Should().Be(ScheduleOutcome.Closed);
+        (await UpdateProgressAsync(ViewerOf("Carla"), task, 50)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await SetReachedAsync(Marina, milestone, true)).Outcome.Should().Be(ScheduleOutcome.Closed);
+
+        (await ItemAsync(task)).Item.Progress.Should().Be(20);
+        (await ItemAsync(milestone)).Item.ReachedOn.Should().BeNull();
+        (await GetAsync(Marina))!.ProgressUpdatable.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Alterar a tarefa mantém o progresso")]
+    public async Task ChangingTheTask_WithoutTheProgress_KeepsIt()
+    {
+        var task = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, _diego))).Id!.Value;
+
+        (await UpdateProgressAsync(ViewerOf("Diego"), task, 60)).Outcome.Should().Be(ScheduleOutcome.Done);
+        (await ChangeItemAsync(Marina, task, TaskForm("Integrar a NF-e", D(10, 19), 5, _diego) with { Progress = null }))
+            .Outcome.Should().Be(ScheduleOutcome.Done);
+
+        (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item => item.Name == "Integrar a NF-e" && item.Progress == 60);
+    }
+
+    [Fact(DisplayName = "Gerente e responsável mudam a tarefa ao mesmo tempo")]
+    public async Task ManagerAndOwner_ChangeTheTaskAtOnce()
+    {
+        var task = (await AddItemAsync(Marina, TaskForm("Integrar NF-e", D(10, 19), 5, _diego))).Id!.Value;
+
+        var results = await System.Threading.Tasks.Task.WhenAll(
+            ChangeItemAsync(Marina, task, TaskForm("Integrar a NF-e", D(10, 19), 6, _diego) with { Progress = null }),
+            UpdateProgressAsync(ViewerOf("Diego"), task, 60));
+
+        results.Should().OnlyContain(result => result.Outcome == ScheduleOutcome.Done);
+        (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item =>
+            item.Name == "Integrar a NF-e" && item.Duration == 6 && item.Progress == 60);
+    }
+
+    [Fact(DisplayName = "Marcar marco como atingido")]
+    public async Task Manager_MarksTheMilestoneAsReached()
+    {
+        var milestone = await AddMilestoneAsync("Aceite da homologação", D(10, 30));
+
+        (await SetReachedAsync(Marina, milestone, true)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        (await ItemAsync(milestone)).Item.ReachedOn.Should().Be(D(10, 19));
+        (await SetReachedAsync(Paulo, milestone, false)).Outcome.Should().Be(ScheduleOutcome.Done);
+        (await ItemAsync(milestone)).Item.ReachedOn.Should().BeNull();
+    }
+
+    [Theory(DisplayName = "Líder técnico não marca o marco")]
+    [InlineData("Rafael")]
+    [InlineData("Carla")]
+    [InlineData("Diego")]
+    [InlineData("Lucas")]
+    public async Task OtherRoles_DoNotMarkTheMilestone(string person)
+    {
+        var milestone = await AddMilestoneAsync("Aceite da homologação", D(10, 30));
+
+        (await SetReachedAsync(ViewerOf(person), milestone, true)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await SetReachedAsync(new ProjectViewer(_beatriz, false), milestone, true)).Outcome.Should().Be(ScheduleOutcome.NotFound);
+
+        (await ItemAsync(milestone)).Item.ReachedOn.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Atingir uma tarefa")]
+    public async Task Task_IsNotReached()
+    {
+        var task = await AddTaskAsync("Integrar NF-e", D(10, 19), 5);
+
+        (await SetReachedAsync(Marina, task, true)).Should().BeEquivalentTo(ScheduleResult.InvalidFields([ScheduleField.Reached]));
+        (await SetReachedAsync(Marina, Guid.CreateVersion7(), true)).Outcome.Should().Be(ScheduleOutcome.NotFound);
+
+        (await ItemAsync(task)).Item.ReachedOn.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Marco atrasado na lista")]
+    public async Task List_CountsTheLateMilestones()
+    {
+        var late = await AddTaskAsync("Validar cadastro", D(10, 13), 3);
+        await UpdateProgressAsync(Marina, late, 80);
+        await AddMilestoneAsync("Aceite da configuração", D(10, 16));
+        var reached = await AddMilestoneAsync("Aceite do levantamento", D(10, 9));
+        await SetReachedAsync(Marina, reached, true);
+
+        var page = await _database.RunAsync<ListProjects, ProjectListPage>(list => list.ExecuteAsync(
+            new ProjectListQuery(null, null, ProjectSituation.Active, false, 1, 25), Marina, Cancellation));
+
+        var erp = page.Items.Single(item => item.Code == "ERP-FIN").Schedule!;
+        (erp.LateTasks, erp.LateMilestones).Should().Be((1, 1));
     }
 
     [Fact(DisplayName = "Cronograma na lista")]

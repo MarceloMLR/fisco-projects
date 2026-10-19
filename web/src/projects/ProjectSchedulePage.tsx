@@ -7,13 +7,11 @@ import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import type { TFunction } from 'i18next';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   api,
   type Project,
-  projectProblems,
   type Schedule,
   type ScheduleItem,
   type ScheduleItemKind,
@@ -30,7 +28,6 @@ import { ProgressBar } from '../components/ProgressBar';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { formatDayText } from '../format/dates';
 import { theme } from '../theme/theme';
-import { problemType } from './projectForm';
 import { useProjectOutlet } from './projectOutlet';
 import {
   findItem,
@@ -41,8 +38,10 @@ import {
   scheduleRows,
 } from './schedule';
 import { ScheduleItemFields } from './ScheduleItemFields';
+import { MilestoneState, TaskProgress } from './ScheduleItemProgress';
 import {
   bodyOf,
+  failureOf,
   newItemValues,
   scheduleItemSchema,
   type ScheduleItemValues,
@@ -50,6 +49,7 @@ import {
   valuesOfItem,
 } from './scheduleItemValues';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
+import { LateCounts, MilestoneStatus } from './ScheduleStatus';
 
 /** Rows of a page of the list; the free Data Grid shows up to 100 (ADR-0050). */
 const pageSize = 100;
@@ -60,6 +60,7 @@ const emptySchedule: Schedule = {
   end: null,
   progress: 0,
   lateTasks: 0,
+  lateMilestones: 0,
   phases: [],
 };
 
@@ -71,9 +72,10 @@ type PhaseDialogState = { phase?: SchedulePhase } | undefined;
 /**
  * The tab Cronograma of a project, with the Lista (ADR-0071; the Linha do tempo comes with Cronograma-3): the phases
  * as group rows with their dates and progress, and under each one its tasks and milestones in order, with the start,
- * the end, the duration in business days, the owner, the progress and what each depends on. A late task says so by
- * icon, color and text (ADR-0065). Who edits the schedule (ADR-0043) includes phases and tasks and changes them; the
- * details of a task open in a drawer (ADR-0081). Every date comes computed from the API (ADR-0051).
+ * the end, the duration in business days, the owner, the progress (for a milestone, its state) and what each depends
+ * on. A late task or milestone says so by icon, color and text (ADR-0065, ADR-0086). Who edits the schedule (ADR-0043)
+ * includes phases and tasks and changes them; the details of a task open in a drawer (ADR-0081), where the people in
+ * charge of a task update its progress. Every date comes computed from the API (ADR-0051).
  */
 export function ProjectSchedulePage() {
   const { t } = useTranslation();
@@ -145,7 +147,9 @@ export function ProjectSchedulePage() {
               : row.item.kind === 'Milestone'
                 ? null
                 : row.item.end;
-          const late = row.kind === 'phase' ? row.phase.late : row.item.late;
+          // A milestone says it is late in the column of its state.
+          const late =
+            row.kind === 'phase' ? row.phase.late : row.item.kind === 'Task' && row.item.late;
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               {end !== null && <span>{formatDayText(end)}</span>}
@@ -203,9 +207,7 @@ export function ProjectSchedulePage() {
             );
           }
           return row.item.kind === 'Milestone' ? (
-            <Box component="span" sx={secondarySx}>
-              {t('projects.schedule.none')}
-            </Box>
+            <MilestoneStatus item={row.item} />
           ) : (
             <ProgressBar
               value={row.item.progress}
@@ -337,11 +339,7 @@ export function ProjectSchedulePage() {
                     width={180}
                   />
                 </Box>
-                {schedule.lateTasks > 0 && (
-                  <DueDate state="overdue">
-                    {t('projects.schedule.lateTasks', { count: schedule.lateTasks })}
-                  </DueDate>
-                )}
+                <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
               </Box>
             )}
             {desktop && <Box sx={{ flex: 1 }} />}
@@ -386,8 +384,9 @@ export function ProjectSchedulePage() {
         {chosen !== undefined &&
           (canEdit ? (
             <ItemEditor
-              // A saved change comes back with the dates the API computed, and the form starts again from them.
-              key={`${chosen.item.id}:${JSON.stringify(chosen.item)}`}
+              // A saved change comes back with the dates the API computed, and the form starts again from them; a
+              // change of the progress or of the state of a milestone leaves what is being typed as it is.
+              key={`${chosen.item.id}:${JSON.stringify(valuesOfItem(chosen.item))}:${chosen.item.end}`}
               project={project}
               schedule={schedule}
               item={chosen.item}
@@ -398,23 +397,22 @@ export function ProjectSchedulePage() {
               }}
             />
           ) : (
-            <ItemDetails item={chosen.item} phase={chosen.phase} schedule={schedule} />
+            <ItemDetails
+              project={project}
+              item={chosen.item}
+              phase={chosen.phase}
+              schedule={schedule}
+              onDone={notify}
+            />
           ))}
       </DetailsDrawer>
     </Box>
   );
 }
 
-/** The message of a refused change that is no field's: the project was closed meanwhile, or another failure. */
-function failureOf(problem: unknown, status: number, t: TFunction) {
-  return status === 409 && problemType(problem) === projectProblems.closed
-    ? t('projects.schedule.messages.closed')
-    : t('projects.schedule.messages.failed');
-}
-
 /**
  * "Nova tarefa": a task or a milestone, its name, phase and start, and, for a task, the duration and the owner, and
- * what it depends on (ADR-0018, ADR-0019). It starts at 0%.
+ * what it depends on (ADR-0018, ADR-0019). A task starts at 0%.
  */
 function NewItemDialog({
   project,
@@ -446,7 +444,7 @@ function NewItemDialog({
     try {
       const { error, response } = await api.POST('/api/projects/{id}/schedule/items', {
         params: { path: { id: project.id } },
-        body: { kind: values.kind, ...bodyOf(values) },
+        body: { kind: values.kind, ...bodyOf(values), progress: 0 },
       });
       if (response.ok) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
@@ -501,7 +499,6 @@ function NewItemDialog({
           kind={kind}
           schedule={schedule}
           project={project}
-          withProgress={false}
         />
         {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
       </Box>
@@ -543,7 +540,7 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
       >
         {item.name}
       </Box>
-      {item.late && (
+      {item.kind === 'Task' && item.late && (
         <Box sx={{ marginTop: 'var(--space-1)' }}>
           <DueDate state="overdue">{t('projects.schedule.late')}</DueDate>
         </Box>
@@ -553,9 +550,10 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
 }
 
 /**
- * The details of a task or milestone for who edits the schedule: the same fields as "Nova tarefa", with the progress
- * and the end the API computed, "Salvar", which says how many items after it were pushed (ADR-0019), and the removal,
- * with confirmation.
+ * The details of a task or milestone for who edits the schedule: the progress of the task or the state of the
+ * milestone, each saved by its own action (ADR-0086); the same fields as "Nova tarefa", with the end the API computed;
+ * "Salvar", which says how many items after it were pushed (ADR-0019), and keeps the progress as it is; and the
+ * removal, with confirmation.
  */
 function ItemEditor({
   project,
@@ -595,7 +593,8 @@ function ItemEditor({
         '/api/projects/{id}/schedule/items/{itemId}',
         {
           params: { path: { id: project.id, itemId: item.id } },
-          body: bodyOf(values),
+          // Without the progress, which stays as it is (ADR-0086).
+          body: { ...bodyOf(values), progress: null },
         },
       );
       if (response.ok) {
@@ -639,7 +638,13 @@ function ItemEditor({
   };
 
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <ItemHeading item={item} phase={phaseName} />
+      {item.kind === 'Task' ? (
+        <TaskProgress project={project} item={item} onDone={onSaved} />
+      ) : (
+        <MilestoneState project={project} item={item} canEdit onDone={onSaved} />
+      )}
       <Box
         component="form"
         noValidate
@@ -649,7 +654,6 @@ function ItemEditor({
         }}
         sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
       >
-        <ItemHeading item={item} phase={phaseName} />
         <ScheduleItemFields
           control={control}
           errors={errors}
@@ -658,7 +662,6 @@ function ItemEditor({
           project={project}
           itemId={item.id}
           endsOn={item.kind === 'Task' ? item.end : undefined}
-          withProgress
         />
         {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -711,19 +714,26 @@ function ItemEditor({
       >
         {t('projects.schedule.removeItem.text', { name: item.name })}
       </Dialog>
-    </>
+    </Box>
   );
 }
 
-/** The details of a task or milestone for who only sees the schedule (ADR-0043). */
+/**
+ * The details of a task or milestone for who does not edit the schedule (ADR-0043): read only, but for the progress of
+ * a task the person is in charge of.
+ */
 function ItemDetails({
+  project,
   item,
   phase,
   schedule,
+  onDone,
 }: {
+  project: Project;
   item: ScheduleItem;
   phase: SchedulePhase;
   schedule: Schedule;
+  onDone: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const names = predecessorNames(item, schedule);
@@ -734,6 +744,11 @@ function ItemDetails({
       sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
     >
       <ItemHeading item={item} phase={phase.name} />
+      {task ? (
+        <TaskProgress project={project} item={item} onDone={onDone} />
+      ) : (
+        <MilestoneState project={project} item={item} canEdit={false} onDone={onDone} />
+      )}
       <Box
         component="dl"
         sx={{
@@ -757,20 +772,6 @@ function ItemDetails({
             <dd>{t('projects.schedule.duration', { count: item.duration })}</dd>
             <dt>{t('projects.schedule.details.owner')}</dt>
             <dd>{item.owner?.name ?? t('projects.schedule.noOwner')}</dd>
-            <dt>{t('projects.schedule.details.progress')}</dt>
-            <dd>
-              <ProgressBar
-                value={item.progress}
-                label={t('projects.schedule.itemProgress', { name: item.name })}
-                width={200}
-              />
-            </dd>
-            {item.completedOn !== null && (
-              <>
-                <dt>{t('projects.schedule.details.completedOn')}</dt>
-                <dd>{formatDayText(item.completedOn)}</dd>
-              </>
-            )}
           </>
         )}
         <dt>{t('projects.schedule.details.dependsOn')}</dt>

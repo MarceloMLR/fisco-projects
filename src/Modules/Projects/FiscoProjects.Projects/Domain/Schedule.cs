@@ -15,7 +15,8 @@ public sealed class ScheduleCycleException() : InvalidOperationException("The de
 
 /// <summary>
 /// What a task or a milestone is asked to be: the phase, the name, the start, the duration (zero for a milestone), the
-/// owner (none for a milestone), the progress (zero for a milestone) and the items it depends on.
+/// owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a new item) and the
+/// items it depends on.
 /// </summary>
 public sealed record ScheduleItemPlan(
     Guid PhaseId,
@@ -23,7 +24,7 @@ public sealed record ScheduleItemPlan(
     DateOnly Start,
     int Duration,
     Guid? OwnerId,
-    int Progress,
+    int? Progress,
     IReadOnlyCollection<Guid> PredecessorIds);
 
 /// <summary>
@@ -189,6 +190,48 @@ public sealed class Schedule : Entity
         return Push(item, after, days);
     }
 
+    /// <summary>
+    /// Updates the progress of a task (ADR-0020): at 100% it keeps today as the day it was completed, below it the day
+    /// goes away. False when the item is not in the schedule.
+    /// </summary>
+    /// <exception cref="ArgumentException">The item is a milestone, or the progress is not from 0 to 100.</exception>
+    public bool UpdateProgress(Guid itemId, int progress, DateOnly today)
+    {
+        if (ItemOf(itemId) is not { } item)
+        {
+            return false;
+        }
+
+        if (item.Kind != ScheduleItemKind.Task || !IsValidProgress(item.Kind, progress))
+        {
+            throw new ArgumentException("Only a task has a progress, from 0 to 100.", nameof(progress));
+        }
+
+        item.SetProgress(progress, today);
+        return true;
+    }
+
+    /// <summary>
+    /// Marks a milestone as reached, keeping the day it was first reached, or as not reached, without the day (ADR-0020,
+    /// ADR-0086). False when the item is not in the schedule.
+    /// </summary>
+    /// <exception cref="ArgumentException">The item is a task.</exception>
+    public bool SetReached(Guid itemId, bool reached, DateOnly today)
+    {
+        if (ItemOf(itemId) is not { } item)
+        {
+            return false;
+        }
+
+        if (item.Kind != ScheduleItemKind.Milestone)
+        {
+            throw new ArgumentException("Only a milestone is reached.", nameof(itemId));
+        }
+
+        item.SetReached(reached, today);
+        return true;
+    }
+
     /// <summary>Removes a task or milestone and its dependencies; nothing else moves. False when it is not in the schedule.</summary>
     public bool RemoveItem(Guid itemId)
     {
@@ -245,14 +288,18 @@ public sealed class Schedule : Entity
             throw new ArgumentException("The phase is not in the schedule.", nameof(plan));
         }
 
-        if (!IsValidDay(plan.Start) || !IsValidDuration(item.Kind, plan.Duration) || !IsValidProgress(item.Kind, plan.Progress)
+        if (!IsValidDay(plan.Start) || !IsValidDuration(item.Kind, plan.Duration)
+            || (plan.Progress is { } progress && !IsValidProgress(item.Kind, progress))
             || (item.Kind == ScheduleItemKind.Milestone && plan.OwnerId is not null))
         {
             throw new ArgumentException("The plan is not valid for the kind of item.", nameof(plan));
         }
 
         item.Set(plan.PhaseId, NameOrThrow(ValidItemName(plan.Name), plan.Name), plan.Duration, plan.OwnerId);
-        item.SetProgress(plan.Progress, today);
+        if (plan.Progress is { } asked)
+        {
+            item.SetProgress(asked, today);
+        }
     }
 
     /// <summary>The items the plan depends on, once each, all in the schedule and none the item itself.</summary>
@@ -368,7 +415,8 @@ public sealed class SchedulePhase : Entity
 
 /// <summary>
 /// A task or a milestone of a schedule. The end is computed from the start and the duration in business days; a
-/// milestone ends on its start. A task completed (100%) keeps the day it was completed (ADR-0020).
+/// milestone ends on its start. A task completed (100%) keeps the day it was completed, and a milestone reached, the day
+/// it was reached (ADR-0020, ADR-0086).
 /// </summary>
 public sealed class ScheduleItem : Entity
 {
@@ -408,8 +456,15 @@ public sealed class ScheduleItem : Entity
     /// <summary>The day the task reached 100%, in the time zone of the installation; null below 100%.</summary>
     public DateOnly? CompletedOn { get; private set; }
 
-    /// <summary>A task is late when its end passed and it has not reached 100% (ADR-0020).</summary>
-    public bool IsLate(DateOnly today) => Kind == ScheduleItemKind.Task && Progress < 100 && End < today;
+    /// <summary>The day the milestone was reached, in the time zone of the installation; null while it is not, and for a task.</summary>
+    public DateOnly? ReachedOn { get; private set; }
+
+    /// <summary>
+    /// A task is late when its end passed and it has not reached 100% (ADR-0020); a milestone, when its day passed and it
+    /// was not reached (ADR-0086).
+    /// </summary>
+    public bool IsLate(DateOnly today) =>
+        End < today && (Kind == ScheduleItemKind.Task ? Progress < 100 : ReachedOn is null);
 
     internal void Set(Guid phaseId, string name, int duration, Guid? ownerId)
     {
@@ -441,6 +496,8 @@ public sealed class ScheduleItem : Entity
     }
 
     internal void Unassign() => OwnerId = null;
+
+    internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
 }
 
 /// <summary>An item that starts only after another ends (ADR-0019).</summary>

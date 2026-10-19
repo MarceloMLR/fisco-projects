@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import type { UseFormSetError } from 'react-hook-form';
 import { z } from 'zod';
 import { projectProblems, type ScheduleItem } from '../api/client';
@@ -25,8 +26,9 @@ export const isScheduleItemError = (message: string | undefined): message is Sch
 const wholeNumber = /^\d{1,4}$/;
 
 /**
- * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days and goes
- * from 0 to 100%; a milestone has neither (ADR-0018, ADR-0020). The fields are kept as typed.
+ * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
+ * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). The fields are kept
+ * as typed.
  */
 export const scheduleItemSchema = z
   .object({
@@ -42,7 +44,6 @@ export const scheduleItemSchema = z
     }),
     duration: z.string(),
     ownerId: z.string(),
-    progress: z.string(),
     predecessorIds: z.array(z.string()),
   })
   .superRefine((values, context) => {
@@ -57,17 +58,21 @@ export const scheduleItemSchema = z
         message: scheduleItemErrors.durationInvalid,
       });
     }
-    const progress = values.progress.trim();
-    if (!wholeNumber.test(progress) || Number(progress) > 100) {
-      context.addIssue({
-        code: 'custom',
-        path: ['progress'],
-        message: scheduleItemErrors.progressInvalid,
-      });
-    }
   });
 
 export type ScheduleItemValues = z.input<typeof scheduleItemSchema>;
+
+/** The progress of a task as typed in its dialog: a whole number from 0 to 100 (ADR-0020). */
+export const progressSchema = z.object({
+  progress: z
+    .string()
+    .trim()
+    .refine((value) => wholeNumber.test(value) && Number(value) <= 100, {
+      error: scheduleItemErrors.progressInvalid,
+    }),
+});
+
+export type ProgressValues = z.input<typeof progressSchema>;
 
 /** The value of the owner field of a task without an owner (an empty value would show an empty select). */
 export const noOwner = 'none';
@@ -81,7 +86,6 @@ export function newItemValues(phaseId: string): ScheduleItemValues {
     start: '',
     duration: '1',
     ownerId: noOwner,
-    progress: '0',
     predecessorIds: [],
   };
 }
@@ -95,12 +99,14 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     start: formatDayText(item.start),
     duration: String(item.duration),
     ownerId: item.owner?.id ?? noOwner,
-    progress: String(item.progress),
     predecessorIds: item.predecessorIds,
   };
 }
 
-/** The body of a change of a task or milestone, as the API takes it. */
+/**
+ * The fields of a task or milestone as the API takes them, without the progress: a new item starts at 0%, and a
+ * change keeps the progress as it is (ADR-0086).
+ */
 export function bodyOf(values: ScheduleItemValues) {
   const task = values.kind === 'Task';
   return {
@@ -109,7 +115,6 @@ export function bodyOf(values: ScheduleItemValues) {
     start: parseTypedDay(values.start) ?? '',
     duration: task ? Number(values.duration.trim()) : 0,
     ownerId: task && values.ownerId !== noOwner ? values.ownerId : null,
-    progress: task ? Number(values.progress.trim()) : 0,
     predecessorIds: values.predecessorIds,
   };
 }
@@ -119,7 +124,6 @@ const apiFields = {
   phaseId: 'phaseId',
   start: 'start',
   duration: 'duration',
-  progress: 'progress',
   ownerId: 'ownerId',
   predecessorIds: 'predecessorIds',
 } as const;
@@ -129,7 +133,6 @@ const fieldErrors = {
   phaseId: scheduleItemErrors.phaseRequired,
   start: scheduleItemErrors.startInvalid,
   duration: scheduleItemErrors.durationInvalid,
-  progress: scheduleItemErrors.progressInvalid,
   ownerId: scheduleItemErrors.ownerInvalid,
   predecessorIds: scheduleItemErrors.predecessorsInvalid,
 } as const;
@@ -150,4 +153,11 @@ export function showRefusal(problem: unknown, setError: UseFormSetError<Schedule
     setError(name, { message: fieldErrors[name] });
   }
   return refused.length > 0;
+}
+
+/** The message of a refused change that is no field's: the project was closed meanwhile, or another failure. */
+export function failureOf(problem: unknown, status: number, t: TFunction) {
+  return status === 409 && problemType(problem) === projectProblems.closed
+    ? t('projects.schedule.messages.closed')
+    : t('projects.schedule.messages.failed');
 }

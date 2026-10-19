@@ -12,6 +12,7 @@ import {
   emptySchedule,
   problem,
   projectsPage,
+  scheduleSeenBy,
   server,
   signedInAs,
 } from '../test/server';
@@ -124,6 +125,39 @@ async function chooseItem(name: string) {
 
 const days = (count: number) => text.duration_other.replace('{{count}}', String(count));
 
+/** The bodies the screen sent to the progress of the tasks; the simulated API saves them on the schedule. */
+const progressSent: unknown[] = [];
+
+/** The simulated API of the progress of a task: 100% keeps 16/10/2026 as the day it was completed. */
+function answerProgress() {
+  progressSent.length = 0;
+  server.use(
+    http.put('/api/projects/:id/schedule/items/:itemId/progress', async ({ request, params }) => {
+      const { progress } = (await request.json()) as { progress: number };
+      progressSent.push({ id: params.itemId, progress });
+      const item = schedule.phases
+        .flatMap((phase) => phase.items)
+        .find((one) => one.id === params.itemId);
+      if (item !== undefined) {
+        Object.assign(item, {
+          progress,
+          completedOn: progress === 100 ? '2026-10-16' : null,
+          late: progress < 100 && item.end < '2026-10-16',
+        });
+      }
+      schedule = { ...schedule };
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+}
+
+async function closeDrawer(drawer: HTMLElement) {
+  fireEvent.click(within(drawer).getByRole('button', { name: ptBR.details.close }));
+  await waitFor(() => {
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+  });
+}
+
 // Spec: cronograma, requirement "Aba Cronograma".
 describe('Aba Cronograma', () => {
   it('Cronograma pela tela', async () => {
@@ -167,7 +201,7 @@ describe('Aba Cronograma', () => {
       color: 'var(--status-danger-text)',
     });
     expect(cellsOf('Integrar emissão de NF-e')[4]).toBe(text.noOwner);
-    // The milestone: its flag, its day, and no end, owner or progress of its own.
+    // The milestone: its flag, its day, its state, and no end or owner of its own.
     const milestone = rowOf('Aceite da homologação');
     expect(within(milestone).getByLabelText(text.kinds.Milestone)).toBeInTheDocument();
     expect(cellsOf('Aceite da homologação')).toEqual([
@@ -176,7 +210,7 @@ describe('Aba Cronograma', () => {
       '',
       text.kinds.Milestone,
       '',
-      text.none,
+      text.milestone.pending,
       'Testes com a equipe do cliente',
     ]);
     // The summary above the list and the trail.
@@ -196,6 +230,47 @@ describe('Aba Cronograma', () => {
       'true',
     );
     expect(screen.getByText('4 fases · 8 tarefas e marcos')).toBeInTheDocument();
+  });
+
+  it('Estados do marco pela tela', async () => {
+    const [survey] = schedule.phases;
+    if (survey === undefined) {
+      throw new Error('No Levantamento.');
+    }
+    const milestone = (name: string, day: string, more: Partial<ScheduleItem>): ScheduleItem => ({
+      ...itemNamed('Aceite da homologação'),
+      id: `0199f5a2-7c1e-7d40-9a1b-6000000000${day.slice(-2)}`,
+      phaseId: survey.id,
+      name,
+      start: day,
+      end: day,
+      predecessorIds: [],
+      ...more,
+    });
+    survey.items = [
+      ...survey.items.slice(0, 2),
+      milestone('Processos mapeados', '2026-10-09', { reachedOn: '2026-10-09' }),
+      ...survey.items.slice(2),
+      milestone('Aceite do levantamento', '2026-10-15', { late: true }),
+    ];
+    schedule = { ...schedule, lateMilestones: 1 };
+    await openSchedule();
+
+    const state = (name: string) => cellsOf(name)[5];
+    expect(state('Processos mapeados')).toBe(text.milestone.reached.replace('{{day}}', '09/10'));
+    expect(state('Aceite da homologação')).toBe(text.milestone.pending);
+    expect(state('Aceite do levantamento')).toBe(text.milestone.late);
+    // Late by icon, color and text (ADR-0065), in the column of its state and not as "Atrasada".
+    const late = within(rowOf('Aceite do levantamento')).getByText(text.milestone.late);
+    expect(late).toHaveStyle({ color: 'var(--status-danger-text)' });
+    expect(cellsOf('Aceite do levantamento')[2]).toBe('');
+    expect(
+      within(rowOf('Processos mapeados')).getByText(
+        text.milestone.reached.replace('{{day}}', '09/10'),
+      ),
+    ).toHaveStyle({ color: 'var(--status-success-text)' });
+    expect(screen.getByText(text.lateMilestones_one.replace('{{count}}', '1'))).toBeVisible();
+    expect(screen.getByText(text.lateTasks_one.replace('{{count}}', '1'))).toBeVisible();
   });
 
   it('Cronograma vazio', async () => {
@@ -261,7 +336,9 @@ describe('Editar o cronograma pela tela', () => {
             duration: 3,
             progress: 0,
             completedOn: null,
+            reachedOn: null,
             late: false,
+            canUpdateProgress: true,
             owner: { id: demoPeople.rafael.id, name: demoPeople.rafael.name },
             predecessorIds: [itemNamed('Mapear processos fiscais').id],
           },
@@ -426,7 +503,8 @@ describe('Editar o cronograma pela tela', () => {
         start: '2026-10-06',
         duration: 5,
         ownerId: demoPeople.rafael.id,
-        progress: 100,
+        // The progress stays as it is: it changes by its own action.
+        progress: null,
         predecessorIds: [itemNamed('Reunião de abertura').id],
       },
     ]);
@@ -541,5 +619,179 @@ describe('Editar o cronograma pela tela', () => {
       within(drawer).queryByRole('button', { name: text.form.remove.Task }),
     ).not.toBeInTheDocument();
     expect(within(drawer).queryByRole('textbox')).not.toBeInTheDocument();
+  });
+});
+
+// Spec: cronograma, requirement "Progresso pela tela".
+describe('Progresso pela tela', () => {
+  beforeEach(() => {
+    answerProgress();
+  });
+
+  it('Iniciar pela tela', async () => {
+    // Marina is in charge of Testes integrados, at 0%, and does not edit the schedule.
+    permissions = { canEditSchedule: false };
+    schedule = scheduleSeenBy(schedule, demoPeople.marina.id);
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    expect(within(drawer).queryByRole('button', { name: text.progressActions.update })).toBeNull();
+    fireEvent.click(within(drawer).getByRole('button', { name: text.progressActions.start }));
+    const dialog = await screen.findByRole('dialog', { name: text.progressDialog.startTitle });
+    expect(within(dialog).getByLabelText(text.form.progress)).toHaveValue('');
+    fireEvent.change(within(dialog).getByLabelText(text.form.progress), {
+      target: { value: '30' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.form.save }));
+
+    expect(
+      await screen.findByText(
+        text.messages.progressUpdated
+          .replace('{{name}}', 'Testes integrados')
+          .replace('{{progress}}', '30'),
+      ),
+    ).toBeInTheDocument();
+    expect(progressSent).toEqual([{ id: itemNamed('Testes integrados').id, progress: 30 }]);
+    await waitFor(() => {
+      expect(
+        within(drawer).getByRole('progressbar', {
+          name: text.itemProgress.replace('{{name}}', 'Testes integrados'),
+        }),
+      ).toHaveAttribute('aria-valuenow', '30');
+    });
+    expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
+    await closeDrawer(drawer);
+    expect(cellsOf('Testes integrados')[5]).toBe('30%');
+  });
+
+  it('Atualizar progresso pela tela', async () => {
+    await openSchedule();
+
+    const drawer = await chooseItem('Integrar emissão de NF-e');
+    // The form of the task has no progress: it changes by its own action.
+    expect(within(drawer).queryByLabelText(text.form.progress)).not.toBeInTheDocument();
+    fireEvent.click(within(drawer).getByRole('button', { name: text.progressActions.update }));
+    const dialog = await screen.findByRole('dialog', { name: text.progressDialog.updateTitle });
+    const field = within(dialog).getByLabelText(text.form.progress);
+    expect(field).toHaveValue('20');
+    fireEvent.change(field, { target: { value: '150' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.form.save }));
+    expect(await within(dialog).findByText(text.errors.progressInvalid)).toBeVisible();
+    fireEvent.change(field, { target: { value: '45' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.form.save }));
+
+    expect(
+      await screen.findByText(
+        text.messages.progressUpdated
+          .replace('{{name}}', 'Integrar emissão de NF-e')
+          .replace('{{progress}}', '45'),
+      ),
+    ).toBeInTheDocument();
+    expect(progressSent).toEqual([{ id: itemNamed('Integrar emissão de NF-e').id, progress: 45 }]);
+  });
+
+  it('Concluir pela tela', async () => {
+    // Rafael is in charge of Validar cadastro de produtos, at 80% and late.
+    permissions = { canEditSchedule: false };
+    schedule = scheduleSeenBy(schedule, demoPeople.rafael.id);
+    await openSchedule();
+
+    const drawer = await chooseItem('Validar cadastro de produtos');
+    fireEvent.click(within(drawer).getByRole('button', { name: text.progressActions.complete }));
+
+    expect(
+      await screen.findByText(
+        text.messages.completed.replace('{{name}}', 'Validar cadastro de produtos'),
+      ),
+    ).toBeInTheDocument();
+    expect(progressSent).toEqual([
+      { id: itemNamed('Validar cadastro de produtos').id, progress: 100 },
+    ]);
+    expect(
+      await within(drawer).findByText(text.completedOn.replace('{{day}}', '16/10/2026')),
+    ).toBeVisible();
+    expect(
+      within(drawer).queryByRole('button', { name: text.progressActions.complete }),
+    ).not.toBeInTheDocument();
+    expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
+    expect(within(drawer).queryByText(text.late)).not.toBeInTheDocument();
+  });
+
+  it('Progresso sem permissão pela tela', async () => {
+    // Carla, a contributor, is in charge of none of the tasks.
+    permissions = { canEditSchedule: false };
+    schedule = scheduleSeenBy(schedule, demoPeople.carla.id);
+    await openSchedule();
+
+    const drawer = await chooseItem('Validar cadastro de produtos');
+
+    expect(
+      within(drawer).getByRole('progressbar', {
+        name: text.itemProgress.replace('{{name}}', 'Validar cadastro de produtos'),
+      }),
+    ).toHaveAttribute('aria-valuenow', '80');
+    for (const action of Object.values(text.progressActions)) {
+      expect(within(drawer).queryByRole('button', { name: action })).not.toBeInTheDocument();
+    }
+    await closeDrawer(drawer);
+    const milestone = await chooseItem('Aceite da homologação');
+    expect(within(milestone).getByText(text.milestone.pending)).toBeVisible();
+    expect(
+      within(milestone).queryByRole('button', { name: text.milestoneActions.markReached }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Progresso num projeto encerrado pela tela', async () => {
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId/progress', () =>
+        problem(409, projectProblems.closed),
+      ),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Integrar emissão de NF-e');
+    fireEvent.click(within(drawer).getByRole('button', { name: text.progressActions.complete }));
+
+    expect(await within(drawer).findByText(text.messages.closed)).toBeVisible();
+  });
+});
+
+// Spec: cronograma, requirement "Marco atingido pela tela".
+describe('Marco atingido pela tela', () => {
+  it('Marcar marco pela tela', async () => {
+    const sent: unknown[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId/reached', async ({ request, params }) => {
+        const { reached } = (await request.json()) as { reached: boolean };
+        sent.push({ id: params.itemId, reached });
+        Object.assign(itemNamed('Aceite da homologação'), {
+          reachedOn: reached ? '2026-10-16' : null,
+        });
+        schedule = { ...schedule };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Aceite da homologação');
+    expect(within(drawer).getByText(text.milestone.pending)).toBeVisible();
+    fireEvent.click(
+      within(drawer).getByRole('button', { name: text.milestoneActions.markReached }),
+    );
+
+    expect(
+      await screen.findByText(text.messages.reached.replace('{{name}}', 'Aceite da homologação')),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([{ id: itemNamed('Aceite da homologação').id, reached: true }]);
+    expect(
+      await within(drawer).findByRole('button', { name: text.milestoneActions.unmark }),
+    ).toBeVisible();
+    expect(
+      within(drawer).getByText(text.milestone.reached.replace('{{day}}', '16/10/2026')),
+    ).toBeVisible();
+    await closeDrawer(drawer);
+    expect(cellsOf('Aceite da homologação')[5]).toBe(
+      text.milestone.reached.replace('{{day}}', '16/10'),
+    );
   });
 });

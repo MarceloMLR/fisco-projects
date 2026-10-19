@@ -7,8 +7,9 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Api.Tests;
 
 // Spec: cronograma (API side): "Quem vê e quem edita o cronograma", "Tarefas e marcos", "Dependências", "Dependências
-// que empurram", "Cronograma de um projeto encerrado" and "Mudanças do cronograma na auditoria"; membros-do-projeto:
-// "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos" and "Cabeçalho do projeto".
+// que empurram", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria", "Progresso das tarefas",
+// "Quem atualiza o progresso", "Marco atingido" and "Marco atrasado"; membros-do-projeto: "Tarefas de quem sai ou passa
+// a leitor"; projetos: "Cronograma na lista de projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
@@ -51,6 +52,10 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             Item(scene.Phase, "Configurar plano de contas", "2026-10-14", 3, kind: "Task")), HttpStatusCode.Created),
         new("Change a task", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
             Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 6, progress: 50)), HttpStatusCode.OK),
+        new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
+            HttpStatusCode.NoContent),
+        new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
+            HttpStatusCode.NoContent),
         new("Remove a milestone", (client, scene) => SendAsync(client, HttpMethod.Delete, $"{scene.Path}/items/{scene.Milestone}"),
             HttpStatusCode.NoContent),
         new("Remove a phase", (client, scene) => SendAsync(client, HttpMethod.Delete, $"{scene.Path}/phases/{scene.EmptyPhase}"),
@@ -82,6 +87,166 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     [Fact(DisplayName = "Cronograma sem sessão")]
     public Task WithoutASession_NothingIsReadNorChanged() => AssertRowAsync(scene => Task.FromResult(scene.App.NewClient()), _ => HttpStatusCode.Unauthorized);
 
+    [Fact(DisplayName = "Gerente atualiza qualquer tarefa")]
+    public async Task Manager_UpdatesTheProgressOfAnyTask()
+    {
+        var scene = await StartAsync(carlasRole: "Developer");
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var carlas = await AddTaskAsync(scene, "Integrar NF-e", scene.Carla);
+
+        (await ProgressAsync(marina, scene, carlas, 40)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProgressAsync(marina, scene, scene.Task, 100)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await ItemAsync(scene, carlas)).GetProperty("progress").GetInt32().Should().Be(40);
+        var task = await ItemAsync(scene, scene.Task);
+        (task.GetProperty("progress").GetInt32(), task.GetProperty("completedOn").GetString()).Should().Be((100, "2026-10-19"));
+    }
+
+    [Theory(DisplayName = "Responsável atualiza a própria tarefa")]
+    [InlineData("TechLead")]
+    [InlineData("Contributor")]
+    [InlineData("Developer")]
+    public async Task Owner_UpdatesTheProgressOfTheirOwnTask(string role)
+    {
+        var scene = await StartAsync(carlasRole: role == "TechLead" ? "Viewer" : role);
+        await using var app = scene.App;
+        var person = role == "TechLead" ? scene.Rafael : scene.Carla;
+        using var client = await app.SignInAsync(person);
+        var own = await AddTaskAsync(scene, "Integrar NF-e", person);
+        var others = await AddTaskAsync(scene, "Ajustar relatórios", scene.Marina);
+
+        (await ProgressAsync(client, scene, own, 30)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProgressAsync(client, scene, others, 30)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        var schedule = await client.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        var items = schedule.GetProperty("phases")[0].GetProperty("items").EnumerateArray().ToList();
+        items.Where(item => item.GetProperty("canUpdateProgress").GetBoolean()).Select(item => item.GetProperty("id").GetGuid())
+            .Should().Equal(own);
+        ((await ItemAsync(scene, own)).GetProperty("progress").GetInt32(), (await ItemAsync(scene, others)).GetProperty("progress").GetInt32())
+            .Should().Be((30, 0));
+    }
+
+    [Fact(DisplayName = "Leitor não atualiza o progresso")]
+    public async Task Viewer_DoesNotUpdateTheProgress()
+    {
+        var scene = await StartAsync(carlasRole: "Viewer");
+        await using var app = scene.App;
+        using var carla = await app.SignInAsync(scene.Carla);
+        var before = await ScheduleOfAsync(scene);
+
+        (await ProgressAsync(carla, scene, scene.Task, 30)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+    }
+
+    [Fact(DisplayName = "Progresso de um marco")]
+    public async Task ProgressOfAMilestone_IsABadRequest()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        var milestone = await ProgressAsync(scene.Admin, scene, scene.Milestone, 50);
+        var outOfRange = await ProgressAsync(scene.Admin, scene, scene.Task, 101);
+
+        milestone.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(milestone)).Should().Equal("progress");
+        (await ErrorFieldsAsync(outOfRange)).Should().Equal("progress");
+        (await ProgressAsync(scene.Admin, scene, Guid.CreateVersion7(), 50)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact(DisplayName = "Progresso num projeto encerrado")]
+    public async Task ProgressInAClosedProject_IsAConflict()
+    {
+        var scene = await StartAsync(carlasRole: "Developer");
+        await using var app = scene.App;
+        using var carla = await app.SignInAsync(scene.Carla);
+        var own = await AddTaskAsync(scene, "Integrar NF-e", scene.Carla);
+        await SendAsync(scene.Admin, HttpMethod.Put, $"/api/projects/{scene.ProjectId}/status", new { status = "Completed" });
+
+        var response = await ProgressAsync(carla, scene, own, 30);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:project-closed");
+        var item = await ItemAsync(scene, own);
+        (item.GetProperty("progress").GetInt32(), item.GetProperty("canUpdateProgress").GetBoolean()).Should().Be((0, false));
+        (await ReachedAsync(scene.Admin, scene, scene.Milestone, true)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact(DisplayName = "Alterar a tarefa mantém o progresso")]
+    public async Task ChangingTheTask_WithoutTheProgress_KeepsIt()
+    {
+        var scene = await StartAsync(carlasRole: "Developer");
+        await using var app = scene.App;
+        using var carla = await app.SignInAsync(scene.Carla);
+        var own = await AddTaskAsync(scene, "Integrar NF-e", scene.Carla);
+
+        await ProgressAsync(carla, scene, own, 60);
+        var changed = await SendAsync(scene.Admin, HttpMethod.Put, $"{scene.Path}/items/{own}",
+            Item(scene.Phase, "Integrar a NF-e", "2026-10-19", 3, progress: null, owner: scene.Carla));
+
+        changed.StatusCode.Should().Be(HttpStatusCode.OK);
+        var item = await ItemAsync(scene, own);
+        (item.GetProperty("name").GetString(), item.GetProperty("progress").GetInt32()).Should().Be(("Integrar a NF-e", 60));
+    }
+
+    [Fact(DisplayName = "Marcar marco como atingido")]
+    public async Task ReachedMilestone_KeepsTheDay_AndIsAudited()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        (await ReachedAsync(marina, scene, scene.Milestone, true)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var milestone = await ItemAsync(scene, scene.Milestone);
+        (milestone.GetProperty("reachedOn").GetString(), milestone.GetProperty("late").GetBoolean()).Should().Be(("2026-10-19", false));
+        var entry = (await scene.Admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=ScheduleItem&pageSize=100", Cancellation))
+            .GetProperty("items")[0];
+        (entry.GetProperty("action").GetString(), entry.GetProperty("itemLabel").GetString()).Should().Be(("Updated", "Aceite da configuração"));
+        Values(entry, "ReachedOn").Should().Be((null, "2026-10-19"));
+        Values(entry, "Kind").Should().Be(("Milestone", "Milestone"));
+    }
+
+    [Fact(DisplayName = "Desmarcar marco")]
+    public async Task UnmarkedMilestone_IsPendingAgain()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        await ReachedAsync(scene.Admin, scene, scene.Milestone, true);
+
+        (await ReachedAsync(scene.Admin, scene, scene.Milestone, false)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var milestone = await ItemAsync(scene, scene.Milestone);
+        milestone.GetProperty("reachedOn").ValueKind.Should().Be(JsonValueKind.Null);
+        milestone.GetProperty("late").GetBoolean().Should().BeTrue("its day, 15/10, passed");
+    }
+
+    [Fact(DisplayName = "Líder técnico não marca o marco")]
+    public async Task TechLead_DoesNotMarkTheMilestone()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var rafael = await app.SignInAsync(scene.Rafael);
+
+        (await ReachedAsync(rafael, scene, scene.Milestone, true)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("reachedOn").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact(DisplayName = "Atingir uma tarefa")]
+    public async Task ReachingATask_IsABadRequest()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        var response = await ReachedAsync(scene.Admin, scene, scene.Task, true);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(response)).Should().Equal("reached");
+    }
+
     [Fact(DisplayName = "Cronograma pela API")]
     public async Task Schedule_ComesWithItsComputedNumbers()
     {
@@ -96,6 +261,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         schedule.GetProperty("today").GetString().Should().Be("2026-10-19");
         (schedule.GetProperty("start").GetString(), schedule.GetProperty("end").GetString()).Should().Be(("2026-10-13", "2026-10-15"));
         (schedule.GetProperty("progress").GetInt32(), schedule.GetProperty("lateTasks").GetInt32()).Should().Be((80, 1));
+        schedule.GetProperty("lateMilestones").GetInt32().Should().Be(1);
         var phases = schedule.GetProperty("phases");
         phases.EnumerateArray().Select(phase => phase.GetProperty("name").GetString()).Should().Equal("Configuração", "Homologação");
         var configuration = phases[0];
@@ -104,8 +270,11 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         (task.GetProperty("kind").GetString(), task.GetProperty("end").GetString(), task.GetProperty("late").GetBoolean())
             .Should().Be(("Task", "2026-10-15", true));
         task.GetProperty("owner").GetProperty("name").GetString().Should().Be("Carla Mendes");
+        task.GetProperty("canUpdateProgress").GetBoolean().Should().BeTrue();
         var milestone = configuration.GetProperty("items")[1];
         (milestone.GetProperty("kind").GetString(), milestone.GetProperty("duration").GetInt32()).Should().Be(("Milestone", 0));
+        (milestone.GetProperty("late").GetBoolean(), milestone.GetProperty("canUpdateProgress").GetBoolean()).Should().Be((true, false));
+        milestone.GetProperty("reachedOn").ValueKind.Should().Be(JsonValueKind.Null);
         milestone.GetProperty("predecessorIds").EnumerateArray().Select(id => id.GetGuid()).Should().Equal(scene.Task);
         phases[1].GetProperty("start").ValueKind.Should().Be(JsonValueKind.Null);
     }
@@ -271,6 +440,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         var schedule = page.GetProperty("items")[0].GetProperty("schedule");
         (schedule.GetProperty("start").GetString(), schedule.GetProperty("end").GetString()).Should().Be(("2026-10-13", "2026-10-15"));
         (schedule.GetProperty("lateTasks").GetInt32(), schedule.GetProperty("currentPhase").GetString()).Should().Be((1, "Configuração"));
+        schedule.GetProperty("lateMilestones").GetInt32().Should().Be(1);
         schedule.GetProperty("phases").EnumerateArray().Select(phase => phase.GetProperty("name").GetString()).Should().Equal("Configuração");
         schedule.GetProperty("milestones").EnumerateArray().Select(day => day.GetString()).Should().Equal("2026-10-15");
         (project.GetProperty("scheduleStart").GetString(), project.GetProperty("scheduleEnd").GetString())
@@ -304,6 +474,22 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             client.Dispose();
         }
     }
+
+    private static Task<HttpResponseMessage> ProgressAsync(HttpClient client, Scene scene, Guid itemId, int progress) =>
+        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/progress", new { progress });
+
+    private static Task<HttpResponseMessage> ReachedAsync(HttpClient client, Scene scene, Guid itemId, bool reached) =>
+        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/reached", new { reached });
+
+    private static async Task<Guid> AddTaskAsync(Scene scene, string name, Guid owner) =>
+        await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, $"{scene.Path}/items",
+            Item(scene.Phase, name, "2026-10-19", 3, owner: owner, kind: "Task")));
+
+    private static async Task<JsonElement> ItemAsync(Scene scene, Guid itemId) =>
+        (await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation))
+            .GetProperty("phases").EnumerateArray()
+            .SelectMany(phase => phase.GetProperty("items").EnumerateArray())
+            .Single(item => item.GetProperty("id").GetGuid() == itemId);
 
     private static async Task<string> ScheduleOfAsync(Scene scene) =>
         (await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation)).GetRawText();
@@ -340,7 +526,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     }
 
     private static object Item(
-        Guid phase, string name, string start, int duration, int progress = 0, Guid? owner = null, string? kind = null, Guid[]? after = null) =>
+        Guid phase, string name, string start, int duration, int? progress = 0, Guid? owner = null, string? kind = null, Guid[]? after = null) =>
         kind is null
             ? new { phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [] }
             : new { kind, phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [] };

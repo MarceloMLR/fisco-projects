@@ -103,7 +103,8 @@ type ScheduleItemField =
   | 'End'
   | 'Progress'
   | 'OwnerId'
-  | 'CompletedOn';
+  | 'CompletedOn'
+  | 'ReachedOn';
 const scheduleItemFields: readonly string[] = [
   'ProjectId',
   'PhaseId',
@@ -115,6 +116,7 @@ const scheduleItemFields: readonly string[] = [
   'Progress',
   'OwnerId',
   'CompletedOn',
+  'ReachedOn',
 ] satisfies ScheduleItemField[];
 
 const isScheduleItemField = (field: string): field is ScheduleItemField =>
@@ -141,7 +143,7 @@ const isSchedule = (
 const isScheduleItemKind = (value: string | null | undefined): value is ScheduleItemKind =>
   value === 'Task' || value === 'Milestone';
 
-const scheduleDays: readonly string[] = ['Start', 'End', 'CompletedOn'];
+const scheduleDays: readonly string[] = ['Start', 'End', 'CompletedOn', 'ReachedOn'];
 const isProjectStatus = (value: string | null): value is ProjectStatus =>
   projectStatuses.some((status) => status === value);
 const isProjectRole = (value: string | null): value is ProjectRole =>

@@ -43,6 +43,8 @@ public static class ProjectsModule
         services.AddScoped<AddScheduleItem>();
         services.AddScoped<ChangeScheduleItem>();
         services.AddScoped<RemoveScheduleItem>();
+        services.AddScoped<UpdateScheduleItemProgress>();
+        services.AddScoped<SetMilestoneReached>();
         services.AddScoped<ListClients>();
         services.AddScoped<AddClient>();
         services.AddScoped<ChangeClient>();

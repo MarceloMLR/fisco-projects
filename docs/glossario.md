@@ -83,7 +83,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Dependência; anterior e seguinte | ScheduleDependency: PredecessorId, SuccessorId | Termina → começa; dependência circular é recusada (ADR-0019) |
 | Empurrar as seguintes | Push, `pushed` | Atrasar uma tarefa move as seguintes só o necessário; antecipar não as puxa (ADR-0019) |
 | Tarefa atrasada | IsLate, `late` | Fim antes de hoje, no fuso da instalação, abaixo de 100% (ADR-0020) |
+| Marco atrasado | IsLate, `late`, LateMilestones | Data antes de hoje, no fuso da instalação, sem ter sido atingido (ADR-0086) |
 | Data de conclusão | CompletedOn | Gravada quando a tarefa chega a 100%, apagada abaixo disso |
+| Marco atingido, pendente; atingido em | `reached`, ReachedOn | Marcado e desmarcado pelo administrador e pelo gerente em `PUT /schedule/items/{itemId}/reached`; guarda o dia (ADR-0086) |
+| Atualizar o progresso; Iniciar, Atualizar progresso, Concluir | UpdateProgress, `PUT /schedule/items/{itemId}/progress` | Ação própria, fora do formulário da tarefa; "Iniciar" pede o percentual e "Concluir" põe 100% (ADR-0086) |
+| Pode atualizar o próprio progresso | CanUpdateOwnProgress, MayUpdateProgress, `canUpdateProgress` | Administrador e gerente em qualquer tarefa; líder técnico, colaborador e desenvolvedor nas de que são responsáveis (ADR-0043) |
 | Números do cronograma | ScheduleFigures | Datas, progresso ponderado pela duração, atraso e fase atual, num lugar só |
 | Fase atual | CurrentPhase | A primeira fase atrasada ou, sem atraso, a última que já começou |
 | Hoje da instalação | InstallationClock | O dia de hoje no fuso da instalação, para o atraso e a conclusão |

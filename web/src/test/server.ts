@@ -296,7 +296,10 @@ function withSchedule(project: DemoProject, schedule: ProjectScheduleSummary): D
   return { ...project, schedule, scheduleStart: schedule.start, scheduleEnd: schedule.end };
 }
 
-/** A task or milestone of the demonstration schedule. */
+/**
+ * A task or milestone of the demonstration schedule, as the manager sees it: the progress of every task may be
+ * updated.
+ */
 function demoItem(
   index: number,
   phaseId: string,
@@ -309,10 +312,29 @@ function demoItem(
     duration: 1,
     progress: 0,
     completedOn: null,
+    reachedOn: null,
     late: false,
+    canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     predecessorIds: [],
     ...item,
+  };
+}
+
+/**
+ * The schedule as a person who does not edit it sees it (ADR-0043): the progress may be updated only in the tasks the
+ * person is in charge of, and in none when the person is a viewer.
+ */
+export function scheduleSeenBy(schedule: Schedule, personId: string, viewer = false): Schedule {
+  return {
+    ...schedule,
+    phases: schedule.phases.map((phase) => ({
+      ...phase,
+      items: phase.items.map((item) => ({
+        ...item,
+        canUpdateProgress: !viewer && item.kind === 'Task' && item.owner?.id === personId,
+      })),
+    })),
   };
 }
 
@@ -404,6 +426,7 @@ export function demoSchedule(): Schedule {
     end: '2026-11-03',
     progress: 42,
     lateTasks: 1,
+    lateMilestones: 0,
     phases: [
       {
         id: phaseIds.survey,
@@ -452,6 +475,7 @@ export const emptySchedule: Schedule = {
   end: null,
   progress: 0,
   lateTasks: 0,
+  lateMilestones: 0,
   phases: [],
 };
 
@@ -483,6 +507,7 @@ export function demoProjects(): DemoProject[] {
         end: '2026-11-03',
         progress: 42,
         lateTasks: 1,
+        lateMilestones: 0,
         currentPhase: 'Levantamento',
         completedOn: null,
         phases: [
@@ -514,6 +539,7 @@ export function demoProjects(): DemoProject[] {
         end: '2027-01-29',
         progress: 0,
         lateTasks: 0,
+        lateMilestones: 0,
         currentPhase: null,
         completedOn: null,
         phases: [
@@ -536,6 +562,7 @@ export function demoProjects(): DemoProject[] {
         end: '2026-08-28',
         progress: 100,
         lateTasks: 0,
+        lateMilestones: 0,
         currentPhase: 'Entrada em produção',
         completedOn: '2026-08-28',
         phases: [

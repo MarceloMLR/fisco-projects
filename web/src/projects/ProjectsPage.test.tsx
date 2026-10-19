@@ -151,6 +151,7 @@ describe('Cronograma na lista de projetos', () => {
       end: '2026-11-13',
       progress: 62,
       lateTasks: 2,
+      lateMilestones: 0,
       currentPhase: 'Configuração',
       completedOn: null,
       phases: [
@@ -187,6 +188,25 @@ describe('Cronograma na lista de projetos', () => {
     expect(
       within(row).getByText(text.schedule.lateTasks_other.replace('{{count}}', '2')),
     ).toBeVisible();
+  });
+
+  it('Marco atrasado na lista', async () => {
+    const erp = projects[0];
+    if (erp?.schedule == null) {
+      throw new Error('No ERP-FIN with a schedule.');
+    }
+    erp.schedule = { ...erp.schedule, lateTasks: 1, lateMilestones: 1 };
+    await openProjects();
+
+    const row = rowOf('Implantação do ERP financeiro');
+    expect(
+      within(row).getByText(text.schedule.lateTasks_one.replace('{{count}}', '1')),
+    ).toBeVisible();
+    const milestones = within(row).getByText(
+      text.schedule.lateMilestones_one.replace('{{count}}', '1'),
+    );
+    expect(milestones).toBeVisible();
+    expect(milestones).toHaveStyle({ color: 'var(--status-danger-text)' });
   });
 
   it('Projeto que ainda não começou', async () => {
