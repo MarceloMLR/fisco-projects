@@ -2,13 +2,13 @@
 
 ## 1. Backend
 
-- [ ] 1.1 No módulo `Administration`:
+- [x] 1.1 No módulo `Administration`:
   - `TimeZone` em `InstallationSettings`, com `ChangeTimeZone` (IANA conhecido pelo servidor) e a migração `InstallationTimeZone`;
   - `UpdateInstallation` no lugar de `RenameInstallation`;
   - `GetGeneralRules` e o fuso em `InstallationInfo`.
 
   Testar o fuso padrão, a troca, o fuso desconhecido, o id do Windows e o formulário recusado sem mudar nada. Verificar com `dotnet test`.
-- [ ] 1.2 Na API:
+- [x] 1.2 Na API:
   - `PUT /api/installation` com `{ name, timeZone }`;
   - `GET /api/installation/rules` com sessão.
 
@@ -16,12 +16,12 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Reescrever `format/dates.ts` com `datesIn(timeZone)` e criar `generalRulesQuery` e `useDates`. Também:
+- [x] 2.1 Reescrever `format/dates.ts` com `datesIn(timeZone)` e criar `generalRulesQuery` e `useDates`. Também:
   - a `AppShell` esperando o fuso;
   - Auditoria, detalhes, período, Usuários e Meu perfil no fuso da instalação.
 
   Testar as funções em America/Sao_Paulo e em outro fuso (meia-noite, dia anterior, "hoje" e "ontem"), "Horas no fuso da instalação" e "Período no fuso da instalação". Verificar com `npm test`.
-- [ ] 2.2 Criar a seção Regras gerais com o campo Fuso horário (busca, nome e identificador) nas Configurações gerais, e o campo "Fuso horário" na Auditoria. Testar "Fuso padrão", "Trocar o fuso", "Descartar alterações" (com o fuso) e o fuso recusado pela API. Verificar com `npm test` e `npm run lint`.
+- [x] 2.2 Criar a seção Regras gerais com o campo Fuso horário (busca, nome e identificador) nas Configurações gerais, e o campo "Fuso horário" na Auditoria. Testar "Fuso padrão", "Trocar o fuso", "Descartar alterações" (com o fuso) e o fuso recusado pela API. Verificar com `npm test` e `npm run lint`.
 
 ## 3. Verificação final
 

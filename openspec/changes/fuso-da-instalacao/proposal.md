@@ -15,7 +15,7 @@ As datas e horas ficam em UTC no banco e devem aparecer no fuso da instalação,
   - `PUT /api/installation` passa a receber `{ name, timeZone }`;
   - novo `GET /api/installation/rules`, para quem tem sessão, com `{ timeZone }`. O fuso não é da marca e não aparece sem sessão;
   - o contrato `IInstallationSettings` passa a dar o fuso aos outros módulos.
-- **Tela Configurações gerais:** nova seção Regras gerais, com o campo Fuso horário, como no canvas. O campo tem busca e mostra o nome do fuso em português e o identificador, como "Horário de Brasília (America/Sao_Paulo)".
+- **Tela Configurações gerais:** nova seção Regras gerais, com o campo Fuso horário, como no canvas. O campo tem busca e mostra o nome do fuso em português e o identificador, como "Horário de Brasília (America/Sao_Paulo)", com o nome que o navegador dá ao fuso.
 - **Datas no fuso da instalação, em todas as telas:**
   - o último acesso nos Usuários e em Meu perfil;
   - as datas e horas da Auditoria e dos detalhes;

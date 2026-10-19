@@ -5,7 +5,8 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fieldControl } from '../components/fieldControl';
 import { TextField } from '../components/TextField';
-import { type DayValue, formatDayValue, formatPeriod } from '../format/dates';
+import type { DayValue } from '../format/dates';
+import { useDates } from '../format/useDates';
 
 export interface Period {
   from: DayValue;
@@ -27,6 +28,7 @@ export function PeriodFilter({
   width: number;
 }) {
   const { t } = useTranslation();
+  const { formatDayValue, formatPeriod } = useDates();
   const dialogId = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 

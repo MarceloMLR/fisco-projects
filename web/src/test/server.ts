@@ -191,6 +191,7 @@ export const handlers = [
   http.get('/api/profile', () => HttpResponse.json(profileOf(marina))),
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
+  http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
 ];
 
 export const server = setupServer(...handlers);

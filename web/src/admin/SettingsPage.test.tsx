@@ -11,18 +11,22 @@ const logoUrl = '/api/installation/logo?v=1';
 
 /** The installation as the simulated API keeps it, changed by the requests as the real one would. */
 let installation: Installation;
+let timeZone: string;
 const requests: string[] = [];
 
 beforeEach(() => {
   installation = { name: 'FiscoProjects', logoUrl: null };
+  timeZone = 'America/Sao_Paulo';
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
     http.get('/api/installation', () => HttpResponse.json(installation)),
+    http.get('/api/installation/rules', () => HttpResponse.json({ timeZone })),
     http.put('/api/installation', async ({ request }) => {
-      const body = (await request.json()) as { name: string };
-      requests.push(`PUT name ${body.name}`);
+      const body = (await request.json()) as { name: string; timeZone: string };
+      requests.push(`PUT ${body.name} ${body.timeZone}`);
       installation = { ...installation, name: body.name };
+      timeZone = body.timeZone;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -69,6 +73,25 @@ function sidebarBrand() {
     throw new Error('The sidebar has no brand.');
   }
   return brand;
+}
+
+function timeZoneField() {
+  return screen.getByRole('combobox', { name: text.timeZone });
+}
+
+/** The name the browser gives a time zone, with its id, as the field shows it. */
+function timeZoneLabel(id: string) {
+  const name = new Intl.DateTimeFormat('pt-BR', { timeZone: id, timeZoneName: 'longGeneric' })
+    .formatToParts(new Date())
+    .find((part) => part.type === 'timeZoneName')?.value;
+  return `${name ?? ''} (${id})`;
+}
+
+async function chooseTimeZone(id: string) {
+  // As a person does: into the field, then typing; outside it, the field shows the chosen one again.
+  timeZoneField().focus();
+  fireEvent.change(timeZoneField(), { target: { value: id } });
+  fireEvent.click(await screen.findByRole('option', { name: timeZoneLabel(id) }));
 }
 
 function preview() {
@@ -158,7 +181,7 @@ describe('Nome e logo nas Configurações gerais', () => {
     fireEvent.click(saveButton());
 
     expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT name Consultoria Fictícia']);
+    expect(requests).toEqual(['PUT Consultoria Fictícia America/Sao_Paulo']);
     await waitFor(() => {
       expect(sidebarBrand()).toHaveTextContent('Consultoria Fictícia');
     });
@@ -298,5 +321,73 @@ describe('Configurações na auditoria', () => {
         `${ptBR.audit.fields.InstallationSettings.Name.toLowerCase()} FiscoProjects → Consultoria Fictícia`,
       ),
     ).toBeInTheDocument();
+  });
+});
+
+// Spec: configuracao-da-instalacao, requirement "Fuso da instalação" (General settings).
+describe('Fuso nas Configurações gerais', () => {
+  it('Fuso padrão', async () => {
+    await openSettings();
+
+    const rules = screen.getByRole('region', { name: text.rules });
+    expect(within(rules).getByRole('combobox', { name: text.timeZone })).toHaveValue(
+      timeZoneLabel('America/Sao_Paulo'),
+    );
+    expect(timeZoneLabel('America/Sao_Paulo')).toMatch(/Brasília \(America\/Sao_Paulo\)$/);
+  });
+
+  it('Trocar o fuso', async () => {
+    await openSettings();
+
+    await chooseTimeZone('Asia/Tokyo');
+    expect(saveButton()).toBeEnabled();
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(requests).toEqual(['PUT FiscoProjects Asia/Tokyo']);
+    await waitFor(() => {
+      expect(timeZoneField()).toHaveValue(timeZoneLabel('Asia/Tokyo'));
+    });
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('Descartar o fuso', async () => {
+    await openSettings();
+    await chooseTimeZone('Asia/Tokyo');
+
+    fireEvent.click(discardButton());
+
+    expect(timeZoneField()).toHaveValue(timeZoneLabel('America/Sao_Paulo'));
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it('Fuso recusado pela API', async () => {
+    server.use(
+      http.put('/api/installation', () =>
+        HttpResponse.json(
+          { status: 400, title: 'Problem', errors: { timeZone: ['Choose an IANA time zone.'] } },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    await openSettings();
+    await chooseTimeZone('Asia/Tokyo');
+
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.timeZoneInvalid)).toBeInTheDocument();
+    expect(timeZoneField()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByText(text.saved)).not.toBeInTheDocument();
+  });
+
+  it('Fuso obrigatório', async () => {
+    await openSettings();
+
+    timeZoneField().focus();
+    fireEvent.change(timeZoneField(), { target: { value: '' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.timeZoneRequired)).toBeInTheDocument();
+    expect(requests).toEqual([]);
   });
 });

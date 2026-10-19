@@ -6,7 +6,7 @@ O administrador MUST poder escolher o fuso horário da instalação entre os fus
 
 #### Scenario: Fuso padrão
 - **WHEN** ninguém escolheu o fuso da instalação
-- **THEN** o fuso é America/Sao_Paulo, e as Configurações gerais mostram "Horário de Brasília (America/Sao_Paulo)"
+- **THEN** o fuso é America/Sao_Paulo, e as Configurações gerais mostram o nome do fuso de Brasília com o identificador America/Sao_Paulo
 
 #### Scenario: Horas no fuso da instalação
 - **WHEN** a instalação está em America/Sao_Paulo e o navegador da pessoa está em outro fuso

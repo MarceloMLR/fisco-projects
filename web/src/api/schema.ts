@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/installation/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetGeneralRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/installation/logo": {
         parameters: {
             query?: never;
@@ -260,6 +276,10 @@ export interface components {
         };
         ChooseThemeRequest: {
             theme: components["schemas"]["ThemePreference"];
+        };
+        /** @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013). */
+        GeneralRulesResponse: {
+            timeZone: string;
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -332,9 +352,10 @@ export interface components {
          * @enum {unknown}
          */
         ThemePreference: "Automatic" | "Light" | "Dark";
-        /** @description The General settings form; it grows with the time zone and the main color. */
+        /** @description The General settings form, saved as a whole: the name shown and the IANA time zone. */
         UpdateInstallationRequest: {
             name: string;
+            timeZone: string;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -866,6 +887,35 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetGeneralRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneralRulesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

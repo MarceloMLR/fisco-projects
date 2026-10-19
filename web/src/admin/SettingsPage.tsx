@@ -5,32 +5,38 @@ import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useId, useRef, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { api, installationProblems } from '../api/client';
-import { installationQuery, queryKeys } from '../api/queries';
+import { generalRulesQuery, installationQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
 import { BrandPreview } from './BrandPreview';
+import { TimeZoneField } from './TimeZoneField';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
 const logoMaxBytes = 1024 * 1024;
 const logoTypes = ['image/png', 'image/svg+xml'];
 
-const nameErrors = {
-  required: 'settings.errors.nameRequired',
-  tooLong: 'settings.errors.nameTooLong',
+const fieldErrors = {
+  nameRequired: 'settings.errors.nameRequired',
+  nameTooLong: 'settings.errors.nameTooLong',
+  timeZoneRequired: 'settings.errors.timeZoneRequired',
+  timeZoneInvalid: 'settings.errors.timeZoneInvalid',
 } as const;
+
+type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
 
 const form = z.object({
   name: z
     .string()
     .trim()
-    .min(1, { error: nameErrors.required })
-    .max(60, { error: nameErrors.tooLong }),
+    .min(1, { error: fieldErrors.nameRequired })
+    .max(60, { error: fieldErrors.nameTooLong }),
+  timeZone: z.string().min(1, { error: fieldErrors.timeZoneRequired }),
 });
 
 type LogoError = 'logoFormat' | 'logoTooLarge' | 'logoUnsafe';
@@ -42,6 +48,34 @@ type LogoChoice =
 // Below this width the Preview goes under the form (fp-cols); below 700 px the fields of a row stack (fp-form-row).
 const singleColumn = '@media (max-width: 1100px)';
 const narrowForm = '@media (max-width: 700px)';
+
+/** A section of the form (fp-form-section) and its title (fp-h2). */
+const sectionSx = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'var(--space-4)',
+  padding: 'var(--space-6)',
+  backgroundColor: 'var(--bg-surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+} as const;
+
+const sectionTitleSx = {
+  margin: 0,
+  fontSize: 18,
+  lineHeight: '26px',
+  fontWeight: 500,
+  letterSpacing: '-0.005em',
+  color: 'var(--text)',
+} as const;
+
+/** Two fields side by side (fp-form-row), one under the other on a narrow screen. */
+const rowSx = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: 'var(--space-4)',
+  [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
+} as const;
 
 function isLogoFile(file: File): boolean {
   const name = file.name.toLowerCase();
@@ -61,6 +95,17 @@ function readPicture(file: File): Promise<string> {
   });
 }
 
+/** The fields a validation problem of the API names (RFC 9457 with the errors of ASP.NET Core). */
+function invalidFields(problem: unknown): string[] {
+  return typeof problem === 'object' &&
+    problem !== null &&
+    'errors' in problem &&
+    typeof problem.errors === 'object' &&
+    problem.errors !== null
+    ? Object.keys(problem.errors)
+    : [];
+}
+
 function logoErrorOf(type: unknown): LogoError {
   if (type === installationProblems.logoTooLarge) {
     return 'logoTooLarge';
@@ -76,6 +121,8 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: installation, isError } = useQuery(installationQuery());
+  // The shell already read the rules, before showing any screen.
+  const { data: rules } = useQuery(generalRulesQuery());
   const [logo, setLogo] = useState<LogoChoice>({ kind: 'saved' });
   const [logoError, setLogoError] = useState<LogoError>();
   const [message, setMessage] = useState<string>();
@@ -91,8 +138,11 @@ export function SettingsPage() {
     formState: { errors, isDirty, isSubmitting },
   } = useForm<z.input<typeof form>, unknown, z.output<typeof form>>({
     resolver: zodResolver(form),
-    defaultValues: { name: '' },
-    values: installation === undefined ? undefined : { name: installation.name },
+    defaultValues: { name: '', timeZone: '' },
+    values:
+      installation === undefined || rules === undefined
+        ? undefined
+        : { name: installation.name, timeZone: rules.timeZone },
   });
 
   const savedLogo = installation?.logoUrl ?? null;
@@ -125,7 +175,7 @@ export function SettingsPage() {
     setLogoError(undefined);
   };
 
-  const save = handleSubmit(async ({ name }) => {
+  const save = handleSubmit(async ({ name, timeZone }) => {
     // The new logo stays on screen until the brand is read again, so the old one never flashes back.
     let logoSaved = false;
     try {
@@ -152,9 +202,18 @@ export function SettingsPage() {
       logoSaved = logo.kind !== 'saved';
 
       if (isDirty) {
-        const { response } = await api.PUT('/api/installation', { body: { name } });
+        const { error, response } = await api.PUT('/api/installation', {
+          body: { name, timeZone },
+        });
         if (response.status === 400) {
-          setError('name', { message: nameErrors.required });
+          // The screen checks the name before sending; the time zone only the server can check.
+          const invalid = invalidFields(error);
+          if (invalid.includes('name')) {
+            setError('name', { message: fieldErrors.nameRequired });
+          }
+          if (invalid.includes('timeZone') || invalid.length === 0) {
+            setError('timeZone', { message: fieldErrors.timeZoneInvalid });
+          }
           return;
         }
         if (!response.ok) {
@@ -175,7 +234,8 @@ export function SettingsPage() {
     }
   });
 
-  const nameError = errors.name?.message;
+  const nameError = errors.name?.message as FieldError | undefined;
+  const timeZoneError = errors.timeZone?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -207,31 +267,8 @@ export function SettingsPage() {
                   minWidth: 0,
                 }}
               >
-                <Box
-                  component="section"
-                  aria-labelledby="settings-brand"
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--space-4)',
-                    padding: 'var(--space-6)',
-                    backgroundColor: 'var(--bg-surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                  }}
-                >
-                  <Box
-                    component="h2"
-                    id="settings-brand"
-                    sx={{
-                      margin: 0,
-                      fontSize: 18,
-                      lineHeight: '26px',
-                      fontWeight: 500,
-                      letterSpacing: '-0.005em',
-                      color: 'var(--text)',
-                    }}
-                  >
+                <Box component="section" aria-labelledby="settings-brand" sx={sectionSx}>
+                  <Box component="h2" id="settings-brand" sx={sectionTitleSx}>
                     {t('settings.brand')}
                   </Box>
                   <Box
@@ -246,11 +283,7 @@ export function SettingsPage() {
                     <TextField
                       label={t('settings.name')}
                       autoComplete="off"
-                      error={
-                        nameError === undefined
-                          ? undefined
-                          : t(nameError as (typeof nameErrors)[keyof typeof nameErrors])
-                      }
+                      error={nameError === undefined ? undefined : t(nameError)}
                       {...register('name')}
                     />
                     <Box
@@ -368,6 +401,26 @@ export function SettingsPage() {
                           : t(`settings.errors.${logoError}`)}
                       </Box>
                     </Box>
+                  </Box>
+                </Box>
+                <Box component="section" aria-labelledby="settings-rules" sx={sectionSx}>
+                  <Box component="h2" id="settings-rules" sx={sectionTitleSx}>
+                    {t('settings.rules')}
+                  </Box>
+                  <Box sx={rowSx}>
+                    <Controller
+                      control={control}
+                      name="timeZone"
+                      render={({ field }) => (
+                        <TimeZoneField
+                          label={t('settings.timeZone')}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={timeZoneError === undefined ? undefined : t(timeZoneError)}
+                        />
+                      )}
+                    />
                   </Box>
                 </Box>
               </Box>

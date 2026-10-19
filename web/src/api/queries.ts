@@ -69,3 +69,11 @@ export function installationQuery() {
     queryFn: ({ signal }) => dataOf(api.GET('/api/installation', { signal })),
   });
 }
+
+/** The rules of the installation for the screens of a session: the time zone of dates and times (ADR-0013). */
+export function generalRulesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.installation, 'rules'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/installation/rules', { signal })),
+  });
+}
