@@ -49,7 +49,12 @@ public sealed class ClientTests(SqlServerFixture sqlServer) : IDisposable
     public Task Administrator_TakesCareOfTheClients() => AssertMatrixAsync(SystemRole.Administrator);
 
     [Fact(DisplayName = "Gerente de projeto inclui um cliente")]
-    public Task ProjectManager_ListsAndIncludes_ButDoesNotChange() => AssertMatrixAsync(SystemRole.ProjectManager);
+    public Task ProjectManager_ListsAndIncludes() =>
+        AssertMatrixAsync(SystemRole.ProjectManager, row => row.AllowedTo.Contains(SystemRole.ProjectManager));
+
+    [Fact(DisplayName = "Gerente de projeto não altera clientes")]
+    public Task ProjectManager_DoesNotChangeClients() =>
+        AssertMatrixAsync(SystemRole.ProjectManager, row => !row.AllowedTo.Contains(SystemRole.ProjectManager));
 
     [Fact(DisplayName = "Usuário não cuida dos clientes")]
     public Task User_DoesNotTakeCareOfTheClients() => AssertMatrixAsync(SystemRole.User);
@@ -227,14 +232,28 @@ public sealed class ClientTests(SqlServerFixture sqlServer) : IDisposable
         await SendAsync(admin, HttpMethod.Put, $"/api/clients/{id}", Form("Alfa Distribuidora", "12.abc.345/01de-35"));
         app.Clock.Advance(TimeSpan.FromMinutes(1));
         await SendLogoAsync(admin, id, Png, "alfa.png");
-        app.Clock.Advance(TimeSpan.FromMinutes(1));
-        await SendAsync(admin, HttpMethod.Post, $"/api/clients/{id}/deactivate");
 
         var entries = await AuditAsync(admin);
-        entries.Select(entry => entry.GetProperty("action").GetString()).Should().Equal("Updated", "Updated", "Updated", "Created");
-        Fields(entries[2]).Should().Equal(("Cnpj", null, "12ABC34501DE35"));
-        Fields(entries[1]).Should().Equal(("LogoFileName", null, "alfa.png"));
-        Fields(entries[0]).Should().Equal(("IsActive", "true", "false"));
+        entries.Select(entry => entry.GetProperty("action").GetString()).Should().Equal("Updated", "Updated", "Created");
+        Fields(entries[1]).Should().Equal(("Cnpj", null, "12ABC34501DE35"));
+        Fields(entries[0]).Should().Equal(("LogoFileName", null, "alfa.png"));
+    }
+
+    [Fact(DisplayName = "Cliente inativado na auditoria")]
+    public async Task DeactivatedClient_IsAudited_WithItsName()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        var id = await AddAsync(admin, Form("Alfa Distribuidora"));
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        await SendAsync(admin, HttpMethod.Post, $"/api/clients/{id}/deactivate");
+
+        var entry = (await AuditAsync(admin))[0];
+        entry.GetProperty("action").GetString().Should().Be("Updated");
+        entry.GetProperty("itemLabel").GetString().Should().Be("Alfa Distribuidora");
+        Fields(entry).Should().Equal(("IsActive", "true", "false"));
     }
 
     public void Dispose()
@@ -251,7 +270,7 @@ public sealed class ClientTests(SqlServerFixture sqlServer) : IDisposable
         builder.Configuration["FileStorage:Local:RootPath"] = _files;
     });
 
-    private async Task AssertMatrixAsync(SystemRole role)
+    private async Task AssertMatrixAsync(SystemRole role, Func<PermissionRow, bool>? which = null)
     {
         await using var app = await StartAsync();
         var adminId = await app.CreateUserAsync("Paulo Nogueira", SystemRole.Administrator);
@@ -259,20 +278,19 @@ public sealed class ClientTests(SqlServerFixture sqlServer) : IDisposable
         var id = await AddAsync(admin, Form("Alfa Distribuidora"));
         await SendLogoAsync(admin, id, Png, "alfa.png");
         using var client = role == SystemRole.Administrator ? admin : (await app.SignedInClientAsync("Marina Costa", role)).Client;
+        var rows = Matrix.Where(which ?? (_ => true)).ToList();
 
-        foreach (var row in Matrix)
+        foreach (var row in rows)
         {
             var response = await row.Send(client, id);
 
             response.StatusCode.Should().Be(row.AllowedTo.Contains(role) ? row.Allowed : HttpStatusCode.Forbidden, $"{role}: {row.Action}");
         }
 
-        (await NamesAsync(admin, string.Empty)).Should().Equal(role switch
-        {
-            SystemRole.Administrator => ["Kappa Energia"],
-            SystemRole.ProjectManager => ["Alfa Distribuidora", "Kappa Energia"],
-            _ => ["Alfa Distribuidora"],
-        });
+        // A refused action changes nothing: only the inclusion and the removal allowed show in the list.
+        bool Ran(string action) => rows.Any(row => row.Action == action && row.AllowedTo.Contains(role));
+        List<string> expected = [.. Ran("Remove a client") ? [] : new[] { "Alfa Distribuidora" }, .. Ran("Include a client") ? ["Kappa Energia"] : Array.Empty<string>()];
+        (await NamesAsync(admin, string.Empty)).Should().Equal(expected);
     }
 
     private static object Form(string name, string? cnpj = null, string? observation = null) => new { name, cnpj, observation };
