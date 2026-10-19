@@ -94,6 +94,7 @@ Rotas em `/api/clients`:
 
 - O `cnpj` vai sem pontuação; a tela formata.
 - `status` é `Active` ou `Inactive`, como nos usuários.
+- **O logo não renova a sessão:** a sessão é renovada a cada chamada, e o cookie renovado faz o ASP.NET Core responder `no-store`, o que anula o cache imutável. As rotas do logo (do cliente e, pelo mesmo motivo, da instalação) levam o marcador `KeepSession` do `Users.Contracts`: a sessão é conferida, mas não renovada. A chamada da lista que mostrou o logo já a renovou.
 
 ### 6. Auditoria
 

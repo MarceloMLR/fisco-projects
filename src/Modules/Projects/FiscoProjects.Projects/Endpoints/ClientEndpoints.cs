@@ -79,6 +79,7 @@ public static class ClientEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
         clients.MapGet("/{id:guid}/logo", GetLogoAsync).WithName("GetClientLogo")
+            .WithMetadata(KeepSession.Instance)
             .Produces(StatusCodes.Status200OK, contentType: "image/png", additionalContentTypes: "image/jpeg");
         // The protection against other sites is the X-CSRF header of the application (ADR-0054), not the antiforgery
         // token of ASP.NET Core forms.

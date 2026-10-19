@@ -222,6 +222,21 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         unversioned.Headers.CacheControl!.NoCache.Should().BeTrue();
     }
 
+    [Fact(DisplayName = "Logo guardado pelo navegador com sessão")]
+    public async Task Logo_KeepsItsCache_WithASession_WithoutRenewingIt()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        await SendLogoAsync(admin, Png, "marca.png");
+        var current = (await BrandAsync(admin)).LogoUrl!;
+
+        var response = await admin.GetAsync(current, Cancellation);
+
+        response.Headers.CacheControl!.ToString().Should().Contain("immutable");
+        response.Headers.Contains("Set-Cookie").Should().BeFalse();
+    }
+
     [Fact(DisplayName = "Troca do fuso na auditoria")]
     public async Task ChangeOfTheTimeZone_IsAudited()
     {
