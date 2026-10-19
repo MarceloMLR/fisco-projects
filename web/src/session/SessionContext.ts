@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { SessionUser } from '../api/client';
+import type { SessionUser, ThemePreference } from '../api/client';
 
 export type Session =
   { status: 'checking' } | { status: 'signed-out' } | { status: 'signed-in'; user: SessionUser };
@@ -9,6 +9,11 @@ export interface SessionContextValue {
   /** Asks the API who is in the session, after signing in. */
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Applies the theme at once and keeps it in the profile (ADR-0014). If the API refuses, the theme goes back to
+   * the one before and the promise is rejected, so the screen can tell the person.
+   */
+  chooseTheme: (theme: ThemePreference) => Promise<void>;
 }
 
 export const SessionContext = createContext<SessionContextValue | null>(null);

@@ -20,6 +20,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Desativar acesso, Reativar acesso | Deactivate, Reactivate | |
 | Situação: Ativo, Inativo | UserStatus: Active, Inactive | `IsActive` no domínio |
 | Último acesso | LastSignInAt | |
+| Meu perfil | Profile | Tela `/profile` da pessoa na sessão: preferências e conta |
+| Tema: Claro, Escuro, Automático | ThemePreference: Light, Dark, Automatic | Preferência salva no perfil; Automático segue o sistema (ADR-0014) |
 | Administração | Administration | Área só do administrador, rotas `/admin` (ADR-0046) |
 | Papel no projeto | ProjectRole | |
 | Administrador | Administrator | |
@@ -121,4 +123,5 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 
 | Português | Código | Observação |
 | --- | --- | --- |
+| Controle segmentado | SegmentedControl | Poucas opções lado a lado, uma escolhida (o tema no menu da conta) |
 | Gaveta de detalhes | DetailsDrawer | Detalhe de um item escolhido numa lista, à direita, por cima da tela, com o fundo escurecido (ADR-0081) |

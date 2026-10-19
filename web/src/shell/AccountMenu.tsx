@@ -1,12 +1,17 @@
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import type { SessionUser } from '../api/client';
 import { Avatar } from '../components/Avatar';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { useThemeChoice, useThemeOptions } from '../profile/themeChoice';
 import { useSession } from '../session/SessionContext';
 
 /** Name and e-mail of the person in the session, next to the avatar (fp-appbar__who). */
@@ -36,12 +41,14 @@ export function SessionPerson({ user, mutedColor }: { user: SessionUser; mutedCo
 }
 
 /**
- * Avatar at the right of the header, opening the account menu (TopBar, fp-appbar__user and fp-appbar__menu):
- * who is in the session and sign out. The profile and the theme choice join it later.
+ * Avatar at the right of the header, opening the account menu (TopBar, fp-appbar__user and fp-appbar__menu): who
+ * is in the session, My profile, the theme (fp-appbar__menu-theme, ADR-0014) and Sign out.
  */
 export function AccountMenu({ user }: { user: SessionUser }) {
   const { t } = useTranslation();
   const { signOut } = useSession();
+  const { theme, choose, message, dismiss } = useThemeChoice();
+  const themeOptions = useThemeOptions();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
   const open = anchor !== null;
@@ -104,6 +111,39 @@ export function AccountMenu({ user }: { user: SessionUser }) {
         </Box>
         <Divider sx={{ margin: 'var(--space-1) 0' }} />
         <MenuItem
+          component={Link}
+          to="/profile"
+          onClick={() => {
+            setAnchor(null);
+          }}
+        >
+          <PersonOutlined aria-hidden />
+          {t('pages.profile.title')}
+        </MenuItem>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-2)',
+            minHeight: 44,
+            padding: '0 var(--space-2) 0 var(--space-3)',
+            color: 'var(--text)',
+            fontSize: 14,
+            lineHeight: '20px',
+          }}
+        >
+          <span>{t('profile.theme')}</span>
+          <SegmentedControl
+            label={t('profile.theme')}
+            iconsOnly
+            value={theme}
+            options={themeOptions}
+            onChange={choose}
+          />
+        </Box>
+        <Divider sx={{ margin: 'var(--space-1) 0' }} />
+        <MenuItem
           onClick={() => {
             setAnchor(null);
             void signOut();
@@ -113,6 +153,13 @@ export function AccountMenu({ user }: { user: SessionUser }) {
           {t('shell.signOut')}
         </MenuItem>
       </Menu>
+      <Snackbar
+        open={message !== undefined}
+        message={message}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={dismiss}
+      />
     </>
   );
 }

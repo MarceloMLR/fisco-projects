@@ -1,5 +1,6 @@
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
+using FiscoProjects.Users.Domain;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -8,8 +9,8 @@ using Microsoft.AspNetCore.Routing;
 
 namespace FiscoProjects.Users.Endpoints;
 
-/// <summary>The person in the session, with the role in the system.</summary>
-public sealed record SessionUserResponse(Guid Id, string Name, string Email, SystemRole Role);
+/// <summary>The person in the session, with the role in the system and the theme of their screens.</summary>
+public sealed record SessionUserResponse(Guid Id, string Name, string Email, SystemRole Role, ThemePreference Theme);
 
 /// <summary>How the sign-in page may sign people in.</summary>
 public sealed record SignInOptionsResponse(bool LocalSignIn);
@@ -46,7 +47,7 @@ internal static class SessionEndpoints
         var user = userId is null ? null : await getSignedInUser.ExecuteAsync(userId.Value, cancellationToken);
         return user is null
             ? TypedResults.Unauthorized()
-            : TypedResults.Ok(new SessionUserResponse(user.Id, user.Name, user.Email, user.Role));
+            : TypedResults.Ok(new SessionUserResponse(user.Id, user.Name, user.Email, user.Role, user.Theme));
     }
 
     private static Ok<SignInOptionsResponse> GetSignInOptions(SignInLocally signInLocally) =>

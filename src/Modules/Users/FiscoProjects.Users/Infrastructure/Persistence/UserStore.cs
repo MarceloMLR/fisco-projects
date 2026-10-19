@@ -22,6 +22,14 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
     public Task<User?> FindAsync(Guid userId, CancellationToken cancellationToken) =>
         db.Users.SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
 
+    public async Task<IReadOnlyList<string>> SignInProvidersAsync(Guid userId, CancellationToken cancellationToken) =>
+        await db.IdentityLinks.AsNoTracking()
+            .Where(link => link.UserId == userId)
+            .Select(link => link.Provider)
+            .Distinct()
+            .OrderBy(provider => provider)
+            .ToListAsync(cancellationToken);
+
     public void Add(User user, IdentityLink link)
     {
         db.Users.Add(user);

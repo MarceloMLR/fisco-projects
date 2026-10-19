@@ -17,12 +17,17 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         // Stored as text; people who signed in before roles existed become User.
         user.Property(u => u.Role).HasConversion<string>().HasMaxLength(32).HasDefaultValue(SystemRole.User).HasSentinel(default(SystemRole));
         user.HasIndex(u => u.Name);
+        // Stored as text; people who signed in before themes existed follow the operating system.
+        user.Property(u => u.Theme).HasConversion<string>().HasMaxLength(16)
+            .HasDefaultValue(ThemePreference.Automatic).HasSentinel(default(ThemePreference));
 
         // Audit (ADR-0039): the person is named by the name; the daily sign-in is a security event of its own,
         // and the creation date is the date of the creation record.
         user.HasAuditLabel(u => u.Name);
         user.Property(u => u.LastSignInAt).ExcludeFromAudit();
         user.Property(u => u.CreatedAt).ExcludeFromAudit();
+        // A personal preference, not data of the business: changing it is no audit record.
+        user.Property(u => u.Theme).ExcludeFromAudit();
     }
 }
 

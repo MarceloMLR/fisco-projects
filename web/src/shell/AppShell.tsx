@@ -129,7 +129,7 @@ export function AppShell() {
         >
           <SessionPerson user={user} mutedColor="var(--sidebar-muted)" />
         </Box>
-        <Sidebar brand={false} onNavigate={closeMenu} />
+        <Sidebar brand={false} withProfile onNavigate={closeMenu} />
       </Drawer>
       <Box
         component="main"

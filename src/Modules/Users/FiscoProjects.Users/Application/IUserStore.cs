@@ -9,6 +9,9 @@ public interface IUserStore
 
     Task<User?> FindAsync(Guid userId, CancellationToken cancellationToken);
 
+    /// <summary>The providers the user signs in with ("local", and "entra" later), in alphabetical order.</summary>
+    Task<IReadOnlyList<string>> SignInProvidersAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<bool> AnyActiveAdministratorAsync(CancellationToken cancellationToken);
 
     Task<UserListPage> ListAsync(UserListQuery query, CancellationToken cancellationToken);

@@ -8,6 +8,7 @@ public static class UsersEndpoints
     public static RouteGroupBuilder MapUsersEndpoints(this RouteGroupBuilder api)
     {
         api.MapSessionEndpoints();
+        api.MapProfileEndpoints();
         api.MapUserAdministrationEndpoints();
         return api;
     }

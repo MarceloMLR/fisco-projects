@@ -26,14 +26,6 @@ As cores das telas MUST vir só dos tokens do design system FiscoProjects, com v
 - **WHEN** a estrutura é exibida no tema claro ou no escuro
 - **THEN** cada par de texto e fundo da barra lateral, do cabeçalho e do conteúdo tem contraste de pelo menos 4,5:1
 
-### Requirement: Tema automático
-
-Enquanto a pessoa não escolhe um tema, a aplicação MUST seguir o tema do sistema operacional (ADR-0014).
-
-#### Scenario: Tema segue o sistema
-- **WHEN** o sistema operacional está no tema escuro, ou no claro
-- **THEN** a aplicação abre no mesmo tema
-
 ### Requirement: Barra lateral no computador
 
 Em telas de 900px ou mais, a aplicação MUST mostrar uma barra lateral fixa, da altura da janela, com o selo e o nome do produto no topo e os itens Início, Projetos e Chamados e, só para o administrador, Administração, destacando o item da página atual.
@@ -52,7 +44,7 @@ Em telas de 900px ou mais, a aplicação MUST mostrar uma barra lateral fixa, da
 
 ### Requirement: Cabeçalho com a trilha
 
-Sobre o conteúdo, a aplicação MUST mostrar um cabeçalho da mesma cor do conteúdo e sem linha, com a trilha da página, cujos níveis acima levam às áreas em que a página fica e cujo último nível é a página atual, e, à direita, o avatar da pessoa na sessão, que abre o menu da conta.
+Sobre o conteúdo, a aplicação MUST mostrar um cabeçalho da mesma cor do conteúdo e sem linha, com a trilha da página, cujos níveis acima levam às áreas em que a página fica e cujo último nível é a página atual, e, à direita, o avatar da pessoa na sessão, que abre o menu da conta. O menu da conta MUST mostrar o nome e o e-mail da pessoa, o item Meu perfil, a escolha do tema (claro, escuro e automático) e a opção Sair.
 
 #### Scenario: Trilha da página
 - **WHEN** a pessoa abre uma página
@@ -64,15 +56,15 @@ Sobre o conteúdo, a aplicação MUST mostrar um cabeçalho da mesma cor do cont
 
 #### Scenario: Conta no cabeçalho
 - **WHEN** a pessoa abre o menu do avatar no cabeçalho
-- **THEN** o menu mostra o nome e o e-mail dela e a opção Sair, e o avatar traz as iniciais do nome
+- **THEN** o menu mostra o nome e o e-mail dela, Meu perfil, o tema escolhido entre claro, escuro e automático e a opção Sair, e o avatar traz as iniciais do nome
 
 ### Requirement: Estrutura no celular
 
-Em telas menores que 900px, a aplicação MUST trocar a barra lateral por uma barra superior com o botão de menu e o título da página; o menu MUST abrir por cima do conteúdo com o nome e o e-mail da pessoa na sessão e a mesma navegação, e fechar ao escolher um item.
+Em telas menores que 900px, a aplicação MUST trocar a barra lateral por uma barra superior com o botão de menu e o título da página; o menu MUST abrir por cima do conteúdo com o nome e o e-mail da pessoa na sessão, a mesma navegação e o item Meu perfil, e fechar ao escolher um item.
 
 #### Scenario: Menu no celular
 - **WHEN** a aplicação é aberta numa tela menor que 900px e a pessoa toca no botão de menu
-- **THEN** o menu abre com o nome e o e-mail da pessoa e os itens Início, Projetos e Chamados, e escolher um item leva à página e fecha o menu
+- **THEN** o menu abre com o nome e o e-mail da pessoa, os itens Início, Projetos e Chamados e o item Meu perfil, e escolher um item leva à página e fecha o menu
 
 ### Requirement: Conteúdo na altura da janela
 

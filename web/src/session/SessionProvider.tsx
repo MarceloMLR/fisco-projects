@@ -1,7 +1,13 @@
+import { useColorScheme } from '@mui/material/styles';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { api, onUnauthorized } from '../api/client';
+import { api, onUnauthorized, type ThemePreference } from '../api/client';
+import { queryKeys } from '../api/queries';
 import { type Session, SessionContext } from './SessionContext';
+
+/** The mode of the theme for a preference of the profile; Automatic follows the operating system. */
+const modeOf = (theme: ThemePreference) =>
+  theme === 'Light' ? 'light' : theme === 'Dark' ? 'dark' : 'system';
 
 async function currentSession(): Promise<Session> {
   try {
@@ -20,6 +26,15 @@ async function currentSession(): Promise<Session> {
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session>({ status: 'checking' });
   const queryClient = useQueryClient();
+  const { setMode } = useColorScheme();
+
+  // The theme of the profile once the session is known; without one, as on the sign-in page, the system's.
+  const theme = session.status === 'signed-in' ? session.user.theme : undefined;
+  useEffect(() => {
+    if (session.status !== 'checking') {
+      setMode(theme === undefined ? 'system' : modeOf(theme));
+    }
+  }, [session.status, theme, setMode]);
 
   useEffect(() => {
     if (session.status === 'signed-out') {
@@ -59,6 +74,35 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ session, refresh, signOut }), [session, refresh, signOut]);
+  const chooseTheme = useCallback(
+    async (chosen: ThemePreference) => {
+      if (session.status !== 'signed-in') {
+        return;
+      }
+      const before = session.user;
+      setSession({ status: 'signed-in', user: { ...before, theme: chosen } });
+      try {
+        const { response } = await api.PUT('/api/profile/theme', { body: { theme: chosen } });
+        if (!response.ok) {
+          throw new Error(`The API answered ${String(response.status)}.`);
+        }
+        void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+      } catch (error) {
+        // Back to the theme the profile still has.
+        setSession((current) =>
+          current.status === 'signed-in' && current.user.id === before.id
+            ? { status: 'signed-in', user: { ...current.user, theme: before.theme } }
+            : current,
+        );
+        throw error;
+      }
+    },
+    [session, queryClient],
+  );
+
+  const value = useMemo(
+    () => ({ session, refresh, signOut, chooseTheme }),
+    [session, refresh, signOut, chooseTheme],
+  );
   return <SessionContext value={value}>{children}</SessionContext>;
 }

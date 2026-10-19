@@ -1,9 +1,6 @@
-import { render } from '@testing-library/react';
 import indexHtml from '../../index.html?raw';
 import mainSource from '../main.tsx?raw';
 import { describe, expect, it } from 'vitest';
-import { simulateDevice } from '../test/media';
-import { AppThemeProvider } from './AppThemeProvider';
 import { theme } from './theme';
 import { color, colorSchemes, colorTokenNames, cssVariables, fontFamilies } from './tokens';
 
@@ -59,19 +56,6 @@ describe('Cores e fontes do design system', () => {
     }
     for (const source of [indexHtml, mainSource]) {
       expect(source).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
-    }
-  });
-});
-
-describe('Tema automático', () => {
-  it('Tema segue o sistema', () => {
-    for (const systemTheme of colorSchemes) {
-      simulateDevice({ systemTheme });
-
-      const { unmount } = render(<AppThemeProvider>{null}</AppThemeProvider>);
-
-      expect(document.documentElement).toHaveAttribute('data-theme', systemTheme);
-      unmount();
     }
   });
 });

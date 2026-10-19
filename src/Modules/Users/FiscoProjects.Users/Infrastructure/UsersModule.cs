@@ -27,6 +27,8 @@ public static class UsersModule
         services.AddScoped<DeactivateUser>();
         services.AddScoped<ReactivateUser>();
         services.AddScoped<ListUsers>();
+        services.AddScoped<GetProfile>();
+        services.AddScoped<ChooseTheme>();
 
         services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
         services.AddAuthorizationBuilder().AddPolicy(SystemPolicies.Administrator, policy => policy

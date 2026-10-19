@@ -33,6 +33,27 @@ public sealed class UserTests
         user.CreatedAt.Should().Be(Now);
     }
 
+    [Fact(DisplayName = "Usuário novo com o tema automático")]
+    public void Create_FollowsTheOperatingSystemTheme()
+    {
+        var user = User.Create("Marina Costa", "marina.costa@empresa.example", Now);
+
+        user.Theme.Should().Be(ThemePreference.Automatic);
+    }
+
+    [Fact(DisplayName = "Escolher o tema no domínio")]
+    public void ChooseTheme_KeepsTheTheme_AndRefusesAnUnknownOne()
+    {
+        var user = User.Create("Marina Costa", "marina.costa@empresa.example", Now);
+
+        user.ChooseTheme(ThemePreference.Dark);
+        var unknown = () => user.ChooseTheme((ThemePreference)7);
+
+        user.Theme.Should().Be(ThemePreference.Dark);
+        unknown.Should().Throw<ArgumentOutOfRangeException>();
+        user.Theme.Should().Be(ThemePreference.Dark);
+    }
+
     [Fact(DisplayName = "Usuário novo com o papel Usuário")]
     public void Create_StartsWithTheUserRole()
     {

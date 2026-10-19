@@ -34,6 +34,7 @@ async function dataOf<Data>(call: Promise<{ data?: Data; error?: unknown; respon
 export const queryKeys = {
   users: ['users'],
   audit: ['audit'],
+  profile: ['profile'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -49,5 +50,13 @@ export function auditQuery(params: AuditParams) {
   return queryOptions({
     queryKey: [...queryKeys.audit, 'list', params] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/audit', { params: { query: params }, signal })),
+  });
+}
+
+/** My profile: the person in the session, how they sign in and the theme they chose. */
+export function profileQuery() {
+  return queryOptions({
+    queryKey: queryKeys.profile,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/profile', { signal })),
   });
 }

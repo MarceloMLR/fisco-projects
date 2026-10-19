@@ -5,6 +5,7 @@ import { RequireAdministrator } from './admin/RequireAdministrator';
 import { UsersPage } from './admin/UsersPage';
 import { HomePage } from './pages/HomePage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { ProfilePage } from './profile/ProfilePage';
 import { SignInPage } from './pages/SignInPage';
 import { TicketsPage } from './pages/TicketsPage';
 import { RequireSession } from './session/RequireSession';
@@ -36,6 +37,12 @@ export const routes: RouteObject[] = [
         path: 'tickets',
         element: <TicketsPage />,
         handle: { navigation: 'tickets', titleKey: 'pages.tickets.title' } satisfies PageHandle,
+      },
+      // My profile is reached from the account menu (and the phone menu); it is no item of the sidebar.
+      {
+        path: 'profile',
+        element: <ProfilePage />,
+        handle: { titleKey: 'pages.profile.title' } satisfies PageHandle,
       },
       {
         path: 'admin',

@@ -35,6 +35,9 @@
     },
     "audit": {
       "title": "Auditoria"
+    },
+    "profile": {
+      "title": "Meu perfil"
     }
   },
   "signIn": {
@@ -116,6 +119,26 @@
   },
   "details": {
     "close": "Fechar"
+  },
+  "profile": {
+    "subtitle": "{{email}} · {{role}}",
+    "preferences": "Preferências",
+    "theme": "Tema",
+    "themes": {
+      "Light": "Claro",
+      "Dark": "Escuro",
+      "Automatic": "Automático"
+    },
+    "themeFailed": "Não foi possível salvar o tema. Tente de novo.",
+    "account": "Conta",
+    "role": "Papel no sistema",
+    "signIn": "Entrada",
+    "signInMethods": {
+      "local": "Entrada local (demonstração)",
+      "entra": "Conta Microsoft da empresa"
+    },
+    "lastAccess": "Último acesso",
+    "none": "—"
   },
   "audit": {
     "table": "Registros de auditoria",

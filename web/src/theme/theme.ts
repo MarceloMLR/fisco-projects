@@ -128,6 +128,19 @@ export const theme = createTheme({
               props: { size: 'large' },
               style: { height: 'var(--control-lg)', padding: '0 var(--space-5)' },
             },
+            // Secondary button (fp-btn--secondary): surface with the control border.
+            {
+              props: { variant: 'outlined' },
+              style: {
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-control)',
+                color: 'var(--text)',
+                '&:hover': {
+                  backgroundColor: 'var(--bg-subtle)',
+                  borderColor: 'var(--border-control)',
+                },
+              },
+            },
             {
               props: { variant: 'contained', color: 'primary' },
               style: {

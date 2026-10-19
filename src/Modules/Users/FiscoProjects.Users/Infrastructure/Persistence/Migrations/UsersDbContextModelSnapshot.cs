@@ -49,6 +49,8 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("identity_links", "users");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
             modelBuilder.Entity("FiscoProjects.Users.Domain.User", b =>
@@ -57,7 +59,8 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -68,7 +71,8 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("LastSignInAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -82,6 +86,14 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(32)")
                         .HasDefaultValue("User");
 
+                    b.Property<string>("Theme")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("Automatic")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
@@ -89,6 +101,8 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("users", "users");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
                 });
 
             modelBuilder.Entity("FiscoProjects.Users.Domain.IdentityLink", b =>
