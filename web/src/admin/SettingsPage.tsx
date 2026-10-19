@@ -69,14 +69,6 @@ const sectionTitleSx = {
   color: 'var(--text)',
 } as const;
 
-/** Two fields side by side (fp-form-row), one under the other on a narrow screen. */
-const rowSx = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: 'var(--space-4)',
-  [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
-} as const;
-
 function isLogoFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return logoTypes.includes(file.type) || name.endsWith('.png') || name.endsWith('.svg');
@@ -407,7 +399,8 @@ export function SettingsPage() {
                   <Box component="h2" id="settings-rules" sx={sectionTitleSx}>
                     {t('settings.rules')}
                   </Box>
-                  <Box sx={rowSx}>
+                  {/* The names of the time zones are long: the field takes more than half of the row. */}
+                  <Box sx={{ maxWidth: 520 }}>
                     <Controller
                       control={control}
                       name="timeZone"
