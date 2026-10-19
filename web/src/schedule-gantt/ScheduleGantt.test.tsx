@@ -6,6 +6,7 @@ import { demoSchedule, demoScheduleWithSubtasks } from '../test/server';
 import { ScheduleGantt } from './ScheduleGantt';
 
 const text = ptBR.projects;
+const oneDayLate = text.schedule.lateDays_one.replace('{{count}}', '1');
 
 /**
  * jsdom does not lay anything out: the area of the timeline says it is 1200 px wide. The table takes 320 px and the
@@ -82,7 +83,7 @@ describe('Linha do tempo', () => {
       'Levantamento93%',
       'Reunião de abertura100%',
       'Mapear processos fiscais100%',
-      `Validar cadastro de produtos${text.schedule.late}80%`,
+      `Validar cadastro de produtos${oneDayLate}80%`,
       'Configuração27%',
       'Parametrizar regras de ICMS50%',
       'Integrar emissão de NF-e20%',
@@ -92,13 +93,13 @@ describe('Linha do tempo', () => {
       `${text.schedule.kinds.Milestone}Aceite da homologação${text.timeline.milestone.pending}`,
       'Entrada em produção',
     ]);
-    // The late task, by icon, color and text (ADR-0065).
+    // The late task, by icon, color and text (ADR-0065); the icon says by how many business days.
     const late = container.querySelector<HTMLElement>('.fp-gantt-progress--late');
     if (late === null) {
       throw new Error('No late task.');
     }
     expect(late.closest('.e-row')?.textContent).toContain('Validar cadastro de produtos');
-    expect(within(late).getByRole('img', { name: text.schedule.late })).toBeVisible();
+    expect(within(late).getByRole('img', { name: oneDayLate })).toBeVisible();
     // The bars in the dates of the schedule: 13/10 to 15/10, three days.
     const validating = barOf(container, 'Validar cadastro de produtos');
     expect([daysOf(validating), lengthOf(validating)]).toEqual([8, 3]);

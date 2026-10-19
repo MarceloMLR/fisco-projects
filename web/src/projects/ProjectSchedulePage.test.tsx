@@ -144,10 +144,12 @@ function answerProgress() {
         .flatMap((phase) => phase.items)
         .find((one) => one.id === params.itemId);
       if (item !== undefined) {
+        const late = progress < 100 && item.end < '2026-10-16';
         Object.assign(item, {
           progress,
           completedOn: progress === 100 ? '2026-10-16' : null,
-          late: progress < 100 && item.end < '2026-10-16',
+          late,
+          lateDays: late ? item.lateDays : 0,
         });
       }
       schedule = { ...schedule };
@@ -192,17 +194,18 @@ describe('Aba Cronograma', () => {
       'aria-valuenow',
       '93',
     );
-    // The late task, by icon, color and text (ADR-0065).
+    // The late task, by icon, color and text (ADR-0065), with the business days of delay under its end.
+    const oneDayLate = text.lateDays_one.replace('{{count}}', '1');
     expect(cellsOf('Validar cadastro de produtos')).toEqual([
       'Validar cadastro de produtos',
       '13/10/2026',
-      `15/10/2026${text.late}`,
+      `15/10/2026${oneDayLate}`,
       days(3),
       'RSRafael Souza',
       '80%',
       'Mapear processos fiscais',
     ]);
-    expect(within(rowOf('Validar cadastro de produtos')).getByText(text.late)).toHaveStyle({
+    expect(within(rowOf('Validar cadastro de produtos')).getByText(oneDayLate)).toHaveStyle({
       color: 'var(--status-danger-text)',
     });
     expect(cellsOf('Integrar emissão de NF-e')[4]).toBe(text.noOwner);
@@ -256,7 +259,7 @@ describe('Aba Cronograma', () => {
       ...survey.items.slice(0, 2),
       milestone('Processos mapeados', '2026-10-09', { reachedOn: '2026-10-09' }),
       ...survey.items.slice(2),
-      milestone('Aceite do levantamento', '2026-10-15', { late: true }),
+      milestone('Aceite do levantamento', '2026-10-15', { late: true, lateDays: 1 }),
     ];
     schedule = { ...schedule, lateMilestones: 1 };
     await openSchedule();
@@ -265,10 +268,12 @@ describe('Aba Cronograma', () => {
     expect(state('Processos mapeados')).toBe(text.milestone.reached.replace('{{day}}', '09/10'));
     expect(state('Aceite da homologação')).toBe(text.milestone.pending);
     expect(state('Aceite do levantamento')).toBe(text.milestone.late);
-    // Late by icon, color and text (ADR-0065), in the column of its state and not as "Atrasada".
+    // Late by icon, color and text (ADR-0065), in the column of its state and not as "Atrasada"; the business days of
+    // delay in the column of the end, which a milestone does not have.
     const late = within(rowOf('Aceite do levantamento')).getByText(text.milestone.late);
     expect(late).toHaveStyle({ color: 'var(--status-danger-text)' });
-    expect(cellsOf('Aceite do levantamento')[2]).toBe('');
+    expect(cellsOf('Aceite do levantamento')[2]).toBe(text.lateDays_one.replace('{{count}}', '1'));
+    expect(cellsOf('Aceite da homologação')[2]).toBe('');
     expect(
       within(rowOf('Processos mapeados')).getByText(
         text.milestone.reached.replace('{{day}}', '09/10'),
@@ -276,6 +281,33 @@ describe('Aba Cronograma', () => {
     ).toHaveStyle({ color: 'var(--status-success-text)' });
     expect(screen.getByText(text.lateMilestones_one.replace('{{count}}', '1'))).toBeVisible();
     expect(screen.getByText(text.lateTasks_one.replace('{{count}}', '1'))).toBeVisible();
+  });
+
+  it('Atraso desde um dia não útil pela tela', async () => {
+    // On a Saturday, the task of Friday and the milestone of the day before lost no business day yet.
+    const [survey] = schedule.phases;
+    if (survey === undefined) {
+      throw new Error('No Levantamento.');
+    }
+    survey.items = survey.items.map((item) =>
+      item.name === 'Validar cadastro de produtos' ? { ...item, lateDays: 0 } : item,
+    );
+    survey.items.push({
+      ...itemNamed('Aceite da homologação'),
+      id: '0199f5a2-7c1e-7d40-9a1b-600000000077',
+      phaseId: survey.id,
+      name: 'Aceite do levantamento',
+      start: '2026-10-15',
+      end: '2026-10-15',
+      predecessorIds: [],
+      late: true,
+      lateDays: 0,
+    });
+    await openSchedule();
+
+    expect(cellsOf('Validar cadastro de produtos')[2]).toBe(`15/10/2026${text.late}`);
+    expect(cellsOf('Aceite do levantamento')[2]).toBe('');
+    expect(cellsOf('Aceite do levantamento')[5]).toBe(text.milestone.late);
   });
 
   it('Cronograma vazio', async () => {
@@ -476,9 +508,12 @@ describe('Editar o cronograma pela tela', () => {
         // Five days from 06/10 end on 13/10, and the API pushes the two items after it.
         const mapping = itemNamed('Mapear processos fiscais');
         Object.assign(mapping, { duration: 5, end: '2026-10-13' });
+        // Ending today, it is no longer late.
         Object.assign(itemNamed('Validar cadastro de produtos'), {
           start: '2026-10-14',
           end: '2026-10-16',
+          late: false,
+          lateDays: 0,
         });
         Object.assign(itemNamed('Parametrizar regras de ICMS'), {
           start: '2026-10-14',
@@ -533,7 +568,7 @@ describe('Editar o cronograma pela tela', () => {
     expect(cellsOf('Mapear processos fiscais')[2]).toBe('13/10/2026');
     expect(cellsOf('Validar cadastro de produtos').slice(1, 3)).toEqual([
       '14/10/2026',
-      `16/10/2026${text.late}`,
+      '16/10/2026',
     ]);
     expect(cellsOf('Parametrizar regras de ICMS').slice(1, 3)).toEqual([
       '14/10/2026',
@@ -623,7 +658,7 @@ describe('Editar o cronograma pela tela', () => {
     expect(
       within(drawer).getByRole('heading', { name: 'Validar cadastro de produtos' }),
     ).toBeVisible();
-    expect(within(drawer).getByText(text.late)).toBeVisible();
+    expect(within(drawer).getByText(text.lateDays_one.replace('{{count}}', '1'))).toBeVisible();
     expect(within(drawer).getByText('Rafael Souza')).toBeVisible();
     expect(within(drawer).getByText('Mapear processos fiscais')).toBeVisible();
     expect(within(drawer).queryByRole('button', { name: text.form.save })).not.toBeInTheDocument();
@@ -726,7 +761,9 @@ describe('Progresso pela tela', () => {
       within(drawer).queryByRole('button', { name: text.progressActions.complete }),
     ).not.toBeInTheDocument();
     expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
-    expect(within(drawer).queryByText(text.late)).not.toBeInTheDocument();
+    expect(
+      within(drawer).queryByText(text.lateDays_one.replace('{{count}}', '1')),
+    ).not.toBeInTheDocument();
   });
 
   it('Progresso sem permissão pela tela', async () => {

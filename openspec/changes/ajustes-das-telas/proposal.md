@@ -9,8 +9,8 @@ Ao conferir as Cronograma-3, 3.1 e 4, Marcelo encontrou pontos que atrapalham o 
 - **Abas do projeto sem barra de rolagem:** o traço da aba escolhida passava 1 px da linha das abas e criava uma rolagem vertical. As abas continuam rolando para o lado no celular, se não couberem.
 - **Dias de atraso** (ADR-0020, ADR-0086):
   - a API passa a dizer, em cada tarefa e marco, há quantos dias úteis está atrasado (`lateDays`): os dias úteis do dia seguinte ao fim até hoje, no calendário da instalação; na tarefa-resumo, os da subtarefa mais atrasada (ADR-0088);
-  - a tela mostra "1 dia útil de atraso" ou "N dias úteis de atraso", o mesmo texto das telas aprovadas: na Lista (embaixo do fim da tarefa e no estado do marco), no detalhe e na dica do ícone na Linha do tempo;
-  - quando o atraso começou num dia não útil (uma tarefa da sexta, vista no sábado), ainda não há dia útil perdido, e a tela continua dizendo "Atrasada" ou "Atrasado".
+  - a tela mostra "1 dia útil de atraso" ou "N dias úteis de atraso", o mesmo texto das telas aprovadas: na coluna Fim da Lista (embaixo da data da tarefa e sozinho no marco), no detalhe e na dica do ícone na Linha do tempo;
+  - quando o atraso começou num dia não útil (uma tarefa da sexta, vista no sábado), ainda não há dia útil perdido, e a tela continua dizendo "Atrasada" na tarefa e "Atrasado" no estado do marco.
 - **Reabrir pela Linha do tempo:** ao fechar o detalhe de uma tarefa ou de uma fase, a Linha do tempo deixa de manter a linha escolhida, e escolher a mesma barra ou linha de novo abre o detalhe outra vez.
 - **CNPJ inválido com o motivo exato** (ADR-0015): o campo diz se falta caractere ("O CNPJ tem 14 caracteres"), se os dois últimos dígitos não batem com os anteriores ou se todos os caracteres são iguais.
 - **Subtarefas mais claras** (ADR-0088):

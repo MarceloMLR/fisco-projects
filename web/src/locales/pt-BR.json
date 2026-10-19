@@ -794,6 +794,8 @@
       "lateMilestones_one": "{{count}} marco atrasado",
       "lateMilestones_other": "{{count}} marcos atrasados",
       "late": "Atrasada",
+      "lateDays_one": "{{count}} dia útil de atraso",
+      "lateDays_other": "{{count}} dias úteis de atraso",
       "milestone": {
         "reached": "Atingido em {{day}}",
         "pending": "Pendente",

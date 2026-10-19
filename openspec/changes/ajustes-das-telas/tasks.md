@@ -1,12 +1,12 @@
 ## 1. Dias de atraso na API
 
-- [ ] 1.1 `ScheduleItem.DaysLate` e `ScheduleFigures.LateDaysOf`, com a tarefa-resumo, e os testes de domínio "Dias de atraso da tarefa", "Atraso que começou num dia não útil" e "Dias de atraso do marco"
-- [ ] 1.2 `GetSchedule` com os dias de atraso pelo calendário já lido, `lateDays` na resposta do item, contrato OpenAPI e tipos do frontend, e o teste da API
+- [x] 1.1 `ScheduleItem.DaysLate` e `ScheduleFigures.LateDaysOf`, com a tarefa-resumo, e os testes de domínio "Dias de atraso da tarefa", "Atraso que começou num dia não útil" e "Dias de atraso do marco"
+- [x] 1.2 `GetSchedule` com os dias de atraso pelo calendário já lido, `lateDays` na resposta do item, contrato OpenAPI e tipos do frontend, e o teste da API
 
 ## 2. Dias de atraso na tela
 
-- [ ] 2.1 Textos "1 dia útil de atraso" e "N dias úteis de atraso"; a Lista (embaixo do fim da tarefa e no estado do marco), o detalhe e a dica do ícone na Linha do tempo, com "Atrasada" e "Atrasado" quando o atraso é zero
-- [ ] 2.2 Testes de tela: "Cronograma pela tela", "Estados do marco pela tela", "Atraso desde um dia não útil pela tela" e "Linha do tempo pela tela"
+- [x] 2.1 Textos "1 dia útil de atraso" e "N dias úteis de atraso"; a coluna Fim da Lista (embaixo da data da tarefa e sozinho no marco), o cabeçalho do detalhe e a dica do ícone na Linha do tempo, com "Atrasada" na tarefa quando o atraso é zero
+- [x] 2.2 Testes de tela: "Cronograma pela tela", "Estados do marco pela tela", "Atraso desde um dia não útil pela tela" e "Linha do tempo pela tela"
 
 ## 3. Linha do tempo, abas e CNPJ
 

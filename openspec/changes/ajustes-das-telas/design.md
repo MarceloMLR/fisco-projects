@@ -36,9 +36,11 @@ O `GetSchedule` já lê o calendário para os `nonWorkingDays`; o mesmo calendá
 
 O texto é o das telas aprovadas: "1 dia útil de atraso" e "N dias úteis de atraso", pelo `DueDate` em estado `overdue` (ícone, cor e texto, ADR-0065).
 
-- **Lista:** a tarefa mostra o atraso embaixo do fim, em duas linhas, como o canvas Projetos faz com o fim e o desvio; o marco mostra o atraso no estado, no lugar de "Atrasado". As colunas Fim e Progresso ficam um pouco mais largas para o texto caber; a fase continua com "Atrasada".
-- **Detalhe:** o cabeçalho da tarefa e o estado do marco mostram o mesmo texto.
-- **Linha do tempo:** a coluna do progresso é estreita; o ícone de atraso diz o número na dica (`titleAccess`), e o marco mantém "Atrasado" com a dica.
+- **Lista:** o atraso fica na coluna Fim, que é a do prazo: a tarefa mostra o atraso embaixo da data, em duas linhas, como o canvas Projetos faz com o fim e o desvio; o marco, que não tem fim, mostra só o atraso, e o estado dele continua "Atrasado". A coluna Fim fica um pouco mais larga para o texto caber; a fase continua com "Atrasada" ao lado da data.
+- **Detalhe:** o cabeçalho da tarefa e o do marco mostram o mesmo texto, e o estado do marco continua "Atrasado".
+- **Linha do tempo:** a coluna do progresso é estreita; o ícone de atraso da tarefa diz o número na dica (`titleAccess`), e o estado do marco, "Atrasado", ganha a mesma dica.
+
+- **Alternativa:** pôr o atraso do marco no estado, no lugar de "Atrasado". Recusada: a coluna do estado é estreita, e o atraso de tarefas e marcos fica num lugar só.
 
 ### 3. A Linha do tempo esquece a linha ao fechar o detalhe
 
@@ -67,5 +69,5 @@ O `loadDemo` termina, carregando ou não, com "Abra as telas em http://localhost
 ## Risks / Trade-offs
 
 - **[Duas linhas na célula do fim]** → A linha da Lista tem 48 px e cabe a data mais o atraso (20 + 18 px), como no canvas Projetos.
-- **[A largura das colunas]** → Fim de 172 para 196 px e Progresso de 148 para 176 px; a 1440 px ainda cabem todas as colunas, e abaixo disso a Lista já rola para o lado dentro da tabela.
+- **[A largura da coluna Fim]** → De 172 para 196 px; a 1440 px ainda cabem todas as colunas, e abaixo disso a Lista já rola para o lado dentro da tabela.
 - **[`clearSelection` num componente de terceiros]** → Coberto por um teste do `ScheduleGantt` e conferido no navegador; se a API do Syncfusion mudar, o teste quebra.

@@ -27,6 +27,27 @@ export function milestoneStatus(item: ScheduleItem): MilestoneStatus {
   return item.late ? 'late' : 'pending';
 }
 
+/**
+ * Whether an item says by how much it is late: a late task always ("Atrasada" while no business day was lost yet); a
+ * late milestone, from the first business day lost, since its state already says "Atrasado" (ADR-0086).
+ */
+export function showsDelay(item: ScheduleItem): boolean {
+  return item.late && (item.kind === 'Task' || item.lateDays > 0);
+}
+
+/**
+ * What a late task or milestone says: "1 dia útil de atraso" or "3 dias úteis de atraso", as the API counts them;
+ * "Atrasada" or "Atrasado" while the delay began on non-business days only (ADR-0020, ADR-0086).
+ */
+export function lateText(item: ScheduleItem, t: TFunction): string {
+  if (item.lateDays > 0) {
+    return t('projects.schedule.lateDays', { count: item.lateDays });
+  }
+  return t(
+    item.kind === 'Milestone' ? 'projects.schedule.milestone.late' : 'projects.schedule.late',
+  );
+}
+
 /** Every task and milestone of the schedule, in the order of the Lista. */
 export function itemsOf(schedule: Schedule): ScheduleItem[] {
   return schedule.phases.flatMap((phase) => phase.items);

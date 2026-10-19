@@ -38,7 +38,7 @@ Um marco não atingido MUST ficar atrasado quando a data é anterior a hoje, no 
 
 ### Requirement: Aba Cronograma
 
-A página do projeto MUST ter a aba Cronograma, entre Visão geral e Membros, que alterna entre Linha do tempo e Lista; no computador abre na Linha do tempo e no celular, na Lista. A Lista MUST ter as fases em linhas de grupo, com datas e progresso, e abaixo delas as tarefas e os marcos em ordem de início, com início, fim, duração, responsável, progresso e dependências. O marco mostra Atingido, Pendente ou Atrasado. A tarefa e o marco atrasados MUST dizer há quantos dias úteis ("1 dia útil de atraso", "3 dias úteis de atraso"): a tarefa embaixo do fim, e o marco no estado; com zero dia útil, a tarefa diz "Atrasada" e o marco, "Atrasado" (ADR-0065, ADR-0071, ADR-0086).
+A página do projeto MUST ter a aba Cronograma, entre Visão geral e Membros, que alterna entre Linha do tempo e Lista; no computador abre na Linha do tempo e no celular, na Lista. A Lista MUST ter as fases em linhas de grupo, com datas e progresso, e abaixo delas as tarefas e os marcos em ordem de início, com início, fim, duração, responsável, progresso e dependências. O marco mostra Atingido, Pendente ou Atrasado. A tarefa e o marco atrasados MUST dizer na coluna Fim há quantos dias úteis ("1 dia útil de atraso", "3 dias úteis de atraso"): a tarefa embaixo da data, e o marco, que não tem fim, só com o atraso. Com zero dia útil, a tarefa diz "Atrasada", e o marco fica só com "Atrasado" no estado (ADR-0065, ADR-0071, ADR-0086).
 
 #### Scenario: Cronograma pela tela
 - **WHEN** hoje é 16/10/2026 e uma pessoa do projeto abre a Lista da aba Cronograma de um projeto com fases, tarefas, um marco e uma tarefa que terminou em 15/10/2026 a 80%
@@ -50,11 +50,11 @@ A página do projeto MUST ter a aba Cronograma, entre Visão geral e Membros, qu
 
 #### Scenario: Estados do marco pela tela
 - **WHEN** hoje é 16/10/2026 e o cronograma tem um marco atingido em 09/10/2026, um pendente em 03/11/2026 e um não atingido de 15/10/2026
-- **THEN** a Lista mostra "Atingido em 09/10", "Pendente" e "1 dia útil de atraso", este com ícone e cor, e o resumo conta um marco atrasado
+- **THEN** a Lista mostra "Atingido em 09/10", "Pendente" e "Atrasado", este com ícone e cor e com "1 dia útil de atraso" na coluna Fim, e o resumo conta um marco atrasado
 
 #### Scenario: Atraso desde um dia não útil pela tela
 - **WHEN** a API diz que uma tarefa e um marco estão atrasados com zero dia útil de atraso
-- **THEN** a Lista mostra "Atrasada" na tarefa e "Atrasado" no marco
+- **THEN** a Lista mostra "Atrasada" embaixo do fim da tarefa, e o marco fica só com "Atrasado" no estado
 
 #### Scenario: Alternar Linha do tempo e Lista
 - **WHEN** uma pessoa abre a aba Cronograma no computador e depois escolhe "Lista"

@@ -42,9 +42,11 @@ import {
   findItem,
   isPhaseRow,
   itemsOf,
+  lateText,
   predecessorNames,
   type ScheduleRow,
   scheduleRows,
+  showsDelay,
 } from './schedule';
 import { ScheduleItemFields } from './ScheduleItemFields';
 import { MilestoneState, TaskProgress } from './ScheduleItemProgress';
@@ -173,21 +175,22 @@ export function ProjectSchedulePage() {
       {
         field: 'end',
         headerName: t('projects.schedule.columns.end'),
-        width: 172,
+        width: 196,
         renderCell: ({ row }) => {
-          const end =
-            row.kind === 'phase'
-              ? row.phase.end
-              : row.item.kind === 'Milestone'
-                ? null
-                : row.item.end;
-          // A milestone says it is late in the column of its state.
-          const late =
-            row.kind === 'phase' ? row.phase.late : row.item.kind === 'Task' && row.item.late;
+          if (row.kind === 'phase') {
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                {row.phase.end !== null && <span>{formatDayText(row.phase.end)}</span>}
+                {row.phase.late && <DueDate state="overdue">{t('projects.schedule.late')}</DueDate>}
+              </Box>
+            );
+          }
+          // The delay in business days, under the end of a task, and alone for a milestone, which has no end.
+          const { item } = row;
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              {end !== null && <span>{formatDayText(end)}</span>}
-              {late && <DueDate state="overdue">{t('projects.schedule.late')}</DueDate>}
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {item.kind === 'Task' && <span>{formatDayText(item.end)}</span>}
+              {showsDelay(item) && <DueDate state="overdue">{lateText(item, t)}</DueDate>}
             </Box>
           );
         },
@@ -757,9 +760,9 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
       >
         {item.name}
       </Box>
-      {item.kind === 'Task' && item.late && (
+      {showsDelay(item) && (
         <Box sx={{ marginTop: 'var(--space-1)' }}>
-          <DueDate state="overdue">{t('projects.schedule.late')}</DueDate>
+          <DueDate state="overdue">{lateText(item, t)}</DueDate>
         </Box>
       )}
     </Box>

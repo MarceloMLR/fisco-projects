@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import type { Schedule } from '../api/client';
 import { type DayValue, formatDayMonthText } from '../format/dates';
 import { DueDate } from '../components/DueDate';
-import { milestoneStatus } from '../projects/schedule';
+import { lateText, milestoneStatus } from '../projects/schedule';
 import { ganttPeriod, type GanttScale, ganttUnitWidth } from './ganttLayout';
 import {
   dateOfDay,
@@ -468,7 +468,7 @@ function NameCell({ row, withDelay }: { row: GanttRow | undefined; withDelay: bo
       </span>
       {late && (
         <WarningAmberOutlined
-          titleAccess={t('projects.schedule.late')}
+          titleAccess={lateText(target.item, t)}
           className="fp-gantt-progress__icon fp-gantt-name__late"
         />
       )}
@@ -476,7 +476,10 @@ function NameCell({ row, withDelay }: { row: GanttRow | undefined; withDelay: bo
   );
 }
 
-/** The progress of a line, or the state of a milestone; a late task says so by icon, color and text. */
+/**
+ * The progress of a line, or the state of a milestone; a late task says so by icon, color and text, and the icon says
+ * by how many business days, as the state of a late milestone does.
+ */
 function ProgressCell({ row }: { row: GanttRow | undefined }) {
   const { t } = useTranslation();
   if (row === undefined) {
@@ -486,9 +489,11 @@ function ProgressCell({ row }: { row: GanttRow | undefined }) {
   if (target.kind === 'item' && target.item.kind === 'Milestone') {
     const status = milestoneStatus(target.item);
     return (
-      <DueDate state={status === 'reached' ? 'met' : status === 'late' ? 'overdue' : 'onTrack'}>
-        {t(`projects.timeline.milestone.${status}`)}
-      </DueDate>
+      <span title={status === 'late' ? lateText(target.item, t) : undefined}>
+        <DueDate state={status === 'reached' ? 'met' : status === 'late' ? 'overdue' : 'onTrack'}>
+          {t(`projects.timeline.milestone.${status}`)}
+        </DueDate>
+      </span>
     );
   }
   const late = target.kind === 'item' && target.item.late;
@@ -498,7 +503,7 @@ function ProgressCell({ row }: { row: GanttRow | undefined }) {
     <span className={late ? 'fp-gantt-progress fp-gantt-progress--late' : 'fp-gantt-progress'}>
       {late && (
         <WarningAmberOutlined
-          titleAccess={t('projects.schedule.late')}
+          titleAccess={lateText(target.item, t)}
           className="fp-gantt-progress__icon"
         />
       )}
