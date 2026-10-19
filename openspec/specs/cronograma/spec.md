@@ -220,7 +220,7 @@ Um projeto concluído ou cancelado é somente leitura: mudar o cronograma MUST r
 
 ### Requirement: Aba Cronograma
 
-A página do projeto MUST ter a aba Cronograma, entre Visão geral e Membros, com a Lista: as fases em linhas de grupo, com as datas e o progresso, e, abaixo de cada uma, as tarefas e os marcos em ordem de início, com o início, o fim, a duração, o responsável, o progresso e de quem dependem. O marco MUST ter o ícone de bandeira e mostrar Atingido, Pendente ou Atrasado; a tarefa atrasada, ícone, cor e o texto "Atrasada". Acima da lista, o progresso do projeto e as tarefas e os marcos atrasados (ADR-0065, ADR-0071, ADR-0086).
+A página do projeto MUST ter a aba Cronograma, entre Visão geral e Membros, com a Lista: as fases em linhas de grupo, com datas e progresso, e abaixo de cada uma as tarefas e os marcos em ordem de início, com início, fim, duração, responsável, progresso e de quem dependem. O marco MUST ter a bandeira e mostrar Atingido, Pendente ou Atrasado; a tarefa atrasada, ícone, cor e "Atrasada". Acima da lista, o progresso do projeto e os atrasos (ADR-0065, ADR-0071, ADR-0086).
 
 #### Scenario: Cronograma pela tela
 - **WHEN** uma pessoa do projeto abre a aba Cronograma de um projeto com fases, tarefas, um marco e uma tarefa atrasada
