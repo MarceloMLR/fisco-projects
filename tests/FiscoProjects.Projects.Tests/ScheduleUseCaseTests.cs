@@ -7,8 +7,8 @@ namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (module side): "Quem vê e quem edita o cronograma", "Fases do cronograma", "Tarefas e marcos",
 // "Responsável da tarefa", "Dependências", "Dependências que empurram", "Cronograma de um projeto encerrado",
-// "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Novas datas pela API" and "Dias não úteis
-// no cronograma"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de
+// "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Novas datas pela API", "Dias não úteis
+// no cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Excluir tarefa-resumo"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de
 // projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLifetime
 {
@@ -108,6 +108,12 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
     private async Task<Guid> AddTaskAsync(string name, DateOnly start, int duration, params Guid[] after) =>
         (await AddItemAsync(Marina, TaskForm(name, start, duration, null, after))).Id!.Value;
+
+    private async Task<Guid> AddSubtaskAsync(string name, DateOnly start, int duration, Guid parent, params Guid[] after) =>
+        (await AddItemAsync(Marina, SubtaskForm(name, start, duration, parent, after))).Id!.Value;
+
+    private ScheduleItemForm SubtaskForm(string name, DateOnly start, int duration, Guid? parent, params Guid[] after) =>
+        new(_phase, name, start, duration, null, null, after, parent);
 
     private async Task<Guid> AddMilestoneAsync(string name, DateOnly day) =>
         (await AddItemAsync(Marina, Form(_phase, name, day, 0), ScheduleItemKind.Milestone)).Id!.Value;
@@ -609,5 +615,141 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         details!.Schedule.Should().Be(new SchedulePeriod(D(10, 13), D(11, 13)));
         details.Permissions.CanEditSchedule.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Incluir subtarefa")]
+    public async Task Subtask_IsSaved_UnderItsTask()
+    {
+        var rules = await AddTaskAsync("Parametrizar regras fiscais", D(10, 13), 5);
+        var mapping = await AddSubtaskAsync("Mapear regras de ICMS", D(10, 13), 3, rules);
+        var approved = (await AddItemAsync(Marina, SubtaskForm("Regras aprovadas", D(10, 15), 0, rules, mapping), ScheduleItemKind.Milestone)).Id!.Value;
+
+        var view = (await GetAsync(Marina))!;
+
+        view.Figures.Phases.Single().Items.Select(item => item.Id).Should().Equal(rules, mapping, approved);
+        view.Figures.Summaries.Should().BeEquivalentTo([rules]);
+        view.ProgressUpdatable.Should().BeEquivalentTo([mapping], "a task with subtasks takes its progress from them");
+        (await ItemAsync(approved)).Item.ParentId.Should().Be(rules);
+        (await ItemAsync(rules)).Item.Should().Match<ScheduleItem>(item => item.Start == D(10, 13) && item.End == D(10, 15) && item.Duration == 3);
+    }
+
+    [Fact(DisplayName = "Subtarefa fora do nível")]
+    public async Task Subtask_OutOfTheLevel_IsRefused()
+    {
+        var other = (await AddPhaseAsync(Marina, "Homologação")).Id!.Value;
+        var rules = await AddTaskAsync("Parametrizar regras fiscais", D(10, 13), 5);
+        var mapping = await AddSubtaskAsync("Mapear regras de ICMS", D(10, 13), 3, rules);
+        var loose = await AddTaskAsync("Integrar NF-e", D(10, 13), 2);
+
+        (await AddItemAsync(Marina, SubtaskForm("Detalhar", D(10, 13), 1, mapping))).Invalid.Should().Equal(ScheduleField.Parent);
+        (await AddItemAsync(Marina, new ScheduleItemForm(other, "Detalhar", D(10, 13), 1, null, 0, [], rules))).Invalid.Should().Equal(ScheduleField.Parent);
+        (await ChangeItemAsync(Marina, rules, SubtaskForm("Parametrizar regras fiscais", D(10, 13), 5, loose))).Invalid.Should().Equal(ScheduleField.Parent);
+        (await AddItemAsync(Marina, SubtaskForm("Detalhar", D(10, 13), 1, Guid.CreateVersion7()))).Invalid.Should().Equal(ScheduleField.Parent);
+        (await GetAsync(Marina))!.Figures.Summaries.Should().BeEquivalentTo([rules]);
+    }
+
+    [Fact(DisplayName = "Progresso de uma tarefa-resumo")]
+    public async Task Summary_RefusesProgressAndDates()
+    {
+        var rules = await AddTaskAsync("Parametrizar regras fiscais", D(10, 13), 5);
+        await AddSubtaskAsync("Mapear regras de ICMS", D(10, 13), 3, rules);
+
+        (await UpdateProgressAsync(Marina, rules, 50)).Invalid.Should().Equal(ScheduleField.Progress);
+        (await RescheduleAsync(Marina, rules, D(10, 20))).Invalid.Should().Equal(ScheduleField.Start);
+        (await ChangeItemAsync(Marina, rules, Form(_phase, "Parametrizar regras fiscais", D(10, 13), 5, progress: 50))).Invalid
+            .Should().Equal(ScheduleField.Progress);
+        // A summary takes only the name, the phase and the owner: its start and duration are not looked at.
+        (await ChangeItemAsync(Marina, rules, SubtaskForm("Regras fiscais", new DateOnly(1999, 1, 1), 0, null))).Outcome
+            .Should().Be(ScheduleOutcome.Done);
+
+        (await ItemAsync(rules)).Item.Should().Match<ScheduleItem>(item =>
+            item.Name == "Regras fiscais" && item.Start == D(10, 13) && item.End == D(10, 15) && item.Progress == 0);
+    }
+
+    [Fact(DisplayName = "Depender de uma tarefa-resumo")]
+    public async Task Summary_InADependency_IsRefused()
+    {
+        var rules = await AddTaskAsync("Parametrizar regras fiscais", D(10, 13), 5);
+        await AddSubtaskAsync("Mapear regras de ICMS", D(10, 13), 3, rules);
+        var loose = await AddTaskAsync("Integrar NF-e", D(10, 13), 2);
+
+        (await ChangeItemAsync(Marina, loose, TaskForm("Integrar NF-e", D(10, 13), 2, null, rules))).Invalid.Should().Equal(ScheduleField.Predecessors);
+        (await ChangeItemAsync(Marina, rules, SubtaskForm("Parametrizar regras fiscais", D(10, 13), 5, null, loose))).Invalid
+            .Should().Equal(ScheduleField.Predecessors);
+        (await AddItemAsync(Marina, SubtaskForm("Detalhar", D(10, 13), 1, loose, loose))).Invalid.Should().Equal(ScheduleField.Predecessors);
+        (await ItemAsync(loose)).Predecessors.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Primeira subtarefa herda as dependências")]
+    public async Task FirstSubtask_TakesTheDependencies_AndPushes()
+    {
+        var icms = await AddTaskAsync("Parametrizar regras de ICMS", D(10, 13), 8);
+        var tests = await AddTaskAsync("Testes integrados", D(10, 23), 5, icms);
+        var clientTests = await AddTaskAsync("Testes com a equipe do cliente", D(10, 30), 2, tests);
+
+        var script = await AddSubtaskAsync("Roteiro de testes", D(10, 13), 7, tests);
+
+        (await ItemAsync(script)).Predecessors.Should().Equal(icms);
+        var after = await ItemAsync(clientTests);
+        after.Predecessors.Should().Equal(script);
+        after.Item.Start.Should().Be(D(11, 4));
+        (await ItemAsync(tests)).Predecessors.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Ciclo pela tarefa que recebe a subtarefa")]
+    public async Task FirstSubtask_RefusesACycle()
+    {
+        var tests = await AddTaskAsync("Testes integrados", D(10, 13), 5);
+        var clientTests = await AddTaskAsync("Testes com a equipe do cliente", D(10, 20), 2, tests);
+
+        var result = await AddItemAsync(Marina, SubtaskForm("Roteiro de testes", D(10, 13), 2, tests, clientTests));
+
+        result.Outcome.Should().Be(ScheduleOutcome.Cycle);
+        (await GetAsync(Marina))!.Figures.Summaries.Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Excluir a última subtarefa")]
+    public async Task RemovingTheLastSubtask_GivesItsDependenciesBack()
+    {
+        var icms = await AddTaskAsync("Parametrizar regras de ICMS", D(10, 5), 4);
+        var tests = await AddTaskAsync("Testes integrados", D(10, 13), 1);
+        var script = await AddSubtaskAsync("Roteiro de testes", D(10, 13), 3, tests, icms);
+
+        (await RemoveItemAsync(Marina, script)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        var view = await ItemAsync(tests);
+        view.Predecessors.Should().Equal(icms);
+        view.Item.Should().Match<ScheduleItem>(item => item.Start == D(10, 13) && item.End == D(10, 15) && item.Duration == 3);
+        (await GetAsync(Marina))!.ProgressUpdatable.Should().Contain(tests);
+    }
+
+    [Fact(DisplayName = "Excluir tarefa com subtarefas")]
+    public async Task RemovingTheSummary_RemovesItsSubtasks()
+    {
+        var approval = (await AddPhaseAsync(Marina, "Homologação")).Id!.Value;
+        var tests = await AddTaskAsync("Testes integrados", D(10, 13), 1);
+        var script = await AddSubtaskAsync("Roteiro de testes", D(10, 13), 2, tests);
+        await AddSubtaskAsync("Executar testes", D(10, 15), 3, tests, script);
+        var clientTests = (await AddItemAsync(Marina, new ScheduleItemForm(approval, "Testes com a equipe do cliente", D(10, 20), 2, null, 0, [script]))).Id!.Value;
+
+        (await RemoveItemAsync(Marina, tests)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        var view = (await GetAsync(Marina))!;
+        view.Figures.Phases.SelectMany(phase => phase.Items).Select(item => item.Id).Should().Equal(clientTests);
+        view.Predecessors.Should().BeEmpty();
+        (await ItemAsync(clientTests)).Item.Start.Should().Be(D(10, 20));
+    }
+
+    [Fact(DisplayName = "Mudar a fase da tarefa-resumo")]
+    public async Task MovingTheSummary_TakesItsSubtasks()
+    {
+        var approval = (await AddPhaseAsync(Marina, "Homologação")).Id!.Value;
+        var tests = await AddTaskAsync("Testes integrados", D(10, 13), 1);
+        var script = await AddSubtaskAsync("Roteiro de testes", D(10, 13), 2, tests);
+
+        (await ChangeItemAsync(Marina, tests, new ScheduleItemForm(approval, "Testes integrados", D(10, 13), 1, null, null, []))).Outcome
+            .Should().Be(ScheduleOutcome.Done);
+
+        ((await ItemAsync(tests)).Item.PhaseId, (await ItemAsync(script)).Item.PhaseId).Should().Be((approval, approval));
     }
 }

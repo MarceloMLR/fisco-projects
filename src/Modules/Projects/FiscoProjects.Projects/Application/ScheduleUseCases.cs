@@ -91,7 +91,8 @@ public sealed class GetSchedule(
             project.IsClosed
                 ? new HashSet<Guid>()
                 : schedule.Items
-                    .Where(item => item.Kind == ScheduleItemKind.Task && ScheduleEditing.MayUpdateProgress(permissions, item, viewer))
+                    .Where(item => item.Kind == ScheduleItemKind.Task && !figures.Summaries.Contains(item.Id)
+                        && ScheduleEditing.MayUpdateProgress(permissions, item, viewer))
                     .Select(item => item.Id)
                     .ToHashSet(),
             nonWorkingDays);
@@ -130,6 +131,9 @@ public enum ScheduleField
 
     /// <summary>The end of a task in the timeline: on or after the start, up to 999 business days; a milestone has none.</summary>
     End = 9,
+
+    /// <summary>The task the item goes into: a task right in the same phase, one level only (ADR-0088).</summary>
+    Parent = 10,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -270,7 +274,8 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 /// <summary>
 /// The form of a task or milestone: the phase, the name, the start, the duration in business days (zero for a
 /// milestone), the owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a
-/// new item) and the items it depends on.
+/// new item), the items it depends on and the task it is in (ADR-0088). A task with subtasks takes only the phase, the
+/// name and the owner; its start and duration are not looked at.
 /// </summary>
 public sealed record ScheduleItemForm(
     Guid PhaseId,
@@ -279,7 +284,8 @@ public sealed record ScheduleItemForm(
     int Duration,
     Guid? OwnerId,
     int? Progress,
-    IReadOnlyCollection<Guid>? PredecessorIds);
+    IReadOnlyCollection<Guid>? PredecessorIds,
+    Guid? ParentId = null);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
@@ -289,28 +295,31 @@ internal static class ScheduleItemChecks
         Project project, Schedule schedule, ScheduleItemKind kind, ScheduleItemForm form, Guid? itemId)
     {
         var invalid = new List<ScheduleField>();
+        // A task with subtasks takes its dates and progress from them (ADR-0088).
+        var summary = itemId is { } id && schedule.IsSummary(id);
         var name = Schedule.ValidItemName(form.Name);
         if (name is null)
         {
             invalid.Add(ScheduleField.Name);
         }
 
-        if (schedule.PhaseOf(form.PhaseId) is null)
+        var phase = schedule.PhaseOf(form.PhaseId);
+        if (phase is null)
         {
             invalid.Add(ScheduleField.Phase);
         }
 
-        if (!Schedule.IsValidDay(form.Start))
+        if (!summary && !Schedule.IsValidDay(form.Start))
         {
             invalid.Add(ScheduleField.Start);
         }
 
-        if (!Schedule.IsValidDuration(kind, form.Duration))
+        if (!summary && !Schedule.IsValidDuration(kind, form.Duration))
         {
             invalid.Add(ScheduleField.Duration);
         }
 
-        if (form.Progress is { } progress && !Schedule.IsValidProgress(kind, progress))
+        if (form.Progress is { } progress && (summary || !Schedule.IsValidProgress(kind, progress)))
         {
             invalid.Add(ScheduleField.Progress);
         }
@@ -320,21 +329,30 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Owner);
         }
 
+        if (phase is not null && form.ParentId is { } parentId && !schedule.MayHold(parentId, itemId, phase.Id))
+        {
+            invalid.Add(ScheduleField.Parent);
+        }
+
+        // Only the items with dates of their own have dependencies (ADR-0088).
         var predecessors = form.PredecessorIds ?? [];
-        if (predecessors.Any(id => id == itemId || schedule.ItemOf(id) is null))
+        if (predecessors.Any(id => id == itemId || id == form.ParentId || schedule.ItemOf(id) is null || schedule.IsSummary(id))
+            || (summary && predecessors.Count > 0))
         {
             invalid.Add(ScheduleField.Predecessors);
         }
 
         return invalid.Count > 0
             ? (null, invalid)
-            : (new ScheduleItemPlan(form.PhaseId, name!, form.Start, form.Duration, form.OwnerId, form.Progress, [.. predecessors.Distinct()]), invalid);
+            : (new ScheduleItemPlan(
+                form.PhaseId, name!, form.Start, form.Duration, form.OwnerId, form.Progress, [.. predecessors.Distinct()], form.ParentId), invalid);
     }
 }
 
 /// <summary>
 /// Includes a task or a milestone (ADR-0018, ADR-0019): it starts on a business day, after the items it depends on, and
-/// a task ends as many business days later as its duration says.
+/// a task ends as many business days later as its duration says. The first subtask of a task takes its dependencies
+/// (ADR-0088).
 /// </summary>
 public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
 {
@@ -347,9 +365,19 @@ public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore sched
         return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
         {
             var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, kind, form, itemId: null);
-            return plan is null
-                ? ScheduleResult.InvalidFields(invalid)
-                : ScheduleResult.Done(schedule.AddItem(kind, plan, days, today).Id);
+            if (plan is null)
+            {
+                return ScheduleResult.InvalidFields(invalid);
+            }
+
+            try
+            {
+                return ScheduleResult.Done(schedule.AddItem(kind, plan, days, today).Id);
+            }
+            catch (ScheduleCycleException)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.Cycle);
+            }
         }, cancellationToken);
     }
 }
@@ -417,7 +445,8 @@ public sealed class UpdateScheduleItemProgress(IProjectStore projects, ISchedule
                     return ScheduleResult.Of(ScheduleOutcome.NotFound);
                 }
 
-                if (!Schedule.IsValidProgress(item.Kind, progress) || item.Kind != ScheduleItemKind.Task)
+                // A task with subtasks takes its progress from them (ADR-0088).
+                if (!Schedule.IsValidProgress(item.Kind, progress) || item.Kind != ScheduleItemKind.Task || schedule.IsSummary(itemId))
                 {
                     return ScheduleResult.InvalidFields([ScheduleField.Progress]);
                 }
@@ -481,7 +510,8 @@ public sealed class RescheduleScheduleItem(
             }
 
             var invalid = new List<ScheduleField>();
-            if (!Schedule.IsValidDay(dates.Start))
+            // A task with subtasks takes its dates from them (ADR-0088).
+            if (!Schedule.IsValidDay(dates.Start) || schedule.IsSummary(itemId))
             {
                 invalid.Add(ScheduleField.Start);
             }
@@ -499,11 +529,17 @@ public sealed class RescheduleScheduleItem(
     }
 }
 
-/// <summary>Removes a task or milestone and its dependencies; no other item moves (ADR-0019).</summary>
-public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore schedules)
+/// <summary>
+/// Removes a task or milestone and its dependencies; no other item moves (ADR-0019). A task with subtasks goes with
+/// them, and the last subtask of a task leaves its dependencies to it (ADR-0088).
+/// </summary>
+public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar)
 {
-    public Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid itemId, ProjectViewer viewer, CancellationToken cancellationToken) =>
-        ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
-            schedule.RemoveItem(itemId) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
+    public async Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid itemId, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var days = await calendar.GetAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+            schedule.RemoveItem(itemId, days) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
             cancellationToken);
+    }
 }

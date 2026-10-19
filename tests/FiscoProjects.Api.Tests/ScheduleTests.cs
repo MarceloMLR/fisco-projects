@@ -8,8 +8,9 @@ namespace FiscoProjects.Api.Tests;
 
 // Spec: cronograma (API side): "Quem vê e quem edita o cronograma", "Tarefas e marcos", "Dependências", "Dependências
 // que empurram", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria", "Progresso das tarefas",
-// "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API" and "Dias não úteis no
-// cronograma"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
+// "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API", "Dias não úteis no
+// cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Subtarefas na auditoria";
+// membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
 // and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
@@ -452,6 +453,115 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         removed.GetProperty("itemLabel").GetString().Should().Be("Aceite da configuração");
         Values(removed, "PredecessorId").Should().Be(("Parametrizar regras de ICMS", null));
         Values(removed, "SuccessorId").Should().Be(("Aceite da configuração", null));
+    }
+
+    [Fact(DisplayName = "Subtarefas pela API")]
+    public async Task Subtasks_ComeUnderTheirTask_WithTheSummaryComputed()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var path = $"{scene.Path}/items";
+
+        // The first subtask of "Parametrizar regras de ICMS" takes its dependency: the milestone now waits for it.
+        var created = await SendAsync(marina, HttpMethod.Post, path, new
+        {
+            kind = "Task",
+            phaseId = scene.Phase,
+            name = "Mapear regras",
+            start = "2026-10-13",
+            duration = 4,
+            ownerId = (Guid?)null,
+            progress = 50,
+            predecessorIds = Array.Empty<Guid>(),
+            parentId = scene.Task,
+        });
+        var subtask = await IdOfAsync(created);
+
+        var schedule = await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        var items = schedule.GetProperty("phases")[0].GetProperty("items").EnumerateArray().ToList();
+        items.Select(item => item.GetProperty("name").GetString())
+            .Should().Equal("Parametrizar regras de ICMS", "Mapear regras", "Aceite da configuração");
+        var task = items[0];
+        task.GetProperty("hasSubtasks").GetBoolean().Should().BeTrue();
+        task.GetProperty("canUpdateProgress").GetBoolean().Should().BeFalse();
+        (task.GetProperty("start").GetString(), task.GetProperty("end").GetString(), task.GetProperty("duration").GetInt32(),
+            task.GetProperty("progress").GetInt32()).Should().Be(("2026-10-13", "2026-10-16", 4, 50));
+        items[1].GetProperty("parentId").GetGuid().Should().Be(scene.Task);
+        items[1].GetProperty("hasSubtasks").GetBoolean().Should().BeFalse();
+        items[2].GetProperty("predecessorIds").EnumerateArray().Select(id => id.GetGuid()).Should().Equal(subtask);
+        items[2].GetProperty("start").GetString().Should().Be("2026-10-16");
+        task.GetProperty("predecessorIds").EnumerateArray().Should().BeEmpty();
+
+        var progress = await ProgressAsync(marina, scene, scene.Task, 70);
+        var dates = await DatesAsync(marina, scene, scene.Task, "2026-10-20");
+        var inMilestone = await SendAsync(marina, HttpMethod.Post, path, new
+        {
+            kind = "Task",
+            phaseId = scene.Phase,
+            name = "Detalhar",
+            start = "2026-10-13",
+            duration = 1,
+            ownerId = (Guid?)null,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            parentId = scene.Milestone,
+        });
+        var onSummary = await SendAsync(marina, HttpMethod.Put, $"{path}/{scene.Milestone}",
+            Item(scene.Phase, "Aceite da configuração", "2026-10-16", 0, after: [scene.Task]));
+
+        progress.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(progress)).Should().Equal("progress");
+        (await ErrorFieldsAsync(dates)).Should().Equal("start");
+        (await ErrorFieldsAsync(inMilestone)).Should().Equal("parentId");
+        (await ErrorFieldsAsync(onSummary)).Should().Equal("predecessorIds");
+    }
+
+    [Fact(DisplayName = "Subtarefa na auditoria")]
+    public async Task Subtask_IsAudited_WithItsTaskByName()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        var path = $"{scene.Path}/items";
+        var other = await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, path,
+            Item(scene.Phase, "Integrar emissão de NF-e", "2026-10-19", 3, kind: "Task")));
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        var subtask = await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, path, new
+        {
+            kind = "Task",
+            phaseId = scene.Phase,
+            name = "Roteiro de testes",
+            start = "2026-10-19",
+            duration = 2,
+            ownerId = (Guid?)null,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            parentId = other,
+        }));
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+        (await SendAsync(scene.Admin, HttpMethod.Put, $"{path}/{subtask}", new
+        {
+            phaseId = scene.Phase,
+            name = "Roteiro de testes",
+            start = "2026-10-19",
+            duration = 2,
+            ownerId = (Guid?)null,
+            progress = (int?)null,
+            predecessorIds = Array.Empty<Guid>(),
+            parentId = scene.Task,
+        })).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var entries = (await scene.Admin.GetFromJsonAsync<JsonElement>(
+                "/api/audit?itemType=ScheduleItem&pageSize=100", Cancellation))
+            .GetProperty("items").EnumerateArray()
+            .Where(entry => entry.GetProperty("itemLabel").GetString() == "Roteiro de testes")
+            .ToList();
+
+        var added = entries.Single(entry => entry.GetProperty("action").GetString() == "Created");
+        var moved = entries.Single(entry => entry.GetProperty("action").GetString() == "Updated");
+        Values(added, "ParentId").Should().Be((null, "Integrar emissão de NF-e"));
+        Values(moved, "ParentId").Should().Be(("Integrar emissão de NF-e", "Parametrizar regras de ICMS"));
     }
 
     [Fact(DisplayName = "Remover o responsável de tarefas")]

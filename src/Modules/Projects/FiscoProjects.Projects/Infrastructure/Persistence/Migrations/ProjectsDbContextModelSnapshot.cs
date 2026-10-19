@@ -236,6 +236,10 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "User");
 
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
                     b.Property<Guid>("PhaseId")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "SchedulePhase");
@@ -257,6 +261,8 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("PhaseId");
 
@@ -344,6 +350,11 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleItem", b =>
                 {
+                    b.HasOne("FiscoProjects.Projects.Domain.ScheduleItem", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.ClientCascade);
+
                     b.HasOne("FiscoProjects.Projects.Domain.SchedulePhase", null)
                         .WithMany()
                         .HasForeignKey("PhaseId")

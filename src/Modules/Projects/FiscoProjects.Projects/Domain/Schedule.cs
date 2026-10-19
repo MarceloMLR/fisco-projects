@@ -15,8 +15,9 @@ public sealed class ScheduleCycleException() : InvalidOperationException("The de
 
 /// <summary>
 /// What a task or a milestone is asked to be: the phase, the name, the start, the duration (zero for a milestone), the
-/// owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a new item) and the
-/// items it depends on.
+/// owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a new item), the
+/// items it depends on and the task it is in, none when it is right in the phase (ADR-0088). For a task with subtasks,
+/// only the phase, the name and the owner count: its dates and progress come from them.
 /// </summary>
 public sealed record ScheduleItemPlan(
     Guid PhaseId,
@@ -25,12 +26,15 @@ public sealed record ScheduleItemPlan(
     int Duration,
     Guid? OwnerId,
     int? Progress,
-    IReadOnlyCollection<Guid> PredecessorIds);
+    IReadOnlyCollection<Guid> PredecessorIds,
+    Guid? ParentId = null);
 
 /// <summary>
 /// The schedule of a project (ADR-0019): phases and, in them, tasks and milestones, in business days of the calendar of
 /// the installation (ADR-0018), with dependencies of the kind "finishes, then starts" that push the next items later
-/// and never pull them earlier, and the progress of the tasks (ADR-0020). Its id is the id of the project.
+/// and never pull them earlier, and the progress of the tasks (ADR-0020). A task right in a phase may hold subtasks,
+/// tasks and milestones one level down; it is then a summary, with its dates and progress from them, and only the items
+/// with dates of their own have dependencies (ADR-0088). Its id is the id of the project.
 /// </summary>
 public sealed class Schedule : Entity
 {
@@ -88,6 +92,22 @@ public sealed class Schedule : Entity
     public IReadOnlyList<ScheduleItem> PredecessorsOf(Guid itemId) =>
         [.. _dependencies.Where(dependency => dependency.SuccessorId == itemId).Select(dependency => Item(dependency.PredecessorId))];
 
+    /// <summary>The tasks and milestones inside a task (ADR-0088).</summary>
+    public IReadOnlyList<ScheduleItem> SubtasksOf(Guid itemId) => [.. _items.Where(item => item.ParentId == itemId)];
+
+    /// <summary>A task with subtasks: its dates and progress come from them, and it has no dependencies (ADR-0088).</summary>
+    public bool IsSummary(Guid itemId) => _items.Any(item => item.ParentId == itemId);
+
+    /// <summary>
+    /// Whether a task may hold the item (none for a new one) in the phase: a task right in that phase, other than the
+    /// item, which holds no subtasks itself, so there is one level only (ADR-0088).
+    /// </summary>
+    public bool MayHold(Guid parentId, Guid? itemId, Guid phaseId) =>
+        ItemOf(parentId) is { Kind: ScheduleItemKind.Task, ParentId: null } parent
+        && parent.Id != itemId
+        && parent.PhaseId == phaseId
+        && (itemId is not { } id || !IsSummary(id));
+
     /// <summary>A new phase, after the others.</summary>
     public SchedulePhase AddPhase(string name)
     {
@@ -122,7 +142,10 @@ public sealed class Schedule : Entity
 
         foreach (var item in _items.Where(item => item.PhaseId == phaseId).ToList())
         {
-            RemoveItem(item.Id);
+            if (_items.Contains(item))
+            {
+                Remove(item);
+            }
         }
 
         _phases.Remove(phase);
@@ -131,9 +154,11 @@ public sealed class Schedule : Entity
 
     /// <summary>
     /// A new task or milestone. The start goes to the first business day it may have: on a business day, and after the
-    /// items it depends on. A task that reaches 100% keeps today as the day it was completed.
+    /// items it depends on. A task that reaches 100% keeps today as the day it was completed. The first subtask of a
+    /// task takes the dependencies of the task, and pushes the items after it as a change would (ADR-0088).
     /// </summary>
     /// <exception cref="ArgumentException">The plan is not valid for the kind or points outside the schedule.</exception>
+    /// <exception cref="ScheduleCycleException">An item it would depend on comes after the task it goes into.</exception>
     public ScheduleItem AddItem(ScheduleItemKind kind, ScheduleItemPlan plan, IBusinessDays days, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(plan);
@@ -145,6 +170,12 @@ public sealed class Schedule : Entity
 
         var item = new ScheduleItem(Id, kind);
         var predecessors = CheckedPredecessors(item.Id, plan);
+        var heir = NewSummary(item.Id, plan);
+        if (heir is not null && predecessors.Overlaps(ItemsAfter(heir.Value)))
+        {
+            throw new ScheduleCycleException();
+        }
+
         Apply(item, plan, today);
         _items.Add(item);
         foreach (var predecessor in predecessors)
@@ -152,13 +183,22 @@ public sealed class Schedule : Entity
             _dependencies.Add(new ScheduleDependency(Id, predecessor, item.Id));
         }
 
+        if (heir is { } summary)
+        {
+            PassDependencies(summary, item.Id);
+        }
+
         item.Place(EarliestStart(item, plan.Start, days), days);
+        Push(item, ItemsAfter(item.Id), days);
+        Summarize(days);
         return item;
     }
 
     /// <summary>
     /// Changes a task or milestone (the kind stays) and pushes, in chain, the items that come after it, only as much as
-    /// each needs to start after the ones before it. An earlier start pulls nobody.
+    /// each needs to start after the ones before it. An earlier start pulls nobody. An item that goes into a task
+    /// without subtasks takes the dependencies of the task; a task with subtasks changes only its name, phase (with the
+    /// subtasks) and owner (ADR-0088).
     /// </summary>
     /// <returns>How many other items were pushed, or null when the item is not in the schedule.</returns>
     /// <exception cref="ArgumentException">The plan is not valid for the kind or points outside the schedule.</exception>
@@ -173,8 +213,23 @@ public sealed class Schedule : Entity
         }
 
         var predecessors = CheckedPredecessors(itemId, plan);
-        var after = ItemsAfter(itemId);
-        if (predecessors.Any(after.Contains))
+        if (IsSummary(itemId))
+        {
+            Apply(item, plan, today);
+            Summarize(days);
+            return 0;
+        }
+
+        var heir = item.ParentId == plan.ParentId ? null : NewSummary(itemId, plan);
+        // The task it goes into passes it its dependencies: check the cycle with them, before changing anything.
+        List<Guid> inherited = heir is { } task
+            ? [.. PredecessorsOf(task).Select(predecessor => predecessor.Id).Where(id => id != itemId)]
+            : [];
+        var successors = SuccessorIdsOf(itemId)
+            .Concat(heir is { } next ? SuccessorIdsOf(next).Where(id => id != itemId) : Enumerable.Empty<Guid>())
+            .ToHashSet();
+        var after = ItemsAfter(successors, itemId);
+        if (predecessors.Concat(inherited).Any(after.Contains))
         {
             throw new ScheduleCycleException();
         }
@@ -186,8 +241,15 @@ public sealed class Schedule : Entity
             _dependencies.Add(new ScheduleDependency(Id, predecessor, itemId));
         }
 
+        if (heir is { } summary)
+        {
+            PassDependencies(summary, itemId);
+        }
+
         item.Place(EarliestStart(item, plan.Start, days), days);
-        return Push(item, after, days);
+        var pushed = Push(item, ItemsAfter(itemId), days);
+        Summarize(days);
+        return pushed;
     }
 
     /// <summary>
@@ -242,6 +304,11 @@ public sealed class Schedule : Entity
             return null;
         }
 
+        if (IsSummary(itemId))
+        {
+            throw new ArgumentException("A task with subtasks takes its dates from them.", nameof(start));
+        }
+
         var duration = item.Duration;
         if (end is { } last)
         {
@@ -257,7 +324,8 @@ public sealed class Schedule : Entity
             duration,
             item.OwnerId,
             Progress: null,
-            [.. PredecessorsOf(itemId).Select(predecessor => predecessor.Id)]);
+            [.. PredecessorsOf(itemId).Select(predecessor => predecessor.Id)],
+            item.ParentId);
         return ChangeItem(itemId, plan, days, today);
     }
 
@@ -265,7 +333,9 @@ public sealed class Schedule : Entity
     /// Updates the progress of a task (ADR-0020): at 100% it keeps today as the day it was completed, below it the day
     /// goes away. False when the item is not in the schedule.
     /// </summary>
-    /// <exception cref="ArgumentException">The item is a milestone, or the progress is not from 0 to 100.</exception>
+    /// <exception cref="ArgumentException">
+    /// The item is a milestone or a task with subtasks (ADR-0088), or the progress is not from 0 to 100.
+    /// </exception>
     public bool UpdateProgress(Guid itemId, int progress, DateOnly today)
     {
         if (ItemOf(itemId) is not { } item)
@@ -273,12 +343,13 @@ public sealed class Schedule : Entity
             return false;
         }
 
-        if (item.Kind != ScheduleItemKind.Task || !IsValidProgress(item.Kind, progress))
+        if (item.Kind != ScheduleItemKind.Task || IsSummary(itemId) || !IsValidProgress(item.Kind, progress))
         {
-            throw new ArgumentException("Only a task has a progress, from 0 to 100.", nameof(progress));
+            throw new ArgumentException("Only a task without subtasks has a progress of its own, from 0 to 100.", nameof(progress));
         }
 
         item.SetProgress(progress, today);
+        SummarizeProgress();
         return true;
     }
 
@@ -300,19 +371,24 @@ public sealed class Schedule : Entity
         }
 
         item.SetReached(reached, today);
+        SummarizeProgress();
         return true;
     }
 
-    /// <summary>Removes a task or milestone and its dependencies; nothing else moves. False when it is not in the schedule.</summary>
-    public bool RemoveItem(Guid itemId)
+    /// <summary>
+    /// Removes a task or milestone and its dependencies; nothing else moves. A task with subtasks goes with them, and
+    /// the last subtask of a task leaves its dependencies to the task (ADR-0088). False when it is not in the schedule.
+    /// </summary>
+    public bool RemoveItem(Guid itemId, IBusinessDays days)
     {
+        ArgumentNullException.ThrowIfNull(days);
         if (ItemOf(itemId) is not { } item)
         {
             return false;
         }
 
-        _dependencies.RemoveAll(dependency => dependency.PredecessorId == itemId || dependency.SuccessorId == itemId);
-        _items.Remove(item);
+        Remove(item);
+        Summarize(days);
         return true;
     }
 
@@ -351,7 +427,10 @@ public sealed class Schedule : Entity
     private static DateOnly OnABusinessDay(DateOnly day, IBusinessDays days) =>
         days.IsBusinessDay(day) ? day : days.AddBusinessDays(day, 1);
 
-    /// <summary>The plan checked against the kind and the phases, and applied to the item but the dates.</summary>
+    /// <summary>
+    /// The plan checked against the kind, the phases and the task it goes into, and applied to the item but the dates. A
+    /// task with subtasks takes only the phase, which its subtasks follow, the name and the owner (ADR-0088).
+    /// </summary>
     private void Apply(ScheduleItem item, ScheduleItemPlan plan, DateOnly today)
     {
         if (PhaseOf(plan.PhaseId) is null)
@@ -359,30 +438,129 @@ public sealed class Schedule : Entity
             throw new ArgumentException("The phase is not in the schedule.", nameof(plan));
         }
 
-        if (!IsValidDay(plan.Start) || !IsValidDuration(item.Kind, plan.Duration)
-            || (plan.Progress is { } progress && !IsValidProgress(item.Kind, progress))
-            || (item.Kind == ScheduleItemKind.Milestone && plan.OwnerId is not null))
+        var summary = IsSummary(item.Id);
+        if ((!summary && (!IsValidDay(plan.Start) || !IsValidDuration(item.Kind, plan.Duration)))
+            || (plan.Progress is { } progress && (summary || !IsValidProgress(item.Kind, progress)))
+            || (item.Kind == ScheduleItemKind.Milestone && plan.OwnerId is not null)
+            || (plan.ParentId is { } parentId && !MayHold(parentId, item.Id, plan.PhaseId)))
         {
             throw new ArgumentException("The plan is not valid for the kind of item.", nameof(plan));
         }
 
-        item.Set(plan.PhaseId, NameOrThrow(ValidItemName(plan.Name), plan.Name), plan.Duration, plan.OwnerId);
+        var name = NameOrThrow(ValidItemName(plan.Name), plan.Name);
+        item.Set(plan.PhaseId, name, summary ? item.Duration : plan.Duration, plan.OwnerId, plan.ParentId);
+        if (summary)
+        {
+            foreach (var subtask in SubtasksOf(item.Id))
+            {
+                subtask.MoveTo(plan.PhaseId);
+            }
+        }
+
         if (plan.Progress is { } asked)
         {
             item.SetProgress(asked, today);
         }
     }
 
-    /// <summary>The items the plan depends on, once each, all in the schedule and none the item itself.</summary>
+    /// <summary>
+    /// The items the plan depends on, once each, all in the schedule and none the item itself. Only items with dates of
+    /// their own have dependencies: none a task with subtasks, nor the task the item goes into (ADR-0088).
+    /// </summary>
     private HashSet<Guid> CheckedPredecessors(Guid itemId, ScheduleItemPlan plan)
     {
         var predecessors = plan.PredecessorIds.ToHashSet();
-        if (predecessors.Contains(itemId) || predecessors.Any(id => ItemOf(id) is null))
+        if (predecessors.Contains(itemId) || predecessors.Any(id => ItemOf(id) is null)
+            || predecessors.Any(IsSummary)
+            || (plan.ParentId is { } parentId && predecessors.Contains(parentId))
+            || (predecessors.Count > 0 && IsSummary(itemId)))
         {
-            throw new ArgumentException("The item depends on items of the schedule other than itself.", nameof(plan));
+            throw new ArgumentException("The item depends on items of the schedule with dates of their own, other than itself.", nameof(plan));
         }
 
         return predecessors;
+    }
+
+    /// <summary>The task that becomes a summary when the item goes into it: one without subtasks yet.</summary>
+    private Guid? NewSummary(Guid itemId, ScheduleItemPlan plan) =>
+        plan.ParentId is { } parentId && MayHold(parentId, itemId, plan.PhaseId) && !IsSummary(parentId) ? parentId : null;
+
+    /// <summary>
+    /// Moves the dependencies of an item, before and after it, to another: a task to its first subtask, or the last
+    /// subtask back to its task (ADR-0088). A dependency between the two goes away, and one the other already has stays once.
+    /// </summary>
+    private void PassDependencies(Guid fromId, Guid toId)
+    {
+        var moving = _dependencies.Where(d => d.PredecessorId == fromId || d.SuccessorId == fromId).ToList();
+        _dependencies.RemoveAll(moving.Contains);
+        foreach (var dependency in moving)
+        {
+            var predecessor = dependency.PredecessorId == fromId ? toId : dependency.PredecessorId;
+            var successor = dependency.SuccessorId == fromId ? toId : dependency.SuccessorId;
+            if (predecessor != successor && !_dependencies.Any(d => d.PredecessorId == predecessor && d.SuccessorId == successor))
+            {
+                _dependencies.Add(new ScheduleDependency(Id, predecessor, successor));
+            }
+        }
+    }
+
+    /// <summary>Removes an item with its subtasks and dependencies; the last subtask leaves its dependencies to the task.</summary>
+    private void Remove(ScheduleItem item)
+    {
+        foreach (var subtask in SubtasksOf(item.Id))
+        {
+            _dependencies.RemoveAll(d => d.PredecessorId == subtask.Id || d.SuccessorId == subtask.Id);
+            _items.Remove(subtask);
+        }
+
+        if (item.ParentId is { } parentId && SubtasksOf(parentId).Count == 1)
+        {
+            PassDependencies(item.Id, parentId);
+        }
+
+        _dependencies.RemoveAll(d => d.PredecessorId == item.Id || d.SuccessorId == item.Id);
+        _items.Remove(item);
+    }
+
+    /// <summary>
+    /// The dates, the duration and the progress of each task with subtasks, from them (ADR-0088): from the first start to
+    /// the last end, the business days between them, and the progress weighted by the duration of its tasks.
+    /// </summary>
+    private void Summarize(IBusinessDays days)
+    {
+        foreach (var summary in _items.Where(item => IsSummary(item.Id)).ToList())
+        {
+            var subtasks = SubtasksOf(summary.Id);
+            var start = subtasks.Min(subtask => subtask.Start);
+            var end = subtasks.Max(subtask => subtask.End);
+            summary.Summarize(start, end, days.CountBusinessDays(start, end));
+        }
+
+        SummarizeProgress();
+    }
+
+    /// <summary>
+    /// The progress of each task with subtasks, weighted by the duration of its tasks, with the day the last reached 100%.
+    /// With milestones only, 100% once all are reached, on the day the last was (ADR-0088).
+    /// </summary>
+    private void SummarizeProgress()
+    {
+        foreach (var summary in _items.Where(item => IsSummary(item.Id)).ToList())
+        {
+            var subtasks = SubtasksOf(summary.Id);
+            var tasks = subtasks.Where(subtask => subtask.Kind == ScheduleItemKind.Task).ToList();
+            if (tasks.Count > 0)
+            {
+                summary.SetSummaryProgress(
+                    ScheduleFigures.WeightedProgress(tasks),
+                    tasks.All(task => task.Progress == 100) ? tasks.Max(task => task.CompletedOn) : null);
+            }
+            else
+            {
+                var reached = subtasks.All(subtask => subtask.ReachedOn is not null);
+                summary.SetSummaryProgress(reached ? 100 : 0, reached ? subtasks.Max(subtask => subtask.ReachedOn) : null);
+            }
+        }
     }
 
     /// <summary>The asked start on a business day, or later when the items before it end later.</summary>
@@ -402,15 +580,18 @@ public sealed class Schedule : Entity
     }
 
     /// <summary>Every item that depends, directly or through others, on the item.</summary>
-    private HashSet<Guid> ItemsAfter(Guid itemId)
+    private HashSet<Guid> ItemsAfter(Guid itemId) => ItemsAfter(SuccessorIdsOf(itemId), itemId);
+
+    /// <summary>The items and every item that depends on them, directly or through others, never passing through the item.</summary>
+    private HashSet<Guid> ItemsAfter(IEnumerable<Guid> successors, Guid itemId)
     {
-        var found = new HashSet<Guid>();
-        var pending = new Queue<Guid>([itemId]);
+        var found = successors.Where(id => id != itemId).ToHashSet();
+        var pending = new Queue<Guid>(found);
         while (pending.TryDequeue(out var current))
         {
             foreach (var successor in SuccessorIdsOf(current))
             {
-                if (found.Add(successor))
+                if (successor != itemId && found.Add(successor))
                 {
                     pending.Enqueue(successor);
                 }
@@ -487,7 +668,8 @@ public sealed class SchedulePhase : Entity
 /// <summary>
 /// A task or a milestone of a schedule. The end is computed from the start and the duration in business days; a
 /// milestone ends on its start. A task completed (100%) keeps the day it was completed, and a milestone reached, the day
-/// it was reached (ADR-0020, ADR-0086).
+/// it was reached (ADR-0020, ADR-0086). A subtask is inside a task of the same phase; the task then keeps the dates,
+/// the duration and the progress the schedule computes from its subtasks (ADR-0088).
 /// </summary>
 public sealed class ScheduleItem : Entity
 {
@@ -506,6 +688,9 @@ public sealed class ScheduleItem : Entity
     public Guid ProjectId { get; private init; }
 
     public Guid PhaseId { get; private set; }
+
+    /// <summary>The task the item is inside, in the same phase; none when it is right in the phase (ADR-0088).</summary>
+    public Guid? ParentId { get; private set; }
 
     public ScheduleItemKind Kind { get; private init; }
 
@@ -537,12 +722,31 @@ public sealed class ScheduleItem : Entity
     public bool IsLate(DateOnly today) =>
         End < today && (Kind == ScheduleItemKind.Task ? Progress < 100 : ReachedOn is null);
 
-    internal void Set(Guid phaseId, string name, int duration, Guid? ownerId)
+    internal void Set(Guid phaseId, string name, int duration, Guid? ownerId, Guid? parentId)
     {
         PhaseId = phaseId;
         Name = name;
         Duration = duration;
         OwnerId = ownerId;
+        ParentId = parentId;
+    }
+
+    /// <summary>A subtask goes with its task to another phase.</summary>
+    internal void MoveTo(Guid phaseId) => PhaseId = phaseId;
+
+    /// <summary>The dates and the duration of a task with subtasks, from them.</summary>
+    internal void Summarize(DateOnly start, DateOnly end, int duration)
+    {
+        Start = start;
+        End = end;
+        Duration = duration;
+    }
+
+    /// <summary>The progress of a task with subtasks, from them, with the day they were all completed.</summary>
+    internal void SetSummaryProgress(int progress, DateOnly? completedOn)
+    {
+        Progress = progress;
+        CompletedOn = completedOn;
     }
 
     internal void SetProgress(int progress, DateOnly today)
