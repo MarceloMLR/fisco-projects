@@ -60,7 +60,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Projetos-1 | `calendario`* | Dias úteis, feriados nacionais calculados, pontos facultativos, feriados locais | 0018 | Planejada |
+| Projetos-1 | `calendario`* | Dias úteis, feriados nacionais calculados, pontos facultativos, feriados locais | 0018, 0083 | Em andamento |
 | Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | Planejada |
 | Projetos-3 | `projetos` | Criação com gerente e líder técnico, lista, status, somente leitura quando encerrado | 0016, 0043, 0072 | Planejada |
 | Projetos-4 | `membros-do-projeto` | Incluir pessoas pelo diretório (versão simulada), papéis no projeto, último gerente protegido | 0040, 0042 | Planejada |

@@ -145,3 +145,4 @@ Regras:
 | [0080](0080-leituras-da-api-com-tanstack-query.md) | Leituras da API no frontend com TanStack Query, guardadas só na memória da sessão | aceita | 2026-10-18 |
 | [0081](0081-detalhes-em-gaveta-sobreposta.md) | Detalhes de um item da lista numa gaveta sobreposta, com o fundo escurecido | aceita | 2026-10-18 |
 | [0082](0082-tokens-da-marca-derivados-da-cor-principal.md) | Tokens da marca derivados da cor principal em OKLCH, com a cor recusada sem contraste | aceita | 2026-10-18 |
+| [0083](0083-pontos-facultativos-calculados-e-feriados-desconsiderados.md) | Pontos facultativos calculados pela portaria federal, contados como dia inteiro e escolhidos para todos os anos | proposta | 2026-10-19 |
