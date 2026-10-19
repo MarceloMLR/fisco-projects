@@ -36,6 +36,7 @@ export const queryKeys = {
   audit: ['audit'],
   profile: ['profile'],
   installation: ['installation'],
+  calendar: ['calendar'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -75,5 +76,14 @@ export function generalRulesQuery() {
   return queryOptions({
     queryKey: [...queryKeys.installation, 'rules'] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/installation/rules', { signal })),
+  });
+}
+
+/** The calendar of a year: the working days and the dates, with the calculated holidays found for the year. */
+export function calendarYearQuery(year: number) {
+  return queryOptions({
+    queryKey: [...queryKeys.calendar, year] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/calendar/{year}', { params: { path: { year } }, signal })),
   });
 }

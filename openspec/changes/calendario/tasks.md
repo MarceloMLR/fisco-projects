@@ -36,7 +36,7 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Criar a tela Calendário e feriados, como no canvas aprovado:
+- [x] 2.1 Criar a tela Calendário e feriados, como no canvas aprovado:
   - rota e item na Administração;
   - dias de trabalho e "Considerado" gravando na hora;
   - ano anterior e próximo;
@@ -46,7 +46,7 @@
   - versão do celular.
 
   Testar com `npm test` os cenários da tela: "Calendário e feriados na Administração", "Trocar o ano", "Filtrar por tipo", "Marcar considerado na lista", "Marcar todos", "Marcar todos de um tipo", "Desmarcar todos", o último dia de trabalho desabilitado e o erro ao salvar.
-- [ ] 2.2 Criar os diálogos "Novo feriado", "Editar feriado" e a confirmação de exclusão, e os textos da Auditoria para os três tipos de item, com o filtro.
+- [x] 2.2 Criar os diálogos "Novo feriado", "Editar feriado" e a confirmação de exclusão, e os textos da Auditoria para os três tipos de item, com o filtro.
 
   Testar com `npm test` e `npm run lint`:
   - "Novo feriado pela tela" e "Excluir com confirmação";

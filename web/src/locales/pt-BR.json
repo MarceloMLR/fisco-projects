@@ -41,6 +41,9 @@
     },
     "settings": {
       "title": "Configurações gerais"
+    },
+    "calendar": {
+      "title": "Calendário e feriados"
     }
   },
   "signIn": {
@@ -166,7 +169,10 @@
     "itemTypes": {
       "SignIn": "Entradas",
       "User": "Usuários",
-      "InstallationSettings": "Configurações"
+      "InstallationSettings": "Configurações",
+      "WorkCalendar": "Dias de trabalho",
+      "CalculatedHoliday": "Feriados calculados",
+      "LocalHoliday": "Feriados locais"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -191,6 +197,16 @@
       },
       "InstallationSettings": {
         "Updated": "Alterou as configurações"
+      },
+      "WorkCalendar": {
+        "Updated": "Alterou os dias de trabalho"
+      },
+      "Holiday": {
+        "Considered": "Considerou um feriado",
+        "Disregarded": "Desconsiderou um feriado",
+        "Created": "Incluiu um feriado",
+        "Updated": "Alterou um feriado",
+        "Deleted": "Excluiu um feriado"
       }
     },
     "providers": {
@@ -213,10 +229,14 @@
       "item": {
         "User": "Usuário",
         "Other": "Item",
-        "InstallationSettings": "Item"
+        "InstallationSettings": "Item",
+        "WorkCalendar": "Item",
+        "Holiday": "Feriado"
       },
       "secret": "Alterado",
-      "none": "—"
+      "none": "—",
+      "yes": "Sim",
+      "no": "Não"
     },
     "fields": {
       "User": {
@@ -230,6 +250,15 @@
         "LogoFileName": "Logo",
         "TimeZone": "Fuso horário",
         "MainColor": "Cor principal"
+      },
+      "WorkCalendar": {
+        "WorkingDays": "Dias de trabalho"
+      },
+      "Holiday": {
+        "Name": "Nome",
+        "Date": "Data",
+        "RepeatsEveryYear": "Repete todo ano",
+        "IsConsidered": "Considerado"
       }
     }
   },
@@ -269,5 +298,114 @@
     "saved": "Configurações salvas.",
     "saveFailed": "Não foi possível salvar as configurações. Tente de novo.",
     "loadFailed": "Não foi possível carregar as configurações. Tente de novo."
+  },
+  "dialog": {
+    "close": "Fechar"
+  },
+  "calendar": {
+    "workingDays": "Dias de trabalho",
+    "lastWorkingDay": "Pelo menos um dia de trabalho.",
+    "weekdays": {
+      "Monday": "Segunda",
+      "Tuesday": "Terça",
+      "Wednesday": "Quarta",
+      "Thursday": "Quinta",
+      "Friday": "Sexta",
+      "Saturday": "Sábado",
+      "Sunday": "Domingo"
+    },
+    "year": "Ano",
+    "previousYear": "Ano anterior",
+    "nextYear": "Próximo ano",
+    "kind": "Tipo",
+    "filters": {
+      "all": "Todos",
+      "allKinds": "Todos os tipos",
+      "NationalHoliday": "Nacionais",
+      "OptionalHoliday": "Pontos facultativos",
+      "LocalHoliday": "Locais"
+    },
+    "kinds": {
+      "NationalHoliday": "Feriado nacional",
+      "OptionalHoliday": "Ponto facultativo",
+      "LocalHoliday": "Feriado local"
+    },
+    "table": "Feriados de {{year}}",
+    "list": "Feriados",
+    "columns": {
+      "date": "Data",
+      "name": "Feriado",
+      "kind": "Tipo",
+      "repeats": "Repete",
+      "considered": "Considerado",
+      "actions": "Ações"
+    },
+    "repeats": {
+      "everyYear": "Todo ano",
+      "onlyIn": "Só em {{year}}"
+    },
+    "consider": "Considerar {{name}}",
+    "markAll": "Marcar todos",
+    "unmarkAll": "Desmarcar todos",
+    "dates_zero": "{{count}} datas em {{year}}",
+    "dates_one": "{{count}} data em {{year}}",
+    "dates_other": "{{count}} datas em {{year}}",
+    "considered_zero": "{{count}} consideradas",
+    "considered_one": "{{count}} considerada",
+    "considered_other": "{{count}} consideradas",
+    "empty": "Nenhuma data com esse tipo em {{year}}.",
+    "loadFailed": "Não foi possível carregar o calendário. Tente de novo.",
+    "holidays": {
+      "NewYearsDay": "Confraternização Universal",
+      "CarnivalMonday": "Segunda-feira de Carnaval",
+      "CarnivalTuesday": "Terça-feira de Carnaval",
+      "AshWednesday": "Quarta-feira de Cinzas",
+      "GoodFriday": "Paixão de Cristo",
+      "Tiradentes": "Tiradentes",
+      "LabourDay": "Dia Mundial do Trabalho",
+      "CorpusChristi": "Corpus Christi",
+      "IndependenceDay": "Independência do Brasil",
+      "OurLadyOfAparecida": "Nossa Senhora Aparecida",
+      "PublicServantsDay": "Dia do Servidor Público",
+      "AllSoulsDay": "Finados",
+      "RepublicDay": "Proclamação da República",
+      "BlackConsciousnessDay": "Dia Nacional de Zumbi e da Consciência Negra",
+      "ChristmasEve": "Véspera de Natal",
+      "ChristmasDay": "Natal",
+      "NewYearsEve": "Véspera de Ano-Novo"
+    },
+    "newHoliday": "Novo feriado",
+    "editHoliday": "Editar feriado",
+    "name": "Nome",
+    "date": "Data",
+    "datePlaceholder": "dd/mm/aaaa",
+    "repeatsEveryYear": "Repete todo ano",
+    "include": "Incluir feriado",
+    "save": "Salvar alterações",
+    "cancel": "Cancelar",
+    "menu": {
+      "button": "Editar ou excluir {{name}}",
+      "edit": "Editar",
+      "remove": "Excluir"
+    },
+    "remove": {
+      "title": "Excluir feriado",
+      "text": "O feriado {{name}}, de {{date}}, sai do calendário. Não dá para desfazer.",
+      "confirm": "Excluir feriado"
+    },
+    "messages": {
+      "saved": "Calendário salvo.",
+      "failed": "Não foi possível salvar. Tente de novo.",
+      "included": "Feriado {{name}} incluído.",
+      "changed": "Feriado {{name}} alterado.",
+      "removed": "Feriado {{name}} excluído."
+    },
+    "errors": {
+      "nameRequired": "Informe o nome do feriado.",
+      "nameTooLong": "Use até 80 caracteres.",
+      "dateRequired": "Informe a data.",
+      "dateInvalid": "Use uma data válida, como 30/12/2026.",
+      "dateOutOfRange": "Use um ano de 1900 a 2199."
+    }
   }
 }

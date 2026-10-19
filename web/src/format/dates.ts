@@ -11,6 +11,9 @@ export type DayValue = string;
 
 const dayLength = 86_400_000;
 
+// A day of the calendar has no time zone: its day of the week is the one of its midnight in UTC.
+const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' });
+
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -59,6 +62,8 @@ export interface Dates {
   formatPeriod: (from: DayValue, to: DayValue) => string;
   /** A day in full (01/10/2026), as the accessible name of the period says it. */
   formatDayValue: (day: DayValue) => string;
+  /** The day of the week of a day of the calendar, in full (segunda-feira). */
+  formatWeekday: (day: DayValue) => string;
 }
 
 function create(timeZone: string): Dates {
@@ -130,10 +135,10 @@ function create(timeZone: string): Dates {
 
   const nextDayValue = (day: DayValue): DayValue => addDays(day, 1);
 
-  const formatDayValue = (day: DayValue): string => {
-    const [year, month, dayOfMonth] = partsOf(day);
-    return `${pad(dayOfMonth)}/${pad(month)}/${String(year)}`;
-  };
+  const formatWeekday = (day: DayValue): string =>
+    weekday.format(new Date(dayNumber(day) * dayLength));
+
+  const formatDayValue = formatDayText;
 
   return {
     timeZone,
@@ -167,6 +172,7 @@ function create(timeZone: string): Dates {
     formatPeriod: (from, to) =>
       `${formatDayValue(from).slice(0, 5)} – ${formatDayValue(to).slice(0, 5)}`,
     formatDayValue,
+    formatWeekday,
   };
 }
 
@@ -180,4 +186,34 @@ export function datesIn(timeZone: string): Dates {
     byTimeZone.set(timeZone, dates);
   }
   return dates;
+}
+
+/** A day of the calendar as the screens show it (30/12/2026); a day has no time zone. */
+export function formatDayText(day: DayValue): string {
+  const [year, month, dayOfMonth] = partsOf(day);
+  return `${pad(dayOfMonth)}/${pad(month)}/${String(year)}`;
+}
+
+const typedDay = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+/** A day typed as dd/mm/aaaa (30/12/2026), or undefined when it is no day of the calendar. */
+export function parseTypedDay(text: string): DayValue | undefined {
+  const match = typedDay.exec(text.trim());
+  if (match === null) {
+    return undefined;
+  }
+  const [, day = '', month = '', year = ''] = match;
+  const value = dayValueOf(Number(year), Number(month), Number(day));
+  // 31/02 would roll over to March; a real day comes back the same.
+  return addDays(value, 0) === value && Number(month) >= 1 && Number(month) <= 12
+    ? value
+    : undefined;
+}
+
+/** The digits of a day being typed, with the slashes in place: 30122026 becomes 30/12/2026. */
+export function maskTypedDay(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)]
+    .filter((part) => part !== '')
+    .join('/');
 }

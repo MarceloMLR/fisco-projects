@@ -44,6 +44,8 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   onRowChoose?: (row: Row) => void;
   /** Text of the footer, such as "1–25 de 312 no período"; by default the Data Grid's own. */
   displayedRowsLabel?: (range: { from: number; to: number; count: number }) => string;
+  /** The id of a row whose field id is not unique or empty. Keep it the same function between renders. */
+  getRowId?: (row: Row) => GridRowId;
 }
 
 const localeText = ptBR.components.MuiDataGrid.defaultProps.localeText;
@@ -163,6 +165,7 @@ export function DataTable<Row extends GridValidRowModel>({
   selectedRowId,
   onRowChoose,
   displayedRowsLabel,
+  getRowId,
 }: DataTableProps<Row>) {
   const text = useMemo(
     () => ({
@@ -231,6 +234,7 @@ export function DataTable<Row extends GridValidRowModel>({
         <DataGrid<Row>
           label={label}
           rows={rows}
+          getRowId={getRowId}
           columns={columns}
           rowCount={rowCount}
           loading={loading}

@@ -9,6 +9,31 @@ export type AuditField = components['schemas']['AuditFieldResponse'];
 export type ThemePreference = components['schemas']['ThemePreference'];
 export type Profile = components['schemas']['ProfileResponse'];
 export type Installation = components['schemas']['InstallationResponse'];
+export type CalendarYear = components['schemas']['CalendarYearResponse'];
+export type CalendarDay = components['schemas']['CalendarDayResponse'];
+export type CalendarDayKind = components['schemas']['CalendarDayKind'];
+export type DayOfWeek = components['schemas']['DayOfWeek'];
+
+/** The days of the week from Monday to Sunday, the order of the Calendar screen. */
+export const weekdays = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const satisfies readonly DayOfWeek[];
+
+/** The kinds of dates of the calendar, in the order of the filter. */
+export const calendarDayKinds = [
+  'NationalHoliday',
+  'OptionalHoliday',
+  'LocalHoliday',
+] as const satisfies readonly CalendarDayKind[];
+
+/** The years the calendar answers for (CalendarYears in the Calendar module). */
+export const calendarYears = { first: 1900, last: 2199 } as const;
 
 /** Themes in the order the screens offer them (ADR-0014). */
 export const themePreferences = [
@@ -18,7 +43,14 @@ export const themePreferences = [
 ] as const satisfies readonly ThemePreference[];
 
 /** Item types the Audit screen filters by, in the order of the filter (AuditItemTypes and the module entities). */
-export const auditItemTypes = ['SignIn', 'User', 'InstallationSettings'] as const;
+export const auditItemTypes = [
+  'SignIn',
+  'User',
+  'InstallationSettings',
+  'WorkCalendar',
+  'CalculatedHoliday',
+  'LocalHoliday',
+] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
