@@ -10,13 +10,17 @@ using Microsoft.AspNetCore.Routing;
 namespace FiscoProjects.Administration.Endpoints;
 
 /// <summary>
-/// The brand of the installation: the name shown and the address of the logo, null without one. The address changes
-/// whenever the logo changes, so the browser may keep it.
+/// The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
+/// #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
+/// browser may keep it.
 /// </summary>
-public sealed record InstallationResponse(string Name, string? LogoUrl);
+public sealed record InstallationResponse(string Name, string? LogoUrl, string? MainColor);
 
-/// <summary>The General settings form, saved as a whole: the name shown and the IANA time zone.</summary>
-public sealed record UpdateInstallationRequest(string Name, string TimeZone);
+/// <summary>
+/// The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
+/// null for the color of the design system).
+/// </summary>
+public sealed record UpdateInstallationRequest(string Name, string TimeZone, string? MainColor);
 
 /// <summary>The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013).</summary>
 public sealed record GeneralRulesResponse(string TimeZone);
@@ -78,7 +82,7 @@ internal static class InstallationEndpoints
         var logoUrl = installation.LogoChangedAt is { } changedAt
             ? links.GetPathByName(http, "GetInstallationLogo", new { v = VersionOf(changedAt) })
             : null;
-        return TypedResults.Ok(new InstallationResponse(installation.Name, logoUrl));
+        return TypedResults.Ok(new InstallationResponse(installation.Name, logoUrl, installation.MainColor));
     }
 
     private static async Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
@@ -106,14 +110,10 @@ internal static class InstallationEndpoints
         UpdateInstallationRequest request, UpdateInstallation updateInstallation, CancellationToken cancellationToken)
     {
         var invalid = await updateInstallation.ExecuteAsync(
-            new InstallationChanges(request.Name, request.TimeZone), cancellationToken);
+            new InstallationChanges(request.Name, request.TimeZone, request.MainColor), cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
-            : TypedResults.ValidationProblem(invalid.ToDictionary(
-                field => field == InstallationField.Name ? "name" : "timeZone",
-                field => field == InstallationField.Name
-                    ? new[] { "The name is needed and has up to 60 characters." }
-                    : ["Choose an IANA time zone, such as America/Sao_Paulo."]));
+            : TypedResults.ValidationProblem(invalid.ToDictionary(KeyOf, field => new[] { ReasonOf(field) }));
     }
 
     private static async Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceLogoAsync(
@@ -144,6 +144,20 @@ internal static class InstallationEndpoints
         await removeLogo.ExecuteAsync(cancellationToken);
         return TypedResults.NoContent();
     }
+
+    private static string KeyOf(InstallationField field) => field switch
+    {
+        InstallationField.Name => "name",
+        InstallationField.TimeZone => "timeZone",
+        _ => "mainColor",
+    };
+
+    private static string ReasonOf(InstallationField field) => field switch
+    {
+        InstallationField.Name => "The name is needed and has up to 60 characters.",
+        InstallationField.TimeZone => "Choose an IANA time zone, such as America/Sao_Paulo.",
+        _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
+    };
 
     private static ProblemHttpResult Refused(string type, string title, string detail) =>
         TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: title, detail: detail, type: type);

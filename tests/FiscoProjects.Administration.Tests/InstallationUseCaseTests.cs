@@ -19,7 +19,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
-        installation.Should().Be(new Installation("FiscoProjects", null));
+        installation.Should().Be(new Installation("FiscoProjects", null, null));
         info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo"));
     }
 
@@ -77,6 +77,38 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         invalid.Should().Equal(InstallationField.Name, InstallationField.TimeZone);
         (await SettingsAsync(database)).TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
+    }
+
+    [Fact(DisplayName = "Trocar a cor principal")]
+    public async Task MainColor_IsKeptInCapitals_AndBackToTheDefault()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", "#0f766e")).Should().BeEmpty();
+        (await SettingsAsync(database)).MainColor.Should().Be("#0F766E");
+        (await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation)))
+            .MainColor.Should().Be("#0F766E");
+
+        (await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", null)).Should().BeEmpty();
+        (await SettingsAsync(database)).MainColor.Should().BeNull();
+    }
+
+    [Theory(DisplayName = "Cor sem contraste ou fora do formato")]
+    [InlineData("#FFD400")]
+    [InlineData("#9FD3FF")]
+    [InlineData("0F766E")]
+    [InlineData("#0F766")]
+    [InlineData("#GGGGGG")]
+    public async Task InvalidMainColor_ChangesNothing(string mainColor)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, "Consultoria Fictícia", "America/Sao_Paulo", mainColor);
+
+        invalid.Should().Equal(InstallationField.MainColor);
+        var settings = await SettingsAsync(database);
+        settings.MainColor.Should().BeNull();
+        settings.Name.Should().Be(InstallationSettings.DefaultName);
     }
 
     [Fact(DisplayName = "Enviar o logo")]
@@ -152,9 +184,9 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     }
 
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
-        AdministrationDatabase database, string? name, string? timeZone) =>
+        AdministrationDatabase database, string? name, string? timeZone, string? mainColor = null) =>
         database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges(name, timeZone), Cancellation));
+            update.ExecuteAsync(new InstallationChanges(name, timeZone, mainColor), Cancellation));
 
     private static Task<LogoRefusal?> SendAsync(AdministrationDatabase database, string fileName, byte[] content) =>
         database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>

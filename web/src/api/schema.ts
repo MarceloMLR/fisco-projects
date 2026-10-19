@@ -295,12 +295,14 @@ export interface components {
         /** Format: binary */
         IFormFile: string;
         /**
-         * @description The brand of the installation: the name shown and the address of the logo, null without one. The address changes
-         *     whenever the logo changes, so the browser may keep it.
+         * @description The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
+         *     #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
+         *     browser may keep it.
          */
         InstallationResponse: {
             name: string;
             logoUrl: null | string;
+            mainColor: null | string;
         };
         LocalSignInRequest: {
             email: string;
@@ -352,10 +354,14 @@ export interface components {
          * @enum {unknown}
          */
         ThemePreference: "Automatic" | "Light" | "Dark";
-        /** @description The General settings form, saved as a whole: the name shown and the IANA time zone. */
+        /**
+         * @description The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
+         *     null for the color of the design system).
+         */
         UpdateInstallationRequest: {
             name: string;
             timeZone: string;
+            mainColor: null | string;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];

@@ -144,7 +144,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         await SendLogoAsync(admin, Png, "marca.png");
 
         var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
-        brand.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo("name", "logoUrl");
+        brand.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo("name", "logoUrl", "mainColor");
         brand.GetProperty("name").GetString().Should().Be(NewName);
         var logoUrl = brand.GetProperty("logoUrl").GetString();
         logoUrl.Should().StartWith("/api/installation/logo?v=");
@@ -236,6 +236,53 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         Fields(entry).Should().Equal(("TimeZone", "America/Sao_Paulo", "America/Manaus"));
     }
 
+    [Fact(DisplayName = "Trocar a cor principal")]
+    public async Task MainColor_IsReadWithoutASession()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        using var anonymous = app.NewClient();
+
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", mainColor: "#0f766e"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await MainColorAsync(anonymous)).Should().Be("#0F766E");
+    }
+
+    [Fact(DisplayName = "Cor sem contraste")]
+    public async Task LightColor_IsABadRequest()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        foreach (var mainColor in new[] { "#FFD400", "1F5FBF", "azul" })
+        {
+            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", mainColor: mainColor));
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+            problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("mainColor");
+        }
+
+        (await MainColorAsync(admin)).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Troca da cor na auditoria")]
+    public async Task ChangeOfTheMainColor_IsAudited()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", mainColor: "#7A1F3D"));
+
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
+        var entry = page.GetProperty("items").EnumerateArray().Should().ContainSingle().Subject;
+        Fields(entry).Should().Equal(("MainColor", null, "#7A1F3D"));
+    }
+
     [Fact(DisplayName = "Troca do nome na auditoria")]
     public async Task ChangesOfTheSettings_AreAudited()
     {
@@ -292,7 +339,11 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
     }
 
     /// <summary>The General settings form, with the default time zone unless another is given.</summary>
-    private static object Form(string name, string timeZone = "America/Sao_Paulo") => new { name, timeZone };
+    private static object Form(string name, string timeZone = "America/Sao_Paulo", string? mainColor = null) =>
+        new { name, timeZone, mainColor };
+
+    private static async Task<string?> MainColorAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation)).GetProperty("mainColor").GetString();
 
     private static async Task<string?> RulesAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("timeZone").GetString();

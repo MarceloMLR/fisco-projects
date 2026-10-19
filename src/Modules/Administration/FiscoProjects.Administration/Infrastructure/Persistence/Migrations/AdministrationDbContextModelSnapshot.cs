@@ -46,6 +46,10 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("MainColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(60)
