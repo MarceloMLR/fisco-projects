@@ -3,6 +3,9 @@ import { visuallyHidden } from '@mui/utils';
 import type { ThemePreference } from '../api/client';
 import { useThemeOptions } from './themeChoice';
 
+/** On a phone the three cards do not fit side by side: they go one under the other, picture beside the name. */
+const narrow = '@media (max-width: 599.95px)';
+
 /** A line of the picture, as text or a list item would be. */
 function Bar({ height, color, width = '100%' }: { height: number; color: string; width?: string }) {
   return (
@@ -98,8 +101,9 @@ export function ThemeOptions({
       aria-label={label}
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 220px))',
+        gridTemplateColumns: 'repeat(3, minmax(0, 220px))',
         gap: 'var(--space-3)',
+        [narrow]: { gridTemplateColumns: 'minmax(0, 1fr)', gap: 'var(--space-2)' },
       }}
     >
       {options.map((option) => {
@@ -127,6 +131,7 @@ export function ThemeOptions({
                 outline: '2px solid var(--focus-ring)',
                 outlineOffset: '2px',
               },
+              [narrow]: { flexDirection: 'row', alignItems: 'center', gap: 'var(--space-3)' },
             }}
           >
             <Box
@@ -140,23 +145,27 @@ export function ThemeOptions({
               }}
               sx={visuallyHidden}
             />
-            {option.value === 'Automatic' ? (
-              <Box
-                component="span"
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  borderRadius: 'var(--radius-md)',
-                  overflow: 'hidden',
-                  '& > span': { borderRadius: 0 },
-                }}
-              >
-                <Thumbnail scheme="light" />
-                <Thumbnail scheme="dark" />
-              </Box>
-            ) : (
-              <Thumbnail scheme={option.value === 'Dark' ? 'dark' : 'light'} />
-            )}
+            <Box
+              component="span"
+              sx={{
+                display: 'grid',
+                gridAutoFlow: 'column',
+                gridAutoColumns: '1fr',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                '& > span': { borderRadius: 0 },
+                [narrow]: { flex: 'none', width: 96, '& > span': { height: 56 } },
+              }}
+            >
+              {option.value === 'Automatic' ? (
+                <>
+                  <Thumbnail scheme="light" />
+                  <Thumbnail scheme="dark" />
+                </>
+              ) : (
+                <Thumbnail scheme={option.value === 'Dark' ? 'dark' : 'light'} />
+              )}
+            </Box>
             <Box
               component="span"
               sx={{
@@ -164,6 +173,7 @@ export function ThemeOptions({
                 alignItems: 'center',
                 gap: 'var(--space-2)',
                 padding: '0 var(--space-1) var(--space-1)',
+                [narrow]: { padding: 0 },
                 fontSize: 13,
                 lineHeight: '18px',
                 fontWeight: 500,
