@@ -2,7 +2,7 @@
 
 ## 1. Backend
 
-- [ ] 1.1 Criar o módulo `Projects` e o `Contracts` com:
+- [x] 1.1 Criar o módulo `Projects` e o `Contracts` com:
   - `Client`, `Cnpj` e `ClientLogo`;
   - contexto, configuração, migração `Initial` e registro no host;
   - os casos de uso dos clientes e do logo;

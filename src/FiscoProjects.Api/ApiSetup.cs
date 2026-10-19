@@ -8,6 +8,8 @@ using FiscoProjects.Calendar.Endpoints;
 using FiscoProjects.Calendar.Infrastructure;
 using FiscoProjects.Files.Infrastructure;
 using FiscoProjects.Persistence;
+using FiscoProjects.Projects.Endpoints;
+using FiscoProjects.Projects.Infrastructure;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -55,6 +57,7 @@ public static class ApiSetup
         builder.Services.AddFilesModule(builder.Configuration);
         builder.Services.AddAdministrationModule(builder.Configuration);
         builder.Services.AddCalendarModule(builder.Configuration);
+        builder.Services.AddProjectsModule(builder.Configuration);
 
         return builder;
     }
@@ -81,7 +84,8 @@ public static class ApiSetup
             .MapUsersEndpoints()
             .MapAuditEndpoints()
             .MapAdministrationEndpoints()
-            .MapCalendarEndpoints();
+            .MapCalendarEndpoints()
+            .MapProjectsEndpoints();
 
         app.MapFrontendFallback();
 
