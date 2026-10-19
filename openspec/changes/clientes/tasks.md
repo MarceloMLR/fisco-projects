@@ -49,7 +49,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção:
+- [x] 3.1 Conferir no navegador, com o build de produção:
   - a tela Clientes, o diálogo com logo, a exclusão e a Auditoria;
   - nos temas claro e escuro, no computador e no celular.
 
