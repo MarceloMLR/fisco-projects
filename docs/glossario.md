@@ -70,16 +70,26 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Ações do projeto | ProjectPermissions | Editar dados e mudar o status, conforme o papel da pessoa (ADR-0043) |
 | Situação na lista: Ativos, Concluídos e cancelados, Todos | ProjectSituation: Active, Closed, All | Filtro da tela Projetos |
 | Meus projetos | `mine=true` | Projetos ativos em que a pessoa está, na barra lateral |
-| Cronograma | Schedule | |
+| Cronograma | Schedule | Um por projeto, com o mesmo id; rota `/projects/{id}/schedule` e aba Cronograma (ADR-0019) |
+| Lista (visualização do cronograma) | ProjectSchedulePage | As fases em linhas de grupo e, abaixo, as tarefas e os marcos (ADR-0071) |
 | Linha do tempo (visualização do cronograma) | Timeline | Na interface não aparece a palavra "Gantt" (ADR-0071) |
 | Componente do Gantt | ScheduleGantt | Único que usa o Syncfusion (ADR-0051, ADR-0074) |
-| Fase | Phase | |
-| Tarefa | ScheduleTask | Evita confundir com `System.Threading.Tasks.Task` |
-| Marco | Milestone | |
-| Dependência | Dependency | |
+| Fase | SchedulePhase | Nome e, dentro dela, tarefas e marcos; as datas e o progresso vêm deles |
+| Tarefa ou marco (item do cronograma) | ScheduleItem | Rota `/schedule/items`; o tipo não muda depois da criação |
+| Tipo: tarefa, marco | ScheduleItemKind: Task, Milestone | O marco é uma data, sem duração, responsável nem progresso (ADR-0018, ADR-0020) |
+| Início, fim | Start, End | Dias sem fuso; o fim é calculado em dias úteis pelo servidor |
+| Duração em dias úteis | Duration | De 1 a 999 numa tarefa, contando o início; zero no marco |
+| Responsável | OwnerId | Uma pessoa do projeto que não é leitora; quem sai ou passa a leitor deixa as tarefas sem responsável (ADR-0042, ADR-0043) |
+| Dependência; anterior e seguinte | ScheduleDependency: PredecessorId, SuccessorId | Termina → começa; dependência circular é recusada (ADR-0019) |
+| Empurrar as seguintes | Push, `pushed` | Atrasar uma tarefa move as seguintes só o necessário; antecipar não as puxa (ADR-0019) |
+| Tarefa atrasada | IsLate, `late` | Fim antes de hoje, no fuso da instalação, abaixo de 100% (ADR-0020) |
+| Data de conclusão | CompletedOn | Gravada quando a tarefa chega a 100%, apagada abaixo disso |
+| Números do cronograma | ScheduleFigures | Datas, progresso ponderado pela duração, atraso e fase atual, num lugar só |
+| Fase atual | CurrentPhase | A primeira fase atrasada ou, sem atraso, a última que já começou |
+| Hoje da instalação | InstallationClock | O dia de hoje no fuso da instalação, para o atraso e a conclusão |
 | Linha de base | Baseline | |
 | Caminho crítico | CriticalPath | |
-| Progresso | Progress | |
+| Progresso | Progress | De 0 a 100% numa tarefa; o da fase e o do projeto são ponderados pela duração (ADR-0020) |
 | Modelo de projeto | ProjectTemplate | |
 | Calendário e feriados | Calendar | Módulo `Calendar` (schema `calendar`) e tela `/admin/calendar`; os outros módulos contam dias úteis pelo contrato `IWorkCalendar` (ADR-0018, ADR-0083) |
 | Calendário da instalação, dias de trabalho | WorkCalendar, WorkingDays | Os dias da semana em que a instalação trabalha, numa linha só; padrão de segunda a sexta, nunca nenhum |
@@ -165,3 +175,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Campo de várias linhas | TextArea | Componente `TextArea` (TextField multiline, fp-field__control--multiline) |
 | Logo ou iniciais | LogoTile | Componente `LogoTile` (fp-logo-tile): o logo da empresa ao lado do nome, ou as iniciais |
 | Gaveta de detalhes | DetailsDrawer | Detalhe de um item escolhido numa lista, à direita, por cima da tela, com o fundo escurecido (ADR-0081) |
+| Faixa de fases | ScheduleStrip | Componente `ScheduleStrip` (fp-strip): fases, parte concluída, fases atrasadas, marcos e hoje (ADR-0071) |
+| Barra de progresso | ProgressBar | Componente `ProgressBar` (fp-progress), com o percentual ao lado |
+| Prazo | DueDate | Componente `DueDate` (fp-due): ícone, cor e texto do estado, como "Atrasada" |
+| Escolha de várias opções | MultiSelect | Componente `MultiSelect`, no visual do campo, com as escolhidas em fichas, como "Depende de" |
