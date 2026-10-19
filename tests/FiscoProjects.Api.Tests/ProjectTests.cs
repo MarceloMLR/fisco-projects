@@ -193,8 +193,9 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
         choice.GetProperty("name").GetString().Should().Be("Alfa Distribuidora");
     }
 
-    // Spec: usuarios-e-papeis, requirement "Pessoas da empresa para escolher". Diego Torres is in the demo directory
-    // of the development settings and never signed in; Carla is in it with an inactive user.
+    // Spec: usuarios-e-papeis, requirement "Pessoas da empresa para escolher". Diego Torres, Lucas Prado and Sofia
+    // Martins are in the demo directory of the development settings and never signed in; Carla is in it with an
+    // inactive user.
     [Fact(DisplayName = "Pessoas do sistema e do diretório")]
     public async Task People_ComeActive_WithTheDirectory_AndOnlyManagersWhenAsked()
     {
@@ -206,7 +207,8 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
         var everyone = await rafael.GetFromJsonAsync<JsonElement>("/api/people", Cancellation);
         var managers = await scene.Admin.GetFromJsonAsync<JsonElement>("/api/people?managers=true&search=a", Cancellation);
 
-        Names(everyone).Should().Equal("Beatriz Lima", "Diego Torres", "Marina Costa", "Paulo Nogueira", "Rafael Souza");
+        Names(everyone).Should().Equal(
+            "Beatriz Lima", "Diego Torres", "Lucas Prado", "Marina Costa", "Paulo Nogueira", "Rafael Souza", "Sofia Martins");
         var diego = everyone.EnumerateArray().Single(person => person.GetProperty("name").GetString() == "Diego Torres");
         diego.GetProperty("id").ValueKind.Should().Be(JsonValueKind.Null);
         diego.GetProperty("directoryId").GetString().Should().Be("local:diego.torres@empresa.example");
