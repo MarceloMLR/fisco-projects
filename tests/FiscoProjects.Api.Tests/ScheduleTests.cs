@@ -8,8 +8,9 @@ namespace FiscoProjects.Api.Tests;
 
 // Spec: cronograma (API side): "Quem vê e quem edita o cronograma", "Tarefas e marcos", "Dependências", "Dependências
 // que empurram", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria", "Progresso das tarefas",
-// "Quem atualiza o progresso", "Marco atingido" and "Marco atrasado"; membros-do-projeto: "Tarefas de quem sai ou passa
-// a leitor"; projetos: "Cronograma na lista de projetos" and "Cabeçalho do projeto".
+// "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API" and "Dias não úteis no
+// cronograma"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
+// and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
@@ -52,6 +53,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             Item(scene.Phase, "Configurar plano de contas", "2026-10-14", 3, kind: "Task")), HttpStatusCode.Created),
         new("Change a task", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
             Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 6, progress: 50)), HttpStatusCode.OK),
+        new("Move a task in the timeline", (client, scene) => DatesAsync(client, scene, scene.Task, "2026-10-14"),
+            HttpStatusCode.OK),
         new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
             HttpStatusCode.NoContent),
         new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
@@ -245,6 +248,67 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await ErrorFieldsAsync(response)).Should().Equal("reached");
+    }
+
+    [Fact(DisplayName = "Mudar o início pela API")]
+    public async Task NewStart_KeepsTheDuration_AndPushes()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+
+        var response = await DatesAsync(marina, scene, scene.Task, "2026-10-16");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("pushed").GetInt32().Should().Be(1);
+        var task = await ItemAsync(scene, scene.Task);
+        (task.GetProperty("start").GetString(), task.GetProperty("end").GetString(), task.GetProperty("duration").GetInt32())
+            .Should().Be(("2026-10-16", "2026-10-20", 3));
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("start").GetString().Should().Be("2026-10-20");
+    }
+
+    [Fact(DisplayName = "Mudar o fim pela API")]
+    public async Task NewEnd_ChangesTheDuration()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        (await DatesAsync(scene.Admin, scene, scene.Task, "2026-10-13", "2026-10-20")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var task = await ItemAsync(scene, scene.Task);
+        (task.GetProperty("end").GetString(), task.GetProperty("duration").GetInt32()).Should().Be(("2026-10-20", 6));
+    }
+
+    [Fact(DisplayName = "Fim antes do início")]
+    public async Task EndBeforeTheStart_IsABadRequest()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        var before = await ScheduleOfAsync(scene);
+
+        var task = await DatesAsync(scene.Admin, scene, scene.Task, "2026-10-14", "2026-10-13");
+        var milestone = await DatesAsync(scene.Admin, scene, scene.Milestone, "2026-10-15", "2026-10-16");
+
+        task.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(task)).Should().Equal("end");
+        (await ErrorFieldsAsync(milestone)).Should().Equal("end");
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+    }
+
+    [Fact(DisplayName = "Dias não úteis no cronograma")]
+    public async Task Schedule_ComesWithTheNonWorkingDays()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var rafael = await app.SignInAsync(scene.Rafael);
+
+        var days = (await rafael.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation))
+            .GetProperty("nonWorkingDays").EnumerateArray().Select(day => day.GetString()).ToList();
+
+        // The schedule goes from 13/10 to 15/10/2026: September to November, with the national holidays of 12/10 and 02/11.
+        days.Should().Contain(["2026-10-12", "2026-11-02", "2026-10-10", "2026-10-11"]);
+        days.Should().NotContain(["2026-10-13", "2026-10-09"]);
+        (days[0], days[^1]).Should().Be(("2026-09-05", "2026-11-29"));
     }
 
     [Fact(DisplayName = "Cronograma pela API")]
@@ -480,6 +544,9 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
 
     private static Task<HttpResponseMessage> ReachedAsync(HttpClient client, Scene scene, Guid itemId, bool reached) =>
         SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/reached", new { reached });
+
+    private static Task<HttpResponseMessage> DatesAsync(HttpClient client, Scene scene, Guid itemId, string start, string? end = null) =>
+        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/dates", new { start, end });
 
     private static async Task<Guid> AddTaskAsync(Scene scene, string name, Guid owner) =>
         await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, $"{scene.Path}/items",

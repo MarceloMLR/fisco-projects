@@ -85,7 +85,8 @@ public static class ApiSetup
             .MapAuditEndpoints()
             .MapAdministrationEndpoints()
             .MapCalendarEndpoints()
-            .MapProjectsEndpoints();
+            .MapProjectsEndpoints()
+            .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();
 

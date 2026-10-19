@@ -7,8 +7,9 @@ namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (module side): "Quem vê e quem edita o cronograma", "Fases do cronograma", "Tarefas e marcos",
 // "Responsável da tarefa", "Dependências", "Dependências que empurram", "Cronograma de um projeto encerrado",
-// "Progresso das tarefas", "Quem atualiza o progresso" and "Marco atingido"; membros-do-projeto: "Tarefas de quem sai
-// ou passa a leitor"; projetos: "Cronograma na lista de projetos" and "Cabeçalho do projeto".
+// "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Novas datas pela API" and "Dias não úteis
+// no cronograma"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de
+// projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLifetime
 {
     private ProjectsDatabase _database = null!;
@@ -88,6 +89,10 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
     private Task<ScheduleResult> SetReachedAsync(ProjectViewer viewer, Guid itemId, bool reached) =>
         _database.RunAsync<SetMilestoneReached, ScheduleResult>(set => set.ExecuteAsync(_project, itemId, reached, viewer, Cancellation));
+
+    private Task<ScheduleResult> RescheduleAsync(ProjectViewer viewer, Guid itemId, DateOnly start, DateOnly? end = null) =>
+        _database.RunAsync<RescheduleScheduleItem, ScheduleResult>(reschedule =>
+            reschedule.ExecuteAsync(_project, itemId, new ScheduleItemDates(start, end), viewer, Cancellation));
 
     private Task<ScheduleView?> GetAsync(ProjectViewer viewer) =>
         _database.RunAsync<GetSchedule, ScheduleView?>(get => get.ExecuteAsync(_project, viewer, Cancellation));
@@ -517,6 +522,62 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         var erp = page.Items.Single(item => item.Code == "ERP-FIN").Schedule!;
         (erp.LateTasks, erp.LateMilestones).Should().Be((1, 1));
+    }
+
+    [Fact(DisplayName = "Mudar o início pela API")]
+    public async Task Manager_MovesATask_KeepingItsDuration()
+    {
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 3);
+        var next = await AddTaskAsync("Testes", D(10, 16), 2, task);
+        await UpdateProgressAsync(Marina, task, 40);
+
+        var result = await RescheduleAsync(Marina, task, D(10, 16));
+
+        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 1));
+        (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item =>
+            item.Start == D(10, 16) && item.End == D(10, 20) && item.Duration == 3 && item.Progress == 40);
+        (await ItemAsync(next)).Item.Start.Should().Be(D(10, 21));
+        (await ItemAsync(next)).Predecessors.Should().Equal(task);
+    }
+
+    [Fact(DisplayName = "Mudar o fim pela API")]
+    public async Task Manager_ChangesTheEnd_OfATask()
+    {
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 3);
+
+        (await RescheduleAsync(Paulo, task, D(10, 13), D(10, 20))).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item => item.Duration == 6 && item.End == D(10, 20));
+    }
+
+    [Fact(DisplayName = "Fim antes do início")]
+    public async Task InvalidDates_AreRefused()
+    {
+        var task = await AddTaskAsync("Parametrizar ICMS", D(10, 13), 3);
+        var milestone = await AddMilestoneAsync("Aceite", D(10, 20));
+
+        (await RescheduleAsync(Marina, task, D(10, 14), D(10, 13))).Should().BeEquivalentTo(ScheduleResult.InvalidFields([ScheduleField.End]));
+        (await RescheduleAsync(Marina, milestone, D(10, 20), D(10, 21))).Invalid.Should().Equal(ScheduleField.End);
+        (await RescheduleAsync(Marina, task, new DateOnly(1999, 12, 31))).Invalid.Should().Equal(ScheduleField.Start);
+        (await RescheduleAsync(Marina, Guid.CreateVersion7(), D(10, 14))).Outcome.Should().Be(ScheduleOutcome.NotFound);
+        (await RescheduleAsync(Rafael, task, D(10, 14))).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await RescheduleAsync(new ProjectViewer(_beatriz, false), task, D(10, 14))).Outcome.Should().Be(ScheduleOutcome.NotFound);
+
+        (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item => item.Start == D(10, 13) && item.End == D(10, 15));
+        await CompleteProjectAsync();
+        (await RescheduleAsync(Marina, task, D(10, 14))).Outcome.Should().Be(ScheduleOutcome.Closed);
+    }
+
+    [Fact(DisplayName = "Dias não úteis no cronograma")]
+    public async Task Schedule_ComesWithTheNonWorkingDaysAround()
+    {
+        (await GetAsync(Marina))!.NonWorkingDays.Should().BeEmpty("the schedule has no items yet");
+        await AddTaskAsync("Parametrizar ICMS", D(10, 13), 3);
+
+        var days = (await GetAsync(Rafael))!.NonWorkingDays;
+
+        days.Should().Contain([D(10, 12), D(10, 10), D(11, 2)]);
+        (days[0], days[^1]).Should().Be((new DateOnly(2026, 9, 5), new DateOnly(2026, 11, 29)));
     }
 
     [Fact(DisplayName = "Cronograma na lista")]

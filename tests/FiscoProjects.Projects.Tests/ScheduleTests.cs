@@ -4,7 +4,8 @@ namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (domain side): "Fases do cronograma", "Tarefas e marcos", "Início em dia útil", "Dependências",
 // "Dependências que empurram", "Excluir sem mover", "Progresso das tarefas", "Datas e progresso das fases e do
-// projeto", "Tarefa atrasada", "Marco atingido" and "Marco atrasado".
+// projeto", "Tarefa atrasada", "Marco atingido", "Marco atrasado", "Novas datas pela API" and "Dias não úteis no
+// cronograma".
 public sealed class ScheduleTests
 {
     private static readonly TestBusinessDays Days = TestBusinessDays.Of2026;
@@ -460,6 +461,64 @@ public sealed class ScheduleTests
         schedule.Figures(D(10, 16)).CurrentPhase.Should().Be(survey, "the milestone of Levantamento passed without being reached");
         schedule.SetReached(acceptance.Id, true, D(10, 16));
         schedule.Figures(D(10, 16)).CurrentPhase.Should().Be(configuration);
+    }
+
+    [Fact(DisplayName = "Mudar o início pela API")]
+    public void Reschedule_WithTheStart_KeepsTheDuration_AndPushes()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Parametrizar ICMS", D(10, 13), 3);
+        var next = Task(schedule, phase, "Testes", D(10, 16), 2, task);
+        Change(schedule, task, plan => plan with { Progress = 40 });
+
+        var pushed = schedule.Reschedule(task.Id, D(10, 16), end: null, Days, Today);
+
+        (task.Start, task.End, task.Duration, task.Progress).Should().Be((D(10, 16), D(10, 20), 3, 40));
+        pushed.Should().Be(1);
+        next.Start.Should().Be(D(10, 21));
+        schedule.Reschedule(Guid.CreateVersion7(), D(10, 16), null, Days, Today).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Mudar o fim pela API")]
+    public void Reschedule_WithTheEnd_CountsTheBusinessDays()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Parametrizar ICMS", D(10, 13), 3);
+        var milestone = Milestone(schedule, phase, "Aceite", D(10, 20));
+
+        schedule.Reschedule(task.Id, D(10, 13), D(10, 20), Days, Today);
+        schedule.Reschedule(milestone.Id, D(10, 23), null, Days, Today);
+
+        (task.Start, task.End, task.Duration).Should().Be((D(10, 13), D(10, 20), 6));
+        (milestone.Start, milestone.End).Should().Be((D(10, 23), D(10, 23)));
+        // From Saturday 10/10, moved to the next business day: Tuesday 13/10, after the holiday of 12/10.
+        Schedule.DurationBetween(D(10, 10), D(10, 13), Days).Should().Be(1);
+    }
+
+    [Fact(DisplayName = "Fim antes do início")]
+    public void Reschedule_RefusesAnEndBeforeTheStart_OrForAMilestone()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Parametrizar ICMS", D(10, 13), 3);
+        var milestone = Milestone(schedule, phase, "Aceite", D(10, 20));
+
+        Schedule.DurationBetween(D(10, 14), D(10, 13), Days).Should().BeNull();
+        Schedule.DurationBetween(D(10, 13), D(10, 13).AddYears(5), Days).Should().BeNull("it would pass 999 business days");
+        schedule.Invoking(s => s.Reschedule(task.Id, D(10, 14), D(10, 13), Days, Today)).Should().Throw<ArgumentException>();
+        schedule.Invoking(s => s.Reschedule(milestone.Id, D(10, 20), D(10, 21), Days, Today)).Should().Throw<ArgumentException>();
+        (task.Start, task.End).Should().Be((D(10, 13), D(10, 15)));
+    }
+
+    [Fact(DisplayName = "Dias não úteis no cronograma")]
+    public void NonWorkingDays_GoFromTheMonthBefore_ToTheMonthAfter()
+    {
+        var days = Schedule.NonWorkingDaysAround(D(10, 5), D(11, 13), Days);
+
+        days.Should().Contain([D(10, 12), D(11, 2), D(10, 10), D(10, 11), new DateOnly(2026, 9, 5), new DateOnly(2026, 12, 27)]);
+        days.Should().OnlyContain(day => !Days.IsBusinessDay(day));
+        (days[0], days[^1]).Should().Be((new DateOnly(2026, 9, 5), new DateOnly(2026, 12, 27)));
+        // September to December 2026: 34 days of weekends, and the holidays of 12/10 and 02/11.
+        days.Should().HaveCount(36);
     }
 
     [Fact(DisplayName = "Fase atual")]

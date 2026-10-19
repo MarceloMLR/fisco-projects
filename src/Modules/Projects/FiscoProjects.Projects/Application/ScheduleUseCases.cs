@@ -50,16 +50,19 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 
 /// <summary>
 /// A schedule as the Schedule tab shows it: the numbers of the day (<see cref="ScheduleFigures"/>), the names of the
-/// owners, the items each item depends on and the tasks whose progress the person may update now (ADR-0043).
+/// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043) and the
+/// non-business days around its period, for the timeline to shade (ADR-0051).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
     IReadOnlyDictionary<Guid, string> OwnerNames,
     IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors,
-    IReadOnlySet<Guid> ProgressUpdatable);
+    IReadOnlySet<Guid> ProgressUpdatable,
+    IReadOnlyList<DateOnly> NonWorkingDays);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
-public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules, IUserDirectory users, InstallationClock clock)
+public sealed class GetSchedule(
+    IProjectStore projects, IScheduleStore schedules, IUserDirectory users, IWorkCalendar calendar, InstallationClock clock)
 {
     /// <returns>The schedule, empty while the project has none, or null when the project does not exist for the person.</returns>
     public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -75,8 +78,12 @@ public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules
         var today = await clock.TodayAsync(cancellationToken);
         var names = await PeopleNames.OfAsync(
             users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
+        var figures = schedule.Figures(today);
+        var nonWorkingDays = figures is { Start: { } start, End: { } end }
+            ? Schedule.NonWorkingDaysAround(start, end, await calendar.GetAsync(cancellationToken))
+            : [];
         return new ScheduleView(
-            schedule.Figures(today),
+            figures,
             names,
             schedule.Dependencies
                 .GroupBy(dependency => dependency.SuccessorId)
@@ -86,7 +93,8 @@ public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules
                 : schedule.Items
                     .Where(item => item.Kind == ScheduleItemKind.Task && ScheduleEditing.MayUpdateProgress(permissions, item, viewer))
                     .Select(item => item.Id)
-                    .ToHashSet());
+                    .ToHashSet(),
+            nonWorkingDays);
     }
 }
 
@@ -119,6 +127,9 @@ public enum ScheduleField
 
     /// <summary>Only a milestone is reached; a task has a progress (ADR-0020).</summary>
     Reached = 8,
+
+    /// <summary>The end of a task in the timeline: on or after the start, up to 999 business days; a milestone has none.</summary>
+    End = 9,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -442,6 +453,48 @@ public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore s
 
             schedule.SetReached(itemId, reached, today);
             return ScheduleResult.Done();
+        }, cancellationToken);
+    }
+}
+
+/// <summary>The new dates of a task or milestone moved in the timeline: the start and, for a task, maybe the end.</summary>
+public sealed record ScheduleItemDates(DateOnly Start, DateOnly? End);
+
+/// <summary>
+/// Moves a task or milestone in the timeline (ADR-0019, ADR-0051): the start keeps the duration; with an end, a task
+/// lasts the business days between them, counted by the calendar of the installation. The items after it are pushed.
+/// </summary>
+public sealed class RescheduleScheduleItem(
+    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, ScheduleItemDates dates, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(dates);
+        var days = await calendar.GetAsync(cancellationToken);
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+        {
+            if (schedule.ItemOf(itemId) is not { } item)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.NotFound);
+            }
+
+            var invalid = new List<ScheduleField>();
+            if (!Schedule.IsValidDay(dates.Start))
+            {
+                invalid.Add(ScheduleField.Start);
+            }
+
+            if (dates.End is { } end
+                && (item.Kind != ScheduleItemKind.Task || Schedule.DurationBetween(dates.Start, end, days) is null))
+            {
+                invalid.Add(ScheduleField.End);
+            }
+
+            return invalid.Count > 0
+                ? ScheduleResult.InvalidFields(invalid)
+                : ScheduleResult.Done(pushed: schedule.Reschedule(itemId, dates.Start, dates.End, days, today) ?? 0);
         }, cancellationToken);
     }
 }

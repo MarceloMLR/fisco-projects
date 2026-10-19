@@ -2,11 +2,11 @@
 
 ## 1. Backend
 
-- [ ] 1.1 Incluir `Schedule.Reschedule` (início e, numa tarefa, o fim, contando os dias úteis); verificar com os testes de domínio "Mudar o início pela API", "Mudar o fim pela API" e "Fim antes do início"
-- [ ] 1.2 Criar `RescheduleScheduleItem` e a rota `PUT /schedule/items/{itemId}/dates`; verificar com os testes de casos de uso e da API, incluindo a ação na tabela de permissões
-- [ ] 1.3 Devolver `nonWorkingDays` no `GET /schedule`; verificar com "Dias não úteis no cronograma"
-- [ ] 1.4 Criar `GET /api/client-settings` com a chave `Syncfusion:LicenseKey`, só com sessão; verificar com os testes da API
-- [ ] 1.5 Atualizar o contrato (`npm run api:update`)
+- [x] 1.1 Incluir `Schedule.Reschedule` (início e, numa tarefa, o fim, contando os dias úteis); verificar com os testes de domínio "Mudar o início pela API", "Mudar o fim pela API" e "Fim antes do início"
+- [x] 1.2 Criar `RescheduleScheduleItem` e a rota `PUT /schedule/items/{itemId}/dates`; verificar com os testes de casos de uso e da API, incluindo a ação na tabela de permissões
+- [x] 1.3 Devolver `nonWorkingDays` no `GET /schedule`; verificar com "Dias não úteis no cronograma"
+- [x] 1.4 Criar `GET /api/client-settings` com a chave `Syncfusion:LicenseKey`, só com sessão; verificar com os testes da API
+- [x] 1.5 Atualizar o contrato (`npm run api:update`)
 
 ## 2. Componente ScheduleGantt
 

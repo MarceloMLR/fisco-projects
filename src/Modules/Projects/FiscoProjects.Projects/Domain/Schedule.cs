@@ -191,6 +191,77 @@ public sealed class Schedule : Entity
     }
 
     /// <summary>
+    /// The duration a task gets from a start, moved to a business day, to an end, in business days of the calendar;
+    /// null when the end comes before that start or the duration would pass 999 days (ADR-0018).
+    /// </summary>
+    public static int? DurationBetween(DateOnly start, DateOnly end, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        if (!IsValidDay(start) || !IsValidDay(end))
+        {
+            return null;
+        }
+
+        var duration = days.CountBusinessDays(OnABusinessDay(start, days), end);
+        return duration is >= 1 and <= MaxDuration ? duration : null;
+    }
+
+    /// <summary>
+    /// The non-business days from the first day of the month before <paramref name="start"/> to the last day of the
+    /// month after <paramref name="end"/>, for the timeline to shade them without the rule of the calendar (ADR-0051).
+    /// </summary>
+    public static IReadOnlyList<DateOnly> NonWorkingDaysAround(DateOnly start, DateOnly end, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        var first = new DateOnly(start.Year, start.Month, 1).AddMonths(-1);
+        var last = new DateOnly(end.Year, end.Month, 1).AddMonths(2).AddDays(-1);
+        var found = new List<DateOnly>();
+        for (var day = first; day <= last; day = day.AddDays(1))
+        {
+            if (!days.IsBusinessDay(day))
+            {
+                found.Add(day);
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Moves a task or milestone in the timeline (ADR-0019, ADR-0051): a new start keeps the duration in business days;
+    /// with an end, a task lasts the business days from the start to it. The rest of the item stays, with its progress,
+    /// and the items after it are pushed as in <see cref="ChangeItem"/>.
+    /// </summary>
+    /// <returns>How many other items were pushed, or null when the item is not in the schedule.</returns>
+    /// <exception cref="ArgumentException">An end for a milestone, or an end that gives no valid duration.</exception>
+    public int? Reschedule(Guid itemId, DateOnly start, DateOnly? end, IBusinessDays days, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        if (ItemOf(itemId) is not { } item)
+        {
+            return null;
+        }
+
+        var duration = item.Duration;
+        if (end is { } last)
+        {
+            duration = item.Kind == ScheduleItemKind.Task && DurationBetween(start, last, days) is { } between
+                ? between
+                : throw new ArgumentException("The end gives no valid duration for the item.", nameof(end));
+        }
+
+        var plan = new ScheduleItemPlan(
+            item.PhaseId,
+            item.Name,
+            start,
+            duration,
+            item.OwnerId,
+            Progress: null,
+            [.. PredecessorsOf(itemId).Select(predecessor => predecessor.Id)]);
+        return ChangeItem(itemId, plan, days, today);
+    }
+
+    /// <summary>
     /// Updates the progress of a task (ADR-0020): at 100% it keeps today as the day it was completed, below it the day
     /// goes away. False when the item is not in the schedule.
     /// </summary>
