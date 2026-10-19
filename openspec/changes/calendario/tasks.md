@@ -62,7 +62,7 @@
   - a Auditoria.
 
   Mandar as capturas para Marcelo.
-- [ ] 3.2 Documentação e verificações:
+- [x] 3.2 Documentação e verificações:
   - glossário, `CLAUDE.md` (módulo `Calendar`) e roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar que a verificação `verify` passa no GitHub Actions.
