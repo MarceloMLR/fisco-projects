@@ -109,7 +109,8 @@ export function ProjectSchedulePage() {
   const [page, setPage] = useState(1);
   const [chosenId, setChosenId] = useState<string>();
   const [phaseDialog, setPhaseDialog] = useState<PhaseDialogState>();
-  const [creating, setCreating] = useState(false);
+  /** "Nova tarefa" open, maybe inside a task ("Nova subtarefa", ADR-0088). */
+  const [creating, setCreating] = useState<{ parentId?: string }>();
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useSearchParams();
   const asked = search.get('view');
@@ -142,7 +143,10 @@ export function ProjectSchedulePage() {
                 alignItems: 'center',
                 gap: 'var(--space-2)',
                 minWidth: 0,
-                paddingLeft: 'var(--space-5)',
+                // A subtask one step further in than the items of the phase (ADR-0088).
+                paddingLeft:
+                  row.item.parentId === null ? 'var(--space-5)' : 'calc(2 * var(--space-5))',
+                fontWeight: row.item.hasSubtasks ? 500 : undefined,
               }}
             >
               {row.item.kind === 'Milestone' && (
@@ -351,7 +355,7 @@ export function ProjectSchedulePage() {
       startIcon={<AddOutlined />}
       disabled={schedule.phases.length === 0}
       onClick={() => {
-        setCreating(true);
+        setCreating({});
       }}
     >
       {t('projects.schedule.newItem')}
@@ -546,15 +550,16 @@ export function ProjectSchedulePage() {
           }}
         />
       )}
-      {creating && (
+      {creating !== undefined && (
         <NewItemDialog
           project={project}
           schedule={schedule}
+          parentId={creating.parentId}
           onClose={() => {
-            setCreating(false);
+            setCreating(undefined);
           }}
           onCreated={(message) => {
-            setCreating(false);
+            setCreating(undefined);
             notify(message);
           }}
         />
@@ -579,6 +584,10 @@ export function ProjectSchedulePage() {
               onRemoved={(message) => {
                 setChosenId(undefined);
                 notify(message);
+              }}
+              onNewSubtask={() => {
+                setChosenId(undefined);
+                setCreating({ parentId: chosen.item.id });
               }}
             />
           ) : (
@@ -612,23 +621,28 @@ function TodayButton({ disabled, onClick }: { disabled: boolean; onClick: () => 
 }
 
 /**
- * "Nova tarefa": a task or a milestone, its name, phase and start, and, for a task, the duration and the owner, and
- * what it depends on (ADR-0018, ADR-0019). A task starts at 0%.
+ * "Nova tarefa": a task or a milestone, its name, phase, the task it goes into and start, and, for a task, the duration
+ * and the owner, and what it depends on (ADR-0018, ADR-0019, ADR-0088). A task starts at 0%. "Nova subtarefa" opens it
+ * inside the task.
  */
 function NewItemDialog({
   project,
   schedule,
+  parentId,
   onClose,
   onCreated,
 }: {
   project: Project;
   schedule: Schedule;
+  /** The task the new item goes into. */
+  parentId?: string;
   onClose: () => void;
   onCreated: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const firstPhase = schedule.phases[0]?.id ?? '';
+  const parent = parentId === undefined ? undefined : findItem(schedule, parentId)?.item;
+  const firstPhase = parent?.phaseId ?? schedule.phases[0]?.id ?? '';
   const {
     control,
     handleSubmit,
@@ -637,7 +651,7 @@ function NewItemDialog({
     formState: { errors, isSubmitting },
   } = useForm<ScheduleItemValues>({
     resolver: zodResolver(scheduleItemSchema),
-    defaultValues: newItemValues(firstPhase),
+    defaultValues: newItemValues(firstPhase, parent?.id),
   });
   const kind = useWatch({ control, name: 'kind' });
 
@@ -666,7 +680,9 @@ function NewItemDialog({
   return (
     <Dialog
       open
-      title={t('projects.schedule.form.title')}
+      title={t(
+        parent === undefined ? 'projects.schedule.form.title' : 'projects.schedule.form.newSubtask',
+      )}
       onClose={onClose}
       onSubmit={(event) => {
         void create(event);
@@ -753,8 +769,9 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
 /**
  * The details of a task or milestone for who edits the schedule: the progress of the task or the state of the
  * milestone, each saved by its own action (ADR-0086); the same fields as "Nova tarefa", with the end the API computed;
- * "Salvar", which says how many items after it were pushed (ADR-0019), and keeps the progress as it is; and the
- * removal, with confirmation.
+ * "Salvar", which says how many items after it were pushed (ADR-0019), and keeps the progress as it is; "Nova
+ * subtarefa", for a task right in the phase; and the removal, with confirmation. A task with subtasks shows its dates
+ * and progress as computed from them, and changes only its name, phase and owner (ADR-0088).
  */
 function ItemEditor({
   project,
@@ -762,12 +779,14 @@ function ItemEditor({
   item,
   onSaved,
   onRemoved,
+  onNewSubtask,
 }: {
   project: Project;
   schedule: Schedule;
   item: ScheduleItem;
   onSaved: (message: string) => void;
   onRemoved: (message: string) => void;
+  onNewSubtask: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -783,6 +802,7 @@ function ItemEditor({
     defaultValues: valuesOfItem(item),
   });
   const phaseName = schedule.phases.find((phase) => phase.id === item.phaseId)?.name ?? '';
+  const subtasks = itemsOf(schedule).filter((other) => other.parentId === item.id).length;
   const refreshed = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
     void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
@@ -842,10 +862,11 @@ function ItemEditor({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <ItemHeading item={item} phase={phaseName} />
       {item.kind === 'Task' ? (
-        <TaskProgress project={project} item={item} onDone={onSaved} />
+        <TaskProgress project={project} item={item} onDone={onSaved} subtasks={subtasks} />
       ) : (
         <MilestoneState project={project} item={item} canEdit onDone={onSaved} />
       )}
+      {item.hasSubtasks && <SummaryDates item={item} />}
       <Box
         component="form"
         noValidate
@@ -863,6 +884,7 @@ function ItemEditor({
           project={project}
           itemId={item.id}
           endsOn={item.kind === 'Task' ? item.end : undefined}
+          summary={item.hasSubtasks}
         />
         {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -878,6 +900,16 @@ function ItemEditor({
             {t(`projects.schedule.form.remove.${item.kind}`)}
           </Button>
           <Box sx={{ flex: 1 }} />
+          {item.kind === 'Task' && item.parentId === null && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<AddOutlined />}
+              onClick={onNewSubtask}
+            >
+              {t('projects.schedule.form.newSubtask')}
+            </Button>
+          )}
           <Button type="submit" variant="contained" disabled={isSubmitting}>
             {t('projects.schedule.form.save')}
           </Button>
@@ -913,15 +945,44 @@ function ItemEditor({
           </>
         }
       >
-        {t('projects.schedule.removeItem.text', { name: item.name })}
+        {subtasks > 0
+          ? t('projects.schedule.removeItem.textSummary', { name: item.name, count: subtasks })
+          : t('projects.schedule.removeItem.text', { name: item.name })}
       </Dialog>
+    </Box>
+  );
+}
+
+/** The dl of the details: the label on the left and the value on the right. */
+const detailsListSx = {
+  display: 'grid',
+  gridTemplateColumns: '128px minmax(0, 1fr)',
+  gap: 'var(--space-3)',
+  margin: 0,
+  fontSize: 14,
+  lineHeight: '20px',
+  '& dt': { fontSize: 13, lineHeight: '20px', color: 'var(--text-secondary)' },
+  '& dd': { margin: 0, minWidth: 0 },
+} as const;
+
+/** The dates of a task with subtasks, computed from them and not typed (ADR-0088). */
+function SummaryDates({ item }: { item: ScheduleItem }) {
+  const { t } = useTranslation();
+  return (
+    <Box component="dl" sx={detailsListSx}>
+      <dt>{t('projects.schedule.details.start')}</dt>
+      <dd>{formatDayText(item.start)}</dd>
+      <dt>{t('projects.schedule.details.end')}</dt>
+      <dd>{formatDayText(item.end)}</dd>
+      <dt>{t('projects.schedule.details.duration')}</dt>
+      <dd>{t('projects.schedule.duration', { count: item.duration })}</dd>
     </Box>
   );
 }
 
 /**
  * The details of a task or milestone for who does not edit the schedule (ADR-0043): read only, but for the progress of
- * a task the person is in charge of.
+ * a task the person is in charge of. A subtask says the task it is in, and a task with subtasks, how many it has.
  */
 function ItemDetails({
   project,
@@ -939,6 +1000,8 @@ function ItemDetails({
   const { t } = useTranslation();
   const names = predecessorNames(item, schedule);
   const task = item.kind === 'Task';
+  const subtasks = itemsOf(schedule).filter((other) => other.parentId === item.id).length;
+  const parent = item.parentId === null ? undefined : findItem(schedule, item.parentId)?.item;
   return (
     <Box
       component="section"
@@ -946,23 +1009,17 @@ function ItemDetails({
     >
       <ItemHeading item={item} phase={phase.name} />
       {task ? (
-        <TaskProgress project={project} item={item} onDone={onDone} />
+        <TaskProgress project={project} item={item} onDone={onDone} subtasks={subtasks} />
       ) : (
         <MilestoneState project={project} item={item} canEdit={false} onDone={onDone} />
       )}
-      <Box
-        component="dl"
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '128px minmax(0, 1fr)',
-          gap: 'var(--space-3)',
-          margin: 0,
-          fontSize: 14,
-          lineHeight: '20px',
-          '& dt': { fontSize: 13, lineHeight: '20px', color: 'var(--text-secondary)' },
-          '& dd': { margin: 0, minWidth: 0 },
-        }}
-      >
+      <Box component="dl" sx={detailsListSx}>
+        {parent !== undefined && (
+          <>
+            <dt>{t('projects.schedule.form.parent')}</dt>
+            <dd>{parent.name}</dd>
+          </>
+        )}
         <dt>{t(task ? 'projects.schedule.details.start' : 'projects.schedule.details.day')}</dt>
         <dd>{formatDayText(item.start)}</dd>
         {task && (
@@ -975,8 +1032,17 @@ function ItemDetails({
             <dd>{item.owner?.name ?? t('projects.schedule.noOwner')}</dd>
           </>
         )}
-        <dt>{t('projects.schedule.details.dependsOn')}</dt>
-        <dd>{names.length === 0 ? t('projects.schedule.none') : names.join(', ')}</dd>
+        {subtasks > 0 ? (
+          <>
+            <dt>{t('projects.schedule.details.subtasks')}</dt>
+            <dd>{subtasks}</dd>
+          </>
+        ) : (
+          <>
+            <dt>{t('projects.schedule.details.dependsOn')}</dt>
+            <dd>{names.length === 0 ? t('projects.schedule.none') : names.join(', ')}</dd>
+          </>
+        )}
       </Box>
     </Box>
   );

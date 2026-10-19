@@ -82,6 +82,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Fase | SchedulePhase | Nome e, dentro dela, tarefas e marcos; as datas e o progresso vêm deles |
 | Tarefa ou marco (item do cronograma) | ScheduleItem | Rota `/schedule/items`; o tipo não muda depois da criação |
 | Tipo: tarefa, marco | ScheduleItemKind: Task, Milestone | O marco é uma data, sem duração, responsável nem progresso (ADR-0018, ADR-0020) |
+| Subtarefa | Subtask (`ScheduleItem` com `ParentId`) | Tarefa ou marco dentro de uma tarefa da mesma fase, num nível só (ADR-0088) |
+| Dentro de | ParentId | A tarefa em que o item está; vazio quando está direto na fase |
+| Tarefa-resumo | Summary (`hasSubtasks`) | Tarefa com subtarefas: datas, duração, progresso e atraso vêm delas, e ela não tem dependências (ADR-0088) |
 | Início, fim | Start, End | Dias sem fuso; o fim é calculado em dias úteis pelo servidor |
 | Duração em dias úteis | Duration | De 1 a 999 numa tarefa, contando o início; zero no marco |
 | Responsável | OwnerId | Uma pessoa do projeto que não é leitora; quem sai ou passa a leitor deixa as tarefas sem responsável (ADR-0042, ADR-0043) |

@@ -47,6 +47,8 @@ export interface DemoItem {
   /** The names of the items it depends on, of the same project. */
   after?: readonly string[];
   reached?: boolean;
+  /** The name of the task it is inside, of the same phase and before it in the plan (ADR-0088). */
+  inside?: string;
 }
 
 export interface DemoPhase {
@@ -138,6 +140,17 @@ export const demoProjects: readonly DemoProject[] = [
             owner: 'rafael',
             after: ['Parametrizar regras de ICMS'],
           }),
+          // Broken into subtasks (ADR-0088): the first takes the dependency of the task.
+          task('Roteiro de testes', 18, 2, { owner: 'carla', inside: 'Testes integrados' }),
+          milestone('Roteiro aprovado', 20, {
+            inside: 'Testes integrados',
+            after: ['Roteiro de testes'],
+          }),
+          task('Executar testes', 20, 3, {
+            owner: 'rafael',
+            inside: 'Testes integrados',
+            after: ['Roteiro aprovado'],
+          }),
         ],
       },
       {
@@ -145,7 +158,7 @@ export const demoProjects: readonly DemoProject[] = [
         items: [
           task('Testes com a equipe do cliente', 25, 2, {
             owner: 'carla',
-            after: ['Testes integrados'],
+            after: ['Executar testes'],
           }),
           milestone('Aceite da homologação', 29, { after: ['Testes com a equipe do cliente'] }),
         ],

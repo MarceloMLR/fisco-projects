@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (item "Subtarefas" substituído pelo ADR-0088)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---
@@ -36,7 +36,7 @@ Escopo:
 | Dependência do tipo "termina → começa": a tarefa seguinte só começa depois que a anterior termina | v1 |
 | Atrasar ou mover uma tarefa para depois empurra as seguintes (respeitando dias úteis e feriados); antecipar não as puxa | v1 |
 | Dependência circular recusada | v1 |
-| Subtarefas (mais de dois níveis) | depois |
+| Subtarefas (mais de dois níveis) | depois (substituído pelo ADR-0088: um nível de subtarefas na v1) |
 | Outros tipos de dependência (começa junto, termina junto) e intervalo entre tarefas | depois |
 | Dependências entre projetos diferentes | fora |
 

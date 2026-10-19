@@ -234,14 +234,14 @@ public sealed class ScheduleTests
         var a = Task(schedule, phase, "A", D(10, 5), 5);
         var b = Task(schedule, phase, "B", D(10, 13), 2, a);
 
-        schedule.RemoveItem(a.Id).Should().BeTrue();
+        schedule.RemoveItem(a.Id, Days).Should().BeTrue();
         var noDependency = Change(schedule, b, plan => plan with { PredecessorIds = [] });
 
         schedule.Items.Should().ContainSingle().Which.Should().Be(b);
         schedule.Dependencies.Should().BeEmpty();
         noDependency.Should().Be(0);
         (b.Start, b.End).Should().Be((D(10, 13), D(10, 14)));
-        schedule.RemoveItem(a.Id).Should().BeFalse();
+        schedule.RemoveItem(a.Id, Days).Should().BeFalse();
     }
 
     [Fact(DisplayName = "Concluir tarefa guarda a data")]

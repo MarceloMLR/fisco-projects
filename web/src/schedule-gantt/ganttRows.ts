@@ -50,8 +50,9 @@ export function lastDayOf(end: Date): DayValue {
 }
 
 /**
- * The lines of the timeline: each phase in the order of the API with its items below it; the classes say what each
- * one is, for the colors of the design system (fp-gantt), and the dependencies point to the numbers of the lines.
+ * The lines of the timeline: each phase in the order of the API with its items below it, and each subtask below its
+ * task, which the Gantt then draws as a summary, as a phase (ADR-0088); the classes say what each one is, for the colors
+ * of the design system (fp-gantt), and the dependencies point to the numbers of the lines.
  */
 export function ganttRowsOf(schedule: Schedule): GanttRow[] {
   const rows: GanttRow[] = [];
@@ -80,10 +81,15 @@ export function ganttRowsOf(schedule: Schedule): GanttRow[] {
         start: dateOfDay(item.start),
         end: milestone ? dateOfDay(item.start) : endOfDay(item.end),
         progress: milestone ? 0 : item.progress,
-        parentKey: phaseKey,
+        // The API sends each task before its subtasks.
+        parentKey: (item.parentId === null ? undefined : keys.get(item.parentId)) ?? phaseKey,
         milestone,
         cssClass: [
-          milestone ? 'fp-gantt-milestone' : 'fp-gantt-task',
+          milestone
+            ? 'fp-gantt-milestone'
+            : item.hasSubtasks
+              ? 'fp-gantt-summary'
+              : 'fp-gantt-task',
           item.late ? 'fp-gantt-late' : '',
         ]
           .join(' ')

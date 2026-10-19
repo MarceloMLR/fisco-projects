@@ -115,6 +115,13 @@ export function ScheduleTimeline({
       ) {
         return;
       }
+      // Only the items with dates of their own have dependencies (ADR-0088).
+      const summary = [predecessor, successor].find((item) => item.hasSubtasks);
+      if (summary !== undefined) {
+        refresh();
+        notify(t('projects.timeline.messages.summaryLink', { name: summary.name }));
+        return;
+      }
       const names = { predecessor: predecessor.name, successor: successor.name };
       try {
         const { error, response } = await api.PUT('/api/projects/{id}/schedule/items/{itemId}', {
@@ -127,6 +134,7 @@ export function ScheduleTimeline({
             ownerId: successor.owner?.id ?? null,
             progress: null,
             predecessorIds: [...successor.predecessorIds, predecessorId],
+            parentId: successor.parentId,
           },
         });
         refresh();

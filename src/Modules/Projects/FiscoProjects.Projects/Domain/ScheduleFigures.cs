@@ -3,7 +3,7 @@ namespace FiscoProjects.Projects.Domain;
 /// <summary>
 /// A phase as the screens show it: the dates from the first start to the last end of its items (none without items),
 /// the progress weighted by the duration of its tasks, whether a task or a milestone of it is late, and its items in
-/// order.
+/// order, each task followed by its subtasks (ADR-0088).
 /// </summary>
 public sealed record PhaseFigures(
     SchedulePhase Phase, DateOnly? Start, DateOnly? End, int Progress, bool IsLate, IReadOnlyList<ScheduleItem> Items);
@@ -22,6 +22,8 @@ public sealed record PhaseFigures(
 /// <param name="CompletedOn">With every task at 100%, the day the last one was completed.</param>
 /// <param name="Phases">The phases in order: by start, then the ones without items in the order they were created.</param>
 /// <param name="Milestones">The days of the milestones.</param>
+/// <param name="Summaries">The tasks with subtasks, whose dates and progress come from them (ADR-0088).</param>
+/// <param name="LateItems">The late tasks and milestones, and the tasks with a late subtask.</param>
 public sealed record ScheduleFigures(
     DateOnly Today,
     DateOnly? Start,
@@ -32,7 +34,9 @@ public sealed record ScheduleFigures(
     SchedulePhase? CurrentPhase,
     DateOnly? CompletedOn,
     IReadOnlyList<PhaseFigures> Phases,
-    IReadOnlyList<DateOnly> Milestones)
+    IReadOnlyList<DateOnly> Milestones,
+    IReadOnlySet<Guid> Summaries,
+    IReadOnlySet<Guid> LateItems)
 {
     /// <summary>The numbers of a schedule from its phases and items, on a day.</summary>
     public static ScheduleFigures Of(IEnumerable<SchedulePhase> phases, IEnumerable<ScheduleItem> items, DateOnly today)
@@ -40,15 +44,20 @@ public sealed record ScheduleFigures(
         ArgumentNullException.ThrowIfNull(phases);
         ArgumentNullException.ThrowIfNull(items);
         var all = items.ToList();
+        // A task with subtasks counts through them, never twice (ADR-0088).
+        var summaries = all.Where(item => item.ParentId is not null).Select(item => item.ParentId!.Value).ToHashSet();
+        var own = all.Where(item => !summaries.Contains(item.Id)).ToList();
+        var late = own.Where(item => item.IsLate(today)).Select(item => item.Id).ToHashSet();
+        late.UnionWith(own.Where(item => late.Contains(item.Id) && item.ParentId is not null).Select(item => item.ParentId!.Value));
         var byPhase = all.ToLookup(item => item.PhaseId);
         var phaseFigures = phases
-            .Select(phase => PhaseOf(phase, byPhase[phase.Id], today))
+            .Select(phase => PhaseOf(phase, byPhase[phase.Id], summaries, late))
             .OrderBy(figures => figures.Start is null)
             .ThenBy(figures => figures.Start)
             .ThenBy(figures => figures.Phase.Position)
             .ToList();
 
-        var tasks = all.Where(item => item.Kind == ScheduleItemKind.Task).ToList();
+        var tasks = own.Where(item => item.Kind == ScheduleItemKind.Task).ToList();
         var dated = phaseFigures.Where(figures => figures.Start is not null).ToList();
         var current = dated.FirstOrDefault(figures => figures.IsLate)
             ?? dated.LastOrDefault(figures => figures.Start <= today);
@@ -66,7 +75,9 @@ public sealed record ScheduleFigures(
             current?.Phase,
             completed,
             phaseFigures,
-            [.. all.Where(item => item.Kind == ScheduleItemKind.Milestone).Select(item => item.Start).Order()]);
+            [.. all.Where(item => item.Kind == ScheduleItemKind.Milestone).Select(item => item.Start).Order()],
+            summaries,
+            late);
     }
 
     /// <summary>The items of a phase by start, end, tasks before milestones of the same day, and name.</summary>
@@ -93,15 +104,26 @@ public sealed record ScheduleFigures(
         return (int)(((2 * done) + days) / (2 * days));
     }
 
-    private static PhaseFigures PhaseOf(SchedulePhase phase, IEnumerable<ScheduleItem> items, DateOnly today)
+    /// <summary>The items of a phase in order (<see cref="InOrder"/>), each task followed by its subtasks, also in order.</summary>
+    public static IReadOnlyList<ScheduleItem> InTreeOrder(IEnumerable<ScheduleItem> items)
     {
-        var ordered = InOrder(items);
+        var all = items.ToList();
+        var ids = all.Select(item => item.Id).ToHashSet();
+        var subtasks = all.Where(item => item.ParentId is { } parentId && ids.Contains(parentId)).ToLookup(item => item.ParentId!.Value);
+        return [.. InOrder(all.Where(item => item.ParentId is not { } parentId || !ids.Contains(parentId)))
+            .SelectMany(item => (IEnumerable<ScheduleItem>)[item, .. InOrder(subtasks[item.Id])])];
+    }
+
+    private static PhaseFigures PhaseOf(
+        SchedulePhase phase, IEnumerable<ScheduleItem> items, IReadOnlySet<Guid> summaries, IReadOnlySet<Guid> late)
+    {
+        var ordered = InTreeOrder(items);
         return new PhaseFigures(
             phase,
             ordered.Count == 0 ? null : ordered.Min(item => item.Start),
             ordered.Count == 0 ? null : ordered.Max(item => item.End),
-            WeightedProgress(ordered),
-            ordered.Any(item => item.IsLate(today)),
+            WeightedProgress(ordered.Where(item => !summaries.Contains(item.Id))),
+            ordered.Any(item => late.Contains(item.Id)),
             ordered);
     }
 }

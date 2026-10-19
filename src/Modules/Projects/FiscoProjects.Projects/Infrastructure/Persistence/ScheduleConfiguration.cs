@@ -54,16 +54,19 @@ internal sealed class ScheduleItemConfiguration : IEntityTypeConfiguration<Sched
         item.Property(i => i.Kind).HasConversion<string>().HasMaxLength(16);
         item.Property(i => i.Name).HasMaxLength(Schedule.ItemNameMaxLength);
         item.HasOne<SchedulePhase>().WithMany().HasForeignKey(i => i.PhaseId).OnDelete(DeleteBehavior.ClientCascade);
+        // The subtasks of a task (ADR-0088); the schedule removes them with the task.
+        item.HasOne<ScheduleItem>().WithMany().HasForeignKey(i => i.ParentId).OnDelete(DeleteBehavior.ClientCascade);
         // The tasks of a person are found when the person leaves a project.
         item.HasIndex(i => i.OwnerId);
 
         // Audit (ADR-0039, ADR-0084): the item by its name, in the project, with its kind in every change, so the
-        // Audit screen says whether it is a task or a milestone; the phase and the owner show by name.
+        // Audit screen says whether it is a task or a milestone; the phase, the owner and the task it is in show by name.
         item.HasAuditLabel(i => i.Name);
         item.Property(i => i.ProjectId).IsAuditReference(ProjectsAudit.ProjectReference).IsAuditContext();
         item.Property(i => i.Kind).IsAuditContext();
         item.Property(i => i.PhaseId).IsAuditReference(ProjectsAudit.SchedulePhaseReference);
         item.Property(i => i.OwnerId).IsAuditReference(UserAudit.Reference);
+        item.Property(i => i.ParentId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
     }
 }
 

@@ -9,6 +9,7 @@ import {
   demoPeople,
   demoProjects,
   demoSchedule,
+  demoScheduleWithSubtasks,
   emptySchedule,
   problem,
   projectsPage,
@@ -345,6 +346,8 @@ describe('Editar o cronograma pela tela', () => {
             canUpdateProgress: true,
             owner: { id: demoPeople.rafael.id, name: demoPeople.rafael.name },
             predecessorIds: [itemNamed('Mapear processos fiscais').id],
+            parentId: null,
+            hasSubtasks: false,
           },
         ];
         schedule = { ...schedule };
@@ -388,6 +391,8 @@ describe('Editar o cronograma pela tela', () => {
         ownerId: demoPeople.rafael.id,
         progress: 0,
         predecessorIds: [itemNamed('Mapear processos fiscais').id],
+        // Right in the phase (ADR-0088).
+        parentId: null,
       },
     ]);
     await waitFor(() => {
@@ -510,6 +515,8 @@ describe('Editar o cronograma pela tela', () => {
         // The progress stays as it is: it changes by its own action.
         progress: null,
         predecessorIds: [itemNamed('Reunião de abertura').id],
+        // Right in the phase (ADR-0088).
+        parentId: null,
       },
     ]);
     // The details start again from what the API computed.
@@ -797,5 +804,143 @@ describe('Marco atingido pela tela', () => {
     expect(cellsOf('Aceite da homologação')[5]).toBe(
       text.milestone.reached.replace('{{day}}', '16/10'),
     );
+  });
+});
+
+// Spec: cronograma, requirement "Subtarefas pela tela" (ADR-0088).
+describe('Subtarefas pela tela', () => {
+  it('Subtarefas na lista', async () => {
+    schedule = demoScheduleWithSubtasks();
+    await openSchedule();
+
+    expect(lines().slice(4, 10)).toEqual([
+      'fase: Configuração',
+      'Parametrizar regras de ICMS',
+      'Integrar emissão de NF-e',
+      'Testes integrados',
+      'Roteiro de testes',
+      'Executar testes',
+    ]);
+    // The summary, with the dates, the duration and the progress of its subtasks.
+    expect(cellsOf('Testes integrados').slice(1, 4)).toEqual(['23/10/2026', '29/10/2026', days(5)]);
+    expect(within(rowOf('Testes integrados')).getByText('Testes integrados')).toHaveStyle({
+      fontWeight: '500',
+    });
+    // A subtask one step further in than the tasks of the phase.
+    const indent = (name: string) => {
+      const cell = within(rowOf(name)).getByText(name).parentElement;
+      return cell === null ? '' : window.getComputedStyle(cell).paddingLeft;
+    };
+    expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-5))');
+    expect(indent('Executar testes')).toBe('calc(2 * var(--space-5))');
+    expect(indent('Integrar emissão de NF-e')).toBe('var(--space-5)');
+    expect(cellsOf('Executar testes')[6]).toBe('Roteiro de testes');
+  });
+
+  it('Nova subtarefa pela tela', async () => {
+    const posted: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects/:id/schedule/items', async ({ request }) => {
+        posted.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: '0199f5a2-7c1e-7d40-9a1b-600000000098' }, { status: 201 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Integrar emissão de NF-e');
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.newSubtask }));
+
+    const dialog = await screen.findByRole('dialog', { name: text.form.newSubtask });
+    expect(within(dialog).getByRole('combobox', { name: text.form.parent })).toHaveTextContent(
+      'Integrar emissão de NF-e',
+    );
+    expect(
+      within(dialog).getByText(
+        text.form.becomesSummary.replace('{{name}}', 'Integrar emissão de NF-e'),
+      ),
+    ).toBeVisible();
+    fireEvent.change(within(dialog).getByLabelText(text.form.name), {
+      target: { value: 'Configurar o certificado digital' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.form.start), {
+      target: { value: '19102026' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.form.duration), {
+      target: { value: '2' },
+    });
+    // The task it goes into is not offered as a dependency.
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.form.dependsOn }));
+    expect(await screen.findByRole('option', { name: 'Testes integrados' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Integrar emissão de NF-e' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: text.form.create.Task }));
+
+    await waitFor(() => {
+      expect(posted).toEqual([
+        expect.objectContaining({
+          kind: 'Task',
+          phaseId: schedule.phases[1]?.id,
+          name: 'Configurar o certificado digital',
+          start: '2026-10-19',
+          duration: 2,
+          parentId: itemNamed('Integrar emissão de NF-e').id,
+        }),
+      ]);
+    });
+  });
+
+  it('Detalhe da tarefa-resumo', async () => {
+    schedule = demoScheduleWithSubtasks();
+    const changes: Record<string, unknown>[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        changes.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+
+    // The name, the phase and the owner change; the dates and the progress come from the subtasks.
+    expect(within(drawer).getByLabelText(text.form.name)).toHaveValue('Testes integrados');
+    expect(within(drawer).queryByLabelText(text.form.start)).not.toBeInTheDocument();
+    expect(within(drawer).queryByLabelText(text.form.duration)).not.toBeInTheDocument();
+    expect(
+      within(drawer).queryByRole('combobox', { name: text.form.dependsOn }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(drawer).queryByRole('combobox', { name: text.form.parent }),
+    ).not.toBeInTheDocument();
+    expect(within(drawer).getByText('23/10/2026')).toBeVisible();
+    expect(within(drawer).getByText('29/10/2026')).toBeVisible();
+    expect(within(drawer).getByText(text.computed_other.replace('{{count}}', '2'))).toBeVisible();
+    expect(
+      within(drawer).queryByRole('button', { name: text.progressActions.start }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(within(drawer).getByLabelText(text.form.name), {
+      target: { value: 'Testes integrados do ERP' },
+    });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    await waitFor(() => {
+      expect(changes).toEqual([
+        expect.objectContaining({
+          name: 'Testes integrados do ERP',
+          progress: null,
+          predecessorIds: [],
+          parentId: null,
+        }),
+      ]);
+    });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.remove.Task }));
+    expect(
+      await screen.findByText(
+        text.removeItem.textSummary_other
+          .replace('{{name}}', 'Testes integrados')
+          .replace('{{count}}', '2'),
+      ),
+    ).toBeVisible();
   });
 });

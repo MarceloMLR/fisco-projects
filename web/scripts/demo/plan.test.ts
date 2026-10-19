@@ -24,6 +24,8 @@ describe('Datas da demonstração', () => {
       const seen = new Set<string>();
       for (const item of project.phases.flatMap((phase) => phase.items)) {
         expect(item.after?.filter((name) => !seen.has(name)) ?? []).toEqual([]);
+        // A subtask goes into a task that comes before it (ADR-0088).
+        expect(item.inside === undefined || seen.has(item.inside)).toBe(true);
         seen.add(item.name);
       }
     }

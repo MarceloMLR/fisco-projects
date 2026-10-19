@@ -11,6 +11,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
 - Status: Planejada, Em andamento, PR aberto, Concluída, Adiada (com o motivo).
 - Em 18/10/2026, Marcelo adiou a Fundação-6 e a Fundação-7 até existir a assinatura do Azure, e o login pelo Entra foi para o grupo 9 (M365-1): sem tenant, desenvolvimento e demonstrações usam a entrada local (ADR-0078).
+- Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
 
 ## Marcos
 
@@ -19,14 +20,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 8 | 6 |
 | 2. Acesso e administração | 10 | 10 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 8 | 4 |
+| 4. Cronograma | 10 | 5 |
 | 5. Chamados | 7 | 0 |
 | 6. Avisos | 3 | 0 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **57** | **24** |
+| **Total** | **59** | **25** |
 
 ## 1. Fundação
 
@@ -73,10 +74,12 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Concluída em 19/10/2026 ([#26](https://github.com/MarceloMLR/fisco-projects/pull/26)) |
 | Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Concluída em 19/10/2026 ([#27](https://github.com/MarceloMLR/fisco-projects/pull/27)) |
 | Cronograma-3.1 | `dados-de-demonstracao` | Comando que carrega os dados fictícios de demonstração pela API, com datas relativas ao dia, a pedido de Marcelo | 0078, 0089 | Concluída em 19/10/2026 ([#28](https://github.com/MarceloMLR/fisco-projects/pull/28)) |
-| Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
-| Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
-| Cronograma-6 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |
-| Cronograma-7 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017 | Planejada |
+| Cronograma-4 | `subtarefas` | Subtarefas em um nível, tarefa-resumo calculada, dependências entre quem faz o trabalho | 0019, 0088 | Concluída em 19/10/2026 ([#29](https://github.com/MarceloMLR/fisco-projects/pull/29)) |
+| Cronograma-4.1 | `ajustes-das-telas` | Ajustes pedidos por Marcelo: barra de rolagem extra nas abas do projeto, dias de atraso de tarefas e marcos, reabrir a mesma linha da Linha do tempo e mensagem mais clara do CNPJ inválido | 0015, 0065, 0071 | Planejada |
+| Cronograma-5 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
+| Cronograma-6 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
+| Cronograma-7 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |
+| Cronograma-8 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017 | Planejada |
 
 ## 5. Chamados
 

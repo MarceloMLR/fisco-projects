@@ -451,7 +451,11 @@ function NameCell({ row, withDelay }: { row: GanttRow | undefined; withDelay: bo
     (target.item.kind === 'Milestone' ? milestoneStatus(target.item) === 'late' : target.item.late);
   return (
     <span
-      className={target.kind === 'phase' ? 'fp-gantt-name fp-gantt-name--phase' : 'fp-gantt-name'}
+      className={
+        target.kind === 'phase' || target.item.hasSubtasks
+          ? 'fp-gantt-name fp-gantt-name--phase'
+          : 'fp-gantt-name'
+      }
     >
       {target.kind === 'item' && target.item.kind === 'Milestone' && (
         <FlagOutlined

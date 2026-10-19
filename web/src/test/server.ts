@@ -317,6 +317,8 @@ function demoItem(
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     predecessorIds: [],
+    parentId: null,
+    hasSubtasks: false,
     ...item,
   };
 }
@@ -491,6 +493,55 @@ export function demoSchedule(): Schedule {
       },
     ],
   };
+}
+
+/**
+ * The schedule of ERP-FIN with "Testes integrados" broken into subtasks (ADR-0088): "Roteiro de testes" took the
+ * dependency on "Parametrizar regras de ICMS", "Executar testes" follows it, and the tests with the client wait for the
+ * last one. The task is a summary, with the dates of its subtasks, and nobody updates its progress.
+ */
+export function demoScheduleWithSubtasks(): Schedule {
+  const schedule = demoSchedule();
+  const configuration = schedule.phases[1];
+  const approval = schedule.phases[2];
+  const [icms, invoices, tests] = configuration?.items ?? [];
+  const clientTests = approval?.items[0];
+  if (
+    configuration === undefined ||
+    approval === undefined ||
+    icms === undefined ||
+    invoices === undefined ||
+    tests === undefined ||
+    clientTests === undefined
+  ) {
+    throw new Error('No Configuração or Homologação.');
+  }
+  const script = demoItem(9, configuration.id, {
+    name: 'Roteiro de testes',
+    start: '2026-10-23',
+    end: '2026-10-26',
+    duration: 2,
+    owner: { id: demoPeople.carla.id, name: demoPeople.carla.name },
+    predecessorIds: [icms.id],
+    parentId: tests.id,
+  });
+  const run = demoItem(10, configuration.id, {
+    name: 'Executar testes',
+    start: '2026-10-27',
+    end: '2026-10-29',
+    duration: 3,
+    predecessorIds: [script.id],
+    parentId: tests.id,
+  });
+  configuration.items = [
+    icms,
+    invoices,
+    { ...tests, predecessorIds: [], hasSubtasks: true, canUpdateProgress: false },
+    script,
+    run,
+  ];
+  approval.items = [{ ...clientTests, predecessorIds: [run.id] }, ...approval.items.slice(1)];
+  return schedule;
 }
 
 /** A schedule without phases, as a new project has. */

@@ -849,6 +849,10 @@
         "kind": "Tipo",
         "name": "Nome",
         "phase": "Fase",
+        "parent": "Dentro de",
+        "inPhase": "Direto na fase",
+        "parentHelp": "Uma tarefa da mesma fase, para virar subtarefa dela.",
+        "becomesSummary": "{{name}} passa a ser resumo: as datas e o progresso vêm das subtarefas, e as dependências dela passam para esta.",
         "start": "Início",
         "day": "Data",
         "dayPlaceholder": "dd/mm/aaaa",
@@ -872,7 +876,8 @@
         "remove": {
           "Task": "Excluir tarefa",
           "Milestone": "Excluir marco"
-        }
+        },
+        "newSubtask": "Nova subtarefa"
       },
       "errors": {
         "nameRequired": "Informe o nome.",
@@ -883,7 +888,8 @@
         "progressInvalid": "Informe de 0 a 100.",
         "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",
         "predecessorsInvalid": "Escolha tarefas e marcos deste cronograma.",
-        "cycle": "Essa dependência formaria um ciclo: uma das escolhidas já depende desta."
+        "cycle": "Essa dependência formaria um ciclo: uma das escolhidas já depende desta.",
+        "parentInvalid": "Escolha uma tarefa direto nesta fase, que não seja subtarefa."
       },
       "details": {
         "label": "Tarefa ou marco selecionado",
@@ -895,7 +901,8 @@
         "owner": "Responsável",
         "progress": "Progresso",
         "state": "Estado",
-        "dependsOn": "Depende de"
+        "dependsOn": "Depende de",
+        "subtasks": "Subtarefas"
       },
       "phaseDialog": {
         "newTitle": "Nova fase",
@@ -922,7 +929,9 @@
           "Milestone": "Excluir o marco?"
         },
         "text": "{{name}} sai do cronograma com as dependências; nenhuma outra tarefa muda de data.",
-        "back": "Voltar"
+        "back": "Voltar",
+        "textSummary_one": "{{name}} sai do cronograma com a subtarefa e as dependências; nenhuma outra tarefa muda de data.",
+        "textSummary_other": "{{name}} sai do cronograma com as {{count}} subtarefas e as dependências; nenhuma outra tarefa muda de data."
       },
       "messages": {
         "phaseAdded": "Fase {{name}} incluída.",
@@ -948,7 +957,9 @@
         "unmarked": "Marco {{name}} desmarcado.",
         "failed": "Não foi possível salvar o cronograma. Tente de novo.",
         "closed": "O projeto está encerrado: reabra-o para mudar o cronograma."
-      }
+      },
+      "computed_one": "Calculado pela subtarefa.",
+      "computed_other": "Calculado pelas {{count}} subtarefas."
     },
     "timeline": {
       "views": {
@@ -991,7 +1002,8 @@
       },
       "messages": {
         "linked": "{{successor}} passa a depender de {{predecessor}}.",
-        "cycle": "Essa ligação formaria um ciclo: {{predecessor}} já depende de {{successor}}."
+        "cycle": "Essa ligação formaria um ciclo: {{predecessor}} já depende de {{successor}}.",
+        "summaryLink": "{{name}} tem subtarefas: ligue uma das subtarefas dela."
       }
     }
   }

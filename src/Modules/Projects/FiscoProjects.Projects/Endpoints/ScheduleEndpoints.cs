@@ -14,8 +14,9 @@ public sealed record ScheduleOwnerResponse(Guid Id, string Name);
 /// <summary>
 /// A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
 /// milestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it
-/// is late, whether the person may update its progress now (only a task, while the project is open), the owner and the
-/// ids of the items it depends on.
+/// is late, whether the person may update its progress now (only a task without subtasks, while the project is open),
+/// the owner, the ids of the items it depends on, the task it is in and whether it has subtasks, whose dates and
+/// progress it then shows (ADR-0088).
 /// </summary>
 public sealed record ScheduleItemResponse(
     Guid Id,
@@ -31,9 +32,14 @@ public sealed record ScheduleItemResponse(
     bool Late,
     bool CanUpdateProgress,
     ScheduleOwnerResponse? Owner,
-    IReadOnlyList<Guid> PredecessorIds);
+    IReadOnlyList<Guid> PredecessorIds,
+    Guid? ParentId,
+    bool HasSubtasks);
 
-/// <summary>A phase, with its dates (none without items), its progress weighted by duration and its items in order.</summary>
+/// <summary>
+/// A phase, with its dates (none without items), its progress weighted by duration and its items in order, each task
+/// followed by its subtasks.
+/// </summary>
 public sealed record SchedulePhaseResponse(
     Guid Id,
     string Name,
@@ -63,7 +69,8 @@ public sealed record SchedulePhaseRequest(string? Name);
 /// <summary>
 /// A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
 /// milestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to
-/// 100 (zero for a milestone) and the items it depends on.
+/// 100 (zero for a milestone), the items it depends on, and the task it goes into, right in the same phase (none for
+/// right in the phase). The first subtask of a task takes the dependencies of the task (ADR-0088).
 /// </summary>
 public sealed record NewScheduleItemRequest(
     ScheduleItemKind Kind,
@@ -73,9 +80,14 @@ public sealed record NewScheduleItemRequest(
     int Duration,
     Guid? OwnerId,
     int Progress,
-    IReadOnlyList<Guid>? PredecessorIds);
+    IReadOnlyList<Guid>? PredecessorIds,
+    Guid? ParentId = null);
 
-/// <summary>A change of a task or a milestone, whose kind stays; without the progress, it stays as it is.</summary>
+/// <summary>
+/// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
+/// in, it goes right in the phase. A task with subtasks changes only its phase, name and owner: its start and duration
+/// are not looked at, and it has no dependencies (ADR-0088).
+/// </summary>
 public sealed record ScheduleItemRequest(
     Guid PhaseId,
     string? Name,
@@ -83,7 +95,8 @@ public sealed record ScheduleItemRequest(
     int Duration,
     Guid? OwnerId,
     int? Progress,
-    IReadOnlyList<Guid>? PredecessorIds);
+    IReadOnlyList<Guid>? PredecessorIds,
+    Guid? ParentId = null);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -167,7 +180,7 @@ internal static class ScheduleEndpoints
                 phase.End,
                 phase.Progress,
                 phase.IsLate,
-                [.. phase.Items.Select(item => ItemOf(item, view, figures.Today))]))],
+                [.. phase.Items.Select(item => ItemOf(item, view))]))],
             view.NonWorkingDays));
     }
 
@@ -224,7 +237,14 @@ internal static class ScheduleEndpoints
             id,
             request.Kind,
             new ScheduleItemForm(
-                request.PhaseId, request.Name, request.Start, request.Duration, request.OwnerId, request.Progress, request.PredecessorIds),
+                request.PhaseId,
+                request.Name,
+                request.Start,
+                request.Duration,
+                request.OwnerId,
+                request.Progress,
+                request.PredecessorIds,
+                request.ParentId),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -251,7 +271,14 @@ internal static class ScheduleEndpoints
             id,
             itemId,
             new ScheduleItemForm(
-                request.PhaseId, request.Name, request.Start, request.Duration, request.OwnerId, request.Progress, request.PredecessorIds),
+                request.PhaseId,
+                request.Name,
+                request.Start,
+                request.Duration,
+                request.OwnerId,
+                request.Progress,
+                request.PredecessorIds,
+                request.ParentId),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -318,7 +345,7 @@ internal static class ScheduleEndpoints
         };
     }
 
-    private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view, DateOnly today) =>
+    private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view) =>
         new(
             item.Id,
             item.Kind,
@@ -330,12 +357,14 @@ internal static class ScheduleEndpoints
             item.Progress,
             item.CompletedOn,
             item.ReachedOn,
-            item.IsLate(today),
+            view.Figures.LateItems.Contains(item.Id),
             view.ProgressUpdatable.Contains(item.Id),
             item.OwnerId is { } ownerId
                 ? new ScheduleOwnerResponse(ownerId, view.OwnerNames.TryGetValue(ownerId, out var name) ? name : string.Empty)
                 : null,
-            view.Predecessors.TryGetValue(item.Id, out var predecessors) ? predecessors : []);
+            view.Predecessors.TryGetValue(item.Id, out var predecessors) ? predecessors : [],
+            item.ParentId,
+            view.Figures.Summaries.Contains(item.Id));
 
     /// <summary>The answer to a change without a body of its own.</summary>
     private static Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult> Answer(ScheduleResult result) =>
@@ -370,6 +399,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Owner => "ownerId",
                 ScheduleField.Reached => "reached",
                 ScheduleField.End => "end",
+                ScheduleField.Parent => "parentId",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -378,13 +408,14 @@ internal static class ScheduleEndpoints
                 {
                     ScheduleField.Name => "The name is needed and has up to 150 characters for a phase and 200 for a task.",
                     ScheduleField.Phase => "The phase is a phase of the schedule.",
-                    ScheduleField.Start => "The start is a day from 2000 to 2099.",
+                    ScheduleField.Start => "The start is a day from 2000 to 2099; a task with subtasks takes its dates from them.",
                     ScheduleField.Duration => "A task lasts from 1 to 999 business days; a milestone has no duration.",
-                    ScheduleField.Progress => "A task goes from 0 to 100%; a milestone has no progress.",
+                    ScheduleField.Progress => "A task goes from 0 to 100%; a milestone has no progress, and a task with subtasks takes it from them.",
                     ScheduleField.Owner => "The owner is a person of the project who is not a viewer; a milestone has none.",
                     ScheduleField.Reached => "Only a milestone is reached; a task has a progress.",
                     ScheduleField.End => "The end of a task comes on or after its start, up to 999 business days; a milestone has no end.",
-                    _ => "The items are tasks and milestones of the schedule, other than the item itself.",
+                    ScheduleField.Parent => "The item goes into a task right in the same phase, which is not inside another; a task with subtasks goes into none.",
+                    _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));
 }

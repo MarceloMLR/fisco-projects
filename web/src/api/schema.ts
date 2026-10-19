@@ -894,7 +894,8 @@ export interface components {
         /**
          * @description A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
          *     milestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to
-         *     100 (zero for a milestone) and the items it depends on.
+         *     100 (zero for a milestone), the items it depends on, and the task it goes into, right in the same phase (none for
+         *     right in the phase). The first subtask of a task takes the dependencies of the task (ADR-0088).
          */
         NewScheduleItemRequest: {
             kind: components["schemas"]["ScheduleItemKind"];
@@ -910,6 +911,8 @@ export interface components {
             /** Format: int32 */
             progress: number;
             predecessorIds: null | string[];
+            /** Format: uuid */
+            parentId?: null | string;
         };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
@@ -1112,7 +1115,11 @@ export interface components {
          * @enum {unknown}
          */
         ScheduleItemKind: "Task" | "Milestone";
-        /** @description A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. */
+        /**
+         * @description A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
+         *     in, it goes right in the phase. A task with subtasks changes only its phase, name and owner: its start and duration
+         *     are not looked at, and it has no dependencies (ADR-0088).
+         */
         ScheduleItemRequest: {
             /** Format: uuid */
             phaseId: string;
@@ -1126,12 +1133,15 @@ export interface components {
             /** Format: int32 */
             progress: null | number;
             predecessorIds: null | string[];
+            /** Format: uuid */
+            parentId?: null | string;
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
          *     milestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it
-         *     is late, whether the person may update its progress now (only a task, while the project is open), the owner and the
-         *     ids of the items it depends on.
+         *     is late, whether the person may update its progress now (only a task without subtasks, while the project is open),
+         *     the owner, the ids of the items it depends on, the task it is in and whether it has subtasks, whose dates and
+         *     progress it then shows (ADR-0088).
          */
         ScheduleItemResponse: {
             /** Format: uuid */
@@ -1156,6 +1166,9 @@ export interface components {
             canUpdateProgress: boolean;
             owner: null | components["schemas"]["ScheduleOwnerResponse"];
             predecessorIds: string[];
+            /** Format: uuid */
+            parentId: null | string;
+            hasSubtasks: boolean;
         };
         /** @description The person in charge of a task. */
         ScheduleOwnerResponse: {
@@ -1166,7 +1179,10 @@ export interface components {
         SchedulePhaseRequest: {
             name: null | string;
         };
-        /** @description A phase, with its dates (none without items), its progress weighted by duration and its items in order. */
+        /**
+         * @description A phase, with its dates (none without items), its progress weighted by duration and its items in order, each task
+         *     followed by its subtasks.
+         */
         SchedulePhaseResponse: {
             /** Format: uuid */
             id: string;
