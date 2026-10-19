@@ -48,6 +48,10 @@ namespace FiscoProjects.Audit.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("ItemLabelReference")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("ItemType")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -70,6 +74,8 @@ namespace FiscoProjects.Audit.Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("Field")
                                 .IsRequired();
+
+                            b1.Property<string>("Reference");
 
                             b1.Property<bool>("Secret");
 

@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListPeople"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -324,6 +340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/clients/choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListClientChoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/clients": {
         parameters: {
             query?: never;
@@ -404,6 +436,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListProjects"];
+        put?: never;
+        post: operations["CreateProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetProject"];
+        put: operations["ChangeProject"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeProjectStatus"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -442,12 +522,17 @@ export interface components {
             detail: null | string;
             changes: components["schemas"]["AuditFieldResponse"][];
         };
-        /** @description A changed field: the value before and after as invariant text, or none for a secret. */
+        /**
+         * @description A changed field: the value before and after as invariant text, or none for a secret. A field that points to another
+         *     item, of the type in Reference (such as User), comes with the item's current name, or none when
+         *     the item no longer exists (ADR-0084).
+         */
         AuditFieldResponse: {
             field: string;
             before: null | string;
             after: null | string;
             secret: boolean;
+            reference: null | string;
         };
         AuditPageResponse: {
             items: components["schemas"]["AuditEntryResponse"][];
@@ -497,6 +582,14 @@ export interface components {
         };
         ChooseThemeRequest: {
             theme: components["schemas"]["ThemePreference"];
+        };
+        /** @description A client to choose for a project or to filter the projects, without the CNPJ nor the observation. */
+        ClientChoiceResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            logoUrl: null | string;
+            status: components["schemas"]["ClientStatus"];
         };
         ClientCreatedResponse: {
             /** Format: uuid */
@@ -570,6 +663,28 @@ export interface components {
         LocalSignInRequest: {
             email: string;
         };
+        /**
+         * @description The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
+         *     project), the manager (the person who creates it, when none) and, optionally, the tech lead.
+         */
+        NewProjectRequest: {
+            code: null | string;
+            name: null | string;
+            description: null | string;
+            /** Format: uuid */
+            clientId: null | string;
+            /** Format: uuid */
+            managerId: null | string;
+            /** Format: uuid */
+            techLeadId: null | string;
+        };
+        /** @description A person to choose, such as the manager of a project. */
+        PersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -592,6 +707,85 @@ export interface components {
             /** Format: date-time */
             lastSignInAt: string;
             signInMethods: string[];
+        };
+        /** @description The client of a project, with the address of its current logo (null without one). */
+        ProjectClientResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            logoUrl: null | string;
+        };
+        ProjectCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description One project of the list; without a client, it is an internal project. */
+        ProjectListItemResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            client: null | components["schemas"]["ProjectClientResponse"];
+            status: components["schemas"]["ProjectStatus"];
+            managers: components["schemas"]["ProjectPersonResponse"][];
+        };
+        ProjectPageResponse: {
+            items: components["schemas"]["ProjectListItemResponse"][];
+            /** Format: int32 */
+            total: number;
+        };
+        /**
+         * @description What the person may do in the project (ADR-0043): change the data, only while the project is open, and change the
+         *     status, including reopening it.
+         */
+        ProjectPermissionsResponse: {
+            canEdit: boolean;
+            canChangeStatus: boolean;
+        };
+        /** @description A person in a project, with the role in it. */
+        ProjectPersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: components["schemas"]["ProjectRole"];
+        };
+        /** @description The data of a project that may change after its creation. */
+        ProjectRequest: {
+            code: null | string;
+            name: null | string;
+            description: null | string;
+            /** Format: uuid */
+            clientId: null | string;
+        };
+        /** @description A project as its page shows it, with the people in it and what the person may do. */
+        ProjectResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description: null | string;
+            client: null | components["schemas"]["ProjectClientResponse"];
+            status: components["schemas"]["ProjectStatus"];
+            members: components["schemas"]["ProjectPersonResponse"][];
+            permissions: components["schemas"]["ProjectPermissionsResponse"];
+        };
+        /**
+         * @description The role of a person in one project (ADR-0040): one per person in each project.
+         * @enum {unknown}
+         */
+        ProjectRole: "Manager" | "TechLead" | "Contributor" | "Developer" | "Viewer";
+        /**
+         * @description Which projects the list shows: the open ones, the closed ones (completed or cancelled) or all.
+         * @enum {unknown}
+         */
+        ProjectSituation: "Active" | "Closed" | "All";
+        /**
+         * @description Where a project is in its life (ADR-0016). Completed and cancelled projects are closed.
+         * @enum {unknown}
+         */
+        ProjectStatus: "Planning" | "InProgress" | "Paused" | "Completed" | "Cancelled";
+        ProjectStatusRequest: {
+            status: components["schemas"]["ProjectStatus"];
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -1039,6 +1233,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ListPeople: {
+        parameters: {
+            query?: {
+                /** @description Part of the name or of the e-mail, without telling case or accents apart. */
+                search?: string;
+                /** @description Only the Administrators and the Project managers, who may manage a project. */
+                managers?: boolean;
+                /** @description How many people at most, from 1 to 100. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
@@ -1660,6 +1908,35 @@ export interface operations {
             };
         };
     };
+    ListClientChoices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientChoiceResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListClients: {
         parameters: {
             query?: {
@@ -1883,6 +2160,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     DeactivateClient: {
@@ -2083,6 +2369,269 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListProjects: {
+        parameters: {
+            query?: {
+                /** @description Part of the code or of the name, without telling case or accents apart. */
+                search?: string;
+                /** @description Only the projects of this client. */
+                clientId?: string;
+                /** @description Active (the default), Closed (completed and cancelled) or All. */
+                situation?: components["schemas"]["ProjectSituation"];
+                /** @description Only the projects the person is in, even for the Administrator. */
+                mine?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectPageResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CreateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChangeProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeProjectStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectStatusRequest"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {

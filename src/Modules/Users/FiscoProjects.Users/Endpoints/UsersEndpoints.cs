@@ -10,6 +10,7 @@ public static class UsersEndpoints
         api.MapSessionEndpoints();
         api.MapProfileEndpoints();
         api.MapUserAdministrationEndpoints();
+        api.MapPeopleEndpoints();
         return api;
     }
 }

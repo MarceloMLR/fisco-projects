@@ -440,6 +440,88 @@
         }
       }
     },
+    "/api/people": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "ListPeople",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Part of the name or of the e-mail, without telling case or accents apart.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "managers",
+            "in": "query",
+            "description": "Only the Administrators and the Project managers, who may manage a project.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "How many people at most, from 1 to 100.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/audit": {
       "get": {
         "tags": [
@@ -1146,6 +1228,39 @@
         }
       }
     },
+    "/api/clients/choices": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "ListClientChoices",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClientChoiceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/clients": {
       "get": {
         "tags": [
@@ -1417,6 +1532,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -1673,6 +1798,345 @@
           }
         }
       }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ListProjects",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Part of the code or of the name, without telling case or accents apart.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "clientId",
+            "in": "query",
+            "description": "Only the projects of this client.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "situation",
+            "in": "query",
+            "description": "Active (the default), Closed (completed and cancelled) or All.",
+            "schema": {
+              "default": "Active",
+              "$ref": "#/components/schemas/ProjectSituation"
+            }
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "description": "Only the projects the person is in, even for the Administrator.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "CreateProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "GetProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ChangeProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/status": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ChangeProjectStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1806,7 +2270,8 @@
           "field",
           "before",
           "after",
-          "secret"
+          "secret",
+          "reference"
         ],
         "type": "object",
         "properties": {
@@ -1827,9 +2292,15 @@
           },
           "secret": {
             "type": "boolean"
+          },
+          "reference": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "A changed field: the value before and after as invariant text, or none for a secret."
+        "description": "A changed field: the value before and after as invariant text, or none for a secret. A field that points to another\nitem, of the type in Reference (such as User), comes with the item's current name, or none when\nthe item no longer exists (ADR-0084)."
       },
       "AuditPageResponse": {
         "required": [
@@ -1995,6 +2466,34 @@
             "$ref": "#/components/schemas/ThemePreference"
           }
         }
+      },
+      "ClientChoiceResponse": {
+        "required": [
+          "id",
+          "name",
+          "logoUrl",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ClientStatus"
+          }
+        },
+        "description": "A client to choose for a project or to filter the projects, without the CNPJ nor the observation."
       },
       "ClientCreatedResponse": {
         "required": [
@@ -2258,6 +2757,80 @@
           }
         }
       },
+      "NewProjectRequest": {
+        "required": [
+          "code",
+          "name",
+          "description",
+          "clientId",
+          "managerId",
+          "techLeadId"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "managerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "techLeadId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead."
+      },
+      "PersonResponse": {
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "description": "A person to choose, such as the manager of a project."
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -2334,6 +2907,271 @@
           }
         },
         "description": "My profile: who the person is, how they sign in and the theme they chose. Sign-in providers come as their codes\n(\"local\", and \"entra\" later); the screen says them in words."
+      },
+      "ProjectClientResponse": {
+        "required": [
+          "id",
+          "name",
+          "logoUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The client of a project, with the address of its current logo (null without one)."
+      },
+      "ProjectCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ProjectListItemResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "client",
+          "status",
+          "managers"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "client": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectClientResponse"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectPersonResponse"
+            }
+          }
+        },
+        "description": "One project of the list; without a client, it is an internal project."
+      },
+      "ProjectPageResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectListItemResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ProjectPermissionsResponse": {
+        "required": [
+          "canEdit",
+          "canChangeStatus"
+        ],
+        "type": "object",
+        "properties": {
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canChangeStatus": {
+            "type": "boolean"
+          }
+        },
+        "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open, and change the\nstatus, including reopening it."
+      },
+      "ProjectPersonResponse": {
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProjectRole"
+          }
+        },
+        "description": "A person in a project, with the role in it."
+      },
+      "ProjectRequest": {
+        "required": [
+          "code",
+          "name",
+          "description",
+          "clientId"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "The data of a project that may change after its creation."
+      },
+      "ProjectResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "client",
+          "status",
+          "members",
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "client": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectClientResponse"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectPersonResponse"
+            }
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/ProjectPermissionsResponse"
+          }
+        },
+        "description": "A project as its page shows it, with the people in it and what the person may do."
+      },
+      "ProjectRole": {
+        "enum": [
+          "Manager",
+          "TechLead",
+          "Contributor",
+          "Developer",
+          "Viewer"
+        ],
+        "description": "The role of a person in one project (ADR-0040): one per person in each project."
+      },
+      "ProjectSituation": {
+        "enum": [
+          "Active",
+          "Closed",
+          "All"
+        ],
+        "description": "Which projects the list shows: the open ones, the closed ones (completed or cancelled) or all."
+      },
+      "ProjectStatus": {
+        "enum": [
+          "Planning",
+          "InProgress",
+          "Paused",
+          "Completed",
+          "Cancelled"
+        ],
+        "description": "Where a project is in its life (ADR-0016). Completed and cancelled projects are closed."
+      },
+      "ProjectStatusRequest": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          }
+        }
       },
       "SessionUserResponse": {
         "required": [
@@ -2515,6 +3353,9 @@
     },
     {
       "name": "Clients"
+    },
+    {
+      "name": "Projects"
     }
   ]
 }

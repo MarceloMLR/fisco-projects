@@ -178,7 +178,7 @@ export function AuditPage() {
               <Select<ItemTypeFilter>
                 label={t('audit.filters.type')}
                 size="sm"
-                width={160}
+                width={200}
                 value={itemType}
                 options={[
                   { value: 'all', label: t('audit.filters.allTypes') },

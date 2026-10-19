@@ -76,6 +76,111 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
 
                     b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
                 });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Client");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_projects_Code");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("projects", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("project_members", "projects");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "UserId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "User");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectMember", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Project", null)
+                        .WithMany("Members")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
+                {
+                    b.Navigation("Members");
+                });
 #pragma warning restore 612, 618
         }
     }

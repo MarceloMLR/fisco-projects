@@ -4,7 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Testing.Samples;
 
-/// <summary>Example module context with the audit markers: a label, a secret, a technical field and an item left out.</summary>
+/// <summary>
+/// Example module context with the audit markers: a label, a secret, a technical field, an item left out and an item
+/// that points to others.
+/// </summary>
 public sealed class GammaDbContext(DbContextOptions<GammaDbContext> options)
     : ModuleDbContext<GammaDbContext>(options), IModuleSchema
 {
@@ -13,6 +16,12 @@ public sealed class GammaDbContext(DbContextOptions<GammaDbContext> options)
     public DbSet<GammaRecord> Records => Set<GammaRecord>();
 
     public DbSet<GammaNote> Notes => Set<GammaNote>();
+
+    public DbSet<GammaLink> Links => Set<GammaLink>();
+
+    /// <summary>The types the links point to, as the modules would name them.</summary>
+    public const string PersonReference = "Person";
+    public const string RecordReference = "Record";
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
@@ -30,6 +39,15 @@ public sealed class GammaDbContext(DbContextOptions<GammaDbContext> options)
             note.ToTable("notes");
             note.Property(n => n.Text).HasMaxLength(100);
             note.ExcludeFromAudit();
+        });
+
+        modelBuilder.Entity<GammaLink>(link =>
+        {
+            link.ToTable("links");
+            link.HasAuditLabelReference(l => l.PersonId, PersonReference);
+            link.Property(l => l.PersonId).IsAuditReference(PersonReference);
+            link.Property(l => l.RecordId).IsAuditReference(RecordReference);
+            link.Property(l => l.Kind).HasMaxLength(20);
         });
     }
 }

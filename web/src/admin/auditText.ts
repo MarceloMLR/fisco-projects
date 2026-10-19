@@ -2,6 +2,11 @@ import type { TFunction } from 'i18next';
 import {
   type AuditEntry,
   type AuditField,
+  isClosedStatus,
+  projectRoles,
+  type ProjectRole,
+  projectStatuses,
+  type ProjectStatus,
   systemRoles,
   type SystemRole,
   weekdays,
@@ -59,6 +64,31 @@ const clientFields: readonly string[] = [
 ] satisfies ClientField[];
 
 const isClientField = (field: string): field is ClientField => clientFields.includes(field);
+
+type ProjectField = 'Code' | 'Name' | 'Description' | 'ClientId' | 'Status';
+const projectFields: readonly string[] = [
+  'Code',
+  'Name',
+  'Description',
+  'ClientId',
+  'Status',
+] satisfies ProjectField[];
+
+const isProjectField = (field: string): field is ProjectField => projectFields.includes(field);
+
+type ProjectMemberField = 'ProjectId' | 'UserId' | 'Role';
+const projectMemberFields: readonly string[] = [
+  'ProjectId',
+  'UserId',
+  'Role',
+] satisfies ProjectMemberField[];
+
+const isProjectMemberField = (field: string): field is ProjectMemberField =>
+  projectMemberFields.includes(field);
+const isProjectStatus = (value: string | null): value is ProjectStatus =>
+  projectStatuses.some((status) => status === value);
+const isProjectRole = (value: string | null): value is ProjectRole =>
+  projectRoles.some((role) => role === value);
 const isHoliday = (entry: AuditEntry) =>
   entry.itemType === 'CalculatedHoliday' || entry.itemType === 'LocalHoliday';
 const isWeekday = (value: string): value is (typeof weekdays)[number] =>
@@ -100,6 +130,12 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'Client' && field === 'IsActive') {
     return t(value === 'true' ? 'clients.statuses.Active' : 'clients.statuses.Inactive');
   }
+  if (entry.itemType === 'Project' && field === 'Status' && isProjectStatus(value)) {
+    return t(`projects.statuses.${value}`);
+  }
+  if (entry.itemType === 'ProjectMember' && field === 'Role' && isProjectRole(value)) {
+    return t(`projects.roles.${value}`);
+  }
   return value;
 }
 
@@ -133,6 +169,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   }
   if (entry.itemType === 'Client' && isClientField(field)) {
     return t(`audit.fields.Client.${field}`);
+  }
+  if (entry.itemType === 'Project' && isProjectField(field)) {
+    return t(`audit.fields.Project.${field}`);
+  }
+  if (entry.itemType === 'ProjectMember' && isProjectMemberField(field)) {
+    return t(`audit.fields.ProjectMember.${field}`);
   }
   return field;
 }
@@ -169,6 +211,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
     }
     return t(`audit.actions.Client.${entry.action}`);
   }
+  if (entry.itemType === 'Project') {
+    return projectTitleOf(entry, t);
+  }
+  if (entry.itemType === 'ProjectMember') {
+    return t(`audit.actions.ProjectMember.${entry.action}`);
+  }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
   }
@@ -187,6 +235,29 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
     );
   }
   return t('audit.actions.User.Updated');
+}
+
+/** A project whose only change was the status says so by the title: completed, cancelled, reopened or changed. */
+function projectTitleOf(entry: AuditEntry, t: TFunction): string {
+  if (entry.action === 'Created' || entry.action === 'Deleted') {
+    return t(`audit.actions.Project.${entry.action}`);
+  }
+  const [only, ...others] = entry.changes;
+  if (only?.field !== 'Status' || others.length > 0) {
+    return t('audit.actions.Project.Updated');
+  }
+  if (only.after === 'Completed' || only.after === 'Cancelled') {
+    return t(`audit.actions.Project.${only.after}`);
+  }
+  return isProjectStatus(only.before) && isClosedStatus(only.before)
+    ? t('audit.actions.Project.Reopened')
+    : t('audit.actions.Project.StatusChanged');
+}
+
+/** The project a person was included in, removed from or had the role changed in, by name. */
+function projectOfMember(entry: AuditEntry): string {
+  const project = changeOf(entry, 'ProjectId');
+  return project?.after ?? project?.before ?? '';
 }
 
 function providerOf(entry: AuditEntry, t: TFunction): string {
@@ -209,6 +280,16 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.action === 'SignInRefused') {
     return join(label, reasonOf(entry, t));
+  }
+  // A person in a project is said with the role and the project.
+  if (entry.itemType === 'ProjectMember') {
+    const role = changeOf(entry, 'Role');
+    const roleValue = role?.after ?? role?.before ?? null;
+    return join(
+      label,
+      roleValue === null ? '' : valueOf(entry, 'Role', roleValue, t),
+      projectOfMember(entry),
+    );
   }
   if (entry.action !== 'Updated') {
     return label;
@@ -271,6 +352,15 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   }
   if (entry.itemType === 'Client') {
     return [{ label: t('audit.details.item.Client'), value: label }];
+  }
+  if (entry.itemType === 'Project') {
+    return [{ label: t('audit.details.item.Project'), value: label }];
+  }
+  if (entry.itemType === 'ProjectMember') {
+    return [
+      { label: t('audit.details.item.ProjectMember'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
   }
   return [
     {

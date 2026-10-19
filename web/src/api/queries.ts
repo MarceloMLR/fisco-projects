@@ -4,6 +4,10 @@ import type { operations } from './schema';
 
 /** Filters of the list of users, as the contract has them. */
 export type UsersParams = NonNullable<operations['ListUsers']['parameters']['query']>;
+/** Filters of the list of projects, as the contract has them. */
+export type ProjectsParams = NonNullable<operations['ListProjects']['parameters']['query']>;
+/** Filters of the people to choose, as the contract has them. */
+export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['query']>;
 /** Filters of the list of clients, as the contract has them. */
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the audit, as the contract has them. */
@@ -40,6 +44,8 @@ export const queryKeys = {
   installation: ['installation'],
   calendar: ['calendar'],
   clients: ['clients'],
+  projects: ['projects'],
+  people: ['people'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -55,6 +61,40 @@ export function clientsQuery(params: ClientsParams) {
   return queryOptions({
     queryKey: [...queryKeys.clients, 'list', params] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/clients', { params: { query: params }, signal })),
+  });
+}
+
+/** The clients to choose for a project or to filter the projects, active and inactive, in alphabetical order. */
+export function clientChoicesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.clients, 'choices'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/clients/choices', { signal })),
+  });
+}
+
+/** A page of the projects the person sees, with the filters of the Projects screen. */
+export function projectsQuery(params: ProjectsParams) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, 'list', params] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects', { params: { query: params }, signal })),
+  });
+}
+
+/** One project, with the people in it and what the person may do. */
+export function projectQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}', { params: { path: { id } }, signal })),
+  });
+}
+
+/** The active people to choose as the manager or the tech lead of a project. */
+export function peopleQuery(params: PeopleParams) {
+  return queryOptions({
+    queryKey: [...queryKeys.people, params] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/people', { params: { query: params }, signal })),
   });
 }
 

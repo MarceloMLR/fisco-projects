@@ -28,9 +28,9 @@ describe('Texto dos registros da auditoria', () => {
         actor: null,
         itemLabel: 'Rafael Souza',
         changes: [
-          { field: 'Name', before: null, after: 'Rafael Souza', secret: false },
-          { field: 'Role', before: null, after: 'User', secret: false },
-          { field: 'IsActive', before: null, after: 'true', secret: false },
+          { field: 'Name', before: null, after: 'Rafael Souza', secret: false, reference: null },
+          { field: 'Role', before: null, after: 'User', secret: false, reference: null },
+          { field: 'IsActive', before: null, after: 'true', secret: false, reference: null },
         ],
       }),
       t,
@@ -55,7 +55,9 @@ describe('Texto dos registros da auditoria', () => {
         action: 'Updated',
         itemType: 'User',
         itemLabel: 'Lívia Prado',
-        changes: [{ field: 'IsActive', before: 'false', after: 'true', secret: false }],
+        changes: [
+          { field: 'IsActive', before: 'false', after: 'true', secret: false, reference: null },
+        ],
       }),
       t,
     );
@@ -66,7 +68,13 @@ describe('Texto dos registros da auditoria', () => {
         actor: null,
         itemLabel: 'Marina Costa Alves',
         changes: [
-          { field: 'Name', before: 'Marina Costa', after: 'Marina Costa Alves', secret: false },
+          {
+            field: 'Name',
+            before: 'Marina Costa',
+            after: 'Marina Costa Alves',
+            secret: false,
+            reference: null,
+          },
         ],
       }),
       t,
@@ -88,7 +96,7 @@ describe('Texto dos registros da auditoria', () => {
         action: 'Updated',
         itemType: 'Credential',
         itemLabel: 'ERP · Homologação',
-        changes: [{ field: 'Password', before: null, after: null, secret: true }],
+        changes: [{ field: 'Password', before: null, after: null, secret: true, reference: null }],
       }),
       t,
     );
@@ -144,6 +152,7 @@ describe('Mudanças do calendário na auditoria', () => {
             before: 'Monday, Tuesday, Wednesday, Thursday, Friday',
             after: 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday',
             secret: false,
+            reference: null,
           },
         ],
       }),
@@ -172,7 +181,9 @@ describe('Mudanças do calendário na auditoria', () => {
         action: 'Updated',
         itemType: 'CalculatedHoliday',
         itemLabel: 'CarnivalMonday',
-        changes: [{ field: 'IsConsidered', before: 'false', after: 'true', secret: false }],
+        changes: [
+          { field: 'IsConsidered', before: 'false', after: 'true', secret: false, reference: null },
+        ],
       }),
       t,
     );
@@ -181,7 +192,9 @@ describe('Mudanças do calendário na auditoria', () => {
         action: 'Updated',
         itemType: 'LocalHoliday',
         itemLabel: 'Data magna do estado',
-        changes: [{ field: 'IsConsidered', before: 'true', after: 'false', secret: false }],
+        changes: [
+          { field: 'IsConsidered', before: 'true', after: 'false', secret: false, reference: null },
+        ],
       }),
       t,
     );
@@ -204,10 +217,22 @@ describe('Mudanças do calendário na auditoria', () => {
         itemType: 'LocalHoliday',
         itemLabel: 'Emenda de Tiradentes',
         changes: [
-          { field: 'Name', before: null, after: 'Emenda de Tiradentes', secret: false },
-          { field: 'Date', before: null, after: '2026-04-20', secret: false },
-          { field: 'RepeatsEveryYear', before: null, after: 'false', secret: false },
-          { field: 'IsConsidered', before: null, after: 'true', secret: false },
+          {
+            field: 'Name',
+            before: null,
+            after: 'Emenda de Tiradentes',
+            secret: false,
+            reference: null,
+          },
+          { field: 'Date', before: null, after: '2026-04-20', secret: false, reference: null },
+          {
+            field: 'RepeatsEveryYear',
+            before: null,
+            after: 'false',
+            secret: false,
+            reference: null,
+          },
+          { field: 'IsConsidered', before: null, after: 'true', secret: false, reference: null },
         ],
       }),
       t,
@@ -217,7 +242,15 @@ describe('Mudanças do calendário na auditoria', () => {
         action: 'Updated',
         itemType: 'LocalHoliday',
         itemLabel: 'Emenda de Tiradentes',
-        changes: [{ field: 'Date', before: '2026-04-20', after: '2026-04-22', secret: false }],
+        changes: [
+          {
+            field: 'Date',
+            before: '2026-04-20',
+            after: '2026-04-22',
+            secret: false,
+            reference: null,
+          },
+        ],
       }),
       t,
     );
@@ -253,9 +286,9 @@ describe('Mudanças dos clientes na auditoria', () => {
         actor: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
         itemLabel: 'Kappa Energia',
         changes: [
-          { field: 'Cnpj', before: null, after: '44555666000181', secret: false },
-          { field: 'IsActive', before: null, after: 'true', secret: false },
-          { field: 'Name', before: null, after: 'Kappa Energia', secret: false },
+          { field: 'Cnpj', before: null, after: '44555666000181', secret: false, reference: null },
+          { field: 'IsActive', before: null, after: 'true', secret: false, reference: null },
+          { field: 'Name', before: null, after: 'Kappa Energia', secret: false, reference: null },
         ],
       }),
       t,
@@ -280,7 +313,9 @@ describe('Mudanças dos clientes na auditoria', () => {
         action: 'Updated',
         itemType: 'Client',
         itemLabel: 'Alfa Distribuidora',
-        changes: [{ field: 'Cnpj', before: null, after: '12ABC34501DE35', secret: false }],
+        changes: [
+          { field: 'Cnpj', before: null, after: '12ABC34501DE35', secret: false, reference: null },
+        ],
       }),
       t,
     );
@@ -289,7 +324,15 @@ describe('Mudanças dos clientes na auditoria', () => {
         action: 'Updated',
         itemType: 'Client',
         itemLabel: 'Alfa Distribuidora',
-        changes: [{ field: 'LogoFileName', before: null, after: 'alfa.png', secret: false }],
+        changes: [
+          {
+            field: 'LogoFileName',
+            before: null,
+            after: 'alfa.png',
+            secret: false,
+            reference: null,
+          },
+        ],
       }),
       t,
     );
@@ -306,7 +349,7 @@ describe('Mudanças dos clientes na auditoria', () => {
           action: 'Updated',
           itemType: 'Client',
           itemLabel: 'Épsilon Logística',
-          changes: [{ field: 'IsActive', before, after, secret: false }],
+          changes: [{ field: 'IsActive', before, after, secret: false, reference: null }],
         }),
         t,
       );
@@ -326,5 +369,142 @@ describe('Mudanças dos clientes na auditoria', () => {
         t,
       ).title,
     ).toBe('Excluiu um cliente');
+  });
+});
+
+// Spec: projetos, requirement "Mudanças dos projetos na auditoria".
+describe('Mudanças dos projetos na auditoria', () => {
+  it('Projeto criado na auditoria', () => {
+    const created = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'Project',
+        itemLabel: 'Implantação do ERP financeiro',
+        changes: [
+          {
+            field: 'ClientId',
+            before: null,
+            after: 'Alfa Distribuidora',
+            secret: false,
+            reference: 'Client',
+          },
+          { field: 'Code', before: null, after: 'ERP-FIN', secret: false, reference: null },
+          {
+            field: 'Name',
+            before: null,
+            after: 'Implantação do ERP financeiro',
+            secret: false,
+            reference: null,
+          },
+          { field: 'Status', before: null, after: 'Planning', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+    const manager = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ProjectMember',
+        itemLabel: 'Marina Costa',
+        changes: [
+          {
+            field: 'ProjectId',
+            before: null,
+            after: 'Implantação do ERP financeiro',
+            secret: false,
+            reference: 'Project',
+          },
+          { field: 'Role', before: null, after: 'Manager', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(created).toEqual({
+      title: 'Criou um projeto',
+      summary: 'Implantação do ERP financeiro',
+      sentence: 'Paulo Nogueira criou um projeto',
+      properties: [{ label: 'Projeto', value: 'Implantação do ERP financeiro' }],
+      changes: [
+        { field: 'Cliente', before: '—', after: 'Alfa Distribuidora' },
+        { field: 'Código', before: '—', after: 'ERP-FIN' },
+        { field: 'Nome', before: '—', after: 'Implantação do ERP financeiro' },
+        { field: 'Status', before: '—', after: 'Planejamento' },
+      ],
+    });
+    expect(manager).toEqual({
+      title: 'Incluiu uma pessoa num projeto',
+      summary: 'Marina Costa · Gerente de projeto · Implantação do ERP financeiro',
+      sentence: 'Paulo Nogueira incluiu uma pessoa num projeto',
+      properties: [
+        { label: 'Pessoa', value: 'Marina Costa' },
+        { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+      ],
+      changes: [
+        { field: 'Projeto', before: '—', after: 'Implantação do ERP financeiro' },
+        { field: 'Papel no projeto', before: '—', after: 'Gerente de projeto' },
+      ],
+    });
+  });
+
+  it('Status na auditoria', () => {
+    const status = (before: string, after: string) =>
+      describeAuditEntry(
+        entry({
+          action: 'Updated',
+          itemType: 'Project',
+          itemLabel: 'Implantação do WMS',
+          changes: [{ field: 'Status', before, after, secret: false, reference: null }],
+        }),
+        t,
+      );
+
+    expect(status('InProgress', 'Completed')).toMatchObject({
+      title: 'Concluiu um projeto',
+      changes: [{ field: 'Status', before: 'Em andamento', after: 'Concluído' }],
+    });
+    expect(status('Completed', 'InProgress')).toMatchObject({
+      title: 'Reabriu um projeto',
+      changes: [{ field: 'Status', before: 'Concluído', after: 'Em andamento' }],
+    });
+    expect(status('Planning', 'Cancelled').title).toBe('Cancelou um projeto');
+    expect(status('InProgress', 'Paused').title).toBe('Mudou o status de um projeto');
+  });
+
+  it('Projeto alterado na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Project',
+        itemLabel: 'Implantação do ERP financeiro e fiscal',
+        changes: [
+          {
+            field: 'Name',
+            before: 'Implantação do ERP financeiro',
+            after: 'Implantação do ERP financeiro e fiscal',
+            secret: false,
+            reference: null,
+          },
+          {
+            field: 'ClientId',
+            before: 'Alfa Distribuidora',
+            after: null,
+            secret: false,
+            reference: 'Client',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.title).toBe('Alterou um projeto');
+    expect(changed.changes).toEqual([
+      {
+        field: 'Nome',
+        before: 'Implantação do ERP financeiro',
+        after: 'Implantação do ERP financeiro e fiscal',
+      },
+      { field: 'Cliente', before: 'Alfa Distribuidora', after: '—' },
+    ]);
   });
 });

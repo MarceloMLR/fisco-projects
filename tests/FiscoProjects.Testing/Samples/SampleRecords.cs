@@ -45,3 +45,13 @@ public sealed class GammaNote : Entity
 {
     public required string Text { get; set; }
 }
+
+/// <summary>An item that points to others: a person, as its label, and an optional record (ADR-0084).</summary>
+public sealed class GammaLink : Entity
+{
+    public Guid PersonId { get; set; }
+
+    public Guid? RecordId { get; set; }
+
+    public required string Kind { get; set; }
+}

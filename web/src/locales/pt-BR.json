@@ -9,7 +9,8 @@
     "menu": "Menu",
     "account": "Conta de {{name}}",
     "accountMenu": "Conta",
-    "signOut": "Sair"
+    "signOut": "Sair",
+    "myProjects": "Meus projetos"
   },
   "nav": {
     "home": "Início",
@@ -47,6 +48,12 @@
     },
     "clients": {
       "title": "Clientes"
+    },
+    "newProject": {
+      "title": "Novo projeto"
+    },
+    "project": {
+      "title": "Visão geral"
     }
   },
   "signIn": {
@@ -177,7 +184,9 @@
       "WorkCalendar": "Dias de trabalho",
       "CalculatedHoliday": "Feriados calculados",
       "LocalHoliday": "Feriados locais",
-      "Client": "Clientes"
+      "Client": "Clientes",
+      "Project": "Projetos",
+      "ProjectMember": "Pessoas dos projetos"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -219,6 +228,20 @@
         "Deleted": "Excluiu um cliente",
         "Deactivated": "Inativou um cliente",
         "Reactivated": "Reativou um cliente"
+      },
+      "Project": {
+        "Created": "Criou um projeto",
+        "Updated": "Alterou um projeto",
+        "Deleted": "Excluiu um projeto",
+        "Completed": "Concluiu um projeto",
+        "Cancelled": "Cancelou um projeto",
+        "Reopened": "Reabriu um projeto",
+        "StatusChanged": "Mudou o status de um projeto"
+      },
+      "ProjectMember": {
+        "Created": "Incluiu uma pessoa num projeto",
+        "Updated": "Trocou o papel de uma pessoa num projeto",
+        "Deleted": "Removeu uma pessoa de um projeto"
       }
     },
     "providers": {
@@ -244,7 +267,9 @@
         "InstallationSettings": "Item",
         "WorkCalendar": "Item",
         "Holiday": "Feriado",
-        "Client": "Cliente"
+        "Client": "Cliente",
+        "Project": "Projeto",
+        "ProjectMember": "Pessoa"
       },
       "secret": "Alterado",
       "none": "—",
@@ -279,6 +304,18 @@
         "Observation": "Observação",
         "IsActive": "Situação",
         "LogoFileName": "Logo"
+      },
+      "Project": {
+        "Code": "Código",
+        "Name": "Nome",
+        "Description": "Descrição",
+        "ClientId": "Cliente",
+        "Status": "Status"
+      },
+      "ProjectMember": {
+        "ProjectId": "Projeto",
+        "UserId": "Pessoa",
+        "Role": "Papel no projeto"
       }
     }
   },
@@ -490,7 +527,8 @@
       "reactivated": "Cliente {{name}} reativado.",
       "removed": "Cliente {{name}} excluído.",
       "failed": "Não foi possível salvar. Tente de novo.",
-      "logoFailed": "O cliente {{name}} foi salvo, mas o logo não. Tente enviar o logo de novo."
+      "logoFailed": "O cliente {{name}} foi salvo, mas o logo não. Tente enviar o logo de novo.",
+      "hasProjects": "O cliente {{name}} tem projetos e só pode ser inativado."
     },
     "errors": {
       "nameRequired": "Informe o nome do cliente.",
@@ -501,5 +539,127 @@
       "logoFormat": "Envie o logo em PNG ou JPG.",
       "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor."
     }
+  },
+  "projects": {
+    "table": "Lista de projetos",
+    "search": "Buscar por código ou nome",
+    "clientFilter": "Cliente",
+    "allClients": "Todos os clientes",
+    "situation": "Situação",
+    "situations": {
+      "Active": "Ativos",
+      "Closed": "Concluídos e cancelados",
+      "All": "Todos"
+    },
+    "columns": {
+      "project": "Projeto",
+      "status": "Status",
+      "schedule": "Cronograma",
+      "deadline": "Prazo final",
+      "manager": "Gerente"
+    },
+    "internal": "Projeto interno",
+    "noSchedule": "Sem cronograma",
+    "noDate": "—",
+    "empty": "Nenhum projeto encontrado com esses filtros.",
+    "total_zero": "{{count}} projetos",
+    "total_one": "{{count}} projeto",
+    "total_other": "{{count}} projetos",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "newProject": "Novo projeto",
+    "statuses": {
+      "Planning": "Planejamento",
+      "InProgress": "Em andamento",
+      "Paused": "Pausado",
+      "Completed": "Concluído",
+      "Cancelled": "Cancelado"
+    },
+    "roles": {
+      "Manager": "Gerente de projeto",
+      "TechLead": "Líder técnico",
+      "Contributor": "Colaborador",
+      "Developer": "Desenvolvedor",
+      "Viewer": "Leitor"
+    },
+    "form": {
+      "data": "Dados do projeto",
+      "code": "Código",
+      "codeHelper": "Ex.: ERP-FIN",
+      "name": "Nome",
+      "client": "Cliente",
+      "optional": "(opcional)",
+      "noClient": "Sem cliente (projeto interno)",
+      "inactiveClient": "{{name}} (inativo)",
+      "newClient": "Cadastrar cliente",
+      "manager": "Gerente",
+      "techLead": "Líder técnico",
+      "noTechLead": "Sem líder técnico",
+      "you": "{{name}} (você)",
+      "notMember": "Com outro gerente, você não entra no projeto.",
+      "description": "Descrição",
+      "cancel": "Cancelar",
+      "create": "Criar projeto",
+      "save": "Salvar alterações",
+      "noPeople": "Nenhuma pessoa encontrada",
+      "editTitle": "Editar dados do projeto"
+    },
+    "errors": {
+      "codeInvalid": "Use de 2 a 15 letras, algarismos e hífens, começando por letra, como ERP-FIN.",
+      "codeInUse": "Este código já é do projeto {{name}}.",
+      "nameRequired": "Informe o nome do projeto.",
+      "nameTooLong": "Use até 150 caracteres.",
+      "descriptionTooLong": "Use até 4.000 caracteres.",
+      "clientInvalid": "Escolha um cliente ativo.",
+      "managerRequired": "Escolha o gerente.",
+      "managerInvalid": "Escolha um gerente de projeto ou administrador ativo.",
+      "techLeadInvalid": "Escolha uma pessoa ativa diferente do gerente."
+    },
+    "header": {
+      "manager": "Gerente",
+      "techLead": "Líder técnico",
+      "tabs": "Seções do projeto"
+    },
+    "actions": {
+      "button": "Ações do projeto",
+      "edit": "Editar dados",
+      "status": "Status",
+      "complete": "Concluir projeto",
+      "cancel": "Cancelar projeto",
+      "reopen": "Reabrir projeto"
+    },
+    "confirm": {
+      "completeTitle": "Concluir projeto",
+      "completeText": "O projeto {{name}} fica somente leitura até ser reaberto.",
+      "completeAction": "Concluir projeto",
+      "cancelTitle": "Cancelar projeto",
+      "cancelText": "O projeto {{name}} fica somente leitura até ser reaberto. Nada é apagado.",
+      "cancelAction": "Cancelar projeto",
+      "back": "Voltar"
+    },
+    "closed": {
+      "Completed": "Projeto concluído: somente leitura. Reabra o projeto para alterar.",
+      "Cancelled": "Projeto cancelado: somente leitura. Reabra o projeto para alterar."
+    },
+    "overview": {
+      "description": "Descrição",
+      "noDescription": "Sem descrição.",
+      "team": "Equipe",
+      "teams": {
+        "management": "Gestão",
+        "functional": "Funcional",
+        "development": "Desenvolvimento"
+      },
+      "managementMeta": "Gerente e líder técnico",
+      "people_zero": "Ninguém ainda",
+      "people_one": "{{count}} pessoa",
+      "people_other": "{{count}} pessoas"
+    },
+    "messages": {
+      "changed": "Projeto {{name}} alterado.",
+      "status": "{{name}}: {{status}}.",
+      "failed": "Não foi possível salvar. Tente de novo."
+    },
+    "notFound": "Projeto não encontrado. Ele não existe ou você não está nele.",
+    "loadFailed": "Não foi possível carregar o projeto. Tente de novo."
   }
 }

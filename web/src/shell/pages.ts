@@ -44,13 +44,15 @@ export type PageTitleKey =
   | 'pages.settings.title'
   | 'pages.calendar.title'
   | 'pages.clients.title'
+  | 'pages.newProject.title'
+  | 'pages.project.title'
   | 'pages.profile.title';
 
-/** A level of the trail above the page: an area that leads to its own address. */
-export interface TrailLevel {
-  titleKey: PageTitleKey;
-  path: string;
-}
+/**
+ * A level of the trail above the page: an area that leads to its own address, or the project of the address, shown by
+ * its code and leading to the project.
+ */
+export type TrailLevel = { titleKey: PageTitleKey; path: string } | { project: true };
 
 /**
  * What a route tells the shell about its page: the sidebar item it belongs to (none for My profile, reached from

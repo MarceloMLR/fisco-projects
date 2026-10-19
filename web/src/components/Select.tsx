@@ -20,6 +20,8 @@ export function Select<Value extends string>({
   onChange,
   size = 'md',
   width,
+  invalid = false,
+  describedBy,
 }: {
   /** Accessible name. */
   label: string;
@@ -28,6 +30,10 @@ export function Select<Value extends string>({
   onChange: (value: Value) => void;
   size?: 'sm' | 'md' | 'lg';
   width?: number;
+  /** Shows the control with the error border, as a field with an error. */
+  invalid?: boolean;
+  /** Id of the helper or the error that describes the field. */
+  describedBy?: string;
 }) {
   return (
     <MuiSelect<Value>
@@ -36,10 +42,19 @@ export function Select<Value extends string>({
         onChange(event.target.value as Value);
       }}
       IconComponent={ExpandMoreOutlined}
-      input={<InputBase inputProps={{ 'aria-label': label }} />}
+      input={
+        <InputBase
+          inputProps={{
+            'aria-label': label,
+            'aria-invalid': invalid ? true : undefined,
+            'aria-describedby': describedBy,
+          }}
+        />
+      }
       MenuProps={{ slotProps: { paper: { sx: { marginTop: 'var(--space-1)' } } } }}
       sx={{
         ...fieldControl(size, width),
+        ...(invalid ? { borderColor: 'var(--status-danger-text)' } : {}),
         '& .MuiSelect-select': {
           display: 'flex',
           alignItems: 'center',

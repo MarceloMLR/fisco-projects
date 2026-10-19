@@ -1,13 +1,17 @@
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
+import { projectsQuery } from '../api/queries';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
 import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
+
+const myProjectsParams = { mine: true, situation: 'Active', pageSize: 30 } as const;
 
 /** My profile at the end of the phone menu, as in the canvas; on a computer it is in the account menu. */
 const profileItem = {
@@ -35,6 +39,8 @@ export function Sidebar({
   const mainItems = useMainNavigation();
   const installation = useInstallation();
   const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
+  // The active projects the person is in, even the Administrator (ADR-0066).
+  const myProjects = useQuery(projectsQuery(myProjectsParams)).data?.items ?? [];
 
   return (
     <Box
@@ -178,6 +184,99 @@ export function Sidebar({
           </li>
         ))}
       </Box>
+      {myProjects.length > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-1)',
+            paddingTop: 'var(--space-4)',
+            borderTop: '1px solid var(--sidebar-divider)',
+          }}
+        >
+          <Box
+            aria-hidden
+            sx={{
+              padding: '0 var(--space-3) var(--space-1)',
+              fontSize: 12,
+              lineHeight: '16px',
+              fontWeight: 500,
+              color: 'var(--sidebar-muted)',
+            }}
+          >
+            {t('shell.myProjects')}
+          </Box>
+          <Box
+            component="ul"
+            aria-label={t('shell.myProjects')}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px',
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+            }}
+          >
+            {myProjects.map((project) => (
+              <li key={project.id}>
+                <Box
+                  component={NavLink}
+                  to={`/projects/${project.id}`}
+                  title={`${project.code} · ${project.name}`}
+                  onClick={onNavigate}
+                  sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: 42,
+                    boxSizing: 'border-box',
+                    padding: '4px var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--sidebar-text)',
+                    fontSize: 13,
+                    lineHeight: '18px',
+                    textDecoration: 'none',
+                    transition,
+                    '&:hover': { backgroundColor: 'var(--sidebar-hover-bg)' },
+                    '&[aria-current="page"]': {
+                      backgroundColor: 'var(--sidebar-active-bg)',
+                      color: 'var(--sidebar-text-active)',
+                      fontWeight: 500,
+                      '& > span:last-of-type': { color: 'var(--sidebar-text-active)' },
+                    },
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {project.name}
+                  </Box>
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      lineHeight: '16px',
+                      fontWeight: 500,
+                      color: 'var(--sidebar-muted)',
+                    }}
+                  >
+                    {project.code}
+                  </Box>
+                </Box>
+              </li>
+            ))}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }

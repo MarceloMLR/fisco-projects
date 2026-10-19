@@ -6,10 +6,15 @@ import type {
   CalendarDay,
   CalendarDayKind,
   CalendarYear,
+  ClientChoice,
   ClientRow,
   DayOfWeek,
   Installation,
+  Person,
   Profile,
+  Project,
+  ProjectRow,
+  ProjectStatus,
   SessionUser,
 } from '../api/client';
 
@@ -140,6 +145,149 @@ export function clientsPage(clients: readonly ClientRow[], url: URL) {
   };
 }
 
+/** The clients to choose, as the API answers them: the name, the logo and the status, without the CNPJ. */
+export function clientChoicesOf(clients: readonly ClientRow[]): ClientChoice[] {
+  return clients
+    .map(({ id, name, logoUrl, status }) => ({ id, name, logoUrl, status }))
+    .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+}
+
+/** A project of the simulated installation, with the people in it and what Marina may do. */
+export interface DemoProject extends Project {
+  /** Whether Marina is in the project, so it shows in her list. */
+  mine: boolean;
+}
+
+const demoPeople = {
+  paulo: { id: '0199f5a2-7c1e-7d40-9a1b-000000000001', name: 'Paulo Nogueira' },
+  marina: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
+  beatriz: { id: '0199f5a2-7c1e-7d40-9a1b-000000000003', name: 'Beatriz Lima' },
+  rafael: { id: '0199f5a2-7c1e-7d40-9a1b-000000000004', name: 'Rafael Souza' },
+} as const;
+
+/** The people to choose as manager or tech lead, as the API answers them. */
+export const demoPeopleChoices: (Person & { manager: boolean })[] = [
+  { ...demoPeople.beatriz, email: 'beatriz.lima@empresa.example', manager: true },
+  { ...demoPeople.marina, email: 'marina.costa@empresa.example', manager: true },
+  { ...demoPeople.paulo, email: 'paulo.nogueira@empresa.example', manager: true },
+  { ...demoPeople.rafael, email: 'rafael.souza@empresa.example', manager: false },
+];
+
+/** The people to choose as the API answers them: by name without accents, only the managers when asked. */
+export function peopleOf(url: URL): Person[] {
+  const search = withoutAccents(url.searchParams.get('search') ?? '');
+  const managers = url.searchParams.get('managers') === 'true';
+  const limit = Number(url.searchParams.get('limit') ?? '20');
+  return demoPeopleChoices
+    .filter((person) => !managers || person.manager)
+    .filter((person) => withoutAccents(person.name).includes(search))
+    .slice(0, limit)
+    .map(({ id, name, email }) => ({ id, name, email }));
+}
+
+function demoProject(
+  index: number,
+  code: string,
+  name: string,
+  client: ClientRow | null,
+  status: ProjectStatus,
+  members: Project['members'],
+  mine = true,
+): DemoProject {
+  return {
+    id: `0199f5a2-7c1e-7d40-9a1b-40000000000${String(index)}`,
+    code,
+    name,
+    description: null,
+    client: client === null ? null : { id: client.id, name: client.name, logoUrl: client.logoUrl },
+    status,
+    members,
+    permissions: {
+      canEdit: status !== 'Completed' && status !== 'Cancelled',
+      canChangeStatus: true,
+    },
+    mine,
+  };
+}
+
+/**
+ * Projects of the simulated installation, as the Projects screen of the canvas shows them: Marina manages most of them;
+ * the last one is Beatriz's, which Marina does not see.
+ */
+export function demoProjects(): DemoProject[] {
+  const [alfa, beta, , gama] = demoClients();
+  const manager = (person: { id: string; name: string }) => ({
+    ...person,
+    role: 'Manager' as const,
+  });
+  const techLead = (person: { id: string; name: string }) => ({
+    ...person,
+    role: 'TechLead' as const,
+  });
+  return [
+    {
+      ...demoProject(1, 'ERP-FIN', 'Implantação do ERP financeiro', alfa ?? null, 'InProgress', [
+        manager(demoPeople.marina),
+        techLead(demoPeople.rafael),
+      ]),
+      description: 'Implantação do ERP na matriz, com o financeiro e a contabilidade.',
+    },
+    demoProject(2, 'TRIB-RS', 'Revisão tributária da filial RS', beta ?? null, 'Planning', [
+      manager(demoPeople.marina),
+    ]),
+    demoProject(3, 'PORTAL-NF', 'Portal de notas para fornecedores', null, 'Paused', [
+      manager(demoPeople.marina),
+    ]),
+    demoProject(4, 'WMS-ALFA', 'Implantação do WMS', alfa ?? null, 'Completed', [
+      manager(demoPeople.marina),
+    ]),
+    demoProject(5, 'CONC-BAN', 'Conciliação bancária automática', gama ?? null, 'Cancelled', [
+      manager(demoPeople.marina),
+    ]),
+    demoProject(
+      6,
+      'FISC-SP',
+      'Revisão fiscal da filial SP',
+      beta ?? null,
+      'InProgress',
+      [manager(demoPeople.beatriz)],
+      false,
+    ),
+  ];
+}
+
+/** The list of projects as the API answers it for Marina: her projects, by search, client and situation. */
+export function projectsPage(projects: readonly DemoProject[], url: URL) {
+  const search = withoutAccents(url.searchParams.get('search') ?? '');
+  const clientId = url.searchParams.get('clientId');
+  const situation = url.searchParams.get('situation') ?? 'Active';
+  const page = Number(url.searchParams.get('page') ?? '1');
+  const pageSize = Number(url.searchParams.get('pageSize') ?? '25');
+  const closed = (status: ProjectStatus) => status === 'Completed' || status === 'Cancelled';
+  const matching = projects
+    .filter((project) => project.mine)
+    .filter(
+      (project) =>
+        withoutAccents(project.name).includes(search) ||
+        withoutAccents(project.code).includes(search),
+    )
+    .filter((project) => clientId === null || project.client?.id === clientId)
+    .filter((project) => situation === 'All' || (situation === 'Closed') === closed(project.status))
+    .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  const rows: ProjectRow[] = matching.map(({ id, code, name, client, status, members }) => ({
+    id,
+    code,
+    name,
+    client,
+    status,
+    managers: members.filter((member) => member.role === 'Manager'),
+  }));
+  return {
+    items: rows.slice((page - 1) * pageSize, page * pageSize),
+    total: rows.length,
+  };
+}
+
 const paulo = { id: '0199f5a2-7c1e-7d40-9a1b-000000000001', name: 'Paulo Nogueira' };
 const marinaActor = { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' };
 
@@ -171,7 +319,9 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemType: 'User',
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000003',
     itemLabel: 'Beatriz Lima',
-    changes: [{ field: 'Role', before: 'User', after: 'ProjectManager', secret: false }],
+    changes: [
+      { field: 'Role', before: 'User', after: 'ProjectManager', secret: false, reference: null },
+    ],
   }),
   auditEntry(2, '2026-10-19T12:58:00Z', marinaActor, {
     action: 'SignedIn',
@@ -190,7 +340,9 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemType: 'User',
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000005',
     itemLabel: 'Lívia Prado',
-    changes: [{ field: 'IsActive', before: 'true', after: 'false', secret: false }],
+    changes: [
+      { field: 'IsActive', before: 'true', after: 'false', secret: false, reference: null },
+    ],
   }),
   auditEntry(5, '2026-10-17T12:02:00Z', null, {
     action: 'Created',
@@ -198,10 +350,16 @@ export const demoAuditEntries: AuditEntryResponse[] = [
     itemId: '0199f5a2-7c1e-7d40-9a1b-000000000004',
     itemLabel: 'Rafael Souza',
     changes: [
-      { field: 'Email', before: null, after: 'rafael.souza@empresa.example', secret: false },
-      { field: 'IsActive', before: null, after: 'true', secret: false },
-      { field: 'Name', before: null, after: 'Rafael Souza', secret: false },
-      { field: 'Role', before: null, after: 'User', secret: false },
+      {
+        field: 'Email',
+        before: null,
+        after: 'rafael.souza@empresa.example',
+        secret: false,
+        reference: null,
+      },
+      { field: 'IsActive', before: null, after: 'true', secret: false, reference: null },
+      { field: 'Name', before: null, after: 'Rafael Souza', secret: false, reference: null },
+      { field: 'Role', before: null, after: 'User', secret: false, reference: null },
     ],
   }),
   auditEntry(6, '2026-09-10T12:00:00Z', paulo, {
@@ -391,6 +549,10 @@ export const handlers = [
   http.get('/api/clients', ({ request }) =>
     HttpResponse.json(clientsPage(demoClients(), new URL(request.url))),
   ),
+  http.get('/api/clients/choices', () => HttpResponse.json(clientChoicesOf(demoClients()))),
+  // Without projects by default: the screens of projects simulate their own.
+  http.get('/api/projects', () => HttpResponse.json({ items: [], total: 0 })),
+  http.get('/api/people', () => HttpResponse.json([])),
 ];
 
 export const server = setupServer(...handlers);

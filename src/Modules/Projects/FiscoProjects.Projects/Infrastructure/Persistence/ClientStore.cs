@@ -41,6 +41,19 @@ internal sealed class ClientStore(ProjectsDbContext db) : IClientStore
         return new ClientListPage(items, total);
     }
 
+    public async Task<IReadOnlyList<ClientChoice>> ChoicesAsync(CancellationToken cancellationToken) =>
+        await db.Clients.AsNoTracking()
+            .OrderBy(client => client.Name).ThenBy(client => client.Id)
+            .Select(client => new ClientChoice(
+                client.Id, client.Name, client.IsActive, client.LogoFileId == null ? null : client.LogoChangedAt))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, string>> NamesAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        await db.Clients.AsNoTracking()
+            .Where(client => ids.Contains(client.Id))
+            .ToDictionaryAsync(client => client.Id, client => client.Name, cancellationToken);
+
     public Task<Client?> FindAsync(Guid id, CancellationToken cancellationToken) =>
         db.Clients.SingleOrDefaultAsync(client => client.Id == id, cancellationToken);
 

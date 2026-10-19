@@ -38,7 +38,8 @@ internal sealed class ChangeAuditor(IHttpContextAccessor http, TimeProvider time
             change.ItemId,
             ActionOf(change.Action),
             change.ItemLabel,
-            change.Fields.Select(field => new AuditField(field.Name, field.Before, field.After, field.Secret)))));
+            change.Fields.Select(field => new AuditField(field.Name, field.Before, field.After, field.Secret, field.Reference)),
+            change.ItemLabelReference)));
         await audit.SaveChangesAsync(cancellationToken);
     }
 

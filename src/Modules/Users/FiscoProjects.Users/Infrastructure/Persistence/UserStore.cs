@@ -72,6 +72,28 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
         return new UserListPage(items, total);
     }
 
+    public async Task<IReadOnlyList<PersonItem>> ListPeopleAsync(PeopleQuery query, CancellationToken cancellationToken)
+    {
+        var people = db.Users.AsNoTracking().Where(user => user.IsActive);
+        if (query.Search is { } search)
+        {
+            people = people.Where(user =>
+                EF.Functions.Collate(user.Name, AccentInsensitive).Contains(search)
+                || EF.Functions.Collate(user.Email, AccentInsensitive).Contains(search));
+        }
+
+        if (query.ManagersOnly)
+        {
+            people = people.Where(user => user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager);
+        }
+
+        return await people
+            .OrderBy(user => user.Name).ThenBy(user => user.Email)
+            .Take(query.Limit)
+            .Select(user => new PersonItem(user.Id, user.Name, user.Email))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken) =>
         db.Users.AnyAsync(
             user => user.Id != userId && user.IsActive && user.Role == SystemRole.Administrator, cancellationToken);

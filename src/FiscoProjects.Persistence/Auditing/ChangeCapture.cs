@@ -38,7 +38,14 @@ internal static class ChangeCapture
                 continue;
             }
 
-            changes.Add(new AuditedChange(module, entry.Metadata.ClrType.Name, item.Id, action.Value, Label(entry, action.Value), fields));
+            changes.Add(new AuditedChange(
+                module,
+                entry.Metadata.ClrType.Name,
+                item.Id,
+                action.Value,
+                Label(entry, action.Value),
+                fields,
+                entry.Metadata.AuditLabelReference()));
         }
 
         return changes;
@@ -65,7 +72,7 @@ internal static class ChangeCapture
 
             fields.Add(metadata.IsAuditSecret()
                 ? new AuditedField(metadata.Name, null, null, Secret: true)
-                : new AuditedField(metadata.Name, Format(before), Format(after), Secret: false));
+                : new AuditedField(metadata.Name, Format(before), Format(after), Secret: false, metadata.AuditReference()));
         }
 
         return fields;

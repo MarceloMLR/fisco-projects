@@ -16,6 +16,9 @@ public interface IUserStore
 
     Task<UserListPage> ListAsync(UserListQuery query, CancellationToken cancellationToken);
 
+    /// <summary>The active people to choose, in alphabetical order (<see cref="PeopleQuery"/>).</summary>
+    Task<IReadOnlyList<PersonItem>> ListPeopleAsync(PeopleQuery query, CancellationToken cancellationToken);
+
     Task<bool> AnyOtherActiveAdministratorAsync(Guid userId, CancellationToken cancellationToken);
 
     /// <summary>

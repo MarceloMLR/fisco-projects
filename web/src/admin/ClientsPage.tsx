@@ -16,7 +16,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type ClientRow, type ClientStatus } from '../api/client';
+import { api, clientProblems, type ClientRow, type ClientStatus } from '../api/client';
 import { ApiError, clientsQuery, queryKeys } from '../api/queries';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
@@ -129,18 +129,27 @@ export function ClientsPage() {
 
   const remove = useMutation({
     mutationFn: async (client: ClientRow) => {
-      const { response } = await api.DELETE('/api/clients/{id}', {
+      const { response, error } = await api.DELETE('/api/clients/{id}', {
         params: { path: { id: client.id } },
       });
       if (!response.ok) {
-        throw new ApiError(response.status, null);
+        throw new ApiError(response.status, error);
       }
     },
     onSuccess: (_result, client) => {
       changed(t('clients.messages.removed', { name: client.name }));
     },
-    onError: () => {
-      setMessage(t('clients.messages.failed'));
+    onError: (error, client) => {
+      // A client with projects is only made inactive (ADR-0015).
+      const problem = error instanceof ApiError ? error.problem : undefined;
+      setMessage(
+        typeof problem === 'object' &&
+          problem !== null &&
+          'type' in problem &&
+          problem.type === clientProblems.hasProjects
+          ? t('clients.messages.hasProjects', { name: client.name })
+          : t('clients.messages.failed'),
+      );
     },
     onSettled: () => {
       setRemoving(undefined);

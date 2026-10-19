@@ -10,16 +10,20 @@ import { useCurrentPage } from './pages';
 /**
  * A screen inside the shell (fp-page): page title, with an optional count (fp-count), and content with the design
  * system margins. On the phone the title is in the top bar, so the heading stays only for screen readers.
- * With actions, the title and the actions share a row (fp-head).
+ * With actions, the title and the actions share a row (fp-head). A screen with a header of its own, as a project,
+ * leaves the title out.
  */
 export function Page({
   count,
   actions,
+  withTitle = true,
   children,
 }: {
   count?: number;
   /** Actions of the page, at the right of the title on the computer (fp-head__actions); the phone places its own. */
   actions?: ReactNode;
+  /** False when the screen has a header of its own, with the main heading. */
+  withTitle?: boolean;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -59,7 +63,7 @@ export function Page({
         padding: desktop ? 'var(--space-5) var(--space-6) var(--space-6)' : 'var(--space-3)',
       }}
     >
-      {desktop && actions !== undefined ? (
+      {!withTitle ? null : desktop && actions !== undefined ? (
         <Box
           sx={{
             display: 'flex',

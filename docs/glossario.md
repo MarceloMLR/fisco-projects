@@ -30,7 +30,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Meu perfil | Profile | Tela `/profile` da pessoa na sessão: preferências e conta |
 | Tema: Claro, Escuro, Automático | ThemePreference: Light, Dark, Automatic | Preferência salva no perfil; Automático segue o sistema (ADR-0014) |
 | Administração | Administration | Área só do administrador, rotas `/admin` (ADR-0046), e o módulo das configurações e dos cadastros |
-| Papel no projeto | ProjectRole | |
+| Papel no projeto | ProjectRole | Gerente de projeto, Líder técnico, Colaborador, Desenvolvedor ou Leitor, um por pessoa no projeto (ADR-0040) |
 | Administrador | Administrator | |
 | Gerente de projeto | ProjectManager | Papel no sistema e no projeto (ADR-0040) |
 | Líder técnico | TechLead | |
@@ -38,22 +38,29 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Desenvolvedor | Developer | Time de Desenvolvimento |
 | Leitor | Viewer | |
 | Gestores (gerente e líder técnico) | Managers | |
-| Membro do projeto | ProjectMember | |
+| Pessoa do projeto (membro) | ProjectMember | A pessoa e o papel dela num projeto; na Auditoria, "Pessoas dos projetos" |
 | Cliente | Client | Empresa para quem o projeto é feito (ADR-0015); módulo `Projects` (schema `projects`) e tela `/admin/clients` |
 | CNPJ | Cnpj | Numérico ou alfanumérico (IN RFB nº 2.229/2024), guardado sem pontuação e único entre os clientes; opcional |
 | Logo do cliente | Client logo (`ClientLogo`) | PNG ou JPG de até 1 MB, no lugar das iniciais; enviado só pelo administrador |
 | Situação do cliente: Ativo, Inativo | ClientStatus: Active, Inactive | `IsActive` no domínio; o inativo continua na lista, apagado |
 | Observação | Observation | Texto livre do cliente, até 500 caracteres |
-| Quem cria projetos | SystemPolicies.ProjectCreators | Administrador ou gerente de projeto (ADR-0043): lista e inclui clientes |
+| Quem cria projetos | SystemPolicies.ProjectCreators | Administrador ou gerente de projeto (ADR-0043): cria projetos e lista e inclui clientes |
+| Clientes para escolher | ClientChoice (`GET /api/clients/choices`) | Nome, logo e situação de todos os clientes, para qualquer pessoa com sessão, sem o CNPJ |
+| Pessoas para escolher | Person (`GET /api/people`) | Pessoas ativas que já entraram, buscadas pelo nome; com `managers`, só administradores e gerentes de projeto |
 | Fornecedor | Vendor | |
 
 ## Projetos e cronograma
 
 | Português | Código | Observação |
 | --- | --- | --- |
-| Projeto | Project | |
-| Código do projeto | ProjectCode | Ex.: ERP-FIN |
-| Status do projeto: Planejamento, Em andamento, Pausado, Concluído, Cancelado | ProjectStatus: Planning, InProgress, OnHold, Completed, Cancelled | |
+| Projeto | Project | Módulo `Projects` (schema `projects`), telas `/projects`, `/projects/new` e `/projects/{id}`; quem não está no projeto não o vê, menos o administrador (ADR-0043) |
+| Projeto interno | Project sem `ClientId` | Projeto sem cliente |
+| Código do projeto | ProjectCode | De 2 a 15 letras, algarismos e hífens, começando por letra, em maiúsculas e único na instalação; ex.: ERP-FIN |
+| Status do projeto: Planejamento, Em andamento, Pausado, Concluído, Cancelado | ProjectStatus: Planning, InProgress, Paused, Completed, Cancelled | |
+| Projeto encerrado (concluído ou cancelado) | IsClosed | Somente leitura até ser reaberto, voltando a Em andamento (ADR-0016) |
+| Ações do projeto | ProjectPermissions | Editar dados e mudar o status, conforme o papel da pessoa (ADR-0043) |
+| Situação na lista: Ativos, Concluídos e cancelados, Todos | ProjectSituation: Active, Closed, All | Filtro da tela Projetos |
+| Meus projetos | `mine=true` | Projetos ativos em que a pessoa está, na barra lateral |
 | Cronograma | Schedule | |
 | Linha do tempo (visualização do cronograma) | Timeline | Na interface não aparece a palavra "Gantt" (ADR-0071) |
 | Componente do Gantt | ScheduleGantt | Único que usa o Syncfusion (ADR-0051, ADR-0074) |
@@ -133,6 +140,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Rótulo do item | ItemLabel, `HasAuditLabel` | O que identifica o item na tela, como o nome da pessoa |
 | Campo fora da auditoria | `ExcludeFromAudit` | Campos técnicos, como o último acesso |
 | Campo secreto | `IsAuditSecret` | Registra só que mudou, sem o valor (ADR-0033) |
+| Referência a outro item | `IsAuditReference`, `HasAuditLabelReference`, `AuditField.Reference` | Guarda o identificador e o tipo; a lista mostra o nome atual por `IAuditReferenceNames` (ADR-0084) |
 | Evento de segurança | ISecurityEvents | Entrada e entrada recusada; troca de papel e situação entram como alteração do usuário |
 | Motivo da recusa: fora do diretório, conta desativada | SignInRefusal: NotInDirectory, Inactive | |
 | Anonimização | Anonymization | |

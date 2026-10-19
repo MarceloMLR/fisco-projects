@@ -110,7 +110,7 @@ public sealed class ClientUseCaseTests(SqlServerFixture sqlServer)
         changed.Outcome.Should().Be(ClientSaveOutcome.NotFound);
         (await database.RunAsync<DeactivateClient, bool>(use => use.ExecuteAsync(id, Cancellation))).Should().BeFalse();
         (await database.RunAsync<ReactivateClient, bool>(use => use.ExecuteAsync(id, Cancellation))).Should().BeFalse();
-        (await database.RunAsync<RemoveClient, bool>(use => use.ExecuteAsync(id, Cancellation))).Should().BeFalse();
+        (await database.RunAsync<RemoveClient, ClientRemoval>(use => use.ExecuteAsync(id, Cancellation))).Should().Be(ClientRemoval.NotFound);
         (await database.RunAsync<RemoveClientLogo, bool>(use => use.ExecuteAsync(id, Cancellation))).Should().BeFalse();
         (await ReplaceLogoAsync(database, id, Logos.Png, "logo.png")).Should().Be(ClientLogoOutcome.NotFound);
     }
@@ -215,7 +215,8 @@ public sealed class ClientUseCaseTests(SqlServerFixture sqlServer)
         var added = await AddAsync(database, "Alfa Distribuidora", null, null);
         await ReplaceLogoAsync(database, added.Id!.Value, Logos.Png, "alfa.png");
 
-        (await database.RunAsync<RemoveClient, bool>(remove => remove.ExecuteAsync(added.Id!.Value, Cancellation))).Should().BeTrue();
+        (await database.RunAsync<RemoveClient, ClientRemoval>(remove => remove.ExecuteAsync(added.Id!.Value, Cancellation)))
+            .Should().Be(ClientRemoval.Removed);
 
         (await ListAsync(database)).Total.Should().Be(0);
         database.Files.Files.Should().BeEmpty();
