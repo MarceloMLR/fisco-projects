@@ -711,6 +711,34 @@ describe('Mudanças do cronograma na auditoria', () => {
     expect(removed.title).toBe('Excluiu uma tarefa');
   });
 
+  // Spec: cronograma, requirement "Marco atingido".
+  it('Marcar marco como atingido', () => {
+    const reached = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ScheduleItem',
+        actor: marinaCosta,
+        itemLabel: 'Aceite da homologação',
+        changes: [
+          context('Kind', 'Milestone'),
+          context('ProjectId', project, 'Project'),
+          {
+            field: 'ReachedOn',
+            before: null,
+            after: '2026-10-16',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(reached.title).toBe('Alterou um marco');
+    expect(reached.summary).toBe('Aceite da homologação · atingido em — → 16/10/2026');
+    expect(reached.changes).toEqual([{ field: 'Atingido em', before: '—', after: '16/10/2026' }]);
+  });
+
   it('Fase renomeada na auditoria', () => {
     const renamed = describeAuditEntry(
       entry({

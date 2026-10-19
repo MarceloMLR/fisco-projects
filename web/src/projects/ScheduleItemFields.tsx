@@ -22,9 +22,10 @@ const rowSx = (columns: string) =>
 
 /**
  * The fields of a task or milestone, the same in "Nova tarefa" and in the details: the name, the phase, the start
- * typed as dd/mm/aaaa and, for a task, the duration in business days, the owner (a person of the project who is not a
- * viewer, ADR-0043) and the progress; and the items it depends on, without the ones that already depend on it, which
- * would make a cycle (ADR-0019). The end is computed by the API, with the calendar of the installation.
+ * typed as dd/mm/aaaa and, for a task, the duration in business days and the owner (a person of the project who is not
+ * a viewer, ADR-0043); and the items it depends on, without the ones that already depend on it, which would make a
+ * cycle (ADR-0019). The end is computed by the API, with the calendar of the installation; the progress changes by its
+ * own action (ADR-0086).
  */
 export function ScheduleItemFields({
   control,
@@ -34,7 +35,6 @@ export function ScheduleItemFields({
   project,
   itemId,
   endsOn,
-  withProgress,
 }: {
   control: Control<ScheduleItemValues>;
   errors: FieldErrors<ScheduleItemValues>;
@@ -45,7 +45,6 @@ export function ScheduleItemFields({
   itemId?: string;
   /** The end the API computed for the item as saved. */
   endsOn?: string;
-  withProgress: boolean;
 }) {
   const { t } = useTranslation();
   const phaseHelpId = useId();
@@ -138,46 +137,30 @@ export function ScheduleItemFields({
         )}
       </Box>
       {task && (
-        <Box sx={rowSx(withProgress ? '2fr 1fr' : '1fr')}>
-          <Controller
-            control={control}
-            name="ownerId"
-            render={({ field }) => {
-              const error = errorText(errors.ownerId?.message);
-              return (
-                <FormField
+        <Controller
+          control={control}
+          name="ownerId"
+          render={({ field }) => {
+            const error = errorText(errors.ownerId?.message);
+            return (
+              <FormField
+                label={t('projects.schedule.form.owner')}
+                optional={t('projects.schedule.form.optional')}
+                error={error}
+                helpId={ownerHelpId}
+              >
+                <Select
                   label={t('projects.schedule.form.owner')}
-                  optional={t('projects.schedule.form.optional')}
-                  error={error}
-                  helpId={ownerHelpId}
-                >
-                  <Select
-                    label={t('projects.schedule.form.owner')}
-                    value={field.value}
-                    options={ownerOptions}
-                    onChange={field.onChange}
-                    invalid={error !== undefined}
-                    describedBy={error === undefined ? undefined : ownerHelpId}
-                  />
-                </FormField>
-              );
-            }}
-          />
-          {withProgress && (
-            <Controller
-              control={control}
-              name="progress"
-              render={({ field }) => (
-                <TextField
-                  label={t('projects.schedule.form.progress')}
-                  inputMode="numeric"
-                  error={errorText(errors.progress?.message)}
-                  {...field}
+                  value={field.value}
+                  options={ownerOptions}
+                  onChange={field.onChange}
+                  invalid={error !== undefined}
+                  describedBy={error === undefined ? undefined : ownerHelpId}
                 />
-              )}
-            />
-          )}
-        </Box>
+              </FormField>
+            );
+          }}
+        />
       )}
       <Controller
         control={control}

@@ -17,6 +17,16 @@ export function scheduleRows(schedule: Schedule): ScheduleRow[] {
   ]);
 }
 
+/** Where a milestone is: reached (on a day), late (its day passed without it) or pending (ADR-0086). */
+export type MilestoneStatus = 'reached' | 'late' | 'pending';
+
+export function milestoneStatus(item: ScheduleItem): MilestoneStatus {
+  if (item.reachedOn !== null) {
+    return 'reached';
+  }
+  return item.late ? 'late' : 'pending';
+}
+
 /** Every task and milestone of the schedule, in the order of the Lista. */
 export function itemsOf(schedule: Schedule): ScheduleItem[] {
   return schedule.phases.flatMap((phase) => phase.items);

@@ -14,9 +14,9 @@
 
 ## 3. Telas
 
-- [ ] 3.1 Mostrar o estado do marco na Lista, os marcos atrasados no resumo e na lista de Projetos; verificar com "Estados do marco pela tela" e "Marco atrasado na lista"
-- [ ] 3.2 Criar o bloco Progresso com "Iniciar", "Atualizar progresso" e "Concluir" e o diálogo do percentual, e tirar o progresso do formulário da tarefa; verificar com "Iniciar pela tela", "Concluir pela tela" e "Progresso sem permissão pela tela"
-- [ ] 3.3 Criar o bloco Estado do marco com "Marcar como atingido" e "Desmarcar"; verificar com "Marcar marco pela tela" e os textos da auditoria
+- [x] 3.1 Mostrar o estado do marco na Lista, os marcos atrasados no resumo e na lista de Projetos; verificar com "Estados do marco pela tela" e "Marco atrasado na lista"
+- [x] 3.2 Criar o bloco Progresso com "Iniciar", "Atualizar progresso" e "Concluir" e o diálogo do percentual, e tirar o progresso do formulário da tarefa; verificar com "Iniciar pela tela", "Concluir pela tela" e "Progresso sem permissão pela tela"
+- [x] 3.3 Criar o bloco Estado do marco com "Marcar como atingido" e "Desmarcar"; verificar com "Marcar marco pela tela" e os textos da auditoria
 
 ## 4. Documentação e verificação
 

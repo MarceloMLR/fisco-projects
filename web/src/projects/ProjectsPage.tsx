@@ -11,7 +11,6 @@ import type { ProjectRow, ProjectSituation } from '../api/client';
 import { clientChoicesQuery, projectsQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
-import { DueDate } from '../components/DueDate';
 import { ScheduleStrip } from '../components/ScheduleStrip';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Select } from '../components/Select';
@@ -23,6 +22,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { summaryText } from './schedule';
+import { LateCounts } from './ScheduleStatus';
 
 const pageSize = 25;
 const searchDelay = 300;
@@ -184,11 +184,11 @@ export function ProjectsPage() {
               <Box component="span" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>
                 {formatDayText(row.schedule.end)}
               </Box>
-              {row.schedule.lateTasks > 0 && (
-                <DueDate state="overdue">
-                  {t('projects.schedule.lateTasks', { count: row.schedule.lateTasks })}
-                </DueDate>
-              )}
+              <LateCounts
+                tasks={row.schedule.lateTasks}
+                milestones={row.schedule.lateMilestones}
+                stacked
+              />
             </Box>
           ),
       },
