@@ -2,7 +2,7 @@
 
 ## 1. Auditoria
 
-- [ ] 1.1 Referências na auditoria (ADR-0084):
+- [x] 1.1 Referências na auditoria (ADR-0084):
   - `IsAuditReference` e `HasAuditLabelReference` no `Persistence`;
   - `AuditField.Reference` e a coluna `ItemLabelReference`, com migração;
   - `IAuditReferenceNames` no `SharedKernel`, com a fonte `User` no `Users`;
