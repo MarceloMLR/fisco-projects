@@ -295,20 +295,23 @@ export function ClientsPage() {
         displayedRowsLabel={footer}
         tools={
           <>
-            <TextField
-              label={t('clients.search')}
-              hideLabel
-              placeholder={t('clients.search')}
-              type="search"
-              size="sm"
-              icon={SearchOutlined}
-              width={desktop ? 280 : undefined}
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-            />
+            {/* On the phone the search takes the whole row, and the status goes below it. */}
+            <Box sx={desktop ? { flex: 'none' } : { flex: '1 1 100%', minWidth: 0 }}>
+              <TextField
+                label={t('clients.search')}
+                hideLabel
+                placeholder={t('clients.search')}
+                type="search"
+                size="sm"
+                icon={SearchOutlined}
+                width={desktop ? 280 : undefined}
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+              />
+            </Box>
             <SegmentedControl<StatusFilter>
               label={t('clients.status')}
               value={status}
