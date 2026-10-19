@@ -73,8 +73,8 @@ No computador, quem edita o cronograma MUST poder arrastar a barra de uma tarefa
 Na Linha do tempo, quem edita o cronograma MUST poder ligar o fim de uma barra ao início de outra para criar a dependência; o servidor empurra a seguinte se preciso. A dependência circular MUST ser recusada com uma mensagem, sem mudar o cronograma (ADR-0019, ADR-0021).
 
 #### Scenario: Ligar duas barras
-- **WHEN** o gerente liga o fim de "Configurar plano de contas" ao início de "Testes integrados"
-- **THEN** "Testes integrados" passa a depender de "Configurar plano de contas", e a seta aparece
+- **WHEN** o gerente liga o fim de "Integrar emissão de NF-e" ao início de "Testes integrados"
+- **THEN** "Testes integrados" passa a depender de "Integrar emissão de NF-e", e a seta aparece
 
 #### Scenario: Ligação circular pela linha do tempo
 - **WHEN** o gerente liga o fim de uma tarefa ao início de outra que vem antes dela na mesma cadeia

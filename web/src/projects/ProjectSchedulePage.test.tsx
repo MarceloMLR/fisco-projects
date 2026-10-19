@@ -110,8 +110,12 @@ function cellsOf(name: string) {
     .map((cell) => cell.textContent);
 }
 
+/** Opens the Lista of the tab; on a phone, it is the view that opens by itself (ADR-0071). */
 async function openSchedule(width?: number) {
-  const view = await renderApp(`/projects/${project.id}/schedule`, width);
+  const view = await renderApp(
+    `/projects/${project.id}/schedule${width === phoneWidth ? '' : '?view=list'}`,
+    width,
+  );
   await waitFor(() => {
     expect(within(table()).getAllByRole('row').length).toBeGreaterThan(1);
   });

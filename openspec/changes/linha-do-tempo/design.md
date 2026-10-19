@@ -34,7 +34,7 @@
 
 ### 2. Datas sem regra no navegador
 
-- O Syncfusion roda em modo manual (`taskMode="Manual"`, `autoCalculateDateScheduling={false}`), com o dia inteiro como horário de trabalho e os fins de semana incluídos. Assim ele desenha as datas que recebe, sem mover nada.
+- O Syncfusion roda em modo manual (`taskMode="Manual"`), com o dia inteiro como horário de trabalho e os fins de semana incluídos. Assim ele desenha as datas que recebe, sem mover nada. O cálculo de datas dele (`autoCalculateDateScheduling`) fica ligado: desligado, ele não posiciona a barra de resumo das fases.
 - Cada dia vira a meia-noite local; o fim de uma tarefa vai até a meia-noite do dia seguinte, e o marco fica no próprio dia.
 - Os dias não úteis vêm da API no `GET /schedule` (`nonWorkingDays`), do primeiro dia do mês anterior ao início ao último dia do mês seguinte ao fim, calculados pelo `IBusinessDays.IsBusinessDay`. A tela os passa como `holidays` do Syncfusion, só para o sombreado. Assim o feriado local e o ponto facultativo aparecem sem a tela conhecer a regra.
 - Alternativa: mandar ao Syncfusion os dias da semana e os feriados para ele calcular. Foi rejeitada, porque repetiria a regra do calendário no navegador (ADR-0051).
@@ -63,7 +63,7 @@
   - Dias vai do início ao fim do cronograma;
   - Semanas, da segunda-feira anterior ao domingo seguinte;
   - Meses, do primeiro ao último dia dos meses.
-- A largura da unidade é o maior valor entre a largura disponível dividida pelas unidades e o mínimo da escala: 24 px por dia, 48 por semana e 64 por mês. Acima do mínimo não há rolagem; abaixo, a rolagem fica dentro da linha do tempo.
+- A largura da unidade é o maior valor entre a largura disponível dividida pelas unidades e o mínimo da escala: 20 px por dia, 44 por semana e 56 por mês. Acima do mínimo não há rolagem; abaixo, a rolagem fica dentro da linha do tempo.
 - Um `ResizeObserver` recalcula quando a área muda (janela, menu lateral, Expandir).
 - "Hoje" rola a linha do tempo até o dia de hoje.
 - As datas da régua são formatadas pela própria tela (`formatter` do Syncfusion) em português, sem os dados CLDR do Syncfusion.

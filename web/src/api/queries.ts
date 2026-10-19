@@ -143,6 +143,18 @@ export function installationQuery() {
   });
 }
 
+/**
+ * What the browser needs from the configuration of the installation: the license of the timeline (ADR-0087). It
+ * changes only with the configuration, so it is read once a session.
+ */
+export function clientSettingsQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.installation, 'client-settings'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/client-settings', { signal })),
+    staleTime: Infinity,
+  });
+}
+
 /** The rules of the installation for the screens of a session: the time zone of dates and times (ADR-0013). */
 export function generalRulesQuery() {
   return queryOptions({

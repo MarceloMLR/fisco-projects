@@ -949,6 +949,50 @@
         "failed": "Não foi possível salvar o cronograma. Tente de novo.",
         "closed": "O projeto está encerrado: reabra-o para mudar o cronograma."
       }
+    },
+    "timeline": {
+      "views": {
+        "label": "Visualização",
+        "timeline": "Linha do tempo",
+        "list": "Lista"
+      },
+      "scales": {
+        "label": "Escala",
+        "days": "Dias",
+        "weeks": "Semanas",
+        "months": "Meses"
+      },
+      "today": "Hoje",
+      "expand": "Expandir",
+      "collapse": "Recolher",
+      "expandedTitle": "Cronograma",
+      "label": "Linha do tempo do cronograma",
+      "loading": "Carregando a linha do tempo…",
+      "noItems": "A linha do tempo aparece quando o cronograma tiver tarefas ou marcos.",
+      "columns": {
+        "name": "Tarefa",
+        "start": "Início",
+        "end": "Fim",
+        "owner": "Responsável",
+        "progress": "Progresso"
+      },
+      "milestone": {
+        "reached": "Atingido",
+        "pending": "Pendente",
+        "late": "Atrasado"
+      },
+      "legend": {
+        "label": "Legenda da linha do tempo",
+        "done": "Concluído",
+        "todo": "A fazer",
+        "phase": "Fase",
+        "milestone": "Marco",
+        "nonWorking": "Fim de semana e feriado"
+      },
+      "messages": {
+        "linked": "{{successor}} passa a depender de {{predecessor}}.",
+        "cycle": "Essa ligação formaria um ciclo: {{predecessor}} já depende de {{successor}}."
+      }
     }
   }
 }

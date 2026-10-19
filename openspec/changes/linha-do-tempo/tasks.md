@@ -10,19 +10,19 @@
 
 ## 2. Componente ScheduleGantt
 
-- [ ] 2.1 Instalar os pacotes do Syncfusion, restringir o import a `web/src/schedule-gantt` pelo lint, tirar a fonte do Google do CSS e liberar as licenças `@syncfusion/`; verificar com o lint, o build e o `frontend.sh`
-- [ ] 2.2 Criar `ganttRows.ts` e `ganttLayout.ts` (linhas, datas, escala e ajuste ao espaço); verificar com testes unitários de "Período ajustado ao espaço", "Período que não cabe" e "Mudar a escala"
-- [ ] 2.3 Criar o `ScheduleGantt` com o visual do design system nos dois temas, os dias não úteis, a linha de hoje, o arrastar, a borda e a ligação, e a chave da licença; verificar com o teste do componente e as capturas
+- [x] 2.1 Instalar os pacotes do Syncfusion, restringir o import a `web/src/schedule-gantt` pelo lint, tirar a fonte do Google do CSS e liberar as licenças `@syncfusion/`; verificar com o lint, o build e o `frontend.sh`
+- [x] 2.2 Criar `ganttRows.ts` e `ganttLayout.ts` (linhas, datas, escala e ajuste ao espaço); verificar com testes unitários de "Período ajustado ao espaço", "Período que não cabe" e "Mudar a escala"
+- [x] 2.3 Criar o `ScheduleGantt` com o visual do design system nos dois temas, os dias não úteis, a linha de hoje, o arrastar, a borda e a ligação, e a chave da licença; verificar com o teste do componente e as capturas
 
 ## 3. Aba Cronograma
 
-- [ ] 3.1 Criar a barra de ferramentas (vista, escala, Hoje, resumo, Expandir, Nova fase, Nova tarefa), a vista no endereço e a legenda; verificar com "Alternar Linha do tempo e Lista" e "Linha do tempo pela tela"
-- [ ] 3.2 Ligar o arrastar, a borda, a ligação e a escolha de item ou fase à API e ao detalhe; verificar com "Arrastar uma tarefa", "Puxar a borda de uma tarefa", "Arrastar sem permissão", "Ligar duas barras", "Ligação circular pela linha do tempo" e "Detalhe pela linha do tempo"
-- [ ] 3.3 Criar Expandir com a tabela completa; verificar com "Expandir o cronograma"
+- [x] 3.1 Criar a barra de ferramentas (vista, escala, Hoje, resumo, Expandir, Nova fase, Nova tarefa), a vista no endereço e a legenda; verificar com "Alternar Linha do tempo e Lista" e "Linha do tempo pela tela"
+- [x] 3.2 Ligar o arrastar, a borda, a ligação e a escolha de item ou fase à API e ao detalhe; verificar com "Arrastar uma tarefa", "Puxar a borda de uma tarefa", "Arrastar sem permissão", "Ligar duas barras", "Ligação circular pela linha do tempo" e "Detalhe pela linha do tempo"
+- [x] 3.3 Criar Expandir com a tabela completa; verificar com "Expandir o cronograma"
 
 ## 4. Documentação e verificação
 
-- [ ] 4.1 Atualizar o glossário, o `CLAUDE.md`, `docs/instalacao.md` (a chave) e o roadmap; verificar lendo os trechos alterados
+- [x] 4.1 Atualizar o glossário, o `CLAUDE.md`, `docs/instalacao.md` (a chave) e o roadmap; verificar lendo os trechos alterados
 - [ ] 4.2 Rodar `scripts/ci` sem erros nem avisos e conferir a Linha do tempo nos temas claro e escuro, em 1440×900, 1920×1080 e no celular, guardando as capturas para o resumo
 
 ## Workflow follow-up

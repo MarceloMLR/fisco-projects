@@ -344,9 +344,18 @@ export function scheduleSeenBy(schedule: Schedule, personId: string, viewer = fa
  */
 function demoNonWorkingDays(): string[] {
   const days: string[] = [];
-  for (let day = new Date(Date.UTC(2026, 8, 1)); day.getUTCFullYear() === 2026; day.setUTCDate(day.getUTCDate() + 1)) {
+  for (
+    let day = new Date(Date.UTC(2026, 8, 1));
+    day.getUTCFullYear() === 2026;
+    day.setUTCDate(day.getUTCDate() + 1)
+  ) {
     const text = day.toISOString().slice(0, 10);
-    if (day.getUTCDay() === 0 || day.getUTCDay() === 6 || text === '2026-10-12' || text === '2026-11-02') {
+    if (
+      day.getUTCDay() === 0 ||
+      day.getUTCDay() === 6 ||
+      text === '2026-10-12' ||
+      text === '2026-11-02'
+    ) {
       days.push(text);
     }
   }
@@ -914,6 +923,8 @@ export const handlers = [
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
   http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
+  // No Syncfusion license in the tests (ADR-0087).
+  http.get('/api/client-settings', () => HttpResponse.json({ timelineLicense: null })),
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
   ),
