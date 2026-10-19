@@ -151,3 +151,4 @@ Regras:
 | [0086](0086-iniciar-pede-o-percentual-e-marco-atrasado.md) | "Iniciar" pede o percentual, e o marco não atingido depois da data fica atrasado | aceita | 2026-10-19 |
 | [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
 | [0088](0088-subtarefas-na-v1.md) | Subtarefas na v1, em um nível, com a tarefa-resumo calculada e dependências só entre quem faz o trabalho | proposta | 2026-10-19 |
+| [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
