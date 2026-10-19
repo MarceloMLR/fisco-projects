@@ -49,7 +49,7 @@ Nenhuma.
 ## Impact
 
 - **Backend (`Projects`):**
-  - `ScheduleItem.ReachedOn`, `Schedule.UpdateProgress`, `MarkReached` e `Unmark`;
+  - `ScheduleItem.ReachedOn`, `Schedule.UpdateProgress` e `Schedule.SetReached`;
   - o atraso do marco em `ScheduleFigures`;
   - a permissão `CanUpdateOwnProgress`;
   - as rotas `PUT /schedule/items/{itemId}/progress` e `/reached`;
