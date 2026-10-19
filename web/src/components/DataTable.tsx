@@ -36,10 +36,15 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   isRowMuted?: (row: Row) => boolean;
   /**
    * Rows that name a group of the rows below, such as a team of a project (fp-group-row): lower, in the subtle
-   * background and never chosen. Their first column spans the whole row (colSpan in its definition). Keep it the
-   * same function between renders.
+   * background and, unless groupRowsChoosable, never chosen. Their first column may span the whole row (colSpan in its
+   * definition). Keep it the same function between renders.
    */
   isGroupRow?: (row: Row) => boolean;
+  /**
+   * The group rows are chosen like the others, such as a phase of a schedule, which opens to be renamed. They keep the
+   * look of a group and their own cells.
+   */
+  groupRowsChoosable?: boolean;
   /** Search and filters above the table (fp-gt-tools). */
   tools?: ReactNode;
   rowHeight?: number;
@@ -162,6 +167,14 @@ const choosableGridSx = {
   '& .MuiDataGrid-row:not(.row-group)': { cursor: 'pointer' },
 } satisfies SxProps<Theme>;
 
+/** A table whose group rows open something too, such as the phases of a schedule. */
+const choosableGroupsGridSx = {
+  ...gridSx,
+  '& .MuiDataGrid-row, & .MuiDataGrid-row.row-group, & .MuiDataGrid-row.row-group:hover': {
+    cursor: 'pointer',
+  },
+} satisfies SxProps<Theme>;
+
 /**
  * Standard table of the application (ADR-0050): the free MUI X Data Grid in pt-BR, with the look of the design
  * system table (fp-gt). It fills the area it is in and scrolls inside, with the pagination at the bottom
@@ -182,6 +195,7 @@ export function DataTable<Row extends GridValidRowModel>({
   loading = false,
   isRowMuted,
   isGroupRow,
+  groupRowsChoosable = false,
   tools,
   rowHeight = 56,
   emptyLabel,
@@ -237,27 +251,31 @@ export function DataTable<Row extends GridValidRowModel>({
         : ({ model }: GridRowHeightParams) => (isGroupRow(model as Row) ? groupRowHeight : null),
     [isGroupRow],
   );
+  const isChoosable = useCallback(
+    (row: Row) => groupRowsChoosable || isGroupRow?.(row) !== true,
+    [groupRowsChoosable, isGroupRow],
+  );
   const onRowClick = useMemo(
     () =>
       onRowChoose === undefined
         ? undefined
         : (params: GridRowParams<Row>) => {
-            if (isGroupRow?.(params.row) !== true) {
+            if (isChoosable(params.row)) {
               onRowChoose(params.row);
             }
           },
-    [onRowChoose, isGroupRow],
+    [onRowChoose, isChoosable],
   );
   const onCellKeyDown = useMemo(
     () =>
       onRowChoose === undefined
         ? undefined
         : (params: GridCellParams<Row>, event: KeyboardEvent) => {
-            if (event.key === 'Enter' && isGroupRow?.(params.row) !== true) {
+            if (event.key === 'Enter' && isChoosable(params.row)) {
               onRowChoose(params.row);
             }
           },
-    [onRowChoose, isGroupRow],
+    [onRowChoose, isChoosable],
   );
 
   return (
@@ -289,7 +307,13 @@ export function DataTable<Row extends GridValidRowModel>({
           disableColumnResize
           disableRowSelectionOnClick
           hideFooterSelectedRowCount
-          sx={onRowChoose === undefined ? gridSx : choosableGridSx}
+          sx={
+            onRowChoose === undefined
+              ? gridSx
+              : groupRowsChoosable
+                ? choosableGroupsGridSx
+                : choosableGridSx
+          }
         />
       </Box>
     </Box>

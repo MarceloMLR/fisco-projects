@@ -203,6 +203,25 @@ export function formatDayText(day: DayValue): string {
   return `${pad(dayOfMonth)}/${pad(month)}/${String(year)}`;
 }
 
+/** The day and the month of a day of the calendar (26/10), as the strip of phases says when a project starts. */
+export function formatDayMonthText(day: DayValue): string {
+  return formatDayText(day).slice(0, 5);
+}
+
+/**
+ * The period of a schedule as the header of a project shows it: 05/10 – 13/11/2026, with the year once when both
+ * days are in it, and 15/12/2026 – 20/01/2027 otherwise.
+ */
+export function formatPeriodText(start: DayValue, end: DayValue): string {
+  const sameYear = partsOf(start)[0] === partsOf(end)[0];
+  return `${sameYear ? formatDayMonthText(start) : formatDayText(start)} – ${formatDayText(end)}`;
+}
+
+/** How many calendar days go from one day to another: 1 from a day to the next, negative backwards. */
+export function daysBetween(from: DayValue, to: DayValue): number {
+  return dayNumber(to) - dayNumber(from);
+}
+
 const typedDay = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 
 /** A day typed as dd/mm/aaaa (30/12/2026), or undefined when it is no day of the calendar. */

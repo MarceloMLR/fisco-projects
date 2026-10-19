@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import i18n from '../i18n';
-import { datesIn, defaultTimeZone } from './dates';
+import {
+  datesIn,
+  daysBetween,
+  defaultTimeZone,
+  formatDayMonthText,
+  formatPeriodText,
+} from './dates';
 
 const t = i18n.t.bind(i18n);
 // 12:00:30 in Brasília, the time zone of the tests (vite.config.ts) and the default of the installations.
@@ -83,5 +89,20 @@ describe('Datas da auditoria', () => {
   it('Mesmas funções para o mesmo fuso', () => {
     expect(datesIn('Asia/Tokyo')).toBe(tokyo);
     expect(datesIn(defaultTimeZone).formatTime).toBe(brasilia.formatTime);
+  });
+});
+
+describe('Datas do cronograma', () => {
+  it('Período no cabeçalho, com o ano uma vez no mesmo ano', () => {
+    expect(formatPeriodText('2026-10-05', '2026-11-13')).toBe('05/10 – 13/11/2026');
+    expect(formatPeriodText('2026-12-15', '2027-01-20')).toBe('15/12/2026 – 20/01/2027');
+    expect(formatDayMonthText('2026-10-26')).toBe('26/10');
+  });
+
+  it('Dias corridos entre dois dias', () => {
+    expect(daysBetween('2026-10-05', '2026-10-05')).toBe(0);
+    expect(daysBetween('2026-10-30', '2026-11-02')).toBe(3);
+    expect(daysBetween('2026-11-02', '2026-10-30')).toBe(-3);
+    expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1);
   });
 });

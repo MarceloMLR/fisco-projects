@@ -311,4 +311,43 @@ describe('Situação', () => {
       'Beatriz Lima',
     ]);
   });
+
+  it('Linhas de grupo que se escolhem', () => {
+    const onRowChoose = vi.fn();
+    const isGroup = (person: Person) => person.id === '1';
+    const table = (choosable: boolean) => (
+      <AppThemeProvider>
+        <div style={{ height: 600, display: 'flex' }}>
+          <DataTable
+            label="People"
+            rows={people}
+            columns={[{ field: 'name', headerName: 'Person', flex: 1 }]}
+            rowCount={3}
+            page={1}
+            pageSize={3}
+            onPageChange={vi.fn()}
+            onRowChoose={onRowChoose}
+            isGroupRow={isGroup}
+            groupRowsChoosable={choosable}
+          />
+        </div>
+      </AppThemeProvider>
+    );
+    const { rerender } = render(table(false));
+    const groupRow = () =>
+      within(screen.getByRole('grid', { name: 'People' })).getAllByRole('row')[1] ?? document.body;
+
+    fireEvent.click(within(groupRow()).getByText('Beatriz Lima'));
+    expect(onRowChoose).not.toHaveBeenCalled();
+
+    rerender(table(true));
+    expect(groupRow()).toHaveClass('row-group');
+    fireEvent.click(within(groupRow()).getByText('Beatriz Lima'));
+    fireEvent.keyDown(within(groupRow()).getByRole('gridcell'), { key: 'Enter' });
+
+    expect(onRowChoose.mock.calls.map(([person]) => (person as Person).name)).toEqual([
+      'Beatriz Lima',
+      'Beatriz Lima',
+    ]);
+  });
 });
