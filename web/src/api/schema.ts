@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/client-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetClientSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -644,6 +660,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/items/{itemId}/dates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["RescheduleScheduleItem"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -778,6 +810,11 @@ export interface components {
             logoUrl: null | string;
             observation: null | string;
             status: components["schemas"]["ClientStatus"];
+        };
+        /** @description What the browser needs from the configuration of the installation: the license key of the timeline. */
+        ClientSettingsResponse: {
+            /** @description The Syncfusion license key (ADR-0051, ADR-0087); none when not configured. */
+            timelineLicense: null | string;
         };
         /** @enum {unknown} */
         ClientStatus: "Active" | "Inactive";
@@ -1061,6 +1098,16 @@ export interface components {
             pushed: number;
         };
         /**
+         * @description New dates from the timeline: the start alone keeps the duration; with the end, a task lasts the business days
+         *     between them. A milestone has no end.
+         */
+        ScheduleItemDatesRequest: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: null | string;
+        };
+        /**
          * @description A task has a start and a duration in business days; a milestone is one day, without duration (ADR-0018).
          * @enum {unknown}
          */
@@ -1151,7 +1198,8 @@ export interface components {
         };
         /**
          * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
-         *     how many tasks and milestones are late, and the phases in order.
+         *     how many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the
+         *     month before the start to the month after the end, for the timeline to shade (none without items).
          */
         ScheduleResponse: {
             /** Format: date */
@@ -1167,6 +1215,7 @@ export interface components {
             /** Format: int32 */
             lateMilestones: number;
             phases: components["schemas"]["SchedulePhaseResponse"][];
+            nonWorkingDays: string[];
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -1658,6 +1707,26 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetClientSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClientSettingsResponse"];
                 };
             };
         };
@@ -3810,6 +3879,76 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RescheduleScheduleItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleItemDatesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleItemChangedResponse"];
+                };
             };
             /** @description Bad Request */
             400: {

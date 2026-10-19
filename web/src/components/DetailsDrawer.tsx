@@ -45,6 +45,9 @@ export function DetailsDrawer({
       anchor="right"
       open={open}
       onClose={onClose}
+      // On the level of the dialogs, so the details of an item chosen in a dialog that covers the screen, as
+      // Expandir of the schedule, come over it.
+      sx={{ zIndex: (theme) => theme.zIndex.modal }}
       slotProps={{
         ...slotProps,
         paper: { role: 'dialog', 'aria-modal': true, 'aria-label': label, sx: paperSx },

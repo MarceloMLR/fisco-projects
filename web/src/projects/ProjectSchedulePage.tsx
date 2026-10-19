@@ -1,14 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddOutlined from '@mui/icons-material/AddOutlined';
+import CloseFullscreenOutlined from '@mui/icons-material/CloseFullscreenOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
+import OpenInFullOutlined from '@mui/icons-material/OpenInFullOutlined';
+import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
+import TodayOutlined from '@mui/icons-material/TodayOutlined';
+import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 import {
   api,
   type Project,
@@ -27,6 +33,9 @@ import { DueDate } from '../components/DueDate';
 import { ProgressBar } from '../components/ProgressBar';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { formatDayText } from '../format/dates';
+import { type GanttScale, ganttScales } from '../schedule-gantt/ganttLayout';
+import type { GanttTarget } from '../schedule-gantt/ganttRows';
+import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { theme } from '../theme/theme';
 import { useProjectOutlet } from './projectOutlet';
 import {
@@ -50,6 +59,7 @@ import {
 } from './scheduleItemValues';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { LateCounts, MilestoneStatus } from './ScheduleStatus';
+import { ScheduleTimeline } from './ScheduleTimeline';
 
 /** Rows of a page of the list; the free Data Grid shows up to 100 (ADR-0050). */
 const pageSize = 100;
@@ -62,7 +72,16 @@ const emptySchedule: Schedule = {
   lateTasks: 0,
   lateMilestones: 0,
   phases: [],
+  nonWorkingDays: [],
 };
+
+/** The views of the tab (ADR-0071). */
+type ScheduleView = 'timeline' | 'list';
+
+const isView = (value: string | null): value is ScheduleView =>
+  value === 'timeline' || value === 'list';
+const isScale = (value: string | null): value is GanttScale =>
+  ganttScales.some((scale) => scale === value);
 
 const secondarySx = { color: 'var(--text-secondary)' } as const;
 const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const;
@@ -70,12 +89,15 @@ const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: '
 type PhaseDialogState = { phase?: SchedulePhase } | undefined;
 
 /**
- * The tab Cronograma of a project, with the Lista (ADR-0071; the Linha do tempo comes with Cronograma-3): the phases
- * as group rows with their dates and progress, and under each one its tasks and milestones in order, with the start,
- * the end, the duration in business days, the owner, the progress (for a milestone, its state) and what each depends
- * on. A late task or milestone says so by icon, color and text (ADR-0065, ADR-0086). Who edits the schedule (ADR-0043)
- * includes phases and tasks and changes them; the details of a task open in a drawer (ADR-0081), where the people in
- * charge of a task update its progress. Every date comes computed from the API (ADR-0051).
+ * The tab Cronograma of a project, with the Linha do tempo and the Lista (ADR-0071). The Linha do tempo draws the
+ * phases, tasks, milestones and dependencies in the time, in days, weeks or months, filling the width, and who edits
+ * the schedule drags, stretches and links the bars on a computer; Expandir opens it over almost the whole screen, with
+ * the full table. The Lista has the phases as group rows with their dates and progress, and under each one its tasks
+ * and milestones in order, with the start, the end, the duration in business days, the owner, the progress (for a
+ * milestone, its state) and what each depends on. A late task or milestone says so by icon, color and text
+ * (ADR-0065, ADR-0086). Who edits the schedule (ADR-0043) includes phases and tasks and changes them; the details of
+ * a task open in a drawer (ADR-0081), where the people in charge of a task update its progress. Every date comes
+ * computed from the API (ADR-0051). The view and the scale stay in the address, to come back to them.
  */
 export function ProjectSchedulePage() {
   const { t } = useTranslation();
@@ -88,6 +110,14 @@ export function ProjectSchedulePage() {
   const [chosenId, setChosenId] = useState<string>();
   const [phaseDialog, setPhaseDialog] = useState<PhaseDialogState>();
   const [creating, setCreating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [search, setSearch] = useSearchParams();
+  const asked = search.get('view');
+  const view: ScheduleView = isView(asked) ? asked : desktop ? 'timeline' : 'list';
+  const askedScale = search.get('scale');
+  const scale: GanttScale = isScale(askedScale) ? askedScale : 'days';
+  const timeline = useRef<ScheduleGanttHandle>(null);
+  const expandedTimeline = useRef<ScheduleGanttHandle>(null);
   const rows = useMemo(() => scheduleRows(schedule), [schedule]);
   const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
   const chosen = chosenId === undefined ? undefined : findItem(schedule, chosenId);
@@ -253,6 +283,80 @@ export function ProjectSchedulePage() {
     [canEdit],
   );
   const getRowId = useCallback((row: ScheduleRow) => row.id, []);
+  const chooseInTimeline = useCallback(
+    (target: GanttTarget) => {
+      if (target.kind === 'item') {
+        setChosenId(target.item.id);
+      } else if (canEdit) {
+        setPhaseDialog({ phase: target.phase });
+      }
+    },
+    [canEdit],
+  );
+  const setParam = (name: string, value: string) => {
+    setSearch(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set(name, value);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const scaleControl = (
+    <SegmentedControl<GanttScale>
+      label={t('projects.timeline.scales.label')}
+      value={scale}
+      options={ganttScales.map((value) => ({
+        value,
+        label: t(`projects.timeline.scales.${value}`),
+      }))}
+      onChange={(value) => {
+        setParam('scale', value);
+      }}
+    />
+  );
+  // The progress of the project and the delays (ADR-0020, ADR-0086), beside the Lista or under the Linha do tempo.
+  const summary = itemCount > 0 && (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 'var(--space-2) var(--space-4)',
+        minWidth: 0,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <Box
+          component="span"
+          sx={{ fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' }}
+        >
+          {t('projects.schedule.progress')}
+        </Box>
+        <ProgressBar
+          value={schedule.progress}
+          label={t('projects.schedule.progress')}
+          width={160}
+        />
+      </Box>
+      <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
+    </Box>
+  );
+  const newItemButton = (
+    <Button
+      variant="contained"
+      size="small"
+      startIcon={<AddOutlined />}
+      disabled={schedule.phases.length === 0}
+      onClick={() => {
+        setCreating(true);
+      }}
+    >
+      {t('projects.schedule.newItem')}
+    </Button>
+  );
 
   const actions = (fullWidth: boolean) =>
     canEdit && (
@@ -273,17 +377,7 @@ export function ProjectSchedulePage() {
         >
           {t('projects.schedule.newPhase')}
         </Button>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddOutlined />}
-          disabled={schedule.phases.length === 0}
-          onClick={() => {
-            setCreating(true);
-          }}
-        >
-          {t('projects.schedule.newItem')}
-        </Button>
+        {newItemButton}
       </Box>
     );
 
@@ -297,56 +391,147 @@ export function ProjectSchedulePage() {
         gap: 'var(--space-3)',
       }}
     >
-      <DataTable<ScheduleRow>
-        label={t('projects.schedule.table')}
-        rows={pageRows}
-        columns={columns}
-        rowCount={rows.length}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        loading={isFetching}
-        rowHeight={48}
-        emptyLabel={t('projects.schedule.empty')}
-        displayedRowsLabel={footer}
-        onRowChoose={choose}
-        isGroupRow={isPhaseRow}
-        groupRowsChoosable={canEdit}
-        getRowId={getRowId}
-        selectedRowId={chosen?.item.id ?? phaseDialog?.phase?.id}
-        tools={
-          <>
-            {itemCount > 0 && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 'var(--space-2) var(--space-4)',
-                  minWidth: 0,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <Box
-                    component="span"
-                    sx={{ fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' }}
-                  >
-                    {t('projects.schedule.progress')}
-                  </Box>
-                  <ProgressBar
-                    value={schedule.progress}
-                    label={t('projects.schedule.progress')}
-                    width={180}
-                  />
-                </Box>
-                <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
-              </Box>
-            )}
-            {desktop && <Box sx={{ flex: 1 }} />}
-            {desktop && actions(false)}
-          </>
+      <Box
+        role="toolbar"
+        aria-label={t('projects.schedule.table')}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 'var(--space-2) var(--space-3)',
+          minWidth: 0,
+        }}
+      >
+        <SegmentedControl<ScheduleView>
+          label={t('projects.timeline.views.label')}
+          value={view}
+          options={[
+            {
+              value: 'timeline',
+              label: t('projects.timeline.views.timeline'),
+              icon: TimelineOutlined,
+            },
+            { value: 'list', label: t('projects.timeline.views.list'), icon: ViewListOutlined },
+          ]}
+          onChange={(value) => {
+            setParam('view', value);
+          }}
+        />
+        {view === 'timeline' && scaleControl}
+        {view === 'timeline' && (
+          <TodayButton
+            disabled={schedule.start === null}
+            onClick={() => {
+              timeline.current?.goToToday();
+            }}
+          />
+        )}
+        {desktop && <Box sx={{ flex: 1 }} />}
+        {desktop && view === 'timeline' && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<OpenInFullOutlined />}
+            disabled={schedule.start === null}
+            onClick={() => {
+              setExpanded(true);
+            }}
+          >
+            {t('projects.timeline.expand')}
+          </Button>
+        )}
+        {desktop && actions(false)}
+      </Box>
+      {view === 'timeline' && expanded ? (
+        // One timeline at a time: the Syncfusion Gantt finds some of its parts in the whole page (ADR-0051).
+        <Box sx={{ flex: 1, minHeight: 0 }} />
+      ) : view === 'timeline' ? (
+        <ScheduleTimeline
+          project={project}
+          schedule={schedule}
+          scale={scale}
+          editable={canEdit && desktop}
+          selectedId={chosen?.item.id}
+          ganttRef={timeline}
+          onChoose={chooseInTimeline}
+          notify={notify}
+          aside={summary}
+        />
+      ) : (
+        <DataTable<ScheduleRow>
+          label={t('projects.schedule.table')}
+          rows={pageRows}
+          columns={columns}
+          rowCount={rows.length}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          loading={isFetching}
+          rowHeight={48}
+          emptyLabel={t('projects.schedule.empty')}
+          displayedRowsLabel={footer}
+          onRowChoose={choose}
+          isGroupRow={isPhaseRow}
+          groupRowsChoosable={canEdit}
+          getRowId={getRowId}
+          selectedRowId={chosen?.item.id ?? phaseDialog?.phase?.id}
+          tools={summary === false ? undefined : summary}
+        />
+      )}
+      <Dialog
+        open={expanded}
+        size="full"
+        title={t('projects.timeline.expandedTitle')}
+        subtitle={`${project.code} · ${project.name}`}
+        onClose={() => {
+          setExpanded(false);
+        }}
+        headerTools={
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 'var(--space-2)',
+              flex: 1,
+            }}
+          >
+            {scaleControl}
+            <TodayButton
+              disabled={schedule.start === null}
+              onClick={() => {
+                expandedTimeline.current?.goToToday();
+              }}
+            />
+            <Box sx={{ flex: 1 }} />
+            {canEdit && newItemButton}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<CloseFullscreenOutlined />}
+              onClick={() => {
+                setExpanded(false);
+              }}
+            >
+              {t('projects.timeline.collapse')}
+            </Button>
+          </Box>
         }
-      />
+      >
+        {expanded && (
+          <ScheduleTimeline
+            project={project}
+            schedule={schedule}
+            scale={scale}
+            editable={canEdit}
+            detailed
+            selectedId={chosen?.item.id}
+            ganttRef={expandedTimeline}
+            onChoose={chooseInTimeline}
+            notify={notify}
+          />
+        )}
+      </Dialog>
       {!desktop && actions(true)}
       {phaseDialog !== undefined && (
         <SchedulePhaseDialog
@@ -407,6 +592,22 @@ export function ProjectSchedulePage() {
           ))}
       </DetailsDrawer>
     </Box>
+  );
+}
+
+/** "Hoje": brings today into view in the Linha do tempo (ADR-0071). */
+function TodayButton({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Button
+      variant="outlined"
+      size="small"
+      startIcon={<TodayOutlined />}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {t('projects.timeline.today')}
+    </Button>
   );
 }
 

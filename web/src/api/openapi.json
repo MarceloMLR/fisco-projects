@@ -512,6 +512,26 @@
         }
       }
     },
+    "/api/client-settings": {
+      "get": {
+        "tags": [
+          "FiscoProjects.Api"
+        ],
+        "operationId": "GetClientSettings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/audit": {
       "get": {
         "tags": [
@@ -3129,6 +3149,99 @@
           }
         }
       }
+    },
+    "/api/projects/{id}/schedule/items/{itemId}/dates": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RescheduleScheduleItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleItemDatesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleItemChangedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3588,6 +3701,22 @@
           }
         },
         "description": "One client in the list: the CNPJ without punctuation (the screen formats it) and the address of the logo, which\nchanges whenever the logo changes, so the browser may keep it; null without a logo."
+      },
+      "ClientSettingsResponse": {
+        "required": [
+          "timelineLicense"
+        ],
+        "type": "object",
+        "properties": {
+          "timelineLicense": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The Syncfusion license key (ADR-0051, ADR-0087); none when not configured."
+          }
+        },
+        "description": "What the browser needs from the configuration of the installation: the license key of the timeline."
       },
       "ClientStatus": {
         "enum": [
@@ -4481,6 +4610,27 @@
         },
         "description": "How many items after the changed one were pushed later (ADR-0019)."
       },
+      "ScheduleItemDatesRequest": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "New dates from the timeline: the start alone keeps the duration; with the end, a task lasts the business days\nbetween them. A milestone has no end."
+      },
       "ScheduleItemKind": {
         "enum": [
           "Task",
@@ -4766,7 +4916,8 @@
           "progress",
           "lateTasks",
           "lateMilestones",
-          "phases"
+          "phases",
+          "nonWorkingDays"
         ],
         "type": "object",
         "properties": {
@@ -4805,9 +4956,16 @@
             "items": {
               "$ref": "#/components/schemas/SchedulePhaseResponse"
             }
+          },
+          "nonWorkingDays": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
           }
         },
-        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, and the phases in order."
+        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the\nmonth before the start to the month after the end, for the timeline to shade (none without items)."
       },
       "SessionUserResponse": {
         "required": [
@@ -4980,6 +5138,9 @@
     },
     {
       "name": "Users"
+    },
+    {
+      "name": "FiscoProjects.Api"
     },
     {
       "name": "Audit"

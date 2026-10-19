@@ -19,14 +19,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 8 | 6 |
 | 2. Acesso e administração | 10 | 10 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 7 | 2 |
+| 4. Cronograma | 7 | 3 |
 | 5. Chamados | 7 | 0 |
 | 6. Avisos | 3 | 0 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **56** | **22** |
+| **Total** | **56** | **23** |
 
 ## 1. Fundação
 
@@ -71,7 +71,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | --- | --- | --- | --- | --- |
 | Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Concluída em 19/10/2026 ([#25](https://github.com/MarceloMLR/fisco-projects/pull/25)) |
 | Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Concluída em 19/10/2026 ([#26](https://github.com/MarceloMLR/fisco-projects/pull/26)) |
-| Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Planejada |
+| Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Concluída em 19/10/2026 ([#27](https://github.com/MarceloMLR/fisco-projects/pull/27)) |
 | Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
 | Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
 | Cronograma-6 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |

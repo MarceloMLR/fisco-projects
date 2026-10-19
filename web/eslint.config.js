@@ -24,6 +24,25 @@ export default defineConfig([
     },
   },
   {
+    // ADR-0051: only the timeline component imports Syncfusion, so it can give way to a timeline of our own.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/schedule-gantt/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@syncfusion/*'],
+              message:
+                'Syncfusion only inside src/schedule-gantt (ADR-0051); use the ScheduleGantt component.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // ADR-0013: visible text comes from the translation files, never written in a component.
     files: ['src/**/*.tsx'],
     ignores: ['src/**/*.test.tsx'],

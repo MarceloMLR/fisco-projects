@@ -338,6 +338,30 @@ export function scheduleSeenBy(schedule: Schedule, personId: string, viewer = fa
   };
 }
 
+/**
+ * The non-business days the API sends with the demonstration schedule: the weekends from September to December 2026,
+ * and the holidays of 12/10 and 02/11.
+ */
+function demoNonWorkingDays(): string[] {
+  const days: string[] = [];
+  for (
+    let day = new Date(Date.UTC(2026, 8, 1));
+    day.getUTCFullYear() === 2026;
+    day.setUTCDate(day.getUTCDate() + 1)
+  ) {
+    const text = day.toISOString().slice(0, 10);
+    if (
+      day.getUTCDay() === 0 ||
+      day.getUTCDay() === 6 ||
+      text === '2026-10-12' ||
+      text === '2026-11-02'
+    ) {
+      days.push(text);
+    }
+  }
+  return days;
+}
+
 const phaseIds = {
   survey: '0199f5a2-7c1e-7d40-9a1b-500000000001',
   configuration: '0199f5a2-7c1e-7d40-9a1b-500000000002',
@@ -427,6 +451,7 @@ export function demoSchedule(): Schedule {
     progress: 42,
     lateTasks: 1,
     lateMilestones: 0,
+    nonWorkingDays: demoNonWorkingDays(),
     phases: [
       {
         id: phaseIds.survey,
@@ -477,6 +502,7 @@ export const emptySchedule: Schedule = {
   lateTasks: 0,
   lateMilestones: 0,
   phases: [],
+  nonWorkingDays: [],
 };
 
 /**
@@ -897,6 +923,8 @@ export const handlers = [
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
   http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
+  // No Syncfusion license in the tests (ADR-0087).
+  http.get('/api/client-settings', () => HttpResponse.json({ timelineLicense: null })),
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
   ),

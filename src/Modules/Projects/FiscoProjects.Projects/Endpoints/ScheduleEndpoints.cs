@@ -45,7 +45,8 @@ public sealed record SchedulePhaseResponse(
 
 /// <summary>
 /// The schedule of a project on the day <c>today</c> of the installation: its dates (none without items), its progress,
-/// how many tasks and milestones are late, and the phases in order.
+/// how many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the
+/// month before the start to the month after the end, for the timeline to shade (none without items).
 /// </summary>
 public sealed record ScheduleResponse(
     DateOnly Today,
@@ -54,7 +55,8 @@ public sealed record ScheduleResponse(
     int Progress,
     int LateTasks,
     int LateMilestones,
-    IReadOnlyList<SchedulePhaseResponse> Phases);
+    IReadOnlyList<SchedulePhaseResponse> Phases,
+    IReadOnlyList<DateOnly> NonWorkingDays);
 
 public sealed record SchedulePhaseRequest(string? Name);
 
@@ -88,6 +90,12 @@ public sealed record ScheduleProgressRequest(int Progress);
 
 /// <summary>Whether a milestone was reached.</summary>
 public sealed record MilestoneReachedRequest(bool Reached);
+
+/// <summary>
+/// New dates from the timeline: the start alone keeps the duration; with the end, a task lasts the business days
+/// between them. A milestone has no end.
+/// </summary>
+public sealed record ScheduleItemDatesRequest(DateOnly Start, DateOnly? End);
 
 public sealed record ScheduleCreatedResponse(Guid Id);
 
@@ -129,6 +137,9 @@ internal static class ScheduleEndpoints
         projects.MapPut("/{id:guid}/schedule/items/{itemId:guid}/reached", SetReachedAsync).WithName("SetMilestoneReached")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapPut("/{id:guid}/schedule/items/{itemId:guid}/dates", RescheduleAsync).WithName("RescheduleScheduleItem")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static async Task<Results<Ok<ScheduleResponse>, NotFound>> GetAsync(
@@ -156,7 +167,8 @@ internal static class ScheduleEndpoints
                 phase.End,
                 phase.Progress,
                 phase.IsLate,
-                [.. phase.Items.Select(item => ItemOf(item, view, figures.Today))]))]));
+                [.. phase.Items.Select(item => ItemOf(item, view, figures.Today))]))],
+            view.NonWorkingDays));
     }
 
     private static async Task<Results<Created<ScheduleCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddPhaseAsync(
@@ -285,6 +297,27 @@ internal static class ScheduleEndpoints
         return Answer(await setReached.ExecuteAsync(id, itemId, request.Reached, viewer, cancellationToken));
     }
 
+    private static async Task<Results<Ok<ScheduleItemChangedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> RescheduleAsync(
+        Guid id,
+        Guid itemId,
+        HttpContext http,
+        ScheduleItemDatesRequest request,
+        IUserAccess access,
+        RescheduleScheduleItem reschedule,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        var result = await reschedule.ExecuteAsync(id, itemId, new ScheduleItemDates(request.Start, request.End), viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            ScheduleOutcome.Done => TypedResults.Ok(new ScheduleItemChangedResponse(result.Pushed)),
+            ScheduleOutcome.NotFound => TypedResults.NotFound(),
+            ScheduleOutcome.Forbidden => TypedResults.Forbid(),
+            ScheduleOutcome.Invalid => Invalid(result.Invalid),
+            _ => Problem(result.Outcome),
+        };
+    }
+
     private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view, DateOnly today) =>
         new(
             item.Id,
@@ -336,6 +369,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Progress => "progress",
                 ScheduleField.Owner => "ownerId",
                 ScheduleField.Reached => "reached",
+                ScheduleField.End => "end",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -349,6 +383,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.Progress => "A task goes from 0 to 100%; a milestone has no progress.",
                     ScheduleField.Owner => "The owner is a person of the project who is not a viewer; a milestone has none.",
                     ScheduleField.Reached => "Only a milestone is reached; a task has a progress.",
+                    ScheduleField.End => "The end of a task comes on or after its start, up to 999 business days; a milestone has no end.",
                     _ => "The items are tasks and milestones of the schedule, other than the item itself.",
                 },
             }));

@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * Dialog of the design system (Dialog, fp-dialog, size sm): the title and a close button at the top, the content and
  * the actions at the bottom. With onSubmit, the dialog is a form, so Enter in a field submits it. An alert asks for a
- * confirmation (alertdialog), and its text describes it.
+ * confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
+ * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges.
  */
 export function Dialog({
   open,
@@ -18,15 +19,23 @@ export function Dialog({
   actions,
   onSubmit,
   alert = false,
+  size = 'sm',
+  subtitle,
+  headerTools,
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
-  actions: ReactNode;
+  actions?: ReactNode;
   onSubmit?: (event: SubmitEvent<HTMLFormElement>) => void;
   alert?: boolean;
+  size?: 'sm' | 'full';
+  subtitle?: ReactNode;
+  /** In the header, after the title; the full size closes by them (its "Recolher"). */
+  headerTools?: ReactNode;
 }) {
+  const full = size === 'full';
   const { t } = useTranslation();
   const titleId = useId();
   const bodyId = useId();
@@ -38,37 +47,51 @@ export function Dialog({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: 'var(--space-3)',
-          padding: 'var(--space-4) var(--space-3) var(--space-3) var(--space-5)',
+          padding: full
+            ? 'var(--space-4) var(--space-5)'
+            : 'var(--space-4) var(--space-3) var(--space-3) var(--space-5)',
+          ...(full && { borderBottom: '1px solid var(--border)' }),
         }}
       >
-        <Box
-          component="h2"
-          id={titleId}
-          sx={{
-            margin: 0,
-            fontSize: 18,
-            lineHeight: '26px',
-            fontWeight: 500,
-            color: 'var(--text)',
-          }}
-        >
-          {title}
+        <Box sx={{ minWidth: 0, ...(full && { marginRight: 'var(--space-2)' }) }}>
+          <Box
+            component="h2"
+            id={titleId}
+            sx={{
+              margin: 0,
+              fontSize: 18,
+              lineHeight: '26px',
+              fontWeight: 500,
+              color: 'var(--text)',
+            }}
+          >
+            {title}
+          </Box>
+          {subtitle !== undefined && (
+            <Box sx={{ fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' }}>
+              {subtitle}
+            </Box>
+          )}
         </Box>
-        <IconButton
-          size="small"
-          aria-label={t('dialog.close')}
-          onClick={onClose}
-          sx={{
-            width: 'var(--control-sm)',
-            height: 'var(--control-sm)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-secondary)',
-            '&:hover': { backgroundColor: 'var(--bg-subtle)', color: 'var(--text)' },
-          }}
-        >
-          <CloseOutlined sx={{ fontSize: 'var(--icon-md)' }} />
-        </IconButton>
+        {headerTools}
+        {!full && (
+          <IconButton
+            size="small"
+            aria-label={t('dialog.close')}
+            onClick={onClose}
+            sx={{
+              width: 'var(--control-sm)',
+              height: 'var(--control-sm)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--text-secondary)',
+              '&:hover': { backgroundColor: 'var(--bg-subtle)', color: 'var(--text)' },
+            }}
+          >
+            <CloseOutlined sx={{ fontSize: 'var(--icon-md)' }} />
+          </IconButton>
+        )}
       </Box>
       <Box
         id={bodyId}
@@ -76,24 +99,27 @@ export function Dialog({
           display: 'flex',
           flexDirection: 'column',
           gap: 'var(--space-4)',
-          padding: 'var(--space-2) var(--space-5) var(--space-5)',
+          padding: full ? 0 : 'var(--space-2) var(--space-5) var(--space-5)',
           color: 'var(--text)',
           fontSize: 14,
           lineHeight: '20px',
+          ...(full && { flex: 1, minHeight: 0, overflow: 'hidden' }),
         }}
       >
         {children}
       </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: 'var(--space-2)',
-          padding: 'var(--space-3) var(--space-5) var(--space-5)',
-        }}
-      >
-        {actions}
-      </Box>
+      {actions !== undefined && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3) var(--space-5) var(--space-5)',
+          }}
+        >
+          {actions}
+        </Box>
+      )}
     </>
   );
 
@@ -106,7 +132,17 @@ export function Dialog({
       aria-describedby={alert ? bodyId : undefined}
       role={alert ? 'alertdialog' : 'dialog'}
       slotProps={{
-        paper: { sx: { maxWidth: 'var(--dialog-sm)', margin: 'var(--space-4)', width: '100%' } },
+        paper: {
+          sx: full
+            ? {
+                maxWidth: 'none',
+                maxHeight: 'none',
+                width: 'calc(100% - 2 * var(--space-6))',
+                height: 'calc(100% - 2 * var(--space-6))',
+                margin: 'var(--space-6)',
+              }
+            : { maxWidth: 'var(--dialog-sm)', margin: 'var(--space-4)', width: '100%' },
+        },
       }}
     >
       {onSubmit === undefined ? (
