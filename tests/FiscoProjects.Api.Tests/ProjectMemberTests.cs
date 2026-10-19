@@ -277,7 +277,8 @@ public sealed class ProjectMemberTests(SqlServerFixture sqlServer)
                 entry.GetProperty("actor").GetProperty("name").GetString()))
             .ToList();
 
-        entries.Should().Equal(("ProjectMember", "Created", "Marina Costa"), ("User", "Created", "Marina Costa"));
+        // Both come in the same save time; their order in the list is not part of the rule.
+        entries.Should().BeEquivalentTo([("ProjectMember", "Created", "Marina Costa"), ("User", "Created", "Marina Costa")]);
     }
 
     [Fact(DisplayName = "Líder técnico do diretório na criação")]
