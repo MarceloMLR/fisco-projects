@@ -15,19 +15,21 @@ public sealed record ProjectClientResponse(Guid Id, string Name, string? LogoUrl
 /// <summary>A person in a project, with the role in it.</summary>
 public sealed record ProjectPersonResponse(Guid Id, string Name, ProjectRole Role);
 
-/// <summary>A phase in the strip of phases: its dates, its progress and whether a task of it is late.</summary>
+/// <summary>A phase in the strip of phases: its dates, its progress and whether a task or a milestone of it is late.</summary>
 public sealed record SchedulePhaseSummaryResponse(string Name, DateOnly Start, DateOnly End, int Progress, bool Late);
 
 /// <summary>
-/// The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase
-/// (the first late one or, without delays, the last that has started; none before the start), the day the last task
-/// was completed when all are at 100%, the phases with items and the days of the milestones.
+/// The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late
+/// (ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the
+/// start), the day the last task was completed when all are at 100%, the phases with items and the days of the
+/// milestones.
 /// </summary>
 public sealed record ProjectScheduleSummaryResponse(
     DateOnly Start,
     DateOnly End,
     int Progress,
     int LateTasks,
+    int LateMilestones,
     string? CurrentPhase,
     DateOnly? CompletedOn,
     IReadOnlyList<SchedulePhaseSummaryResponse> Phases,
@@ -296,6 +298,7 @@ internal static class ProjectEndpoints
             figures.End!.Value,
             figures.Progress,
             figures.LateTasks,
+            figures.LateMilestones,
             figures.CurrentPhase?.Name,
             figures.CompletedOn,
             [.. figures.Phases

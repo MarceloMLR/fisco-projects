@@ -4,7 +4,7 @@ namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (domain side): "Fases do cronograma", "Tarefas e marcos", "Início em dia útil", "Dependências",
 // "Dependências que empurram", "Excluir sem mover", "Progresso das tarefas", "Datas e progresso das fases e do
-// projeto" and "Tarefa atrasada".
+// projeto", "Tarefa atrasada", "Marco atingido" and "Marco atrasado".
 public sealed class ScheduleTests
 {
     private static readonly TestBusinessDays Days = TestBusinessDays.Of2026;
@@ -341,16 +341,125 @@ public sealed class ScheduleTests
         Change(schedule, done, plan => plan with { Progress = 100 });
         var today = Task(schedule, phase, "Do dia", D(10, 14), 3);
         Change(schedule, today, plan => plan with { Progress = 50 });
-        var milestone = Milestone(schedule, phase, "Marco passado", D(10, 5));
 
         var figures = schedule.Figures(D(10, 16));
 
         today.End.Should().Be(D(10, 16));
         done.IsLate(D(10, 16)).Should().BeFalse();
         today.IsLate(D(10, 16)).Should().BeFalse();
-        milestone.IsLate(D(10, 16)).Should().BeFalse();
         figures.LateTasks.Should().Be(0);
         figures.Phases.Single().IsLate.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Alterar a tarefa mantém o progresso")]
+    public void ChangingTheTask_WithoutTheProgress_KeepsIt()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Mapear processos", D(10, 5), 5);
+
+        schedule.UpdateProgress(task.Id, 60, Today).Should().BeTrue();
+        Change(schedule, task, plan => plan with { Name = "Mapear os processos", Progress = null });
+
+        task.Name.Should().Be("Mapear os processos");
+        task.Progress.Should().Be(60);
+        task.CompletedOn.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Atualizar o progresso no domínio")]
+    public void UpdateProgress_KeepsTheCompletionDay_AndOnlyFitsATask()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Mapear processos", D(10, 5), 5);
+        var milestone = Milestone(schedule, phase, "Aceite", D(10, 20));
+
+        schedule.UpdateProgress(task.Id, 100, D(10, 16)).Should().BeTrue();
+        schedule.UpdateProgress(task.Id, 100, D(10, 19));
+        task.CompletedOn.Should().Be(D(10, 16));
+        schedule.UpdateProgress(task.Id, 30, D(10, 19));
+
+        (task.Progress, task.CompletedOn).Should().Be((30, (DateOnly?)null));
+        schedule.UpdateProgress(Guid.CreateVersion7(), 50, Today).Should().BeFalse();
+        schedule.Invoking(s => s.UpdateProgress(milestone.Id, 0, Today)).Should().Throw<ArgumentException>();
+        schedule.Invoking(s => s.UpdateProgress(task.Id, 101, Today)).Should().Throw<ArgumentException>();
+        schedule.Invoking(s => s.UpdateProgress(task.Id, -1, Today)).Should().Throw<ArgumentException>();
+        schedule.Invoking(s => s.SetReached(task.Id, true, Today)).Should().Throw<ArgumentException>();
+        task.ReachedOn.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Marcar marco como atingido")]
+    public void Milestone_IsReached_AndKeepsTheDay()
+    {
+        var (schedule, phase) = NewSchedule();
+        var milestone = Milestone(schedule, phase, "Aceite da homologação", D(10, 20));
+
+        schedule.SetReached(milestone.Id, true, D(10, 16)).Should().BeTrue();
+        schedule.SetReached(milestone.Id, true, D(10, 19));
+        Change(schedule, milestone, plan => plan with { Start = D(10, 27) });
+
+        milestone.ReachedOn.Should().Be(D(10, 16));
+        milestone.Start.Should().Be(D(10, 27));
+        milestone.IsLate(D(10, 28)).Should().BeFalse();
+        schedule.SetReached(Guid.CreateVersion7(), true, Today).Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Desmarcar marco")]
+    public void Milestone_IsUnmarked_WithoutTheDay()
+    {
+        var (schedule, phase) = NewSchedule();
+        var milestone = Milestone(schedule, phase, "Aceite da homologação", D(10, 20));
+        schedule.SetReached(milestone.Id, true, D(10, 16));
+
+        schedule.SetReached(milestone.Id, false, D(10, 19)).Should().BeTrue();
+
+        milestone.ReachedOn.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Marco vencido")]
+    public void OverdueMilestone_IsLate()
+    {
+        var (schedule, phase) = NewSchedule();
+        var milestone = Milestone(schedule, phase, "Aceite da configuração", D(10, 15));
+        Task(schedule, phase, "Parametrizar", D(10, 19), 3);
+
+        var figures = schedule.Figures(D(10, 16));
+
+        milestone.IsLate(D(10, 16)).Should().BeTrue();
+        figures.Phases.Single().IsLate.Should().BeTrue();
+        figures.LateMilestones.Should().Be(1);
+        figures.LateTasks.Should().Be(0);
+        figures.CurrentPhase.Should().Be(phase);
+    }
+
+    [Fact(DisplayName = "Marco atingido ou do dia não fica atrasado")]
+    public void ReachedMilestone_AndMilestoneOfToday_AreNotLate()
+    {
+        var (schedule, phase) = NewSchedule();
+        var reached = Milestone(schedule, phase, "Aceite do levantamento", D(10, 15));
+        schedule.SetReached(reached.Id, true, D(10, 15));
+        var ofToday = Milestone(schedule, phase, "Aceite da configuração", D(10, 16));
+
+        var figures = schedule.Figures(D(10, 16));
+
+        reached.IsLate(D(10, 16)).Should().BeFalse();
+        ofToday.IsLate(D(10, 16)).Should().BeFalse();
+        figures.LateMilestones.Should().Be(0);
+        figures.Phases.Single().IsLate.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Fase atual com marco atrasado")]
+    public void CurrentPhase_ConsidersTheLateMilestones()
+    {
+        var schedule = new Schedule(Guid.CreateVersion7());
+        var survey = schedule.AddPhase("Levantamento");
+        var configuration = schedule.AddPhase("Configuração");
+        var surveyTask = Task(schedule, survey, "Mapear", D(10, 5), 5);
+        Change(schedule, surveyTask, plan => plan with { Progress = 100 });
+        var acceptance = Milestone(schedule, survey, "Aceite do levantamento", D(10, 9), surveyTask);
+        Task(schedule, configuration, "Parametrizar", D(10, 13), 8);
+
+        schedule.Figures(D(10, 16)).CurrentPhase.Should().Be(survey, "the milestone of Levantamento passed without being reached");
+        schedule.SetReached(acceptance.Id, true, D(10, 16));
+        schedule.Figures(D(10, 16)).CurrentPhase.Should().Be(configuration);
     }
 
     [Fact(DisplayName = "Fase atual")]

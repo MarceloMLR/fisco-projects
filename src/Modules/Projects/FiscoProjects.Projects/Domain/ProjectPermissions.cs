@@ -13,13 +13,21 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// <param name="CanManagePeople">Includes people, changes their roles and removes them (ADR-0042).</param>
 /// <param name="CanManageManagers">Does the same with the managers; the tech lead manages the people, but not them.</param>
 /// <param name="CanEditSchedule">
-/// Changes the schedule: phases, tasks, milestones, dependencies, owners and progress; everyone else only sees it.
+/// Changes the schedule: phases, tasks, milestones, dependencies, owners, the progress of any task and the milestones
+/// reached; everyone else only sees it.
 /// </param>
+/// <param name="CanUpdateOwnProgress">Updates the progress of the tasks the person is in charge of (ADR-0043).</param>
 public sealed record ProjectPermissions(
-    bool CanView, bool CanEditData, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers, bool CanEditSchedule)
+    bool CanView,
+    bool CanEditData,
+    bool CanChangeStatus,
+    bool CanManagePeople,
+    bool CanManageManagers,
+    bool CanEditSchedule,
+    bool CanUpdateOwnProgress)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true);
-    private static readonly ProjectPermissions None = new(false, false, false, false, false, false);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)
     {
@@ -32,8 +40,15 @@ public sealed record ProjectPermissions(
         return role switch
         {
             ProjectRole.Manager => All,
-            ProjectRole.TechLead => None with { CanView = true, CanEditData = true, CanManagePeople = true },
-            ProjectRole.Contributor or ProjectRole.Developer or ProjectRole.Viewer => None with { CanView = true },
+            ProjectRole.TechLead => None with
+            {
+                CanView = true,
+                CanEditData = true,
+                CanManagePeople = true,
+                CanUpdateOwnProgress = true,
+            },
+            ProjectRole.Contributor or ProjectRole.Developer => None with { CanView = true, CanUpdateOwnProgress = true },
+            ProjectRole.Viewer => None with { CanView = true },
             _ => None,
         };
     }
@@ -44,4 +59,10 @@ public sealed record ProjectPermissions(
     /// </summary>
     public bool MayManage(ProjectRole? current, ProjectRole? next) =>
         CanManagePeople && (CanManageManagers || (current != ProjectRole.Manager && next != ProjectRole.Manager));
+
+    /// <summary>
+    /// Whether the person may update the progress of a task: the Administrator and the manager of any task, the tech
+    /// lead, the contributor and the developer only of the ones they are in charge of (ADR-0043).
+    /// </summary>
+    public bool MayUpdateProgress(bool isOwner) => CanEditSchedule || (CanUpdateOwnProgress && isOwner);
 }

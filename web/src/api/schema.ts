@@ -612,6 +612,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/items/{itemId}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["UpdateScheduleItemProgress"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/items/{itemId}/reached": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["SetMilestoneReached"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -790,6 +822,10 @@ export interface components {
         };
         LocalSignInRequest: {
             email: string;
+        };
+        /** @description Whether a milestone was reached. */
+        MilestoneReachedRequest: {
+            reached: boolean;
         };
         /**
          * @description The person to include, by `userId` or, for a person of the company directory who never signed in, by the
@@ -980,9 +1016,10 @@ export interface components {
          */
         ProjectRole: "Manager" | "TechLead" | "Contributor" | "Developer" | "Viewer";
         /**
-         * @description The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase
-         *     (the first late one or, without delays, the last that has started; none before the start), the day the last task
-         *     was completed when all are at 100%, the phases with items and the days of the milestones.
+         * @description The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late
+         *     (ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the
+         *     start), the day the last task was completed when all are at 100%, the phases with items and the days of the
+         *     milestones.
          */
         ProjectScheduleSummaryResponse: {
             /** Format: date */
@@ -993,6 +1030,8 @@ export interface components {
             progress: number;
             /** Format: int32 */
             lateTasks: number;
+            /** Format: int32 */
+            lateMilestones: number;
             currentPhase: null | string;
             /** Format: date */
             completedOn: null | string;
@@ -1026,7 +1065,7 @@ export interface components {
          * @enum {unknown}
          */
         ScheduleItemKind: "Task" | "Milestone";
-        /** @description A change of a task or a milestone, whose kind stays. */
+        /** @description A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. */
         ScheduleItemRequest: {
             /** Format: uuid */
             phaseId: string;
@@ -1038,13 +1077,14 @@ export interface components {
             /** Format: uuid */
             ownerId: null | string;
             /** Format: int32 */
-            progress: number;
+            progress: null | number;
             predecessorIds: null | string[];
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
-         *     milestone), the progress (zero for a milestone), the day it reached 100%, whether it is late, the owner and the ids of
-         *     the items it depends on.
+         *     milestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it
+         *     is late, whether the person may update its progress now (only a task, while the project is open), the owner and the
+         *     ids of the items it depends on.
          */
         ScheduleItemResponse: {
             /** Format: uuid */
@@ -1063,7 +1103,10 @@ export interface components {
             progress: number;
             /** Format: date */
             completedOn: null | string;
+            /** Format: date */
+            reachedOn: null | string;
             late: boolean;
+            canUpdateProgress: boolean;
             owner: null | components["schemas"]["ScheduleOwnerResponse"];
             predecessorIds: string[];
         };
@@ -1090,7 +1133,7 @@ export interface components {
             late: boolean;
             items: components["schemas"]["ScheduleItemResponse"][];
         };
-        /** @description A phase in the strip of phases: its dates, its progress and whether a task of it is late. */
+        /** @description A phase in the strip of phases: its dates, its progress and whether a task or a milestone of it is late. */
         SchedulePhaseSummaryResponse: {
             name: string;
             /** Format: date */
@@ -1101,9 +1144,14 @@ export interface components {
             progress: number;
             late: boolean;
         };
+        /** @description The progress of a task, from 0 to 100. */
+        ScheduleProgressRequest: {
+            /** Format: int32 */
+            progress: number;
+        };
         /**
          * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
-         *     how many tasks are late, and the phases in order.
+         *     how many tasks and milestones are late, and the phases in order.
          */
         ScheduleResponse: {
             /** Format: date */
@@ -1116,6 +1164,8 @@ export interface components {
             progress: number;
             /** Format: int32 */
             lateTasks: number;
+            /** Format: int32 */
+            lateMilestones: number;
             phases: components["schemas"]["SchedulePhaseResponse"][];
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
@@ -3617,6 +3667,142 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateScheduleItemProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleProgressRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SetMilestoneReached: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneReachedRequest"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {

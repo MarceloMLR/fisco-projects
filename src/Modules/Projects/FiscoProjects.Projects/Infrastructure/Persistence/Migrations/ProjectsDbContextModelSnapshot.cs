@@ -248,6 +248,9 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:Context", true)
                         .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
 
+                    b.Property<DateOnly?>("ReachedOn")
+                        .HasColumnType("date");
+
                     b.Property<DateOnly>("Start")
                         .HasColumnType("date");
 
