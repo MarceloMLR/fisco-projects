@@ -28,11 +28,11 @@ As cores das telas MUST vir só dos tokens do design system FiscoProjects, com v
 
 ### Requirement: Barra lateral no computador
 
-Em telas de 900px ou mais, a aplicação MUST mostrar uma barra lateral fixa, da altura da janela, com o selo e o nome do produto no topo e os itens Início, Projetos e Chamados e, só para o administrador, Administração, destacando o item da página atual.
+Em telas de 900px ou mais, a aplicação MUST mostrar uma barra lateral fixa, da altura da janela, com o nome da instalação no topo, depois do logo da instalação ou, sem logo, do selo, e os itens Início, Projetos e Chamados e, só para o administrador, Administração, destacando o item da página atual.
 
 #### Scenario: Navegação principal
 - **WHEN** a aplicação é aberta numa tela de 900px ou mais
-- **THEN** a barra lateral mostra o nome do produto e os itens Início, Projetos e Chamados
+- **THEN** a barra lateral mostra o nome da instalação e os itens Início, Projetos e Chamados
 
 #### Scenario: Item da página atual
 - **WHEN** a pessoa está numa página da navegação principal
