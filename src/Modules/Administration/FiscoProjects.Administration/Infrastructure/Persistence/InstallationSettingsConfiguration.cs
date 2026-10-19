@@ -14,6 +14,7 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
         // The installations created before the time zone existed show dates in the default one (ADR-0013).
         settings.Property(s => s.TimeZone).HasMaxLength(InstallationSettings.TimeZoneMaxLength)
             .HasDefaultValue(InstallationSettings.DefaultTimeZone);
+        settings.Property(s => s.MainColor).HasMaxLength(7);
         settings.Property(s => s.LogoFileId).HasMaxLength(400);
         settings.Property(s => s.LogoFileName).HasMaxLength(200);
         settings.Property(s => s.LogoContentType).HasMaxLength(64);

@@ -993,7 +993,8 @@
       "InstallationResponse": {
         "required": [
           "name",
-          "logoUrl"
+          "logoUrl",
+          "mainColor"
         ],
         "type": "object",
         "properties": {
@@ -1005,9 +1006,15 @@
               "null",
               "string"
             ]
+          },
+          "mainColor": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "The brand of the installation: the name shown and the address of the logo, null without one. The address changes\nwhenever the logo changes, so the browser may keep it."
+        "description": "The brand of the installation: the name shown, the address of the logo (null without one) and the main color as\n#RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the\nbrowser may keep it."
       },
       "LocalSignInRequest": {
         "required": [
@@ -1157,7 +1164,8 @@
       "UpdateInstallationRequest": {
         "required": [
           "name",
-          "timeZone"
+          "timeZone",
+          "mainColor"
         ],
         "type": "object",
         "properties": {
@@ -1166,9 +1174,15 @@
           },
           "timeZone": {
             "type": "string"
+          },
+          "mainColor": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown and the IANA time zone."
+        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or\nnull for the color of the design system)."
       },
       "UserPageResponse": {
         "required": [

@@ -144,3 +144,4 @@ Regras:
 | [0079](0079-modulo-de-arquivos-com-implementacao-local.md) | Arquivos num módulo próprio, com contrato único e implementação local em disco | aceita | 2026-10-18 |
 | [0080](0080-leituras-da-api-com-tanstack-query.md) | Leituras da API no frontend com TanStack Query, guardadas só na memória da sessão | aceita | 2026-10-18 |
 | [0081](0081-detalhes-em-gaveta-sobreposta.md) | Detalhes de um item da lista numa gaveta sobreposta, com o fundo escurecido | aceita | 2026-10-18 |
+| [0082](0082-tokens-da-marca-derivados-da-cor-principal.md) | Tokens da marca derivados da cor principal em OKLCH, com a cor recusada sem contraste | aceita | 2026-10-18 |

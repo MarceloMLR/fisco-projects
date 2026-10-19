@@ -12,7 +12,7 @@ describe('Barra lateral no computador', () => {
   it('Navegação principal', async () => {
     server.use(
       http.get('/api/installation', () =>
-        HttpResponse.json({ name: 'Consultoria Fictícia', logoUrl: null }),
+        HttpResponse.json({ name: 'Consultoria Fictícia', logoUrl: null, mainColor: null }),
       ),
     );
     await renderApp('/');

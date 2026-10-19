@@ -12,8 +12,11 @@ public interface IInstallationSettingsStore
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
 
-/// <summary>The brand of the installation: its name and, with a logo, when the logo last changed.</summary>
-public sealed record Installation(string Name, DateTime? LogoChangedAt);
+/// <summary>
+/// The brand of the installation: its name, when the logo last changed (with a logo) and the main color (null for the
+/// default one).
+/// </summary>
+public sealed record Installation(string Name, DateTime? LogoChangedAt, string? MainColor);
 
 /// <summary>The logo to serve: the file, its type and when it changed.</summary>
 public sealed record InstallationLogo(FileDownload File, string ContentType, DateTime ChangedAt);
@@ -23,7 +26,7 @@ public sealed class GetInstallation(IInstallationSettingsStore store)
     public async Task<Installation> ExecuteAsync(CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new Installation(settings.Name, settings.HasLogo ? settings.LogoChangedAt : null);
+        return new Installation(settings.Name, settings.HasLogo ? settings.LogoChangedAt : null, settings.MainColor);
     }
 }
 
@@ -57,14 +60,15 @@ public enum InstallationField
 {
     Name = 1,
     TimeZone = 2,
+    MainColor = 3,
 }
 
-/// <summary>The General settings form, saved as a whole: the name shown and the time zone.</summary>
-public sealed record InstallationChanges(string? Name, string? TimeZone);
+/// <summary>The General settings form, saved as a whole: the name shown, the time zone and the main color.</summary>
+public sealed record InstallationChanges(string? Name, string? TimeZone, string? MainColor);
 
 /// <summary>
-/// Saves the General settings form (ADR-0003, ADR-0013): every field valid, or nothing changes. One save, so one
-/// audit record.
+/// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
+/// so one audit record.
 /// </summary>
 public sealed class UpdateInstallation(IInstallationSettingsStore store)
 {
@@ -85,6 +89,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.TimeZone);
         }
 
+        if (!InstallationSettings.TryNormalizeMainColor(changes.MainColor, out var mainColor))
+        {
+            invalid.Add(InstallationField.MainColor);
+        }
+
         if (name is null || invalid.Count > 0)
         {
             return invalid;
@@ -93,6 +102,7 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         var settings = await store.GetAsync(cancellationToken);
         settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
+        settings.ChangeMainColor(mainColor);
         await store.SaveChangesAsync(cancellationToken);
         return [];
     }

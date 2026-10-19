@@ -20,11 +20,12 @@ const userFields: readonly string[] = ['Name', 'Email', 'Role', 'IsActive'] sati
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
 
-type SettingsField = 'Name' | 'LogoFileName' | 'TimeZone';
+type SettingsField = 'Name' | 'LogoFileName' | 'TimeZone' | 'MainColor';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
   'TimeZone',
+  'MainColor',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);

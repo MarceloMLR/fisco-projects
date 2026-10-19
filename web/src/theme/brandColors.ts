@@ -1,0 +1,286 @@
+import { color, type ColorScheme, colorSchemes } from './tokens';
+
+// The colors of the brand derived from the main color of the installation (ADR-0082). Every token starts from its
+// value in the design system: the hue moves by the difference of hue between the new color and the default one, and
+// the chroma scales by their ratio, in OKLCH. The lightness stays, except for the tokens that are the main color itself
+// in the light theme. Then the pairs of text and background of the design system are pushed to their minimum
+// contrast. With the default color, every token keeps its value.
+
+/** The tokens that follow the main color (design system, "Marca da instalação"). */
+export const brandTokenNames = [
+  'action',
+  'action-hover',
+  'action-pressed',
+  'action-text',
+  'control-selected',
+  'focus-ring',
+  'sidebar-active-bg',
+  'sidebar-text-active',
+  'sidebar-indicator',
+  'avatar-owner',
+  'brand-panel-bg',
+  'brand-panel-bg-2',
+  'brand-panel-muted',
+  'brand-panel-accent',
+] as const;
+
+export type BrandTokenName = (typeof brandTokenNames)[number];
+export type BrandTokens = Record<BrandTokenName, string>;
+
+/** In the light theme, these are the main color, with the difference of lightness each has to the default one. */
+const followLightness: ReadonlySet<BrandTokenName> = new Set([
+  'action',
+  'action-hover',
+  'action-pressed',
+  'action-text',
+  'control-selected',
+  'focus-ring',
+  'sidebar-indicator',
+  'avatar-owner',
+  'brand-panel-bg-2',
+]);
+
+/** Contrast the main color needs with white, the label of the main button and the background of links (ADR-0082). */
+export const minimumContrastWithWhite = 4.5;
+
+interface Oklch {
+  l: number;
+  c: number;
+  h: number;
+}
+
+type Rgb = [number, number, number];
+
+const hexPattern = /^#?([0-9a-fA-F]{6})$/;
+
+/** A #RRGGBB color in capitals, or undefined for anything else (with or without #, any case). */
+export function normalizeHex(value: string): string | undefined {
+  const match = hexPattern.exec(value.trim());
+  return match?.[1] === undefined ? undefined : `#${match[1].toUpperCase()}`;
+}
+
+function rgbOf(hex: string): Rgb {
+  const value = hex.slice(1, 7);
+  return [0, 2, 4].map((start) => parseInt(value.slice(start, start + 2), 16) / 255) as Rgb;
+}
+
+function hexOf([r, g, b]: Rgb): string {
+  return `#${[r, g, b]
+    .map((channel) =>
+      Math.round(Math.min(1, Math.max(0, channel)) * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
+const toLinear = (channel: number) =>
+  channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+const fromLinear = (channel: number) =>
+  channel <= 0.0031308 ? channel * 12.92 : 1.055 * channel ** (1 / 2.4) - 0.055;
+
+/** OKLCH of a sRGB color (Björn Ottosson, OKLab). */
+function oklchOf(hex: string): Oklch {
+  const [r, g, b] = rgbOf(hex).map(toLinear) as Rgb;
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const lightness = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  const hue = (Math.atan2(bb, a) * 180) / Math.PI;
+  return { l: lightness, c: Math.hypot(a, bb), h: hue < 0 ? hue + 360 : hue };
+}
+
+/** Linear sRGB of an OKLCH color, possibly outside the sRGB gamut. */
+function linearOf({ l: lightness, c, h }: Oklch): Rgb {
+  const a = c * Math.cos((h * Math.PI) / 180);
+  const b = c * Math.sin((h * Math.PI) / 180);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+}
+
+const inGamut = (rgb: Rgb) => rgb.every((channel) => channel >= -1e-4 && channel <= 1 + 1e-4);
+
+/** The OKLCH color as #RRGGBB, with the chroma reduced until it fits in sRGB. */
+function hexOfOklch(color: Oklch): string {
+  const target = { ...color, l: Math.min(1, Math.max(0, color.l)) };
+  if (!inGamut(linearOf(target))) {
+    let low = 0;
+    let high = target.c;
+    for (let step = 0; step < 24; step += 1) {
+      const middle = (low + high) / 2;
+      if (inGamut(linearOf({ ...target, c: middle }))) {
+        low = middle;
+      } else {
+        high = middle;
+      }
+    }
+    target.c = low;
+  }
+  return hexOf(linearOf(target).map(fromLinear) as Rgb);
+}
+
+function luminance(hex: string): number {
+  const [r, g, b] = rgbOf(hex).map(toLinear) as Rgb;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Contrast ratio of two opaque #RRGGBB colors (WCAG 2.x). */
+export function contrast(first: string, second: string): number {
+  const [light, dark] = [luminance(first), luminance(second)].sort((a, b) => b - a) as [
+    number,
+    number,
+  ];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/** The default main color: the action of the light theme in the design system. */
+export function defaultMainColor(): string {
+  return normalizeHex(color('action', 'light')) ?? color('action', 'light');
+}
+
+/**
+ * Whether a color may be the main color: #RRGGBB with 4.5:1 with white (the label of the main button), the same rule
+ * the server checks (InstallationSettings.TryNormalizeMainColor).
+ */
+export function hasContrast(mainColor: string): boolean {
+  const hex = normalizeHex(mainColor);
+  return (
+    hex !== undefined && contrast(hex, color('on-action', 'light')) >= minimumContrastWithWhite
+  );
+}
+
+/** Moves the lightness of a color away from the backgrounds until it has the contrast with each of them. */
+function withContrast(hex: string, backgrounds: readonly string[], minimum: number): string {
+  if (backgrounds.every((background) => contrast(hex, background) >= minimum)) {
+    return hex;
+  }
+  const lighter = luminance(backgrounds[0] ?? hex) < 0.18;
+  const start = oklchOf(hex);
+  let candidate = hex;
+  for (let step = 1; step <= 100; step += 1) {
+    candidate = hexOfOklch({ ...start, l: start.l + (lighter ? step : -step) * 0.01 });
+    if (backgrounds.every((background) => contrast(candidate, background) >= minimum)) {
+      break;
+    }
+  }
+  return candidate;
+}
+
+function derive(mainColor: string, scheme: ColorScheme): BrandTokens {
+  const base = oklchOf(defaultMainColor());
+  const chosen = oklchOf(mainColor);
+  const ratio = base.c > 0 ? chosen.c / base.c : 0;
+  const tokens = {} as BrandTokens;
+  for (const name of brandTokenNames) {
+    const original = color(name, scheme);
+    if (scheme === 'light' && original.toUpperCase() === defaultMainColor()) {
+      // The main color itself, as the Administrator chose it.
+      tokens[name] = mainColor.toLowerCase();
+      continue;
+    }
+    const value = oklchOf(original);
+    tokens[name] = hexOfOklch({
+      l: scheme === 'light' && followLightness.has(name) ? value.l + (chosen.l - base.l) : value.l,
+      c: value.c * ratio,
+      h: value.h + (chosen.h - base.h),
+    });
+  }
+
+  // The pairs of the design system, at their minimum contrast; never the main color in the light theme.
+  const token = (name: string) => color(name, scheme);
+  const keep = (name: BrandTokenName) =>
+    scheme === 'light' && tokens[name] === mainColor.toLowerCase();
+  const adjust = (name: BrandTokenName, backgrounds: string[], minimum: number) => {
+    if (!keep(name)) {
+      tokens[name] = withContrast(tokens[name], backgrounds, minimum);
+    }
+  };
+  for (const name of ['action', 'action-hover', 'action-pressed'] as const) {
+    // The background of the white label: darker until the label has its contrast.
+    if (!keep(name)) {
+      tokens[name] = darkerUntil(tokens[name], token('on-action'), 4.5);
+    }
+  }
+  if (!keep('avatar-owner')) {
+    tokens['avatar-owner'] = darkerUntil(tokens['avatar-owner'], token('on-avatar-role'), 4.5);
+  }
+  adjust('action-text', [token('bg-surface'), token('bg-page')], 4.5);
+  adjust('control-selected', [token('bg-surface')], 3);
+  adjust('focus-ring', [token('bg-page')], 3);
+  adjust('sidebar-text-active', [tokens['sidebar-active-bg']], 4.5);
+  adjust('brand-panel-muted', [tokens['brand-panel-bg']], 4.5);
+  return tokens;
+}
+
+/** Makes a background darker until a light text over it has the contrast. */
+function darkerUntil(background: string, text: string, minimum: number): string {
+  const start = oklchOf(background);
+  let candidate = background;
+  for (let step = 1; contrast(candidate, text) < minimum && step <= 100; step += 1) {
+    candidate = hexOfOklch({ ...start, l: start.l - step * 0.01 });
+  }
+  return candidate;
+}
+
+/**
+ * The values of the brand tokens for a main color in each theme; null (or the default color) gives the values of the
+ * design system.
+ */
+export function brandTokens(mainColor: string | null): Record<ColorScheme, BrandTokens> {
+  const hex = mainColor === null ? undefined : normalizeHex(mainColor);
+  const values = {} as Record<ColorScheme, BrandTokens>;
+  for (const scheme of colorSchemes) {
+    if (hex === undefined || hex === defaultMainColor()) {
+      values[scheme] = Object.fromEntries(
+        brandTokenNames.map((name) => [name, color(name, scheme)]),
+      ) as BrandTokens;
+    } else {
+      values[scheme] = derive(hex, scheme);
+    }
+  }
+  return values;
+}
+
+function channels(hex: string): string {
+  return rgbOf(hex)
+    .map((channel) => String(Math.round(channel * 255)))
+    .join(' ');
+}
+
+/** The CSS custom properties of a theme for a main color, also those of the primary color of MUI. */
+export function brandVariables(
+  mainColor: string | null,
+  scheme: ColorScheme,
+): Record<string, string> {
+  const tokens = brandTokens(mainColor)[scheme];
+  return {
+    ...Object.fromEntries(brandTokenNames.map((name) => [`--${name}`, tokens[name]])),
+    '--mui-palette-primary-main': tokens.action,
+    '--mui-palette-primary-dark': tokens['action-hover'],
+    '--mui-palette-primary-mainChannel': channels(tokens.action),
+    '--mui-palette-primary-darkChannel': channels(tokens['action-hover']),
+  };
+}
+
+/**
+ * The style sheet of a main color for both themes. Its selectors weigh more than the ones of the design system
+ * (0,2,0), so it wins whatever the order, also on elements that set their own theme with data-theme.
+ */
+export function brandStyleSheet(mainColor: string): string {
+  const block = (selector: string, scheme: ColorScheme) =>
+    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme))
+      .map(([name, value]) => `  ${name}: ${value};`)
+      .join('\n')}\n}`;
+  return [
+    block(':root:not([data-theme="dark"]), [data-theme="light"][data-theme="light"]', 'light'),
+    block('[data-theme="dark"][data-theme="dark"]', 'dark'),
+  ].join('\n');
+}

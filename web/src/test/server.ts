@@ -171,7 +171,11 @@ export function auditPage(entries: readonly AuditEntryResponse[], url: URL) {
 }
 
 /** The brand of the simulated installation: the name nobody changed yet, and no logo. */
-export const defaultInstallation: Installation = { name: 'FiscoProjects', logoUrl: null };
+export const defaultInstallation: Installation = {
+  name: 'FiscoProjects',
+  logoUrl: null,
+  mainColor: null,
+};
 
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */
 export function profileOf(person: SessionUser): Profile {
