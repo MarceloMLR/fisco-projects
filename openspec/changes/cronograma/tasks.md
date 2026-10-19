@@ -2,10 +2,10 @@
 
 ## 1. Domínio do cronograma
 
-- [ ] 1.1 Criar `Schedule`, `SchedulePhase`, `ScheduleItem` (tarefa e marco) e `ScheduleDependency` no domínio do `Projects`, com fases, início em dia útil, fim calculado pelo `IBusinessDays`, responsável, progresso com data de conclusão e exclusão em cascata pelo domínio; verificar com os testes unitários "Criar e renomear fase", "Excluir fase com tarefas", "Criar tarefa", "Marco sem duração", "Início num sábado", "Concluir tarefa guarda a data" e "Voltar abaixo de 100%"
-- [ ] 1.2 Implementar as dependências (primeiro dia possível, ciclo recusado) e o empurrão em ordem topológica, com a contagem de itens empurrados; verificar com "Tarefa depois da anterior", "Dependência circular", "Atrasar empurra a cadeia", "Antecipar não puxa" e "Excluir a tarefa anterior"
-- [ ] 1.3 Implementar `ScheduleFigures` (datas e progresso ponderado das fases e do projeto, atraso, fase atual, conclusão e marcos) e `Schedule.Unassign`; verificar com "Progresso ponderado pela duração", "Tarefa vencida", "Tarefa concluída ou do dia não fica atrasada" e os testes da fase atual
-- [ ] 1.4 Incluir `CanEditSchedule` em `ProjectPermissions` (administrador e gerente) e verificar com a tabela de permissões do domínio
+- [x] 1.1 Criar `Schedule`, `SchedulePhase`, `ScheduleItem` (tarefa e marco) e `ScheduleDependency` no domínio do `Projects`, com fases, início em dia útil, fim calculado pelo `IBusinessDays`, responsável, progresso com data de conclusão e exclusão em cascata pelo domínio; verificar com os testes unitários "Criar e renomear fase", "Excluir fase com tarefas", "Criar tarefa", "Marco sem duração", "Início num sábado", "Concluir tarefa guarda a data" e "Voltar abaixo de 100%"
+- [x] 1.2 Implementar as dependências (primeiro dia possível, ciclo recusado) e o empurrão em ordem topológica, com a contagem de itens empurrados; verificar com "Tarefa depois da anterior", "Dependência circular", "Atrasar empurra a cadeia", "Antecipar não puxa" e "Excluir a tarefa anterior"
+- [x] 1.3 Implementar `ScheduleFigures` (datas e progresso ponderado das fases e do projeto, atraso, fase atual, conclusão e marcos) e `Schedule.Unassign`; verificar com "Progresso ponderado pela duração", "Tarefa vencida", "Tarefa concluída ou do dia não fica atrasada" e os testes da fase atual
+- [x] 1.4 Incluir `CanEditSchedule` em `ProjectPermissions` (administrador e gerente) e verificar com a tabela de permissões do domínio
 
 ## 2. Persistência e auditoria
 

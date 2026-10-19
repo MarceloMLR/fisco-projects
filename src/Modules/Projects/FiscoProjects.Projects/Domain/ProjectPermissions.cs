@@ -12,11 +12,14 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// <param name="CanChangeStatus">Pauses, completes, cancels and reopens the project.</param>
 /// <param name="CanManagePeople">Includes people, changes their roles and removes them (ADR-0042).</param>
 /// <param name="CanManageManagers">Does the same with the managers; the tech lead manages the people, but not them.</param>
+/// <param name="CanEditSchedule">
+/// Changes the schedule: phases, tasks, milestones, dependencies, owners and progress; everyone else only sees it.
+/// </param>
 public sealed record ProjectPermissions(
-    bool CanView, bool CanEditData, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers)
+    bool CanView, bool CanEditData, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers, bool CanEditSchedule)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true);
-    private static readonly ProjectPermissions None = new(false, false, false, false, false);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true);
+    private static readonly ProjectPermissions None = new(false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)
     {
@@ -29,8 +32,7 @@ public sealed record ProjectPermissions(
         return role switch
         {
             ProjectRole.Manager => All,
-            ProjectRole.TechLead => new(
-                CanView: true, CanEditData: true, CanChangeStatus: false, CanManagePeople: true, CanManageManagers: false),
+            ProjectRole.TechLead => None with { CanView = true, CanEditData = true, CanManagePeople = true },
             ProjectRole.Contributor or ProjectRole.Developer or ProjectRole.Viewer => None with { CanView = true },
             _ => None,
         };
