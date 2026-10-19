@@ -13,7 +13,7 @@ As datas e horas ficam em UTC no banco e devem aparecer no fuso da instalação,
   - um fuso que o servidor não conhece, ou que não é IANA, é recusado.
 - **API:**
   - `PUT /api/installation` passa a receber `{ name, timeZone }`;
-  - novo `GET /api/installation/settings`, para quem tem sessão, com `{ timeZone }`. O fuso não é da marca e não aparece sem sessão;
+  - novo `GET /api/installation/rules`, para quem tem sessão, com `{ timeZone }`. O fuso não é da marca e não aparece sem sessão;
   - o contrato `IInstallationSettings` passa a dar o fuso aos outros módulos.
 - **Tela Configurações gerais:** nova seção Regras gerais, com o campo Fuso horário, como no canvas. O campo tem busca e mostra o nome do fuso em português e o identificador, como "Horário de Brasília (America/Sao_Paulo)".
 - **Datas no fuso da instalação, em todas as telas:**
@@ -49,12 +49,12 @@ Nenhuma.
 - Backend (módulo `Administration`):
   - `TimeZone` em `InstallationSettings`, com a migração `InstallationTimeZone`;
   - `UpdateInstallation` no lugar de `RenameInstallation`;
-  - `GetInstallationSettings` e o fuso no contrato `InstallationInfo`;
+  - `GetGeneralRules` e o fuso no contrato `InstallationInfo`;
   - testes do módulo e da API.
 - Contrato OpenAPI e tipos do frontend (`npm run api:update`).
 - Frontend:
   - `format/dates.ts` com as funções num fuso (`datesIn`) e o gancho `useDates`;
-  - `installationSettingsQuery`, e a estrutura esperando o fuso;
+  - `generalRulesQuery`, e a estrutura esperando o fuso;
   - Auditoria, detalhes, período, Usuários e Meu perfil;
   - o campo Fuso horário nas Configurações gerais;
   - traduções e testes.

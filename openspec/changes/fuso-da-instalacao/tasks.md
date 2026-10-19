@@ -5,18 +5,18 @@
 - [ ] 1.1 No módulo `Administration`:
   - `TimeZone` em `InstallationSettings`, com `ChangeTimeZone` (IANA conhecido pelo servidor) e a migração `InstallationTimeZone`;
   - `UpdateInstallation` no lugar de `RenameInstallation`;
-  - `GetInstallationSettings` e o fuso em `InstallationInfo`.
+  - `GetGeneralRules` e o fuso em `InstallationInfo`.
 
   Testar o fuso padrão, a troca, o fuso desconhecido, o id do Windows e o formulário recusado sem mudar nada. Verificar com `dotnet test`.
 - [ ] 1.2 Na API:
   - `PUT /api/installation` com `{ name, timeZone }`;
-  - `GET /api/installation/settings` com sessão.
+  - `GET /api/installation/rules` com sessão.
 
   Testar "Fuso inválido", "Fuso só com sessão", "Troca do fuso na auditoria" e o fuso na matriz de permissões. Atualizar o contrato com `npm run api:update` e verificar com `dotnet test`.
 
 ## 2. Frontend
 
-- [ ] 2.1 Reescrever `format/dates.ts` com `datesIn(timeZone)` e criar `installationSettingsQuery` e `useDates`. Também:
+- [ ] 2.1 Reescrever `format/dates.ts` com `datesIn(timeZone)` e criar `generalRulesQuery` e `useDates`. Também:
   - a `AppShell` esperando o fuso;
   - Auditoria, detalhes, período, Usuários e Meu perfil no fuso da instalação.
 

@@ -42,7 +42,7 @@ Alternativa: guardar o deslocamento (UTC−03:00). Foi descartada, porque o desl
 
 ### 3. O fuso só com sessão
 
-- **`GET /api/installation/settings`** (qualquer pessoa com sessão) devolve `{ timeZone }`. A marca (`GET /api/installation`) continua só com o nome e o logo, porque a página de entrada não mostra datas, e o requisito "Marca visível sem sessão" não expõe outras configurações.
+- **`GET /api/installation/rules`** (qualquer pessoa com sessão) devolve `{ timeZone }`. A marca (`GET /api/installation`) continua só com o nome e o logo, porque a página de entrada não mostra datas, e o requisito "Marca visível sem sessão" não expõe outras configurações.
 - **Contrato:** `IInstallationSettings` passa a devolver `InstallationInfo(Name, TimeZone)`, para os prazos e o resumo diário que vêm depois.
 
 ### 4. Frontend: datas num fuso e a estrutura esperando por ele
@@ -52,10 +52,10 @@ Alternativa: guardar o deslocamento (UTC−03:00). Foi descartada, porque o desl
   - os dias (`DayValue`, "2026-10-16") calculados com as partes da data no fuso (`formatToParts`);
   - a meia-noite de um dia achada pelo deslocamento do fuso naquele instante, conferido duas vezes por causa do horário de verão.
 - **Cache por fuso:** o resultado de `datesIn` fica guardado por fuso, então as funções mantêm a identidade e as colunas do `DataTable` não são redesenhadas à toa (ADR-0080).
-- **Consulta e gancho:** `installationSettingsQuery()` (chave `['installation', 'settings']`) e o gancho `useDates()`, que devolve `datesIn` do fuso da instalação ou do padrão America/Sao_Paulo, se a consulta falhar.
+- **Consulta e gancho:** `generalRulesQuery()` (chave `['installation', 'rules']`) e o gancho `useDates()`, que devolve `datesIn` do fuso da instalação ou do padrão America/Sao_Paulo, se a consulta falhar.
 - **Estrutura esperando o fuso:** a `AppShell` mostra o mesmo "carregando" da sessão até a consulta responder. É uma resposta pequena, logo depois da sessão, e assim nenhuma hora aparece em outro fuso.
 - **Telas:** Auditoria, detalhes, período, Usuários e Meu perfil usam `useDates()` no lugar das funções soltas. As colunas memoizadas passam a depender das funções do fuso.
-- **Depois de salvar:** as Configurações gerais invalidam a chave `['installation']`, que inclui `['installation', 'settings']`, e as telas passam ao novo fuso.
+- **Depois de salvar:** as Configurações gerais invalidam a chave `['installation']`, que inclui `['installation', 'rules']`, e as telas passam ao novo fuso.
 
 ### 5. Campo Fuso horário
 
