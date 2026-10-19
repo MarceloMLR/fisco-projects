@@ -1,0 +1,45 @@
+using System.ComponentModel;
+using FiscoProjects.Users.Application;
+using FiscoProjects.Users.Contracts;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
+
+namespace FiscoProjects.Users.Endpoints;
+
+/// <summary>A person to choose, such as the manager of a project.</summary>
+public sealed record PersonResponse(Guid Id, string Name, string Email);
+
+/// <summary>
+/// The people to choose when a project is created (ADR-0072): the Administrator and the Project manager create projects,
+/// so only they ask.
+/// </summary>
+internal static class PeopleEndpoints
+{
+    public static void MapPeopleEndpoints(this RouteGroupBuilder api) =>
+        api.MapGet("/people", ListAsync).WithName("ListPeople").WithTags("Users")
+            .RequireAuthorization(SystemPolicies.ProjectCreators)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+    private static async Task<Results<Ok<IReadOnlyList<PersonResponse>>, ValidationProblem>> ListAsync(
+        ListPeople listPeople,
+        CancellationToken cancellationToken,
+        [Description("Part of the name or of the e-mail, without telling case or accents apart.")] string? search = null,
+        [Description("Only the Administrators and the Project managers, who may manage a project.")] bool managers = false,
+        [Description("How many people at most, from 1 to 100.")] int limit = 20)
+    {
+        if (limit is < 1 or > PeopleQuery.MaxLimit)
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                [nameof(limit)] = [$"Must be between 1 and {PeopleQuery.MaxLimit}."],
+            });
+        }
+
+        var people = await listPeople.ExecuteAsync(new PeopleQuery(search, managers, limit), cancellationToken);
+        return TypedResults.Ok<IReadOnlyList<PersonResponse>>(
+            [.. people.Select(person => new PersonResponse(person.Id, person.Name, person.Email))]);
+    }
+}

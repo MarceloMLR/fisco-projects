@@ -29,6 +29,7 @@ public static class UsersModule
         services.AddScoped<DeactivateUser>();
         services.AddScoped<ReactivateUser>();
         services.AddScoped<ListUsers>();
+        services.AddScoped<ListPeople>();
         services.AddScoped<GetProfile>();
         services.AddScoped<ChooseTheme>();
 

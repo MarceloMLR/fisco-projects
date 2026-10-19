@@ -30,6 +30,9 @@ public sealed record ClientRequest(string? Name, string? Cnpj, string? Observati
 
 public sealed record ClientCreatedResponse(Guid Id);
 
+/// <summary>A client to choose for a project or to filter the projects, without the CNPJ nor the observation.</summary>
+public sealed record ClientChoiceResponse(Guid Id, string Name, string? LogoUrl, ClientStatus Status);
+
 /// <summary>Problem types of the clients, so the screen can tell the reason.</summary>
 public static class ClientProblems
 {
@@ -37,13 +40,17 @@ public static class ClientProblems
     public const string CnpjInUse = "urn:fiscoprojects:problem:client-cnpj-in-use";
     public const string LogoFormat = "urn:fiscoprojects:problem:client-logo-format";
     public const string LogoTooLarge = "urn:fiscoprojects:problem:client-logo-too-large";
+
+    /// <summary>The client has projects: it can only be made inactive (ADR-0015).</summary>
+    public const string HasProjects = "urn:fiscoprojects:problem:client-has-projects";
 }
 
 /// <summary>
 /// The clients (ADR-0015): the Administrator and the Project manager list and include them, as a project needs them
-/// (ADR-0043, ADR-0046); every other change is the Administrator's. The logo opens for anyone in a session.
+/// (ADR-0043, ADR-0046); every other change is the Administrator's. The logo and the clients to choose open for anyone
+/// in a session.
 /// </summary>
-public static class ClientEndpoints
+internal static class ClientEndpoints
 {
     /// <summary>A body larger than this is refused before it is read; the logo itself has up to 1 MB.</summary>
     public const long UploadLimit = 2 * 1024 * 1024;
@@ -51,11 +58,13 @@ public static class ClientEndpoints
     // A logo opened straight in the browser must not run anything nor load anything (ADR-0030).
     private const string LogoPolicy = "default-src 'none'; sandbox";
 
-    public static RouteGroupBuilder MapProjectsEndpoints(this RouteGroupBuilder api)
+    public static void MapClientEndpoints(this RouteGroupBuilder api)
     {
         var clients = api.MapGroup("/clients")
             .WithTags("Clients")
             .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        clients.MapGet("/choices", ListChoicesAsync).WithName("ListClientChoices");
 
         clients.MapGet("/", ListAsync).WithName("ListClients")
             .RequireAuthorization(SystemPolicies.ProjectCreators)
@@ -76,7 +85,8 @@ public static class ClientEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden);
         clients.MapDelete("/{id:guid}", RemoveAsync).WithName("RemoveClient")
             .RequireAuthorization(SystemPolicies.Administrator)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         clients.MapGet("/{id:guid}/logo", GetLogoAsync).WithName("GetClientLogo")
             .WithMetadata(KeepSession.Instance)
@@ -92,7 +102,6 @@ public static class ClientEndpoints
         clients.MapDelete("/{id:guid}/logo", RemoveLogoAsync).WithName("RemoveClientLogo")
             .RequireAuthorization(SystemPolicies.Administrator)
             .ProducesProblem(StatusCodes.Status403Forbidden);
-        return api;
     }
 
     private static async Task<Results<Ok<ClientPageResponse>, ValidationProblem>> ListAsync(
@@ -133,9 +142,7 @@ public static class ClientEndpoints
                 client.Id,
                 client.Name,
                 client.Cnpj,
-                client.LogoChangedAt is { } changedAt
-                    ? links.GetPathByName(http, "GetClientLogo", new { id = client.Id, v = VersionOf(changedAt) })
-                    : null,
+                LogoUrlOf(http, links, client.Id, client.LogoChangedAt),
                 client.Observation,
                 client.IsActive ? ClientStatus.Active : ClientStatus.Inactive))],
             result.Total));
@@ -175,9 +182,29 @@ public static class ClientEndpoints
         Guid id, ReactivateClient reactivateClient, CancellationToken cancellationToken) =>
         await reactivateClient.ExecuteAsync(id, cancellationToken) ? TypedResults.NoContent() : TypedResults.NotFound();
 
-    private static async Task<Results<NoContent, NotFound>> RemoveAsync(
+    private static async Task<Results<NoContent, NotFound, ProblemHttpResult>> RemoveAsync(
         Guid id, RemoveClient removeClient, CancellationToken cancellationToken) =>
-        await removeClient.ExecuteAsync(id, cancellationToken) ? TypedResults.NoContent() : TypedResults.NotFound();
+        await removeClient.ExecuteAsync(id, cancellationToken) switch
+        {
+            ClientRemoval.Removed => TypedResults.NoContent(),
+            ClientRemoval.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Client with projects",
+                detail: "A client with projects can only be made inactive.",
+                type: ClientProblems.HasProjects),
+        };
+
+    private static async Task<Ok<IReadOnlyList<ClientChoiceResponse>>> ListChoicesAsync(
+        HttpContext http, LinkGenerator links, ListClientChoices listChoices, CancellationToken cancellationToken)
+    {
+        var choices = await listChoices.ExecuteAsync(cancellationToken);
+        return TypedResults.Ok<IReadOnlyList<ClientChoiceResponse>>([.. choices.Select(choice => new ClientChoiceResponse(
+            choice.Id,
+            choice.Name,
+            LogoUrlOf(http, links, choice.Id, choice.LogoChangedAt),
+            choice.IsActive ? ClientStatus.Active : ClientStatus.Inactive))]);
+    }
 
     private static async Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
         Guid id, HttpContext http, GetClientLogo getLogo, CancellationToken cancellationToken, string? v = null)
@@ -249,6 +276,12 @@ public static class ClientEndpoints
 
     private static ProblemHttpResult Refused(string type, string title, string detail) =>
         TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: title, detail: detail, type: type);
+
+    /// <summary>The address of the current logo of a client, which changes whenever the logo changes; null without one.</summary>
+    internal static string? LogoUrlOf(HttpContext http, LinkGenerator links, Guid clientId, DateTime? logoChangedAt) =>
+        logoChangedAt is { } changedAt
+            ? links.GetPathByName(http, "GetClientLogo", new { id = clientId, v = VersionOf(changedAt) })
+            : null;
 
     private static string VersionOf(DateTime changedAt) => changedAt.Ticks.ToString(CultureInfo.InvariantCulture);
 }

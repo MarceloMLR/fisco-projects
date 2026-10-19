@@ -14,6 +14,9 @@ public sealed record ClientListItem(
 
 public sealed record ClientListPage(IReadOnlyList<ClientListItem> Items, int Total);
 
+/// <summary>A client to choose, as the project form and the filter of the projects show it.</summary>
+public sealed record ClientChoice(Guid Id, string Name, bool IsActive, DateTime? LogoChangedAt);
+
 /// <summary>Another client already has the CNPJ: the unique index refused the save.</summary>
 public sealed class ClientCnpjInUseException(Exception inner) : Exception("Another client has the CNPJ.", inner);
 
@@ -28,6 +31,12 @@ public interface IClientStore
 
     /// <summary>The client, tracked, so a change is saved by <see cref="SaveChangesAsync"/>.</summary>
     Task<Client?> FindAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>All the clients, active and inactive, in alphabetical order, without the CNPJ nor the observation.</summary>
+    Task<IReadOnlyList<ClientChoice>> ChoicesAsync(CancellationToken cancellationToken);
+
+    /// <summary>The name of each client found.</summary>
+    Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
 
     /// <summary>The name of the client with the CNPJ, other than the one given.</summary>
     Task<string?> NameOfClientWithCnpjAsync(string cnpj, Guid? except, CancellationToken cancellationToken);
@@ -50,6 +59,15 @@ public sealed class ListClients(IClientStore store)
             query with { Search = string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim() },
             cancellationToken);
     }
+}
+
+/// <summary>
+/// The clients to choose for a project or to filter the projects: anyone with a session reads them, without the CNPJ
+/// nor the observation.
+/// </summary>
+public sealed class ListClientChoices(IClientStore store)
+{
+    public Task<IReadOnlyList<ClientChoice>> ExecuteAsync(CancellationToken cancellationToken) => store.ChoicesAsync(cancellationToken);
 }
 
 /// <summary>A field of the client form.</summary>
@@ -220,19 +238,31 @@ public sealed class ReactivateClient(IClientStore store)
     }
 }
 
-/// <summary>
-/// Removes a client: the record first, then the file of the logo. A file that cannot be removed stays behind in the
-/// folder of the system, with no effect on the application.
-/// </summary>
-public sealed class RemoveClient(IClientStore store, IFileStorage files)
+public enum ClientRemoval
 {
-    /// <returns>False for a client that does not exist.</returns>
-    public async Task<bool> ExecuteAsync(Guid id, CancellationToken cancellationToken)
+    Removed = 1,
+    NotFound = 2,
+    HasProjects = 3,
+}
+
+/// <summary>
+/// Removes a client without projects (ADR-0015): the record first, then the file of the logo. A client with projects,
+/// even closed ones, is only made inactive. A file that cannot be removed stays behind in the folder of the system,
+/// with no effect on the application.
+/// </summary>
+public sealed class RemoveClient(IClientStore store, IProjectStore projects, IFileStorage files)
+{
+    public async Task<ClientRemoval> ExecuteAsync(Guid id, CancellationToken cancellationToken)
     {
         var client = await store.FindAsync(id, cancellationToken);
         if (client is null)
         {
-            return false;
+            return ClientRemoval.NotFound;
+        }
+
+        if (await projects.AnyWithClientAsync(id, cancellationToken))
+        {
+            return ClientRemoval.HasProjects;
         }
 
         var logo = client.LogoFileId;
@@ -243,7 +273,7 @@ public sealed class RemoveClient(IClientStore store, IFileStorage files)
             await files.DeleteFileAsync(logo, CancellationToken.None);
         }
 
-        return true;
+        return ClientRemoval.Removed;
     }
 }
 

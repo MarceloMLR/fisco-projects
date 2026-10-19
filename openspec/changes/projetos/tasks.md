@@ -16,7 +16,7 @@
 
 ## 2. Backend dos projetos
 
-- [ ] 2.1 Domínio e aplicação no `Projects`:
+- [x] 2.1 Domínio e aplicação no `Projects`:
   - `Project`, `ProjectCode`, `ProjectStatus`, `ProjectMember`, `ProjectRole` e `ProjectPermissions`;
   - casos de uso de listar, abrir, criar, alterar e mudar o status;
   - configuração, migração e as fontes de nomes `Client` e `Project`;
