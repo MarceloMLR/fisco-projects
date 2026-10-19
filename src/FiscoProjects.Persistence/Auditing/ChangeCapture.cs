@@ -33,7 +33,7 @@ internal static class ChangeCapture
             }
 
             var fields = Fields(entry, action.Value);
-            if (action == AuditedAction.Updated && fields.Count == 0)
+            if (action == AuditedAction.Updated && fields.All(field => field.IsContext))
             {
                 continue;
             }
@@ -65,6 +65,14 @@ internal static class ChangeCapture
 
             var before = action == AuditedAction.Created ? null : property.OriginalValue;
             var after = action == AuditedAction.Deleted ? null : property.CurrentValue;
+            if (metadata.IsAuditContext() && action == AuditedAction.Updated)
+            {
+                // Where the item is, also when it does not change (AuditModelBuilderExtensions.IsAuditContext).
+                fields.Add(new AuditedField(
+                    metadata.Name, Format(before), Format(after), Secret: false, metadata.AuditReference(), IsContext: true));
+                continue;
+            }
+
             if (Equals(before, after) || (action == AuditedAction.Updated && !property.IsModified))
             {
                 continue;

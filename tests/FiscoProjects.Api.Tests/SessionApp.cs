@@ -112,9 +112,7 @@ internal sealed class SessionApp : IAsyncDisposable
         return client;
     }
 
-    /// <summary>
-    /// Puts a person in a project with a role, straight in the database, as the members screen (Projetos-4) will do.
-    /// </summary>
+    /// <summary>Puts a person in a project with a role, straight in the database, to set up a scene.</summary>
     public Task AddProjectMemberAsync(Guid projectId, Guid userId, string role) =>
         ExecuteAsync(
             "INSERT INTO [projects].[project_members] (Id, ProjectId, UserId, Role, AddedAt) VALUES (@id, @project, @user, @role, @at)",

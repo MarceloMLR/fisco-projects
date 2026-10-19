@@ -66,6 +66,13 @@ public interface IProjectStore
 
     /// <exception cref="ProjectCodeInUseException">Another project got the same code meanwhile.</exception>
     Task SaveChangesAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Runs the work in a serializable transaction, repeated from scratch when the database picks it as a deadlock
+    /// victim, so checks such as "another manager stays" hold against concurrent changes.
+    /// </summary>
+    Task<TOutcome> InSerializableTransactionAsync<TOutcome>(
+        Func<CancellationToken, Task<TOutcome>> work, CancellationToken cancellationToken);
 }
 
 /// <summary>The names of the people of the projects, from the Users module.</summary>
@@ -235,16 +242,26 @@ internal static class ProjectSaving
     }
 }
 
-/// <summary>The project form of the creation: the manager is the person who creates it when none is chosen.</summary>
+/// <summary>
+/// The project form of the creation: the manager is the person who creates it when none is chosen. The tech lead is a
+/// user (<see cref="TechLeadId"/>) or a person of the directory who never signed in (<see cref="TechLeadDirectoryId"/>).
+/// </summary>
 public sealed record NewProject(
-    string? Code, string? Name, string? Description, Guid? ClientId, Guid? ManagerId, Guid? TechLeadId);
+    string? Code,
+    string? Name,
+    string? Description,
+    Guid? ClientId,
+    Guid? ManagerId,
+    Guid? TechLeadId,
+    string? TechLeadDirectoryId = null);
 
 /// <summary>
 /// Creates a project in Planning (ADR-0016) with its manager and, optionally, its tech lead (ADR-0072). The manager is
 /// the person who creates it, or another active person with the system role Project manager or Administrator; then
 /// the person who creates it does not join the project. The tech lead is another active person.
 /// </summary>
-public sealed class CreateProject(IProjectStore store, IClientStore clients, IUserAccess access, TimeProvider clock)
+public sealed class CreateProject(
+    IProjectStore store, IClientStore clients, IUserAccess access, IUserProvisioning provisioning, TimeProvider clock)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -263,8 +280,10 @@ public sealed class CreateProject(IProjectStore store, IClientStore clients, IUs
             invalid.Add(ProjectField.Manager);
         }
 
-        if (form.TechLeadId is { } techLeadId
-            && (techLeadId == managerId || await access.FindAsync(techLeadId, cancellationToken) is not { IsActive: true }))
+        var fromDirectory = !string.IsNullOrWhiteSpace(form.TechLeadDirectoryId);
+        if ((form.TechLeadId is not null && fromDirectory)
+            || (form.TechLeadId is { } techLeadId
+                && (techLeadId == managerId || await access.FindAsync(techLeadId, cancellationToken) is not { IsActive: true })))
         {
             invalid.Add(ProjectField.TechLead);
         }
@@ -279,8 +298,19 @@ public sealed class CreateProject(IProjectStore store, IClientStore clients, IUs
             return ProjectSaveResult.CodeInUse(owner);
         }
 
+        // A tech lead of the directory becomes a user only when everything else is right (ADR-0005).
+        var techLead = form.TechLeadId;
+        if (fromDirectory)
+        {
+            techLead = await provisioning.UserFromDirectoryAsync(form.TechLeadDirectoryId!, cancellationToken);
+            if (techLead is null || techLead == managerId)
+            {
+                return ProjectSaveResult.InvalidFields([ProjectField.TechLead]);
+            }
+        }
+
         var project = Project.Create(
-            data.Code, data.Name, data.Description, form.ClientId, managerId, form.TechLeadId, clock.GetUtcNow().UtcDateTime);
+            data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, clock.GetUtcNow().UtcDateTime);
         store.Add(project);
         return await ProjectSaving.SaveAsync(store, project, cancellationToken);
     }

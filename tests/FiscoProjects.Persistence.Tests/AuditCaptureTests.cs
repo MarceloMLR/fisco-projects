@@ -154,6 +154,50 @@ public sealed class AuditCaptureTests(SqlServerFixture sqlServer) : IAsyncLifeti
         ]);
     }
 
+    [Fact(DisplayName = "Contexto gravado na alteração")]
+    public async Task ContextField_ComesInEveryChange_EvenUnchanged()
+    {
+        var record = await CreateAsync();
+        var personId = Guid.CreateVersion7();
+        await using (var db = _database.NewContext<GammaDbContext>())
+        {
+            db.Links.Add(new GammaLink { PersonId = personId, RecordId = record.Id, Kind = "Dono" });
+            await db.SaveChangesAsync(Cancellation);
+        }
+
+        await using (var db = _database.NewContext<GammaDbContext>())
+        {
+            var link = await db.Links.SingleAsync(Cancellation);
+            link.Kind = "Leitor";
+            await db.SaveChangesAsync(Cancellation);
+        }
+
+        var change = _auditor.Recorded.Last();
+        change.Action.Should().Be(AuditedAction.Updated);
+        change.Fields.Should().BeEquivalentTo(
+        [
+            new AuditedField("Kind", "Dono", "Leitor", false),
+            new AuditedField(
+                "RecordId", record.Id.ToString(), record.Id.ToString(), false, GammaDbContext.RecordReference, IsContext: true),
+        ]);
+    }
+
+    [Fact(DisplayName = "Contexto sem outra alteração")]
+    public async Task ContextField_Alone_WritesNoRecord()
+    {
+        var record = await CreateAsync();
+        await using var db = _database.NewContext<GammaDbContext>();
+        var link = new GammaLink { PersonId = Guid.CreateVersion7(), RecordId = record.Id, Kind = "Dono" };
+        db.Links.Add(link);
+        await db.SaveChangesAsync(Cancellation);
+        var recorded = _auditor.Recorded.Count;
+
+        db.Entry(link).Property(l => l.RecordId).IsModified = true;
+        await db.SaveChangesAsync(Cancellation);
+
+        _auditor.Recorded.Should().HaveCount(recorded);
+    }
+
     [Fact(DisplayName = "Alteração que não é salva")]
     public async Task FailedSave_WritesNoRecord()
     {

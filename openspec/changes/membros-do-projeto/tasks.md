@@ -2,7 +2,7 @@
 
 ## 1. Pessoas e diretório no `Users`
 
-- [ ] 1.1 Diretório e usuário criado pelo diretório:
+- [x] 1.1 Diretório e usuário criado pelo diretório:
   - `IPeopleDirectory` com `LocalPeopleDirectory`;
   - `ListPeople` com as pessoas do diretório, `canBeManager` e `/api/people` para qualquer pessoa com sessão;
   - `IUserProvisioning` e `User.FromDirectory`;
@@ -16,7 +16,7 @@
 
 ## 2. Pessoas no `Projects`
 
-- [ ] 2.1 Domínio e auditoria:
+- [x] 2.1 Domínio e auditoria:
   - `AddMember`, `ChangeMemberRole` e `RemoveMember`, com o último gerente e o projeto encerrado;
   - `CanManagePeople`, `CanManageManagers` e `MayManage`;
   - `IsAuditContext()` no `Persistence`, aplicado ao `ProjectId`.
@@ -25,7 +25,7 @@
   - as regras no domínio;
   - a matriz das permissões;
   - o contexto gravado na alteração.
-- [ ] 2.2 Casos de uso e API:
+- [x] 2.2 Casos de uso e API:
   - `ListProjectMembers`, `AddProjectMember`, `ChangeProjectMemberRole` e `RemoveProjectMember`, numa transação serializável;
   - rotas `/api/projects/{id}/members` e `canManagePeople` e `canManageManagers` no projeto;
   - `techLeadDirectoryId` na criação.

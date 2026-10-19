@@ -25,6 +25,12 @@ public enum ProjectRole
 /// <summary>A closed project only changes its status, until it is reopened (ADR-0016).</summary>
 public sealed class ProjectClosedException() : InvalidOperationException("The project is closed: reopen it to change it.");
 
+/// <summary>The person is already in the project: one role per person, changed by changing the role (ADR-0042).</summary>
+public sealed class ProjectMemberExistsException() : InvalidOperationException("The person is already in the project.");
+
+/// <summary>The change would leave the project without a manager (ADR-0042).</summary>
+public sealed class LastManagerException() : InvalidOperationException("The project always has a manager.");
+
 /// <summary>
 /// A project (ADR-0016): the code, the name, the description, the client (none for an internal project), the status
 /// and the people in it, each with a role. It is created with its manager and, optionally, its tech lead (ADR-0072).
@@ -103,17 +109,70 @@ public sealed class Project : Entity
     }
 
     /// <summary>The role of the person in the project, or null when the person is not in it.</summary>
-    public ProjectRole? RoleOf(Guid userId) => _members.FirstOrDefault(member => member.UserId == userId)?.Role;
+    public ProjectRole? RoleOf(Guid userId) => MemberOf(userId)?.Role;
+
+    /// <summary>Includes a person with a role (ADR-0042).</summary>
+    /// <exception cref="ProjectClosedException">The project is completed or cancelled.</exception>
+    /// <exception cref="ProjectMemberExistsException">The person is already in the project.</exception>
+    public ProjectMember AddMember(Guid userId, ProjectRole role, DateTime now)
+    {
+        EnsureOpen();
+        EnsureKnown(role);
+        if (MemberOf(userId) is not null)
+        {
+            throw new ProjectMemberExistsException();
+        }
+
+        var member = new ProjectMember(Id, userId, role, now);
+        _members.Add(member);
+        return member;
+    }
+
+    /// <summary>Changes the role of a person in the project; false when the person is not in it.</summary>
+    /// <exception cref="ProjectClosedException">The project is completed or cancelled.</exception>
+    /// <exception cref="LastManagerException">The person is the last manager and the new role is another.</exception>
+    public bool ChangeMemberRole(Guid userId, ProjectRole role)
+    {
+        EnsureOpen();
+        EnsureKnown(role);
+        if (MemberOf(userId) is not { } member)
+        {
+            return false;
+        }
+
+        if (role != ProjectRole.Manager)
+        {
+            EnsureAnotherManager(member);
+        }
+
+        member.ChangeRole(role);
+        return true;
+    }
+
+    /// <summary>
+    /// Removes a person from the project, who loses the access from the next request on (ADR-0042); false when the
+    /// person is not in it.
+    /// </summary>
+    /// <exception cref="ProjectClosedException">The project is completed or cancelled.</exception>
+    /// <exception cref="LastManagerException">The person is the last manager.</exception>
+    public bool RemoveMember(Guid userId)
+    {
+        EnsureOpen();
+        if (MemberOf(userId) is not { } member)
+        {
+            return false;
+        }
+
+        EnsureAnotherManager(member);
+        _members.Remove(member);
+        return true;
+    }
 
     /// <summary>Changes the code, the name, the description and the client.</summary>
     /// <exception cref="ProjectClosedException">The project is completed or cancelled.</exception>
     public void Change(string code, string name, string? description, Guid? clientId)
     {
-        if (IsClosed)
-        {
-            throw new ProjectClosedException();
-        }
-
+        EnsureOpen();
         SetData(code, name, description, clientId);
     }
 
@@ -126,6 +185,34 @@ public sealed class Project : Entity
         }
 
         Status = status;
+    }
+
+    private ProjectMember? MemberOf(Guid userId) => _members.FirstOrDefault(member => member.UserId == userId);
+
+    private void EnsureOpen()
+    {
+        if (IsClosed)
+        {
+            throw new ProjectClosedException();
+        }
+    }
+
+    private static void EnsureKnown(ProjectRole role)
+    {
+        if (!Enum.IsDefined(role))
+        {
+            throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown project role.");
+        }
+    }
+
+    /// <summary>A manager leaves the role only while another manager stays (ADR-0042).</summary>
+    private void EnsureAnotherManager(ProjectMember member)
+    {
+        if (member.Role == ProjectRole.Manager
+            && !_members.Any(other => other != member && other.Role == ProjectRole.Manager))
+        {
+            throw new LastManagerException();
+        }
     }
 
     private void SetData(string code, string name, string? description, Guid? clientId)
@@ -165,4 +252,6 @@ public sealed class ProjectMember : Entity
     public ProjectRole Role { get; private set; }
 
     public DateTime AddedAt { get; private init; }
+
+    internal void ChangeRole(ProjectRole role) => Role = role;
 }

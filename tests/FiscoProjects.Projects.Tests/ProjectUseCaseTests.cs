@@ -64,7 +64,7 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         var details = await GetAsync(created.Id!.Value, Marina);
 
         details!.Members.Should().Equal(new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager));
-        details.Permissions.Should().Be(new ProjectPermissions(true, true, true));
+        details.Permissions.Should().Be(new ProjectPermissions(true, true, true, true, true));
     }
 
     [Fact(DisplayName = "Projeto para outro gerente")]
@@ -102,7 +102,7 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         details!.Members.Should().Equal(
             new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager),
             new ProjectPerson(_rafael, "Rafael Souza", ProjectRole.TechLead));
-        details.Permissions.Should().Be(new ProjectPermissions(true, true, false));
+        details.Permissions.Should().Be(new ProjectPermissions(true, true, false, true, false));
     }
 
     [Fact(DisplayName = "Líder técnico inválido")]
@@ -164,7 +164,7 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         await AddMemberAsync(created.Id!.Value, _rafael, role);
         var rafael = new ProjectViewer(_rafael, false);
 
-        (await GetAsync(created.Id!.Value, rafael))!.Permissions.Should().Be(new ProjectPermissions(true, false, false));
+        (await GetAsync(created.Id!.Value, rafael))!.Permissions.Should().Be(new ProjectPermissions(true, false, false, false, false));
         (await ChangeAsync(created.Id!.Value, new ProjectChanges("ERP-FIN", "Outro", null, null), rafael))
             .Outcome.Should().Be(ProjectSaveOutcome.Forbidden);
         (await ChangeStatusAsync(created.Id!.Value, ProjectStatus.Paused, rafael)).Should().Be(ProjectStatusOutcome.Forbidden);

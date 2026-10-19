@@ -101,21 +101,139 @@ public sealed class ProjectTests
         project.Status.Should().Be(ProjectStatus.InProgress);
     }
 
-    // The matrix of ADR-0043 for the project: viewing, changing the data and changing the status.
+    // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status and managing the people.
     [Theory(DisplayName = "Permissões no projeto")]
-    [InlineData(false, ProjectRole.Manager, true, true, true)]
-    [InlineData(false, ProjectRole.TechLead, true, true, false)]
-    [InlineData(false, ProjectRole.Contributor, true, false, false)]
-    [InlineData(false, ProjectRole.Developer, true, false, false)]
-    [InlineData(false, ProjectRole.Viewer, true, false, false)]
-    [InlineData(false, null, false, false, false)]
-    [InlineData(true, null, true, true, true)]
-    [InlineData(true, ProjectRole.Viewer, true, true, true)]
+    [InlineData(false, ProjectRole.Manager, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false)]
+    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false)]
+    [InlineData(false, ProjectRole.Developer, true, false, false, false, false)]
+    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false)]
+    [InlineData(false, null, false, false, false, false, false)]
+    [InlineData(true, null, true, true, true, true, true)]
+    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true)]
     public void Permissions_FollowTheMatrix(
-        bool administrator, ProjectRole? role, bool canView, bool canEditData, bool canChangeStatus)
+        bool administrator,
+        ProjectRole? role,
+        bool canView,
+        bool canEditData,
+        bool canChangeStatus,
+        bool canManagePeople,
+        bool canManageManagers)
     {
         var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
 
-        permissions.Should().Be(new ProjectPermissions(canView, canEditData, canChangeStatus));
+        permissions.Should().Be(new ProjectPermissions(canView, canEditData, canChangeStatus, canManagePeople, canManageManagers));
+    }
+
+    // ADR-0042, ADR-0043: the tech lead manages the people, but not the managers, and makes no one a manager.
+    [Theory(DisplayName = "Quem gerencia cada pessoa")]
+    [InlineData(ProjectRole.Manager, null, ProjectRole.Developer, true)]
+    [InlineData(ProjectRole.Manager, null, ProjectRole.Manager, true)]
+    [InlineData(ProjectRole.Manager, ProjectRole.Manager, null, true)]
+    [InlineData(ProjectRole.TechLead, null, ProjectRole.Developer, true)]
+    [InlineData(ProjectRole.TechLead, ProjectRole.Developer, ProjectRole.TechLead, true)]
+    [InlineData(ProjectRole.TechLead, ProjectRole.TechLead, null, true)]
+    [InlineData(ProjectRole.TechLead, null, ProjectRole.Manager, false)]
+    [InlineData(ProjectRole.TechLead, ProjectRole.Developer, ProjectRole.Manager, false)]
+    [InlineData(ProjectRole.TechLead, ProjectRole.Manager, ProjectRole.TechLead, false)]
+    [InlineData(ProjectRole.TechLead, ProjectRole.Manager, null, false)]
+    [InlineData(ProjectRole.Contributor, null, ProjectRole.Developer, false)]
+    [InlineData(ProjectRole.Developer, ProjectRole.Viewer, null, false)]
+    [InlineData(ProjectRole.Viewer, ProjectRole.Developer, ProjectRole.Contributor, false)]
+    public void WhoManagesEachPerson(ProjectRole viewerRole, ProjectRole? current, ProjectRole? next, bool allowed)
+    {
+        var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), false), viewerRole);
+
+        permissions.MayManage(current, next).Should().Be(allowed);
+    }
+
+    // Spec: membros-do-projeto, requirements "Um papel por pessoa", "Último gerente" and "Pessoas de um projeto encerrado".
+    [Fact(DisplayName = "Incluir, trocar o papel e remover no domínio")]
+    public void Members_AreIncluded_Changed_AndRemoved()
+    {
+        var (project, manager) = NewProject();
+        var diego = Guid.CreateVersion7();
+
+        project.AddMember(diego, ProjectRole.Developer, Now.AddDays(1)).AddedAt.Should().Be(Now.AddDays(1));
+        project.RoleOf(diego).Should().Be(ProjectRole.Developer);
+        project.ChangeMemberRole(diego, ProjectRole.Contributor).Should().BeTrue();
+        project.RoleOf(diego).Should().Be(ProjectRole.Contributor);
+        project.RemoveMember(diego).Should().BeTrue();
+
+        project.RoleOf(diego).Should().BeNull();
+        project.Members.Select(member => member.UserId).Should().Equal(manager);
+    }
+
+    [Fact(DisplayName = "Pessoa que já está no projeto")]
+    public void PersonAlreadyInTheProject_IsRefused()
+    {
+        var (project, manager) = NewProject();
+
+        var include = () => project.AddMember(manager, ProjectRole.Developer, Now);
+
+        include.Should().Throw<ProjectMemberExistsException>();
+        project.RoleOf(manager).Should().Be(ProjectRole.Manager);
+    }
+
+    [Fact(DisplayName = "Pessoa fora do projeto")]
+    public void PersonNotInTheProject_IsNotChangedNorRemoved()
+    {
+        var (project, _) = NewProject();
+
+        project.ChangeMemberRole(Guid.CreateVersion7(), ProjectRole.Viewer).Should().BeFalse();
+        project.RemoveMember(Guid.CreateVersion7()).Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Remover e rebaixar o último gerente")]
+    public void LastManager_IsNeitherRemovedNorDemoted()
+    {
+        var (project, manager) = NewProject();
+
+        var remove = () => project.RemoveMember(manager);
+        var demote = () => project.ChangeMemberRole(manager, ProjectRole.TechLead);
+
+        remove.Should().Throw<LastManagerException>();
+        demote.Should().Throw<LastManagerException>();
+        project.RoleOf(manager).Should().Be(ProjectRole.Manager);
+    }
+
+    [Fact(DisplayName = "Outro gerente no projeto")]
+    public void WithAnotherManager_AManagerLeaves()
+    {
+        var (project, manager) = NewProject();
+        var beatriz = Guid.CreateVersion7();
+        project.AddMember(beatriz, ProjectRole.Manager, Now);
+
+        project.ChangeMemberRole(manager, ProjectRole.TechLead).Should().BeTrue();
+        var removeTheLast = () => project.RemoveMember(beatriz);
+
+        removeTheLast.Should().Throw<LastManagerException>();
+        project.ChangeMemberRole(manager, ProjectRole.Manager).Should().BeTrue();
+        project.RemoveMember(beatriz).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Pessoas de um projeto encerrado")]
+    public void ClosedProject_KeepsItsPeople()
+    {
+        var (project, manager) = NewProject();
+        var diego = Guid.CreateVersion7();
+        project.AddMember(diego, ProjectRole.Developer, Now);
+        project.ChangeStatus(ProjectStatus.Completed);
+
+        var include = () => project.AddMember(Guid.CreateVersion7(), ProjectRole.Viewer, Now);
+        var change = () => project.ChangeMemberRole(diego, ProjectRole.Viewer);
+        var remove = () => project.RemoveMember(diego);
+
+        include.Should().Throw<ProjectClosedException>();
+        change.Should().Throw<ProjectClosedException>();
+        remove.Should().Throw<ProjectClosedException>();
+        project.Members.Should().HaveCount(2);
+        project.RoleOf(manager).Should().Be(ProjectRole.Manager);
+    }
+
+    private static (Project Project, Guid Manager) NewProject()
+    {
+        var manager = Guid.CreateVersion7();
+        return (Project.Create("ERP-FIN", "ERP", null, null, manager, null, Now), manager);
     }
 }
