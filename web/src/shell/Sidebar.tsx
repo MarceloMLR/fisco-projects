@@ -1,3 +1,4 @@
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
@@ -6,19 +7,30 @@ import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
 
+/** My profile at the end of the phone menu, as in the canvas; on a computer it is in the account menu. */
+const profileItem = {
+  key: 'profile',
+  path: '/profile',
+  labelKey: 'pages.profile.title',
+  icon: PersonOutlined,
+} as const;
+
 /**
  * Sidebar from the design system (Sidebar, fp-sidebar): full height, product name on top, then the main
- * navigation. Without the brand it is the content of the phone menu.
+ * navigation. Without the brand it is the content of the phone menu, which also has My profile.
  */
 export function Sidebar({
   brand = true,
+  withProfile = false,
   onNavigate,
 }: {
   brand?: boolean;
+  withProfile?: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
-  const navigation = useMainNavigation();
+  const mainItems = useMainNavigation();
+  const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
 
   return (
     <Box

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { components } from '../api/schema';
-import type { SessionUser } from '../api/client';
+import type { Profile, SessionUser } from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
 type AuditEntryResponse = components['schemas']['AuditEntryResponse'];
@@ -14,6 +14,7 @@ export const marina: SessionUser = {
   name: 'Marina Costa',
   email: 'marina.costa@empresa.example',
   role: 'User',
+  theme: 'Automatic',
 };
 
 /**
@@ -169,6 +170,11 @@ export function auditPage(entries: readonly AuditEntryResponse[], url: URL) {
   };
 }
 
+/** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */
+export function profileOf(person: SessionUser): Profile {
+  return { ...person, lastSignInAt: '2026-10-19T12:12:00Z', signInMethods: ['local'] };
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
@@ -179,6 +185,8 @@ export const handlers = [
   ),
   http.get('/api/session/sign-in-options', () => HttpResponse.json({ localSignIn: true })),
   http.post('/api/session/sign-out', () => new HttpResponse(null, { status: 204 })),
+  http.get('/api/profile', () => HttpResponse.json(profileOf(marina))),
+  http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
 ];
 
 export const server = setupServer(...handlers);

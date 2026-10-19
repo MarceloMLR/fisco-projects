@@ -19,14 +19,14 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 No `SessionProvider`, aplicar o tema da sessão (e `system` sem sessão) e criar `chooseTheme`, que volta atrás se a API recusar. Testar:
+- [x] 2.1 No `SessionProvider`, aplicar o tema da sessão (e `system` sem sessão) e criar `chooseTheme`, que volta atrás se a API recusar. Testar:
   - "Tema segue o sistema";
   - "Tema em outro navegador";
   - "Página de entrada segue o sistema".
 
   Verificar com `npm test`.
-- [ ] 2.2 Criar o `SegmentedControl` (com a variante só de ícones e as setas do teclado) e passar o `AccountMenu` para Meu perfil, Tema e Sair. Testar "Conta no cabeçalho" e "Escolher o tema". Verificar com `npm test` e `npm run lint`.
-- [ ] 2.3 Criar a tela Meu perfil (`/profile`) com `profileQuery`, as opções de tema com miniaturas e a Conta. Também:
+- [x] 2.2 Criar o `SegmentedControl` (com a variante só de ícones e as setas do teclado) e passar o `AccountMenu` para Meu perfil, Tema e Sair. Testar "Conta no cabeçalho" e "Escolher o tema". Verificar com `npm test` e `npm run lint`.
+- [x] 2.3 Criar a tela Meu perfil (`/profile`) com `profileQuery`, as opções de tema com miniaturas e a Conta. Também:
   - o item Meu perfil no menu do celular;
   - o `navigation` opcional no `PageHandle`;
   - testar "Dados da conta", "Tema na tela Meu perfil", "Meu perfil pelo menu da conta" e "Menu no celular".

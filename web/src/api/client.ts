@@ -6,6 +6,15 @@ export type SystemRole = components['schemas']['SystemRole'];
 export type UserRow = components['schemas']['UserResponse'];
 export type AuditEntry = components['schemas']['AuditEntryResponse'];
 export type AuditField = components['schemas']['AuditFieldResponse'];
+export type ThemePreference = components['schemas']['ThemePreference'];
+export type Profile = components['schemas']['ProfileResponse'];
+
+/** Themes in the order the screens offer them (ADR-0014). */
+export const themePreferences = [
+  'Light',
+  'Dark',
+  'Automatic',
+] as const satisfies readonly ThemePreference[];
 
 /** Item types the Audit screen filters by, in the order of the filter (AuditItemTypes and the module entities). */
 export const auditItemTypes = ['SignIn', 'User'] as const;

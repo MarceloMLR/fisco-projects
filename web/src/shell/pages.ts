@@ -40,7 +40,8 @@ export type PageTitleKey =
   | 'pages.tickets.title'
   | 'pages.admin.title'
   | 'pages.users.title'
-  | 'pages.audit.title';
+  | 'pages.audit.title'
+  | 'pages.profile.title';
 
 /** A level of the trail above the page: an area that leads to its own address. */
 export interface TrailLevel {
@@ -48,17 +49,18 @@ export interface TrailLevel {
   path: string;
 }
 
-/** What a route tells the shell about its page: the sidebar item it belongs to, its title and the trail above it. */
+/**
+ * What a route tells the shell about its page: the sidebar item it belongs to (none for My profile, reached from
+ * the account menu), its title and the trail above it.
+ */
 export interface PageHandle {
-  navigation: NavigationKey;
+  navigation?: NavigationKey;
   titleKey: PageTitleKey;
   trail?: readonly TrailLevel[];
 }
 
 function isPageHandle(handle: unknown): handle is PageHandle {
-  return (
-    typeof handle === 'object' && handle !== null && 'titleKey' in handle && 'navigation' in handle
-  );
+  return typeof handle === 'object' && handle !== null && 'titleKey' in handle;
 }
 
 /** The page of the current route. Every route inside the shell declares a PageHandle. */

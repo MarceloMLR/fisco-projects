@@ -80,7 +80,12 @@ describe('Estrutura no celular', () => {
     const items = within(menu)
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(items).toEqual([ptBR.nav.home, ptBR.nav.projects, ptBR.nav.tickets]);
+    expect(items).toEqual([
+      ptBR.nav.home,
+      ptBR.nav.projects,
+      ptBR.nav.tickets,
+      ptBR.pages.profile.title,
+    ]);
 
     fireEvent.click(within(menu).getByRole('link', { name: ptBR.nav.projects }));
 
@@ -88,6 +93,16 @@ describe('Estrutura no celular', () => {
       expect(screen.queryByRole('dialog', { name: ptBR.shell.menu })).not.toBeInTheDocument();
     });
     expect(screen.getByRole('banner')).toHaveTextContent(ptBR.pages.projects.title);
+
+    // My profile, at the end of the menu.
+    fireEvent.click(screen.getByRole('button', { name: ptBR.shell.openMenu }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog', { name: ptBR.shell.menu })).getByRole('link', {
+        name: ptBR.pages.profile.title,
+      }),
+    );
+    expect(await screen.findByRole('heading', { level: 1, name: marina.name })).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toHaveTextContent(ptBR.pages.profile.title);
   });
 });
 
@@ -106,7 +121,21 @@ describe('Conta no cabeçalho', () => {
     expect(account).toHaveAttribute('aria-expanded', 'true');
     expect(menu).toHaveTextContent(marina.name);
     expect(menu).toHaveTextContent(marina.email);
-    expect(within(menu).getByRole('menuitem', { name: ptBR.shell.signOut })).toBeInTheDocument();
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual([ptBR.pages.profile.title, ptBR.shell.signOut]);
+    const themes = within(menu).getByRole('radiogroup', { name: ptBR.profile.theme });
+    expect(
+      within(themes)
+        .getAllByRole('radio')
+        .map((option) => [option.getAttribute('aria-label'), option.getAttribute('aria-checked')]),
+    ).toEqual([
+      [ptBR.profile.themes.Light, 'false'],
+      [ptBR.profile.themes.Dark, 'false'],
+      [ptBR.profile.themes.Automatic, 'true'],
+    ]);
   });
 
   it('Sair', async () => {
