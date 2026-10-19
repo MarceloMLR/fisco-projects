@@ -68,7 +68,7 @@
   - nos temas claro e escuro, no computador e no celular.
 
   Mandar as capturas para Marcelo.
-- [ ] 4.2 Documentação e verificações:
+- [x] 4.2 Documentação e verificações:
   - glossário, `CLAUDE.md` e roadmap;
   - rodar todos os scripts de `scripts/ci` sem erro;
   - abrir o PR e confirmar a verificação `verify`.
