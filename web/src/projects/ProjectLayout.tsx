@@ -31,15 +31,17 @@ const CompleteIcon = projectStatusLook.Completed.icon;
 const CancelIcon = projectStatusLook.Cancelled.icon;
 
 /**
- * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral or Membros, each at its own
- * address. "Ações do projeto", in every tab, offers to edit the data and to change the status, as the person may
+ * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral, Cronograma or Membros,
+ * each at its own address. "Ações do projeto", in every tab, offers to edit the data and to change the status, as the person may
  * (ADR-0043); a closed project says it is read-only (ADR-0016). The tabs get the project and the message at the bottom
  * (useProjectOutlet).
  */
 export function ProjectLayout() {
   const { t } = useTranslation();
   const { projectId = '' } = useParams();
-  const tab = useMatch('/projects/:projectId/members') === null ? 'overview' : 'members';
+  const onMembers = useMatch('/projects/:projectId/members') !== null;
+  const onSchedule = useMatch('/projects/:projectId/schedule') !== null;
+  const tab = onMembers ? 'members' : onSchedule ? 'schedule' : 'overview';
   const queryClient = useQueryClient();
   const { data: project, error, isPending } = useQuery(projectQuery(projectId));
   const [menu, setMenu] = useState<HTMLElement>();

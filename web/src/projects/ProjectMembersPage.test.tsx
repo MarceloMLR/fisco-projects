@@ -447,6 +447,11 @@ describe('Abas do projeto', () => {
       'aria-selected',
       'true',
     );
+    expect(
+      within(screen.getByRole('tablist', { name: ptBR.projects.header.tabs }))
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual([ptBR.pages.project.title, ptBR.pages.projectSchedule.title, 'Membros5']);
 
     fireEvent.click(members);
 
@@ -455,6 +460,14 @@ describe('Abas do projeto', () => {
     });
     expect(await screen.findByRole('grid', { name: text.table })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Membros/ })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: ptBR.pages.projectSchedule.title }));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/projects/${project.id}/schedule`);
+    });
+    expect(screen.getByRole('tab', { name: ptBR.pages.projectSchedule.title })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     fireEvent.click(screen.getByRole('tab', { name: ptBR.pages.project.title }));
     expect(await screen.findByRole('region', { name: ptBR.projects.overview.team })).toBeVisible();
   });

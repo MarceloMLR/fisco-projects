@@ -27,10 +27,18 @@ public sealed record ProjectClient(Guid Id, string Name, DateTime? LogoChangedAt
 /// <summary>A person in a project, by name, with the role in it.</summary>
 public sealed record ProjectPerson(Guid Id, string Name, ProjectRole Role);
 
+/// <summary>A project of the list, with the numbers of its schedule (null without tasks and milestones).</summary>
 public sealed record ProjectListItem(
-    Guid Id, string Code, string Name, ProjectClient? Client, ProjectStatus Status, IReadOnlyList<ProjectPerson> Managers);
+    Guid Id,
+    string Code,
+    string Name,
+    ProjectClient? Client,
+    ProjectStatus Status,
+    IReadOnlyList<ProjectPerson> Managers,
+    ScheduleFigures? Schedule);
 
-public sealed record ProjectListPage(IReadOnlyList<ProjectListItem> Items, int Total);
+/// <summary>A page of the list, with today in the time zone of the installation, the day the schedules are seen on.</summary>
+public sealed record ProjectListPage(IReadOnlyList<ProjectListItem> Items, int Total, DateOnly Today);
 
 /// <summary>A project of the list as the store reads it: the managers by id.</summary>
 public sealed record ProjectListRow(
@@ -89,8 +97,11 @@ internal static class PeopleNames
         names.TryGetValue(id, out var name) ? name : string.Empty;
 }
 
-/// <summary>The projects the person sees, with the names of the managers (ADR-0016, ADR-0043).</summary>
-public sealed class ListProjects(IProjectStore store, IUserDirectory users)
+/// <summary>
+/// The projects the person sees, with the names of the managers (ADR-0016, ADR-0043) and the numbers of their schedules
+/// for the strip of phases and the final deadline (ADR-0071).
+/// </summary>
+public sealed class ListProjects(IProjectStore store, IScheduleStore schedules, IUserDirectory users, InstallationClock clock)
 {
     public async Task<ProjectListPage> ExecuteAsync(
         ProjectListQuery query, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -101,6 +112,8 @@ public sealed class ListProjects(IProjectStore store, IUserDirectory users)
             viewer,
             cancellationToken);
         var names = await PeopleNames.OfAsync(users, rows.Items.SelectMany(row => row.ManagerIds), cancellationToken);
+        var parts = await schedules.OfProjectsAsync([.. rows.Items.Select(row => row.Id)], cancellationToken);
+        var today = await clock.TodayAsync(cancellationToken);
         return new ProjectListPage(
             [.. rows.Items.Select(row => new ProjectListItem(
                 row.Id,
@@ -110,17 +123,28 @@ public sealed class ListProjects(IProjectStore store, IUserDirectory users)
                 row.Status,
                 [.. row.ManagerIds
                     .Select(id => new ProjectPerson(id, PeopleNames.NameOf(names, id), ProjectRole.Manager))
-                    .OrderBy(person => person.Name, StringComparer.CurrentCulture)]))],
-            rows.Total);
+                    .OrderBy(person => person.Name, StringComparer.CurrentCulture)],
+                parts.TryGetValue(row.Id, out var schedule) && schedule.Items.Count > 0
+                    ? ScheduleFigures.Of(schedule.Phases, schedule.Items, today)
+                    : null))],
+            rows.Total,
+            today);
     }
 }
 
-/// <summary>A project as its page shows it: the client, the people by name and what the person may do.</summary>
+/// <summary>
+/// A project as its page shows it: the client, the people by name, what the person may do and the dates of the schedule
+/// (null without tasks and milestones).
+/// </summary>
 public sealed record ProjectDetails(
-    Project Project, ProjectClient? Client, IReadOnlyList<ProjectPerson> Members, ProjectPermissions Permissions);
+    Project Project,
+    ProjectClient? Client,
+    IReadOnlyList<ProjectPerson> Members,
+    ProjectPermissions Permissions,
+    SchedulePeriod? Schedule);
 
 /// <summary>One project, for the people in it and the Administrator; for anyone else, it does not exist.</summary>
-public sealed class GetProject(IProjectStore store, IClientStore clients, IUserDirectory users)
+public sealed class GetProject(IProjectStore store, IClientStore clients, IScheduleStore schedules, IUserDirectory users)
 {
     public async Task<ProjectDetails?> ExecuteAsync(Guid id, ProjectViewer viewer, CancellationToken cancellationToken)
     {
@@ -145,7 +169,8 @@ public sealed class GetProject(IProjectStore store, IClientStore clients, IUserD
                 .Select(member => new ProjectPerson(member.UserId, PeopleNames.NameOf(names, member.UserId), member.Role))
                 .OrderBy(person => person.Role)
                 .ThenBy(person => person.Name, StringComparer.CurrentCulture)],
-            permissions);
+            permissions,
+            await schedules.PeriodAsync(id, cancellationToken));
     }
 }
 

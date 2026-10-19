@@ -11,26 +11,31 @@ import type { ProjectRow, ProjectSituation } from '../api/client';
 import { clientChoicesQuery, projectsQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
+import { DueDate } from '../components/DueDate';
+import { ScheduleStrip } from '../components/ScheduleStrip';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Select } from '../components/Select';
 import { TextField } from '../components/TextField';
+import { formatDayText } from '../format/dates';
 import { useDebounced } from '../hooks/useDebounced';
 import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
+import { summaryText } from './schedule';
 
 const pageSize = 25;
 const searchDelay = 300;
 const allClients = 'all';
-const noProjects = { items: [], total: 0 };
+const noProjects = { items: [], total: 0, today: '' };
 
 const secondarySx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 
 /**
  * Projetos (canvas Projetos): the projects the person sees, in alphabetical order, with the search by code or name,
- * the filter of client and the situation, the active ones by default (ADR-0016). The schedule columns say "Sem
- * cronograma" until the schedule exists (Cronograma-1). Only the Administrator and the Project manager create projects.
+ * the filter of client and the situation, the active ones by default (ADR-0016). Each project shows the strip of
+ * phases with its progress and current phase, and the final deadline with the late tasks (ADR-0071); "Sem cronograma"
+ * without tasks and milestones. Only the Administrator and the Project manager create projects.
  */
 export function ProjectsPage() {
   const { t } = useTranslation();
@@ -56,6 +61,7 @@ export function ProjectsPage() {
     placeholderData: keepPreviousData,
   });
   const projects = data ?? noProjects;
+  const { today } = projects;
   const { data: clients } = useQuery(clientChoicesQuery());
 
   const columns = useMemo<DataTableColumn<ProjectRow>[]>(
@@ -114,23 +120,77 @@ export function ProjectsPage() {
       {
         field: 'schedule',
         headerName: t('projects.columns.schedule'),
-        flex: 1.2,
-        minWidth: 180,
-        renderCell: () => (
-          <Box component="span" sx={secondarySx}>
-            {t('projects.noSchedule')}
-          </Box>
-        ),
+        flex: 1.4,
+        minWidth: 220,
+        renderCell: ({ row }) => {
+          const schedule = row.schedule;
+          if (schedule === null) {
+            return (
+              <Box component="span" sx={secondarySx}>
+                {t('projects.noSchedule')}
+              </Box>
+            );
+          }
+          const text = summaryText(schedule, today, t);
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-1)',
+                width: '100%',
+              }}
+            >
+              <ScheduleStrip
+                start={schedule.start}
+                end={schedule.end}
+                phases={schedule.phases}
+                milestones={schedule.milestones}
+                today={today}
+                label={t('projects.schedule.strip', {
+                  start: formatDayText(schedule.start),
+                  end: formatDayText(schedule.end),
+                })}
+              />
+              <Box
+                component="span"
+                sx={{
+                  ...secondarySx,
+                  fontSize: 12,
+                  lineHeight: '16px',
+                  fontVariantNumeric: 'tabular-nums',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {text}
+              </Box>
+            </Box>
+          );
+        },
       },
       {
         field: 'deadline',
         headerName: t('projects.columns.deadline'),
-        width: 140,
-        renderCell: () => (
-          <Box component="span" sx={secondarySx}>
-            {t('projects.noDate')}
-          </Box>
-        ),
+        width: 168,
+        renderCell: ({ row }) =>
+          row.schedule === null ? (
+            <Box component="span" sx={secondarySx}>
+              {t('projects.noDate')}
+            </Box>
+          ) : (
+            <Box sx={{ minWidth: 0 }}>
+              <Box component="span" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>
+                {formatDayText(row.schedule.end)}
+              </Box>
+              {row.schedule.lateTasks > 0 && (
+                <DueDate state="overdue">
+                  {t('projects.schedule.lateTasks', { count: row.schedule.lateTasks })}
+                </DueDate>
+              )}
+            </Box>
+          ),
       },
       {
         field: 'manager',
@@ -152,7 +212,7 @@ export function ProjectsPage() {
         },
       },
     ],
-    [t],
+    [t, today],
   );
 
   const choose = useCallback(

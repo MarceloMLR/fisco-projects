@@ -1,0 +1,350 @@
+using FiscoProjects.Administration.Contracts;
+using FiscoProjects.Calendar.Contracts;
+using FiscoProjects.Projects.Domain;
+using FiscoProjects.Users.Contracts;
+
+namespace FiscoProjects.Projects.Application;
+
+/// <summary>The phases and the items of the schedule of a project, as the list of projects reads them.</summary>
+public sealed record ScheduleParts(IReadOnlyList<SchedulePhase> Phases, IReadOnlyList<ScheduleItem> Items);
+
+/// <summary>The first start and the last end of a schedule.</summary>
+public sealed record SchedulePeriod(DateOnly Start, DateOnly End);
+
+/// <summary>
+/// Where the schedules are kept, in the same unit of work as the projects: a change is saved by
+/// <see cref="IProjectStore.SaveChangesAsync"/>, in the transaction of <see cref="IProjectStore.InSerializableTransactionAsync"/>.
+/// </summary>
+public interface IScheduleStore
+{
+    /// <summary>The schedule with its phases, items and dependencies, tracked; null while the project has none.</summary>
+    Task<Schedule?> FindAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>The schedule, tracked, created now when the project has none yet.</summary>
+    Task<Schedule> GetOrAddAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>The phases and items of each project, without tracking, for the list of projects.</summary>
+    Task<IReadOnlyDictionary<Guid, ScheduleParts>> OfProjectsAsync(
+        IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken);
+
+    /// <summary>The dates of the schedule of a project; null without tasks and milestones.</summary>
+    Task<SchedulePeriod?> PeriodAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>The name of each phase found.</summary>
+    Task<IReadOnlyDictionary<Guid, string>> PhaseNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
+    /// <summary>The name of each task or milestone found.</summary>
+    Task<IReadOnlyDictionary<Guid, string>> ItemNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+}
+
+/// <summary>Today in the time zone of the installation (ADR-0013), for the delays and the completion of the tasks.</summary>
+public sealed class InstallationClock(IInstallationSettings settings, TimeProvider clock)
+{
+    public async Task<DateOnly> TodayAsync(CancellationToken cancellationToken)
+    {
+        var installation = await settings.GetAsync(cancellationToken);
+        var zone = TimeZoneInfo.TryFindSystemTimeZoneById(installation.TimeZone, out var found) ? found : TimeZoneInfo.Utc;
+        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(clock.GetUtcNow().UtcDateTime, zone));
+    }
+}
+
+/// <summary>
+/// A schedule as the Schedule tab shows it: the numbers of the day (<see cref="ScheduleFigures"/>), the names of the
+/// owners and the items each item depends on.
+/// </summary>
+public sealed record ScheduleView(
+    ScheduleFigures Figures,
+    IReadOnlyDictionary<Guid, string> OwnerNames,
+    IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors);
+
+/// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
+public sealed class GetSchedule(IProjectStore projects, IScheduleStore schedules, IUserDirectory users, InstallationClock clock)
+{
+    /// <returns>The schedule, empty while the project has none, or null when the project does not exist for the person.</returns>
+    public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var project = await projects.FindAsync(projectId, cancellationToken);
+        if (project is null || !ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId)).CanView)
+        {
+            return null;
+        }
+
+        var schedule = await schedules.FindAsync(projectId, cancellationToken) ?? new Schedule(projectId);
+        var today = await clock.TodayAsync(cancellationToken);
+        var names = await PeopleNames.OfAsync(
+            users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
+        return new ScheduleView(
+            schedule.Figures(today),
+            names,
+            schedule.Dependencies
+                .GroupBy(dependency => dependency.SuccessorId)
+                .ToDictionary(group => group.Key, group => (IReadOnlyList<Guid>)[.. group.Select(dependency => dependency.PredecessorId)]));
+    }
+}
+
+/// <summary>What happened to a change of the schedule.</summary>
+public enum ScheduleOutcome
+{
+    Done = 1,
+
+    /// <summary>The project, or the phase or item in it, does not exist for the person who asks.</summary>
+    NotFound = 2,
+
+    Forbidden = 3,
+    Invalid = 4,
+    Closed = 5,
+
+    /// <summary>An item it would depend on already depends on it (ADR-0019).</summary>
+    Cycle = 6,
+}
+
+/// <summary>A field of the forms of the schedule.</summary>
+public enum ScheduleField
+{
+    Name = 1,
+    Phase = 2,
+    Start = 3,
+    Duration = 4,
+    Progress = 5,
+    Owner = 6,
+    Predecessors = 7,
+}
+
+/// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
+public sealed record ScheduleResult(ScheduleOutcome Outcome, Guid? Id, int Pushed, IReadOnlyList<ScheduleField> Invalid)
+{
+    public static ScheduleResult Of(ScheduleOutcome outcome) => new(outcome, null, 0, []);
+
+    public static ScheduleResult Done(Guid? id = null, int pushed = 0) => new(ScheduleOutcome.Done, id, pushed, []);
+
+    public static ScheduleResult InvalidFields(IReadOnlyList<ScheduleField> fields) => new(ScheduleOutcome.Invalid, null, 0, fields);
+}
+
+/// <summary>
+/// The common part of the changes of a schedule: only the Administrator and the manager change it, while the project
+/// is open (ADR-0016, ADR-0043). The change runs in a serializable transaction, so two changes at once never break a
+/// chain of dependencies, and a person leaving the project never leaves an owner who is no longer in it.
+/// </summary>
+internal static class ScheduleEditing
+{
+    public static async Task<ScheduleResult> RunAsync(
+        IProjectStore projects,
+        IScheduleStore schedules,
+        Guid projectId,
+        ProjectViewer viewer,
+        Func<Project, Schedule, ScheduleResult> change,
+        CancellationToken cancellationToken)
+    {
+        if (Refusal(await projects.FindAsync(projectId, cancellationToken), viewer) is { } refusal)
+        {
+            return refusal;
+        }
+
+        return await projects.InSerializableTransactionAsync(async token =>
+        {
+            var project = await projects.FindAsync(projectId, token);
+            if (Refusal(project, viewer) is { } late)
+            {
+                return late;
+            }
+
+            var result = change(project!, await schedules.GetOrAddAsync(projectId, token));
+            if (result.Outcome == ScheduleOutcome.Done)
+            {
+                await projects.SaveChangesAsync(token);
+            }
+
+            return result;
+        }, cancellationToken);
+    }
+
+    /// <summary>A task is in charge of a person of the project who is not a viewer (ADR-0043).</summary>
+    public static bool MayOwn(Project project, Guid? ownerId) =>
+        ownerId is not { } id || project.RoleOf(id) is { } role && role != ProjectRole.Viewer;
+
+    private static ScheduleResult? Refusal(Project? project, ProjectViewer viewer)
+    {
+        var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
+        if (project is null || permissions is not { CanView: true })
+        {
+            return ScheduleResult.Of(ScheduleOutcome.NotFound);
+        }
+
+        if (!permissions.CanEditSchedule)
+        {
+            return ScheduleResult.Of(ScheduleOutcome.Forbidden);
+        }
+
+        return project.IsClosed ? ScheduleResult.Of(ScheduleOutcome.Closed) : null;
+    }
+}
+
+/// <summary>Includes a phase in the schedule, after the others (ADR-0019).</summary>
+public sealed class AddSchedulePhase(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(Guid projectId, string? name, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+            Schedule.ValidPhaseName(name) is { } valid
+                ? ScheduleResult.Done(schedule.AddPhase(valid).Id)
+                : ScheduleResult.InvalidFields([ScheduleField.Name]),
+            cancellationToken);
+}
+
+/// <summary>Renames a phase of the schedule.</summary>
+public sealed class RenameSchedulePhase(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid phaseId, string? name, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+        {
+            if (schedule.PhaseOf(phaseId) is null)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.NotFound);
+            }
+
+            return Schedule.ValidPhaseName(name) is { } valid && schedule.RenamePhase(phaseId, valid)
+                ? ScheduleResult.Done()
+                : ScheduleResult.InvalidFields([ScheduleField.Name]);
+        }, cancellationToken);
+}
+
+/// <summary>Removes a phase with its tasks and milestones and their dependencies; no other item moves (ADR-0019).</summary>
+public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid phaseId, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+            schedule.RemovePhase(phaseId) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
+            cancellationToken);
+}
+
+/// <summary>
+/// The form of a task or milestone: the phase, the name, the start, the duration in business days (zero for a
+/// milestone), the owner (none for a milestone), the progress (zero for a milestone) and the items it depends on.
+/// </summary>
+public sealed record ScheduleItemForm(
+    Guid PhaseId,
+    string? Name,
+    DateOnly Start,
+    int Duration,
+    Guid? OwnerId,
+    int Progress,
+    IReadOnlyCollection<Guid>? PredecessorIds);
+
+/// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
+internal static class ScheduleItemChecks
+{
+    /// <summary>The plan the form asks for, or the invalid fields.</summary>
+    public static (ScheduleItemPlan? Plan, List<ScheduleField> Invalid) Check(
+        Project project, Schedule schedule, ScheduleItemKind kind, ScheduleItemForm form, Guid? itemId)
+    {
+        var invalid = new List<ScheduleField>();
+        var name = Schedule.ValidItemName(form.Name);
+        if (name is null)
+        {
+            invalid.Add(ScheduleField.Name);
+        }
+
+        if (schedule.PhaseOf(form.PhaseId) is null)
+        {
+            invalid.Add(ScheduleField.Phase);
+        }
+
+        if (!Schedule.IsValidDay(form.Start))
+        {
+            invalid.Add(ScheduleField.Start);
+        }
+
+        if (!Schedule.IsValidDuration(kind, form.Duration))
+        {
+            invalid.Add(ScheduleField.Duration);
+        }
+
+        if (!Schedule.IsValidProgress(kind, form.Progress))
+        {
+            invalid.Add(ScheduleField.Progress);
+        }
+
+        if ((kind == ScheduleItemKind.Milestone && form.OwnerId is not null) || !ScheduleEditing.MayOwn(project, form.OwnerId))
+        {
+            invalid.Add(ScheduleField.Owner);
+        }
+
+        var predecessors = form.PredecessorIds ?? [];
+        if (predecessors.Any(id => id == itemId || schedule.ItemOf(id) is null))
+        {
+            invalid.Add(ScheduleField.Predecessors);
+        }
+
+        return invalid.Count > 0
+            ? (null, invalid)
+            : (new ScheduleItemPlan(form.PhaseId, name!, form.Start, form.Duration, form.OwnerId, form.Progress, [.. predecessors.Distinct()]), invalid);
+    }
+}
+
+/// <summary>
+/// Includes a task or a milestone (ADR-0018, ADR-0019): it starts on a business day, after the items it depends on, and
+/// a task ends as many business days later as its duration says.
+/// </summary>
+public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, ScheduleItemKind kind, ScheduleItemForm form, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        var days = await calendar.GetAsync(cancellationToken);
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
+        {
+            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, kind, form, itemId: null);
+            return plan is null
+                ? ScheduleResult.InvalidFields(invalid)
+                : ScheduleResult.Done(schedule.AddItem(kind, plan, days, today).Id);
+        }, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Changes a task or a milestone and pushes, in chain, the items after it that would start before it ends; an earlier
+/// start pulls nobody (ADR-0019). A task that reaches 100% keeps today as the day it was completed (ADR-0020).
+/// </summary>
+public sealed class ChangeScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, ScheduleItemForm form, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        var days = await calendar.GetAsync(cancellationToken);
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
+        {
+            if (schedule.ItemOf(itemId) is not { } item)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.NotFound);
+            }
+
+            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, item.Kind, form, itemId);
+            if (plan is null)
+            {
+                return ScheduleResult.InvalidFields(invalid);
+            }
+
+            try
+            {
+                return ScheduleResult.Done(pushed: schedule.ChangeItem(itemId, plan, days, today) ?? 0);
+            }
+            catch (ScheduleCycleException)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.Cycle);
+            }
+        }, cancellationToken);
+    }
+}
+
+/// <summary>Removes a task or milestone and its dependencies; no other item moves (ADR-0019).</summary>
+public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid itemId, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+            schedule.RemoveItem(itemId) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
+            cancellationToken);
+}

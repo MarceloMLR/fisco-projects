@@ -15,6 +15,14 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
+    public DbSet<Schedule> Schedules => Set<Schedule>();
+
+    public DbSet<SchedulePhase> SchedulePhases => Set<SchedulePhase>();
+
+    public DbSet<ScheduleItem> ScheduleItems => Set<ScheduleItem>();
+
+    public DbSet<ScheduleDependency> ScheduleDependencies => Set<ScheduleDependency>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }

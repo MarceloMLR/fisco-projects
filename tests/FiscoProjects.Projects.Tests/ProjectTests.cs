@@ -101,16 +101,17 @@ public sealed class ProjectTests
         project.Status.Should().Be(ProjectStatus.InProgress);
     }
 
-    // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status and managing the people.
+    // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status, managing the people and
+    // editing the schedule.
     [Theory(DisplayName = "Permissões no projeto")]
-    [InlineData(false, ProjectRole.Manager, true, true, true, true, true)]
-    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false)]
-    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false)]
-    [InlineData(false, ProjectRole.Developer, true, false, false, false, false)]
-    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false)]
-    [InlineData(false, null, false, false, false, false, false)]
-    [InlineData(true, null, true, true, true, true, true)]
-    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false)]
+    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false)]
+    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false)]
+    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false)]
+    [InlineData(false, null, false, false, false, false, false, false)]
+    [InlineData(true, null, true, true, true, true, true, true)]
+    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true)]
     public void Permissions_FollowTheMatrix(
         bool administrator,
         ProjectRole? role,
@@ -118,11 +119,13 @@ public sealed class ProjectTests
         bool canEditData,
         bool canChangeStatus,
         bool canManagePeople,
-        bool canManageManagers)
+        bool canManageManagers,
+        bool canEditSchedule)
     {
         var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
 
-        permissions.Should().Be(new ProjectPermissions(canView, canEditData, canChangeStatus, canManagePeople, canManageManagers));
+        permissions.Should().Be(new ProjectPermissions(
+            canView, canEditData, canChangeStatus, canManagePeople, canManageManagers, canEditSchedule));
     }
 
     // ADR-0042, ADR-0043: the tech lead manages the people, but not the managers, and makes no one a manager.

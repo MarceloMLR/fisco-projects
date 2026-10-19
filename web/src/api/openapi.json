@@ -2418,6 +2418,545 @@
           }
         }
       }
+    },
+    "/api/projects/{id}/schedule": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "GetSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/phases": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "AddSchedulePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulePhaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/phases/{phaseId}": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RenameSchedulePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "phaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulePhaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RemoveSchedulePhase",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "phaseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/items": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "AddScheduleItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewScheduleItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/items/{itemId}": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ChangeScheduleItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleItemChangedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RemoveScheduleItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3124,6 +3663,64 @@
         },
         "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005)."
       },
+      "NewScheduleItemRequest": {
+        "required": [
+          "kind",
+          "phaseId",
+          "name",
+          "start",
+          "duration",
+          "ownerId",
+          "progress",
+          "predecessorIds"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "phaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "predecessorIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a\nmilestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to\n100 (zero for a milestone) and the items it depends on."
+      },
       "PersonResponse": {
         "required": [
           "id",
@@ -3279,7 +3876,8 @@
           "name",
           "client",
           "status",
-          "managers"
+          "managers",
+          "schedule"
         ],
         "type": "object",
         "properties": {
@@ -3311,9 +3909,19 @@
             "items": {
               "$ref": "#/components/schemas/ProjectPersonResponse"
             }
+          },
+          "schedule": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectScheduleSummaryResponse"
+              }
+            ]
           }
         },
-        "description": "One project of the list; without a client, it is an internal project."
+        "description": "One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule."
       },
       "ProjectMemberCreatedResponse": {
         "required": [
@@ -3384,7 +3992,8 @@
       "ProjectPageResponse": {
         "required": [
           "items",
-          "total"
+          "total",
+          "today"
         ],
         "type": "object",
         "properties": {
@@ -3397,15 +4006,21 @@
           "total": {
             "type": "integer",
             "format": "int32"
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
           }
-        }
+        },
+        "description": "A page of the list, with today in the time zone of the installation, the day the schedules are seen on."
       },
       "ProjectPermissionsResponse": {
         "required": [
           "canEdit",
           "canChangeStatus",
           "canManagePeople",
-          "canManageManagers"
+          "canManageManagers",
+          "canEditSchedule"
         ],
         "type": "object",
         "properties": {
@@ -3420,9 +4035,12 @@
           },
           "canManageManagers": {
             "type": "boolean"
+          },
+          "canEditSchedule": {
+            "type": "boolean"
           }
         },
-        "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, and do it also\nwith the managers (ADR-0042)."
+        "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."
       },
       "ProjectPersonResponse": {
         "required": [
@@ -3491,7 +4109,9 @@
           "client",
           "status",
           "members",
-          "permissions"
+          "permissions",
+          "scheduleStart",
+          "scheduleEnd"
         ],
         "type": "object",
         "properties": {
@@ -3532,9 +4152,23 @@
           },
           "permissions": {
             "$ref": "#/components/schemas/ProjectPermissionsResponse"
+          },
+          "scheduleStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "scheduleEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         },
-        "description": "A project as its page shows it, with the people in it and what the person may do."
+        "description": "A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none\nwithout tasks and milestones)."
       },
       "ProjectRole": {
         "enum": [
@@ -3545,6 +4179,64 @@
           "Viewer"
         ],
         "description": "The role of a person in one project (ADR-0040): one per person in each project."
+      },
+      "ProjectScheduleSummaryResponse": {
+        "required": [
+          "start",
+          "end",
+          "progress",
+          "lateTasks",
+          "currentPhase",
+          "completedOn",
+          "phases",
+          "milestones"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lateTasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentPhase": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "completedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchedulePhaseSummaryResponse"
+            }
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase\n(the first late one or, without delays, the last that has started; none before the start), the day the last task\nwas completed when all are at 100%, the phases with items and the days of the milestones."
       },
       "ProjectSituation": {
         "enum": [
@@ -3574,6 +4266,326 @@
             "$ref": "#/components/schemas/ProjectStatus"
           }
         }
+      },
+      "ScheduleCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ScheduleItemChangedResponse": {
+        "required": [
+          "pushed"
+        ],
+        "type": "object",
+        "properties": {
+          "pushed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many items after the changed one were pushed later (ADR-0019)."
+      },
+      "ScheduleItemKind": {
+        "enum": [
+          "Task",
+          "Milestone"
+        ],
+        "description": "A task has a start and a duration in business days; a milestone is one day, without duration (ADR-0018)."
+      },
+      "ScheduleItemRequest": {
+        "required": [
+          "phaseId",
+          "name",
+          "start",
+          "duration",
+          "ownerId",
+          "progress",
+          "predecessorIds"
+        ],
+        "type": "object",
+        "properties": {
+          "phaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ownerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "predecessorIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "A change of a task or a milestone, whose kind stays."
+      },
+      "ScheduleItemResponse": {
+        "required": [
+          "id",
+          "kind",
+          "phaseId",
+          "name",
+          "start",
+          "end",
+          "duration",
+          "progress",
+          "completedOn",
+          "late",
+          "owner",
+          "predecessorIds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "phaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "owner": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScheduleOwnerResponse"
+              }
+            ]
+          },
+          "predecessorIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day it reached 100%, whether it is late, the owner and the ids of\nthe items it depends on."
+      },
+      "ScheduleOwnerResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "The person in charge of a task."
+      },
+      "SchedulePhaseRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SchedulePhaseResponse": {
+        "required": [
+          "id",
+          "name",
+          "start",
+          "end",
+          "progress",
+          "late",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleItemResponse"
+            }
+          }
+        },
+        "description": "A phase, with its dates (none without items), its progress weighted by duration and its items in order."
+      },
+      "SchedulePhaseSummaryResponse": {
+        "required": [
+          "name",
+          "start",
+          "end",
+          "progress",
+          "late"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "description": "A phase in the strip of phases: its dates, its progress and whether a task of it is late."
+      },
+      "ScheduleResponse": {
+        "required": [
+          "today",
+          "start",
+          "end",
+          "progress",
+          "lateTasks",
+          "phases"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lateTasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchedulePhaseResponse"
+            }
+          }
+        },
+        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks are late, and the phases in order."
       },
       "SessionUserResponse": {
         "required": [

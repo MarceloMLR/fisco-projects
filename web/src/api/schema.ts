@@ -532,6 +532,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/phases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AddSchedulePhase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/phases/{phaseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["RenameSchedulePhase"];
+        post?: never;
+        delete: operations["RemoveSchedulePhase"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AddScheduleItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeScheduleItem"];
+        post?: never;
+        delete: operations["RemoveScheduleItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -739,6 +819,26 @@ export interface components {
             techLeadDirectoryId?: null | string;
         };
         /**
+         * @description A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
+         *     milestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to
+         *     100 (zero for a milestone) and the items it depends on.
+         */
+        NewScheduleItemRequest: {
+            kind: components["schemas"]["ScheduleItemKind"];
+            /** Format: uuid */
+            phaseId: string;
+            name: null | string;
+            /** Format: date */
+            start: string;
+            /** Format: int32 */
+            duration: number;
+            /** Format: uuid */
+            ownerId: null | string;
+            /** Format: int32 */
+            progress: number;
+            predecessorIds: null | string[];
+        };
+        /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
          *     active Administrator or Project manager can be a manager (ADR-0085).
@@ -785,7 +885,7 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
-        /** @description One project of the list; without a client, it is an internal project. */
+        /** @description One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule. */
         ProjectListItemResponse: {
             /** Format: uuid */
             id: string;
@@ -794,6 +894,7 @@ export interface components {
             client: null | components["schemas"]["ProjectClientResponse"];
             status: components["schemas"]["ProjectStatus"];
             managers: components["schemas"]["ProjectPersonResponse"][];
+            schedule: null | components["schemas"]["ProjectScheduleSummaryResponse"];
         };
         /** @description The user now in the project; a person of the directory got this user when included. */
         ProjectMemberCreatedResponse: {
@@ -819,21 +920,25 @@ export interface components {
         ProjectMemberRoleRequest: {
             role: components["schemas"]["ProjectRole"];
         };
+        /** @description A page of the list, with today in the time zone of the installation, the day the schedules are seen on. */
         ProjectPageResponse: {
             items: components["schemas"]["ProjectListItemResponse"][];
             /** Format: int32 */
             total: number;
+            /** Format: date */
+            today: string;
         };
         /**
          * @description What the person may do in the project (ADR-0043): change the data, only while the project is open; change the
-         *     status, including reopening it; and, while the project is open, include, change and remove people, and do it also
-         *     with the managers (ADR-0042).
+         *     status, including reopening it; and, while the project is open, include, change and remove people, do it also with
+         *     the managers (ADR-0042), and change the schedule.
          */
         ProjectPermissionsResponse: {
             canEdit: boolean;
             canChangeStatus: boolean;
             canManagePeople: boolean;
             canManageManagers: boolean;
+            canEditSchedule: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -850,7 +955,10 @@ export interface components {
             /** Format: uuid */
             clientId: null | string;
         };
-        /** @description A project as its page shows it, with the people in it and what the person may do. */
+        /**
+         * @description A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none
+         *     without tasks and milestones).
+         */
         ProjectResponse: {
             /** Format: uuid */
             id: string;
@@ -861,12 +969,36 @@ export interface components {
             status: components["schemas"]["ProjectStatus"];
             members: components["schemas"]["ProjectPersonResponse"][];
             permissions: components["schemas"]["ProjectPermissionsResponse"];
+            /** Format: date */
+            scheduleStart: null | string;
+            /** Format: date */
+            scheduleEnd: null | string;
         };
         /**
          * @description The role of a person in one project (ADR-0040): one per person in each project.
          * @enum {unknown}
          */
         ProjectRole: "Manager" | "TechLead" | "Contributor" | "Developer" | "Viewer";
+        /**
+         * @description The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase
+         *     (the first late one or, without delays, the last that has started; none before the start), the day the last task
+         *     was completed when all are at 100%, the phases with items and the days of the milestones.
+         */
+        ProjectScheduleSummaryResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            progress: number;
+            /** Format: int32 */
+            lateTasks: number;
+            currentPhase: null | string;
+            /** Format: date */
+            completedOn: null | string;
+            phases: components["schemas"]["SchedulePhaseSummaryResponse"][];
+            milestones: string[];
+        };
         /**
          * @description Which projects the list shows: the open ones, the closed ones (completed or cancelled) or all.
          * @enum {unknown}
@@ -879,6 +1011,112 @@ export interface components {
         ProjectStatus: "Planning" | "InProgress" | "Paused" | "Completed" | "Cancelled";
         ProjectStatusRequest: {
             status: components["schemas"]["ProjectStatus"];
+        };
+        ScheduleCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description How many items after the changed one were pushed later (ADR-0019). */
+        ScheduleItemChangedResponse: {
+            /** Format: int32 */
+            pushed: number;
+        };
+        /**
+         * @description A task has a start and a duration in business days; a milestone is one day, without duration (ADR-0018).
+         * @enum {unknown}
+         */
+        ScheduleItemKind: "Task" | "Milestone";
+        /** @description A change of a task or a milestone, whose kind stays. */
+        ScheduleItemRequest: {
+            /** Format: uuid */
+            phaseId: string;
+            name: null | string;
+            /** Format: date */
+            start: string;
+            /** Format: int32 */
+            duration: number;
+            /** Format: uuid */
+            ownerId: null | string;
+            /** Format: int32 */
+            progress: number;
+            predecessorIds: null | string[];
+        };
+        /**
+         * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
+         *     milestone), the progress (zero for a milestone), the day it reached 100%, whether it is late, the owner and the ids of
+         *     the items it depends on.
+         */
+        ScheduleItemResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ScheduleItemKind"];
+            /** Format: uuid */
+            phaseId: string;
+            name: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            duration: number;
+            /** Format: int32 */
+            progress: number;
+            /** Format: date */
+            completedOn: null | string;
+            late: boolean;
+            owner: null | components["schemas"]["ScheduleOwnerResponse"];
+            predecessorIds: string[];
+        };
+        /** @description The person in charge of a task. */
+        ScheduleOwnerResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        SchedulePhaseRequest: {
+            name: null | string;
+        };
+        /** @description A phase, with its dates (none without items), its progress weighted by duration and its items in order. */
+        SchedulePhaseResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            start: null | string;
+            /** Format: date */
+            end: null | string;
+            /** Format: int32 */
+            progress: number;
+            late: boolean;
+            items: components["schemas"]["ScheduleItemResponse"][];
+        };
+        /** @description A phase in the strip of phases: its dates, its progress and whether a task of it is late. */
+        SchedulePhaseSummaryResponse: {
+            name: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            progress: number;
+            late: boolean;
+        };
+        /**
+         * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
+         *     how many tasks are late, and the phases in order.
+         */
+        ScheduleResponse: {
+            /** Format: date */
+            today: string;
+            /** Format: date */
+            start: null | string;
+            /** Format: date */
+            end: null | string;
+            /** Format: int32 */
+            progress: number;
+            /** Format: int32 */
+            lateTasks: number;
+            phases: components["schemas"]["SchedulePhaseResponse"][];
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -2933,6 +3171,448 @@ export interface operations {
             path: {
                 id: string;
                 userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddSchedulePhase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchedulePhaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RenameSchedulePhase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                phaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchedulePhaseRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveSchedulePhase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                phaseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    AddScheduleItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewScheduleItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeScheduleItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleItemChangedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveScheduleItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
             };
             cookie?: never;
         };

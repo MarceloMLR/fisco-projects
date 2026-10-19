@@ -24,6 +24,11 @@ export type ProjectMember = components['schemas']['ProjectMemberResponse'];
 export type ProjectStatus = components['schemas']['ProjectStatus'];
 export type ProjectRole = components['schemas']['ProjectRole'];
 export type ProjectSituation = components['schemas']['ProjectSituation'];
+export type ProjectScheduleSummary = components['schemas']['ProjectScheduleSummaryResponse'];
+export type Schedule = components['schemas']['ScheduleResponse'];
+export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
+export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
+export type ScheduleItemKind = components['schemas']['ScheduleItemKind'];
 
 /** Statuses of a project in the order of its life (ADR-0016); the last two close it. */
 export const projectStatuses = [
@@ -86,6 +91,9 @@ export const auditItemTypes = [
   'Client',
   'Project',
   'ProjectMember',
+  'SchedulePhase',
+  'ScheduleItem',
+  'ScheduleDependency',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -123,6 +131,7 @@ export const projectProblems = {
   closed: 'urn:fiscoprojects:problem:project-closed',
   memberExists: 'urn:fiscoprojects:problem:project-member-exists',
   lastManager: 'urn:fiscoprojects:problem:project-last-manager',
+  scheduleCycle: 'urn:fiscoprojects:problem:schedule-cycle',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

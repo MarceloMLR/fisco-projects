@@ -77,8 +77,8 @@ describe('Lista de projetos', () => {
     expect(cells).toEqual([
       'Implantação do ERP financeiroERP-FIN · Alfa Distribuidora',
       ptBR.projects.statuses.InProgress,
-      text.noSchedule,
-      text.noDate,
+      '42% · Levantamento',
+      `03/11/2026${text.schedule.lateTasks_one.replace('{{count}}', '1')}`,
       'MCMarina Costa',
     ]);
     expect(rowOf('Portal de notas')).toHaveTextContent(`PORTAL-NF · ${text.internal}`);
@@ -124,11 +124,101 @@ describe('Lista de projetos', () => {
   it('Escolher um projeto na lista', async () => {
     const { router } = await openProjects();
 
-    fireEvent.click(within(rowOf('Revisão tributária')).getByText(text.noSchedule));
+    fireEvent.click(within(rowOf('Revisão tributária')).getByText('Começa em 26/10'));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/projects/0199f5a2-7c1e-7d40-9a1b-400000000002');
     });
+  });
+});
+
+/** The strip of phases of a row, by its accessible name. */
+function stripOf(row: HTMLElement, start: string, end: string) {
+  return within(row).getByRole('img', {
+    name: text.schedule.strip.replace('{{start}}', start).replace('{{end}}', end),
+  });
+}
+
+// Spec: projetos, requirement "Cronograma na lista de projetos".
+describe('Cronograma na lista de projetos', () => {
+  it('Cronograma na lista', async () => {
+    const erp = projects[0];
+    if (erp === undefined) {
+      throw new Error('No ERP-FIN.');
+    }
+    erp.schedule = {
+      start: '2026-10-05',
+      end: '2026-11-13',
+      progress: 62,
+      lateTasks: 2,
+      currentPhase: 'Configuração',
+      completedOn: null,
+      phases: [
+        {
+          name: 'Levantamento',
+          start: '2026-10-05',
+          end: '2026-10-15',
+          progress: 100,
+          late: false,
+        },
+        { name: 'Configuração', start: '2026-10-13', end: '2026-10-29', progress: 38, late: true },
+        {
+          name: 'Entrada em produção',
+          start: '2026-11-04',
+          end: '2026-11-13',
+          progress: 0,
+          late: false,
+        },
+      ],
+      milestones: ['2026-11-03', '2026-11-13'],
+    };
+    await openProjects();
+
+    const row = rowOf('Implantação do ERP financeiro');
+    const strip = stripOf(row, '05/10/2026', '13/11/2026');
+    expect(within(strip).getByTitle('Levantamento')).toHaveAttribute('data-late', 'false');
+    expect(within(strip).getByTitle('Configuração')).toHaveAttribute('data-late', 'true');
+    expect(within(strip).getByTitle('Entrada em produção')).toBeInTheDocument();
+    expect(within(strip).getAllByTestId('strip-milestone')).toHaveLength(2);
+    // Today, 16/10, is the 12th of the 40 days from 05/10 to 13/11: in the middle of it, at 28.75%.
+    expect(within(strip).getByTestId('strip-today')).toHaveStyle({ left: '28.75%' });
+    expect(row).toHaveTextContent('62% · Configuração');
+    expect(row).toHaveTextContent('13/11/2026');
+    expect(
+      within(row).getByText(text.schedule.lateTasks_other.replace('{{count}}', '2')),
+    ).toBeVisible();
+  });
+
+  it('Projeto que ainda não começou', async () => {
+    await openProjects();
+
+    const row = rowOf('Revisão tributária da filial RS');
+    expect(stripOf(row, '26/10/2026', '29/01/2027')).toBeInTheDocument();
+    expect(row).toHaveTextContent('Começa em 26/10');
+    expect(row).toHaveTextContent('29/01/2027');
+  });
+
+  it('Projeto concluído na lista', async () => {
+    await openProjects();
+
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: text.situation })).getByRole('radio', {
+        name: text.situations.Closed,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(rowOf('Implantação do WMS')).toHaveTextContent('100% · concluído em 28/08');
+    });
+  });
+
+  it('Projeto sem cronograma na lista', async () => {
+    await openProjects();
+
+    const cells = within(rowOf('Portal de notas para fornecedores'))
+      .getAllByRole('gridcell')
+      .map((cell) => cell.textContent);
+    expect(cells.slice(2, 4)).toEqual([text.noSchedule, text.noDate]);
   });
 });
 

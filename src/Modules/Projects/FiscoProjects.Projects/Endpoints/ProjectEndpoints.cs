@@ -15,25 +15,49 @@ public sealed record ProjectClientResponse(Guid Id, string Name, string? LogoUrl
 /// <summary>A person in a project, with the role in it.</summary>
 public sealed record ProjectPersonResponse(Guid Id, string Name, ProjectRole Role);
 
-/// <summary>One project of the list; without a client, it is an internal project.</summary>
+/// <summary>A phase in the strip of phases: its dates, its progress and whether a task of it is late.</summary>
+public sealed record SchedulePhaseSummaryResponse(string Name, DateOnly Start, DateOnly End, int Progress, bool Late);
+
+/// <summary>
+/// The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks are late, the current phase
+/// (the first late one or, without delays, the last that has started; none before the start), the day the last task
+/// was completed when all are at 100%, the phases with items and the days of the milestones.
+/// </summary>
+public sealed record ProjectScheduleSummaryResponse(
+    DateOnly Start,
+    DateOnly End,
+    int Progress,
+    int LateTasks,
+    string? CurrentPhase,
+    DateOnly? CompletedOn,
+    IReadOnlyList<SchedulePhaseSummaryResponse> Phases,
+    IReadOnlyList<DateOnly> Milestones);
+
+/// <summary>One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule.</summary>
 public sealed record ProjectListItemResponse(
     Guid Id,
     string Code,
     string Name,
     ProjectClientResponse? Client,
     ProjectStatus Status,
-    IReadOnlyList<ProjectPersonResponse> Managers);
+    IReadOnlyList<ProjectPersonResponse> Managers,
+    ProjectScheduleSummaryResponse? Schedule);
 
-public sealed record ProjectPageResponse(IReadOnlyList<ProjectListItemResponse> Items, int Total);
+/// <summary>A page of the list, with today in the time zone of the installation, the day the schedules are seen on.</summary>
+public sealed record ProjectPageResponse(IReadOnlyList<ProjectListItemResponse> Items, int Total, DateOnly Today);
 
 /// <summary>
 /// What the person may do in the project (ADR-0043): change the data, only while the project is open; change the
-/// status, including reopening it; and, while the project is open, include, change and remove people, and do it also
-/// with the managers (ADR-0042).
+/// status, including reopening it; and, while the project is open, include, change and remove people, do it also with
+/// the managers (ADR-0042), and change the schedule.
 /// </summary>
-public sealed record ProjectPermissionsResponse(bool CanEdit, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers);
+public sealed record ProjectPermissionsResponse(
+    bool CanEdit, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers, bool CanEditSchedule);
 
-/// <summary>A project as its page shows it, with the people in it and what the person may do.</summary>
+/// <summary>
+/// A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none
+/// without tasks and milestones).
+/// </summary>
 public sealed record ProjectResponse(
     Guid Id,
     string Code,
@@ -42,7 +66,9 @@ public sealed record ProjectResponse(
     ProjectClientResponse? Client,
     ProjectStatus Status,
     IReadOnlyList<ProjectPersonResponse> Members,
-    ProjectPermissionsResponse Permissions);
+    ProjectPermissionsResponse Permissions,
+    DateOnly? ScheduleStart,
+    DateOnly? ScheduleEnd);
 
 /// <summary>
 /// The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
@@ -79,6 +105,9 @@ public static class ProjectProblems
 
     /// <summary>The change would leave the project without a manager (ADR-0042).</summary>
     public const string LastManager = "urn:fiscoprojects:problem:project-last-manager";
+
+    /// <summary>An item of the schedule would depend on an item that already depends on it (ADR-0019); status 400.</summary>
+    public const string ScheduleCycle = "urn:fiscoprojects:problem:schedule-cycle";
 }
 
 /// <summary>
@@ -105,6 +134,7 @@ internal static class ProjectEndpoints
         projects.MapPut("/{id:guid}/status", ChangeStatusAsync).WithName("ChangeProjectStatus")
             .ProducesProblem(StatusCodes.Status403Forbidden);
         projects.MapProjectMemberEndpoints();
+        projects.MapScheduleEndpoints();
     }
 
     private static async Task<Results<Ok<ProjectPageResponse>, ValidationProblem>> ListAsync(
@@ -146,8 +176,10 @@ internal static class ProjectEndpoints
                 item.Name,
                 ClientOf(http, links, item.Client),
                 item.Status,
-                [.. item.Managers.Select(PersonOf)]))],
-            result.Total));
+                [.. item.Managers.Select(PersonOf)],
+                item.Schedule is { } schedule ? SummaryOf(schedule) : null))],
+            result.Total,
+            result.Today));
     }
 
     private static async Task<Results<Created<ProjectCreatedResponse>, ValidationProblem, ProblemHttpResult>> CreateAsync(
@@ -197,7 +229,10 @@ internal static class ProjectEndpoints
                 CanEdit: details.Permissions.CanEditData && !project.IsClosed,
                 CanChangeStatus: details.Permissions.CanChangeStatus,
                 CanManagePeople: details.Permissions.CanManagePeople && !project.IsClosed,
-                CanManageManagers: details.Permissions.CanManageManagers && !project.IsClosed)));
+                CanManageManagers: details.Permissions.CanManageManagers && !project.IsClosed,
+                CanEditSchedule: details.Permissions.CanEditSchedule && !project.IsClosed),
+            details.Schedule?.Start,
+            details.Schedule?.End));
     }
 
     private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> ChangeAsync(
@@ -254,6 +289,20 @@ internal static class ProjectEndpoints
             : new ProjectClientResponse(client.Id, client.Name, ClientEndpoints.LogoUrlOf(http, links, client.Id, client.LogoChangedAt));
 
     private static ProjectPersonResponse PersonOf(ProjectPerson person) => new(person.Id, person.Name, person.Role);
+
+    private static ProjectScheduleSummaryResponse SummaryOf(ScheduleFigures figures) =>
+        new(
+            figures.Start!.Value,
+            figures.End!.Value,
+            figures.Progress,
+            figures.LateTasks,
+            figures.CurrentPhase?.Name,
+            figures.CompletedOn,
+            [.. figures.Phases
+                .Where(phase => phase.Start is not null)
+                .Select(phase => new SchedulePhaseSummaryResponse(
+                    phase.Phase.Name, phase.Start!.Value, phase.End!.Value, phase.Progress, phase.IsLate))],
+            figures.Milestones);
 
     private static ValidationProblem Invalid(IReadOnlyList<ProjectField> fields) =>
         TypedResults.ValidationProblem(fields.ToDictionary(

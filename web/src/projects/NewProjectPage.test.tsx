@@ -107,8 +107,12 @@ beforeEach(() => {
           canChangeStatus: true,
           canManagePeople: true,
           canManageManagers: true,
+          canEditSchedule: true,
         },
+        scheduleStart: null,
+        scheduleEnd: null,
         mine: true,
+        schedule: null,
       });
       return HttpResponse.json({ id: newId }, { status: 201 });
     }),
