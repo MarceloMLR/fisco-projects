@@ -130,3 +130,115 @@ describe('Texto dos registros da auditoria', () => {
     ]);
   });
 });
+
+// Spec: calendario, requirement "Mudanças do calendário na auditoria".
+describe('Mudanças do calendário na auditoria', () => {
+  it('Dias de trabalho na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'WorkCalendar',
+        changes: [
+          {
+            field: 'WorkingDays',
+            before: 'Monday, Tuesday, Wednesday, Thursday, Friday',
+            after: 'Monday, Tuesday, Wednesday, Thursday, Friday, Saturday',
+            secret: false,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed).toEqual({
+      title: 'Alterou os dias de trabalho',
+      summary:
+        'dias de trabalho Segunda, Terça, Quarta, Quinta, Sexta → Segunda, Terça, Quarta, Quinta, Sexta, Sábado',
+      sentence: 'Paulo Nogueira alterou os dias de trabalho',
+      properties: [{ label: 'Item', value: 'Calendário e feriados' }],
+      changes: [
+        {
+          field: 'Dias de trabalho',
+          before: 'Segunda, Terça, Quarta, Quinta, Sexta',
+          after: 'Segunda, Terça, Quarta, Quinta, Sexta, Sábado',
+        },
+      ],
+    });
+  });
+
+  it('Escolha de feriado na auditoria', () => {
+    const considered = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'CalculatedHoliday',
+        itemLabel: 'CarnivalMonday',
+        changes: [{ field: 'IsConsidered', before: 'false', after: 'true', secret: false }],
+      }),
+      t,
+    );
+    const disregarded = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'LocalHoliday',
+        itemLabel: 'Data magna do estado',
+        changes: [{ field: 'IsConsidered', before: 'true', after: 'false', secret: false }],
+      }),
+      t,
+    );
+
+    expect(considered).toEqual({
+      title: 'Considerou um feriado',
+      summary: 'Segunda-feira de Carnaval',
+      sentence: 'Paulo Nogueira considerou um feriado',
+      properties: [{ label: 'Feriado', value: 'Segunda-feira de Carnaval' }],
+      changes: [{ field: 'Considerado', before: 'Não', after: 'Sim' }],
+    });
+    expect(disregarded.title).toBe('Desconsiderou um feriado');
+    expect(disregarded.summary).toBe('Data magna do estado');
+  });
+
+  it('Feriado local na auditoria', () => {
+    const created = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'LocalHoliday',
+        itemLabel: 'Emenda de Tiradentes',
+        changes: [
+          { field: 'Name', before: null, after: 'Emenda de Tiradentes', secret: false },
+          { field: 'Date', before: null, after: '2026-04-20', secret: false },
+          { field: 'RepeatsEveryYear', before: null, after: 'false', secret: false },
+          { field: 'IsConsidered', before: null, after: 'true', secret: false },
+        ],
+      }),
+      t,
+    );
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'LocalHoliday',
+        itemLabel: 'Emenda de Tiradentes',
+        changes: [{ field: 'Date', before: '2026-04-20', after: '2026-04-22', secret: false }],
+      }),
+      t,
+    );
+    const removed = describeAuditEntry(
+      entry({ action: 'Deleted', itemType: 'LocalHoliday', itemLabel: 'Emenda de Tiradentes' }),
+      t,
+    );
+
+    expect(created.title).toBe('Incluiu um feriado');
+    expect(created.changes).toEqual([
+      { field: 'Nome', before: '—', after: 'Emenda de Tiradentes' },
+      { field: 'Data', before: '—', after: '20/04/2026' },
+      { field: 'Repete todo ano', before: '—', after: 'Não' },
+      { field: 'Considerado', before: '—', after: 'Sim' },
+    ]);
+    expect(changed.title).toBe('Alterou um feriado');
+    expect(changed.summary).toBe('Emenda de Tiradentes · data 20/04/2026 → 22/04/2026');
+    expect(removed).toMatchObject({
+      title: 'Excluiu um feriado',
+      summary: 'Emenda de Tiradentes',
+      properties: [{ label: 'Feriado', value: 'Emenda de Tiradentes' }],
+    });
+  });
+});

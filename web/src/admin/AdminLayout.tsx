@@ -1,3 +1,4 @@
+import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
@@ -30,6 +31,12 @@ const sections = [
         path: '/admin/settings',
         labelKey: 'pages.settings.title',
         icon: SettingsOutlined,
+        counted: false,
+      },
+      {
+        path: '/admin/calendar',
+        labelKey: 'pages.calendar.title',
+        icon: CalendarTodayOutlined,
         counted: false,
       },
     ],

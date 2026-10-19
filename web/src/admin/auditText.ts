@@ -1,5 +1,13 @@
 import type { TFunction } from 'i18next';
-import { type AuditEntry, type AuditField, systemRoles, type SystemRole } from '../api/client';
+import {
+  type AuditEntry,
+  type AuditField,
+  systemRoles,
+  type SystemRole,
+  weekdays,
+} from '../api/client';
+import { formatDayText } from '../format/dates';
+import { calculatedHolidayName } from './calendarText';
 
 /** How the Audit screen tells a record (canvas AdminAuditoria). */
 export interface AuditDescription {
@@ -29,6 +37,20 @@ const settingsFields: readonly string[] = [
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
+
+type HolidayField = 'Name' | 'Date' | 'RepeatsEveryYear' | 'IsConsidered';
+const holidayFields: readonly string[] = [
+  'Name',
+  'Date',
+  'RepeatsEveryYear',
+  'IsConsidered',
+] satisfies HolidayField[];
+
+const isHolidayField = (field: string): field is HolidayField => holidayFields.includes(field);
+const isHoliday = (entry: AuditEntry) =>
+  entry.itemType === 'CalculatedHoliday' || entry.itemType === 'LocalHoliday';
+const isWeekday = (value: string): value is (typeof weekdays)[number] =>
+  weekdays.some((day) => day === value);
 const isRole = (value: string | null): value is SystemRole =>
   systemRoles.some((role) => role === value);
 
@@ -47,7 +69,35 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'User' && field === 'IsActive') {
     return t(value === 'true' ? 'users.status.Active' : 'users.status.Inactive');
   }
+  // The days of the week as the API names them ("Monday, Tuesday"), in words of the screen.
+  if (entry.itemType === 'WorkCalendar' && field === 'WorkingDays') {
+    return value
+      .split(', ')
+      .map((day) => (isWeekday(day) ? t(`calendar.weekdays.${day}`) : day))
+      .join(', ');
+  }
+  if (isHoliday(entry) && (field === 'IsConsidered' || field === 'RepeatsEveryYear')) {
+    return t(value === 'true' ? 'audit.details.yes' : 'audit.details.no');
+  }
+  if (isHoliday(entry) && field === 'Date') {
+    return formatDayText(value);
+  }
   return value;
+}
+
+/** The item as the screen names it: a calculated holiday by its translated name, every other by its label. */
+function labelOf(entry: AuditEntry, t: TFunction): string | null {
+  return entry.itemType === 'CalculatedHoliday' && entry.itemLabel !== null
+    ? calculatedHolidayName(entry.itemLabel, t)
+    : entry.itemLabel;
+}
+
+/** A holiday whose only change was to be considered or disregarded, said by the title alone. */
+function considerationOf(entry: AuditEntry): AuditField | undefined {
+  const [only, ...others] = entry.changes;
+  return entry.action === 'Updated' && only?.field === 'IsConsidered' && others.length === 0
+    ? only
+    : undefined;
 }
 
 function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
@@ -56,6 +106,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   }
   if (entry.itemType === 'InstallationSettings' && isSettingsField(field)) {
     return t(`audit.fields.InstallationSettings.${field}`);
+  }
+  if (entry.itemType === 'WorkCalendar' && field === 'WorkingDays') {
+    return t('audit.fields.WorkCalendar.WorkingDays');
+  }
+  if (isHoliday(entry) && isHolidayField(field)) {
+    return t(`audit.fields.Holiday.${field}`);
   }
   return field;
 }
@@ -66,6 +122,20 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.itemType === 'InstallationSettings' && entry.action === 'Updated') {
     return t('audit.actions.InstallationSettings.Updated');
+  }
+  if (entry.itemType === 'WorkCalendar' && entry.action === 'Updated') {
+    return t('audit.actions.WorkCalendar.Updated');
+  }
+  if (isHoliday(entry)) {
+    const consideration = considerationOf(entry);
+    if (consideration !== undefined) {
+      return t(
+        consideration.after === 'true'
+          ? 'audit.actions.Holiday.Considered'
+          : 'audit.actions.Holiday.Disregarded',
+      );
+    }
+    return t(`audit.actions.Holiday.${entry.action}`);
   }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
@@ -100,7 +170,7 @@ function reasonOf(entry: AuditEntry, t: TFunction): string {
 }
 
 function summaryOf(entry: AuditEntry, t: TFunction): string {
-  const label = entry.itemLabel ?? '';
+  const label = labelOf(entry, t) ?? '';
   const join = (...parts: string[]) => parts.filter((part) => part !== '').join(' · ');
   if (entry.action === 'SignedIn') {
     return providerOf(entry, t);
@@ -120,6 +190,9 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
     );
   }
   if (entry.itemType === 'User' && changeOf(entry, 'IsActive') !== undefined) {
+    return label;
+  }
+  if (isHoliday(entry) && considerationOf(entry) !== undefined) {
     return label;
   }
   const change = entry.changes[0];
@@ -151,13 +224,20 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.details.item.InstallationSettings'), value: t('pages.settings.title') },
     ];
   }
-  if (entry.itemLabel === null) {
+  if (entry.itemType === 'WorkCalendar') {
+    return [{ label: t('audit.details.item.WorkCalendar'), value: t('pages.calendar.title') }];
+  }
+  const label = labelOf(entry, t);
+  if (label === null) {
     return [];
+  }
+  if (isHoliday(entry)) {
+    return [{ label: t('audit.details.item.Holiday'), value: label }];
   }
   return [
     {
       label: t(entry.itemType === 'User' ? 'audit.details.item.User' : 'audit.details.item.Other'),
-      value: entry.itemLabel,
+      value: label,
     },
   ];
 }

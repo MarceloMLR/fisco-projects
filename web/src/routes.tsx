@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router';
 import { AdminLayout } from './admin/AdminLayout';
 import { AuditPage } from './admin/AuditPage';
+import { CalendarPage } from './admin/CalendarPage';
 import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
@@ -87,6 +88,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.settings.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'calendar',
+                element: <CalendarPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.calendar.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },

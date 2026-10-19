@@ -1,7 +1,15 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { components } from '../api/schema';
-import type { Installation, Profile, SessionUser } from '../api/client';
+import type {
+  CalendarDay,
+  CalendarDayKind,
+  CalendarYear,
+  DayOfWeek,
+  Installation,
+  Profile,
+  SessionUser,
+} from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
 type AuditEntryResponse = components['schemas']['AuditEntryResponse'];
@@ -182,6 +190,133 @@ export function profileOf(person: SessionUser): Profile {
   return { ...person, lastSignInAt: '2026-10-19T12:12:00Z', signInMethods: ['local'] };
 }
 
+/** A local holiday of the simulated calendar, as the Calendar module keeps it. */
+export interface DemoLocalHoliday {
+  id: string;
+  name: string;
+  date: string;
+  repeatsEveryYear: boolean;
+  isConsidered: boolean;
+}
+
+/** The calendar of the simulated installation, changed by the requests of a test as the real one would be. */
+export interface DemoCalendar {
+  workingDays: DayOfWeek[];
+  /** The calculated holidays considered, by key. */
+  considered: Set<string>;
+  local: DemoLocalHoliday[];
+}
+
+const calculatedRules: [
+  string,
+  CalendarDayKind,
+  (year: number, easter: number) => number,
+  number?,
+][] = [
+  ['NewYearsDay', 'NationalHoliday', (year) => Date.UTC(year, 0, 1)],
+  ['CarnivalMonday', 'OptionalHoliday', (_year, easter) => easter - 48 * 86_400_000],
+  ['CarnivalTuesday', 'OptionalHoliday', (_year, easter) => easter - 47 * 86_400_000],
+  ['AshWednesday', 'OptionalHoliday', (_year, easter) => easter - 46 * 86_400_000],
+  ['GoodFriday', 'NationalHoliday', (_year, easter) => easter - 2 * 86_400_000],
+  ['Tiradentes', 'NationalHoliday', (year) => Date.UTC(year, 3, 21)],
+  ['LabourDay', 'NationalHoliday', (year) => Date.UTC(year, 4, 1)],
+  ['CorpusChristi', 'OptionalHoliday', (_year, easter) => easter + 60 * 86_400_000],
+  ['IndependenceDay', 'NationalHoliday', (year) => Date.UTC(year, 8, 7)],
+  ['OurLadyOfAparecida', 'NationalHoliday', (year) => Date.UTC(year, 9, 12)],
+  ['PublicServantsDay', 'OptionalHoliday', (year) => Date.UTC(year, 9, 28)],
+  ['AllSoulsDay', 'NationalHoliday', (year) => Date.UTC(year, 10, 2)],
+  ['RepublicDay', 'NationalHoliday', (year) => Date.UTC(year, 10, 15)],
+  ['BlackConsciousnessDay', 'NationalHoliday', (year) => Date.UTC(year, 10, 20), 2024],
+  ['ChristmasEve', 'OptionalHoliday', (year) => Date.UTC(year, 11, 24)],
+  ['ChristmasDay', 'NationalHoliday', (year) => Date.UTC(year, 11, 25)],
+  ['NewYearsEve', 'OptionalHoliday', (year) => Date.UTC(year, 11, 31)],
+];
+
+/** Easter Sunday of the Gregorian calendar, at midnight UTC (the same rule as the Calendar module). */
+function easterOf(year: number): number {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const h =
+    (19 * a + b - Math.floor(b / 4) - Math.floor((b - Math.floor((b + 8) / 25) + 1) / 3) + 15) % 30;
+  const l = (32 + 2 * (b % 4) + 2 * Math.floor(c / 4) - h - (c % 4)) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return Date.UTC(year, month - 1, day);
+}
+
+/** A new simulated calendar: Monday to Friday, the national holidays considered and two local holidays of 2026. */
+export function demoCalendar(): DemoCalendar {
+  return {
+    workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    considered: new Set(
+      calculatedRules.filter(([, kind]) => kind === 'NationalHoliday').map(([key]) => key),
+    ),
+    local: [
+      {
+        id: '0199f5a2-7c1e-7d40-9a1b-200000000001',
+        name: 'Aniversário da cidade',
+        date: '2026-01-25',
+        repeatsEveryYear: true,
+        isConsidered: true,
+      },
+      {
+        id: '0199f5a2-7c1e-7d40-9a1b-200000000002',
+        name: 'Emenda de Tiradentes',
+        date: '2026-04-20',
+        repeatsEveryYear: false,
+        isConsidered: true,
+      },
+    ],
+  };
+}
+
+/** The calendar of a year as the API answers it: the calculated holidays of the year and the local ones, in order. */
+export function calendarYearOf(calendar: DemoCalendar, year: number): CalendarYear {
+  const easter = easterOf(year);
+  const calculated: CalendarDay[] = calculatedRules
+    .filter(([, , , since]) => since === undefined || year >= since)
+    .map(([key, kind, dateOf]) => ({
+      date: new Date(dateOf(year, easter)).toISOString().slice(0, 10),
+      kind,
+      key,
+      id: null,
+      name: null,
+      repeatsEveryYear: true,
+      isConsidered: calendar.considered.has(key),
+    }));
+  const local: CalendarDay[] = calendar.local.flatMap((holiday) => {
+    const holidayYear = Number(holiday.date.slice(0, 4));
+    const date =
+      holidayYear === year
+        ? holiday.date
+        : holiday.repeatsEveryYear && year > holidayYear
+          ? `${String(year)}${holiday.date.slice(4)}`
+          : undefined;
+    return date === undefined
+      ? []
+      : [
+          {
+            date,
+            kind: 'LocalHoliday' as const,
+            key: null,
+            id: holiday.id,
+            name: holiday.name,
+            repeatsEveryYear: holiday.repeatsEveryYear,
+            isConsidered: holiday.isConsidered,
+          },
+        ];
+  });
+  return {
+    year,
+    workingDays: calendar.workingDays,
+    days: [...calculated, ...local].toSorted((first, second) =>
+      first.date.localeCompare(second.date),
+    ),
+  };
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
@@ -196,6 +331,9 @@ export const handlers = [
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
   http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
+  http.get('/api/calendar/:year', ({ params }) =>
+    HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
+  ),
 ];
 
 export const server = setupServer(...handlers);

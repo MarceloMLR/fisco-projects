@@ -322,7 +322,7 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 
 ## Pendências
 
-- Telas ainda não desenhadas: cadastros da Administração (Fornecedores, Calendário e feriados, Prazos dos chamados, Pastas padrão, Categorias de links e Modelos de projeto). Seguem o padrão das telas de Usuários e Clientes, ou são desenhadas antes da change correspondente.
+- Telas ainda não desenhadas: cadastros da Administração (Fornecedores, Prazos dos chamados, Pastas padrão, Categorias de links e Modelos de projeto). Calendário e feriados foi desenhada e aprovada em 19/10/2026. Seguem o padrão das telas de Usuários e Clientes, ou são desenhadas antes da change correspondente.
 - Confirmar na documentação do Syncfusion o ajuste da linha do tempo ao espaço disponível antes de implementar o cronograma (ADR-0071).
 - Divergência a corrigir: o ADR-0065 cita "Material Symbols", mas o design system usa Material Icons no estilo Outlined (variantes `…Outlined` do `@mui/icons-material`).
 - Levar os tokens do design system para o repositório na change do tema do MUI.
