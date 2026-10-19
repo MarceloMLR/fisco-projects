@@ -66,7 +66,7 @@
 
 ## 4. Verificação final
 
-- [ ] 4.1 Conferir no navegador, com o build de produção:
+- [x] 4.1 Conferir no navegador, com o build de produção:
   - a aba Membros, "Incluir pessoa", o detalhe e a remoção;
   - o Novo projeto com o líder técnico do diretório;
   - Usuários com "Nunca entrou" e a Auditoria;

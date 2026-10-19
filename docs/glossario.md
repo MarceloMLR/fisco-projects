@@ -39,6 +39,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Leitor | Viewer | |
 | Gestores (gerente e líder técnico) | Managers | |
 | Pessoa do projeto (membro) | ProjectMember | A pessoa e o papel dela num projeto; na Auditoria, "Pessoas dos projetos" |
+| Membros (aba do projeto) | `/projects/{id}/members` | As pessoas do projeto por time ou por nome, com "Incluir pessoa" e o detalhe na gaveta |
+| Times na aba Membros: Gestão, Funcional, Desenvolvimento, Leitores | MemberTeam: management, functional, development, viewers | O líder técnico aparece em Gestão e em Desenvolvimento (ADR-0040, ADR-0068) |
+| Incluir pessoa, trocar o papel, remover do projeto | AddProjectMember, ChangeProjectMemberRole, RemoveProjectMember | Administrador e gerente com todos; líder técnico com todos menos os gerentes (ADR-0042, ADR-0043) |
+| Quem gerencia as pessoas | `CanManagePeople`, `CanManageManagers`, `MayManage` | A regra num lugar só, em `ProjectPermissions` |
+| Último gerente | LastManager | O projeto sempre tem um gerente: remover ou rebaixar o último é recusado (ADR-0042) |
 | Cliente | Client | Empresa para quem o projeto é feito (ADR-0015); módulo `Projects` (schema `projects`) e tela `/admin/clients` |
 | CNPJ | Cnpj | Numérico ou alfanumérico (IN RFB nº 2.229/2024), guardado sem pontuação e único entre os clientes; opcional |
 | Logo do cliente | Client logo (`ClientLogo`) | PNG ou JPG de até 1 MB, no lugar das iniciais; enviado só pelo administrador |
@@ -46,7 +51,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Observação | Observation | Texto livre do cliente, até 500 caracteres |
 | Quem cria projetos | SystemPolicies.ProjectCreators | Administrador ou gerente de projeto (ADR-0043): cria projetos e lista e inclui clientes |
 | Clientes para escolher | ClientChoice (`GET /api/clients/choices`) | Nome, logo e situação de todos os clientes, para qualquer pessoa com sessão, sem o CNPJ |
-| Pessoas para escolher | Person (`GET /api/people`) | Pessoas ativas que já entraram, buscadas pelo nome; com `managers`, só administradores e gerentes de projeto |
+| Pessoas para escolher | Person (`GET /api/people`) | Usuários ativos e pessoas do diretório que nunca entraram, buscados pelo nome ou e-mail por qualquer pessoa com sessão; com `managers`, só administradores e gerentes de projeto |
+| Diretório da empresa | IPeopleDirectory | Onde as pessoas são achadas antes de entrar (ADR-0005): hoje o de demonstração da entrada local (`LocalSignIn:People`); na M365-1, o Microsoft Graph |
+| Pessoa do diretório (que nunca entrou) | DirectoryPerson, `directoryId` | Identificada na API por `"{provider}:{externalId}"` até virar usuário |
+| Usuário criado pelo diretório | `User.FromDirectory`, IUserProvisioning | Criado ao ser incluído num projeto, com o papel Usuário e sem último acesso; na primeira entrada, usa o mesmo usuário |
+| Nunca entrou | `LastSignInAt` nulo | O último acesso de quem foi incluído pelo diretório e ainda não entrou |
 | Fornecedor | Vendor | |
 
 ## Projetos e cronograma
@@ -141,6 +150,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Campo fora da auditoria | `ExcludeFromAudit` | Campos técnicos, como o último acesso |
 | Campo secreto | `IsAuditSecret` | Registra só que mudou, sem o valor (ADR-0033) |
 | Referência a outro item | `IsAuditReference`, `HasAuditLabelReference`, `AuditField.Reference` | Guarda o identificador e o tipo; a lista mostra o nome atual por `IAuditReferenceNames` (ADR-0084) |
+| Contexto do item | `IsAuditContext` | Campo gravado em toda mudança, mesmo sem mudar, para dizer onde o item está, como o projeto de uma pessoa; a tela o usa no texto, fora da tabela de mudanças |
 | Evento de segurança | ISecurityEvents | Entrada e entrada recusada; troca de papel e situação entram como alteração do usuário |
 | Motivo da recusa: fora do diretório, conta desativada | SignInRefusal: NotInDirectory, Inactive | |
 | Anonimização | Anonymization | |
