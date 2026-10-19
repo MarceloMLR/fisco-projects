@@ -7,7 +7,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Cada change tem um ID (`Fundação-1`, `Acesso-2`...) e um nome no OpenSpec (`estrutura-do-backend`...).
 - Fluxo de cada change: branch nova a partir da `main` atualizada → proposta e avaliação contra os ADRs e o design técnico e visual → implementação com testes → PR → aprovação de Marcelo → archive na mesma branch → merge → volta para a `main` e apaga a branch. Detalhes no `CLAUDE.md`, seção 9.
 - Correção de uma change já arquivada ganha um subnúmero (`Fundação-2.1`), só quando necessário.
-- Toda change com tela entrega as versões de computador e celular, nos temas claro e escuro. Os dados fictícios de demonstração crescem a cada change.
+- Toda change com tela entrega as versões de computador e celular, nos temas claro e escuro. Os dados fictícios de demonstração crescem a cada change: cada uma acrescenta os dela ao plano de `web/scripts/demo/plan.ts`, carregado por `npm run demo:data` (ADR-0089).
 - Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
 - Status: Planejada, Em andamento, PR aberto, Concluída, Adiada (com o motivo).
 - Em 18/10/2026, Marcelo adiou a Fundação-6 e a Fundação-7 até existir a assinatura do Azure, e o login pelo Entra foi para o grupo 9 (M365-1): sem tenant, desenvolvimento e demonstrações usam a entrada local (ADR-0078).
@@ -19,14 +19,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 8 | 6 |
 | 2. Acesso e administração | 10 | 10 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 8 | 3 |
+| 4. Cronograma | 8 | 4 |
 | 5. Chamados | 7 | 0 |
 | 6. Avisos | 3 | 0 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **57** | **23** |
+| **Total** | **57** | **24** |
 
 ## 1. Fundação
 
@@ -72,7 +72,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Concluída em 19/10/2026 ([#25](https://github.com/MarceloMLR/fisco-projects/pull/25)) |
 | Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Concluída em 19/10/2026 ([#26](https://github.com/MarceloMLR/fisco-projects/pull/26)) |
 | Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Concluída em 19/10/2026 ([#27](https://github.com/MarceloMLR/fisco-projects/pull/27)) |
-| Cronograma-3.1 | `dados-de-demonstracao` | Comando que carrega os dados fictícios de demonstração pela API, com datas relativas ao dia, a pedido de Marcelo | 0078, 0089 | PR aberto ([#28](https://github.com/MarceloMLR/fisco-projects/pull/28)) |
+| Cronograma-3.1 | `dados-de-demonstracao` | Comando que carrega os dados fictícios de demonstração pela API, com datas relativas ao dia, a pedido de Marcelo | 0078, 0089 | Concluída em 19/10/2026 ([#28](https://github.com/MarceloMLR/fisco-projects/pull/28)) |
 | Cronograma-4 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021 | Planejada |
 | Cronograma-5 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021 | Planejada |
 | Cronograma-6 | `exportar-cronograma` | PDF e XML do MS Project | 0021 | Planejada |

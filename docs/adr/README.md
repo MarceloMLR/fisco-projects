@@ -150,4 +150,4 @@ Regras:
 | [0085](0085-gerente-do-projeto-com-papel-no-sistema.md) | Gerente do projeto sempre com o papel no sistema Gerente de projeto ou Administrador | aceita | 2026-10-19 |
 | [0086](0086-iniciar-pede-o-percentual-e-marco-atrasado.md) | "Iniciar" pede o percentual, e o marco não atingido depois da data fica atrasado | aceita | 2026-10-19 |
 | [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
-| [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | proposta | 2026-10-19 |
+| [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
