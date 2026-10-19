@@ -15,6 +15,36 @@ export type CalendarDayKind = components['schemas']['CalendarDayKind'];
 export type DayOfWeek = components['schemas']['DayOfWeek'];
 export type ClientRow = components['schemas']['ClientResponse'];
 export type ClientStatus = components['schemas']['ClientStatus'];
+export type ClientChoice = components['schemas']['ClientChoiceResponse'];
+export type Person = components['schemas']['PersonResponse'];
+export type ProjectRow = components['schemas']['ProjectListItemResponse'];
+export type Project = components['schemas']['ProjectResponse'];
+export type ProjectPerson = components['schemas']['ProjectPersonResponse'];
+export type ProjectStatus = components['schemas']['ProjectStatus'];
+export type ProjectRole = components['schemas']['ProjectRole'];
+export type ProjectSituation = components['schemas']['ProjectSituation'];
+
+/** Statuses of a project in the order of its life (ADR-0016); the last two close it. */
+export const projectStatuses = [
+  'Planning',
+  'InProgress',
+  'Paused',
+  'Completed',
+  'Cancelled',
+] as const satisfies readonly ProjectStatus[];
+
+/** Whether a project is completed or cancelled: read-only until reopened (ADR-0016). */
+export const isClosedStatus = (status: ProjectStatus) =>
+  status === 'Completed' || status === 'Cancelled';
+
+/** Roles in a project, in the order the screens list them (ADR-0040). */
+export const projectRoles = [
+  'Manager',
+  'TechLead',
+  'Contributor',
+  'Developer',
+  'Viewer',
+] as const satisfies readonly ProjectRole[];
 
 /** The days of the week from Monday to Sunday, the order of the Calendar screen. */
 export const weekdays = [
@@ -53,6 +83,8 @@ export const auditItemTypes = [
   'CalculatedHoliday',
   'LocalHoliday',
   'Client',
+  'Project',
+  'ProjectMember',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -81,6 +113,13 @@ export const clientProblems = {
   cnpjInUse: 'urn:fiscoprojects:problem:client-cnpj-in-use',
   logoFormat: 'urn:fiscoprojects:problem:client-logo-format',
   logoTooLarge: 'urn:fiscoprojects:problem:client-logo-too-large',
+  hasProjects: 'urn:fiscoprojects:problem:client-has-projects',
+} as const;
+
+/** Problem types of the projects (ProjectProblems in the Projects module). */
+export const projectProblems = {
+  codeInUse: 'urn:fiscoprojects:problem:project-code-in-use',
+  closed: 'urn:fiscoprojects:problem:project-closed',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

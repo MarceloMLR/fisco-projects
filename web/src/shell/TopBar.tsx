@@ -25,7 +25,8 @@ export function TopBar({
   user,
 }: {
   title: string;
-  trail?: readonly { title: string; path: string }[];
+  /** The areas above the page; a code, such as the one of a project, goes in the monospaced type. */
+  trail?: readonly { title: string; path: string; code?: boolean }[];
   user: SessionUser;
 }) {
   const { t } = useTranslation();
@@ -82,6 +83,9 @@ export function TopBar({
                 to={level.path}
                 sx={{
                   ...crumb,
+                  ...(level.code === true
+                    ? { fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500 }
+                    : {}),
                   color: 'var(--text-secondary)',
                   textDecoration: 'none',
                   '&:hover': { backgroundColor: 'var(--bg-hover)', color: 'var(--text)' },

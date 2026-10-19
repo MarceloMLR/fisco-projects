@@ -371,3 +371,140 @@ describe('Mudanças dos clientes na auditoria', () => {
     ).toBe('Excluiu um cliente');
   });
 });
+
+// Spec: projetos, requirement "Mudanças dos projetos na auditoria".
+describe('Mudanças dos projetos na auditoria', () => {
+  it('Projeto criado na auditoria', () => {
+    const created = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'Project',
+        itemLabel: 'Implantação do ERP financeiro',
+        changes: [
+          {
+            field: 'ClientId',
+            before: null,
+            after: 'Alfa Distribuidora',
+            secret: false,
+            reference: 'Client',
+          },
+          { field: 'Code', before: null, after: 'ERP-FIN', secret: false, reference: null },
+          {
+            field: 'Name',
+            before: null,
+            after: 'Implantação do ERP financeiro',
+            secret: false,
+            reference: null,
+          },
+          { field: 'Status', before: null, after: 'Planning', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+    const manager = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ProjectMember',
+        itemLabel: 'Marina Costa',
+        changes: [
+          {
+            field: 'ProjectId',
+            before: null,
+            after: 'Implantação do ERP financeiro',
+            secret: false,
+            reference: 'Project',
+          },
+          { field: 'Role', before: null, after: 'Manager', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(created).toEqual({
+      title: 'Criou um projeto',
+      summary: 'Implantação do ERP financeiro',
+      sentence: 'Paulo Nogueira criou um projeto',
+      properties: [{ label: 'Projeto', value: 'Implantação do ERP financeiro' }],
+      changes: [
+        { field: 'Cliente', before: '—', after: 'Alfa Distribuidora' },
+        { field: 'Código', before: '—', after: 'ERP-FIN' },
+        { field: 'Nome', before: '—', after: 'Implantação do ERP financeiro' },
+        { field: 'Status', before: '—', after: 'Planejamento' },
+      ],
+    });
+    expect(manager).toEqual({
+      title: 'Incluiu uma pessoa num projeto',
+      summary: 'Marina Costa · Gerente de projeto · Implantação do ERP financeiro',
+      sentence: 'Paulo Nogueira incluiu uma pessoa num projeto',
+      properties: [
+        { label: 'Pessoa', value: 'Marina Costa' },
+        { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+      ],
+      changes: [
+        { field: 'Projeto', before: '—', after: 'Implantação do ERP financeiro' },
+        { field: 'Papel no projeto', before: '—', after: 'Gerente de projeto' },
+      ],
+    });
+  });
+
+  it('Status na auditoria', () => {
+    const status = (before: string, after: string) =>
+      describeAuditEntry(
+        entry({
+          action: 'Updated',
+          itemType: 'Project',
+          itemLabel: 'Implantação do WMS',
+          changes: [{ field: 'Status', before, after, secret: false, reference: null }],
+        }),
+        t,
+      );
+
+    expect(status('InProgress', 'Completed')).toMatchObject({
+      title: 'Concluiu um projeto',
+      changes: [{ field: 'Status', before: 'Em andamento', after: 'Concluído' }],
+    });
+    expect(status('Completed', 'InProgress')).toMatchObject({
+      title: 'Reabriu um projeto',
+      changes: [{ field: 'Status', before: 'Concluído', after: 'Em andamento' }],
+    });
+    expect(status('Planning', 'Cancelled').title).toBe('Cancelou um projeto');
+    expect(status('InProgress', 'Paused').title).toBe('Mudou o status de um projeto');
+  });
+
+  it('Projeto alterado na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Project',
+        itemLabel: 'Implantação do ERP financeiro e fiscal',
+        changes: [
+          {
+            field: 'Name',
+            before: 'Implantação do ERP financeiro',
+            after: 'Implantação do ERP financeiro e fiscal',
+            secret: false,
+            reference: null,
+          },
+          {
+            field: 'ClientId',
+            before: 'Alfa Distribuidora',
+            after: null,
+            secret: false,
+            reference: 'Client',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.title).toBe('Alterou um projeto');
+    expect(changed.changes).toEqual([
+      {
+        field: 'Nome',
+        before: 'Implantação do ERP financeiro',
+        after: 'Implantação do ERP financeiro e fiscal',
+      },
+      { field: 'Cliente', before: 'Alfa Distribuidora', after: '—' },
+    ]);
+  });
+});

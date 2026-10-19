@@ -40,18 +40,18 @@
 
 ## 3. Frontend
 
-- [ ] 3.1 Tela Projetos e Meus projetos na barra lateral.
+- [x] 3.1 Tela Projetos e Meus projetos na barra lateral.
 
   Testar com `npm test`:
   - "Projetos na lista", "Projetos encerrados pelo filtro", "Buscar e filtrar projetos";
   - "Usuário sem Novo projeto";
   - "Meus projetos na barra lateral".
-- [ ] 3.2 Tela Novo projeto, com "Cadastrar cliente" e a troca do gerente.
+- [x] 3.2 Tela Novo projeto, com "Cadastrar cliente" e a troca do gerente.
 
   Testar com `npm test`:
   - "Novo projeto pela tela", "Cadastrar cliente na criação", "Trocar o gerente na criação";
   - código inválido e repetido.
-- [ ] 3.3 Página do projeto:
+- [x] 3.3 Página do projeto:
   - cabeçalho, trilha com o código, ações, edição, status com confirmação, somente leitura e reabertura;
   - textos da Auditoria e os tipos no filtro;
   - a exclusão recusada do cliente com projetos na tela Clientes.

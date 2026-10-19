@@ -4,8 +4,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet } from 'react-router';
-import { generalRulesQuery } from '../api/queries';
+import { Outlet, useParams } from 'react-router';
+import { generalRulesQuery, projectQuery } from '../api/queries';
 import { SessionPending } from '../session/RequireSession';
 import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
@@ -17,6 +17,13 @@ import { TopBar } from './TopBar';
 
 const menuId = 'main-menu';
 
+/** The project of the address (/projects/:projectId), as its page already read it. */
+function useProjectOfTheAddress() {
+  const { projectId } = useParams();
+  const { data } = useQuery({ ...projectQuery(projectId ?? ''), enabled: projectId !== undefined });
+  return projectId === undefined ? undefined : data;
+}
+
 /**
  * Structure around every screen (ADR-0066): it fills the window, which never scrolls; the content scrolls inside.
  * From 900px, sidebar and invisible header (fp-frame); below it, the phone top bar and menu (ADR-0012).
@@ -26,7 +33,16 @@ export function AppShell() {
   const page = useCurrentPage();
   const { session } = useSession();
   const title = t(page.titleKey);
-  const trail = (page.trail ?? []).map((level) => ({ title: t(level.titleKey), path: level.path }));
+  const project = useProjectOfTheAddress();
+  const trail = (page.trail ?? []).flatMap((level) => {
+    if (!('project' in level)) {
+      return [{ title: t(level.titleKey), path: level.path }];
+    }
+    // The project of the address shows once it is read.
+    return project === undefined
+      ? []
+      : [{ title: project.code, path: `/projects/${project.id}`, code: true }];
+  });
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [menuOpen, setMenuOpen] = useState(false);
   // No screen shows a date before the time zone of the installation is known (ADR-0013).

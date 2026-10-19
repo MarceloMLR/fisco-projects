@@ -313,6 +313,40 @@ describe('Tela Clientes', () => {
     expect(requests).toEqual(['DELETE 0199f5a2-7c1e-7d40-9a1b-300000000004']);
   });
 
+  // Spec: clientes, requirement "Situação e exclusão do cliente".
+  it('Cliente com projetos', async () => {
+    server.use(
+      http.delete('/api/clients/:id', ({ params }) => {
+        requests.push(`DELETE ${String(params.id)}`);
+        return HttpResponse.json(
+          { status: 409, title: 'Conflict', type: clientProblems.hasProjects },
+          { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
+        );
+      }),
+    );
+    await openClients();
+
+    fireEvent.click(
+      within(await openMenuOf('Alfa Distribuidora')).getByRole('menuitem', {
+        name: text.menu.remove,
+      }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', {
+        name: text.remove.confirm,
+      }),
+    );
+
+    expect(
+      await screen.findByText(text.messages.hasProjects.replace('{{name}}', 'Alfa Distribuidora')),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+    expect(names()).toContain('Alfa Distribuidora');
+    expect(requests).toEqual(['DELETE 0199f5a2-7c1e-7d40-9a1b-300000000001']);
+  });
+
   it('Clientes no celular', async () => {
     await openClients(phoneWidth);
 

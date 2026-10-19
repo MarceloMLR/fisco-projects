@@ -119,7 +119,8 @@ export function ClientDialog({
   /** Only the Administrator sends, replaces and removes the logo. */
   canSendLogo: boolean;
   onClose: () => void;
-  onSaved: (message: string) => void;
+  /** The client saved, with the message that says so and its id, so a project form can choose it. */
+  onSaved: (message: string, id: string) => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -255,7 +256,10 @@ export function ClientDialog({
       if (id !== undefined && !(await saveLogo(id))) {
         return;
       }
-      onSaved(t(editing ? 'clients.messages.changed' : 'clients.messages.included', { name }));
+      onSaved(
+        t(editing ? 'clients.messages.changed' : 'clients.messages.included', { name }),
+        id ?? '',
+      );
     } catch {
       setError('root', {
         message: saved ? t('clients.messages.logoFailed', { name }) : t('clients.messages.failed'),

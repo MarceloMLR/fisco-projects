@@ -8,7 +8,10 @@ import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
 import { InstallationRoot } from './installation/InstallationRoot';
 import { HomePage } from './pages/HomePage';
-import { ProjectsPage } from './pages/ProjectsPage';
+import { NewProjectPage } from './projects/NewProjectPage';
+import { ProjectPage } from './projects/ProjectPage';
+import { ProjectsPage } from './projects/ProjectsPage';
+import { RequireProjectCreator } from './projects/RequireProjectCreator';
 import { ProfilePage } from './profile/ProfilePage';
 import { SignInPage } from './pages/SignInPage';
 import { TicketsPage } from './pages/TicketsPage';
@@ -42,6 +45,28 @@ export const routes: RouteObject[] = [
             handle: {
               navigation: 'projects',
               titleKey: 'pages.projects.title',
+            } satisfies PageHandle,
+          },
+          {
+            path: 'projects/new',
+            element: (
+              <RequireProjectCreator>
+                <NewProjectPage />
+              </RequireProjectCreator>
+            ),
+            handle: {
+              navigation: 'projects',
+              titleKey: 'pages.newProject.title',
+              trail: [{ titleKey: 'pages.projects.title', path: '/projects' }],
+            } satisfies PageHandle,
+          },
+          {
+            path: 'projects/:projectId',
+            element: <ProjectPage />,
+            handle: {
+              navigation: 'projects',
+              titleKey: 'pages.project.title',
+              trail: [{ titleKey: 'pages.projects.title', path: '/projects' }, { project: true }],
             } satisfies PageHandle,
           },
           {
