@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuditEntry, UserRow } from '../api/client';
+import { queryKeys } from '../api/queries';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
 import { auditPage, demoAuditEntries, demoUsers, marina, server, usersPage } from '../test/server';
@@ -207,8 +208,13 @@ describe('Dados da API guardados durante a sessão', () => {
       await screen.findByRole('heading', { level: 1, name: ptBR.signIn.title }),
     ).toBeInTheDocument();
 
-    // Nothing of the session is kept for whoever signs in next.
-    expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+    // Nothing of the session is kept for whoever signs in next; the sign-in page reads only the brand again.
+    expect(
+      queryClient
+        .getQueryCache()
+        .getAll()
+        .map((query) => query.queryKey),
+    ).toEqual([queryKeys.installation]);
 
     server.use(
       http.post('/api/session/local', () => {

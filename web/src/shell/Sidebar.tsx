@@ -3,6 +3,8 @@ import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
+import { InstallationLogo } from '../installation/InstallationLogo';
+import { useInstallation } from '../installation/useInstallation';
 import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
@@ -16,8 +18,9 @@ const profileItem = {
 } as const;
 
 /**
- * Sidebar from the design system (Sidebar, fp-sidebar): full height, product name on top, then the main
- * navigation. Without the brand it is the content of the phone menu, which also has My profile.
+ * Sidebar from the design system (Sidebar, fp-sidebar): full height, the name of the installation on top after its
+ * logo (or the badge, without one), then the main navigation. Without the brand it is the content of the phone menu,
+ * which also has My profile.
  */
 export function Sidebar({
   brand = true,
@@ -30,6 +33,7 @@ export function Sidebar({
 }) {
   const { t } = useTranslation();
   const mainItems = useMainNavigation();
+  const installation = useInstallation();
   const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
 
   return (
@@ -68,22 +72,26 @@ export function Sidebar({
             textDecoration: 'none',
           }}
         >
-          <Box
-            component="span"
-            aria-hidden="true"
-            sx={{
-              display: 'inline-grid',
-              placeItems: 'center',
-              flex: 'none',
-              width: 28,
-              height: 28,
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--action)',
-              color: 'var(--on-action)',
-            }}
-          >
-            <ViewTimelineOutlined sx={{ fontSize: 18 }} />
-          </Box>
+          {installation.logoUrl === null ? (
+            <Box
+              component="span"
+              aria-hidden="true"
+              sx={{
+                display: 'inline-grid',
+                placeItems: 'center',
+                flex: 'none',
+                width: 28,
+                height: 28,
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--action)',
+                color: 'var(--on-action)',
+              }}
+            >
+              <ViewTimelineOutlined sx={{ fontSize: 18 }} />
+            </Box>
+          ) : (
+            <InstallationLogo src={installation.logoUrl} maxHeight={28} />
+          )}
           <Box
             component="span"
             sx={{
@@ -97,7 +105,7 @@ export function Sidebar({
               textOverflow: 'ellipsis',
             }}
           >
-            {t('app.name')}
+            {installation.name}
           </Box>
         </Box>
       )}

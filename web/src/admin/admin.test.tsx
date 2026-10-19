@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
-import { signedInAs } from '../test/server';
+import { defaultInstallation, signedInAs } from '../test/server';
 
 const navigationName = ptBR.shell.mainNavigation;
 
@@ -18,13 +18,15 @@ describe('Barra lateral no computador', () => {
   it('Administração na barra lateral', async () => {
     signedInAs('Administrator');
     const admin = await renderApp('/');
-    expect(sidebarItems()).toEqual([
-      ptBR.app.name,
-      ptBR.nav.home,
-      ptBR.nav.projects,
-      ptBR.nav.tickets,
-      ptBR.nav.admin,
-    ]);
+    await waitFor(() => {
+      expect(sidebarItems()).toEqual([
+        defaultInstallation.name,
+        ptBR.nav.home,
+        ptBR.nav.projects,
+        ptBR.nav.tickets,
+        ptBR.nav.admin,
+      ]);
+    });
     admin.unmount();
 
     for (const role of ['ProjectManager', 'User'] as const) {

@@ -5,6 +5,10 @@
     <Project Path="src/FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Administration/">
+    <Project Path="src/Modules/Administration/FiscoProjects.Administration.Contracts/FiscoProjects.Administration.Contracts.csproj" />
+    <Project Path="src/Modules/Administration/FiscoProjects.Administration/FiscoProjects.Administration.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Audit/">
     <Project Path="src/Modules/Audit/FiscoProjects.Audit.Contracts/FiscoProjects.Audit.Contracts.csproj" />
     <Project Path="src/Modules/Audit/FiscoProjects.Audit/FiscoProjects.Audit.csproj" />
@@ -18,6 +22,7 @@
     <Project Path="src/Modules/Users/FiscoProjects.Users/FiscoProjects.Users.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/FiscoProjects.Administration.Tests/FiscoProjects.Administration.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Api.Tests/FiscoProjects.Api.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Architecture.Tests/FiscoProjects.Architecture.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Audit.Tests/FiscoProjects.Audit.Tests.csproj" />

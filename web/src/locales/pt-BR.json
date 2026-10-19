@@ -38,6 +38,9 @@
     },
     "profile": {
       "title": "Meu perfil"
+    },
+    "settings": {
+      "title": "Configurações gerais"
     }
   },
   "signIn": {
@@ -69,7 +72,8 @@
   "admin": {
     "sections": {
       "label": "Seções da administração",
-      "people": "Pessoas e segurança"
+      "people": "Pessoas e segurança",
+      "installation": "Instalação"
     }
   },
   "users": {
@@ -161,7 +165,8 @@
     },
     "itemTypes": {
       "SignIn": "Entradas",
-      "User": "Usuários"
+      "User": "Usuários",
+      "InstallationSettings": "Configurações"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -183,6 +188,9 @@
         "Created": "Criou um item",
         "Updated": "Alterou um item",
         "Deleted": "Excluiu um item"
+      },
+      "InstallationSettings": {
+        "Updated": "Alterou as configurações"
       }
     },
     "providers": {
@@ -204,7 +212,8 @@
       "provider": "Forma de entrada",
       "item": {
         "User": "Usuário",
-        "Other": "Item"
+        "Other": "Item",
+        "InstallationSettings": "Item"
       },
       "secret": "Alterado",
       "none": "—"
@@ -215,7 +224,36 @@
         "Email": "E-mail",
         "Role": "Papel no sistema",
         "IsActive": "Situação"
+      },
+      "InstallationSettings": {
+        "Name": "Nome exibido",
+        "LogoFileName": "Logo"
       }
     }
+  },
+  "settings": {
+    "brand": "Marca",
+    "name": "Nome exibido",
+    "logo": "Logo",
+    "optional": "(opcional)",
+    "logoHint": "PNG ou SVG, até 1 MB",
+    "noLogo": "—",
+    "sendLogo": "Enviar logo",
+    "replaceLogo": "Trocar logo",
+    "removeLogo": "Remover logo",
+    "errors": {
+      "nameRequired": "Informe o nome exibido.",
+      "nameTooLong": "Use até 60 caracteres.",
+      "logoFormat": "Envie o logo em PNG ou SVG.",
+      "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor.",
+      "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles."
+    },
+    "preview": "Prévia",
+    "previewLabel": "Prévia da marca",
+    "discard": "Descartar",
+    "save": "Salvar alterações",
+    "saved": "Configurações salvas.",
+    "saveFailed": "Não foi possível salvar as configurações. Tente de novo.",
+    "loadFailed": "Não foi possível carregar as configurações. Tente de novo."
   }
 }

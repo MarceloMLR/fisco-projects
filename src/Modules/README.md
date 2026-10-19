@@ -162,6 +162,7 @@ Arquivos (anexos, documentos, termos, logos) vão sempre pelo contrato `IFileSto
 - `EnsureFolderAsync` cria as pastas que faltam no caminho; `UploadAsync` escolhe, para o mesmo nome, entre `NewVersion` (documentos) e `KeepBoth` (anexos).
 - Limite de tamanho e tipos recusados são regras de cada uso e ficam no módulo que recebe o arquivo.
 - Para excluir, `DeleteFileAsync` remove o arquivo com as versões, e `DeleteFolderIfEmptyAsync` só remove pasta vazia, para nunca apagar o que o FiscoProjects não criou (ADR-0041).
+- Exemplo: o logo da instalação no módulo `Administration` (`ReplaceInstallationLogo`), conferido pelo conteúdo, gravado antes do registro e excluído se o registro falhar.
 
 ### Testes com banco
 

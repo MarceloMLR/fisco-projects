@@ -5,6 +5,9 @@ import { api, onUnauthorized, type ThemePreference } from '../api/client';
 import { queryKeys } from '../api/queries';
 import { type Session, SessionContext } from './SessionContext';
 
+/** Queries of public data, read with or without a session. */
+const publicQueries: readonly string[] = [queryKeys.installation[0]];
+
 /** The mode of the theme for a preference of the profile; Automatic follows the operating system. */
 const modeOf = (theme: ThemePreference) =>
   theme === 'Light' ? 'light' : theme === 'Dark' ? 'dark' : 'system';
@@ -36,9 +39,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [session.status, theme, setMode]);
 
+  // Everything read in the session is thrown away; the brand of the installation is public and stays, since the
+  // sign-in page and the tab title keep showing it (removing it would leave them waiting for an answer forever).
   useEffect(() => {
     if (session.status === 'signed-out') {
-      queryClient.clear();
+      queryClient.removeQueries({
+        predicate: (query) => !publicQueries.includes(String(query.queryKey[0])),
+      });
+      queryClient.getMutationCache().clear();
     }
   }, [session.status, queryClient]);
 

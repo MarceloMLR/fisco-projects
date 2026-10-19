@@ -19,6 +19,11 @@ type UserField = 'Name' | 'Email' | 'Role' | 'IsActive';
 const userFields: readonly string[] = ['Name', 'Email', 'Role', 'IsActive'] satisfies UserField[];
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
+
+type SettingsField = 'Name' | 'LogoFileName';
+const settingsFields: readonly string[] = ['Name', 'LogoFileName'] satisfies SettingsField[];
+
+const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
 const isRole = (value: string | null): value is SystemRole =>
   systemRoles.some((role) => role === value);
 
@@ -41,12 +46,21 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
 }
 
 function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
-  return entry.itemType === 'User' && isUserField(field) ? t(`audit.fields.User.${field}`) : field;
+  if (entry.itemType === 'User' && isUserField(field)) {
+    return t(`audit.fields.User.${field}`);
+  }
+  if (entry.itemType === 'InstallationSettings' && isSettingsField(field)) {
+    return t(`audit.fields.InstallationSettings.${field}`);
+  }
+  return field;
 }
 
 function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.action === 'SignedIn' || entry.action === 'SignInRefused') {
     return t(`audit.actions.SignIn.${entry.action}`);
+  }
+  if (entry.itemType === 'InstallationSettings' && entry.action === 'Updated') {
+    return t('audit.actions.InstallationSettings.Updated');
   }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
@@ -124,6 +138,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
     return [
       { label: t('audit.details.identity'), value: entry.itemLabel ?? '' },
       { label: t('audit.details.reason'), value: reasonOf(entry, t) },
+    ];
+  }
+  // The settings are always the same item, with no label of their own.
+  if (entry.itemType === 'InstallationSettings') {
+    return [
+      { label: t('audit.details.item.InstallationSettings'), value: t('pages.settings.title') },
     ];
   }
   if (entry.itemLabel === null) {
