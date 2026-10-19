@@ -4,6 +4,8 @@ import { useOutletContext } from 'react-router';
 export interface AdminContext {
   /** People of the installation, without filters; null while unknown. */
   usersTotal: number | null;
+  /** Clients of the installation, without filters; null while unknown. */
+  clientsTotal: number | null;
 }
 
 export function useAdminContext(): AdminContext {

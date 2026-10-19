@@ -1,3 +1,4 @@
+import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
@@ -7,7 +8,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
-import { usersQuery } from '../api/queries';
+import { clientsQuery, usersQuery } from '../api/queries';
 import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
 
@@ -15,12 +16,12 @@ const sections = [
   {
     labelKey: 'admin.sections.people',
     items: [
-      { path: '/admin/users', labelKey: 'pages.users.title', icon: GroupOutlined, counted: true },
+      { path: '/admin/users', labelKey: 'pages.users.title', icon: GroupOutlined, count: 'users' },
       {
         path: '/admin/audit',
         labelKey: 'pages.audit.title',
         icon: HistoryOutlined,
-        counted: false,
+        count: null,
       },
     ],
   },
@@ -31,13 +32,24 @@ const sections = [
         path: '/admin/settings',
         labelKey: 'pages.settings.title',
         icon: SettingsOutlined,
-        counted: false,
+        count: null,
       },
       {
         path: '/admin/calendar',
         labelKey: 'pages.calendar.title',
         icon: CalendarTodayOutlined,
-        counted: false,
+        count: null,
+      },
+    ],
+  },
+  {
+    labelKey: 'admin.sections.records',
+    items: [
+      {
+        path: '/admin/clients',
+        labelKey: 'pages.clients.title',
+        icon: BusinessOutlined,
+        count: 'clients',
       },
     ],
   },
@@ -51,10 +63,12 @@ const sections = [
 export function AdminLayout() {
   const { t } = useTranslation();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
-  // Only the count of the people, for the section Users and the title of its page.
+  // Only the counts of the people and of the clients, for their sections and the titles of their pages.
   const usersTotal = useQuery(usersQuery({ pageSize: 1 })).data?.total ?? null;
+  const clientsTotal = useQuery(clientsQuery({ pageSize: 1 })).data?.total ?? null;
 
-  const context: AdminContext = { usersTotal };
+  const context: AdminContext = { usersTotal, clientsTotal };
+  const counts = { users: usersTotal, clients: clientsTotal };
 
   return (
     <Box
@@ -106,7 +120,7 @@ export function AdminLayout() {
               >
                 {t(section.labelKey)}
               </Box>,
-              ...section.items.map(({ path, labelKey, icon: Icon, counted }) => (
+              ...section.items.map(({ path, labelKey, icon: Icon, count }) => (
                 <li key={path}>
                   <Box
                     component={NavLink}
@@ -144,7 +158,7 @@ export function AdminLayout() {
                     >
                       {t(labelKey)}
                     </Box>
-                    {counted && usersTotal !== null && (
+                    {count !== null && counts[count] !== null && (
                       <Box
                         component="span"
                         sx={{
@@ -155,7 +169,7 @@ export function AdminLayout() {
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {usersTotal}
+                        {counts[count]}
                       </Box>
                     )}
                   </Box>

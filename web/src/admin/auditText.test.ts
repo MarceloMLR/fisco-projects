@@ -242,3 +242,89 @@ describe('Mudanças do calendário na auditoria', () => {
     });
   });
 });
+
+// Spec: clientes, requirement "Mudanças dos clientes na auditoria" (what each record says).
+describe('Mudanças dos clientes na auditoria', () => {
+  it('Cliente incluído na auditoria', () => {
+    const created = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'Client',
+        actor: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
+        itemLabel: 'Kappa Energia',
+        changes: [
+          { field: 'Cnpj', before: null, after: '44555666000181', secret: false },
+          { field: 'IsActive', before: null, after: 'true', secret: false },
+          { field: 'Name', before: null, after: 'Kappa Energia', secret: false },
+        ],
+      }),
+      t,
+    );
+
+    expect(created).toEqual({
+      title: 'Incluiu um cliente',
+      summary: 'Kappa Energia',
+      sentence: 'Marina Costa incluiu um cliente',
+      properties: [{ label: 'Cliente', value: 'Kappa Energia' }],
+      changes: [
+        { field: 'CNPJ', before: '—', after: '44.555.666/0001-81' },
+        { field: 'Situação', before: '—', after: 'Ativo' },
+        { field: 'Nome', before: '—', after: 'Kappa Energia' },
+      ],
+    });
+  });
+
+  it('Cliente alterado na auditoria', () => {
+    const cnpj = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Client',
+        itemLabel: 'Alfa Distribuidora',
+        changes: [{ field: 'Cnpj', before: null, after: '12ABC34501DE35', secret: false }],
+      }),
+      t,
+    );
+    const logo = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Client',
+        itemLabel: 'Alfa Distribuidora',
+        changes: [{ field: 'LogoFileName', before: null, after: 'alfa.png', secret: false }],
+      }),
+      t,
+    );
+
+    expect(cnpj.title).toBe('Alterou um cliente');
+    expect(cnpj.summary).toBe('Alfa Distribuidora · cnpj — → 12.ABC.345/01DE-35');
+    expect(logo.changes).toEqual([{ field: 'Logo', before: '—', after: 'alfa.png' }]);
+  });
+
+  it('Cliente inativado na auditoria', () => {
+    const changed = (before: string, after: string) =>
+      describeAuditEntry(
+        entry({
+          action: 'Updated',
+          itemType: 'Client',
+          itemLabel: 'Épsilon Logística',
+          changes: [{ field: 'IsActive', before, after, secret: false }],
+        }),
+        t,
+      );
+
+    expect(changed('true', 'false')).toMatchObject({
+      title: 'Inativou um cliente',
+      summary: 'Épsilon Logística',
+      changes: [{ field: 'Situação', before: 'Ativo', after: 'Inativo' }],
+    });
+    expect(changed('false', 'true').title).toBe('Reativou um cliente');
+  });
+
+  it('Cliente excluído na auditoria', () => {
+    expect(
+      describeAuditEntry(
+        entry({ action: 'Deleted', itemType: 'Client', itemLabel: 'Gama Têxtil' }),
+        t,
+      ).title,
+    ).toBe('Excluiu um cliente');
+  });
+});

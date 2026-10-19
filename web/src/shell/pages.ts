@@ -43,6 +43,7 @@ export type PageTitleKey =
   | 'pages.audit.title'
   | 'pages.settings.title'
   | 'pages.calendar.title'
+  | 'pages.clients.title'
   | 'pages.profile.title';
 
 /** A level of the trail above the page: an area that leads to its own address. */

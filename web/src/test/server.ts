@@ -1,10 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { components } from '../api/schema';
+import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
   CalendarDayKind,
   CalendarYear,
+  ClientRow,
   DayOfWeek,
   Installation,
   Profile,
@@ -79,6 +81,58 @@ export function usersPage(users: readonly UserResponse[], url: URL) {
     )
     .filter((user) => role === null || user.role === role)
     .filter((user) => status === null || user.status === status)
+    .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  return {
+    items: matching.slice((page - 1) * pageSize, page * pageSize),
+    total: matching.length,
+  };
+}
+
+function client(
+  index: number,
+  name: string,
+  cnpj: string | null,
+  observation: string | null,
+  status: ClientRow['status'] = 'Active',
+): ClientRow {
+  return {
+    id: `0199f5a2-7c1e-7d40-9a1b-30000000000${String(index)}`,
+    name,
+    cnpj,
+    logoUrl: null,
+    observation,
+    status,
+  };
+}
+
+/** Clients of the simulated installation, as the Clients screen of the canvas shows them; only Alfa has a logo. */
+export function demoClients(): ClientRow[] {
+  return [
+    {
+      ...client(1, 'Alfa Distribuidora', '11222333000181', 'Matriz em Campinas'),
+      logoUrl: '/api/clients/0199f5a2-7c1e-7d40-9a1b-300000000001/logo?v=1',
+    },
+    client(2, 'Beta Alimentos', '22333444000181', 'Filiais SP e RS'),
+    client(3, 'Épsilon Logística', null, 'Contrato encerrado em 2025', 'Inactive'),
+    client(4, 'Gama Têxtil', '12ABC34501DE35', null),
+    client(5, 'Kappa Energia', null, 'Cliente novo, sem projeto ainda'),
+  ];
+}
+
+/** The list of clients as the API answers it: search by name without accents or by CNPJ, status and pages. */
+export function clientsPage(clients: readonly ClientRow[], url: URL) {
+  const search = (url.searchParams.get('search') ?? '').trim();
+  const cnpj = cleanCnpj(search);
+  const status = url.searchParams.get('status');
+  const page = Number(url.searchParams.get('page') ?? '1');
+  const pageSize = Number(url.searchParams.get('pageSize') ?? '25');
+  const matching = clients
+    .filter(
+      (row) =>
+        withoutAccents(row.name).includes(withoutAccents(search)) ||
+        (cnpj !== '' && (row.cnpj ?? '').includes(cnpj)),
+    )
+    .filter((row) => status === null || row.status === status)
     .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   return {
     items: matching.slice((page - 1) * pageSize, page * pageSize),
@@ -333,6 +387,9 @@ export const handlers = [
   http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
+  ),
+  http.get('/api/clients', ({ request }) =>
+    HttpResponse.json(clientsPage(demoClients(), new URL(request.url))),
   ),
 ];
 

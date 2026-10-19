@@ -44,6 +44,9 @@
     },
     "calendar": {
       "title": "Calendário e feriados"
+    },
+    "clients": {
+      "title": "Clientes"
     }
   },
   "signIn": {
@@ -76,7 +79,8 @@
     "sections": {
       "label": "Seções da administração",
       "people": "Pessoas e segurança",
-      "installation": "Instalação"
+      "installation": "Instalação",
+      "records": "Cadastros"
     }
   },
   "users": {
@@ -172,7 +176,8 @@
       "InstallationSettings": "Configurações",
       "WorkCalendar": "Dias de trabalho",
       "CalculatedHoliday": "Feriados calculados",
-      "LocalHoliday": "Feriados locais"
+      "LocalHoliday": "Feriados locais",
+      "Client": "Clientes"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -207,6 +212,13 @@
         "Created": "Incluiu um feriado",
         "Updated": "Alterou um feriado",
         "Deleted": "Excluiu um feriado"
+      },
+      "Client": {
+        "Created": "Incluiu um cliente",
+        "Updated": "Alterou um cliente",
+        "Deleted": "Excluiu um cliente",
+        "Deactivated": "Inativou um cliente",
+        "Reactivated": "Reativou um cliente"
       }
     },
     "providers": {
@@ -231,7 +243,8 @@
         "Other": "Item",
         "InstallationSettings": "Item",
         "WorkCalendar": "Item",
-        "Holiday": "Feriado"
+        "Holiday": "Feriado",
+        "Client": "Cliente"
       },
       "secret": "Alterado",
       "none": "—",
@@ -259,6 +272,13 @@
         "Date": "Data",
         "RepeatsEveryYear": "Repete todo ano",
         "IsConsidered": "Considerado"
+      },
+      "Client": {
+        "Name": "Nome",
+        "Cnpj": "CNPJ",
+        "Observation": "Observação",
+        "IsActive": "Situação",
+        "LogoFileName": "Logo"
       }
     }
   },
@@ -406,6 +426,80 @@
       "dateRequired": "Informe a data.",
       "dateInvalid": "Use uma data válida, como 30/12/2026.",
       "dateOutOfRange": "Use um ano de 1900 a 2199."
+    }
+  },
+  "clients": {
+    "table": "Lista de clientes",
+    "search": "Buscar por nome ou CNPJ",
+    "status": "Situação",
+    "filters": {
+      "all": "Todos",
+      "Active": "Ativos",
+      "Inactive": "Inativos"
+    },
+    "columns": {
+      "client": "Cliente",
+      "cnpj": "CNPJ",
+      "status": "Situação",
+      "observation": "Observação",
+      "actions": "Ações"
+    },
+    "statuses": {
+      "Active": "Ativo",
+      "Inactive": "Inativo"
+    },
+    "empty": "Nenhum cliente encontrado com esses filtros.",
+    "total_zero": "{{count}} clientes",
+    "total_one": "{{count}} cliente",
+    "total_other": "{{count}} clientes",
+    "active_zero": "{{count}} ativos",
+    "active_one": "{{count}} ativo",
+    "active_other": "{{count}} ativos",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "newClient": "Novo cliente",
+    "editClient": "Editar cliente",
+    "name": "Nome",
+    "cnpj": "CNPJ",
+    "cnpjPlaceholder": "00.000.000/0000-00",
+    "optional": "(opcional)",
+    "observation": "Observação",
+    "logo": "Logo",
+    "logoHint": "PNG ou JPG, até 1 MB",
+    "sendLogo": "Enviar logo",
+    "replaceLogo": "Trocar logo",
+    "removeLogo": "Remover logo",
+    "include": "Incluir cliente",
+    "save": "Salvar alterações",
+    "cancel": "Cancelar",
+    "menu": {
+      "button": "Editar ou inativar {{name}}",
+      "edit": "Editar",
+      "deactivate": "Inativar",
+      "reactivate": "Reativar",
+      "remove": "Excluir"
+    },
+    "remove": {
+      "title": "Excluir cliente",
+      "text": "O cliente {{name}} sai do cadastro, com o logo. Não dá para desfazer.",
+      "confirm": "Excluir cliente"
+    },
+    "messages": {
+      "included": "Cliente {{name}} incluído.",
+      "changed": "Cliente {{name}} alterado.",
+      "deactivated": "Cliente {{name}} inativado.",
+      "reactivated": "Cliente {{name}} reativado.",
+      "removed": "Cliente {{name}} excluído.",
+      "failed": "Não foi possível salvar. Tente de novo.",
+      "logoFailed": "O cliente {{name}} foi salvo, mas o logo não. Tente enviar o logo de novo."
+    },
+    "errors": {
+      "nameRequired": "Informe o nome do cliente.",
+      "nameTooLong": "Use até 150 caracteres.",
+      "cnpjInvalid": "Confira o CNPJ: os dígitos verificadores não conferem.",
+      "cnpjInUse": "Este CNPJ já é do cliente {{name}}.",
+      "observationTooLong": "Use até 500 caracteres.",
+      "logoFormat": "Envie o logo em PNG ou JPG.",
+      "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor."
     }
   }
 }

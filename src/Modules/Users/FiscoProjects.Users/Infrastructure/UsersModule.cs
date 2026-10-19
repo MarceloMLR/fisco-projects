@@ -31,9 +31,13 @@ public static class UsersModule
         services.AddScoped<ChooseTheme>();
 
         services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
-        services.AddAuthorizationBuilder().AddPolicy(SystemPolicies.Administrator, policy => policy
-            .RequireAuthenticatedUser()
-            .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)));
+        services.AddAuthorizationBuilder()
+            .AddPolicy(SystemPolicies.Administrator, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)))
+            .AddPolicy(SystemPolicies.ProjectCreators, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator, SystemRole.ProjectManager)));
 
         services.AddOptions<FirstAdministratorOptions>()
             .Bind(configuration.GetSection(FirstAdministratorOptions.Section))

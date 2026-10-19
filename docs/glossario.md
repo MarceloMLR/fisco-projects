@@ -39,7 +39,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Leitor | Viewer | |
 | Gestores (gerente e líder técnico) | Managers | |
 | Membro do projeto | ProjectMember | |
-| Cliente | Client | Empresa para quem o projeto é feito (ADR-0015) |
+| Cliente | Client | Empresa para quem o projeto é feito (ADR-0015); módulo `Projects` (schema `projects`) e tela `/admin/clients` |
+| CNPJ | Cnpj | Numérico ou alfanumérico (IN RFB nº 2.229/2024), guardado sem pontuação e único entre os clientes; opcional |
+| Logo do cliente | Client logo (`ClientLogo`) | PNG ou JPG de até 1 MB, no lugar das iniciais; enviado só pelo administrador |
+| Situação do cliente: Ativo, Inativo | ClientStatus: Active, Inactive | `IsActive` no domínio; o inativo continua na lista, apagado |
+| Observação | Observation | Texto livre do cliente, até 500 caracteres |
+| Quem cria projetos | SystemPolicies.ProjectCreators | Administrador ou gerente de projeto (ADR-0043): lista e inclui clientes |
 | Fornecedor | Vendor | |
 
 ## Projetos e cronograma
@@ -139,4 +144,6 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Controle segmentado | SegmentedControl | Poucas opções lado a lado, uma escolhida (o tema no menu da conta) |
 | Caixa de seleção | Checkbox | Componente `Checkbox` (fp-check), com o rótulo visível ou só para leitores de tela |
 | Diálogo | Dialog | Componente `Dialog` (fp-dialog): título, fechar, conteúdo e ações; formulário ou confirmação |
+| Campo de várias linhas | TextArea | Componente `TextArea` (TextField multiline, fp-field__control--multiline) |
+| Logo ou iniciais | LogoTile | Componente `LogoTile` (fp-logo-tile): o logo da empresa ao lado do nome, ou as iniciais |
 | Gaveta de detalhes | DetailsDrawer | Detalhe de um item escolhido numa lista, à direita, por cima da tela, com o fundo escurecido (ADR-0081) |

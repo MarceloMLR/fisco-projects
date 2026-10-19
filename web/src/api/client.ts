@@ -13,6 +13,8 @@ export type CalendarYear = components['schemas']['CalendarYearResponse'];
 export type CalendarDay = components['schemas']['CalendarDayResponse'];
 export type CalendarDayKind = components['schemas']['CalendarDayKind'];
 export type DayOfWeek = components['schemas']['DayOfWeek'];
+export type ClientRow = components['schemas']['ClientResponse'];
+export type ClientStatus = components['schemas']['ClientStatus'];
 
 /** The days of the week from Monday to Sunday, the order of the Calendar screen. */
 export const weekdays = [
@@ -50,6 +52,7 @@ export const auditItemTypes = [
   'WorkCalendar',
   'CalculatedHoliday',
   'LocalHoliday',
+  'Client',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -71,6 +74,13 @@ export const installationProblems = {
   logoFormat: 'urn:fiscoprojects:problem:logo-format',
   logoTooLarge: 'urn:fiscoprojects:problem:logo-too-large',
   logoUnsafe: 'urn:fiscoprojects:problem:logo-unsafe',
+} as const;
+
+/** Problem types of the clients (ClientProblems in the Projects module). */
+export const clientProblems = {
+  cnpjInUse: 'urn:fiscoprojects:problem:client-cnpj-in-use',
+  logoFormat: 'urn:fiscoprojects:problem:client-logo-format',
+  logoTooLarge: 'urn:fiscoprojects:problem:client-logo-too-large',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

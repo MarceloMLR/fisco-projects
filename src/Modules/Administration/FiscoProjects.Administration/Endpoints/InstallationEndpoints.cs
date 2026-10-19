@@ -54,6 +54,7 @@ internal static class InstallationEndpoints
         installation.MapGet("/rules", GetRulesAsync).WithName("GetGeneralRules")
             .ProducesProblem(StatusCodes.Status401Unauthorized);
         installation.MapGet("/logo", GetLogoAsync).WithName("GetInstallationLogo").AllowAnonymous()
+            .WithMetadata(KeepSession.Instance)
             .Produces(StatusCodes.Status200OK, contentType: "image/png", additionalContentTypes: "image/svg+xml");
 
         installation.MapPut("/", UpdateAsync).WithName("UpdateInstallation")

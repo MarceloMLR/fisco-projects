@@ -63,8 +63,9 @@ internal static class SessionAuthentication
             return;
         }
 
-        // The default only renews after half of the timeout; renewing on every use keeps the full timeout.
-        context.ShouldRenew = true;
+        // The default only renews after half of the timeout; renewing on every use keeps the full timeout. Files the
+        // browser keeps (KeepSession) never renew it, so their own cache headers stand.
+        context.ShouldRenew = context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<KeepSession>() is null;
     }
 
     // The body comes from UseStatusCodePages, in Problem Details.
