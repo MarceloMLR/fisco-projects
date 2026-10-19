@@ -60,10 +60,16 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Caminho crítico | CriticalPath | |
 | Progresso | Progress | |
 | Modelo de projeto | ProjectTemplate | |
-| Calendário da instalação | WorkCalendar | |
-| Dia útil | BusinessDay | |
+| Calendário e feriados | Calendar | Módulo `Calendar` (schema `calendar`) e tela `/admin/calendar`; os outros módulos contam dias úteis pelo contrato `IWorkCalendar` (ADR-0018, ADR-0083) |
+| Calendário da instalação, dias de trabalho | WorkCalendar, WorkingDays | Os dias da semana em que a instalação trabalha, numa linha só; padrão de segunda a sexta, nunca nenhum |
+| Dia útil | BusinessDay | Dia de trabalho que não é feriado nem ponto facultativo considerado (`IBusinessDays`) |
 | Feriado | Holiday | |
-| Ponto facultativo | OptionalHoliday | |
+| Feriado nacional | NationalHoliday | Calculado pelo sistema (`INationalCalendar`), considerado até o administrador desconsiderar |
+| Ponto facultativo | OptionalHoliday | Calculado pelo sistema, desconsiderado até a empresa considerar; meio período conta como dia inteiro (ADR-0083) |
+| Feriado calculado | CalculatedHoliday | Feriado nacional ou ponto facultativo, com a escolha de considerar, que vale em todos os anos |
+| Feriado local | LocalHoliday | Da cidade, do estado ou da empresa: nome, data e "Repete todo ano", a partir do ano da data |
+| Considerado, desconsiderado | IsConsidered | Considerado, o feriado deixa de ser dia útil; desconsiderado, continua na lista como dia útil |
+| Marcar todos, Desmarcar todos | ConsiderHolidays | Considera (ou desconsidera) de uma vez as datas da lista mostrada |
 | Meu trabalho | MyWork | |
 | Visão geral do projeto | ProjectOverview | |
 
@@ -131,4 +137,6 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Controle segmentado | SegmentedControl | Poucas opções lado a lado, uma escolhida (o tema no menu da conta) |
+| Caixa de seleção | Checkbox | Componente `Checkbox` (fp-check), com o rótulo visível ou só para leitores de tela |
+| Diálogo | Dialog | Componente `Dialog` (fp-dialog): título, fechar, conteúdo e ações; formulário ou confirmação |
 | Gaveta de detalhes | DetailsDrawer | Detalhe de um item escolhido numa lista, à direita, por cima da tela, com o fundo escurecido (ADR-0081) |
