@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { components } from '../api/schema';
-import type { Profile, SessionUser } from '../api/client';
+import type { Installation, Profile, SessionUser } from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
 type AuditEntryResponse = components['schemas']['AuditEntryResponse'];
@@ -170,6 +170,9 @@ export function auditPage(entries: readonly AuditEntryResponse[], url: URL) {
   };
 }
 
+/** The brand of the simulated installation: the name nobody changed yet, and no logo. */
+export const defaultInstallation: Installation = { name: 'FiscoProjects', logoUrl: null };
+
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */
 export function profileOf(person: SessionUser): Profile {
   return { ...person, lastSignInAt: '2026-10-19T12:12:00Z', signInMethods: ['local'] };
@@ -187,6 +190,7 @@ export const handlers = [
   http.post('/api/session/sign-out', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/profile', () => HttpResponse.json(profileOf(marina))),
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
+  http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
 ];
 
 export const server = setupServer(...handlers);

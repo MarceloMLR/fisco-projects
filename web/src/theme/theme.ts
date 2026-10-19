@@ -141,6 +141,16 @@ export const theme = createTheme({
                 },
               },
             },
+            // Ghost button (fp-btn--ghost): only the text in the action color, as "Remover logo".
+            {
+              props: { variant: 'text' },
+              style: {
+                padding: '0 var(--space-3)',
+                color: 'var(--action-text)',
+                '&:hover': { backgroundColor: 'var(--bg-selected)' },
+                '&.Mui-disabled': { backgroundColor: 'transparent' },
+              },
+            },
             {
               props: { variant: 'contained', color: 'primary' },
               style: {

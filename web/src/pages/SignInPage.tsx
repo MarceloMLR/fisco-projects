@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { api, signInProblems } from '../api/client';
 import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
+import { InstallationLogo } from '../installation/InstallationLogo';
+import { useInstallation } from '../installation/useInstallation';
 import { SessionPending } from '../session/RequireSession';
 import { type SignInState, useSession } from '../session/SessionContext';
 import { rememberEmail, rememberedEmail } from '../session/rememberedEmail';
@@ -60,6 +62,7 @@ export function SignInPage() {
 function SignInScreen() {
   const { t } = useTranslation();
   const { refresh } = useSession();
+  const installation = useInstallation();
   const [localSignIn, setLocalSignIn] = useState<boolean>();
   const [refusal, setRefusal] = useState<Refusal>();
   const {
@@ -189,22 +192,40 @@ function SignInScreen() {
               fontWeight: 500,
             }}
           >
-            <Box
-              component="span"
-              aria-hidden="true"
-              sx={{
-                display: 'inline-grid',
-                placeItems: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--brand-panel-text)',
-                color: 'var(--brand-panel-bg)',
-              }}
-            >
-              <ViewTimelineOutlined sx={{ fontSize: 'var(--icon-md)' }} />
-            </Box>
-            {t('app.name')}
+            {installation.logoUrl === null ? (
+              <Box
+                component="span"
+                aria-hidden="true"
+                sx={{
+                  display: 'inline-grid',
+                  placeItems: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--brand-panel-text)',
+                  color: 'var(--brand-panel-bg)',
+                }}
+              >
+                <ViewTimelineOutlined sx={{ fontSize: 'var(--icon-md)' }} />
+              </Box>
+            ) : (
+              // The panel is always dark; a light tile keeps a dark logo visible, at the height of the badge.
+              <Box
+                component="span"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  boxSizing: 'border-box',
+                  height: 32,
+                  padding: '4px 6px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--brand-panel-text)',
+                }}
+              >
+                <InstallationLogo src={installation.logoUrl} maxHeight={24} maxWidth={148} />
+              </Box>
+            )}
+            {installation.name}
           </Box>
           <Box
             component="p"

@@ -35,6 +35,7 @@ export const queryKeys = {
   users: ['users'],
   audit: ['audit'],
   profile: ['profile'],
+  installation: ['installation'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -58,5 +59,13 @@ export function profileQuery() {
   return queryOptions({
     queryKey: queryKeys.profile,
     queryFn: ({ signal }) => dataOf(api.GET('/api/profile', { signal })),
+  });
+}
+
+/** The brand of the installation (name and logo), read without a session too, as the sign-in page shows it. */
+export function installationQuery() {
+  return queryOptions({
+    queryKey: queryKeys.installation,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/installation', { signal })),
   });
 }

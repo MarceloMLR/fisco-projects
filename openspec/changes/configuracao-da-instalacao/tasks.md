@@ -21,8 +21,8 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Criar `installationQuery` e `useInstallation`, e mostrar o nome e o logo da instalação na `Sidebar`, na `SignInPage` e no título da aba. Testar "Nome padrão", "Trocar o nome", "Enviar o logo", "Remover o logo", "Marca na página de entrada" e "Navegação principal". Verificar com `npm test`.
-- [ ] 2.2 Criar a tela Configurações gerais (`/admin/settings`), com:
+- [x] 2.1 Criar `installationQuery` e `useInstallation`, e mostrar o nome e o logo da instalação na `Sidebar`, na `SignInPage` e no título da aba. Testar "Nome padrão", "Trocar o nome", "Enviar o logo", "Remover o logo", "Marca na página de entrada" e "Navegação principal". Verificar com `npm test`.
+- [x] 2.2 Criar a tela Configurações gerais (`/admin/settings`), com:
   - a seção Instalação no `AdminLayout`;
   - a seção Marca (nome e logo), a Prévia e a barra de ações;
   - o tipo Configurações na Auditoria.

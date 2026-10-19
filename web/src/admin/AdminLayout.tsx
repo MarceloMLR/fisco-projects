@@ -1,5 +1,6 @@
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
+import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +19,17 @@ const sections = [
         path: '/admin/audit',
         labelKey: 'pages.audit.title',
         icon: HistoryOutlined,
+        counted: false,
+      },
+    ],
+  },
+  {
+    labelKey: 'admin.sections.installation',
+    items: [
+      {
+        path: '/admin/settings',
+        labelKey: 'pages.settings.title',
+        icon: SettingsOutlined,
         counted: false,
       },
     ],

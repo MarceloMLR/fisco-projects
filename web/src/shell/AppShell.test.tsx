@@ -10,14 +10,24 @@ const navigationName = ptBR.shell.mainNavigation;
 // Spec: estrutura-das-telas.
 describe('Barra lateral no computador', () => {
   it('Navegação principal', async () => {
+    server.use(
+      http.get('/api/installation', () =>
+        HttpResponse.json({ name: 'Consultoria Fictícia', logoUrl: null }),
+      ),
+    );
     await renderApp('/');
 
     const sidebar = screen.getByRole('navigation', { name: navigationName });
-    expect(within(sidebar).getByText(ptBR.app.name)).toBeInTheDocument();
+    expect(await within(sidebar).findByText('Consultoria Fictícia')).toBeInTheDocument();
     const items = within(sidebar)
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(items).toEqual([ptBR.app.name, ptBR.nav.home, ptBR.nav.projects, ptBR.nav.tickets]);
+    expect(items).toEqual([
+      'Consultoria Fictícia',
+      ptBR.nav.home,
+      ptBR.nav.projects,
+      ptBR.nav.tickets,
+    ]);
   });
 
   it('Item da página atual', async () => {

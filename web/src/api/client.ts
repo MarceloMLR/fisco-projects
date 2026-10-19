@@ -8,6 +8,7 @@ export type AuditEntry = components['schemas']['AuditEntryResponse'];
 export type AuditField = components['schemas']['AuditFieldResponse'];
 export type ThemePreference = components['schemas']['ThemePreference'];
 export type Profile = components['schemas']['ProfileResponse'];
+export type Installation = components['schemas']['InstallationResponse'];
 
 /** Themes in the order the screens offer them (ADR-0014). */
 export const themePreferences = [
@@ -17,7 +18,7 @@ export const themePreferences = [
 ] as const satisfies readonly ThemePreference[];
 
 /** Item types the Audit screen filters by, in the order of the filter (AuditItemTypes and the module entities). */
-export const auditItemTypes = ['SignIn', 'User'] as const;
+export const auditItemTypes = ['SignIn', 'User', 'InstallationSettings'] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
@@ -31,6 +32,13 @@ export const systemRoles = [
 export const signInProblems = {
   notInDirectory: 'urn:fiscoprojects:problem:not-in-demo-directory',
   inactive: 'urn:fiscoprojects:problem:user-inactive',
+} as const;
+
+/** Problem types of a refused logo (InstallationProblems in the Administration module). */
+export const installationProblems = {
+  logoFormat: 'urn:fiscoprojects:problem:logo-format',
+  logoTooLarge: 'urn:fiscoprojects:problem:logo-too-large',
+  logoUnsafe: 'urn:fiscoprojects:problem:logo-unsafe',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */
