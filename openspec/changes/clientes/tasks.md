@@ -28,7 +28,7 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Criar a tela Clientes, como no canvas:
+- [x] 2.1 Criar a tela Clientes, como no canvas:
   - seção Cadastros com o total;
   - lista com logo ou iniciais, CNPJ formatado, situação e observação;
   - busca e filtro de situação;
@@ -36,7 +36,7 @@
   - menu com Editar, Inativar ou Reativar e Excluir com confirmação.
 
   Testar com `npm test` "Clientes na Administração", "Buscar cliente", "Filtrar por situação", "Excluir cliente pela tela", inativar e reativar.
-- [ ] 2.2 Criar o `ClientDialog` (novo e editar), com:
+- [x] 2.2 Criar o `ClientDialog` (novo e editar), com:
   - máscara de CNPJ;
   - logo para o administrador;
   - CNPJ repetido no campo.

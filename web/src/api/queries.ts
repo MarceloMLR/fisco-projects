@@ -4,6 +4,8 @@ import type { operations } from './schema';
 
 /** Filters of the list of users, as the contract has them. */
 export type UsersParams = NonNullable<operations['ListUsers']['parameters']['query']>;
+/** Filters of the list of clients, as the contract has them. */
+export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the audit, as the contract has them. */
 export type AuditParams = NonNullable<operations['ListAuditEntries']['parameters']['query']>;
 
@@ -37,6 +39,7 @@ export const queryKeys = {
   profile: ['profile'],
   installation: ['installation'],
   calendar: ['calendar'],
+  clients: ['clients'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -44,6 +47,14 @@ export function usersQuery(params: UsersParams) {
   return queryOptions({
     queryKey: [...queryKeys.users, 'list', params] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/users', { params: { query: params }, signal })),
+  });
+}
+
+/** A page of the clients, with the filters of the Clients screen; with pageSize 1, only the count. */
+export function clientsQuery(params: ClientsParams) {
+  return queryOptions({
+    queryKey: [...queryKeys.clients, 'list', params] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/clients', { params: { query: params }, signal })),
   });
 }
 

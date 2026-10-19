@@ -6,6 +6,7 @@ import {
   type SystemRole,
   weekdays,
 } from '../api/client';
+import { formatCnpj } from '../format/cnpj';
 import { formatDayText } from '../format/dates';
 import { calculatedHolidayName } from './calendarText';
 
@@ -47,6 +48,17 @@ const holidayFields: readonly string[] = [
 ] satisfies HolidayField[];
 
 const isHolidayField = (field: string): field is HolidayField => holidayFields.includes(field);
+
+type ClientField = 'Name' | 'Cnpj' | 'Observation' | 'IsActive' | 'LogoFileName';
+const clientFields: readonly string[] = [
+  'Name',
+  'Cnpj',
+  'Observation',
+  'IsActive',
+  'LogoFileName',
+] satisfies ClientField[];
+
+const isClientField = (field: string): field is ClientField => clientFields.includes(field);
 const isHoliday = (entry: AuditEntry) =>
   entry.itemType === 'CalculatedHoliday' || entry.itemType === 'LocalHoliday';
 const isWeekday = (value: string): value is (typeof weekdays)[number] =>
@@ -82,6 +94,12 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (isHoliday(entry) && field === 'Date') {
     return formatDayText(value);
   }
+  if (entry.itemType === 'Client' && field === 'Cnpj') {
+    return formatCnpj(value);
+  }
+  if (entry.itemType === 'Client' && field === 'IsActive') {
+    return t(value === 'true' ? 'clients.statuses.Active' : 'clients.statuses.Inactive');
+  }
   return value;
 }
 
@@ -113,6 +131,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (isHoliday(entry) && isHolidayField(field)) {
     return t(`audit.fields.Holiday.${field}`);
   }
+  if (entry.itemType === 'Client' && isClientField(field)) {
+    return t(`audit.fields.Client.${field}`);
+  }
   return field;
 }
 
@@ -136,6 +157,17 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
       );
     }
     return t(`audit.actions.Holiday.${entry.action}`);
+  }
+  if (entry.itemType === 'Client') {
+    const situation = entry.action === 'Updated' ? changeOf(entry, 'IsActive') : undefined;
+    if (situation !== undefined) {
+      return t(
+        situation.after === 'false'
+          ? 'audit.actions.Client.Deactivated'
+          : 'audit.actions.Client.Reactivated',
+      );
+    }
+    return t(`audit.actions.Client.${entry.action}`);
   }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
@@ -189,7 +221,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
       `${valueOf(entry, 'Role', role.before, t)} → ${valueOf(entry, 'Role', role.after, t)}`,
     );
   }
-  if (entry.itemType === 'User' && changeOf(entry, 'IsActive') !== undefined) {
+  if (
+    (entry.itemType === 'User' || entry.itemType === 'Client') &&
+    changeOf(entry, 'IsActive') !== undefined
+  ) {
     return label;
   }
   if (isHoliday(entry) && considerationOf(entry) !== undefined) {
@@ -233,6 +268,9 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   }
   if (isHoliday(entry)) {
     return [{ label: t('audit.details.item.Holiday'), value: label }];
+  }
+  if (entry.itemType === 'Client') {
+    return [{ label: t('audit.details.item.Client'), value: label }];
   }
   return [
     {

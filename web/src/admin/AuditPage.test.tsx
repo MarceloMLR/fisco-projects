@@ -151,6 +151,18 @@ describe('Tela de Auditoria', () => {
     expect(lastRequest().get('itemType')).toBe('SignIn');
   });
 
+  // Spec: clientes, requirement "Mudanças dos clientes na auditoria".
+  it('Clientes no filtro da Auditoria', async () => {
+    await openAudit();
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: text.filters.type }));
+    fireEvent.click(await screen.findByRole('option', { name: text.itemTypes.Client }));
+
+    await waitFor(() => {
+      expect(lastRequest().get('itemType')).toBe('Client');
+    });
+  });
+
   it('Filtro por período', async () => {
     await openAudit();
 
