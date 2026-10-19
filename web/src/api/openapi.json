@@ -4722,6 +4722,7 @@
           "completedOn",
           "reachedOn",
           "late",
+          "lateDays",
           "canUpdateProgress",
           "owner",
           "predecessorIds",
@@ -4777,6 +4778,10 @@
           "late": {
             "type": "boolean"
           },
+          "lateDays": {
+            "type": "integer",
+            "format": "int32"
+          },
           "canUpdateProgress": {
             "type": "boolean"
           },
@@ -4808,7 +4813,7 @@
             "type": "boolean"
           }
         },
-        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late, whether the person may update its progress now (only a task without subtasks, while the project is open),\nthe owner, the ids of the items it depends on, the task it is in and whether it has subtasks, whose dates and\nprogress it then shows (ADR-0088)."
+        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088)."
       },
       "ScheduleOwnerResponse": {
         "required": [

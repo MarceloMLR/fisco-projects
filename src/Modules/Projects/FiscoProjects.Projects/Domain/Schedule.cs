@@ -722,6 +722,16 @@ public sealed class ScheduleItem : Entity
     public bool IsLate(DateOnly today) =>
         End < today && (Kind == ScheduleItemKind.Task ? Progress < 100 : ReachedOn is null);
 
+    /// <summary>
+    /// The business days of delay on a day: from the day after the end up to the day, both included, in the calendar of
+    /// the installation (ADR-0018); zero when it is not late, and while the delay began on non-business days only.
+    /// </summary>
+    public int DaysLate(DateOnly today, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        return IsLate(today) ? days.CountBusinessDays(End.AddDays(1), today) : 0;
+    }
+
     internal void Set(Guid phaseId, string name, int duration, Guid? ownerId, Guid? parentId)
     {
         PhaseId = phaseId;

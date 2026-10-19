@@ -7,10 +7,10 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Api.Tests;
 
 // Spec: cronograma (API side): "Quem vê e quem edita o cronograma", "Tarefas e marcos", "Dependências", "Dependências
-// que empurram", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria", "Progresso das tarefas",
-// "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API", "Dias não úteis no
-// cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Subtarefas na auditoria";
-// membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
+// que empurram", "Tarefa atrasada", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria",
+// "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API",
+// "Dias não úteis no cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Subtarefas na
+// auditoria"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
 // and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
@@ -334,11 +334,14 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         var task = configuration.GetProperty("items")[0];
         (task.GetProperty("kind").GetString(), task.GetProperty("end").GetString(), task.GetProperty("late").GetBoolean())
             .Should().Be(("Task", "2026-10-15", true));
+        // Late on 16/10 and 19/10, without the weekend, as the milestone of the same day.
+        task.GetProperty("lateDays").GetInt32().Should().Be(2);
         task.GetProperty("owner").GetProperty("name").GetString().Should().Be("Carla Mendes");
         task.GetProperty("canUpdateProgress").GetBoolean().Should().BeTrue();
         var milestone = configuration.GetProperty("items")[1];
         (milestone.GetProperty("kind").GetString(), milestone.GetProperty("duration").GetInt32()).Should().Be(("Milestone", 0));
         (milestone.GetProperty("late").GetBoolean(), milestone.GetProperty("canUpdateProgress").GetBoolean()).Should().Be((true, false));
+        (milestone.GetProperty("start").GetString(), milestone.GetProperty("lateDays").GetInt32()).Should().Be(("2026-10-15", 2));
         milestone.GetProperty("reachedOn").ValueKind.Should().Be(JsonValueKind.Null);
         milestone.GetProperty("predecessorIds").EnumerateArray().Select(id => id.GetGuid()).Should().Equal(scene.Task);
         phases[1].GetProperty("start").ValueKind.Should().Be(JsonValueKind.Null);
@@ -489,6 +492,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             task.GetProperty("progress").GetInt32()).Should().Be(("2026-10-13", "2026-10-16", 4, 50));
         items[1].GetProperty("parentId").GetGuid().Should().Be(scene.Task);
         items[1].GetProperty("hasSubtasks").GetBoolean().Should().BeFalse();
+        // The subtask ended on 16/10 at 50%: on 19/10 it and its task are one business day late.
+        (items[1].GetProperty("lateDays").GetInt32(), task.GetProperty("lateDays").GetInt32()).Should().Be((1, 1));
         items[2].GetProperty("predecessorIds").EnumerateArray().Select(id => id.GetGuid()).Should().Equal(subtask);
         items[2].GetProperty("start").GetString().Should().Be("2026-10-16");
         task.GetProperty("predecessorIds").EnumerateArray().Should().BeEmpty();

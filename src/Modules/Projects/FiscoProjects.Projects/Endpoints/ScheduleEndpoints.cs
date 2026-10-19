@@ -14,9 +14,11 @@ public sealed record ScheduleOwnerResponse(Guid Id, string Name);
 /// <summary>
 /// A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
 /// milestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it
-/// is late, whether the person may update its progress now (only a task without subtasks, while the project is open),
-/// the owner, the ids of the items it depends on, the task it is in and whether it has subtasks, whose dates and
-/// progress it then shows (ADR-0088).
+/// is late and by how many business days (from the day after the end up to today; for a task with subtasks, the most
+/// of its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person
+/// may update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the
+/// items it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows
+/// (ADR-0088).
 /// </summary>
 public sealed record ScheduleItemResponse(
     Guid Id,
@@ -30,6 +32,7 @@ public sealed record ScheduleItemResponse(
     DateOnly? CompletedOn,
     DateOnly? ReachedOn,
     bool Late,
+    int LateDays,
     bool CanUpdateProgress,
     ScheduleOwnerResponse? Owner,
     IReadOnlyList<Guid> PredecessorIds,
@@ -358,6 +361,7 @@ internal static class ScheduleEndpoints
             item.CompletedOn,
             item.ReachedOn,
             view.Figures.LateItems.Contains(item.Id),
+            view.LateDays.TryGetValue(item.Id, out var lateDays) ? lateDays : 0,
             view.ProgressUpdatable.Contains(item.Id),
             item.OwnerId is { } ownerId
                 ? new ScheduleOwnerResponse(ownerId, view.OwnerNames.TryGetValue(ownerId, out var name) ? name : string.Empty)

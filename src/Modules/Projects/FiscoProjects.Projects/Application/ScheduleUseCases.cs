@@ -50,15 +50,17 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 
 /// <summary>
 /// A schedule as the Schedule tab shows it: the numbers of the day (<see cref="ScheduleFigures"/>), the names of the
-/// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043) and the
-/// non-business days around its period, for the timeline to shade (ADR-0051).
+/// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043), the
+/// non-business days around its period, for the timeline to shade (ADR-0051), and the business days of delay of each
+/// late item (<see cref="ScheduleFigures.LateDaysOf"/>).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
     IReadOnlyDictionary<Guid, string> OwnerNames,
     IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors,
     IReadOnlySet<Guid> ProgressUpdatable,
-    IReadOnlyList<DateOnly> NonWorkingDays);
+    IReadOnlyList<DateOnly> NonWorkingDays,
+    IReadOnlyDictionary<Guid, int> LateDays);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -79,8 +81,10 @@ public sealed class GetSchedule(
         var names = await PeopleNames.OfAsync(
             users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
         var figures = schedule.Figures(today);
-        var nonWorkingDays = figures is { Start: { } start, End: { } end }
-            ? Schedule.NonWorkingDaysAround(start, end, await calendar.GetAsync(cancellationToken))
+        // Without items, there is nothing to shade nor to be late.
+        var days = figures.Start is null ? null : await calendar.GetAsync(cancellationToken);
+        var nonWorkingDays = days is not null && figures is { Start: { } start, End: { } end }
+            ? Schedule.NonWorkingDaysAround(start, end, days)
             : [];
         return new ScheduleView(
             figures,
@@ -95,7 +99,8 @@ public sealed class GetSchedule(
                         && ScheduleEditing.MayUpdateProgress(permissions, item, viewer))
                     .Select(item => item.Id)
                     .ToHashSet(),
-            nonWorkingDays);
+            nonWorkingDays,
+            days is null ? new Dictionary<Guid, int>() : ScheduleFigures.LateDaysOf(schedule.Items, today, days));
     }
 }
 

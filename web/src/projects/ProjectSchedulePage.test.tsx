@@ -343,6 +343,7 @@ describe('Editar o cronograma pela tela', () => {
             completedOn: null,
             reachedOn: null,
             late: false,
+            lateDays: 0,
             canUpdateProgress: true,
             owner: { id: demoPeople.rafael.id, name: demoPeople.rafael.name },
             predecessorIds: [itemNamed('Mapear processos fiscais').id],
