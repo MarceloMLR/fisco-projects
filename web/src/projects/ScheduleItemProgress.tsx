@@ -76,10 +76,13 @@ export function TaskProgress({
   project,
   item,
   onDone,
+  subtasks = 0,
 }: {
   project: Project;
   item: ScheduleItem;
   onDone: (message: string) => void;
+  /** How many subtasks the task has: its progress is computed from them, and nobody updates it (ADR-0088). */
+  subtasks?: number;
 }) {
   const { t } = useTranslation();
   const refresh = useRefresh();
@@ -119,6 +122,14 @@ export function TaskProgress({
         <DueDate state="met">
           {t('projects.schedule.completedOn', { day: formatDayText(item.completedOn) })}
         </DueDate>
+      )}
+      {subtasks > 0 && (
+        <Box
+          component="span"
+          sx={{ fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' }}
+        >
+          {t('projects.schedule.computed', { count: subtasks })}
+        </Box>
       )}
       {item.canUpdateProgress && (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>

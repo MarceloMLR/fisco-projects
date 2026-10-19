@@ -15,6 +15,7 @@ export const scheduleItemErrors = {
   progressInvalid: 'projects.schedule.errors.progressInvalid',
   ownerInvalid: 'projects.schedule.errors.ownerInvalid',
   predecessorsInvalid: 'projects.schedule.errors.predecessorsInvalid',
+  parentInvalid: 'projects.schedule.errors.parentInvalid',
   cycle: 'projects.schedule.errors.cycle',
 } as const;
 
@@ -27,8 +28,9 @@ const wholeNumber = /^\d{1,4}$/;
 
 /**
  * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
- * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). The fields are kept
- * as typed.
+ * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). A task with
+ * subtasks (`summary`) takes its dates from them, so its duration is not checked (ADR-0088). The fields are kept as
+ * typed.
  */
 export const scheduleItemSchema = z
   .object({
@@ -45,9 +47,11 @@ export const scheduleItemSchema = z
     duration: z.string(),
     ownerId: z.string(),
     predecessorIds: z.array(z.string()),
+    parentId: z.string(),
+    summary: z.boolean().optional(),
   })
   .superRefine((values, context) => {
-    if (values.kind === 'Milestone') {
+    if (values.kind === 'Milestone' || values.summary === true) {
       return;
     }
     const duration = values.duration.trim();
@@ -77,8 +81,11 @@ export type ProgressValues = z.input<typeof progressSchema>;
 /** The value of the owner field of a task without an owner (an empty value would show an empty select). */
 export const noOwner = 'none';
 
-/** A new task, in the phase given, without dates yet. */
-export function newItemValues(phaseId: string): ScheduleItemValues {
+/** The value of "Dentro de" for an item right in the phase (ADR-0088). */
+export const noParent = 'phase';
+
+/** A new task, in the phase given and, for a subtask, in the task given, without dates yet. */
+export function newItemValues(phaseId: string, parentId: string = noParent): ScheduleItemValues {
   return {
     kind: 'Task',
     name: '',
@@ -87,6 +94,7 @@ export function newItemValues(phaseId: string): ScheduleItemValues {
     duration: '1',
     ownerId: noOwner,
     predecessorIds: [],
+    parentId,
   };
 }
 
@@ -100,22 +108,27 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     duration: String(item.duration),
     ownerId: item.owner?.id ?? noOwner,
     predecessorIds: item.predecessorIds,
+    parentId: item.parentId ?? noParent,
+    summary: item.hasSubtasks,
   };
 }
 
 /**
  * The fields of a task or milestone as the API takes them, without the progress: a new item starts at 0%, and a
- * change keeps the progress as it is (ADR-0086).
+ * change keeps the progress as it is (ADR-0086). A task with subtasks sends no dependencies nor task it is in: the API
+ * looks only at its phase, name and owner (ADR-0088).
  */
 export function bodyOf(values: ScheduleItemValues) {
   const task = values.kind === 'Task';
+  const summary = values.summary === true;
   return {
     phaseId: values.phaseId,
     name: values.name.trim(),
     start: parseTypedDay(values.start) ?? '',
     duration: task ? Number(values.duration.trim()) : 0,
     ownerId: task && values.ownerId !== noOwner ? values.ownerId : null,
-    predecessorIds: values.predecessorIds,
+    predecessorIds: summary ? [] : values.predecessorIds,
+    parentId: summary || values.parentId === noParent ? null : values.parentId,
   };
 }
 
@@ -126,6 +139,7 @@ const apiFields = {
   duration: 'duration',
   ownerId: 'ownerId',
   predecessorIds: 'predecessorIds',
+  parentId: 'parentId',
 } as const;
 
 const fieldErrors = {
@@ -135,6 +149,7 @@ const fieldErrors = {
   duration: scheduleItemErrors.durationInvalid,
   ownerId: scheduleItemErrors.ownerInvalid,
   predecessorIds: scheduleItemErrors.predecessorsInvalid,
+  parentId: scheduleItemErrors.parentInvalid,
 } as const;
 
 /**

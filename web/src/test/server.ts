@@ -317,6 +317,8 @@ function demoItem(
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     predecessorIds: [],
+    parentId: null,
+    hasSubtasks: false,
     ...item,
   };
 }
