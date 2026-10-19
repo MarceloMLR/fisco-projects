@@ -147,7 +147,11 @@ user.HasAuditLabel(u => u.Name);                       // o que identifica o ite
 user.Property(u => u.LastSignInAt).ExcludeFromAudit(); // campo técnico: fica de fora
 credential.Property(c => c.Password).IsAuditSecret();  // registra só que mudou, nunca o valor (ADR-0033)
 link.ExcludeFromAudit();                                // item técnico inteiro de fora
+project.Property(p => p.ClientId).IsAuditReference(ProjectsAudit.ClientReference); // outro item: a tela mostra o nome atual
+member.HasAuditLabelReference(m => m.UserId, UserAudit.Reference);                  // rótulo que é outro item (ADR-0084)
 ```
+
+- Uma referência guarda o identificador e o tipo (`"User"`, `"Client"`, `"Project"`), não o nome: a lista da Auditoria pede o nome atual à fonte `IAuditReferenceNames` (`SharedKernel`) registrada pelo módulo dono do tipo. Um item que não existe mais aparece sem nome. O tipo de cada referência fica no `Contracts` do módulo dono, como `UserAudit.Reference`.
 
 - Dados de negócio mudam só pelo `SaveChangesAsync`: `ExecuteUpdate`, `ExecuteDelete` e SQL direto não passam pela auditoria. O `SaveChanges` síncrono é recusado.
 - Uma transação aberta pelo módulo (dentro da estratégia de execução) leva junto os registros da auditoria.

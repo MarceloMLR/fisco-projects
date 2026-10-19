@@ -63,7 +63,7 @@
 
 ## 4. Verificação final
 
-- [ ] 4.1 Conferir no navegador, com o build de produção:
+- [x] 4.1 Conferir no navegador, com o build de produção:
   - Projetos, Novo projeto, a página do projeto e as ações, e a Auditoria;
   - nos temas claro e escuro, no computador e no celular.
 
