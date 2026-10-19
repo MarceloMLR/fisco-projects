@@ -82,7 +82,8 @@ Alternativa: limpar o SVG (tirar scripts e atributos perigosos) em vez de recusa
 - **Consulta:** `installationQuery()` em `queries.ts`, com a chave `['installation']`, e o gancho `useInstallation()`. Enquanto a resposta não chega, ele devolve o nome dos arquivos de tradução (`app.name`) e nenhum logo.
 - **Barra lateral:** com logo, `<img alt="">` no lugar do selo, com até 28 × 160 px, porque o nome vem logo depois.
 - **Página de entrada:** o logo no lugar do selo de 32 px, sobre um fundo claro (`brand-panel-text`) com cantos `radius-md`. O painel é sempre escuro, e um logo escuro sumiria nele.
-- **Título da aba:** o nome da instalação, atualizado por um efeito no `App`.
+- **Título da aba:** o nome da instalação, atualizado por uma rota raiz (`InstallationRoot`) em volta de todas as telas, com ou sem sessão.
+- **Saída:** a sessão descarta o que leu, menos a marca, que é pública. Removida a consulta, a rota raiz ficaria presa a uma consulta que não existe mais e a aba não mudaria de nome na página de entrada.
 - **Depois de salvar:** a tela invalida `['installation']` e `['audit']`.
 
 ### 5. Tela Configurações gerais

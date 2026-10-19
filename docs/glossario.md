@@ -7,6 +7,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Instalação | Installation | Uma cópia do sistema para uma empresa (ADR-0003) |
+| Configurações gerais | InstallationSettings | As configurações da instalação na Administração (`/admin/settings`), numa linha só do módulo `Administration` |
+| Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
+| Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
+| Marca da instalação | Installation | Nome e logo, lidos sem sessão (`GET /api/installation`) |
 | Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão; também o papel de menor privilégio (`SystemRole.User`) |
 | Vínculo com o provedor de identidade | IdentityLink | Provedor e identificador externo, separado do usuário (ADR-0009) |
 | Entrada (login) | SignIn | |
@@ -22,7 +26,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Último acesso | LastSignInAt | |
 | Meu perfil | Profile | Tela `/profile` da pessoa na sessão: preferências e conta |
 | Tema: Claro, Escuro, Automático | ThemePreference: Light, Dark, Automatic | Preferência salva no perfil; Automático segue o sistema (ADR-0014) |
-| Administração | Administration | Área só do administrador, rotas `/admin` (ADR-0046) |
+| Administração | Administration | Área só do administrador, rotas `/admin` (ADR-0046), e o módulo das configurações e dos cadastros |
 | Papel no projeto | ProjectRole | |
 | Administrador | Administrator | |
 | Gerente de projeto | ProjectManager | Papel no sistema e no projeto (ADR-0040) |

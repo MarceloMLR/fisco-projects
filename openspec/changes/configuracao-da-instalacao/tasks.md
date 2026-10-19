@@ -31,7 +31,7 @@
 
 ## 3. Verificação final
 
-- [ ] 3.1 Conferir no navegador, com o build de produção:
+- [x] 3.1 Conferir no navegador, com o build de produção:
   - a tela Configurações gerais, nos temas claro e escuro;
   - a troca do nome e do logo, com a barra lateral, a página de entrada e a aba;
   - a Auditoria com o registro;
