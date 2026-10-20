@@ -313,3 +313,28 @@ describe('Trocas na demonstração', () => {
     expect(bodies.get('/api/tickets/4/team')).toEqual([{ team: 'Functional' }]);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Fornecedores na demonstração".
+describe('Fornecedores na demonstração', () => {
+  it('Fornecedores na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Two fictitious vendors, by the Administrator; the tech lead registers the first ticket at one and updates it.
+    expect(callsBy(/ POST \/api\/admin\/vendors$/)).toEqual([
+      'paulo POST /api/admin/vendors',
+      'paulo POST /api/admin/vendors',
+    ]);
+    const vendors = (bodies.get('/api/admin/vendors') ?? []) as { name: string }[];
+    expect(vendors.map((vendor) => vendor.name)).toEqual([
+      'Emissor Exemplo',
+      'Nuvem Fiscal Exemplo',
+    ]);
+    expect(callsBy(/\/vendor-tickets/)).toEqual([
+      'rafael POST /api/tickets/1/vendor-tickets',
+      expect.stringMatching(/^rafael PUT \/api\/tickets\/1\/vendor-tickets\/[0-9a-f-]+$/),
+    ]);
+    expect(bodies.get('/api/tickets/1/vendor-tickets')).toEqual([
+      expect.objectContaining({ code: 'FX-20931', openedOn: '2026-10-19', status: 'Open' }),
+    ]);
+  });
+});
