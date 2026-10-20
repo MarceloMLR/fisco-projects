@@ -63,7 +63,7 @@
 
 ### 4. Permissões
 
-- **`DocumentAccess`:** ganha o `CanEditLinks` (todos, menos o leitor), no mesmo lugar das regras dos documentos (ADR-0045).
+- **`DocumentAccess`:** ganha o `MayEditLinks` (todos, menos o leitor), no mesmo lugar das regras dos documentos (ADR-0045).
 
 ### 5. Tela
 
