@@ -47,7 +47,7 @@ describe('Exportar em PDF pela impressão', () => {
     // A line for each phase and item, with its dates and progress.
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(13);
-    expect(rows[6]?.textContent).toContain('Parametrizar regras de ICMS13/10/202622/10/202650%');
+    expect(rows[6]?.textContent).toContain('Parametrizar regras de ICMS13/1022/1050%');
     // The bars of the tasks in the period, with the baseline under them; the critical path is off.
     await waitFor(() => {
       expect(container.querySelectorAll('rect.g-bar').length).toBe(7);

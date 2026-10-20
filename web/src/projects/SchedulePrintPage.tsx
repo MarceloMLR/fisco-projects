@@ -10,7 +10,12 @@ import { useParams, useSearchParams } from 'react-router';
 import type { Schedule, ScheduleItem, SchedulePhase } from '../api/client';
 import { projectQuery, projectScheduleQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
-import { type DayValue, formatDayText, formatPeriodText } from '../format/dates';
+import {
+  type DayValue,
+  formatDayMonthText,
+  formatDayText,
+  formatPeriodText,
+} from '../format/dates';
 import { predecessorNames, type ScheduleDisplay, scheduleRows } from './schedule';
 import { choiceOf, type PrintScale, printScale, scaleSpans } from './schedulePrint';
 import { TimelineLegend } from './ScheduleTimeline';
@@ -106,6 +111,9 @@ export function SchedulePrintPage() {
         color: 'var(--text)',
         fontFamily: 'var(--font-sans)',
         padding: 'var(--space-6)',
+        // The colors of the bars and of the legend also on paper.
+        printColorAdjust: 'exact',
+        WebkitPrintColorAdjust: 'exact',
         '@media print': { padding: 0, minHeight: 0 },
       }}
     >
@@ -177,11 +185,11 @@ export function SchedulePrintPage() {
         }}
       >
         <colgroup>
-          <col style={{ width: 200 }} />
-          <col style={{ width: 72 }} />
-          <col style={{ width: 72 }} />
+          <col style={{ width: 196 }} />
           <col style={{ width: 52 }} />
-          <col style={{ width: 120 }} />
+          <col style={{ width: 52 }} />
+          <col style={{ width: 68 }} />
+          <col style={{ width: 124 }} />
           <col style={{ width: stripWidth }} />
         </colgroup>
         <thead>
@@ -203,8 +211,8 @@ export function SchedulePrintPage() {
                 <Box component="td" sx={{ fontWeight: 500 }}>
                   {row.phase.name}
                 </Box>
-                <td>{row.phase.start === null ? '' : formatDayText(row.phase.start)}</td>
-                <td>{row.phase.end === null ? '' : formatDayText(row.phase.end)}</td>
+                <td>{row.phase.start === null ? '' : formatDayMonthText(row.phase.start)}</td>
+                <td>{row.phase.end === null ? '' : formatDayMonthText(row.phase.end)}</td>
                 <td>{row.phase.start === null ? '' : `${String(row.phase.progress)}%`}</td>
                 <td />
                 <td className="strip">
@@ -237,8 +245,8 @@ export function SchedulePrintPage() {
                   )}
                   {row.item.name}
                 </Box>
-                <td>{formatDayText(row.item.start)}</td>
-                <td>{row.item.kind === 'Task' ? formatDayText(row.item.end) : ''}</td>
+                <td>{formatDayMonthText(row.item.start)}</td>
+                <td>{row.item.kind === 'Task' ? formatDayMonthText(row.item.end) : ''}</td>
                 <td>
                   {row.item.kind === 'Task'
                     ? `${String(row.item.progress)}%`
@@ -270,6 +278,13 @@ export function SchedulePrintPage() {
       </Box>
     </Box>
   );
+}
+
+/** In days too narrow for every number, only the Mondays keep theirs. */
+function mondayLabel(day: DayValue, scale: 'days' | 'weeks' | 'months'): string | undefined {
+  return scale === 'days' && new Date(`${day}T00:00:00Z`).getUTCDay() === 1
+    ? String(Number(day.slice(8, 10)))
+    : undefined;
 }
 
 /** The two rows of the scale: the months over the days or weeks, or the years over the months. */
@@ -309,7 +324,7 @@ function ScaleStrip({
         return (
           <g key={`bottom-${span.from}`}>
             <line className="g-scale-line" x1={left} x2={left} y1={18} y2={height} />
-            {width >= 12 && (
+            {(width >= 16 || span.label === mondayLabel(span.from, scale)) && (
               <text className="g-scale-text" x={left + width / 2} y={31} textAnchor="middle">
                 {span.label}
               </text>
