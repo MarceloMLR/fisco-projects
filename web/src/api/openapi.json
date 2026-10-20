@@ -3993,6 +3993,36 @@
         }
       }
     },
+    "/api/tickets/flow": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "GetTicketFlow",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketFlowResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tickets/{number}": {
       "get": {
         "tags": [
@@ -4033,6 +4063,83 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/transitions": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeTicketStatus",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketTransitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -4121,6 +4228,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -4189,6 +4306,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6478,6 +6605,45 @@
         ],
         "description": "The theme a person chose in the profile (ADR-0014); Automatic follows the operating system."
       },
+      "TicketAction": {
+        "enum": [
+          "StartTriage",
+          "FirstResponse",
+          "StartWork",
+          "AskForInformation",
+          "Reply",
+          "Resolve",
+          "ConfirmAndClose",
+          "AutoClose",
+          "Reopen",
+          "Cancel"
+        ],
+        "description": "The actions of the flow of a ticket (ADR-0024), named in English in the table."
+      },
+      "TicketActionResponse": {
+        "required": [
+          "action",
+          "to",
+          "requiresMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TicketAction"
+          },
+          "to": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "requiresMessage": {
+            "type": "boolean"
+          }
+        },
+        "description": "An action of the flow the person may take now: where it leads and whether it needs a message (ADR-0024)."
+      },
+      "TicketActors": {
+        "type": "string",
+        "description": "Who may take an action of the flow (ADR-0024, ADR-0044); a transition takes several."
+      },
       "TicketAttachmentResponse": {
         "required": [
           "id",
@@ -6520,7 +6686,8 @@
       "TicketConversationPermissionsResponse": {
         "required": [
           "canSend",
-          "canAttachToDescription"
+          "canAttachToDescription",
+          "actions"
         ],
         "type": "object",
         "properties": {
@@ -6529,9 +6696,15 @@
           },
           "canAttachToDescription": {
             "type": "boolean"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketActionResponse"
+            }
           }
         },
-        "description": "What the person may do in the conversation."
+        "description": "What the person may do in the conversation, with the actions of the flow open now."
       },
       "TicketCountsResponse": {
         "required": [
@@ -6592,6 +6765,111 @@
             "format": "int32"
           }
         }
+      },
+      "TicketEventKind": {
+        "enum": [
+          "StatusChanged",
+          "AssigneeSet"
+        ],
+        "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
+      },
+      "TicketEventResponse": {
+        "required": [
+          "id",
+          "kind",
+          "actorId",
+          "from",
+          "to",
+          "action",
+          "assigneeId",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TicketEventKind"
+          },
+          "actorId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "from": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketStatus"
+              }
+            ]
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketStatus"
+              }
+            ]
+          },
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketAction"
+              }
+            ]
+          },
+          "assigneeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is\nnull when the system did it."
+      },
+      "TicketFlowResponse": {
+        "required": [
+          "statuses",
+          "transitions",
+          "autoCloseBusinessDays"
+        ],
+        "type": "object",
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketStatus"
+            }
+          },
+          "transitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketTransitionResponse"
+            }
+          },
+          "autoCloseBusinessDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The flow of the tickets, read from its table, with the statuses in their order and after how many business days a\nresolved ticket without an answer closes."
       },
       "TicketListItemResponse": {
         "required": [
@@ -6843,6 +7121,7 @@
           "openedAt",
           "updatedAt",
           "messages",
+          "events",
           "attachments",
           "followers",
           "mentionable",
@@ -6924,6 +7203,12 @@
               "$ref": "#/components/schemas/TicketMessageResponse"
             }
           },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketEventResponse"
+            }
+          },
           "attachments": {
             "type": "array",
             "items": {
@@ -6991,6 +7276,69 @@
           "Development"
         ],
         "description": "The team a ticket goes to (ADR-0068): only these two, without queues."
+      },
+      "TicketTransitionRequest": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketAction"
+              }
+            ]
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The message, as the JSON of the editor, without mentions; needed by the actions that ask for one."
+          }
+        },
+        "description": "An action of the flow taken in a ticket, with the message when the action needs one."
+      },
+      "TicketTransitionResponse": {
+        "required": [
+          "from",
+          "to",
+          "action",
+          "actors",
+          "requiresMessage",
+          "automatic"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "to": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "action": {
+            "$ref": "#/components/schemas/TicketAction"
+          },
+          "actors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketActors"
+            },
+            "description": "Attendant, Requester, Manager, Administrator or System."
+          },
+          "requiresMessage": {
+            "type": "boolean"
+          },
+          "automatic": {
+            "type": "boolean",
+            "description": "Taken by the system on its own, never offered as a button."
+          }
+        },
+        "description": "A transition of the flow (ADR-0024): from a status to another by an action, who may take it, and how."
       },
       "TicketView": {
         "enum": [

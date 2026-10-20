@@ -24,6 +24,7 @@ import type {
   Ticket,
   TicketChoice,
   TicketCounts,
+  TicketFlow,
   TicketRow,
 } from '../api/client';
 
@@ -1193,6 +1194,7 @@ export function demoTicket(row: TicketRow): Ticket {
     updatedAt: row.updatedAt,
     descriptionBody: null,
     messages: [],
+    events: [],
     attachments: [],
     followers: [row.requester.id],
     mentionable: [
@@ -1213,8 +1215,108 @@ export function demoTicket(row: TicketRow): Ticket {
         role: row.requester.id === demoPeople.diego.id ? 'Requester' : 'Development',
       },
     ],
-    permissions: { canSend: true, canAttachToDescription: false },
+    permissions: { canSend: true, canAttachToDescription: false, actions: [] },
     following: row.requester.id === marina.id,
+  };
+}
+
+/** The flow of the MVP (ADR-0024), as GET /api/tickets/flow answers it. */
+export function demoTicketFlow(): TicketFlow {
+  const attendant = ['Attendant'];
+  const closers = ['Requester', 'Manager', 'Administrator'];
+  return {
+    statuses: ['Open', 'Triage', 'InProgress', 'WaitingForRequester', 'Resolved', 'Closed'],
+    autoCloseBusinessDays: 5,
+    transitions: [
+      {
+        from: 'Open',
+        to: 'Triage',
+        action: 'StartTriage',
+        actors: attendant,
+        requiresMessage: false,
+        automatic: false,
+      },
+      {
+        from: 'Open',
+        to: 'InProgress',
+        action: 'FirstResponse',
+        actors: attendant,
+        requiresMessage: true,
+        automatic: true,
+      },
+      {
+        from: 'Open',
+        to: 'Closed',
+        action: 'Cancel',
+        actors: closers,
+        requiresMessage: true,
+        automatic: false,
+      },
+      {
+        from: 'Triage',
+        to: 'InProgress',
+        action: 'StartWork',
+        actors: attendant,
+        requiresMessage: false,
+        automatic: false,
+      },
+      {
+        from: 'Triage',
+        to: 'Closed',
+        action: 'Cancel',
+        actors: closers,
+        requiresMessage: true,
+        automatic: false,
+      },
+      {
+        from: 'InProgress',
+        to: 'WaitingForRequester',
+        action: 'AskForInformation',
+        actors: attendant,
+        requiresMessage: true,
+        automatic: false,
+      },
+      {
+        from: 'InProgress',
+        to: 'Resolved',
+        action: 'Resolve',
+        actors: attendant,
+        requiresMessage: false,
+        automatic: false,
+      },
+      {
+        from: 'WaitingForRequester',
+        to: 'InProgress',
+        action: 'Reply',
+        actors: ['Attendant', 'Requester'],
+        requiresMessage: true,
+        automatic: true,
+      },
+      {
+        from: 'Resolved',
+        to: 'Closed',
+        action: 'ConfirmAndClose',
+        actors: closers,
+        requiresMessage: false,
+        automatic: false,
+      },
+      {
+        from: 'Resolved',
+        to: 'Closed',
+        action: 'AutoClose',
+        actors: ['System'],
+        requiresMessage: false,
+        automatic: true,
+      },
+      {
+        from: 'Resolved',
+        to: 'InProgress',
+        action: 'Reopen',
+        actors: ['Requester'],
+        requiresMessage: true,
+        automatic: false,
+      },
+    ],
   };
 }
 
@@ -1275,6 +1377,7 @@ export const handlers = [
   ),
   http.get('/api/tickets/counts', () => HttpResponse.json(demoTicketCounts)),
   http.get('/api/tickets/choices', () => HttpResponse.json(demoTicketChoices())),
+  http.get('/api/tickets/flow', () => HttpResponse.json(demoTicketFlow())),
   http.get('/api/tickets/:number', ({ params }) => {
     const row = demoTickets().find((ticket) => String(ticket.number) === params.number);
     return row === undefined

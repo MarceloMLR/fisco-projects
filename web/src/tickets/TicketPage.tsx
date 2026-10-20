@@ -11,9 +11,11 @@ import { ApiError, queryKeys, ticketQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { useDates } from '../format/useDates';
 import { useSession } from '../session/SessionContext';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
-import { toneOf } from './conversation';
+import { type ConversationFilter, toneOf } from './conversation';
+import { TicketActions } from './TicketActions';
 import { AttachmentChip, PersonAvatar, TicketConversation } from './TicketConversation';
 import { TicketReply } from './TicketReply';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
@@ -280,14 +282,17 @@ export function TicketPage() {
     enabled: number !== null,
   });
   const thread = useRef<HTMLDivElement>(null);
-  const messages = ticket?.messages.length;
-  // The conversation opens at its end, the latest message, and goes there again after an answer (ADR-0069).
+  const [filter, setFilter] = useState<ConversationFilter>('all');
+  const interactions =
+    ticket === undefined ? undefined : ticket.messages.length + ticket.events.length;
+  // The conversation opens at its end, the latest interaction, and goes there again after an answer or a change of
+  // status (ADR-0069).
   useEffect(() => {
     const area = thread.current;
-    if (area !== null && messages !== undefined) {
+    if (area !== null && interactions !== undefined) {
       area.scrollTop = area.scrollHeight;
     }
-  }, [messages]);
+  }, [interactions, filter]);
   const state: unknown = location.state;
   const [message, setMessage] = useState<string | undefined>(
     typeof state === 'object' &&
@@ -333,6 +338,8 @@ export function TicketPage() {
         <Box component="span" sx={tagSx}>
           {t(`tickets.teams.${ticket.team}`)}
         </Box>
+        <Box sx={{ flex: 1 }} />
+        <TicketActions ticket={ticket} onMessage={setMessage} />
       </Box>
       <Box
         component="h1"
@@ -386,9 +393,20 @@ export function TicketPage() {
             component="span"
             sx={{ marginLeft: 'var(--space-2)', fontWeight: 400, color: 'var(--text-secondary)' }}
           >
-            {t('tickets.conversation.interactions', { count: ticket.messages.length })}
+            {t('tickets.conversation.interactions', { count: interactions ?? 0 })}
           </Box>
         </Box>
+        <Box sx={{ flex: 1 }} />
+        <SegmentedControl
+          label={t('tickets.conversation.show')}
+          value={filter}
+          options={[
+            { value: 'all', label: t('tickets.conversation.filters.all') },
+            { value: 'messages', label: t('tickets.conversation.filters.messages') },
+            { value: 'history', label: t('tickets.conversation.filters.history') },
+          ]}
+          onChange={setFilter}
+        />
       </Box>
       <Box
         ref={thread}
@@ -402,7 +420,7 @@ export function TicketPage() {
           '&:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
         }}
       >
-        <TicketConversation ticket={ticket} me={me} />
+        <TicketConversation ticket={ticket} me={me} filter={filter} />
       </Box>
       {ticket.permissions.canSend && (
         <Box
