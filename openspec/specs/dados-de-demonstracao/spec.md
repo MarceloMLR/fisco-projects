@@ -101,3 +101,11 @@ A carga de demonstração MUST enviar documentos fictícios para as pastas do pr
 #### Scenario: Documentos na demonstração
 - **WHEN** o comando carrega os dados de demonstração
 - **THEN** a aba Documentos do ERP-FIN mostra documentos em mais de uma pasta, um deles na versão 2, aprovados, em revisão e em rascunho, vinculados a tarefas, e um obsoleto que só aparece com o filtro "Todos"
+
+### Requirement: Links na demonstração
+
+A carga de demonstração MUST incluir links fictícios do projeto principal em quatro categorias, cada um incluído por uma pessoa do projeto que cadastra links (ADR-0002, ADR-0032, ADR-0089).
+
+#### Scenario: Links na demonstração
+- **WHEN** o comando carrega os dados de demonstração
+- **THEN** a aba Links do ERP-FIN mostra links em Ambientes, Sistemas, Painéis e Repositórios, incluídos por pessoas diferentes
