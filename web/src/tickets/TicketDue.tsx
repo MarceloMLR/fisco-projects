@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { TicketDue as Due, TicketDueState } from '../api/client';
 import { DueDate, type DueState } from '../components/DueDate';
-import { formatDayMonthText } from '../format/dates';
+import { formatWeekdayDayText } from '../format/dates';
 
 const looks: Record<TicketDueState, DueState> = {
   OnTrack: 'onTrack',
@@ -10,15 +10,6 @@ const looks: Record<TicketDueState, DueState> = {
   Paused: 'paused',
   Met: 'met',
 };
-
-/** The weekday and the day, as "segunda, 26/10", from a day of the calendar. */
-function weekdayText(day: string): string {
-  const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
-  const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
-    .format(new Date(Date.UTC(year, month - 1, dayOfMonth)))
-    .replace('-feira', '');
-  return `${weekday}, ${formatDayMonthText(day)}`;
-}
 
 /**
  * A deadline of a ticket (ADR-0025) by the DueDate of the design system: the icon, the color and the text of its state,
@@ -35,7 +26,7 @@ export function TicketDue({
   finished?: boolean;
 }) {
   const { t } = useTranslation();
-  const day = due.dueOn === null ? '' : weekdayText(due.dueOn);
+  const day = due.dueOn === null ? '' : formatWeekdayDayText(due.dueOn);
   const text = {
     OnTrack: () => t('tickets.due.onTrack', { day }),
     Soon: () => t('tickets.due.soon', { day }),

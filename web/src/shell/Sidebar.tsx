@@ -4,14 +4,12 @@ import Box from '@mui/material/Box';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
-import { projectsQuery } from '../api/queries';
+import { myProjectsQuery } from '../api/queries';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
 import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
-
-const myProjectsParams = { mine: true, situation: 'Active', pageSize: 30 } as const;
 
 /** My profile at the end of the phone menu, as in the canvas; on a computer it is in the account menu. */
 const profileItem = {
@@ -40,7 +38,7 @@ export function Sidebar({
   const installation = useInstallation();
   const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
   // The active projects the person is in, even the Administrator (ADR-0066).
-  const myProjects = useQuery(projectsQuery(myProjectsParams)).data?.items ?? [];
+  const myProjects = useQuery(myProjectsQuery()).data?.items ?? [];
 
   return (
     <Box

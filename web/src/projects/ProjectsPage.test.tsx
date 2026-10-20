@@ -152,6 +152,7 @@ describe('Cronograma na lista de projetos', () => {
       progress: 62,
       lateTasks: 2,
       lateMilestones: 0,
+      lateDays: 3,
       currentPhase: 'Configuração',
       completedOn: null,
       phases: [

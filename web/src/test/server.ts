@@ -10,6 +10,7 @@ import {
 } from './demoDocuments';
 import { demoLinkCategories, demoLinks, linksList } from './demoLinks';
 import { credentialsList, demoCredentials } from './demoCredentials';
+import { emptyMyWork } from './demoMyWork';
 import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
@@ -308,7 +309,12 @@ function demoProject(
 }
 
 /** A project with the numbers of its schedule, and its dates in the header. */
-function withSchedule(project: DemoProject, schedule: ProjectScheduleSummary): DemoProject {
+function withSchedule(
+  project: DemoProject,
+  summary: Omit<ProjectScheduleSummary, 'lateDays'> &
+    Partial<Pick<ProjectScheduleSummary, 'lateDays'>>,
+): DemoProject {
+  const schedule = { lateDays: 0, ...summary };
   return { ...project, schedule, scheduleStart: schedule.start, scheduleEnd: schedule.end };
 }
 
@@ -650,6 +656,7 @@ export function demoProjects(): DemoProject[] {
         progress: 42,
         lateTasks: 1,
         lateMilestones: 0,
+        lateDays: 2,
         currentPhase: 'Levantamento',
         completedOn: null,
         phases: [
@@ -1444,6 +1451,10 @@ export const handlers = [
   http.get('/api/clients/choices', () => HttpResponse.json(clientChoicesOf(demoClients()))),
   // Without projects by default: the screens of projects simulate their own.
   http.get('/api/projects', () => HttpResponse.json({ items: [], total: 0, today: demoToday })),
+  http.get('/api/projects/upcoming-milestones', () =>
+    HttpResponse.json({ items: [], today: demoToday }),
+  ),
+  http.get('/api/my-work', () => HttpResponse.json(emptyMyWork)),
   http.get('/api/people', () => HttpResponse.json([])),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),

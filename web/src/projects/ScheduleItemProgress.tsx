@@ -22,6 +22,7 @@ import {
   type ProgressValues,
   scheduleItemErrors,
 } from './scheduleItemValues';
+import { completeTask } from './scheduleProgress';
 import { MilestoneStatus } from './ScheduleStatus';
 
 /** A part of the details of a task or milestone, with its heading. */
@@ -93,22 +94,14 @@ export function TaskProgress({
   const complete = async () => {
     setPending(true);
     setFailure(undefined);
-    try {
-      const { error, response } = await api.PUT(
-        '/api/projects/{id}/schedule/items/{itemId}/progress',
-        { params: { path: { id: project.id, itemId: item.id } }, body: { progress: 100 } },
-      );
-      if (response.ok) {
-        refresh();
-        onDone(t('projects.schedule.messages.completed', { name: item.name }));
-        return;
-      }
-      setFailure(failureOf(error, response.status, t));
-    } catch {
-      setFailure(t('projects.schedule.messages.failed'));
-    } finally {
-      setPending(false);
+    const failed = await completeTask(project.id, item.id, t);
+    setPending(false);
+    if (failed === undefined) {
+      refresh();
+      onDone(t('projects.schedule.messages.completed', { name: item.name }));
+      return;
     }
+    setFailure(failed);
   };
 
   return (
@@ -164,7 +157,7 @@ export function TaskProgress({
       {failure !== undefined && <Alert tone="danger">{failure}</Alert>}
       {asking && (
         <ProgressDialog
-          project={project}
+          projectId={project.id}
           item={item}
           onClose={() => {
             setAsking(false);
@@ -182,16 +175,16 @@ export function TaskProgress({
 
 /**
  * The percentage of a task, typed: empty when the task starts ("Iniciar", ADR-0086), the current one when it is
- * updated.
+ * updated; in the details of the task and in the queue of Meu trabalho.
  */
-function ProgressDialog({
-  project,
+export function ProgressDialog({
+  projectId,
   item,
   onClose,
   onSaved,
 }: {
-  project: Project;
-  item: ScheduleItem;
+  projectId: string;
+  item: Pick<ScheduleItem, 'id' | 'name' | 'progress'>;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
@@ -214,7 +207,7 @@ function ProgressDialog({
     try {
       const { error, response } = await api.PUT(
         '/api/projects/{id}/schedule/items/{itemId}/progress',
-        { params: { path: { id: project.id, itemId: item.id } }, body: { progress } },
+        { params: { path: { id: projectId, itemId: item.id } }, body: { progress } },
       );
       if (response.ok) {
         onSaved(t('projects.schedule.messages.progressUpdated', { name: item.name, progress }));

@@ -71,6 +71,7 @@ export const queryKeys = {
   linkCategories: ['link-categories'],
   credentials: ['credentials'],
   acceptances: ['acceptances'],
+  myWork: ['my-work'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -104,6 +105,11 @@ export function projectsQuery(params: ProjectsParams) {
     queryFn: ({ signal }) =>
       dataOf(api.GET('/api/projects', { params: { query: params }, signal })),
   });
+}
+
+/** The open projects the person is in, as the side bar and Meu trabalho list them (ADR-0066, ADR-0070). */
+export function myProjectsQuery() {
+  return projectsQuery({ mine: true, situation: 'Active', pageSize: 30 });
 }
 
 /** One project, with the people in it and what the person may do. */
@@ -501,5 +507,21 @@ export function acceptanceMilestonesQuery(projectId: string) {
           signal,
         }),
       ),
+  });
+}
+
+/** Meu trabalho of the person: the queue by urgency, in its three views (ADR-0070, ADR-0096). */
+export function myWorkQuery() {
+  return queryOptions({
+    queryKey: queryKeys.myWork,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/my-work', { signal })),
+  });
+}
+
+/** The next milestones of the projects of the person, for Meu trabalho (ADR-0096). */
+export function upcomingMilestonesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, 'upcoming-milestones'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/projects/upcoming-milestones', { signal })),
   });
 }

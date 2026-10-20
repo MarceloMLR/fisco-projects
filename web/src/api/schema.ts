@@ -244,6 +244,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/my-work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The tickets, tasks and requests of acceptance of the person by urgency: late, waiting for the person, due up to the next business day and in the next 7 days, in the views for me, opened by me and followed. */
+        get: operations["GetMyWork"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/client-settings": {
         parameters: {
             query?: never;
@@ -526,6 +543,23 @@ export interface paths {
         get: operations["ListProjects"];
         put?: never;
         post: operations["CreateProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/upcoming-milestones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The first 10 milestones not reached, from today on, of the open projects the person is in (ADR-0096). */
+        get: operations["ListUpcomingMilestones"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2291,6 +2325,118 @@ export interface components {
         MilestoneReachedRequest: {
             reached: boolean;
         };
+        /** @description A request of acceptance of the queue: whether it is for the person, for whom, who asked, when and the milestone. */
+        MyWorkAcceptanceResponse: {
+            forYou: boolean;
+            recipient: components["schemas"]["MyWorkPersonResponse"];
+            requestedBy: components["schemas"]["MyWorkPersonResponse"];
+            /** Format: date-time */
+            requestedAt: string;
+            milestone: null | string;
+        };
+        /**
+         * @description The one action of a line of the queue (ADR-0070, ADR-0096).
+         * @enum {unknown}
+         */
+        MyWorkAction: "Open" | "Reply" | "Assign" | "Start" | "Update" | "Complete" | "Remind";
+        /** @enum {unknown} */
+        MyWorkDeadline: "FirstResponse" | "Resolution" | null;
+        /**
+         * @description The groups of the queue (ADR-0070), in the order of the screen.
+         * @enum {unknown}
+         */
+        MyWorkGroup: "Late" | "Waiting" | "Soon" | "Week";
+        /** @description A group of a view, with its items in order. */
+        MyWorkGroupResponse: {
+            group: components["schemas"]["MyWorkGroup"];
+            items: components["schemas"]["MyWorkItemResponse"][];
+        };
+        /**
+         * @description An item of the queue: the kind, the project, the title, the action of the line, the day it is due (none while it
+         *     waits for the person), the business days of delay, since when it waits for the person and what the kind tells.
+         */
+        MyWorkItemResponse: {
+            kind: components["schemas"]["MyWorkKind"];
+            /** Format: uuid */
+            id: string;
+            project: components["schemas"]["MyWorkProjectResponse"];
+            title: string;
+            action: components["schemas"]["MyWorkAction"];
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: int32 */
+            daysLate: null | number;
+            /** Format: date-time */
+            waitingSince: null | string;
+            ticket: null | components["schemas"]["MyWorkTicketResponse"];
+            task: null | components["schemas"]["MyWorkTaskResponse"];
+            acceptance: null | components["schemas"]["MyWorkAcceptanceResponse"];
+        };
+        /**
+         * @description What an item of the queue is: a ticket, a task of a schedule or a request of acceptance.
+         * @enum {unknown}
+         */
+        MyWorkKind: "Ticket" | "Task" | "Acceptance";
+        /** @description A person an item shows, by the current name. */
+        MyWorkPersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description The project of an item: the id and the code. */
+        MyWorkProjectResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+        };
+        /** @description Meu trabalho of the person: today and the next business day of the installation, and the three views. */
+        MyWorkResponse: {
+            /** Format: date */
+            today: string;
+            /** Format: date */
+            nextBusinessDay: string;
+            views: components["schemas"]["MyWorkViewResponse"][];
+        };
+        /** @description A task of the queue: the phase and the progress. */
+        MyWorkTaskResponse: {
+            phase: string;
+            /** Format: int32 */
+            progress: number;
+        };
+        /**
+         * @description The team of a ticket (ADR-0068).
+         * @enum {unknown}
+         */
+        MyWorkTeam: "Functional" | "Development";
+        /** @description A ticket of the queue: the number, the status, the team, who asked, who is in charge and which deadline counts. */
+        MyWorkTicketResponse: {
+            /** Format: int32 */
+            number: number;
+            status: components["schemas"]["MyWorkTicketStatus"];
+            team: components["schemas"]["MyWorkTeam"];
+            requester: components["schemas"]["MyWorkPersonResponse"];
+            assignee: null | components["schemas"]["MyWorkPersonResponse"];
+            /** Format: int32 */
+            interactions: number;
+            deadline: null | components["schemas"]["MyWorkDeadline"];
+        };
+        /**
+         * @description The statuses of a ticket the queue shows: the open ones (ADR-0024).
+         * @enum {unknown}
+         */
+        MyWorkTicketStatus: "Open" | "Triage" | "InProgress" | "WaitingForRequester";
+        /**
+         * @description The views of Meu trabalho (ADR-0070), in the order of the screen.
+         * @enum {unknown}
+         */
+        MyWorkView: "ForMe" | "OpenedByMe" | "Following";
+        /** @description A view of the queue: how many items it has and the groups with items, in the order of the screen. */
+        MyWorkViewResponse: {
+            view: components["schemas"]["MyWorkView"];
+            /** Format: int32 */
+            count: number;
+            groups: components["schemas"]["MyWorkGroupResponse"][];
+        };
         NewDefaultFolderRequest: {
             name: null | string;
         };
@@ -2568,8 +2714,8 @@ export interface components {
         /**
          * @description The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late
          *     (ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the
-         *     start), the day the last task was completed when all are at 100%, the phases with items and the days of the
-         *     milestones.
+         *     start), the day the last task was completed when all are at 100%, the phases with items, the days of the
+         *     milestones and the business days of delay of the most late task or milestone (ADR-0096).
          */
         ProjectScheduleSummaryResponse: {
             /** Format: date */
@@ -2587,6 +2733,8 @@ export interface components {
             completedOn: null | string;
             phases: components["schemas"]["SchedulePhaseSummaryResponse"][];
             milestones: string[];
+            /** Format: int32 */
+            lateDays: number;
         };
         /**
          * @description Which projects the list shows: the open ones, the closed ones (completed or cancelled) or all.
@@ -3240,6 +3388,34 @@ export interface components {
         UnreadNotificationsResponse: {
             /** Format: int32 */
             unread: number;
+        };
+        /** @description The project of a milestone ahead. */
+        UpcomingMilestoneProjectResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+        };
+        /**
+         * @description A milestone ahead of the projects of the person: the day, the business days left until it (none on the day itself)
+         *     and whether a request of acceptance for it waits for the answer.
+         */
+        UpcomingMilestoneResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            businessDaysLeft: number;
+            acceptanceRequested: boolean;
+            project: components["schemas"]["UpcomingMilestoneProjectResponse"];
+        };
+        /** @description The milestones ahead, the soonest first, and today in the time zone of the installation. */
+        UpcomingMilestonesResponse: {
+            items: components["schemas"]["UpcomingMilestoneResponse"][];
+            /** Format: date */
+            today: string;
         };
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
@@ -3924,6 +4100,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinkCategoryResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetMyWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyWorkResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -5171,6 +5376,35 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListUpcomingMilestones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingMilestonesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
