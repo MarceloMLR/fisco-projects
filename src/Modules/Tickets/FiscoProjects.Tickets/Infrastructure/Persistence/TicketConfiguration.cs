@@ -85,10 +85,10 @@ internal sealed class VendorTicketConfiguration : IEntityTypeConfiguration<Vendo
         vendorTicket.HasOne<Ticket>().WithMany().HasForeignKey(v => v.TicketId).OnDelete(DeleteBehavior.Cascade);
         vendorTicket.HasOne<Vendor>().WithMany().HasForeignKey(v => v.VendorId).OnDelete(DeleteBehavior.Restrict);
         vendorTicket.HasIndex(v => new { v.TicketId, v.RegisteredAt });
-        // Audit (ADR-0039, ADR-0084): named by its number at the vendor, with the ticket it is in every record.
+        // Audit (ADR-0039, ADR-0084): named by its number at the vendor, with the ticket and the vendor in every record.
         vendorTicket.HasAuditLabel(v => v.Code);
         vendorTicket.Property(v => v.TicketId).IsAuditReference(TicketsAudit.TicketReference).IsAuditContext();
-        vendorTicket.Property(v => v.VendorId).IsAuditReference(TicketsAudit.VendorReference);
+        vendorTicket.Property(v => v.VendorId).IsAuditReference(TicketsAudit.VendorReference).IsAuditContext();
         vendorTicket.Property(v => v.RegisteredById).IsAuditReference(UserAudit.Reference);
         vendorTicket.Property(v => v.RegisteredAt).ExcludeFromAudit();
         vendorTicket.Property(v => v.UpdatedAt).ExcludeFromAudit();

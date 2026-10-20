@@ -613,6 +613,7 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("VendorId")
                         .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
                         .HasAnnotation("FiscoProjects:Audit:Reference", "Vendor");
 
                     b.HasKey("Id");

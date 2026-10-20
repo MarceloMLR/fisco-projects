@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TicketsDbContext))]
-    [Migration("20261020105114_TicketVendors")]
+    [Migration("20261020110331_TicketVendors")]
     partial class TicketVendors
     {
         /// <inheritdoc />
@@ -616,6 +616,7 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("VendorId")
                         .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
                         .HasAnnotation("FiscoProjects:Audit:Reference", "Vendor");
 
                     b.HasKey("Id");
