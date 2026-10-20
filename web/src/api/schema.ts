@@ -1139,9 +1139,11 @@ export interface components {
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
          *     milestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it
-         *     is late, whether the person may update its progress now (only a task without subtasks, while the project is open),
-         *     the owner, the ids of the items it depends on, the task it is in and whether it has subtasks, whose dates and
-         *     progress it then shows (ADR-0088).
+         *     is late and by how many business days (from the day after the end up to today; for a task with subtasks, the most
+         *     of its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person
+         *     may update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the
+         *     items it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows
+         *     (ADR-0088).
          */
         ScheduleItemResponse: {
             /** Format: uuid */
@@ -1163,6 +1165,8 @@ export interface components {
             /** Format: date */
             reachedOn: null | string;
             late: boolean;
+            /** Format: int32 */
+            lateDays: number;
             canUpdateProgress: boolean;
             owner: null | components["schemas"]["ScheduleOwnerResponse"];
             predecessorIds: string[];

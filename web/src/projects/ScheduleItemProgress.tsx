@@ -25,7 +25,7 @@ import {
 import { MilestoneStatus } from './ScheduleStatus';
 
 /** A part of the details of a task or milestone, with its heading. */
-function DetailsSection({ title, children }: { title: string; children: ReactNode }) {
+export function DetailsSection({ title, children }: { title: string; children: ReactNode }) {
   const headingId = useId();
   return (
     <Box

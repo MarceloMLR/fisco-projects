@@ -7,7 +7,7 @@ import { loadDemo } from './load.ts';
 const baseUrl = process.argv[2] ?? 'http://localhost:5175';
 
 try {
-  console.log(`Carregando os dados de demonstração em ${baseUrl}...`);
+  console.log(`Carregando os dados de demonstração pela API em ${baseUrl}...`);
   await loadDemo(baseUrl, (line) => {
     console.log(line);
   });

@@ -44,7 +44,7 @@ const tabSx = {
       position: 'absolute',
       left: 'var(--space-3)',
       right: 'var(--space-3)',
-      bottom: -1,
+      bottom: 0,
       height: 2,
       backgroundColor: 'var(--action-text)',
       borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
@@ -240,8 +240,12 @@ export function ProjectHeader({
         sx={{
           display: 'flex',
           gap: 'var(--space-1)',
-          margin: '0 calc(var(--space-3) * -1)',
+          // Over the line of the header by 1 px, with the mark of the chosen tab on it; only sideways there is
+          // something to scroll, on a narrow screen.
+          marginX: 'calc(var(--space-3) * -1)',
+          marginBottom: '-1px',
           overflowX: 'auto',
+          overflowY: 'hidden',
         }}
       >
         <Box

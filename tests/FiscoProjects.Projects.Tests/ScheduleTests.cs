@@ -350,6 +350,44 @@ public sealed class ScheduleTests
         today.IsLate(D(10, 16)).Should().BeFalse();
         figures.LateTasks.Should().Be(0);
         figures.Phases.Single().IsLate.Should().BeFalse();
+        ScheduleFigures.LateDaysOf(schedule.Items, D(10, 16), Days).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Dias de atraso da tarefa")]
+    public void LateSubtask_CountsTheBusinessDaysAfterItsEnd_AndSoDoesItsSummary()
+    {
+        var (schedule, phase) = NewSchedule();
+        var summary = Task(schedule, phase, "Testes integrados", D(10, 13), 5);
+        var late = schedule.AddItem(
+            ScheduleItemKind.Task, Plan(phase, "Roteiro de testes", D(10, 13), 3) with { ParentId = summary.Id }, Days, Today);
+        schedule.UpdateProgress(late.Id, 80, Today);
+        var onTime = schedule.AddItem(
+            ScheduleItemKind.Task, Plan(phase, "Executar testes", D(10, 19), 3) with { ParentId = summary.Id }, Days, Today);
+
+        var lateDays = ScheduleFigures.LateDaysOf(schedule.Items, D(10, 19), Days);
+
+        // From 16/10 to 19/10: the Friday and the Monday, without the weekend.
+        late.End.Should().Be(D(10, 15));
+        late.DaysLate(D(10, 19), Days).Should().Be(2);
+        summary.End.Should().Be(D(10, 21));
+        lateDays.Should().BeEquivalentTo(new Dictionary<Guid, int> { [late.Id] = 2, [summary.Id] = 2 });
+        onTime.DaysLate(D(10, 19), Days).Should().Be(0);
+        late.DaysLate(D(10, 15), Days).Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Atraso que começou num dia não útil")]
+    public void TaskLateSinceAWeekend_IsLate_WithoutBusinessDaysOfDelay()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Validar cadastro", D(10, 14), 3);
+        schedule.UpdateProgress(task.Id, 80, Today);
+
+        task.End.Should().Be(D(10, 16));
+        task.IsLate(D(10, 17)).Should().BeTrue();
+        task.DaysLate(D(10, 17), Days).Should().Be(0);
+        task.DaysLate(D(10, 18), Days).Should().Be(0);
+        task.DaysLate(D(10, 19), Days).Should().Be(1);
+        ScheduleFigures.LateDaysOf(schedule.Items, D(10, 17), Days).Should().ContainKey(task.Id).WhoseValue.Should().Be(0);
     }
 
     [Fact(DisplayName = "Alterar a tarefa mantém o progresso")]
@@ -429,6 +467,21 @@ public sealed class ScheduleTests
         figures.LateMilestones.Should().Be(1);
         figures.LateTasks.Should().Be(0);
         figures.CurrentPhase.Should().Be(phase);
+    }
+
+    [Fact(DisplayName = "Dias de atraso do marco")]
+    public void LateMilestone_CountsTheBusinessDaysAfterItsDay()
+    {
+        var (schedule, phase) = NewSchedule();
+        var milestone = Milestone(schedule, phase, "Processos mapeados", D(10, 9));
+        var reached = Milestone(schedule, phase, "Kickoff", D(10, 5));
+        schedule.SetReached(reached.Id, true, D(10, 5));
+
+        // 13/10 to 16/10: without the weekend and the holiday of 12/10.
+        milestone.DaysLate(D(10, 16), Days).Should().Be(4);
+        reached.DaysLate(D(10, 16), Days).Should().Be(0);
+        ScheduleFigures.LateDaysOf(schedule.Items, D(10, 16), Days)
+            .Should().BeEquivalentTo(new Dictionary<Guid, int> { [milestone.Id] = 4 });
     }
 
     [Fact(DisplayName = "Marco atingido ou do dia não fica atrasado")]

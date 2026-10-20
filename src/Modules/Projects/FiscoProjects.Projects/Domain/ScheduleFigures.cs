@@ -1,3 +1,5 @@
+using FiscoProjects.Calendar.Contracts;
+
 namespace FiscoProjects.Projects.Domain;
 
 /// <summary>
@@ -78,6 +80,27 @@ public sealed record ScheduleFigures(
             [.. all.Where(item => item.Kind == ScheduleItemKind.Milestone).Select(item => item.Start).Order()],
             summaries,
             late);
+    }
+
+    /// <summary>
+    /// The business days of delay of each late task and milestone on a day (<see cref="ScheduleItem.DaysLate"/>), and of
+    /// each task with a late subtask, which takes the most of its subtasks (ADR-0088); the others are not in it.
+    /// </summary>
+    public static IReadOnlyDictionary<Guid, int> LateDaysOf(IEnumerable<ScheduleItem> items, DateOnly today, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(days);
+        var all = items.ToList();
+        var summaries = all.Where(item => item.ParentId is not null).Select(item => item.ParentId!.Value).ToHashSet();
+        var late = all
+            .Where(item => !summaries.Contains(item.Id) && item.IsLate(today))
+            .ToDictionary(item => item.Id, item => item.DaysLate(today, days));
+        foreach (var group in all.Where(item => item.ParentId is not null && late.ContainsKey(item.Id)).GroupBy(item => item.ParentId!.Value))
+        {
+            late[group.Key] = group.Max(item => late[item.Id]);
+        }
+
+        return late;
     }
 
     /// <summary>The items of a phase by start, end, tasks before milestones of the same day, and name.</summary>

@@ -314,6 +314,7 @@ function demoItem(
     completedOn: null,
     reachedOn: null,
     late: false,
+    lateDays: 0,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     predecessorIds: [],
@@ -404,6 +405,7 @@ export function demoSchedule(): Schedule {
     duration: 3,
     progress: 80,
     late: true,
+    lateDays: 1,
     owner: rafaelOwner,
     predecessorIds: [mapping.id],
   });

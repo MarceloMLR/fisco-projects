@@ -18,10 +18,18 @@ import {
  * Loads the demonstration data through the API (ADR-0089), each action by the person who would do it on the screens:
  * the Administrator creates the clients and the projects, the manager builds the schedules and each person in charge
  * of a task updates its progress. It changes nothing when the main project is already there, and stops where the local
- * sign-in is off, as in production (ADR-0078).
+ * sign-in is off, as in production (ADR-0078). It ends saying where the screens open.
  */
 
 type Api = ReturnType<typeof createClient<paths>>;
+
+/**
+ * Where the screens open in the development (`npm run dev`), always with the code as it is now; the API, in 5175,
+ * serves the last `npm run build`, which may be older.
+ */
+export const screensAddress = 'http://localhost:5173';
+
+const screensLine = `Abra as telas em ${screensAddress} (npm run dev).`;
 
 export type DemoOutcome =
   | { loaded: true; firstDay: string; projects: number; items: number }
@@ -114,6 +122,7 @@ export async function loadDemo(
   );
   if (found.items.some((project) => project.code === mainProject)) {
     log(`Os dados de demonstração já estão carregados (${mainProject} existe). Nada mudou.`);
+    log(screensLine);
     return { loaded: false, reason: 'already-loaded' };
   }
 
@@ -160,6 +169,7 @@ export async function loadDemo(
   log(
     `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}.`,
   );
+  log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
 }
 

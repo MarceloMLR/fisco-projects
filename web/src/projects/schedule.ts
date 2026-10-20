@@ -9,11 +9,19 @@ export type ScheduleRow =
 
 export const isPhaseRow = (row: ScheduleRow) => row.kind === 'phase';
 
-/** The lines of the Lista: each phase in the order of the API, with its items below it in order. */
-export function scheduleRows(schedule: Schedule): ScheduleRow[] {
+/**
+ * The lines of the Lista: each phase in the order of the API, with its items below it in order, but the subtasks of
+ * the tasks whose subtasks are hidden (ADR-0088).
+ */
+export function scheduleRows(
+  schedule: Schedule,
+  collapsed: ReadonlySet<string> = new Set(),
+): ScheduleRow[] {
   return schedule.phases.flatMap((phase) => [
     { kind: 'phase', id: phase.id, phase } as const,
-    ...phase.items.map((item) => ({ kind: 'item', id: item.id, item, phase }) as const),
+    ...phase.items
+      .filter((item) => item.parentId === null || !collapsed.has(item.parentId))
+      .map((item) => ({ kind: 'item', id: item.id, item, phase }) as const),
   ]);
 }
 
@@ -25,6 +33,27 @@ export function milestoneStatus(item: ScheduleItem): MilestoneStatus {
     return 'reached';
   }
   return item.late ? 'late' : 'pending';
+}
+
+/**
+ * Whether an item says by how much it is late: a late task always ("Atrasada" while no business day was lost yet); a
+ * late milestone, from the first business day lost, since its state already says "Atrasado" (ADR-0086).
+ */
+export function showsDelay(item: ScheduleItem): boolean {
+  return item.late && (item.kind === 'Task' || item.lateDays > 0);
+}
+
+/**
+ * What a late task or milestone says: "1 dia útil de atraso" or "3 dias úteis de atraso", as the API counts them;
+ * "Atrasada" or "Atrasado" while the delay began on non-business days only (ADR-0020, ADR-0086).
+ */
+export function lateText(item: ScheduleItem, t: TFunction): string {
+  if (item.lateDays > 0) {
+    return t('projects.schedule.lateDays', { count: item.lateDays });
+  }
+  return t(
+    item.kind === 'Milestone' ? 'projects.schedule.milestone.late' : 'projects.schedule.late',
+  );
 }
 
 /** Every task and milestone of the schedule, in the order of the Lista. */

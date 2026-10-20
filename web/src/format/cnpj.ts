@@ -23,14 +23,31 @@ function checkDigit(characters: string, weights: readonly number[]): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-/** Whether a CNPJ without punctuation follows the rule: the format and both check digits. */
-export function isValidCnpj(cnpj: string): boolean {
-  if (!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj) || /^(.)\1*$/.test(cnpj)) {
-    return false;
+/**
+ * What is wrong with a CNPJ without punctuation, for the field to say: fewer or more than 14 characters
+ * (`incomplete`), all of them the same (`repeated`), or the last two not the check digits of the others (`digits`);
+ * null when it follows the rule.
+ */
+export type CnpjProblem = 'incomplete' | 'repeated' | 'digits';
+
+export function cnpjProblem(cnpj: string): CnpjProblem | null {
+  if (cnpj.length !== cnpjLength) {
+    return 'incomplete';
+  }
+  if (/^(.)\1*$/.test(cnpj)) {
+    return 'repeated';
+  }
+  if (!/^[0-9A-Z]{12}[0-9]{2}$/.test(cnpj)) {
+    return 'digits';
   }
   const first = checkDigit(cnpj.slice(0, 12), firstWeights);
   const second = checkDigit(cnpj.slice(0, 12) + String(first), secondWeights);
-  return cnpj.slice(12) === `${String(first)}${String(second)}`;
+  return cnpj.slice(12) === `${String(first)}${String(second)}` ? null : 'digits';
+}
+
+/** Whether a CNPJ without punctuation follows the rule: the format and both check digits. */
+export function isValidCnpj(cnpj: string): boolean {
+  return cnpjProblem(cnpj) === null;
 }
 
 /** A CNPJ as the screens show it: XX.XXX.XXX/XXXX-XX. Anything else stays as it is. */

@@ -144,10 +144,12 @@ function answerProgress() {
         .flatMap((phase) => phase.items)
         .find((one) => one.id === params.itemId);
       if (item !== undefined) {
+        const late = progress < 100 && item.end < '2026-10-16';
         Object.assign(item, {
           progress,
           completedOn: progress === 100 ? '2026-10-16' : null,
-          late: progress < 100 && item.end < '2026-10-16',
+          late,
+          lateDays: late ? item.lateDays : 0,
         });
       }
       schedule = { ...schedule };
@@ -192,17 +194,18 @@ describe('Aba Cronograma', () => {
       'aria-valuenow',
       '93',
     );
-    // The late task, by icon, color and text (ADR-0065).
+    // The late task, by icon, color and text (ADR-0065), with the business days of delay under its end.
+    const oneDayLate = text.lateDays_one.replace('{{count}}', '1');
     expect(cellsOf('Validar cadastro de produtos')).toEqual([
       'Validar cadastro de produtos',
       '13/10/2026',
-      `15/10/2026${text.late}`,
+      `15/10/2026${oneDayLate}`,
       days(3),
       'RSRafael Souza',
       '80%',
       'Mapear processos fiscais',
     ]);
-    expect(within(rowOf('Validar cadastro de produtos')).getByText(text.late)).toHaveStyle({
+    expect(within(rowOf('Validar cadastro de produtos')).getByText(oneDayLate)).toHaveStyle({
       color: 'var(--status-danger-text)',
     });
     expect(cellsOf('Integrar emissão de NF-e')[4]).toBe(text.noOwner);
@@ -256,7 +259,7 @@ describe('Aba Cronograma', () => {
       ...survey.items.slice(0, 2),
       milestone('Processos mapeados', '2026-10-09', { reachedOn: '2026-10-09' }),
       ...survey.items.slice(2),
-      milestone('Aceite do levantamento', '2026-10-15', { late: true }),
+      milestone('Aceite do levantamento', '2026-10-15', { late: true, lateDays: 1 }),
     ];
     schedule = { ...schedule, lateMilestones: 1 };
     await openSchedule();
@@ -265,10 +268,12 @@ describe('Aba Cronograma', () => {
     expect(state('Processos mapeados')).toBe(text.milestone.reached.replace('{{day}}', '09/10'));
     expect(state('Aceite da homologação')).toBe(text.milestone.pending);
     expect(state('Aceite do levantamento')).toBe(text.milestone.late);
-    // Late by icon, color and text (ADR-0065), in the column of its state and not as "Atrasada".
+    // Late by icon, color and text (ADR-0065), in the column of its state and not as "Atrasada"; the business days of
+    // delay in the column of the end, which a milestone does not have.
     const late = within(rowOf('Aceite do levantamento')).getByText(text.milestone.late);
     expect(late).toHaveStyle({ color: 'var(--status-danger-text)' });
-    expect(cellsOf('Aceite do levantamento')[2]).toBe('');
+    expect(cellsOf('Aceite do levantamento')[2]).toBe(text.lateDays_one.replace('{{count}}', '1'));
+    expect(cellsOf('Aceite da homologação')[2]).toBe('');
     expect(
       within(rowOf('Processos mapeados')).getByText(
         text.milestone.reached.replace('{{day}}', '09/10'),
@@ -276,6 +281,33 @@ describe('Aba Cronograma', () => {
     ).toHaveStyle({ color: 'var(--status-success-text)' });
     expect(screen.getByText(text.lateMilestones_one.replace('{{count}}', '1'))).toBeVisible();
     expect(screen.getByText(text.lateTasks_one.replace('{{count}}', '1'))).toBeVisible();
+  });
+
+  it('Atraso desde um dia não útil pela tela', async () => {
+    // On a Saturday, the task of Friday and the milestone of the day before lost no business day yet.
+    const [survey] = schedule.phases;
+    if (survey === undefined) {
+      throw new Error('No Levantamento.');
+    }
+    survey.items = survey.items.map((item) =>
+      item.name === 'Validar cadastro de produtos' ? { ...item, lateDays: 0 } : item,
+    );
+    survey.items.push({
+      ...itemNamed('Aceite da homologação'),
+      id: '0199f5a2-7c1e-7d40-9a1b-600000000077',
+      phaseId: survey.id,
+      name: 'Aceite do levantamento',
+      start: '2026-10-15',
+      end: '2026-10-15',
+      predecessorIds: [],
+      late: true,
+      lateDays: 0,
+    });
+    await openSchedule();
+
+    expect(cellsOf('Validar cadastro de produtos')[2]).toBe(`15/10/2026${text.late}`);
+    expect(cellsOf('Aceite do levantamento')[2]).toBe('');
+    expect(cellsOf('Aceite do levantamento')[5]).toBe(text.milestone.late);
   });
 
   it('Cronograma vazio', async () => {
@@ -343,6 +375,7 @@ describe('Editar o cronograma pela tela', () => {
             completedOn: null,
             reachedOn: null,
             late: false,
+            lateDays: 0,
             canUpdateProgress: true,
             owner: { id: demoPeople.rafael.id, name: demoPeople.rafael.name },
             predecessorIds: [itemNamed('Mapear processos fiscais').id],
@@ -475,9 +508,12 @@ describe('Editar o cronograma pela tela', () => {
         // Five days from 06/10 end on 13/10, and the API pushes the two items after it.
         const mapping = itemNamed('Mapear processos fiscais');
         Object.assign(mapping, { duration: 5, end: '2026-10-13' });
+        // Ending today, it is no longer late.
         Object.assign(itemNamed('Validar cadastro de produtos'), {
           start: '2026-10-14',
           end: '2026-10-16',
+          late: false,
+          lateDays: 0,
         });
         Object.assign(itemNamed('Parametrizar regras de ICMS'), {
           start: '2026-10-14',
@@ -532,7 +568,7 @@ describe('Editar o cronograma pela tela', () => {
     expect(cellsOf('Mapear processos fiscais')[2]).toBe('13/10/2026');
     expect(cellsOf('Validar cadastro de produtos').slice(1, 3)).toEqual([
       '14/10/2026',
-      `16/10/2026${text.late}`,
+      '16/10/2026',
     ]);
     expect(cellsOf('Parametrizar regras de ICMS').slice(1, 3)).toEqual([
       '14/10/2026',
@@ -622,7 +658,7 @@ describe('Editar o cronograma pela tela', () => {
     expect(
       within(drawer).getByRole('heading', { name: 'Validar cadastro de produtos' }),
     ).toBeVisible();
-    expect(within(drawer).getByText(text.late)).toBeVisible();
+    expect(within(drawer).getByText(text.lateDays_one.replace('{{count}}', '1'))).toBeVisible();
     expect(within(drawer).getByText('Rafael Souza')).toBeVisible();
     expect(within(drawer).getByText('Mapear processos fiscais')).toBeVisible();
     expect(within(drawer).queryByRole('button', { name: text.form.save })).not.toBeInTheDocument();
@@ -725,7 +761,9 @@ describe('Progresso pela tela', () => {
       within(drawer).queryByRole('button', { name: text.progressActions.complete }),
     ).not.toBeInTheDocument();
     expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
-    expect(within(drawer).queryByText(text.late)).not.toBeInTheDocument();
+    expect(
+      within(drawer).queryByText(text.lateDays_one.replace('{{count}}', '1')),
+    ).not.toBeInTheDocument();
   });
 
   it('Progresso sem permissão pela tela', async () => {
@@ -831,10 +869,52 @@ describe('Subtarefas pela tela', () => {
       const cell = within(rowOf(name)).getByText(name).parentElement;
       return cell === null ? '' : window.getComputedStyle(cell).paddingLeft;
     };
-    expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-5))');
-    expect(indent('Executar testes')).toBe('calc(2 * var(--space-5))');
-    expect(indent('Integrar emissão de NF-e')).toBe('var(--space-5)');
+    expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-6))');
+    expect(indent('Executar testes')).toBe('calc(2 * var(--space-6))');
+    expect(indent('Integrar emissão de NF-e')).toBe('var(--space-6)');
     expect(cellsOf('Executar testes')[6]).toBe('Roteiro de testes');
+    // The summary has the arrow of its subtasks, shown at first; the other tasks have none.
+    expect(
+      within(rowOf('Testes integrados')).getByRole('button', {
+        name: text.collapseSubtasks.replace('{{name}}', 'Testes integrados'),
+      }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(within(rowOf('Integrar emissão de NF-e')).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('Recolher subtarefas na lista', async () => {
+    schedule = demoScheduleWithSubtasks();
+    await openSchedule();
+
+    fireEvent.click(
+      within(rowOf('Testes integrados')).getByRole('button', {
+        name: text.collapseSubtasks.replace('{{name}}', 'Testes integrados'),
+      }),
+    );
+
+    // The subtasks leave the Lista, and the details of the task do not open.
+    await waitFor(() => {
+      expect(lines()).not.toContain('Roteiro de testes');
+    });
+    expect(lines().slice(4, 9)).toEqual([
+      'fase: Configuração',
+      'Parametrizar regras de ICMS',
+      'Integrar emissão de NF-e',
+      'Testes integrados',
+      'fase: Homologação',
+    ]);
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+    const show = within(rowOf('Testes integrados')).getByRole('button', {
+      name: text.expandSubtasks.replace('{{name}}', 'Testes integrados'),
+    });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    // By the key too, and they come back.
+    fireEvent.keyDown(show, { key: 'Enter' });
+    fireEvent.click(show);
+    await waitFor(() => {
+      expect(lines()).toContain('Executar testes');
+    });
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
   });
 
   it('Nova subtarefa pela tela', async () => {
@@ -848,7 +928,10 @@ describe('Subtarefas pela tela', () => {
     await openSchedule();
 
     const drawer = await chooseItem('Integrar emissão de NF-e');
-    fireEvent.click(within(drawer).getByRole('button', { name: text.form.newSubtask }));
+    // In the Subtarefas of the details, still without any.
+    const section = within(drawer).getByRole('region', { name: text.details.subtasks });
+    expect(within(section).queryByRole('listitem')).not.toBeInTheDocument();
+    fireEvent.click(within(section).getByRole('button', { name: text.form.newSubtask }));
 
     const dialog = await screen.findByRole('dialog', { name: text.form.newSubtask });
     expect(within(dialog).getByRole('combobox', { name: text.form.parent })).toHaveTextContent(
@@ -919,6 +1002,20 @@ describe('Subtarefas pela tela', () => {
     expect(
       within(drawer).queryByRole('button', { name: text.progressActions.start }),
     ).not.toBeInTheDocument();
+    // The Subtarefas, with "Nova subtarefa"; the buttons of the end of the details are of the same size.
+    const section = within(drawer).getByRole('region', { name: text.details.subtasks });
+    expect(
+      within(section)
+        .getAllByRole('listitem')
+        .map((subtask) => subtask.textContent),
+    ).toEqual(['Roteiro de testes', 'Executar testes']);
+    expect(within(section).getByRole('button', { name: text.form.newSubtask })).toBeVisible();
+    expect(within(drawer).getByRole('button', { name: text.form.remove.Task })).toHaveClass(
+      'MuiButton-sizeMedium',
+    );
+    expect(within(drawer).getByRole('button', { name: text.form.save })).toHaveClass(
+      'MuiButton-sizeMedium',
+    );
     fireEvent.change(within(drawer).getByLabelText(text.form.name), {
       target: { value: 'Testes integrados do ERP' },
     });
@@ -942,5 +1039,14 @@ describe('Subtarefas pela tela', () => {
           .replace('{{count}}', '2'),
       ),
     ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: text.removeItem.back }));
+
+    // A subtask of the section opens its own details.
+    const subtasks = await within(drawer).findByRole('region', { name: text.details.subtasks });
+    fireEvent.click(within(subtasks).getByRole('button', { name: 'Roteiro de testes' }));
+    expect(await within(drawer).findByRole('heading', { name: 'Roteiro de testes' })).toBeVisible();
+    expect(within(drawer).getByRole('combobox', { name: text.form.parent })).toHaveTextContent(
+      'Testes integrados',
+    );
   });
 });
