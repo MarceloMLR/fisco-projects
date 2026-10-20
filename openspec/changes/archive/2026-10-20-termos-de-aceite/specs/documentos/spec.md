@@ -2,7 +2,7 @@
 
 ### Requirement: Permissões nos documentos
 
-Todas as pessoas do projeto e o administrador MUST ver e baixar os documentos. Enviar, vincular e mudar para Rascunho, Em revisão ou Obsoleto MUST ser de todos, menos o leitor. Aprovar e excluir MUST ser do administrador, do gerente e do líder técnico. A pasta de termos MUST aparecer para o administrador e o gerente, com todos os termos, e para quem tem um termo assinado em seu nome, só com o dele. Quem não está no projeto recebe 404, e o projeto concluído ou cancelado MUST ser só leitura, com 409 (ADR-0016, ADR-0043, ADR-0045, ADR-0093).
+Todos do projeto e o administrador MUST ver e baixar os documentos. Enviar, vincular e mudar para Rascunho, Em revisão ou Obsoleto MUST ser de todos, menos o leitor; aprovar e excluir, do administrador, do gerente e do líder técnico. A pasta de termos MUST aparecer para o administrador e o gerente, e para quem assinou um termo, só com os dele. Quem não está no projeto recebe 404, e o projeto encerrado MUST ser só leitura, com 409 (ADR-0016, ADR-0043, ADR-0045, ADR-0093).
 
 #### Scenario: Permissões nos documentos por papel
 - **WHEN** o administrador, o gerente, o líder técnico, o colaborador, o desenvolvedor e o leitor tentam enviar, vincular, mudar para Em revisão, aprovar e excluir
