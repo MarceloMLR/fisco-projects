@@ -676,6 +676,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/baseline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["SaveScheduleBaseline"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1091,6 +1107,20 @@ export interface components {
         ProjectStatusRequest: {
             status: components["schemas"]["ProjectStatus"];
         };
+        /**
+         * @description The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
+         *     business days the end of the project now is after (positive) or before (negative) it, null without items now.
+         */
+        ScheduleBaselineResponse: {
+            /** Format: date */
+            savedOn: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            deviation: null | number;
+        };
         ScheduleCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -1143,7 +1173,9 @@ export interface components {
          *     of its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person
          *     may update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the
          *     items it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows
-         *     (ADR-0088).
+         *     (ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline
+         *     with the business days its end is after (positive) or before (negative) them, all null when it was not in the
+         *     baseline (ADR-0021).
          */
         ScheduleItemResponse: {
             /** Format: uuid */
@@ -1173,6 +1205,13 @@ export interface components {
             /** Format: uuid */
             parentId: null | string;
             hasSubtasks: boolean;
+            critical: boolean;
+            /** Format: date */
+            baselineStart: null | string;
+            /** Format: date */
+            baselineEnd: null | string;
+            /** Format: int32 */
+            baselineDeviation: null | number;
         };
         /** @description The person in charge of a task. */
         ScheduleOwnerResponse: {
@@ -1218,8 +1257,9 @@ export interface components {
         };
         /**
          * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
-         *     how many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the
-         *     month before the start to the month after the end, for the timeline to shade (none without items).
+         *     how many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month
+         *     before the start to the month after the end, for the timeline to shade (none without items), and the baseline, none
+         *     until the manager saves one.
          */
         ScheduleResponse: {
             /** Format: date */
@@ -1236,6 +1276,7 @@ export interface components {
             lateMilestones: number;
             phases: components["schemas"]["SchedulePhaseResponse"][];
             nonWorkingDays: string[];
+            baseline: null | components["schemas"]["ScheduleBaselineResponse"];
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -3969,6 +4010,69 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleItemChangedResponse"];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SaveScheduleBaseline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
