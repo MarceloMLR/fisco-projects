@@ -1,4 +1,5 @@
 using FiscoProjects.Persistence;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Tickets.Infrastructure.Persistence;
@@ -31,6 +32,13 @@ public static class TicketsModule
         services.AddScoped<OpenTicketAttachment>();
         services.AddScoped<TicketDeadlines>();
         services.AddScoped<TicketAnswers>();
+        services.AddScoped<TicketBatch>();
+        services.AddScoped<ChangeTicketAssignees>();
+        services.AddScoped<ChangeTicketRequesters>();
+        services.AddScoped<ListTicketPeopleChoices>();
+        services.AddScoped<TransferTicket>();
+        // The tickets of a person who leaves a project or gets another role (ADR-0042).
+        services.AddScoped<IProjectMemberChanges, TicketMemberChanges>();
         services.AddScoped<ChangeTicketPriority>();
         services.AddScoped<GetTicketDeadlines>();
         services.AddScoped<ChangeTicketDeadlines>();

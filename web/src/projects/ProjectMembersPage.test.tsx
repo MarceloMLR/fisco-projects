@@ -9,6 +9,7 @@ import {
   demoPeople,
   demoPeopleChoices,
   demoProjects,
+  demoTickets,
   marina,
   membersOf,
   peopleOf,
@@ -483,5 +484,78 @@ describe('Abas do projeto', () => {
     );
     fireEvent.click(screen.getByRole('tab', { name: ptBR.pages.project.title }));
     expect(await screen.findByRole('region', { name: ptBR.projects.overview.team })).toBeVisible();
+  });
+});
+
+// Spec: membros-do-projeto, requirement "Chamados no detalhe da pessoa".
+describe('Chamados no detalhe da pessoa', () => {
+  const tickets = () => {
+    const [first, second] = demoTickets();
+    if (first === undefined || second === undefined) {
+      throw new Error('No tickets.');
+    }
+    return [
+      { ...first, assignee: demoPeople.diego, canChangeAssignee: true, canChangeRequester: true },
+      { ...second, assignee: demoPeople.diego, canChangeAssignee: true, canChangeRequester: true },
+    ];
+  };
+
+  it('Chamados da pessoa no detalhe', async () => {
+    const asked: string[] = [];
+    server.use(
+      http.get('/api/tickets', ({ request }) => {
+        asked.push(new URL(request.url).search);
+        return HttpResponse.json({ items: tickets(), total: 2 });
+      }),
+    );
+    await openMembers();
+
+    const drawer = await choose('Diego Torres');
+
+    const section = await within(drawer).findByRole('region', { name: /Chamados em aberto/ });
+    const [first] = tickets();
+    expect(
+      await within(section).findByRole('link', {
+        name: `#${String(first?.number)} ${String(first?.title)}`,
+      }),
+    ).toBeInTheDocument();
+    expect(within(section).getAllByText(text.tickets.assignee)).toHaveLength(2);
+    expect(asked.some((query) => query.includes(`personId=${demoPeople.diego.id}`))).toBe(true);
+  });
+
+  it('Passar pendências', async () => {
+    let current = tickets();
+    const saved: unknown[] = [];
+    server.use(
+      http.get('/api/tickets', () => HttpResponse.json({ items: current, total: current.length })),
+      http.get('/api/tickets/assignee-choices', () =>
+        HttpResponse.json([demoPeople.marina, demoPeople.rafael]),
+      ),
+      http.put('/api/tickets/assignee', async ({ request }) => {
+        saved.push(await request.json());
+        current = [];
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await openMembers();
+    const drawer = await choose('Diego Torres');
+    fireEvent.click(await within(drawer).findByRole('button', { name: text.tickets.handOver }));
+    const dialog = await screen.findByRole('dialog', {
+      name: text.tickets.handOverTitle.replace('{{name}}', 'Diego Torres'),
+    });
+
+    fireEvent.mouseDown(
+      within(dialog).getByRole('combobox', { name: 'Novo responsável (2 chamados)' }),
+    );
+    fireEvent.click(await screen.findByRole('option', { name: 'Rafael Souza' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: text.tickets.handOver }));
+
+    expect(
+      await screen.findByText(text.tickets.done.replace('{{name}}', 'Diego Torres')),
+    ).toBeInTheDocument();
+    expect(saved).toEqual([
+      { numbers: tickets().map((ticket) => ticket.number), assigneeId: demoPeople.rafael.id },
+    ]);
+    expect(await within(drawer).findByText(text.tickets.none)).toBeInTheDocument();
   });
 });

@@ -193,7 +193,22 @@ public sealed class AddProjectMember(IProjectStore store, IUserAccess access, IU
 /// viewer is in charge of no task, so the tasks of a person who becomes one lose the owner. Run in a serializable
 /// transaction, so two changes at once never leave the project without a manager.
 /// </summary>
-public sealed class ChangeProjectMemberRole(IProjectStore store, IScheduleStore schedules, IUserAccess access)
+/// <summary>
+/// Tells the other modules that a person left a project or got another role (ADR-0042), after the change is saved, as
+/// the tickets of the person (Tickets).
+/// </summary>
+public interface IMemberChangeNotices
+{
+    /// <param name="projectId">The project.</param>
+    /// <param name="userId">The person.</param>
+    /// <param name="role">The role now; null when the person left.</param>
+    /// <param name="actorId">Who made the change.</param>
+    /// <param name="cancellationToken">Stops the work.</param>
+    Task NotifyAsync(Guid projectId, Guid userId, ProjectRole? role, Guid actorId, CancellationToken cancellationToken);
+}
+
+public sealed class ChangeProjectMemberRole(
+    IProjectStore store, IScheduleStore schedules, IUserAccess access, IMemberChangeNotices notices)
 {
     public async Task<MemberOutcome> ExecuteAsync(
         Guid projectId, Guid userId, ProjectRole role, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -217,7 +232,7 @@ public sealed class ChangeProjectMemberRole(IProjectStore store, IScheduleStore 
             return MemberOutcome.Done;
         }
 
-        return await store.InSerializableTransactionAsync(async token =>
+        var outcome = await store.InSerializableTransactionAsync(async token =>
         {
             var current = await store.FindAsync(projectId, token);
             var roleNow = current?.RoleOf(userId);
@@ -243,6 +258,12 @@ public sealed class ChangeProjectMemberRole(IProjectStore store, IScheduleStore 
             await store.SaveChangesAsync(token);
             return MemberOutcome.Done;
         }, cancellationToken);
+        if (outcome == MemberOutcome.Done)
+        {
+            await notices.NotifyAsync(projectId, userId, role, viewer.UserId, cancellationToken);
+        }
+
+        return outcome;
     }
 }
 
@@ -252,7 +273,7 @@ public sealed class ChangeProjectMemberRole(IProjectStore store, IScheduleStore 
 /// last manager stays. Run in a serializable transaction, so two removals at once never leave the project without a
 /// manager.
 /// </summary>
-public sealed class RemoveProjectMember(IProjectStore store, IScheduleStore schedules)
+public sealed class RemoveProjectMember(IProjectStore store, IScheduleStore schedules, IMemberChangeNotices notices)
 {
     public async Task<MemberOutcome> ExecuteAsync(
         Guid projectId, Guid userId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -264,7 +285,7 @@ public sealed class RemoveProjectMember(IProjectStore store, IScheduleStore sche
             return refusal;
         }
 
-        return await store.InSerializableTransactionAsync(async token =>
+        var outcome = await store.InSerializableTransactionAsync(async token =>
         {
             var current = await store.FindAsync(projectId, token);
             var roleNow = current?.RoleOf(userId);
@@ -286,5 +307,12 @@ public sealed class RemoveProjectMember(IProjectStore store, IScheduleStore sche
             await store.SaveChangesAsync(token);
             return MemberOutcome.Done;
         }, cancellationToken);
+        if (outcome == MemberOutcome.Done)
+        {
+            // The tickets of the person in the project lose the assignee (ADR-0042), once the removal is saved.
+            await notices.NotifyAsync(projectId, userId, null, viewer.UserId, cancellationToken);
+        }
+
+        return outcome;
     }
 }

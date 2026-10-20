@@ -3809,6 +3809,15 @@
               "format": "int32",
               "default": 25
             }
+          },
+          {
+            "name": "personId",
+            "in": "query",
+            "description": "Only the tickets of which this person is the assignee or the requester.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -4016,6 +4025,317 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TicketFlowResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/assignee": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeTicketAssignees",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketAssigneeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/requester": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeTicketRequesters",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRequesterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/assignee-choices": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "description": "The people who may be the assignee of all the tickets of the numbers (ADR-0068).",
+        "operationId": "ListTicketAssigneeChoices",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketPersonResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/tickets/requester-choices": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "description": "The people who may be the requester of all the tickets of the numbers (ADR-0027).",
+        "operationId": "ListTicketRequesterChoices",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketPersonResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/team": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "TransferTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketTeamRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6815,6 +7135,33 @@
         "type": "string",
         "description": "Who may take an action of the flow (ADR-0024, ADR-0044); a transition takes several."
       },
+      "TicketAssigneeRequest": {
+        "required": [
+          "numbers",
+          "assigneeId"
+        ],
+        "type": "object",
+        "properties": {
+          "numbers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "assigneeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "A new assignee for the tickets, one or many (ADR-0027, ADR-0068)."
+      },
       "TicketAttachmentResponse": {
         "required": [
           "id",
@@ -6859,7 +7206,10 @@
           "canSend",
           "canAttachToDescription",
           "actions",
-          "canChangePriority"
+          "canChangePriority",
+          "canChangeAssignee",
+          "canChangeRequester",
+          "canTransfer"
         ],
         "type": "object",
         "properties": {
@@ -6876,6 +7226,15 @@
             }
           },
           "canChangePriority": {
+            "type": "boolean"
+          },
+          "canChangeAssignee": {
+            "type": "boolean"
+          },
+          "canChangeRequester": {
+            "type": "boolean"
+          },
+          "canTransfer": {
             "type": "boolean"
           }
         },
@@ -7106,7 +7465,10 @@
         "enum": [
           "StatusChanged",
           "AssigneeSet",
-          "PriorityChanged"
+          "PriorityChanged",
+          "AssigneeCleared",
+          "RequesterChanged",
+          "TeamChanged"
         ],
         "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
       },
@@ -7121,6 +7483,10 @@
           "assigneeId",
           "fromPriority",
           "toPriority",
+          "fromTeam",
+          "toTeam",
+          "fromPersonId",
+          "toPersonId",
           "at"
         ],
         "type": "object",
@@ -7196,6 +7562,42 @@
               }
             ]
           },
+          "fromTeam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketTeam"
+              }
+            ]
+          },
+          "toTeam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketTeam"
+              }
+            ]
+          },
+          "fromPersonId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The requester before, or the assignee who left.",
+            "format": "uuid"
+          },
+          "toPersonId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The new requester.",
+            "format": "uuid"
+          },
           "at": {
             "type": "string",
             "format": "date-time"
@@ -7244,7 +7646,9 @@
           "openedAt",
           "updatedAt",
           "interactions",
-          "resolution"
+          "resolution",
+          "canChangeAssignee",
+          "canChangeRequester"
         ],
         "type": "object",
         "properties": {
@@ -7307,6 +7711,14 @@
                 "$ref": "#/components/schemas/TicketDueResponse"
               }
             ]
+          },
+          "canChangeAssignee": {
+            "type": "boolean",
+            "description": "The person may change the assignee, also with others at once (ADR-0068)."
+          },
+          "canChangeRequester": {
+            "type": "boolean",
+            "description": "The person may change the requester with others at once (ADR-0027)."
           }
         },
         "description": "A ticket of a list; without an assignee until someone of the team answers it (ADR-0068)."
@@ -7493,6 +7905,33 @@
         },
         "description": "The project of a ticket: the screens show the code beside the number (ADR-0029)."
       },
+      "TicketRequesterRequest": {
+        "required": [
+          "numbers",
+          "requesterId"
+        ],
+        "type": "object",
+        "properties": {
+          "numbers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "requesterId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "A new requester for the tickets, one or many (ADR-0027)."
+      },
       "TicketResponse": {
         "required": [
           "id",
@@ -7677,6 +8116,25 @@
           "Development"
         ],
         "description": "The team a ticket goes to (ADR-0068): only these two, without queues."
+      },
+      "TicketTeamRequest": {
+        "required": [
+          "team"
+        ],
+        "type": "object",
+        "properties": {
+          "team": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketTeam"
+              }
+            ]
+          }
+        },
+        "description": "The other team for the ticket (ADR-0068)."
       },
       "TicketTransitionRequest": {
         "required": [

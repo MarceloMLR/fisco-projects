@@ -298,3 +298,18 @@ describe('Prazos na demonstração', () => {
     expect(asked).toHaveLength(1);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Trocas na demonstração".
+describe('Trocas na demonstração', () => {
+  it('Trocas na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The manager assigns the sixth ticket to the developer; the tech lead sends the fourth to Funcional.
+    expect(callsBy(/ PUT \/api\/tickets\/assignee$/)).toEqual(['marina PUT /api/tickets/assignee']);
+    expect(bodies.get('/api/tickets/assignee')).toEqual([
+      { numbers: [6], assigneeId: idOf('diego') },
+    ]);
+    expect(callsBy(/ PUT \/api\/tickets\/\d+\/team$/)).toEqual(['rafael PUT /api/tickets/4/team']);
+    expect(bodies.get('/api/tickets/4/team')).toEqual([{ team: 'Functional' }]);
+  });
+});

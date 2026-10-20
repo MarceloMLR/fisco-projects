@@ -61,6 +61,11 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
             tickets = tickets.Where(ticket => ticket.Team == team);
         }
 
+        if (query.PersonId is { } personId)
+        {
+            tickets = tickets.Where(ticket => ticket.AssigneeId == personId || ticket.RequesterId == personId);
+        }
+
         tickets = query.Situation switch
         {
             TicketSituation.Open => Open(tickets),
@@ -200,6 +205,12 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
 
     public Task<Ticket?> FindAsync(int number, CancellationToken cancellationToken) =>
         db.Tickets.SingleOrDefaultAsync(ticket => ticket.Number == number, cancellationToken);
+
+    public async Task<IReadOnlyList<Ticket>> FindManyAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken) =>
+        await db.Tickets.Where(ticket => numbers.Contains(ticket.Number)).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken) =>
+        await Open(db.Tickets.Where(ticket => ticket.ProjectId == projectId && ticket.AssigneeId == userId)).ToListAsync(cancellationToken);
 
     private IQueryable<Ticket> Seen(TicketScope scope)
     {

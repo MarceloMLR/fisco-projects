@@ -129,6 +129,38 @@ public static class TicketAccess
     }
 
     /// <summary>
+    /// Changes the assignee, one ticket or many at a time (ADR-0068, which replaces the column "quem atende" of
+    /// ADR-0044): the Administrator, the manager and the tech lead.
+    /// </summary>
+    public static bool MayAssign(TicketViewer viewer, ProjectMemberRole? role)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        return viewer.IsAdministrator || role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead;
+    }
+
+    /// <summary>Who may be the assignee of a ticket of the team (ADR-0068): who serves it, or the manager of the project.</summary>
+    public static bool CanBeAssignee(TicketTeam team, ProjectMemberRole? role) =>
+        role is { } member && (Serves(team, member) || member == ProjectMemberRole.Manager);
+
+    /// <summary>
+    /// Changes the requester (ADR-0027, ADR-0044): the Administrator and the managers, one ticket or many; the requester,
+    /// only the own ticket, one at a time.
+    /// </summary>
+    public static bool MayChangeRequester(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket, bool inBulk)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        return MayAssign(viewer, role) || (!inBulk && ticket.RequesterId == viewer.UserId);
+    }
+
+    /// <summary>Who may be the requester: who opens tickets in the project, everyone in it but the viewer (ADR-0044).</summary>
+    public static bool CanBeRequester(ProjectMemberRole? role) =>
+        role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead or ProjectMemberRole.Contributor or ProjectMemberRole.Developer;
+
+    /// <summary>Transfers the ticket to the other team (ADR-0044): who serves it, as the flow says it.</summary>
+    public static bool MayTransfer(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
+        (ActorsOf(viewer, role, ticket) & TicketActors.Attendant) != 0;
+
+    /// <summary>
     /// The parts of a person in the flow of the ticket (ADR-0024, ADR-0044): who serves it is the Administrator, the
     /// managers and who serves its team; the requester; the managers (the manager and the tech lead); the
     /// Administrator.

@@ -181,6 +181,9 @@ describe('Conversa pela tela', () => {
         canAttachToDescription: false,
         actions: [],
         canChangePriority: false,
+        canChangeAssignee: false,
+        canChangeRequester: false,
+        canTransfer: false,
       },
       following: false,
     };

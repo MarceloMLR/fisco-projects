@@ -192,6 +192,28 @@ public sealed class Ticket : Entity
         UpdatedAt = now;
     }
 
+    /// <summary>Nobody is in charge of the ticket any more, as when the assignee leaves the project (ADR-0042).</summary>
+    public void Unassign(DateTime now)
+    {
+        AssigneeId = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Another person of the project answers for the ticket as the requester (ADR-0027).</summary>
+    public void ChangeRequester(Guid requesterId, DateTime now)
+    {
+        RequesterId = requesterId;
+        UpdatedAt = now;
+    }
+
+    /// <summary>The ticket goes to the other team, without an assignee until someone of it answers (ADR-0068).</summary>
+    public void Transfer(TicketTeam team, DateTime now)
+    {
+        Team = team;
+        AssigneeId = null;
+        UpdatedAt = now;
+    }
+
     /// <summary>The person in charge of the ticket from now on (ADR-0068).</summary>
     public void Assign(Guid assigneeId, DateTime now)
     {

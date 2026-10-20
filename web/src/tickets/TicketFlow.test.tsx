@@ -43,6 +43,10 @@ const tookIt: Ticket['events'] = [
     assigneeId: demoPeople.diego.id,
     fromPriority: null,
     toPriority: null,
+    fromTeam: null,
+    toTeam: null,
+    fromPersonId: null,
+    toPersonId: null,
     at: '2026-10-15T10:00:00Z',
   },
   {
@@ -55,6 +59,10 @@ const tookIt: Ticket['events'] = [
     assigneeId: null,
     fromPriority: null,
     toPriority: null,
+    fromTeam: null,
+    toTeam: null,
+    fromPersonId: null,
+    toPersonId: null,
     at: '2026-10-15T10:00:00Z',
   },
 ];
@@ -79,6 +87,9 @@ beforeEach(() => {
         { action: 'Resolve', to: 'Resolved', requiresMessage: false },
       ],
       canChangePriority: true,
+      canChangeAssignee: false,
+      canChangeRequester: false,
+      canTransfer: false,
     },
   };
   taken.length = 0;
@@ -117,10 +128,21 @@ beforeEach(() => {
             assigneeId: null,
             fromPriority: null,
             toPriority: null,
+            fromTeam: null,
+            toTeam: null,
+            fromPersonId: null,
+            toPersonId: null,
             at,
           },
         ],
-        permissions: { ...ticket.permissions, actions: [], canChangePriority: false },
+        permissions: {
+          ...ticket.permissions,
+          actions: [],
+          canChangePriority: false,
+          canChangeAssignee: false,
+          canChangeRequester: false,
+          canTransfer: false,
+        },
       };
       return new HttpResponse(null, { status: 204 });
     }),
@@ -215,6 +237,10 @@ describe('Histórico na conversa', () => {
           assigneeId: null,
           fromPriority: null,
           toPriority: null,
+          fromTeam: null,
+          toTeam: null,
+          fromPersonId: null,
+          toPersonId: null,
           at: '2026-10-22T12:00:00Z',
         },
       ],
@@ -223,6 +249,9 @@ describe('Histórico na conversa', () => {
         canAttachToDescription: false,
         actions: [],
         canChangePriority: false,
+        canChangeAssignee: false,
+        canChangeRequester: false,
+        canTransfer: false,
       },
     };
     await openTicket();

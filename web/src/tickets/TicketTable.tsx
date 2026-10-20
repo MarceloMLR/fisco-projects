@@ -1,15 +1,44 @@
+import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined';
 import ForumOutlined from '@mui/icons-material/ForumOutlined';
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
-import { type ReactNode, useCallback, useMemo } from 'react';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
+import { type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import type { TicketRow } from '../api/client';
+import { Checkbox } from '../components/Checkbox';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { useDates } from '../format/useDates';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { TicketDue } from './TicketDue';
+import { PeopleChangeDialog } from './TicketPeopleDialogs';
+import type { PeopleChange } from './ticketChanges';
 
 export const ticketPageSize = 25;
+
+/** A row the person may change in bulk: the assignee or the requester (ADR-0027). */
+const isSelectable = (row: TicketRow) => row.canChangeAssignee || row.canChangeRequester;
+
+/** A click on a control of a row that must not open the ticket. */
+const keepRow = (event: MouseEvent) => {
+  event.stopPropagation();
+};
+
+const linkButtonSx = {
+  padding: 0,
+  marginLeft: '32px',
+  border: 0,
+  background: 'none',
+  font: 'inherit',
+  fontSize: 13,
+  lineHeight: '18px',
+  color: 'var(--action-text)',
+  cursor: 'pointer',
+  '&:hover': { textDecoration: 'underline' },
+  '&:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: 2 },
+} as const;
 
 const secondarySx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const;
@@ -42,13 +71,80 @@ export function TicketTable({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { formatDayMonth } = useDates();
+  // The marked tickets, by number, kept across the pages until the change or "Limpar seleção" (canvas Chamados).
+  const [marked, setMarked] = useState<ReadonlyMap<number, TicketRow>>(new Map());
+  const [changing, setChanging] = useState<{ kind: PeopleChange; numbers: number[] }>();
+  const [message, setMessage] = useState<string>();
+  const selectable = rows.filter(isSelectable);
+  const allMarked = selectable.length > 0 && selectable.every((row) => marked.has(row.number));
+
+  const mark = useCallback((row: TicketRow, checked: boolean) => {
+    setMarked((current) => {
+      const next = new Map(current);
+      if (checked) {
+        next.set(row.number, row);
+      } else {
+        next.delete(row.number);
+      }
+      return next;
+    });
+  }, []);
+
+  const markPage = useCallback(
+    (checked: boolean) => {
+      setMarked((current) => {
+        const next = new Map(current);
+        for (const row of rows.filter(isSelectable)) {
+          if (checked) {
+            next.set(row.number, row);
+          } else {
+            next.delete(row.number);
+          }
+        }
+        return next;
+      });
+    },
+    [rows],
+  );
 
   const columns = useMemo<DataTableColumn<TicketRow>[]>(
     () => [
+      ...(rows.some(isSelectable)
+        ? [
+            {
+              field: 'select',
+              width: 40,
+              sortable: false,
+              renderHeader: () => (
+                <Box onClick={keepRow} sx={{ display: 'flex' }}>
+                  <Checkbox
+                    label={t('tickets.select.all')}
+                    hideLabel
+                    checked={allMarked}
+                    onChange={markPage}
+                  />
+                </Box>
+              ),
+              renderCell: ({ row }: { row: TicketRow }) =>
+                isSelectable(row) ? (
+                  <Box onClick={keepRow} sx={{ display: 'flex' }}>
+                    <Checkbox
+                      label={t('tickets.select.one', { number: row.number })}
+                      hideLabel
+                      checked={marked.has(row.number)}
+                      onChange={(checked) => {
+                        mark(row, checked);
+                      }}
+                    />
+                  </Box>
+                ) : null,
+            } satisfies DataTableColumn<TicketRow>,
+          ]
+        : []),
       {
         field: 'number',
         headerName: t('tickets.columns.number'),
-        width: 76,
+        width: 64,
         renderCell: ({ row }) => (
           <Box
             component="span"
@@ -66,7 +162,7 @@ export function TicketTable({
         field: 'title',
         headerName: t('tickets.columns.title'),
         flex: 2,
-        minWidth: 260,
+        minWidth: 232,
         renderCell: ({ row }) => {
           const team = t(`tickets.teams.${row.team}`);
           return (
@@ -114,7 +210,7 @@ export function TicketTable({
       {
         field: 'status',
         headerName: t('tickets.columns.statusAndDue'),
-        width: 212,
+        width: 184,
         // The status with the deadline of the resolution under it, while it is open (canvas Chamados, ADR-0025).
         renderCell: ({ row }) => (
           <Box
@@ -137,19 +233,44 @@ export function TicketTable({
       {
         field: 'assignee',
         headerName: t('tickets.columns.assignee'),
-        width: 184,
-        renderCell: ({ row }) => <TicketPersonTag name={row.assignee?.name} />,
+        width: 168,
+        renderCell: ({ row }) =>
+          row.assignee === null && row.canChangeAssignee ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '2px',
+              }}
+            >
+              <TicketPersonTag name={undefined} />
+              <Box
+                component="button"
+                type="button"
+                onClick={(event: MouseEvent) => {
+                  keepRow(event);
+                  setChanging({ kind: 'assignee', numbers: [row.number] });
+                }}
+                sx={linkButtonSx}
+              >
+                {t('tickets.assignLink')}
+              </Box>
+            </Box>
+          ) : (
+            <TicketPersonTag name={row.assignee?.name} />
+          ),
       },
       {
         field: 'priority',
         headerName: t('tickets.columns.priority'),
-        width: 112,
+        width: 92,
         renderCell: ({ row }) => <PriorityTag priority={row.priority} />,
       },
       {
         field: 'interactions',
         headerName: t('tickets.columns.interactions'),
-        width: 60,
+        width: 52,
         align: 'right',
         headerAlign: 'right',
         renderHeader: () => (
@@ -169,8 +290,55 @@ export function TicketTable({
         ),
       },
     ],
-    [t, inProject, formatDayMonth],
+    [t, inProject, formatDayMonth, rows, allMarked, marked, mark, markPage],
   );
+
+  const chosen = [...marked.values()];
+  const selectionActions =
+    chosen.length === 0
+      ? undefined
+      : {
+          label: t('tickets.bulk.label'),
+          content: (
+            <>
+              <Box component="span" sx={{ fontWeight: 500 }}>
+                {t('tickets.bulk.selected', { count: chosen.length })}
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AssignmentIndOutlined />}
+                disabled={!chosen.every((row) => row.canChangeAssignee)}
+                onClick={() => {
+                  setChanging({ kind: 'assignee', numbers: chosen.map((row) => row.number) });
+                }}
+              >
+                {t('tickets.bulk.assign')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<PersonOutlined />}
+                disabled={!chosen.every((row) => row.canChangeRequester)}
+                onClick={() => {
+                  setChanging({ kind: 'requester', numbers: chosen.map((row) => row.number) });
+                }}
+              >
+                {t('tickets.bulk.requester')}
+              </Button>
+              <Box sx={{ flex: 1 }} />
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => {
+                  setMarked(new Map());
+                }}
+              >
+                {t('tickets.bulk.clear')}
+              </Button>
+            </>
+          ),
+        };
 
   const choose = useCallback(
     (row: TicketRow) => {
@@ -189,20 +357,46 @@ export function TicketTable({
   );
 
   return (
-    <DataTable
-      label={t('tickets.table')}
-      rows={rows}
-      columns={columns}
-      rowCount={total}
-      page={page}
-      pageSize={ticketPageSize}
-      onPageChange={onPageChange}
-      loading={loading}
-      rowHeight={60}
-      emptyLabel={emptyLabel}
-      displayedRowsLabel={footer}
-      onRowChoose={choose}
-      tools={tools}
-    />
+    <>
+      <DataTable
+        label={t('tickets.table')}
+        rows={rows}
+        columns={columns}
+        rowCount={total}
+        page={page}
+        pageSize={ticketPageSize}
+        onPageChange={onPageChange}
+        loading={loading}
+        rowHeight={60}
+        emptyLabel={emptyLabel}
+        displayedRowsLabel={footer}
+        onRowChoose={choose}
+        tools={tools}
+        selectionActions={selectionActions}
+      />
+      {changing !== undefined && (
+        <PeopleChangeDialog
+          kind={changing.kind}
+          numbers={changing.numbers}
+          onClose={() => {
+            setChanging(undefined);
+          }}
+          onDone={(text) => {
+            setChanging(undefined);
+            setMarked(new Map());
+            setMessage(text);
+          }}
+        />
+      )}
+      <Snackbar
+        open={message !== undefined}
+        message={message}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => {
+          setMessage(undefined);
+        }}
+      />
+    </>
   );
 }

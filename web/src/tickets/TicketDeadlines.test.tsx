@@ -24,6 +24,9 @@ beforeEach(() => {
       canAttachToDescription: false,
       actions: [],
       canChangePriority: true,
+      canChangeAssignee: false,
+      canChangeRequester: false,
+      canTransfer: false,
     },
     deadlines: {
       firstResponse: { state: 'Met', dueOn: '2026-10-20', daysLate: null },
@@ -138,6 +141,10 @@ describe('Prazos pela tela', () => {
           assigneeId: null,
           fromPriority: 'Medium',
           toPriority: 'High',
+          fromTeam: null,
+          toTeam: null,
+          fromPersonId: null,
+          toPersonId: null,
           at: '2026-10-19T13:00:00Z',
         },
         {
@@ -150,6 +157,10 @@ describe('Prazos pela tela', () => {
           assigneeId: null,
           fromPriority: null,
           toPriority: null,
+          fromTeam: null,
+          toTeam: null,
+          fromPersonId: null,
+          toPersonId: null,
           at: '2026-10-19T14:00:00Z',
         },
       ],
@@ -216,7 +227,13 @@ describe('Prazos de um chamado resolvido', () => {
     ticket = {
       ...ticket,
       status: 'Resolved',
-      permissions: { ...ticket.permissions, canChangePriority: false },
+      permissions: {
+        ...ticket.permissions,
+        canChangePriority: false,
+        canChangeAssignee: false,
+        canChangeRequester: false,
+        canTransfer: false,
+      },
       deadlines: ticket.deadlines && {
         ...ticket.deadlines,
         resolution: { state: 'Overdue', dueOn: '2026-10-20', daysLate: 2 },
