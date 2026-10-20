@@ -197,7 +197,7 @@ Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail
   2. Proposta e implementação na branch, com testes; commits pequenos em Conventional Commits.
   3. Push e PR com `gh pr create`; roadmap com "PR aberto". Avise Marcelo com o resumo.
   4. Depois da aprovação de Marcelo no chat (o GitHub não deixa o autor aprovar o próprio PR), rode o archive do OpenSpec (`/opsx:archive`) na mesma branch, atualize o roadmap para "Concluída" e faça push, para o PR levar código e specs juntos.
-  5. Faça o merge do PR; se o merge não puder ser feito pela sessão, peça a Marcelo para fazê-lo no GitHub. Depois volte para a `main` (`git switch main`, `git pull`), apague a branch local com `git branch -d <branch>` (nunca `-D`) e a remota com `git push origin --delete <branch>`.
+  5. O merge é sempre de Marcelo, no GitHub: avise que o PR está pronto e espere, sem fazer o merge pela sessão. Depois que ele avisar do merge, volte para a `main` (`git switch main`, `git pull`) e apague a branch local com `git branch -d <branch>` (nunca `-D`); a remota, Marcelo apaga no GitHub.
   6. Só então comece a próxima change, de novo pelo passo 1.
   - Nunca use `push --force` nem reescreva histórico publicado.
 - Commits em Conventional Commits: `tipo(escopo): descrição`, no imperativo, em minúsculas, sem ponto final, até 72 caracteres. Tipos: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Quebra de compatibilidade com `!` e rodapé `BREAKING CHANGE:`. Títulos de PR no mesmo formato.
