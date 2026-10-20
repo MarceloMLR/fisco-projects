@@ -24,6 +24,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     private sealed record Scene(
         SessionApp App,
         HttpClient Admin,
+        Guid AdminId,
         Guid ProjectId,
         Guid Marina,
         Guid Rafael,
@@ -59,6 +60,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
             HttpStatusCode.NoContent),
         new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
+            HttpStatusCode.NoContent),
+        new("Save the baseline", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/baseline"),
             HttpStatusCode.NoContent),
         new("Remove a milestone", (client, scene) => SendAsync(client, HttpMethod.Delete, $"{scene.Path}/items/{scene.Milestone}"),
             HttpStatusCode.NoContent),
@@ -569,6 +572,96 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         Values(moved, "ParentId").Should().Be(("Integrar emissão de NF-e", "Parametrizar regras de ICMS"));
     }
 
+    [Fact(DisplayName = "Linha de base e caminho crítico pela API")]
+    public async Task Baseline_IsSaved_AndComparedWithTheSchedule_WithTheCriticalPath()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var before = await ScheduleOfAsync(scene);
+        JsonDocument.Parse(before).RootElement.GetProperty("baseline").ValueKind.Should().Be(JsonValueKind.Null);
+
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/baseline")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        // Moved two business days later, the task pushes the milestone after it, and the end of the project.
+        (await DatesAsync(marina, scene, scene.Task, "2026-10-15")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var schedule = await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        var baseline = schedule.GetProperty("baseline");
+        (baseline.GetProperty("savedOn").GetString(), baseline.GetProperty("start").GetString(), baseline.GetProperty("end").GetString())
+            .Should().Be(("2026-10-19", "2026-10-13", "2026-10-15"));
+        (schedule.GetProperty("end").GetString(), baseline.GetProperty("deviation").GetInt32()).Should().Be(("2026-10-19", 2));
+        var task = await ItemAsync(scene, scene.Task);
+        (task.GetProperty("baselineStart").GetString(), task.GetProperty("baselineEnd").GetString(), task.GetProperty("baselineDeviation").GetInt32())
+            .Should().Be(("2026-10-13", "2026-10-15", 2));
+        // The task and the milestone after it make the whole schedule: both on the critical path.
+        (task.GetProperty("critical").GetBoolean(), (await ItemAsync(scene, scene.Milestone)).GetProperty("critical").GetBoolean())
+            .Should().Be((true, true));
+
+        // An item included later has no baseline.
+        var later = await AddTaskAsync(scene, "Configurar plano de contas", scene.Rafael);
+        var added = await ItemAsync(scene, later);
+        (added.GetProperty("baselineStart").ValueKind, added.GetProperty("baselineDeviation").ValueKind)
+            .Should().Be((JsonValueKind.Null, JsonValueKind.Null));
+
+        // Without tasks nor milestones there is no baseline to save.
+        foreach (var id in new[] { scene.Milestone, scene.Task, later })
+        {
+            await SendAsync(marina, HttpMethod.Delete, $"{scene.Path}/items/{id}");
+        }
+
+        var empty = await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/baseline");
+        empty.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(empty)).Should().Equal("baseline");
+    }
+
+    [Fact(DisplayName = "Linha de base num projeto encerrado")]
+    public async Task ClosedProject_KeepsItsBaseline()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/baseline");
+        await SendAsync(marina, HttpMethod.Put, $"/api/projects/{scene.ProjectId}/status", new { status = "Completed" });
+        var before = await ScheduleOfAsync(scene);
+
+        var response = await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/baseline");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:project-closed");
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+    }
+
+    [Fact(DisplayName = "Linha de base na auditoria")]
+    public async Task Baseline_IsAuditedOnce_ByTheNameOfTheProject()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/baseline");
+        // The next day, with sessions of their own, as the others expired.
+        app.Clock.Advance(TimeSpan.FromDays(1));
+        using var marinaNextDay = await app.SignInAsync(scene.Marina);
+        using var admin = await app.SignInAsync(scene.AdminId);
+        await DatesAsync(marinaNextDay, scene, scene.Task, "2026-10-15");
+        await SendAsync(marinaNextDay, HttpMethod.Put, $"{scene.Path}/baseline");
+
+        var entries = (await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=ScheduleBaseline&pageSize=100", Cancellation))
+            .GetProperty("items").EnumerateArray().ToList();
+        var project = await admin.GetFromJsonAsync<JsonElement>($"/api/projects/{scene.ProjectId}", Cancellation);
+
+        entries.Select(entry => entry.GetProperty("action").GetString()).Should().Equal("Updated", "Created");
+        entries.Should().AllSatisfy(entry =>
+        {
+            entry.GetProperty("itemLabel").GetString().Should().Be(project.GetProperty("name").GetString());
+            entry.GetProperty("actor").GetProperty("name").GetString().Should().Be("Marina Costa");
+        });
+        Values(entries[0], "SavedOn").Should().Be(("2026-10-19", "2026-10-20"));
+        Values(entries[0], "End").Should().Be(("2026-10-15", "2026-10-19"));
+        // The copy of the dates of each item stays out of the audit.
+        var all = (await admin.GetFromJsonAsync<JsonElement>("/api/audit?pageSize=100", Cancellation)).GetProperty("items");
+        all.EnumerateArray().Select(entry => entry.GetProperty("itemType").GetString()).Should().NotContain("ScheduleBaselineItem");
+    }
+
     [Fact(DisplayName = "Remover o responsável de tarefas")]
     public async Task RemovedPerson_LeavesTheTasksWithoutOwner_AndItIsAudited()
     {
@@ -679,7 +772,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     private async Task<Scene> StartAsync(string carlasRole = "Viewer")
     {
         var app = await SessionApp.StartAsync(sqlServer);
-        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        var (admin, adminId) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
         var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
         var carla = await app.CreateUserAsync("Carla Mendes", SystemRole.User);
@@ -704,7 +797,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             Item(phase, "Parametrizar regras de ICMS", "2026-10-13", 3, kind: "Task")));
         var milestone = await IdOfAsync(await SendAsync(admin, HttpMethod.Post, $"{path}/items",
             Item(phase, "Aceite da configuração", "2026-10-15", 0, kind: "Milestone", after: [task])));
-        return new Scene(app, admin, projectId, marina, rafael, carla, beatriz, phase, emptyPhase, task, milestone);
+        return new Scene(app, admin, adminId, projectId, marina, rafael, carla, beatriz, phase, emptyPhase, task, milestone);
     }
 
     private static object Item(
