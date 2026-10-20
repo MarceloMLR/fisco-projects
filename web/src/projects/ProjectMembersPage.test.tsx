@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { type Project, type ProjectRole, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
@@ -338,6 +338,11 @@ describe('Incluir pessoa pela tela', () => {
 // Spec: membros-do-projeto, requirement "Detalhe da pessoa pela tela".
 describe('Detalhe da pessoa pela tela', () => {
   it('Detalhe da pessoa', async () => {
+    // "Ontem" is the day before today: today is 19/10/2026, as in the demonstration data.
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-19T15:00:30Z') });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     await openMembers();
 
     const drawer = await choose('Rafael Souza');
