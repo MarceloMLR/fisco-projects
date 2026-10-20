@@ -127,7 +127,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Responsável | Assignee | |
 | Acompanhar | Follow | |
 | Status: Aberto, Em triagem, Em andamento, Aguardando solicitante, Resolvido, Fechado | TicketStatus: Open, Triage, InProgress, WaitingForRequester, Resolved, Closed | |
-| Transição do fluxo | StatusTransition | |
+| Transição do fluxo | TicketTransition | Lida da tabela `ticket_transitions` e conferida pelo `TicketFlow` (ADR-0024) |
 | Prioridade: baixa, média, alta, crítica | Priority: Low, Medium, High, Critical | |
 | Prazo de primeira resposta | FirstResponseDeadline | |
 | Prazo de resolução | ResolutionDeadline | |
@@ -142,6 +142,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Que acompanho (visão) | TicketView.Following | Os chamados que a pessoa acompanha |
 | Papel na conversa: Solicitante, Responsável, Gerente do projeto, Líder técnico, Desenvolvimento, Funcional | TicketParticipantRole: Requester, Owner, Manager, TechLead, Development, Functional | Dá a cor e o selo de cada mensagem (ADR-0069) |
 | Texto formatado | RichText | O JSON do editor (Tiptap), validado no servidor |
+| Ações do fluxo: Iniciar triagem, Primeira resposta, Iniciar atendimento, Pedir informações, Enviar resposta, Marcar como resolvido, Confirmar e fechar, Fechamento automático, Reabrir, Cancelar chamado | TicketAction: StartTriage, FirstResponse, StartWork, AskForInformation, Reply, Resolve, ConfirmAndClose, AutoClose, Reopen, Cancel | A primeira resposta, a resposta em Aguardando solicitante e o fechamento automático são do sistema, nunca botões |
+| Quem pode no fluxo: quem atende, solicitante, gestor, administrador, sistema | TicketActors: Attendant, Requester, Manager, Administrator, System | Quem atende inclui o administrador e os gestores (ADR-0044) |
+| Evento da conversa: mudança de status, responsável definido | TicketEvent: StatusChanged, AssigneeSet | Fora da auditoria, como as mensagens |
+| Fechamento automático | TicketAutoClose | Processo em segundo plano; `Tickets:AutoCloseBusinessDays` (5) |
 
 ## Documentos, links, acessos e termos
 
