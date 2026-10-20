@@ -35,22 +35,29 @@ describe('Detalhe pela linha do tempo', () => {
       fireEvent.click(bar);
     };
 
-    choose();
-    expect(onChoose).toHaveBeenLastCalledWith(
-      expect.objectContaining({ kind: 'item', item: mapping }),
-    );
+    // Syncfusion may answer a moment later when the machine is busy: each step waits for it.
+    const chooses = async (times: number) => {
+      choose();
+      await vi.waitFor(() => {
+        expect(onChoose.mock.calls.length).toBeGreaterThanOrEqual(times);
+      });
+      expect(onChoose).toHaveBeenLastCalledWith(
+        expect.objectContaining({ kind: 'item', item: mapping }),
+      );
+    };
+
+    await chooses(1);
     const chosen = onChoose.mock.calls.length;
     // The details open with the line chosen, and it stays chosen while they are open.
     redraw({ selectedId: mapping?.id });
-    expect(chosenLines()).toEqual([2]);
+    await vi.waitFor(() => {
+      expect(chosenLines()).toEqual([2]);
+    });
     // Closed, the timeline forgets the line, and the same bar opens the details again.
     redraw({ selectedId: undefined });
-    expect(chosenLines()).toEqual([]);
-    choose();
-
-    expect(onChoose.mock.calls.length).toBeGreaterThan(chosen);
-    expect(onChoose).toHaveBeenLastCalledWith(
-      expect.objectContaining({ kind: 'item', item: mapping }),
-    );
+    await vi.waitFor(() => {
+      expect(chosenLines()).toEqual([]);
+    });
+    await chooses(chosen + 1);
   });
 });

@@ -798,6 +798,8 @@
       "late": "Atrasada",
       "lateDays_one": "{{count}} dia útil de atraso",
       "lateDays_other": "{{count}} dias úteis de atraso",
+      "collapseSubtasks": "Recolher as subtarefas de {{name}}",
+      "expandSubtasks": "Mostrar as subtarefas de {{name}}",
       "milestone": {
         "reached": "Atingido em {{day}}",
         "pending": "Pendente",

@@ -16,11 +16,11 @@
 
 ## 4. Subtarefas mais claras
 
-- [ ] 4.1 Seta de recolher e mostrar as subtarefas na Lista, com o recuo de 24 px; teste "Recolher subtarefas na lista" e "Subtarefas na lista"
-- [ ] 4.2 Seção Subtarefas no detalhe, com "Nova subtarefa" para quem edita, e o rodapé com os botões do mesmo tamanho; testes "Nova subtarefa pela tela" e "Detalhe da tarefa-resumo"
+- [x] 4.1 Seta de recolher e mostrar as subtarefas na Lista, com o recuo de 24 px; teste "Recolher subtarefas na lista" e "Subtarefas na lista"
+- [x] 4.2 Seção Subtarefas no detalhe, com "Nova subtarefa" para quem edita, e o rodapé com os botões do mesmo tamanho; testes "Nova subtarefa pela tela" e "Detalhe da tarefa-resumo"
 
 ## 5. Dados de demonstração e documentação
 
-- [ ] 5.1 O fim da carga de demonstração com o endereço das telas; testes "Carregar dados de demonstração" e "Dados já carregados"
-- [ ] 5.2 `CLAUDE.md` (o `lateDays` e a seção Subtarefas) e o roadmap da Cronograma-4.1
+- [x] 5.1 O fim da carga de demonstração com o endereço das telas; testes "Carregar dados de demonstração" e "Dados já carregados"
+- [x] 5.2 `CLAUDE.md` (o `lateDays` e a seção Subtarefas) e o roadmap da Cronograma-4.1
 - [ ] 5.3 Build sem avisos, testes, format, frontend e specs; conferir no navegador, nos temas claro e escuro, no computador e no celular

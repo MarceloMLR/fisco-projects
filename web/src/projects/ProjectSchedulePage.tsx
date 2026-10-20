@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddOutlined from '@mui/icons-material/AddOutlined';
+import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import CloseFullscreenOutlined from '@mui/icons-material/CloseFullscreenOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
+import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import OpenInFullOutlined from '@mui/icons-material/OpenInFullOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
@@ -9,6 +11,7 @@ import TodayOutlined from '@mui/icons-material/TodayOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -60,6 +63,7 @@ import {
   valuesOfItem,
 } from './scheduleItemValues';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
+import { SubtaskSection } from './ScheduleSubtasks';
 import { LateCounts, MilestoneStatus } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
 
@@ -121,7 +125,18 @@ export function ProjectSchedulePage() {
   const scale: GanttScale = isScale(askedScale) ? askedScale : 'days';
   const timeline = useRef<ScheduleGanttHandle>(null);
   const expandedTimeline = useRef<ScheduleGanttHandle>(null);
-  const rows = useMemo(() => scheduleRows(schedule), [schedule]);
+  /** The tasks whose subtasks the Lista hides, until the arrow shows them again; all are shown at first. */
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+  const rows = useMemo(() => scheduleRows(schedule, collapsed), [schedule, collapsed]);
+  const toggleSubtasks = useCallback((itemId: string) => {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(itemId)) {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }, []);
   const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
   const chosen = chosenId === undefined ? undefined : findItem(schedule, chosenId);
   const itemCount = itemsOf(schedule).length;
@@ -133,7 +148,7 @@ export function ProjectSchedulePage() {
         headerName: t('projects.schedule.columns.name'),
         flex: 2,
         minWidth: 220,
-        renderCell: ({ row }) =>
+        renderCell: ({ row, tabIndex }) =>
           row.kind === 'phase' ? (
             <Box component="span" sx={ellipsisSx}>
               {row.phase.name}
@@ -145,12 +160,26 @@ export function ProjectSchedulePage() {
                 alignItems: 'center',
                 gap: 'var(--space-2)',
                 minWidth: 0,
-                // A subtask one step further in than the items of the phase (ADR-0088).
-                paddingLeft:
-                  row.item.parentId === null ? 'var(--space-5)' : 'calc(2 * var(--space-5))',
+                // A subtask one step further in than the items of the phase; a task with subtasks has its arrow in
+                // the step, with the name where the others start (ADR-0088).
+                paddingLeft: row.item.hasSubtasks
+                  ? 0
+                  : row.item.parentId === null
+                    ? 'var(--space-6)'
+                    : 'calc(2 * var(--space-6))',
                 fontWeight: row.item.hasSubtasks ? 500 : undefined,
               }}
             >
+              {row.item.hasSubtasks && (
+                <SubtasksArrow
+                  name={row.item.name}
+                  open={!collapsed.has(row.item.id)}
+                  tabIndex={tabIndex}
+                  onToggle={() => {
+                    toggleSubtasks(row.item.id);
+                  }}
+                />
+              )}
               {row.item.kind === 'Milestone' && (
                 <FlagOutlined
                   aria-label={t('projects.schedule.kinds.Milestone')}
@@ -268,7 +297,7 @@ export function ProjectSchedulePage() {
         ),
       },
     ],
-    [t, schedule],
+    [t, schedule, collapsed, toggleSubtasks],
   );
 
   const footer = useCallback(
@@ -592,6 +621,7 @@ export function ProjectSchedulePage() {
                 setChosenId(undefined);
                 setCreating({ parentId: chosen.item.id });
               }}
+              onOpen={setChosenId}
             />
           ) : (
             <ItemDetails
@@ -600,10 +630,61 @@ export function ProjectSchedulePage() {
               phase={chosen.phase}
               schedule={schedule}
               onDone={notify}
+              onOpen={setChosenId}
             />
           ))}
       </DetailsDrawer>
     </Box>
+  );
+}
+
+/**
+ * The arrow of a task with subtasks in the Lista, as in the Linha do tempo: it hides and shows the subtasks, without
+ * opening the details of the task, by the mouse or by Enter and Space (ADR-0088).
+ */
+function SubtasksArrow({
+  name,
+  open,
+  tabIndex,
+  onToggle,
+}: {
+  name: string;
+  open: boolean;
+  tabIndex: -1 | 0;
+  onToggle: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <IconButton
+      aria-expanded={open}
+      aria-label={t(
+        open ? 'projects.schedule.collapseSubtasks' : 'projects.schedule.expandSubtasks',
+        { name },
+      )}
+      tabIndex={tabIndex}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggle();
+      }}
+      onKeyDown={(event) => {
+        // The key acts on the arrow, and the line does not open its details.
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.stopPropagation();
+        }
+      }}
+      sx={{
+        flex: 'none',
+        width: 24,
+        height: 24,
+        padding: 0,
+        // The name starts where the names of the other tasks do.
+        marginLeft: 'calc(var(--space-2) * -1)',
+        color: 'var(--text-secondary)',
+        '& .MuiSvgIcon-root': { fontSize: 20 },
+      }}
+    >
+      {open ? <ExpandMoreOutlined /> : <ChevronRightOutlined />}
+    </IconButton>
   );
 }
 
@@ -771,10 +852,10 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
 
 /**
  * The details of a task or milestone for who edits the schedule: the progress of the task or the state of the
- * milestone, each saved by its own action (ADR-0086); the same fields as "Nova tarefa", with the end the API computed;
- * "Salvar", which says how many items after it were pushed (ADR-0019), and keeps the progress as it is; "Nova
- * subtarefa", for a task right in the phase; and the removal, with confirmation. A task with subtasks shows its dates
- * and progress as computed from them, and changes only its name, phase and owner (ADR-0088).
+ * milestone, each saved by its own action (ADR-0086); for a task right in the phase, its Subtarefas, with "Nova
+ * subtarefa"; the same fields as "Nova tarefa", with the end the API computed; "Salvar", which says how many items
+ * after it were pushed (ADR-0019), and keeps the progress as it is; and the removal, with confirmation. A task with
+ * subtasks shows its dates and progress as computed from them, and changes only its name, phase and owner (ADR-0088).
  */
 function ItemEditor({
   project,
@@ -783,6 +864,7 @@ function ItemEditor({
   onSaved,
   onRemoved,
   onNewSubtask,
+  onOpen,
 }: {
   project: Project;
   schedule: Schedule;
@@ -790,6 +872,8 @@ function ItemEditor({
   onSaved: (message: string) => void;
   onRemoved: (message: string) => void;
   onNewSubtask: () => void;
+  /** Opens the details of another item, as a subtask of this one. */
+  onOpen: (itemId: string) => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -869,6 +953,9 @@ function ItemEditor({
       ) : (
         <MilestoneState project={project} item={item} canEdit onDone={onSaved} />
       )}
+      {item.kind === 'Task' && item.parentId === null && (
+        <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} onNew={onNewSubtask} />
+      )}
       {item.hasSubtasks && <SummaryDates item={item} />}
       <Box
         component="form"
@@ -893,7 +980,6 @@ function ItemEditor({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Button
             variant="text"
-            size="small"
             startIcon={<DeleteOutlined />}
             onClick={() => {
               setRemoving(true);
@@ -903,16 +989,6 @@ function ItemEditor({
             {t(`projects.schedule.form.remove.${item.kind}`)}
           </Button>
           <Box sx={{ flex: 1 }} />
-          {item.kind === 'Task' && item.parentId === null && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<AddOutlined />}
-              onClick={onNewSubtask}
-            >
-              {t('projects.schedule.form.newSubtask')}
-            </Button>
-          )}
           <Button type="submit" variant="contained" disabled={isSubmitting}>
             {t('projects.schedule.form.save')}
           </Button>
@@ -985,7 +1061,8 @@ function SummaryDates({ item }: { item: ScheduleItem }) {
 
 /**
  * The details of a task or milestone for who does not edit the schedule (ADR-0043): read only, but for the progress of
- * a task the person is in charge of. A subtask says the task it is in, and a task with subtasks, how many it has.
+ * a task the person is in charge of. A subtask says the task it is in, and a task with subtasks lists them, each
+ * opening its own details (ADR-0088).
  */
 function ItemDetails({
   project,
@@ -993,12 +1070,15 @@ function ItemDetails({
   phase,
   schedule,
   onDone,
+  onOpen,
 }: {
   project: Project;
   item: ScheduleItem;
   phase: SchedulePhase;
   schedule: Schedule;
   onDone: (message: string) => void;
+  /** Opens the details of another item, as a subtask of this one. */
+  onOpen: (itemId: string) => void;
 }) {
   const { t } = useTranslation();
   const names = predecessorNames(item, schedule);
@@ -1016,6 +1096,7 @@ function ItemDetails({
       ) : (
         <MilestoneState project={project} item={item} canEdit={false} onDone={onDone} />
       )}
+      {subtasks > 0 && <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} />}
       <Box component="dl" sx={detailsListSx}>
         {parent !== undefined && (
           <>
@@ -1035,12 +1116,7 @@ function ItemDetails({
             <dd>{item.owner?.name ?? t('projects.schedule.noOwner')}</dd>
           </>
         )}
-        {subtasks > 0 ? (
-          <>
-            <dt>{t('projects.schedule.details.subtasks')}</dt>
-            <dd>{subtasks}</dd>
-          </>
-        ) : (
+        {subtasks === 0 && (
           <>
             <dt>{t('projects.schedule.details.dependsOn')}</dt>
             <dd>{names.length === 0 ? t('projects.schedule.none') : names.join(', ')}</dd>

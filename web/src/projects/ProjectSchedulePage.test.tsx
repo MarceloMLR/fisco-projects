@@ -869,10 +869,52 @@ describe('Subtarefas pela tela', () => {
       const cell = within(rowOf(name)).getByText(name).parentElement;
       return cell === null ? '' : window.getComputedStyle(cell).paddingLeft;
     };
-    expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-5))');
-    expect(indent('Executar testes')).toBe('calc(2 * var(--space-5))');
-    expect(indent('Integrar emissão de NF-e')).toBe('var(--space-5)');
+    expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-6))');
+    expect(indent('Executar testes')).toBe('calc(2 * var(--space-6))');
+    expect(indent('Integrar emissão de NF-e')).toBe('var(--space-6)');
     expect(cellsOf('Executar testes')[6]).toBe('Roteiro de testes');
+    // The summary has the arrow of its subtasks, shown at first; the other tasks have none.
+    expect(
+      within(rowOf('Testes integrados')).getByRole('button', {
+        name: text.collapseSubtasks.replace('{{name}}', 'Testes integrados'),
+      }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(within(rowOf('Integrar emissão de NF-e')).queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('Recolher subtarefas na lista', async () => {
+    schedule = demoScheduleWithSubtasks();
+    await openSchedule();
+
+    fireEvent.click(
+      within(rowOf('Testes integrados')).getByRole('button', {
+        name: text.collapseSubtasks.replace('{{name}}', 'Testes integrados'),
+      }),
+    );
+
+    // The subtasks leave the Lista, and the details of the task do not open.
+    await waitFor(() => {
+      expect(lines()).not.toContain('Roteiro de testes');
+    });
+    expect(lines().slice(4, 9)).toEqual([
+      'fase: Configuração',
+      'Parametrizar regras de ICMS',
+      'Integrar emissão de NF-e',
+      'Testes integrados',
+      'fase: Homologação',
+    ]);
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+    const show = within(rowOf('Testes integrados')).getByRole('button', {
+      name: text.expandSubtasks.replace('{{name}}', 'Testes integrados'),
+    });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    // By the key too, and they come back.
+    fireEvent.keyDown(show, { key: 'Enter' });
+    fireEvent.click(show);
+    await waitFor(() => {
+      expect(lines()).toContain('Executar testes');
+    });
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
   });
 
   it('Nova subtarefa pela tela', async () => {
@@ -886,7 +928,10 @@ describe('Subtarefas pela tela', () => {
     await openSchedule();
 
     const drawer = await chooseItem('Integrar emissão de NF-e');
-    fireEvent.click(within(drawer).getByRole('button', { name: text.form.newSubtask }));
+    // In the Subtarefas of the details, still without any.
+    const section = within(drawer).getByRole('region', { name: text.details.subtasks });
+    expect(within(section).queryByRole('listitem')).not.toBeInTheDocument();
+    fireEvent.click(within(section).getByRole('button', { name: text.form.newSubtask }));
 
     const dialog = await screen.findByRole('dialog', { name: text.form.newSubtask });
     expect(within(dialog).getByRole('combobox', { name: text.form.parent })).toHaveTextContent(
@@ -957,6 +1002,20 @@ describe('Subtarefas pela tela', () => {
     expect(
       within(drawer).queryByRole('button', { name: text.progressActions.start }),
     ).not.toBeInTheDocument();
+    // The Subtarefas, with "Nova subtarefa"; the buttons of the end of the details are of the same size.
+    const section = within(drawer).getByRole('region', { name: text.details.subtasks });
+    expect(
+      within(section)
+        .getAllByRole('listitem')
+        .map((subtask) => subtask.textContent),
+    ).toEqual(['Roteiro de testes', 'Executar testes']);
+    expect(within(section).getByRole('button', { name: text.form.newSubtask })).toBeVisible();
+    expect(within(drawer).getByRole('button', { name: text.form.remove.Task })).toHaveClass(
+      'MuiButton-sizeMedium',
+    );
+    expect(within(drawer).getByRole('button', { name: text.form.save })).toHaveClass(
+      'MuiButton-sizeMedium',
+    );
     fireEvent.change(within(drawer).getByLabelText(text.form.name), {
       target: { value: 'Testes integrados do ERP' },
     });
@@ -980,5 +1039,14 @@ describe('Subtarefas pela tela', () => {
           .replace('{{count}}', '2'),
       ),
     ).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: text.removeItem.back }));
+
+    // A subtask of the section opens its own details.
+    const subtasks = await within(drawer).findByRole('region', { name: text.details.subtasks });
+    fireEvent.click(within(subtasks).getByRole('button', { name: 'Roteiro de testes' }));
+    expect(await within(drawer).findByRole('heading', { name: 'Roteiro de testes' })).toBeVisible();
+    expect(within(drawer).getByRole('combobox', { name: text.form.parent })).toHaveTextContent(
+      'Testes integrados',
+    );
   });
 });
