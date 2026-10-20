@@ -107,7 +107,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045, 0092, 0093 | Em andamento |
+| Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045, 0092, 0093 | PR aberto ([#48](https://github.com/MarceloMLR/fisco-projects/pull/48)) |
 | Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Planejada |
 | Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | Planejada |
 | Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034 | Planejada |
