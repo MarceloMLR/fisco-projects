@@ -279,6 +279,12 @@ export const demoProjects: readonly DemoProject[] = [
             after: ['Mapear processos fiscais'],
             reached: true,
           }),
+          // Late in the week it is loaded, in the queue of Meu trabalho of the manager (ADR-0070).
+          task('Aprovar o escopo com o cliente', 7, 3, {
+            owner: 'marina',
+            progress: 60,
+            after: ['Reunião de abertura'],
+          }),
           // Late on the Monday it is loaded: it ended on the Friday before, at 80%.
           task('Validar cadastro de produtos', 8, 4, {
             owner: 'diego',
@@ -299,6 +305,8 @@ export const demoProjects: readonly DemoProject[] = [
             movedTo: 10,
           }),
           task('Configurar plano de contas', 9, 6, { owner: 'carla', progress: 70 }),
+          // Of the week it is loaded, not started: "Iniciar" in Meu trabalho of the manager.
+          task('Revisar parâmetros com o cliente', 14, 3, { owner: 'marina' }),
           task('Integrar emissão de NF-e', 14, 8, { owner: 'diego', progress: 30 }),
           task('Testes integrados', 18, 5, {
             owner: 'rafael',
@@ -721,6 +729,15 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'marina',
         description:
           'A alíquota de ICMS-ST de autopeças mudou no RS. Precisamos ajustar o cadastro.',
+        messages: [{ by: 'carla', text: 'Vou ajustar o cadastro ainda hoje.' }],
+        // Waits for the answer of the manager: "Aguardando você" in her Meu trabalho (ADR-0070).
+        changes: [
+          {
+            by: 'carla',
+            action: 'AskForInformation',
+            text: 'A alíquota nova vale para todas as autopeças ou só para algumas NCM?',
+          },
+        ],
       },
     ],
     phases: [

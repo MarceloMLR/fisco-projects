@@ -31,3 +31,30 @@ describe('Datas da demonstração', () => {
     }
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Meu trabalho na demonstração".
+describe('Meu trabalho na demonstração', () => {
+  it('Meu trabalho na demonstração', () => {
+    // Loaded on a Monday, the day 14 of the main project: a task of the manager already late and one of the week.
+    const tasks = demoProjects
+      .flatMap((project) => project.phases)
+      .flatMap((phase) => phase.items)
+      .filter(
+        (item) => item.kind === 'Task' && item.owner === 'marina' && (item.progress ?? 0) < 100,
+      );
+    expect(tasks.some((item) => item.day + item.duration < 14)).toBe(true);
+    expect(tasks.some((item) => item.day >= 14 && item.day <= 21)).toBe(true);
+    // A ticket of the manager waits for her answer, and a request of acceptance waits for its answer.
+    const tickets = demoProjects.flatMap((project) => project.tickets ?? []);
+    expect(
+      tickets.some(
+        (ticket) =>
+          ticket.by === 'marina' && ticket.changes?.at(-1)?.action === 'AskForInformation',
+      ),
+    ).toBe(true);
+    const acceptances = demoProjects.flatMap((project) => project.acceptances ?? []);
+    expect(acceptances.some((term) => term.answer === undefined && term.attached !== true)).toBe(
+      true,
+    );
+  });
+});
