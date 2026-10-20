@@ -65,6 +65,7 @@ public static class CredentialEndpoints
         credentials.MapDelete("/{credentialId:guid}", RemoveAsync).WithName("RemoveCredential")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        credentials.MapCredentialImportEndpoints();
         return api;
     }
 
