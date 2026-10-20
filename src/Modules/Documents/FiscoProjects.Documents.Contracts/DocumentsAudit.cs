@@ -5,4 +5,7 @@ public static class DocumentsAudit
 {
     /// <summary>The type of a field that holds the id of a folder of a project, shown on the Audit screen by its name.</summary>
     public const string FolderReference = "DocumentFolder";
+
+    /// <summary>The type of a field that holds the id of a category of links, shown on the Audit screen by its name.</summary>
+    public const string LinkCategoryReference = "LinkCategory";
 }

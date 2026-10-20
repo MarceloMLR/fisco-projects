@@ -26,6 +26,7 @@ import { Page } from '../shell/Page';
 import { ProjectDialog } from './ProjectDialog';
 import { ProjectHeader } from './ProjectHeader';
 import type { ProjectOutlet } from './projectOutlet';
+import { projectTabs } from './projectTabs';
 import { projectStatusLook } from './projectStatus';
 import { theme } from '../theme/theme';
 
@@ -54,19 +55,8 @@ function problemField(problem: unknown, name: string): unknown {
 export function ProjectLayout() {
   const { t } = useTranslation();
   const { projectId = '' } = useParams();
-  const onMembers = useMatch('/projects/:projectId/members') !== null;
-  const onSchedule = useMatch('/projects/:projectId/schedule') !== null;
-  const onTickets = useMatch('/projects/:projectId/tickets') !== null;
-  const onDocuments = useMatch('/projects/:projectId/documents') !== null;
-  const tab = onMembers
-    ? 'members'
-    : onSchedule
-      ? 'schedule'
-      : onTickets
-        ? 'tickets'
-        : onDocuments
-          ? 'documents'
-          : 'overview';
+  const segment = useMatch('/projects/:projectId/:tab')?.params.tab;
+  const tab = projectTabs.find((item) => item === segment) ?? 'overview';
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   // The documents are split in panes with margins of their own, as in the canvas (fp-split).
   const flush = desktop && tab === 'documents';

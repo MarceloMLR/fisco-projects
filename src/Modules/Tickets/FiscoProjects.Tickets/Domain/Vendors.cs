@@ -44,14 +44,7 @@ public sealed class Vendor : Entity
     /// <summary>
     /// An address of the web, http or https, up to 500 characters; empty is none. False when it is not valid.
     /// </summary>
-    public static bool TryUrl(string? text, out string? url)
-    {
-        url = string.IsNullOrWhiteSpace(text) ? null : text.Trim();
-        return url is null
-            || (url.Length <= UrlMaxLength
-                && Uri.TryCreate(url, UriKind.Absolute, out var uri)
-                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps));
-    }
+    public static bool TryUrl(string? text, out string? url) => WebAddress.TryOf(text, UrlMaxLength, out url);
 }
 
 /// <summary>Where a ticket stands at the vendor (ADR-0028); the vendor decides its own cycle, so any status follows any other.</summary>

@@ -181,8 +181,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Vincular ao cronograma | LinkDocument | A uma fase, tarefa ou marco do mesmo projeto |
 | Projeto criado (contrato) | IProjectSetup | O `Projects` avisa o projeto novo; o `Documents` cria as pastas |
 | Itens do cronograma (contrato) | IScheduleItems | Fases, tarefas e marcos de um projeto, com o nome atual |
-| Link | Link | |
-| Categoria de link | LinkCategory | |
+| Link do projeto | ProjectLink | Título, endereço http ou https, categoria e para que serve (ADR-0032) |
+| Categoria de link | LinkCategory | Lista da Administração; a inativa fica fora dos links novos |
+| Cadastrar links | `DocumentAccess.MayEditLinks` | Todos do projeto, menos o leitor (ADR-0045) |
+| Endereço da web | WebAddress | No `SharedKernel`: http ou https, até um tamanho, usado por links e fornecedores |
+| Busca sem acento | SearchText | No `SharedKernel`: busca numa lista em memória sem caixa e sem acento |
 | Acesso (login e senha de um portal) | PortalCredential | Módulo `Credentials` |
 | Termo de aceite | AcceptanceRequest | Pedido de aceite de um marco, respondido com PDF assinado (ADR-0035) |
 | Termo assinado | SignedAcceptance | |

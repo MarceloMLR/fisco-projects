@@ -240,6 +240,117 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.LinkCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_link_categories_Name");
+
+                    b.ToTable("link_categories", "documents");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("019a0a11-0000-7000-8000-000000000001"),
+                            IsActive = true,
+                            Name = "Sistemas"
+                        },
+                        new
+                        {
+                            Id = new Guid("019a0a11-0000-7000-8000-000000000002"),
+                            IsActive = true,
+                            Name = "Ambientes"
+                        },
+                        new
+                        {
+                            Id = new Guid("019a0a11-0000-7000-8000-000000000003"),
+                            IsActive = true,
+                            Name = "Repositórios"
+                        },
+                        new
+                        {
+                            Id = new Guid("019a0a11-0000-7000-8000-000000000004"),
+                            IsActive = true,
+                            Name = "Painéis"
+                        },
+                        new
+                        {
+                            Id = new Guid("019a0a11-0000-7000-8000-000000000005"),
+                            IsActive = true,
+                            Name = "Outros"
+                        });
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.ProjectLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "LinkCategory");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("UpdatedById")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("links", "documents");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Title");
+                });
+
             modelBuilder.Entity("FiscoProjects.Documents.Domain.Document", b =>
                 {
                     b.HasOne("FiscoProjects.Documents.Domain.DocumentFolder", null)
@@ -255,6 +366,15 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .WithMany("Versions")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.ProjectLink", b =>
+                {
+                    b.HasOne("FiscoProjects.Documents.Domain.LinkCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

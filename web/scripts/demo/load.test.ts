@@ -108,6 +108,16 @@ beforeEach(() => {
         maxBytes: 25 * 1024 * 1024,
       }),
     ),
+    // The categories of links of the migration (ADR-0032).
+    http.get(`${base}/api/link-categories`, () =>
+      HttpResponse.json(
+        ['Ambientes', 'Outros', 'Painéis', 'Repositórios', 'Sistemas'].map((name, index) => ({
+          id: `0199f5a2-3333-7000-8000-${String(index + 1).padStart(12, '0')}`,
+          name,
+          isActive: true,
+        })),
+      ),
+    ),
     http.post(`${base}/api/tickets`, () =>
       HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
     ),
@@ -408,5 +418,35 @@ describe('Documentos na demonstração', () => {
     const lastDocument = calls.findLastIndex((call) => call.includes('/documents'));
     const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
     expect(lastDocument).toBeLessThan(status);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Links na demonstração".
+describe('Links na demonstração', () => {
+  it('Links na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each link included by a person of the project who keeps links, never the viewer (ADR-0045).
+    const main = demoProjects.find((project) => project.code === 'ERP-FIN');
+    const links = main?.links ?? [];
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/links$/)).toHaveLength(links.length);
+    expect(people(/ POST \/api\/projects\/[^/]+\/links$/)).toEqual([
+      'carla',
+      'diego',
+      'marina',
+      'rafael',
+    ]);
+    expect(new Set(links.map((link) => link.category))).toEqual(
+      new Set(['Ambientes', 'Sistemas', 'Painéis', 'Repositórios']),
+    );
+    const sent = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/links'))
+      .flatMap(([, saved]) => saved) as { title: string; url: string; categoryId: string }[];
+    expect(sent.every((link) => link.url.startsWith('https://'))).toBe(true);
+    expect(new Set(sent.map((link) => link.categoryId)).size).toBe(4);
+    // Before the project gets its status.
+    const lastLink = calls.findLastIndex((call) => call.endsWith('/links'));
+    const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
+    expect(lastLink).toBeLessThan(status);
   });
 });

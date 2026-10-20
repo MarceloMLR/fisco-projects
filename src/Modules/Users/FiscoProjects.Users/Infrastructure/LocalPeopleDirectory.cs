@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Users.Application;
 using Microsoft.Extensions.Options;
 
@@ -14,10 +13,9 @@ internal sealed class LocalPeopleDirectory(IOptions<LocalSignInOptions> options)
 {
     public Task<IReadOnlyList<DirectoryPerson>> SearchAsync(string? search, int limit, CancellationToken cancellationToken)
     {
-        var text = Simplify(search);
+        var text = SearchText.Simplify(search);
         IReadOnlyList<DirectoryPerson> found = [.. People()
-            .Where(person => text.Length == 0 || Simplify(person.Name).Contains(text, StringComparison.Ordinal)
-                || Simplify(person.Email).Contains(text, StringComparison.Ordinal))
+            .Where(person => SearchText.Finds(person.Name, text) || SearchText.Finds(person.Email, text))
             .OrderBy(person => person.Name, StringComparer.CurrentCultureIgnoreCase)
             .Take(limit)];
         return Task.FromResult(found);
@@ -31,20 +29,4 @@ internal sealed class LocalPeopleDirectory(IOptions<LocalSignInOptions> options)
             ? options.Value.People.Select(person => new DirectoryPerson(
                 SignInLocally.Provider, SignInLocally.Normalize(person.Email), person.Name.Trim(), person.Email.Trim()))
             : [];
-
-    /// <summary>The text without accents, in lowercase, as the database compares names (accent and case insensitive).</summary>
-    private static string Simplify(string? text)
-    {
-        var decomposed = (text ?? string.Empty).Trim().Normalize(NormalizationForm.FormD);
-        var simple = new StringBuilder(decomposed.Length);
-        foreach (var character in decomposed)
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
-            {
-                simple.Append(char.ToLowerInvariant(character));
-            }
-        }
-
-        return simple.ToString();
-    }
 }

@@ -1141,4 +1141,100 @@ describe('Mudanças do cronograma na auditoria', () => {
       changes: [{ field: 'Situação', before: 'Ativa', after: 'Inativa' }],
     });
   });
+
+  it('Link incluído e alterado na auditoria', () => {
+    const project = {
+      field: 'ProjectId',
+      before: null,
+      after: 'Implantação do ERP financeiro',
+      secret: false,
+      reference: 'Project',
+    };
+    const added = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ProjectLink',
+        itemLabel: 'ERP · Homologação',
+        changes: [
+          {
+            field: 'CategoryId',
+            before: null,
+            after: 'Ambientes',
+            secret: false,
+            reference: 'LinkCategory',
+          },
+          project,
+          {
+            field: 'Title',
+            before: null,
+            after: 'ERP · Homologação',
+            secret: false,
+            reference: null,
+          },
+          {
+            field: 'Url',
+            before: null,
+            after: 'https://hml-erp.cliente.example',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ProjectLink',
+        itemLabel: 'ERP · Homologação',
+        changes: [
+          { ...project, before: project.after },
+          {
+            field: 'Description',
+            before: null,
+            after: 'Testes com o cliente.',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(added.title).toBe('Incluiu um link');
+    expect(added.summary).toBe('ERP · Homologação · Implantação do ERP financeiro');
+    expect(added.properties).toEqual([
+      { label: 'Link', value: 'ERP · Homologação' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(added.changes).toEqual(
+      expect.arrayContaining([{ field: 'Categoria', before: '—', after: 'Ambientes' }]),
+    );
+    expect([changed.title, changed.summary]).toEqual([
+      'Alterou um link',
+      'ERP · Homologação · para que serve — → Testes com o cliente.',
+    ]);
+  });
+
+  it('Categoria de links inativada na auditoria', () => {
+    const deactivated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'LinkCategory',
+        itemLabel: 'Painéis',
+        changes: [
+          { field: 'IsActive', before: 'true', after: 'false', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(deactivated).toEqual({
+      title: 'Inativou uma categoria de links',
+      summary: 'Painéis',
+      sentence: 'Paulo Nogueira inativou uma categoria de links',
+      properties: [{ label: 'Categoria', value: 'Painéis' }],
+      changes: [{ field: 'Situação', before: 'Ativa', after: 'Inativa' }],
+    });
+  });
 });

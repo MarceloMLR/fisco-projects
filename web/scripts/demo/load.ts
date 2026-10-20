@@ -197,8 +197,9 @@ export async function loadDemo(
     (total, project) => total + (project.documents?.length ?? 0),
     0,
   );
+  const links = demoProjects.reduce((total, project) => total + (project.links?.length ?? 0), 0);
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados e ${String(documents)} documentos.`,
+    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos e ${String(links)} links.`,
   );
   log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
@@ -445,6 +446,10 @@ async function loadProject(
     await loadDocuments(project, id, ids, phaseIds, builder, personOf);
   }
 
+  if ((project.links ?? []).length > 0) {
+    await loadLinks(project, id, builder, personOf);
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {
@@ -544,5 +549,33 @@ async function loadDocuments(
         `Vínculo de ${document.name}`,
       );
     }
+  }
+}
+
+/** Includes the links of the project, each by its person, in the categories of the migration (ADR-0032). */
+async function loadLinks(
+  project: DemoProject,
+  projectId: string,
+  builder: Api,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+): Promise<void> {
+  const categories = must(await builder.GET('/api/link-categories'), 'Categorias de links');
+  for (const link of project.links ?? []) {
+    const categoryId = categories.find((category) => category.name === link.category)?.id;
+    if (categoryId === undefined) {
+      throw new Error(`${link.title} vai para ${link.category}, que não é uma categoria ativa.`);
+    }
+    must(
+      await personOf(link.by).api.POST('/api/projects/{projectId}/links', {
+        params: { path: { projectId } },
+        body: {
+          title: link.title,
+          url: link.url,
+          categoryId,
+          description: link.description ?? null,
+        },
+      }),
+      `Link ${link.title}`,
+    );
   }
 }

@@ -154,6 +154,15 @@ export interface DemoDocument {
   link?: { by: DemoPerson; to: string };
 }
 
+/** A link of the project, included by a person who keeps links (ADR-0032, ADR-0045), in a category of the migration. */
+export interface DemoLink {
+  title: string;
+  url: string;
+  category: string;
+  description?: string;
+  by: DemoPerson;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -171,6 +180,8 @@ export interface DemoProject {
   tickets?: readonly DemoTicket[];
   /** The documents sent once the schedule is built, before the project gets its status. */
   documents?: readonly DemoDocument[];
+  /** The links included once the schedule is built, before the project gets its status. */
+  links?: readonly DemoLink[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -466,6 +477,50 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'diego',
         lines: ['Plano de testes integrados', 'Roteiros de compras, vendas e apuração.'],
         link: { by: 'diego', to: 'Testes integrados' },
+      },
+    ],
+    links: [
+      {
+        title: 'ERP · Homologação',
+        url: 'https://hml-erp.alfadistribuidora.example',
+        category: 'Ambientes',
+        description: 'Usado nos testes com a equipe do cliente.',
+        by: 'rafael',
+      },
+      {
+        title: 'ERP · Produção',
+        url: 'https://erp.alfadistribuidora.example',
+        category: 'Ambientes',
+        description: 'Somente leitura até a virada para produção.',
+        by: 'rafael',
+      },
+      {
+        title: 'Emissor de NF-e',
+        url: 'https://nfe.emissor-exemplo.example/painel',
+        category: 'Sistemas',
+        description: 'Painel do emissor usado pela filial.',
+        by: 'diego',
+      },
+      {
+        title: 'Portal de suporte do emissor',
+        url: 'https://suporte.emissor-exemplo.example',
+        category: 'Sistemas',
+        description: 'Onde registramos os chamados no fornecedor.',
+        by: 'marina',
+      },
+      {
+        title: 'Qualidade dos cadastros',
+        url: 'https://bi.alfadistribuidora.example/cadastros',
+        category: 'Painéis',
+        description: 'Produtos e clientes com cadastro incompleto.',
+        by: 'carla',
+      },
+      {
+        title: 'Layouts de integração',
+        url: 'https://git.empresa.example/erp-fin/layouts',
+        category: 'Repositórios',
+        description: 'Layouts de arquivo trocados com o emissor.',
+        by: 'diego',
       },
     ],
   },

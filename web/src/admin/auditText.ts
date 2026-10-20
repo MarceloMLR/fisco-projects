@@ -254,6 +254,22 @@ const isDocumentField = (field: string): field is DocumentField => documentField
 const isDocumentStatus = (value: string): value is DocumentStatus =>
   documentStatuses.some((status) => status === value);
 
+type LinkCategoryField = 'Name' | 'IsActive';
+const linkCategoryFields: readonly string[] = ['Name', 'IsActive'] satisfies LinkCategoryField[];
+const isLinkCategoryField = (field: string): field is LinkCategoryField =>
+  linkCategoryFields.includes(field);
+
+type ProjectLinkField = 'ProjectId' | 'CategoryId' | 'Title' | 'Url' | 'Description';
+const projectLinkFields: readonly string[] = [
+  'ProjectId',
+  'CategoryId',
+  'Title',
+  'Url',
+  'Description',
+] satisfies ProjectLinkField[];
+const isProjectLinkField = (field: string): field is ProjectLinkField =>
+  projectLinkFields.includes(field);
+
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
 /** A record of a phase, a task or milestone, or a dependency of a schedule. */
@@ -362,6 +378,11 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'Document' && field === 'Status' && isDocumentStatus(value)) {
     return t(`documents.statuses.${value}`);
   }
+  if (entry.itemType === 'LinkCategory' && field === 'IsActive') {
+    return t(
+      value === 'true' ? 'linkCategories.statuses.Active' : 'linkCategories.statuses.Inactive',
+    );
+  }
   // A time of day (07:30:00) without the seconds.
   if (entry.itemType === 'InstallationSettings' && field === 'DailySummaryAt') {
     return value.slice(0, 5);
@@ -449,6 +470,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'Document' && isDocumentField(field)) {
     return t(`audit.fields.Document.${field}`);
   }
+  if (entry.itemType === 'LinkCategory' && isLinkCategoryField(field)) {
+    return t(`audit.fields.LinkCategory.${field}`);
+  }
+  if (entry.itemType === 'ProjectLink' && isProjectLinkField(field)) {
+    return t(`audit.fields.ProjectLink.${field}`);
+  }
   return field;
 }
 
@@ -526,6 +553,26 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.itemType === 'Document') {
     return documentTitleOf(entry, t);
+  }
+  // A category of the links, included, renamed, deactivated and reactivated (ADR-0032).
+  if (entry.itemType === 'LinkCategory') {
+    const situation = entry.action === 'Updated' ? changeOf(entry, 'IsActive') : undefined;
+    if (situation !== undefined) {
+      return t(
+        situation.after === 'false'
+          ? 'audit.actions.LinkCategory.Deactivated'
+          : 'audit.actions.LinkCategory.Reactivated',
+      );
+    }
+    return t(
+      `audit.actions.LinkCategory.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // A link of a project, included, changed and removed (ADR-0032).
+  if (entry.itemType === 'ProjectLink') {
+    return t(
+      `audit.actions.ProjectLink.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
@@ -705,6 +752,13 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'DefaultFolder' && changeOf(entry, 'IsActive') !== undefined) {
     return label;
   }
+  if (entry.itemType === 'LinkCategory' && changeOf(entry, 'IsActive') !== undefined) {
+    return label;
+  }
+  // A link included or removed says the project.
+  if (entry.itemType === 'ProjectLink' && entry.action !== 'Updated') {
+    return join(label, projectOfMember(entry));
+  }
   // A document sent or removed says the folder and the project.
   if (entry.itemType === 'Document' && entry.action !== 'Updated') {
     return join(label, folderOf(entry), projectOfMember(entry));
@@ -809,6 +863,15 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       ...(folderOf(entry) === ''
         ? []
         : [{ label: t('audit.fields.Document.FolderId'), value: folderOf(entry) }]),
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'LinkCategory') {
+    return [{ label: t('audit.details.item.LinkCategory'), value: label }];
+  }
+  if (entry.itemType === 'ProjectLink') {
+    return [
+      { label: t('audit.details.item.ProjectLink'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

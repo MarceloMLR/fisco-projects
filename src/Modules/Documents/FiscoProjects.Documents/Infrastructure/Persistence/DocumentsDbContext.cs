@@ -17,6 +17,10 @@ internal sealed class DocumentsDbContext(DbContextOptions<DocumentsDbContext> op
 
     public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
 
+    public DbSet<LinkCategory> LinkCategories => Set<LinkCategory>();
+
+    public DbSet<ProjectLink> Links => Set<ProjectLink>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DocumentsDbContext).Assembly);
 }

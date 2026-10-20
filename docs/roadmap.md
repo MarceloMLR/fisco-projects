@@ -24,11 +24,11 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 4. Cronograma | 10 | 10 |
 | 5. Chamados | 7 | 7 |
 | 6. Avisos | 3 | 3 |
-| 7. Documentos, links, acessos e termos | 5 | 1 |
+| 7. Documentos, links, acessos e termos | 5 | 2 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **60** | **42** |
+| **Total** | **60** | **43** |
 
 ## 1. Fundação
 
@@ -108,7 +108,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045, 0092, 0093 | Concluída em 20/10/2026 ([#48](https://github.com/MarceloMLR/fisco-projects/pull/48)) |
-| Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Planejada |
+| Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Concluída em 20/10/2026 ([#49](https://github.com/MarceloMLR/fisco-projects/pull/49)) |
 | Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | Planejada |
 | Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034 | Planejada |
 | Documentos-5 | `termos-de-aceite` | Pedido, resposta com PDF assinado, recusa | 0035, 0045 | Planejada |

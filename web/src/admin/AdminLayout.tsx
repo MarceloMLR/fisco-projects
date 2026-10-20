@@ -5,6 +5,7 @@ import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import HourglassEmptyOutlined from '@mui/icons-material/HourglassEmptyOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
+import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import Box from '@mui/material/Box';
@@ -17,6 +18,7 @@ import {
   allVendorsQuery,
   clientsQuery,
   defaultFoldersQuery,
+  linkCategoriesQuery,
   usersQuery,
 } from '../api/queries';
 import { theme } from '../theme/theme';
@@ -85,6 +87,12 @@ const sections = [
         icon: FolderOutlined,
         count: 'defaultFolders',
       },
+      {
+        path: '/admin/link-categories',
+        labelKey: 'pages.linkCategories.title',
+        icon: LinkOutlined,
+        count: 'linkCategories',
+      },
     ],
   },
 ] as const;
@@ -104,6 +112,7 @@ export function AdminLayout() {
   const templatesTotal = useQuery(allTemplatesQuery()).data?.length ?? null;
   const vendorsTotal = useQuery(allVendorsQuery()).data?.length ?? null;
   const defaultFoldersTotal = useQuery(defaultFoldersQuery()).data?.length ?? null;
+  const linkCategoriesTotal = useQuery(linkCategoriesQuery()).data?.length ?? null;
 
   const context: AdminContext = { usersTotal, clientsTotal };
   const counts = {
@@ -112,6 +121,7 @@ export function AdminLayout() {
     templates: templatesTotal,
     vendors: vendorsTotal,
     defaultFolders: defaultFoldersTotal,
+    linkCategories: linkCategoriesTotal,
   };
 
   return (
