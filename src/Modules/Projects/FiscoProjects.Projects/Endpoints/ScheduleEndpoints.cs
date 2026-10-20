@@ -150,6 +150,8 @@ internal static class ScheduleEndpoints
     public static void MapScheduleEndpoints(this RouteGroupBuilder projects)
     {
         projects.MapGet("/{id:guid}/schedule", GetAsync).WithName("GetSchedule");
+        projects.MapGet("/{id:guid}/schedule/ms-project", ExportToMsProjectAsync).WithName("ExportScheduleToMsProject")
+            .Produces<string>(StatusCodes.Status200OK, "application/xml");
         projects.MapPost("/{id:guid}/schedule/phases", AddPhaseAsync).WithName("AddSchedulePhase")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -221,6 +223,19 @@ internal static class ScheduleEndpoints
                 : null,
             StepOf(view.Undo),
             StepOf(view.Redo)));
+    }
+
+    /// <summary>
+    /// The schedule in the XML of the MS Project (ADR-0021, ADR-0051), as a file named after the code of the project, for
+    /// whoever sees it (ADR-0043).
+    /// </summary>
+    private static async Task<Results<FileContentHttpResult, NotFound>> ExportToMsProjectAsync(
+        Guid id, HttpContext http, IUserAccess access, ExportScheduleToMsProject export, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        return await export.ExecuteAsync(id, viewer, cancellationToken) is { } file
+            ? TypedResults.File(System.Text.Encoding.UTF8.GetBytes(file.Content), file.MediaType, file.Name)
+            : TypedResults.NotFound();
     }
 
     private static ScheduleStepResponse? StepOf(ScheduleChangeLabel? label) =>

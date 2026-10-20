@@ -701,3 +701,33 @@ public sealed class RedoScheduleChange(IProjectStore projects, IScheduleStore sc
     public Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken) =>
         ScheduleEditing.StepAsync(projects, schedules, projectId, viewer, undo: false, cancellationToken);
 }
+
+/// <summary>A file to download: its name, its media type and its content.</summary>
+public sealed record ExportedFile(string Name, string MediaType, string Content);
+
+/// <summary>
+/// The schedule of a project in the XML of the MS Project (ADR-0021, ADR-0051), for whoever sees it (ADR-0043): the
+/// dates the server computed, the calendar of the installation and the baseline.
+/// </summary>
+public sealed class ExportScheduleToMsProject(
+    IProjectStore projects, IScheduleStore schedules, IUserDirectory users, IWorkCalendar calendar, InstallationClock clock, TimeProvider time)
+{
+    /// <returns>The file, or null when the project does not exist for the person.</returns>
+    public async Task<ExportedFile?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var project = await projects.FindAsync(projectId, cancellationToken);
+        if (project is null || ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId)) is not { CanView: true })
+        {
+            return null;
+        }
+
+        var schedule = await schedules.FindAsync(projectId, cancellationToken) ?? new Schedule(projectId);
+        var figures = schedule.Figures(await clock.TodayAsync(cancellationToken));
+        var days = await calendar.GetAsync(cancellationToken);
+        var names = await PeopleNames.OfAsync(
+            users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
+        var document = MsProjectExport.Of(
+            project.Code, project.Name, schedule, figures, days, names, time.GetUtcNow().UtcDateTime);
+        return new ExportedFile($"{project.Code}-cronograma.xml", "application/xml", document.Declaration + Environment.NewLine + document);
+    }
+}

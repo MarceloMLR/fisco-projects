@@ -38,15 +38,19 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         public string Path => $"/api/projects/{ProjectId}/schedule";
     }
 
-    /// <summary>One action on the schedule and its status when allowed (ADR-0043); all but the first change the schedule.</summary>
+    /// <summary>One action on the schedule and its status when allowed (ADR-0043); all but the reads change the schedule.</summary>
     private sealed record Action(string Name, Func<HttpClient, Scene, Task<HttpResponseMessage>> Run, HttpStatusCode Allowed)
     {
-        public bool Changes => Name != Actions[0].Name;
+        public bool Changes => !Reads.Contains(Name);
     }
+
+    /// <summary>What everyone in the project does with the schedule, without changing it (ADR-0043).</summary>
+    private static readonly HashSet<string> Reads = ["See the schedule", "Export to MS Project"];
 
     private static readonly Action[] Actions =
     [
         new("See the schedule", (client, scene) => client.GetAsync(scene.Path, Cancellation), HttpStatusCode.OK),
+        new("Export to MS Project", (client, scene) => client.GetAsync($"{scene.Path}/ms-project", Cancellation), HttpStatusCode.OK),
         new("Add a phase", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/phases", new { name = "Entrada em produção" }),
             HttpStatusCode.Created),
         new("Rename a phase", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/phases/{scene.Phase}", new { name = "Parametrização" }),
@@ -801,6 +805,23 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:schedule-nothing-to-undo");
         (await StepsAsync(marina, scene)).Should().Be(("PhaseAdded:Treinamento", null));
+    }
+
+    [Fact(DisplayName = "XML do cronograma pela API")]
+    public async Task Export_IsAFileNamedAfterTheProject()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var carla = await app.SignInAsync(scene.Carla);
+
+        var response = await carla.GetAsync($"{scene.Path}/ms-project", Cancellation);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/xml");
+        response.Content.Headers.ContentDisposition!.FileName.Should().Be("ERP-FIN-cronograma.xml");
+        var document = System.Xml.Linq.XDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));
+        document.Descendants().Where(element => element.Name.LocalName == "Name").Select(element => element.Value)
+            .Should().Contain(["Configuração", "Parametrizar regras de ICMS", "Aceite da configuração"]);
     }
 
     [Fact(DisplayName = "Remover o responsável de tarefas")]
