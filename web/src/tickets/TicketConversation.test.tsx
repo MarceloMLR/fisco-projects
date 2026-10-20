@@ -184,6 +184,7 @@ describe('Conversa pela tela', () => {
         canChangeAssignee: false,
         canChangeRequester: false,
         canTransfer: false,
+        canRegisterVendorTicket: false,
       },
       following: false,
     };

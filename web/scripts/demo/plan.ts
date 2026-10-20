@@ -12,6 +12,7 @@ type ProjectStatus = components['schemas']['ProjectStatus'];
 type TicketTeam = components['schemas']['TicketTeam'];
 type TicketPriority = components['schemas']['TicketPriority'];
 type TicketAction = components['schemas']['TicketAction'];
+type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 
 /** The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). */
 export const demoPeople = {
@@ -47,6 +48,14 @@ export const projectManagers: readonly DemoPerson[] = ['marina', 'beatriz'];
 export const demoClients = ['Alfa Distribuidora', 'Beta Alimentos', 'Gama Têxtil'] as const;
 
 export type DemoClient = (typeof demoClients)[number];
+
+/** The vendors the team opens tickets with, fictitious, included by the Administrator (ADR-0002, ADR-0028). */
+export const demoVendors = [
+  { name: 'Emissor Exemplo', portalUrl: 'https://suporte.emissor.example' },
+  { name: 'Nuvem Fiscal Exemplo', portalUrl: null },
+] as const;
+
+export type DemoVendor = (typeof demoVendors)[number]['name'];
 
 export interface DemoItem {
   kind: 'Task' | 'Milestone';
@@ -91,6 +100,19 @@ export interface DemoStatusChange {
   text?: string;
 }
 
+/**
+ * A ticket opened at a vendor and registered by who serves our ticket on the day the data is loaded, with an update of
+ * its status there (ADR-0028).
+ */
+export interface DemoVendorTicket {
+  by: DemoPerson;
+  vendor: DemoVendor;
+  code: string;
+  status: VendorTicketStatus;
+  note?: string;
+  update?: { by: DemoPerson; status: VendorTicketStatus; note: string };
+}
+
 /** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
 export interface DemoTicket {
   title: string;
@@ -110,6 +132,8 @@ export interface DemoTicket {
   assignee?: { by: DemoPerson; to: DemoPerson };
   /** Transferred to the other team by who serves it, left without an assignee (ADR-0068). */
   transfer?: { by: DemoPerson; to: TicketTeam };
+  /** The tickets opened at vendors, registered after the conversation and the status (ADR-0028). */
+  atVendors?: readonly DemoVendorTicket[];
 }
 
 export interface DemoProject {
@@ -273,6 +297,20 @@ export const demoProjects: readonly DemoProject[] = [
           {
             by: 'marina',
             text: 'Subi a prioridade para Alta: o fechamento da filial é na segunda.',
+          },
+        ],
+        atVendors: [
+          {
+            by: 'rafael',
+            vendor: 'Emissor Exemplo',
+            code: 'FX-20931',
+            status: 'Open',
+            note: 'Aberto com o XML da nota 3381 e o retorno da SEFAZ.',
+            update: {
+              by: 'rafael',
+              status: 'InAnalysis',
+              note: 'O fornecedor confirmou o erro no grupo de referência e está analisando.',
+            },
           },
         ],
       },

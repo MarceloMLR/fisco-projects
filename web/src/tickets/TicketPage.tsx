@@ -22,6 +22,7 @@ import { TicketReply } from './TicketReply';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { ticketNumberOf } from './tickets';
 import { TicketDue } from './TicketDue';
+import { VendorSection } from './TicketVendors';
 
 const tagSx = {
   display: 'inline-flex',
@@ -280,6 +281,7 @@ function SidePanel({
         </Button>
       </Box>
       <DeadlinesSection ticket={ticket} />
+      <VendorSection ticket={ticket} onMessage={onMessage} />
       <Box
         component="section"
         aria-labelledby="ticket-attachments"
@@ -529,6 +531,8 @@ export function TicketPage() {
         flexDirection: 'column',
         gridTemplateColumns: 'minmax(0, 1fr) 340px',
         overflow: desktop ? 'hidden' : 'auto',
+        // On the phone the page scrolls: the conversation and the panel keep their heights, one under the other.
+        ...(desktop ? {} : { '& > *': { flexShrink: 0 } }),
       }}
     >
       {conversation}

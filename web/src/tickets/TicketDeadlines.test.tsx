@@ -27,6 +27,7 @@ beforeEach(() => {
       canChangeAssignee: false,
       canChangeRequester: false,
       canTransfer: false,
+      canRegisterVendorTicket: false,
     },
     deadlines: {
       firstResponse: { state: 'Met', dueOn: '2026-10-20', daysLate: null },
@@ -145,6 +146,10 @@ describe('Prazos pela tela', () => {
           toTeam: null,
           fromPersonId: null,
           toPersonId: null,
+          vendorTicketId: null,
+          fromVendorStatus: null,
+          toVendorStatus: null,
+          note: null,
           at: '2026-10-19T13:00:00Z',
         },
         {
@@ -161,6 +166,10 @@ describe('Prazos pela tela', () => {
           toTeam: null,
           fromPersonId: null,
           toPersonId: null,
+          vendorTicketId: null,
+          fromVendorStatus: null,
+          toVendorStatus: null,
+          note: null,
           at: '2026-10-19T14:00:00Z',
         },
       ],
@@ -233,6 +242,7 @@ describe('Prazos de um chamado resolvido', () => {
         canChangeAssignee: false,
         canChangeRequester: false,
         canTransfer: false,
+        canRegisterVendorTicket: false,
       },
       deadlines: ticket.deadlines && {
         ...ticket.deadlines,

@@ -3734,7 +3734,7 @@
           {
             "name": "view",
             "in": "query",
-            "description": "All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following.",
+            "description": "All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe, Following or WithVendor.",
             "schema": {
               "default": "All",
               "$ref": "#/components/schemas/TicketView"
@@ -4025,6 +4025,210 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TicketFlowResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/vendor-choices": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "description": "The active vendors, for new registrations of tickets at vendors (ADR-0028).",
+        "operationId": "ListVendorChoices",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/vendor-tickets": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "RegisterVendorTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VendorTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VendorTicketCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/vendor-tickets/{id}": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "UpdateVendorTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VendorTicketUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4935,6 +5139,194 @@
           }
         }
       }
+    },
+    "/api/admin/vendors": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ListVendors",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "AddVendor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewVendorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VendorCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/vendors/{id}": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeVendor",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VendorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5833,6 +6225,27 @@
           }
         },
         "description": "A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). The\ndescription comes with its formatting in `descriptionBody` (the JSON of the editor) or as plain text."
+      },
+      "NewVendorRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portalUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new vendor, active."
       },
       "PersonResponse": {
         "required": [
@@ -7209,7 +7622,8 @@
           "canChangePriority",
           "canChangeAssignee",
           "canChangeRequester",
-          "canTransfer"
+          "canTransfer",
+          "canRegisterVendorTicket"
         ],
         "type": "object",
         "properties": {
@@ -7236,6 +7650,9 @@
           },
           "canTransfer": {
             "type": "boolean"
+          },
+          "canRegisterVendorTicket": {
+            "type": "boolean"
           }
         },
         "description": "What the person may do in the conversation, with the actions of the flow open now and the priority."
@@ -7248,7 +7665,8 @@
           "unassignedInMyTeams",
           "assignedToMe",
           "openedByMe",
-          "following"
+          "following",
+          "withVendor"
         ],
         "type": "object",
         "properties": {
@@ -7279,9 +7697,13 @@
           "following": {
             "type": "integer",
             "format": "int32"
+          },
+          "withVendor": {
+            "type": "integer",
+            "format": "int32"
           }
         },
-        "description": "How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,\nwithout an assignee in the teams of the person, in charge of the person and opened by the person."
+        "description": "How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,\nwithout an assignee in the teams of the person, in charge of the person, opened by the person, followed by the person\nand with a ticket at a vendor."
       },
       "TicketCreatedResponse": {
         "required": [
@@ -7468,7 +7890,9 @@
           "PriorityChanged",
           "AssigneeCleared",
           "RequesterChanged",
-          "TeamChanged"
+          "TeamChanged",
+          "VendorTicketRegistered",
+          "VendorStatusChanged"
         ],
         "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
       },
@@ -7487,6 +7911,10 @@
           "toTeam",
           "fromPersonId",
           "toPersonId",
+          "vendorTicketId",
+          "fromVendorStatus",
+          "toVendorStatus",
+          "note",
           "at"
         ],
         "type": "object",
@@ -7598,6 +8026,41 @@
             "description": "The new requester.",
             "format": "uuid"
           },
+          "vendorTicketId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ticket at a vendor registered or updated, among the vendorTickets of the ticket.",
+            "format": "uuid"
+          },
+          "fromVendorStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VendorTicketStatus"
+              }
+            ]
+          },
+          "toVendorStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VendorTicketStatus"
+              }
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The note of the update at the vendor."
+          },
           "at": {
             "type": "string",
             "format": "date-time"
@@ -7648,7 +8111,8 @@
           "interactions",
           "resolution",
           "canChangeAssignee",
-          "canChangeRequester"
+          "canChangeRequester",
+          "vendor"
         ],
         "type": "object",
         "properties": {
@@ -7719,6 +8183,17 @@
           "canChangeRequester": {
             "type": "boolean",
             "description": "The person may change the requester with others at once (ADR-0027)."
+          },
+          "vendor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The ticket at a vendor: the open one registered last, or the last one (ADR-0028); null without one.",
+                "$ref": "#/components/schemas/TicketVendorResponse"
+              }
+            ]
           }
         },
         "description": "A ticket of a list; without an assignee until someone of the team answers it (ADR-0068)."
@@ -7957,7 +8432,8 @@
           "participants",
           "permissions",
           "following",
-          "deadlines"
+          "deadlines",
+          "vendorTickets"
         ],
         "type": "object",
         "properties": {
@@ -8080,6 +8556,12 @@
                 "$ref": "#/components/schemas/TicketDeadlinesResponse"
               }
             ]
+          },
+          "vendorTickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VendorTicketResponse"
+            }
           }
         },
         "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the\nproject; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be\nmentioned, the parts of the people who appear in it and what the person may do."
@@ -8199,6 +8681,39 @@
         },
         "description": "A transition of the flow (ADR-0024): from a status to another by an action, who may take it, and how."
       },
+      "TicketVendorResponse": {
+        "required": [
+          "id",
+          "vendor",
+          "code",
+          "status",
+          "staleDays"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VendorTicketStatus"
+          },
+          "staleDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A ticket at a vendor as a list shows it, with the business days without an update once it is stale."
+      },
       "TicketView": {
         "enum": [
           "All",
@@ -8206,7 +8721,8 @@
           "UnassignedInMyTeams",
           "Unassigned",
           "OpenedByMe",
-          "Following"
+          "Following",
+          "WithVendor"
         ],
         "description": "The lists of tickets (ADR-0029, ADR-0068)."
       },
@@ -8294,6 +8810,246 @@
           "Active",
           "Inactive"
         ]
+      },
+      "VendorCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "VendorRequest": {
+        "required": [
+          "name",
+          "portalUrl",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "portalUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "description": "The name, the portal and the situation of a vendor."
+      },
+      "VendorResponse": {
+        "required": [
+          "id",
+          "name",
+          "portalUrl",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "portalUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "description": "A vendor of the installation (ADR-0028): its name, the address of its support portal and its situation."
+      },
+      "VendorTicketCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "VendorTicketRequest": {
+        "required": [
+          "vendorId",
+          "code",
+          "openedOn",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "vendorId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "openedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VendorTicketStatus"
+              }
+            ]
+          },
+          "link": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A ticket opened at an active vendor to register in our ticket."
+      },
+      "VendorTicketResponse": {
+        "required": [
+          "id",
+          "vendorId",
+          "vendor",
+          "code",
+          "openedOn",
+          "status",
+          "link",
+          "note",
+          "registeredById",
+          "registeredAt",
+          "updatedAt",
+          "staleDays"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vendorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "openedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VendorTicketStatus"
+          },
+          "link": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "registeredById": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "staleDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The business days without an update, once it reaches the setting of the installation; null otherwise.",
+            "format": "int32"
+          }
+        },
+        "description": "A ticket opened at a vendor and registered in our ticket (ADR-0028): the vendor, its number and the day it was opened\nthere, the status there, the link, the note, who registered it and when it was last updated, with the business days\nwithout an update once it is stale."
+      },
+      "VendorTicketStatus": {
+        "enum": [
+          "Open",
+          "InAnalysis",
+          "WaitingForUs",
+          "Resolved",
+          "Closed"
+        ],
+        "description": "Where a ticket stands at the vendor (ADR-0028); the vendor decides its own cycle, so any status follows any other."
+      },
+      "VendorTicketUpdateRequest": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VendorTicketStatus"
+              }
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The new status of a ticket at a vendor, with a note."
       },
       "WorkingDaysRequest": {
         "required": [

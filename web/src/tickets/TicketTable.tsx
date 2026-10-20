@@ -107,6 +107,13 @@ export function TicketTable({
     [rows],
   );
 
+  // The vendor of the ticket in the second line of the title (ADR-0028).
+  const atVendor = useCallback(
+    (row: TicketRow) =>
+      row.vendor === null ? '' : ` · ${t('tickets.atVendor', { vendor: row.vendor.vendor })}`,
+    [t],
+  );
+
   const columns = useMemo<DataTableColumn<TicketRow>[]>(
     () => [
       ...(rows.some(isSelectable)
@@ -164,7 +171,8 @@ export function TicketTable({
         flex: 2,
         minWidth: 232,
         renderCell: ({ row }) => {
-          const team = t(`tickets.teams.${row.team}`);
+          // The vendor right after the team, so a long name of the requester does not hide it (ADR-0028).
+          const team = t(`tickets.teams.${row.team}`) + atVendor(row);
           return (
             <Box sx={{ minWidth: 0 }}>
               <Box
@@ -290,7 +298,7 @@ export function TicketTable({
         ),
       },
     ],
-    [t, inProject, formatDayMonth, rows, allMarked, marked, mark, markPage],
+    [t, inProject, formatDayMonth, rows, allMarked, marked, mark, markPage, atVendor],
   );
 
   const chosen = [...marked.values()];

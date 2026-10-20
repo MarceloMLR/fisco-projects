@@ -51,6 +51,7 @@ export const queryKeys = {
   templates: ['templates'],
   tickets: ['tickets'],
   ticketDeadlines: ['ticket-deadlines'],
+  vendors: ['vendors'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -262,6 +263,22 @@ export function ticketDeadlinesQuery() {
   return queryOptions({
     queryKey: queryKeys.ticketDeadlines,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/ticket-deadlines', { signal })),
+  });
+}
+
+/** The active vendors, for new registrations of tickets at vendors (ADR-0028). */
+export function vendorChoicesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.vendors, 'choices'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/tickets/vendor-choices', { signal })),
+  });
+}
+
+/** Every vendor, for the Administrator (ADR-0028, ADR-0046). */
+export function allVendorsQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.vendors, 'all'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/vendors', { signal })),
   });
 }
 

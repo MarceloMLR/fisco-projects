@@ -2,6 +2,7 @@ import AutorenewOutlined from '@mui/icons-material/AutorenewOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
+import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
@@ -119,9 +120,12 @@ export function PersonAvatar({
 function EventLine({
   event,
   personOf,
+  vendorTickets,
 }: {
   event: TicketEvent;
   personOf: (id: string) => Participant;
+  /** The tickets at vendors of the ticket, for the number and the vendor of their events (ADR-0028). */
+  vendorTickets: Ticket['vendorTickets'];
 }) {
   const { t } = useTranslation();
   const { formatTime } = useDates();
@@ -135,7 +139,31 @@ function EventLine({
         ? SwapHorizOutlined
         : event.kind === 'PriorityChanged'
           ? FlagOutlined
-          : AutorenewOutlined;
+          : event.kind === 'VendorTicketRegistered' || event.kind === 'VendorStatusChanged'
+            ? LinkOutlined
+            : AutorenewOutlined;
+  const atVendor = vendorTickets.find((record) => record.id === event.vendorTicketId);
+  const vendorStatus = (status: TicketEvent['toVendorStatus']) =>
+    status === null ? '' : t(`tickets.vendors.statuses.${status}`);
+  // A registration or an update at a vendor (ADR-0028); an update to the same status says only the status.
+  const vendorText = () =>
+    event.kind === 'VendorTicketRegistered'
+      ? t('tickets.events.vendorRegistered', {
+          code: atVendor?.code ?? '',
+          vendor: atVendor?.vendor ?? '',
+        })
+      : event.fromVendorStatus === event.toVendorStatus
+        ? t('tickets.events.vendorUpdatedSame', {
+            code: atVendor?.code ?? '',
+            vendor: atVendor?.vendor ?? '',
+            status: vendorStatus(event.toVendorStatus),
+          })
+        : t('tickets.events.vendorUpdated', {
+            code: atVendor?.code ?? '',
+            vendor: atVendor?.vendor ?? '',
+            from: vendorStatus(event.fromVendorStatus),
+            to: vendorStatus(event.toVendorStatus),
+          });
   const changed = () => {
     const text = t('tickets.events.changed', {
       action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
@@ -176,14 +204,16 @@ function EventLine({
                       : t(`tickets.priorities.${event.fromPriority}`),
                   to: event.toPriority === null ? '' : t(`tickets.priorities.${event.toPriority}`),
                 })
-              : changed();
+              : event.kind === 'VendorTicketRegistered' || event.kind === 'VendorStatusChanged'
+                ? vendorText()
+                : changed();
   return (
     <Box
       component="li"
       data-kind="event"
       sx={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: event.note === null ? 'center' : 'flex-start',
         gap: 'var(--space-2)',
         paddingLeft: '6px',
         fontSize: 13,
@@ -196,6 +226,14 @@ function EventLine({
       <Icon aria-hidden />
       <span>
         <strong>{actor}</strong> {what}
+        {event.note !== null && (
+          <Box
+            component="span"
+            sx={{ display: 'block', marginTop: '2px', overflowWrap: 'anywhere' }}
+          >
+            {event.note}
+          </Box>
+        )}
       </span>
       <Box
         component="time"
@@ -407,7 +445,11 @@ export function TicketConversation({
             return (
               <Fragment key={item.event.id}>
                 {separator}
-                <EventLine event={item.event} personOf={personOf} />
+                <EventLine
+                  event={item.event}
+                  personOf={personOf}
+                  vendorTickets={ticket.vendorTickets}
+                />
               </Fragment>
             );
           }

@@ -47,6 +47,10 @@ export type TicketDeadlineSetting = components['schemas']['TicketDeadlineSetting
 export type TicketEvent = components['schemas']['TicketEventResponse'];
 export type TicketFlow = components['schemas']['TicketFlowResponse'];
 export type TicketTransition = components['schemas']['TicketTransitionResponse'];
+export type Vendor = components['schemas']['VendorResponse'];
+export type VendorTicket = components['schemas']['VendorTicketResponse'];
+export type TicketVendor = components['schemas']['TicketVendorResponse'];
+export type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
@@ -118,6 +122,8 @@ export const auditItemTypes = [
   'ProjectTemplate',
   'Ticket',
   'TicketDeadlineSetting',
+  'Vendor',
+  'VendorTicket',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -131,6 +137,15 @@ export const ticketPriorities = [
   'High',
   'Critical',
 ] as const satisfies readonly TicketPriority[];
+
+/** The statuses of a ticket at a vendor, in the order of its cycle (ADR-0028). */
+export const vendorTicketStatuses = [
+  'Open',
+  'InAnalysis',
+  'WaitingForUs',
+  'Resolved',
+  'Closed',
+] as const satisfies readonly VendorTicketStatus[];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
 export const systemRoles = [
@@ -181,6 +196,7 @@ export const ticketProblems = {
   ticketChanged: 'urn:fiscoprojects:problem:ticket-changed',
   personRefused: 'urn:fiscoprojects:problem:ticket-person-refused',
   ticketFinished: 'urn:fiscoprojects:problem:ticket-finished',
+  vendorNameInUse: 'urn:fiscoprojects:problem:vendor-name-in-use',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

@@ -158,6 +158,12 @@ public enum TicketEventKind
 
     /// <summary>The ticket went to the other team, without an assignee (ADR-0068).</summary>
     TeamChanged = 6,
+
+    /// <summary>A ticket opened at a vendor was registered in it (ADR-0028).</summary>
+    VendorTicketRegistered = 7,
+
+    /// <summary>The status of a ticket at a vendor was updated, with a note (ADR-0028).</summary>
+    VendorStatusChanged = 8,
 }
 
 /// <summary>An event of the conversation: who did it (none for the system), what and when.</summary>
@@ -203,6 +209,16 @@ public sealed class TicketEvent : Entity
     /// <summary>The new requester.</summary>
     public Guid? ToPersonId { get; private init; }
 
+    /// <summary>The ticket at a vendor registered or updated.</summary>
+    public Guid? VendorTicketId { get; private init; }
+
+    public VendorTicketStatus? FromVendorStatus { get; private init; }
+
+    public VendorTicketStatus? ToVendorStatus { get; private init; }
+
+    /// <summary>The note of the update at the vendor.</summary>
+    public string? Note { get; private init; }
+
     public DateTime At { get; private init; }
 
     public static TicketEvent StatusChanged(Guid ticketId, Guid? actorId, TicketTransition transition, DateTime at)
@@ -227,6 +243,26 @@ public sealed class TicketEvent : Entity
 
     public static TicketEvent TeamChanged(Guid ticketId, Guid actorId, TicketTeam from, TicketTeam to, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.TeamChanged, at) { FromTeam = from, ToTeam = to };
+
+    public static TicketEvent VendorTicketRegistered(Guid ticketId, Guid actorId, VendorTicket vendorTicket, DateTime at)
+    {
+        ArgumentNullException.ThrowIfNull(vendorTicket);
+        return new TicketEvent(ticketId, actorId, TicketEventKind.VendorTicketRegistered, at)
+        {
+            VendorTicketId = vendorTicket.Id,
+            ToVendorStatus = vendorTicket.Status,
+        };
+    }
+
+    public static TicketEvent VendorStatusChanged(
+        Guid ticketId, Guid actorId, Guid vendorTicketId, VendorTicketStatus from, VendorTicketStatus to, string? note, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.VendorStatusChanged, at)
+        {
+            VendorTicketId = vendorTicketId,
+            FromVendorStatus = from,
+            ToVendorStatus = to,
+            Note = note,
+        };
 
     public static TicketEvent AssigneeSet(Guid ticketId, Guid actorId, Guid assigneeId, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.AssigneeSet, at) { AssigneeId = assigneeId };

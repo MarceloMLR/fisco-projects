@@ -24,6 +24,9 @@ public enum TicketView
 
     /// <summary>The tickets the person follows (ADR-0026).</summary>
     Following = 6,
+
+    /// <summary>The tickets with a ticket registered at a vendor (ADR-0028).</summary>
+    WithVendor = 7,
 }
 
 /// <summary>The order of a list: by the priority, the highest first and the oldest first in each, or by the number.</summary>
@@ -81,11 +84,11 @@ public sealed record TicketRows(IReadOnlyList<Ticket> Items, int Total);
 
 /// <summary>
 /// How many tickets each list has: all of them, any status, and the open ones (<see cref="Ticket.OpenStatuses"/>), the
-/// open ones without an assignee, without an assignee in the teams of the person, in charge of the person and opened by
-/// the person.
+/// open ones without an assignee, without an assignee in the teams of the person, in charge of the person, opened by
+/// the person, followed by the person and with a ticket at a vendor.
 /// </summary>
 public sealed record TicketCounts(
-    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following);
+    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following, int WithVendor);
 
 /// <summary>Where the tickets are kept.</summary>
 public interface ITicketStore
@@ -164,6 +167,9 @@ public sealed record TicketListItem(
 
     /// <summary>The person may change the requester with others at once (ADR-0027).</summary>
     public bool CanChangeRequester { get; init; }
+
+    /// <summary>The ticket at a vendor the list shows: the open one registered last, or the last one (ADR-0028).</summary>
+    public TicketVendorTicket? Vendor { get; init; }
 }
 
 public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
@@ -175,7 +181,13 @@ public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
 public sealed class TicketChangedException(Exception inner) : InvalidOperationException("The ticket changed since it was read.", inner);
 
 /// <summary>Lists the tickets the person sees (ADR-0044), filtered (ADR-0029).</summary>
-public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUserDirectory users, TicketDeadlines deadlines)
+public sealed class ListTickets(
+    IProjectAccess projects,
+    ITicketStore store,
+    IUserDirectory users,
+    TicketDeadlines deadlines,
+    IVendorStore vendors,
+    VendorStaleSettings stale)
 {
     public async Task<TicketPage> ExecuteAsync(TicketQuery query, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -187,6 +199,8 @@ public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUs
         var items = await TicketNames.ItemsOfAsync(rows.Items, visible, interactions, users, cancellationToken);
         var day = await deadlines.TodayAsync(cancellationToken);
         var roles = visible.ToDictionary(project => project.Id, project => project.Role);
+        var atVendors = VendorTickets.ShownIn(
+            await vendors.TicketsOfAsync([.. rows.Items.Select(ticket => ticket.Id)], cancellationToken));
         return new TicketPage(
             [.. items.Select(item =>
             {
@@ -196,6 +210,7 @@ public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUs
                     Deadlines = TicketDeadlines.FiguresOf(item.Ticket, day),
                     CanChangeAssignee = manages && item.Ticket.IsOpen,
                     CanChangeRequester = manages && item.Ticket.Status != TicketStatus.Closed,
+                    Vendor = atVendors.TryGetValue(item.Ticket.Id, out var vendor) ? VendorTickets.Of(vendor, day, stale) : null,
                 };
             })],
             rows.Total);
@@ -351,6 +366,9 @@ public sealed record TicketConversationPermissions(
 
     /// <summary>To the other team, by who serves it (ADR-0044).</summary>
     public bool CanTransfer { get; init; }
+
+    /// <summary>Registers and updates tickets at vendors, by who serves it, until it is closed (ADR-0028).</summary>
+    public bool CanRegisterVendorTicket { get; init; }
 }
 
 /// <summary>
@@ -376,10 +394,19 @@ public sealed record TicketDetails(
 {
     /// <summary>The deadlines of the ticket today (ADR-0025).</summary>
     public TicketDeadlineFigures? Deadlines { get; init; }
+
+    /// <summary>The tickets registered at vendors, in the order they were registered (ADR-0028).</summary>
+    public IReadOnlyList<TicketVendorTicket> VendorTickets { get; init; } = [];
 }
 
 /// <summary>A ticket by its number, for everyone in its project and the Administrator (ADR-0044); null for anyone else.</summary>
-public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUserDirectory users, TicketDeadlines deadlines)
+public sealed class GetTicket(
+    IProjectAccess projects,
+    ITicketStore store,
+    IUserDirectory users,
+    TicketDeadlines deadlines,
+    IVendorStore vendors,
+    VendorStaleSettings stale)
 {
     public async Task<TicketDetails?> ExecuteAsync(int number, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -401,6 +428,7 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
         var events = await store.EventsAsync(ticket.Id, cancellationToken);
         var attachments = await store.AttachmentsAsync(ticket.Id, cancellationToken);
         var followers = await store.FollowersAsync(ticket.Id, cancellationToken);
+        var atVendors = await vendors.TicketsOfAsync([ticket.Id], cancellationToken);
         var mentionable = TicketAccess.Mentionable(ticket, members);
         List<Guid> people =
         [
@@ -412,6 +440,7 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
             .. events.Where(item => item.ActorId is not null).Select(item => item.ActorId!.Value),
             .. followers,
             .. mentionable,
+            .. atVendors.Select(row => row.Record.RegisteredById),
             viewer.UserId,
         ];
         var names = await users.NamesAsync([.. people.Distinct()], cancellationToken);
@@ -453,10 +482,13 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
                 CanChangeRequester = ticket.Status != TicketStatus.Closed
                     && TicketAccess.MayChangeRequester(viewer, project.Role, ticket, inBulk: false),
                 CanTransfer = ticket.IsOpen && TicketAccess.MayTransfer(viewer, project.Role, ticket),
+                CanRegisterVendorTicket = ticket.Status != TicketStatus.Closed
+                    && TicketAccess.MayRegisterAtVendor(viewer, project.Role, ticket),
             },
             followers.Contains(viewer.UserId))
         {
             Deadlines = TicketDeadlines.FiguresOf(ticket, day),
+            VendorTickets = [.. atVendors.Select(row => VendorTickets.Of(row, day, stale))],
         };
     }
 }

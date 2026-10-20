@@ -10,6 +10,7 @@ import {
   demoPeople,
   type DemoProject,
   demoProjects,
+  demoVendors,
   firstDayFor,
   mainProject,
   manager,
@@ -163,10 +164,28 @@ export async function loadDemo(
   }
   log(`Clientes: ${String(clients.size)}.`);
 
+  const vendors = new Map<string, string>();
+  for (const vendor of demoVendors) {
+    const added = must(
+      await admin.api.POST('/api/admin/vendors', { body: vendor }),
+      `Fornecedor ${vendor.name}`,
+    );
+    vendors.set(vendor.name, added.id);
+  }
+  log(`Fornecedores: ${String(vendors.size)}.`);
+
   const firstDay = firstDayFor(found.today);
   let items = 0;
   for (const project of demoProjects) {
-    items += await loadProject(project, firstDay, admin.api, clients, personOf);
+    items += await loadProject(
+      project,
+      firstDay,
+      found.today,
+      admin.api,
+      clients,
+      vendors,
+      personOf,
+    );
   }
   const tickets = demoProjects.reduce(
     (total, project) => total + (project.tickets?.length ?? 0),
@@ -201,8 +220,10 @@ function documentOf(message: DemoMessage, personOf: (person: DemoPerson) => { id
 async function loadProject(
   project: DemoProject,
   firstDay: string,
+  today: string,
   admin: Api,
   clients: ReadonlyMap<string, string>,
+  vendors: ReadonlyMap<string, string>,
   personOf: (person: DemoPerson) => { api: Api; id: string },
 ): Promise<number> {
   const created = must(
@@ -365,6 +386,32 @@ async function loadProject(
         }),
         `Status do chamado ${ticket.title}`,
       );
+    }
+    // Then the tickets at vendors, registered on the day of the load and updated (ADR-0028).
+    for (const atVendor of ticket.atVendors ?? []) {
+      const registered = must(
+        await personOf(atVendor.by).api.POST('/api/tickets/{number}/vendor-tickets', {
+          params: { path: { number: opened.number } },
+          body: {
+            vendorId: vendors.get(atVendor.vendor) ?? null,
+            code: atVendor.code,
+            openedOn: today,
+            status: atVendor.status,
+            link: null,
+            note: atVendor.note ?? null,
+          },
+        }),
+        `Chamado ${atVendor.code} no fornecedor`,
+      );
+      if (atVendor.update !== undefined) {
+        done(
+          await personOf(atVendor.update.by).api.PUT('/api/tickets/{number}/vendor-tickets/{id}', {
+            params: { path: { number: opened.number, id: registered.id } },
+            body: { status: atVendor.update.status, note: atVendor.update.note },
+          }),
+          `Atualização do chamado ${atVendor.code} no fornecedor`,
+        );
+      }
     }
     // Then the people and the team, each by who may change them (ADR-0068).
     if (ticket.assignee !== undefined) {

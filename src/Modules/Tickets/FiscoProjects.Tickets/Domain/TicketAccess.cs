@@ -160,6 +160,10 @@ public static class TicketAccess
     public static bool MayTransfer(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
         (ActorsOf(viewer, role, ticket) & TicketActors.Attendant) != 0;
 
+    /// <summary>Registers and updates the tickets at vendors in the ticket (ADR-0028, ADR-0044): who serves it.</summary>
+    public static bool MayRegisterAtVendor(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
+        (ActorsOf(viewer, role, ticket) & TicketActors.Attendant) != 0;
+
     /// <summary>
     /// The parts of a person in the flow of the ticket (ADR-0024, ADR-0044): who serves it is the Administrator, the
     /// managers and who serves its team; the requester; the managers (the manager and the tech lead); the

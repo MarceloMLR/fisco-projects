@@ -137,7 +137,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Menção | Mention | |
 | Anexo | Attachment | |
 | Transferência entre times | Transfer | |
-| Chamado em fornecedor | VendorTicket | |
+| Chamado em fornecedor | VendorTicket | Registrado no nosso chamado por quem atende, na auditoria (ADR-0028) |
+| Fornecedor | Vendor | Cadastrado pelo administrador em Administração, Fornecedores; nunca é excluído, só inativado |
+| Status no fornecedor: Aberto no fornecedor, Em análise, Aguardando nosso retorno, Resolvido, Fechado | VendorTicketStatus: Open, InAnalysis, WaitingForUs, Resolved, Closed | Qualquer status vai para qualquer outro |
+| Sem retorno do fornecedor (parado) | VendorTickets.StaleDaysOf | Em aberto no fornecedor e sem atualização há `Tickets:VendorStaleBusinessDays` (5) dias úteis |
+| Com fornecedor (visão) | TicketView.WithVendor | Os chamados com registro em fornecedor |
 | Visões: Atribuídos a mim, Sem responsável nos meus times, Abertos por mim, Todos os abertos | TicketView: AssignedToMe, UnassignedInMyTeams, OpenedByMe, All | "Sem responsável" da aba do projeto é `Unassigned` (ADR-0068) |
 | Situação na lista: Em aberto, Encerrados, Todos | TicketSituation: Open, Finished, All | Encerrados são os resolvidos e os fechados |
 | Acesso aos projetos (contrato) | IProjectAccess | Os projetos que cada pessoa vê e o papel dela, para os outros módulos |
@@ -146,7 +150,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Texto formatado | RichText | O JSON do editor (Tiptap), validado no servidor |
 | Ações do fluxo: Iniciar triagem, Primeira resposta, Iniciar atendimento, Pedir informações, Enviar resposta, Marcar como resolvido, Confirmar e fechar, Fechamento automático, Reabrir, Cancelar chamado | TicketAction: StartTriage, FirstResponse, StartWork, AskForInformation, Reply, Resolve, ConfirmAndClose, AutoClose, Reopen, Cancel | A primeira resposta, a resposta em Aguardando solicitante e o fechamento automático são do sistema, nunca botões |
 | Quem pode no fluxo: quem atende, solicitante, gestor, administrador, sistema | TicketActors: Attendant, Requester, Manager, Administrator, System | Quem atende inclui o administrador e os gestores (ADR-0044) |
-| Evento da conversa: mudança de status, responsável definido, prioridade, responsável tirado, solicitante trocado, time trocado | TicketEvent: StatusChanged, AssigneeSet, PriorityChanged, AssigneeCleared, RequesterChanged, TeamChanged | Fora da auditoria, como as mensagens |
+| Evento da conversa: mudança de status, responsável definido, prioridade, responsável tirado, solicitante trocado, time trocado, registro no fornecedor, atualização no fornecedor | TicketEvent: StatusChanged, AssigneeSet, PriorityChanged, AssigneeCleared, RequesterChanged, TeamChanged, VendorTicketRegistered, VendorStatusChanged | Fora da auditoria, como as mensagens |
 | Trocar o responsável, em lote | ChangeTicketAssignees | Só o administrador, o gerente e o líder técnico (ADR-0068) |
 | Trocar o solicitante | ChangeTicketRequesters | O próprio solicitante troca um a um; em lote, só os gestores |
 | Transferir de time | TransferTicket | Deixa o chamado sem responsável |
