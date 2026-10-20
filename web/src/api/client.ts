@@ -133,6 +133,8 @@ export const projectProblems = {
   memberExists: 'urn:fiscoprojects:problem:project-member-exists',
   lastManager: 'urn:fiscoprojects:problem:project-last-manager',
   scheduleCycle: 'urn:fiscoprojects:problem:schedule-cycle',
+  scheduleNothingToUndo: 'urn:fiscoprojects:problem:schedule-nothing-to-undo',
+  scheduleUndoBlocked: 'urn:fiscoprojects:problem:schedule-undo-blocked',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

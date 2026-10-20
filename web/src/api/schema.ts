@@ -692,6 +692,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["UndoScheduleChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/redo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RedoScheduleChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1108,6 +1140,11 @@ export interface components {
             status: components["schemas"]["ProjectStatus"];
         };
         /**
+         * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
+         * @enum {unknown}
+         */
+        ScheduleAction: "PhaseAdded" | "PhaseRenamed" | "PhaseRemoved" | "TaskAdded" | "MilestoneAdded" | "TaskChanged" | "MilestoneChanged" | "TaskRemoved" | "MilestoneRemoved" | "DatesChanged" | "ProgressUpdated" | "MilestoneReached" | "MilestoneUnmarked";
+        /**
          * @description The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
          *     business days the end of the project now is after (positive) or before (negative) it, null without items now.
          */
@@ -1258,8 +1295,8 @@ export interface components {
         /**
          * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
          *     how many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month
-         *     before the start to the month after the end, for the timeline to shade (none without items), and the baseline, none
-         *     until the manager saves one.
+         *     before the start to the month after the end, for the timeline to shade (none without items), the baseline, none
+         *     until the manager saves one, and, for who edits the schedule, what undoing and redoing would do, none when nothing.
          */
         ScheduleResponse: {
             /** Format: date */
@@ -1277,6 +1314,16 @@ export interface components {
             phases: components["schemas"]["SchedulePhaseResponse"][];
             nonWorkingDays: string[];
             baseline: null | components["schemas"]["ScheduleBaselineResponse"];
+            undo: null | components["schemas"]["ScheduleStepResponse"];
+            redo: null | components["schemas"]["ScheduleStepResponse"];
+        };
+        /**
+         * @description A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or
+         *     redoing does, or did.
+         */
+        ScheduleStepResponse: {
+            action: components["schemas"]["ScheduleAction"];
+            name: string;
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -4081,6 +4128,118 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UndoScheduleChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleStepResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RedoScheduleChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleStepResponse"];
                 };
             };
             /** @description Unauthorized */

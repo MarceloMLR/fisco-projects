@@ -69,4 +69,15 @@ internal sealed class ScheduleStore(ProjectsDbContext db) : IScheduleStore
         await db.ScheduleItems.AsNoTracking()
             .Where(item => ids.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.Name, cancellationToken);
+
+    public async Task<IReadOnlyList<ScheduleChange>> ChangesOfAsync(
+        Guid projectId, Guid actorId, CancellationToken cancellationToken) =>
+        await db.ScheduleChanges
+            .Where(change => change.ProjectId == projectId && change.ActorId == actorId)
+            .OrderBy(change => change.Number)
+            .ToListAsync(cancellationToken);
+
+    public void AddChange(ScheduleChange change) => db.ScheduleChanges.Add(change);
+
+    public void RemoveChange(ScheduleChange change) => db.ScheduleChanges.Remove(change);
 }

@@ -65,12 +65,13 @@ import {
   valuesOfItem,
 } from './scheduleItemValues';
 import {
-  BaselineMenu,
   BaselineSection,
   BaselineSummary,
   DisplayChecks,
   DisplayMenu,
+  ScheduleMoreMenu,
 } from './ScheduleBaseline';
+import { UndoButton } from './ScheduleSteps';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
 import { LateCounts, MilestoneStatus } from './ScheduleStatus';
@@ -89,6 +90,8 @@ const emptySchedule: Schedule = {
   phases: [],
   nonWorkingDays: [],
   baseline: null,
+  undo: null,
+  redo: null,
 };
 
 /** The views of the tab (ADR-0071). */
@@ -393,8 +396,11 @@ export function ProjectSchedulePage() {
       <BaselineSummary schedule={schedule} />
     </Box>
   );
-  const baselineMenu = canEdit && (
-    <BaselineMenu project={project} schedule={schedule} notify={notify} />
+  const moreMenu = canEdit && (
+    <ScheduleMoreMenu project={project} schedule={schedule} notify={notify} />
+  );
+  const undoButton = canEdit && (
+    <UndoButton project={project} schedule={schedule} notify={notify} />
   );
   const newItemButton = (
     <Button
@@ -480,6 +486,7 @@ export function ProjectSchedulePage() {
         )}
         {desktop && <Box sx={{ flex: 1 }} />}
         {view === 'timeline' && <DisplayMenu display={display} onChange={setDisplay} />}
+        {undoButton}
         {desktop && view === 'timeline' && (
           <Button
             variant="outlined"
@@ -494,7 +501,7 @@ export function ProjectSchedulePage() {
           </Button>
         )}
         {desktop && actions(false)}
-        {baselineMenu}
+        {moreMenu}
       </Box>
       {view === 'timeline' && expanded ? (
         // One timeline at a time: the Syncfusion Gantt finds some of its parts in the whole page (ADR-0051).
@@ -560,6 +567,7 @@ export function ProjectSchedulePage() {
             />
             <DisplayChecks display={display} onChange={setDisplay} />
             <Box sx={{ flex: 1 }} />
+            {undoButton}
             {canEdit && newItemButton}
             <Button
               variant="outlined"

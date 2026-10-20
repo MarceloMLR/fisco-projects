@@ -130,3 +130,11 @@ export interface ScheduleDisplay {
 
 /** Both at first, as the canvas shows. */
 export const fullDisplay: ScheduleDisplay = { baseline: true, critical: true };
+
+/** A change of the schedule the person may undo or redo (ADR-0091). */
+export type ScheduleStep = NonNullable<Schedule['undo']>;
+
+/** What a change was, as undoing it says: "a inclusão da tarefa Configurar plano de contas". */
+export function stepText(step: ScheduleStep, t: TFunction): string {
+  return t(`projects.steps.what.${step.action}`, { name: step.name });
+}

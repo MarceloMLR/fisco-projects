@@ -468,6 +468,8 @@ export function demoSchedule(): Schedule {
     lateMilestones: 0,
     nonWorkingDays: demoNonWorkingDays(),
     baseline: null,
+    undo: null,
+    redo: null,
     phases: [
       {
         id: phaseIds.survey,
@@ -599,6 +601,8 @@ export const emptySchedule: Schedule = {
   phases: [],
   nonWorkingDays: [],
   baseline: null,
+  undo: null,
+  redo: null,
 };
 
 /**

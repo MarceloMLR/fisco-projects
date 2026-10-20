@@ -3309,6 +3309,134 @@
           }
         }
       }
+    },
+    "/api/projects/{id}/schedule/undo": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "UndoScheduleChange",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleStepResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/redo": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RedoScheduleChange",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleStepResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4659,6 +4787,24 @@
           }
         }
       },
+      "ScheduleAction": {
+        "enum": [
+          "PhaseAdded",
+          "PhaseRenamed",
+          "PhaseRemoved",
+          "TaskAdded",
+          "MilestoneAdded",
+          "TaskChanged",
+          "MilestoneChanged",
+          "TaskRemoved",
+          "MilestoneRemoved",
+          "DatesChanged",
+          "ProgressUpdated",
+          "MilestoneReached",
+          "MilestoneUnmarked"
+        ],
+        "description": "The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091)."
+      },
       "ScheduleBaselineResponse": {
         "required": [
           "savedOn",
@@ -5075,7 +5221,9 @@
           "lateMilestones",
           "phases",
           "nonWorkingDays",
-          "baseline"
+          "baseline",
+          "undo",
+          "redo"
         ],
         "type": "object",
         "properties": {
@@ -5131,9 +5279,45 @@
                 "$ref": "#/components/schemas/ScheduleBaselineResponse"
               }
             ]
+          },
+          "undo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScheduleStepResponse"
+              }
+            ]
+          },
+          "redo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScheduleStepResponse"
+              }
+            ]
           }
         },
-        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month\nbefore the start to the month after the end, for the timeline to shade (none without items), and the baseline, none\nuntil the manager saves one."
+        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month\nbefore the start to the month after the end, for the timeline to shade (none without items), the baseline, none\nuntil the manager saves one, and, for who edits the schedule, what undoing and redoing would do, none when nothing."
+      },
+      "ScheduleStepResponse": {
+        "required": [
+          "action",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ScheduleAction"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or\nredoing does, or did."
       },
       "SessionUserResponse": {
         "required": [
