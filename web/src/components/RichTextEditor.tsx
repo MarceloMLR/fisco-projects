@@ -215,15 +215,17 @@ export function RichTextEditor({
         >
           <LinkOutlined />
         </ToolButton>
-        <Box
-          aria-hidden
-          sx={{
-            width: '1px',
-            height: 18,
-            margin: '0 var(--space-1)',
-            backgroundColor: 'var(--border)',
-          }}
-        />
+        {(mentionable !== undefined || tools !== undefined) && (
+          <Box
+            aria-hidden
+            sx={{
+              width: '1px',
+              height: 18,
+              margin: '0 var(--space-1)',
+              backgroundColor: 'var(--border)',
+            }}
+          />
+        )}
         {mentionable !== undefined && (
           <ToolButton
             label={t('editor.mention')}

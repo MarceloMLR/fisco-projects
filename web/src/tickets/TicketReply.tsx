@@ -185,6 +185,7 @@ export function TicketReply({ ticket, me }: { ticket: Ticket; me: string }) {
         <RichTextEditor
           key={round}
           label={t('tickets.reply.label')}
+          minHeight={44}
           placeholder={
             ticket.requester.id === me
               ? t('tickets.reply.placeholderOwn')

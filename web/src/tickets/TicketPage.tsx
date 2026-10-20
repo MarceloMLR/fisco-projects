@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router';
 import { api, type Ticket } from '../api/client';
@@ -279,6 +279,15 @@ export function TicketPage() {
     ...ticketQuery(number ?? 0),
     enabled: number !== null,
   });
+  const thread = useRef<HTMLDivElement>(null);
+  const messages = ticket?.messages.length;
+  // The conversation opens at its end, the latest message, and goes there again after an answer (ADR-0069).
+  useEffect(() => {
+    const area = thread.current;
+    if (area !== null && messages !== undefined) {
+      area.scrollTop = area.scrollHeight;
+    }
+  }, [messages]);
   const state: unknown = location.state;
   const [message, setMessage] = useState<string | undefined>(
     typeof state === 'object' &&
@@ -382,6 +391,7 @@ export function TicketPage() {
         </Box>
       </Box>
       <Box
+        ref={thread}
         tabIndex={0}
         aria-label={t('tickets.conversation.title')}
         sx={{
