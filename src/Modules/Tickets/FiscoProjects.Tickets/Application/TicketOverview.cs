@@ -57,6 +57,13 @@ public sealed class TicketProjectOverview(
                     TicketDeadline.Resolution => ProjectTicketDeadline.Resolution,
                     _ => null,
                 },
+                due?.State switch
+                {
+                    TicketDueState.Overdue => ProjectTicketDueState.Overdue,
+                    TicketDueState.Soon => ProjectTicketDueState.Soon,
+                    TicketDueState.OnTrack => ProjectTicketDueState.OnTrack,
+                    _ => null,
+                },
                 due?.DueOn,
                 due?.DaysLate), order));
         }

@@ -53,6 +53,7 @@ public sealed record OverviewTicketResponse(
     OverviewPersonResponse? Assignee,
     int Interactions,
     ProjectTicketDeadline? Deadline,
+    ProjectTicketDueState? DueState,
     DateOnly? DueOn,
     int? DaysLate);
 
@@ -140,6 +141,7 @@ internal static class OverviewEndpoints
                     ticket.AssigneeId is { } assignee ? Person(assignee) : null,
                     ticket.Interactions,
                     ticket.Deadline,
+                    ticket.DueState,
                     ticket.DueOn,
                     ticket.DaysLate))],
                 [.. result.Acceptances.Select(term => new OverviewAcceptanceResponse(
