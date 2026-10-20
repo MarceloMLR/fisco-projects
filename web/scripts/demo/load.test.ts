@@ -280,3 +280,21 @@ describe('Status na demonstração', () => {
     ]);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Prazos na demonstração".
+describe('Prazos na demonstração', () => {
+  it('Prazos na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Opened on the day of the load: the critical ones are due on the next business day, the others later.
+    const opened = (bodies.get('/api/tickets') ?? []) as { priority: string }[];
+    expect(opened.map((ticket) => ticket.priority)).toEqual(
+      expect.arrayContaining(['Critical', 'High', 'Medium', 'Low']),
+    );
+    // And one waits for the requester, with its deadline paused.
+    const asked = demoProjects
+      .flatMap((project) => project.tickets ?? [])
+      .filter((ticket) => ticket.changes?.some((change) => change.action === 'AskForInformation'));
+    expect(asked).toHaveLength(1);
+  });
+});
