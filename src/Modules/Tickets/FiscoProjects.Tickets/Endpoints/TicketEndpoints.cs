@@ -3,9 +3,9 @@ using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace FiscoProjects.Tickets.Endpoints;
