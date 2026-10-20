@@ -127,4 +127,37 @@ public static class TicketAccess
             _ => TicketParticipantRole.Other,
         };
     }
+
+    /// <summary>
+    /// The parts of a person in the flow of the ticket (ADR-0024, ADR-0044): who serves it is the Administrator, the
+    /// managers and who serves its team; the requester; the managers (the manager and the tech lead); the
+    /// Administrator.
+    /// </summary>
+    public static TicketActors ActorsOf(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        ArgumentNullException.ThrowIfNull(ticket);
+        var actors = TicketActors.None;
+        if (viewer.IsAdministrator)
+        {
+            actors |= TicketActors.Administrator | TicketActors.Attendant;
+        }
+
+        if (role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead)
+        {
+            actors |= TicketActors.Manager | TicketActors.Attendant;
+        }
+
+        if (role is { } member && Serves(ticket.Team, member))
+        {
+            actors |= TicketActors.Attendant;
+        }
+
+        if (ticket.RequesterId == viewer.UserId)
+        {
+            actors |= TicketActors.Requester;
+        }
+
+        return actors;
+    }
 }

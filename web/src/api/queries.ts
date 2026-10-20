@@ -226,6 +226,15 @@ export function ticketChoicesQuery() {
 }
 
 /** One ticket by its number, with its people. */
+/** The flow of the tickets, read from its table (ADR-0024); it changes only with a new version of the application. */
+export function ticketFlowQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.tickets, 'flow'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/tickets/flow', { signal })),
+    staleTime: Infinity,
+  });
+}
+
 export function ticketQuery(number: number) {
   return queryOptions({
     queryKey: [...queryKeys.tickets, number] as const,

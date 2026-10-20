@@ -1,3 +1,4 @@
+import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
@@ -12,7 +13,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
   type TicketCounts,
   type TicketSituation,
@@ -134,8 +135,29 @@ export function TicketsPage() {
       </Button>
     ) : undefined;
 
+  // How a ticket moves, from Aberto to Fechado (ADR-0024).
+  const flowLink = (block: boolean) => (
+    <Button
+      variant="outlined"
+      component={Link}
+      to="/tickets/flow"
+      startIcon={<AccountTreeOutlined />}
+      fullWidth={block}
+      sx={block ? { flex: 'none' } : undefined}
+    >
+      {t('tickets.flow.link')}
+    </Button>
+  );
+
   const list = (
-    <Page actions={openTicket(false)}>
+    <Page
+      actions={
+        <>
+          {flowLink(false)}
+          {openTicket(false)}
+        </>
+      }
+    >
       <TicketTable
         rows={tickets.items}
         total={tickets.total}
@@ -210,6 +232,7 @@ export function TicketsPage() {
         }
       />
       {!desktop && openTicket(true)}
+      {!desktop && flowLink(true)}
     </Page>
   );
 

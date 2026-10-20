@@ -176,7 +176,7 @@ describe('Conversa pela tela', () => {
     signedInAs('User');
     ticket = {
       ...ticket,
-      permissions: { canSend: false, canAttachToDescription: false },
+      permissions: { canSend: false, canAttachToDescription: false, actions: [] },
       following: false,
     };
     await openTicket();

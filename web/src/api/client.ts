@@ -39,6 +39,12 @@ export type TicketPriority = components['schemas']['TicketPriority'];
 export type TicketStatus = components['schemas']['TicketStatus'];
 export type TicketView = components['schemas']['TicketView'];
 export type TicketSituation = components['schemas']['TicketSituation'];
+export type TicketAction = components['schemas']['TicketAction'];
+export type TicketEvent = components['schemas']['TicketEventResponse'];
+export type TicketFlow = components['schemas']['TicketFlowResponse'];
+export type TicketTransition = components['schemas']['TicketTransitionResponse'];
+/** Who may take an action of the flow (TicketActors in the Tickets module). */
+export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
 /** Statuses of a project in the order of its life (ADR-0016); the last two close it. */
 export const projectStatuses = [
@@ -165,6 +171,8 @@ export const projectProblems = {
 export const ticketProblems = {
   mentionRefused: 'urn:fiscoprojects:problem:ticket-mention-refused',
   attachmentRefused: 'urn:fiscoprojects:problem:ticket-attachment-refused',
+  ticketClosed: 'urn:fiscoprojects:problem:ticket-closed',
+  actionNotAllowedNow: 'urn:fiscoprojects:problem:ticket-action-not-allowed-now',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

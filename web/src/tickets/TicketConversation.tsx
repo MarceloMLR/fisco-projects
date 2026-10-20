@@ -1,5 +1,7 @@
+import AutorenewOutlined from '@mui/icons-material/AutorenewOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { Fragment, useMemo, useState } from 'react';
@@ -10,6 +12,8 @@ import { RichText } from '../components/RichText';
 import { useDates } from '../format/useDates';
 import {
   attachmentUrl,
+  type ConversationFilter,
+  conversationItems,
   isImage,
   type MessageTone,
   type ParticipantRole,
@@ -20,6 +24,7 @@ import {
 
 type Attachment = Ticket['attachments'][number];
 type Participant = Ticket['participants'][number];
+type TicketEvent = Ticket['events'][number];
 
 /** A file of the conversation (Message.Attachment): opens in a new tab, images and PDF in the browser. */
 export function AttachmentChip({ number, attachment }: { number: number; attachment: Attachment }) {
@@ -105,6 +110,67 @@ export function PersonAvatar({
   return <Avatar name={name} size={size} tone={tone === 'requester' ? undefined : tone} />;
 }
 
+/**
+ * An event of the conversation (Message.Event, fp-event): a discreet line with who did it, what and when; the
+ * changes of status keep the action and the two statuses, so the text tells it without the icon.
+ */
+function EventLine({
+  event,
+  personOf,
+}: {
+  event: TicketEvent;
+  personOf: (id: string) => Participant;
+}) {
+  const { t } = useTranslation();
+  const { formatTime } = useDates();
+  const actor = event.actorId === null ? t('tickets.events.system') : personOf(event.actorId).name;
+  const Icon = event.kind === 'AssigneeSet' ? PersonOutlined : AutorenewOutlined;
+  const what =
+    event.kind === 'AssigneeSet'
+      ? event.assigneeId === event.actorId || event.assigneeId === null
+        ? t('tickets.events.took')
+        : t('tickets.events.assigned', { name: personOf(event.assigneeId).name })
+      : t('tickets.events.changed', {
+          action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
+          from: event.from === null ? '' : t(`tickets.statuses.${event.from}`),
+          to: event.to === null ? '' : t(`tickets.statuses.${event.to}`),
+        });
+  return (
+    <Box
+      component="li"
+      data-kind="event"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-2)',
+        paddingLeft: '6px',
+        fontSize: 13,
+        lineHeight: '18px',
+        color: 'var(--text-secondary)',
+        '& > svg': { flex: 'none', fontSize: 18 },
+        '& strong': { fontWeight: 500, color: 'var(--text)' },
+      }}
+    >
+      <Icon aria-hidden />
+      <span>
+        <strong>{actor}</strong> {what}
+      </span>
+      <Box
+        component="time"
+        dateTime={event.at}
+        sx={{
+          marginLeft: 'auto',
+          fontSize: 12,
+          lineHeight: '16px',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {formatTime(event.at)}
+      </Box>
+    </Box>
+  );
+}
+
 function Files({ number, files }: { number: number; files: readonly Attachment[] }) {
   return files.length === 0 ? null : (
     <Box
@@ -122,7 +188,15 @@ function Files({ number, files }: { number: number; files: readonly Attachment[]
  * at the left and everyone else at the right, each in the color and with the tag of its part and "(você)" on the
  * person; a line for each day, and the older interactions folded above ten.
  */
-export function TicketConversation({ ticket, me }: { ticket: Ticket; me: string }) {
+export function TicketConversation({
+  ticket,
+  me,
+  filter = 'all',
+}: {
+  ticket: Ticket;
+  me: string;
+  filter?: ConversationFilter;
+}) {
   const { t } = useTranslation();
   const { timeZone, formatDateTime, formatTime } = useDates();
   const [unfolded, setUnfolded] = useState(false);
@@ -137,8 +211,9 @@ export function TicketConversation({ ticket, me }: { ticket: Ticket; me: string 
   const requester = personOf(ticket.requester.id);
   const filesOf = (messageId: string | null) =>
     ticket.attachments.filter((attachment) => attachment.messageId === messageId);
-  const hidden = unfolded ? 0 : Math.max(0, ticket.messages.length - shownInteractions);
-  const shown = ticket.messages.slice(hidden);
+  const items = conversationItems(ticket, filter);
+  const hidden = unfolded ? 0 : Math.max(0, items.length - shownInteractions);
+  const shown = items.slice(hidden);
   const dayOf = useMemo(() => {
     const format = new Intl.DateTimeFormat('pt-BR', {
       timeZone,
@@ -179,53 +254,66 @@ export function TicketConversation({ ticket, me }: { ticket: Ticket; me: string 
         width: '100%',
       }}
     >
-      <Box
-        component="section"
-        aria-label={t('tickets.details.description')}
-        sx={{
-          padding: 'var(--space-4) var(--space-5)',
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-        }}
-      >
+      {filter !== 'history' && (
         <Box
+          component="section"
+          aria-label={t('tickets.details.description')}
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 'var(--space-2)',
-            marginBottom: 'var(--space-3)',
-            fontSize: 13,
-            color: 'var(--text-secondary)',
+            padding: 'var(--space-4) var(--space-5)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
           }}
         >
-          <Avatar name={requester.name} size="sm" />
-          <Box component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
-            {requester.name}
-          </Box>
-          <RoleTag role="Requester" />
-          <span>{t('tickets.conversation.opened', { when: formatDateTime(ticket.openedAt) })}</span>
-        </Box>
-        {ticket.descriptionBody === null ? (
           <Box
             sx={{
-              whiteSpace: 'pre-wrap',
-              fontSize: 14,
-              lineHeight: '22px',
-              overflowWrap: 'anywhere',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 'var(--space-2)',
+              marginBottom: 'var(--space-3)',
+              fontSize: 13,
+              color: 'var(--text-secondary)',
             }}
           >
-            {ticket.description}
+            <Avatar name={requester.name} size="sm" />
+            <Box component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+              {requester.name}
+            </Box>
+            <RoleTag role="Requester" />
+            <span>
+              {t('tickets.conversation.opened', { when: formatDateTime(ticket.openedAt) })}
+            </span>
           </Box>
-        ) : (
-          <RichText value={ticket.descriptionBody} />
-        )}
-        <Files number={ticket.number} files={filesOf(null)} />
-      </Box>
+          {ticket.descriptionBody === null ? (
+            <Box
+              sx={{
+                whiteSpace: 'pre-wrap',
+                fontSize: 14,
+                lineHeight: '22px',
+                overflowWrap: 'anywhere',
+              }}
+            >
+              {ticket.description}
+            </Box>
+          ) : (
+            <RichText value={ticket.descriptionBody} />
+          )}
+          <Files number={ticket.number} files={filesOf(null)} />
+        </Box>
+      )}
+      {filter === 'history' && items.length === 0 && (
+        <Box component="p" sx={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
+          {t('tickets.conversation.noHistory')}
+        </Box>
+      )}
       <Box
         component="ol"
-        aria-label={t('tickets.conversation.messages')}
+        aria-label={t(
+          filter === 'history'
+            ? 'tickets.conversation.filters.history'
+            : 'tickets.conversation.messages',
+        )}
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -249,35 +337,45 @@ export function TicketConversation({ ticket, me }: { ticket: Ticket; me: string 
             </Button>
           </li>
         )}
-        {shown.map((message, index) => {
+        {shown.map((item, index) => {
+          const previous = shown[index - 1];
+          const newDay = previous === undefined || dayOf(previous.at) !== dayOf(item.at);
+          const separator = newDay && (
+            <Box
+              component="li"
+              aria-hidden={false}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-3)',
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+                '&::before, &::after': {
+                  content: '""',
+                  flex: 1,
+                  height: '1px',
+                  backgroundColor: 'var(--border)',
+                },
+              }}
+            >
+              {dayText(item.at)}
+            </Box>
+          );
+          if (item.kind === 'event') {
+            return (
+              <Fragment key={item.event.id}>
+                {separator}
+                <EventLine event={item.event} personOf={personOf} />
+              </Fragment>
+            );
+          }
+          const { message } = item;
           const author = personOf(message.authorId);
           const tone = toneOf[author.role];
           const left = author.role === 'Requester';
-          const previous = shown[index - 1];
-          const newDay = previous === undefined || dayOf(previous.sentAt) !== dayOf(message.sentAt);
           return (
             <Fragment key={message.id}>
-              {newDay && (
-                <Box
-                  component="li"
-                  aria-hidden={false}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-3)',
-                    fontSize: 12,
-                    color: 'var(--text-secondary)',
-                    '&::before, &::after': {
-                      content: '""',
-                      flex: 1,
-                      height: '1px',
-                      backgroundColor: 'var(--border)',
-                    },
-                  }}
-                >
-                  {dayText(message.sentAt)}
-                </Box>
-              )}
+              {separator}
               <Box
                 component="li"
                 data-side={left ? 'requester' : 'team'}

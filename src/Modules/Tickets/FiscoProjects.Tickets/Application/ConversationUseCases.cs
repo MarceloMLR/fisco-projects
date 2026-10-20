@@ -18,6 +18,9 @@ public enum ConversationOutcome
     InvalidBody = 4,
     MentionRefused = 5,
     AttachmentRefused = 6,
+
+    /// <summary>The ticket is closed and takes no more messages (ADR-0024).</summary>
+    Closed = 7,
 }
 
 /// <summary>What happened: done, or why not; with a refused file, its name and the reason.</summary>
@@ -131,6 +134,11 @@ public sealed class SendTicketMessage(IProjectAccess projects, ITicketStore stor
             return new ConversationResult(ConversationOutcome.Forbidden);
         }
 
+        if (ticket.Status == TicketStatus.Closed)
+        {
+            return new ConversationResult(ConversationOutcome.Closed);
+        }
+
         if (RichText.Parse(body) is not { } text)
         {
             return new ConversationResult(ConversationOutcome.InvalidBody);
@@ -165,6 +173,7 @@ public sealed class SendTicketMessage(IProjectAccess projects, ITicketStore stor
             }
 
             ticket.Touch(now);
+            await AnswerAsync(ticket, project, viewer, now, cancellationToken);
             await store.SaveChangesAsync(cancellationToken);
         }
         catch
@@ -174,6 +183,42 @@ public sealed class SendTicketMessage(IProjectAccess projects, ITicketStore stor
         }
 
         return ConversationResult.Done;
+    }
+
+    /// <summary>
+    /// What an answer does to the ticket (ADR-0024, ADR-0068): the first one of who serves its team, without an
+    /// assignee, makes the person the assignee, who follows the ticket, and takes an Open ticket to In progress; the
+    /// answer of the requester, or of who serves it, to a ticket Waiting for the requester takes it back to In
+    /// progress. The answers of the requester, of the manager and of who only follows never set the assignee.
+    /// </summary>
+    private async Task AnswerAsync(
+        Ticket ticket, ProjectAccess project, TicketViewer viewer, DateTime now, CancellationToken cancellationToken)
+    {
+        var flow = await store.FlowAsync(cancellationToken);
+        // The requester who also serves the team still answers as the requester, without taking the ticket.
+        if (ticket.AssigneeId is null && ticket.RequesterId != viewer.UserId
+            && project.Role is { } role && TicketAccess.Serves(ticket.Team, role))
+        {
+            ticket.Assign(viewer.UserId, now);
+            store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, viewer.UserId, now));
+            await store.FollowAsync(ticket.Id, viewer.UserId, now, cancellationToken);
+            if (flow.Of(ticket.Status, TicketAction.FirstResponse) is { } first)
+            {
+                Take(ticket, first, viewer.UserId, now);
+            }
+        }
+
+        if (flow.Of(ticket.Status, TicketAction.Reply) is { } reply
+            && (reply.Actors & TicketAccess.ActorsOf(viewer, project.Role, ticket)) != 0)
+        {
+            Take(ticket, reply, viewer.UserId, now);
+        }
+    }
+
+    private void Take(Ticket ticket, TicketTransition transition, Guid actorId, DateTime now)
+    {
+        ticket.Apply(transition, now);
+        store.AddEvent(TicketEvent.StatusChanged(ticket.Id, actorId, transition, now));
     }
 }
 
@@ -200,6 +245,11 @@ public sealed class AttachToDescription(IProjectAccess projects, ITicketStore st
         if (ticket.RequesterId != viewer.UserId || await store.HasMessagesAsync(ticket.Id, cancellationToken))
         {
             return new ConversationResult(ConversationOutcome.Forbidden);
+        }
+
+        if (ticket.Status == TicketStatus.Closed)
+        {
+            return new ConversationResult(ConversationOutcome.Closed);
         }
 
         if (attachments.Count == 0)

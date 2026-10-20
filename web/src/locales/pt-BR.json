@@ -72,6 +72,9 @@
     },
     "ticket": {
       "title": "Chamado"
+    },
+    "ticketFlow": {
+      "title": "Fluxo de chamados"
     }
   },
   "signIn": {
@@ -1390,7 +1393,15 @@
       "yesterday": "Ontem, {{day}}",
       "older_one": "Mostrar {{count}} interação anterior",
       "older_other": "Mostrar {{count}} interações anteriores",
-      "empty": "Ninguém respondeu ainda."
+      "empty": "Ninguém respondeu ainda.",
+      "show": "Mostrar",
+      "filters": {
+        "all": "Tudo",
+        "messages": "Mensagens",
+        "history": "Histórico"
+      },
+      "noHistory": "Nenhuma mudança de status ainda.",
+      "noMessages": "Ninguém respondeu ainda."
     },
     "reply": {
       "label": "Resposta",
@@ -1419,6 +1430,92 @@
       "attachments": "Anexos da conversa",
       "noAttachments": "Nenhum anexo.",
       "followFailed": "Não foi possível mudar o acompanhamento. Tente de novo."
+    },
+    "actions": {
+      "StartTriage": "Iniciar triagem",
+      "FirstResponse": "Primeira resposta",
+      "StartWork": "Iniciar atendimento",
+      "AskForInformation": "Pedir informações",
+      "Reply": "Enviar resposta",
+      "Resolve": "Marcar como resolvido",
+      "ConfirmAndClose": "Confirmar e fechar",
+      "AutoClose": "Fechamento automático",
+      "Reopen": "Reabrir",
+      "Cancel": "Cancelar chamado"
+    },
+    "actionMenu": "Mais ações do chamado",
+    "actionDialog": {
+      "AskForInformation": "Escreva o que falta para continuar. O chamado fica Aguardando solicitante até a resposta.",
+      "Reopen": "Conte o que ainda não está resolvido. O chamado volta para Em andamento.",
+      "Cancel": "Conte por que o chamado não segue. O chamado fica Fechado e não recebe mais mensagens.",
+      "other": "A mensagem vai para a conversa do chamado.",
+      "label": "Mensagem",
+      "placeholder": "Escreva a mensagem",
+      "needed": "Escreva a mensagem para continuar.",
+      "back": "Voltar"
+    },
+    "actionDone": {
+      "StartTriage": "Triagem iniciada.",
+      "StartWork": "Atendimento iniciado.",
+      "AskForInformation": "Pedido de informações enviado.",
+      "Resolve": "Chamado marcado como resolvido.",
+      "ConfirmAndClose": "Chamado fechado.",
+      "Reopen": "Chamado reaberto.",
+      "Cancel": "Chamado cancelado.",
+      "FirstResponse": "Resposta enviada.",
+      "Reply": "Resposta enviada.",
+      "AutoClose": "Chamado fechado."
+    },
+    "actionFailed": "Não foi possível mudar o status. Tente de novo.",
+    "actionStale": "O status do chamado mudou enquanto você estava na página. Veja como ele está agora.",
+    "events": {
+      "system": "Sistema",
+      "took": "assumiu o chamado",
+      "assigned": "definiu o responsável · {{name}}",
+      "changed": "{{action}} · {{from}} → {{to}}",
+      "verbs": {
+        "StartTriage": "iniciou a triagem",
+        "FirstResponse": "respondeu",
+        "StartWork": "iniciou o atendimento",
+        "AskForInformation": "pediu informações",
+        "Reply": "respondeu",
+        "Resolve": "marcou como resolvido",
+        "ConfirmAndClose": "confirmou e fechou",
+        "AutoClose": "fechou sem retorno do solicitante",
+        "Reopen": "reabriu",
+        "Cancel": "cancelou o chamado"
+      }
+    },
+    "flow": {
+      "link": "Fluxo de chamados",
+      "intro": "Como um chamado anda de Aberto até Fechado: cada ação, quem pode fazê-la e se ela pede uma mensagem.",
+      "statuses": "Status",
+      "transitions": "Transições",
+      "columns": {
+        "from": "De",
+        "to": "Para",
+        "action": "Ação",
+        "actors": "Quem pode",
+        "message": "Mensagem",
+        "automatic": "Como"
+      },
+      "actors": {
+        "Attendant": "Quem atende",
+        "Requester": "Solicitante",
+        "Manager": "Gestor",
+        "Administrator": "Administrador",
+        "System": "Sistema"
+      },
+      "needsMessage": "Exige mensagem",
+      "noMessage": "Não exige",
+      "automatic": "Automática",
+      "byButton": "Pelo botão",
+      "attendantHelp": "Quem atende: o administrador, o gerente, o líder técnico e quem atende o time do chamado. Gestor: o gerente e o líder técnico.",
+      "autoCloseHelp_one": "Um chamado Resolvido sem retorno fecha sozinho depois de {{count}} dia útil.",
+      "autoCloseHelp_other": "Um chamado Resolvido sem retorno fecha sozinho depois de {{count}} dias úteis.",
+      "loadFailed": "Não foi possível carregar o fluxo. Tente de novo.",
+      "range_one": "{{count}} transição",
+      "range_other": "{{count}} transições"
     }
   },
   "editor": {

@@ -23,6 +23,7 @@ import { RequireSession } from './session/RequireSession';
 import { AppShell } from './shell/AppShell';
 import { OpenTicketPage } from './tickets/OpenTicketPage';
 import { ProjectTicketsPage } from './tickets/ProjectTicketsPage';
+import { TicketFlowPage } from './tickets/TicketFlowPage';
 import { TicketPage } from './tickets/TicketPage';
 import { TicketsPage } from './tickets/TicketsPage';
 import type { PageHandle } from './shell/pages';
@@ -152,6 +153,15 @@ export const routes: RouteObject[] = [
             handle: {
               navigation: 'tickets',
               titleKey: 'pages.newTicket.title',
+              trail: [{ titleKey: 'pages.tickets.title', path: '/tickets' }],
+            } satisfies PageHandle,
+          },
+          {
+            path: 'tickets/flow',
+            element: <TicketFlowPage />,
+            handle: {
+              navigation: 'tickets',
+              titleKey: 'pages.ticketFlow.title',
               trail: [{ titleKey: 'pages.tickets.title', path: '/tickets' }],
             } satisfies PageHandle,
           },

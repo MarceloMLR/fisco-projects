@@ -33,3 +33,34 @@ export const attachmentUrl = (number: number, id: string) =>
 
 /** Whether the file is an image, for its icon. */
 export const isImage = (contentType: string) => contentType.startsWith('image/');
+
+/** What the conversation shows (ADR-0069): everything, only the messages or only the history of the ticket. */
+export type ConversationFilter = 'all' | 'messages' | 'history';
+
+export type ConversationItem =
+  | { kind: 'message'; at: string; message: Ticket['messages'][number] }
+  | { kind: 'event'; at: string; event: Ticket['events'][number] };
+
+/**
+ * The messages and the events of a ticket in the order they happened; at the same moment, the message comes before the
+ * change it made, as the first answer and the answer of the requester.
+ */
+export function conversationItems(
+  ticket: Ticket,
+  filter: ConversationFilter = 'all',
+): ConversationItem[] {
+  const items: ConversationItem[] = [
+    ...(filter === 'history'
+      ? []
+      : ticket.messages.map((message) => ({
+          kind: 'message' as const,
+          at: message.sentAt,
+          message,
+        }))),
+    ...(filter === 'messages'
+      ? []
+      : ticket.events.map((event) => ({ kind: 'event' as const, at: event.at, event }))),
+  ];
+  // The sort is stable: the messages, first in the list, stay before the events of the same moment.
+  return items.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+}

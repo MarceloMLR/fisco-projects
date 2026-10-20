@@ -37,6 +37,51 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         // The formatted description repeats the plain one, and the folder is technical.
         ticket.Property(t => t.DescriptionBody).ExcludeFromAudit();
         ticket.Property(t => t.AttachmentFolderId).ExcludeFromAudit();
+        // The moments of the status repeat the status, which the audit already has.
+        ticket.Property(t => t.ResolvedAt).ExcludeFromAudit();
+        ticket.Property(t => t.ClosedAt).ExcludeFromAudit();
+        ticket.HasIndex(t => new { t.Status, t.ResolvedAt });
+    }
+}
+
+// The flow of the tickets (ADR-0024): the table starts with the flow of the MVP, and has no screen to change it in the
+// first version, so it stays out of the audit.
+internal sealed class TicketTransitionConfiguration : IEntityTypeConfiguration<TicketTransition>
+{
+    public void Configure(EntityTypeBuilder<TicketTransition> transition)
+    {
+        transition.ToTable("ticket_transitions");
+        transition.Property(t => t.From).HasConversion<string>().HasMaxLength(24);
+        transition.Property(t => t.To).HasConversion<string>().HasMaxLength(24);
+        transition.Property(t => t.Action).HasConversion<string>().HasMaxLength(32);
+        transition.Property(t => t.Actors).HasConversion<string>().HasMaxLength(128);
+        transition.ExcludeFromAudit();
+        transition.HasData(TicketFlow.Default.Select((item, index) => new
+        {
+            Id = Guid.Parse($"0199f5a2-0000-7000-8000-{index + 1:D12}"),
+            item.From,
+            item.To,
+            item.Action,
+            item.Actors,
+            item.RequiresMessage,
+            item.Automatic,
+        }));
+    }
+}
+
+// The events are part of the conversation, which never changes: out of the audit, as the messages.
+internal sealed class TicketEventConfiguration : IEntityTypeConfiguration<TicketEvent>
+{
+    public void Configure(EntityTypeBuilder<TicketEvent> ticketEvent)
+    {
+        ticketEvent.ToTable("ticket_events");
+        ticketEvent.Property(e => e.Kind).HasConversion<string>().HasMaxLength(24);
+        ticketEvent.Property(e => e.FromStatus).HasConversion<string>().HasMaxLength(24);
+        ticketEvent.Property(e => e.ToStatus).HasConversion<string>().HasMaxLength(24);
+        ticketEvent.Property(e => e.Action).HasConversion<string>().HasMaxLength(32);
+        ticketEvent.HasOne<Ticket>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Cascade);
+        ticketEvent.HasIndex(e => new { e.TicketId, e.At });
+        ticketEvent.ExcludeFromAudit();
     }
 }
 

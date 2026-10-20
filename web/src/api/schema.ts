@@ -852,6 +852,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTicketFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{number}": {
         parameters: {
             query?: never;
@@ -862,6 +878,22 @@ export interface paths {
         get: operations["GetTicket"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ChangeTicketStatus"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1618,6 +1650,19 @@ export interface components {
          * @enum {unknown}
          */
         ThemePreference: "Automatic" | "Light" | "Dark";
+        /**
+         * @description The actions of the flow of a ticket (ADR-0024), named in English in the table.
+         * @enum {unknown}
+         */
+        TicketAction: "StartTriage" | "FirstResponse" | "StartWork" | "AskForInformation" | "Reply" | "Resolve" | "ConfirmAndClose" | "AutoClose" | "Reopen" | "Cancel";
+        /** @description An action of the flow the person may take now: where it leads and whether it needs a message (ADR-0024). */
+        TicketActionResponse: {
+            action: components["schemas"]["TicketAction"];
+            to: components["schemas"]["TicketStatus"];
+            requiresMessage: boolean;
+        };
+        /** @description Who may take an action of the flow (ADR-0024, ADR-0044); a transition takes several. */
+        TicketActors: string;
         /** @description An attachment of a ticket: of a message, or of the description when the message is null. */
         TicketAttachmentResponse: {
             /** Format: uuid */
@@ -1631,10 +1676,11 @@ export interface components {
             /** Format: date-time */
             uploadedAt: string;
         };
-        /** @description What the person may do in the conversation. */
+        /** @description What the person may do in the conversation, with the actions of the flow open now. */
         TicketConversationPermissionsResponse: {
             canSend: boolean;
             canAttachToDescription: boolean;
+            actions: components["schemas"]["TicketActionResponse"][];
         };
         /**
          * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
@@ -1661,6 +1707,39 @@ export interface components {
             id: string;
             /** Format: int32 */
             number: number;
+        };
+        /**
+         * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
+         * @enum {unknown}
+         */
+        TicketEventKind: "StatusChanged" | "AssigneeSet";
+        /**
+         * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
+         *     null when the system did it.
+         */
+        TicketEventResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["TicketEventKind"];
+            /** Format: uuid */
+            actorId: null | string;
+            from: null | components["schemas"]["TicketStatus"];
+            to: null | components["schemas"]["TicketStatus"];
+            action: null | components["schemas"]["TicketAction"];
+            /** Format: uuid */
+            assigneeId: null | string;
+            /** Format: date-time */
+            at: string;
+        };
+        /**
+         * @description The flow of the tickets, read from its table, with the statuses in their order and after how many business days a
+         *     resolved ticket without an answer closes.
+         */
+        TicketFlowResponse: {
+            statuses: components["schemas"]["TicketStatus"][];
+            transitions: components["schemas"]["TicketTransitionResponse"][];
+            /** Format: int32 */
+            autoCloseBusinessDays: number;
         };
         /** @description A ticket of a list; without an assignee until someone of the team answers it (ADR-0068). */
         TicketListItemResponse: {
@@ -1772,6 +1851,7 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             messages: components["schemas"]["TicketMessageResponse"][];
+            events: components["schemas"]["TicketEventResponse"][];
             attachments: components["schemas"]["TicketAttachmentResponse"][];
             followers: string[];
             mentionable: string[];
@@ -1799,6 +1879,23 @@ export interface components {
          * @enum {unknown}
          */
         TicketTeam: "Functional" | "Development";
+        /** @description An action of the flow taken in a ticket, with the message when the action needs one. */
+        TicketTransitionRequest: {
+            action: null | components["schemas"]["TicketAction"];
+            /** @description The message, as the JSON of the editor, without mentions; needed by the actions that ask for one. */
+            body?: null | string;
+        };
+        /** @description A transition of the flow (ADR-0024): from a status to another by an action, who may take it, and how. */
+        TicketTransitionResponse: {
+            from: components["schemas"]["TicketStatus"];
+            to: components["schemas"]["TicketStatus"];
+            action: components["schemas"]["TicketAction"];
+            /** @description Attendant, Requester, Manager, Administrator or System. */
+            actors: components["schemas"]["TicketActors"][];
+            requiresMessage: boolean;
+            /** @description Taken by the system on its own, never offered as a button. */
+            automatic: boolean;
+        };
         /**
          * @description The lists of tickets (ADR-0029, ADR-0068).
          * @enum {unknown}
@@ -5173,6 +5270,35 @@ export interface operations {
             };
         };
     };
+    GetTicketFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketFlowResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetTicket: {
         parameters: {
             query?: never;
@@ -5208,6 +5334,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ChangeTicketStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };
@@ -5271,6 +5464,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     AttachToTicketDescription: {
@@ -5330,6 +5532,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };

@@ -29,6 +29,13 @@ public static class TicketsModule
         services.AddScoped<AttachToDescription>();
         services.AddScoped<FollowTicket>();
         services.AddScoped<OpenTicketAttachment>();
+        services.AddScoped<GetTicketFlow>();
+        services.AddScoped<ChangeTicketStatus>();
+        // A resolved ticket without an answer closes after 5 business days, as each installation sets (ADR-0024).
+        services.AddSingleton(new TicketAutoCloseSettings(
+            configuration.GetValue("Tickets:AutoCloseBusinessDays", TicketAutoCloseSettings.Default)));
+        services.AddScoped<CloseResolvedTickets>();
+        services.AddHostedService<TicketAutoClose>();
         return services;
     }
 }

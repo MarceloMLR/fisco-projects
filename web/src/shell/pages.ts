@@ -52,6 +52,7 @@ export type PageTitleKey =
   | 'pages.projectTickets.title'
   | 'pages.newTicket.title'
   | 'pages.ticket.title'
+  | 'pages.ticketFlow.title'
   | 'pages.profile.title';
 
 /**
