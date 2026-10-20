@@ -256,6 +256,7 @@ public sealed class TicketChangeTests(SqlServerFixture sqlServer)
         var number = await OpenAsync(scene.App, scene.Carla, scene.Erp, "Development");
         using var diego = await scene.App.SignInAsync(scene.Diego);
         await AnswerAsync(diego, number, "Isso é cadastro, não é erro.");
+        scene.App.Clock.Advance(TimeSpan.FromMinutes(5));
 
         var moved = await SendAsync(diego, HttpMethod.Put, $"/api/tickets/{number}/team", new { team = "Functional" });
 

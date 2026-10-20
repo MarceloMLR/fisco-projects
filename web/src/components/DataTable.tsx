@@ -300,11 +300,7 @@ export function DataTable<Row extends GridValidRowModel>({
     <Box component="section" aria-label={label} sx={sectionSx}>
       {tools !== undefined && <Box sx={toolsSx}>{tools}</Box>}
       {selectionActions !== undefined && (
-        <Box
-          role="region"
-          aria-label={selectionActions.label}
-          sx={selectionActionsSx}
-        >
+        <Box role="region" aria-label={selectionActions.label} sx={selectionActionsSx}>
           {selectionActions.content}
         </Box>
       )}
