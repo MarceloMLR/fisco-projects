@@ -146,10 +146,11 @@ Specs:
 openspec validate --all --strict
 ```
 
-Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci`, na ordem `build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
+Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workflows/pull-request.yml`) roda os scripts de `scripts/ci` em jobs paralelos (ADR-0090): `backend` (`build.sh` e `test.sh`), `format` (`format.sh`), `frontend` (`frontend.sh`) e `specs` (`specs.sh`), com os pacotes do NuGet e do npm em cache. O `changes.sh` compara o commit com o último do PR que passou na verificação: se só mudou documentação (`docs/`, `openspec/`, `.claude/` e `.md` fora de `web/`), só as specs rodam, como no push do archive. O job `verify` decide pelo `verdict.sh`. O workflow só prepara .NET e Node e chama os scripts (ADR-0055); a lógica nova entra nos scripts, não no workflow.
 
 - Para rodar o mesmo na máquina: `bash scripts/ci/<script>.sh`, de qualquer pasta (no Windows, pelo Git Bash). `frontend.sh` e `specs.sh` usam o Node da versão do `.nvmrc`; o `specs.sh` instala o OpenSpec CLI fixado em `scripts/ci/package.json`.
 - A regra "Protect main" exige a verificação `verify` aprovada. Renomear o job bloqueia o merge até a regra ser atualizada.
+- Os testes de `tests/FiscoProjects.Pipeline.Tests` leem o workflow como texto (um job por `  <nome>:` sob `jobs:`, scripts por `run: bash scripts/ci/<script>.sh`) e rodam o `changes.sh` e o `verdict.sh` com o `bash`; no Windows, os que precisam do `bash` são pulados.
 - Pacote do NuGet com vulnerabilidade conhecida, direto ou transitivo, quebra o build. No frontend, `frontend.sh` reprova pacote vulnerável que vai para o navegador e dependência com licença fora da lista do script `licenses` do `web/package.json`.
 
 Previsto para a Fundação-6, que entra nos scripts de `scripts/ci`:

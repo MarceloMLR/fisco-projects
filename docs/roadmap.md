@@ -11,6 +11,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
 - Status: Planejada, Em andamento, PR aberto, Concluída, Adiada (com o motivo).
 - Em 18/10/2026, Marcelo adiou a Fundação-6 e a Fundação-7 até existir a assinatura do Azure, e o login pelo Entra foi para o grupo 9 (M365-1): sem tenant, desenvolvimento e demonstrações usam a entrada local (ADR-0078).
+- Em 19/10/2026, Marcelo pediu a Fundação-3.2 (`verificacao-mais-rapida`), para a verificação do PR ficar mais rápida sem deixar de existir (ADR-0090).
 - Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
 
 ## Marcos
@@ -37,7 +38,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-2 | `banco-de-dados` | EF Core com SQL Server, um schema por módulo, migrações, SQL Server no Docker local e nos testes | 0048, 0056, 0075 | Concluída em 18/10/2026 ([#5](https://github.com/MarceloMLR/fisco-projects/pull/5)) |
 | Fundação-3 | `pipeline-de-pr` | GitHub Actions com build, testes, formatação e `openspec validate`, exigido na regra "Protect main" | 0055 | Concluída em 18/10/2026 ([#6](https://github.com/MarceloMLR/fisco-projects/pull/6)) |
 | Fundação-3.1 | `sem-verificacao-ortografica` | Retira a verificação de ortografia (cspell) do PR e a extensão do VS Code, a pedido de Marcelo | 0055 | Concluída em 18/10/2026 ([#12](https://github.com/MarceloMLR/fisco-projects/pull/12)) |
-| Fundação-3.2 | `verificacao-mais-rapida` | Verificação do PR em jobs paralelos, com cache dos pacotes e só as specs no commit que muda apenas documentação, a pedido de Marcelo | 0055, 0090 | Planejada |
+| Fundação-3.2 | `verificacao-mais-rapida` | Verificação do PR em jobs paralelos, com cache dos pacotes e só as specs no commit que muda apenas documentação, a pedido de Marcelo | 0055, 0090 | Em andamento |
 | Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061, 0076 | Concluída em 18/10/2026 ([#7](https://github.com/MarceloMLR/fisco-projects/pull/7)) |
 | Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067, 0077 | Concluída em 18/10/2026 ([#8](https://github.com/MarceloMLR/fisco-projects/pull/8)) |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Adiada: aguarda a assinatura do Azure |
