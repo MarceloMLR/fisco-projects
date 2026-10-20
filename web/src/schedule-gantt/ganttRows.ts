@@ -21,6 +21,9 @@ export interface GanttRow {
   parentKey?: number;
   predecessor?: string;
   milestone: boolean;
+  /** The dates of a task in the baseline (ADR-0021), drawn as a thin bar under its own; none for the others. */
+  baselineStart?: Date;
+  baselineEnd?: Date;
   cssClass: string;
   target: GanttTarget;
 }
@@ -52,9 +55,11 @@ export function lastDayOf(end: Date): DayValue {
 /**
  * The lines of the timeline: each phase in the order of the API with its items below it, and each subtask below its
  * task, which the Gantt then draws as a summary, as a phase (ADR-0088); the classes say what each one is, for the colors
- * of the design system (fp-gantt), and the dependencies point to the numbers of the lines.
+ * of the design system (fp-gantt), with the critical path when it is shown (ADR-0021), and the dependencies point to
+ * the numbers of the lines. A task with dates of its own takes its dates in the baseline, as the design system draws
+ * them only under tasks.
  */
-export function ganttRowsOf(schedule: Schedule): GanttRow[] {
+export function ganttRowsOf(schedule: Schedule, { critical = false } = {}): GanttRow[] {
   const rows: GanttRow[] = [];
   const keys = new Map<string, number>();
   let next = 1;
@@ -75,6 +80,7 @@ export function ganttRowsOf(schedule: Schedule): GanttRow[] {
       const key = next++;
       keys.set(item.id, key);
       const milestone = item.kind === 'Milestone';
+      const ownDates = !milestone && !item.hasSubtasks;
       rows.push({
         key,
         name: item.name,
@@ -84,6 +90,12 @@ export function ganttRowsOf(schedule: Schedule): GanttRow[] {
         // The API sends each task before its subtasks.
         parentKey: (item.parentId === null ? undefined : keys.get(item.parentId)) ?? phaseKey,
         milestone,
+        ...(ownDates && item.baselineStart !== null && item.baselineEnd !== null
+          ? {
+              baselineStart: dateOfDay(item.baselineStart),
+              baselineEnd: endOfDay(item.baselineEnd),
+            }
+          : {}),
         cssClass: [
           milestone
             ? 'fp-gantt-milestone'
@@ -91,9 +103,10 @@ export function ganttRowsOf(schedule: Schedule): GanttRow[] {
               ? 'fp-gantt-summary'
               : 'fp-gantt-task',
           item.late ? 'fp-gantt-late' : '',
+          critical && item.critical ? 'fp-gantt-critical' : '',
         ]
-          .join(' ')
-          .trim(),
+          .filter((name) => name !== '')
+          .join(' '),
         target: { kind: 'item', item, phase },
       });
     }

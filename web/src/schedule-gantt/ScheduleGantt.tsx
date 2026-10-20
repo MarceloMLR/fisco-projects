@@ -74,6 +74,10 @@ export interface ScheduleGanttProps {
   /** The full table beside the timeline, as Expandir shows it (ADR-0071). */
   detailed?: boolean;
   selectedId?: string;
+  /** The dates of the baseline as a thin bar under each task (ADR-0021); only with a baseline saved. */
+  showBaseline?: boolean;
+  /** The tasks and milestones of the critical path in red, with the part done in green (ADR-0021, ADR-0067). */
+  showCritical?: boolean;
   /** The Syncfusion license of the installation (ADR-0087); none shows the notice of the trial. */
   license: string | null;
   onChoose: (target: GanttTarget) => void;
@@ -132,6 +136,8 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       editable,
       detailed = false,
       selectedId,
+      showBaseline = false,
+      showCritical = false,
       license,
       onChoose,
       onMove,
@@ -151,7 +157,10 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       : narrow
         ? Math.round(width * narrowShare)
         : listWidth.compact;
-    const rows = useMemo(() => ganttRowsOf(schedule), [schedule]);
+    const rows = useMemo(
+      () => ganttRowsOf(schedule, { critical: showCritical }),
+      [schedule, showCritical],
+    );
     const period = useMemo(
       () =>
         schedule.start === null || schedule.end === null
@@ -357,8 +366,11 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
               parentID: 'parentKey',
               dependency: 'predecessor',
               milestone: 'milestone',
+              baselineStartDate: 'baselineStart',
+              baselineEndDate: 'baselineEnd',
               cssClass: 'cssClass',
             }}
+            renderBaseline={showBaseline && schedule.baseline !== null}
             // Manual: the bars stay in the dates of the API. Its own computing stays on, or the bars of the phases
             // lose their place.
             taskMode="Manual"

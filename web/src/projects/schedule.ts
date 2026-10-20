@@ -121,3 +121,12 @@ export function summaryText(summary: ProjectScheduleSummary, today: string, t: T
         phase: summary.currentPhase,
       });
 }
+
+/** What the Linha do tempo shows over the bars (ADR-0021, ADR-0071). */
+export interface ScheduleDisplay {
+  baseline: boolean;
+  critical: boolean;
+}
+
+/** Both at first, as the canvas shows. */
+export const fullDisplay: ScheduleDisplay = { baseline: true, critical: true };

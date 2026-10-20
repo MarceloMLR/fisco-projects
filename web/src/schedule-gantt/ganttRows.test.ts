@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { demoSchedule, demoScheduleWithSubtasks } from '../test/server';
+import { demoSchedule, demoScheduleWithBaseline, demoScheduleWithSubtasks } from '../test/server';
 import { dateOfDay, dayOfDate, endOfDay, ganttRowsOf, lastDayOf } from './ganttRows';
 
 // Spec: cronograma, requirement "Linha do tempo": the lines and the dates the timeline draws come from the API.
@@ -77,5 +77,29 @@ describe('Linhas da linha do tempo', () => {
     expect(row('Executar testes')?.parentKey).toBe(summary?.key);
     expect(row('Executar testes')?.predecessor).toBe(`${String(row('Roteiro de testes')?.key)}FS`);
     expect(row('Integrar emissão de NF-e')?.cssClass).toBe('fp-gantt-task');
+  });
+});
+
+// Spec: cronograma, requirements "Linha de base pela tela" and "Caminho crítico pela tela".
+describe('Linha de base e caminho crítico nas linhas', () => {
+  it('Datas da linha de base e o caminho crítico', () => {
+    const rows = ganttRowsOf(demoScheduleWithBaseline(), { critical: true });
+    const row = (name: string) => rows.find((one) => one.name === name);
+
+    // The thin bar from the first day of the baseline to the midnight after its last; none for a milestone.
+    expect(row('Parametrizar regras de ICMS')).toMatchObject({
+      baselineStart: dateOfDay('2026-10-13'),
+      baselineEnd: endOfDay('2026-10-20'),
+      cssClass: 'fp-gantt-task fp-gantt-critical',
+    });
+    expect(row('Aceite da homologação')).toMatchObject({
+      cssClass: 'fp-gantt-milestone fp-gantt-critical',
+    });
+    expect(row('Aceite da homologação')?.baselineStart).toBeUndefined();
+    expect(row('Validar cadastro de produtos')?.cssClass).toBe('fp-gantt-task fp-gantt-late');
+    // Without the critical path in "Exibir", no line is red.
+    expect(
+      ganttRowsOf(demoScheduleWithBaseline()).some((one) => one.cssClass.includes('critical')),
+    ).toBe(false);
   });
 });

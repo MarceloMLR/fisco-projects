@@ -196,7 +196,8 @@
       "ProjectMember": "Pessoas dos projetos",
       "SchedulePhase": "Fases dos cronogramas",
       "ScheduleItem": "Tarefas e marcos",
-      "ScheduleDependency": "Dependências"
+      "ScheduleDependency": "Dependências",
+      "ScheduleBaseline": "Linhas de base"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -274,6 +275,11 @@
         "Created": "Incluiu uma dependência",
         "Updated": "Alterou uma dependência",
         "Deleted": "Excluiu uma dependência"
+      },
+      "ScheduleBaseline": {
+        "Created": "Salvou a linha de base",
+        "Updated": "Atualizou a linha de base",
+        "Deleted": "Excluiu a linha de base"
       }
     },
     "providers": {
@@ -304,7 +310,8 @@
         "ProjectMember": "Pessoa",
         "SchedulePhase": "Fase",
         "ScheduleItem": "Tarefa ou marco",
-        "ScheduleDependency": "Seguinte"
+        "ScheduleDependency": "Seguinte",
+        "ScheduleBaseline": "Projeto"
       },
       "secret": "Alterado",
       "none": "—",
@@ -373,6 +380,11 @@
         "ProjectId": "Projeto",
         "PredecessorId": "Anterior",
         "SuccessorId": "Seguinte"
+      },
+      "ScheduleBaseline": {
+        "SavedOn": "Salva em",
+        "Start": "Início",
+        "End": "Fim"
       }
     },
     "dependsOn": "depende de {{name}}"
@@ -1002,6 +1014,8 @@
         "label": "Legenda da linha do tempo",
         "done": "Concluído",
         "todo": "A fazer",
+        "critical": "Caminho crítico",
+        "baseline": "Linha de base",
         "phase": "Fase",
         "milestone": "Marco",
         "nonWorking": "Fim de semana e feriado"
@@ -1010,6 +1024,53 @@
         "linked": "{{successor}} passa a depender de {{predecessor}}.",
         "cycle": "Essa ligação formaria um ciclo: {{predecessor}} já depende de {{successor}}.",
         "summaryLink": "{{name}} tem subtarefas: ligue uma das subtarefas dela."
+      }
+    },
+    "baseline": {
+      "display": "Exibir",
+      "displayLabel": "O que a linha do tempo exibe",
+      "show": {
+        "baseline": "Linha de base",
+        "critical": "Caminho crítico"
+      },
+      "more": "Linha de base e exportação",
+      "save": "Salvar linha de base",
+      "update": "Atualizar linha de base",
+      "confirm": {
+        "title": "Atualizar a linha de base?",
+        "text": "A linha de base de {{day}} será trocada pelas datas atuais do cronograma.",
+        "back": "Voltar"
+      },
+      "messages": {
+        "saved": "Linha de base salva.",
+        "updated": "Linha de base atualizada.",
+        "noItems": "Inclua tarefas ou marcos antes de salvar a linha de base."
+      },
+      "summary": "Linha de base de {{day}}",
+      "projectEnd": {
+        "later_one": "Fim {{count}} dia útil depois",
+        "later_other": "Fim {{count}} dias úteis depois",
+        "earlier_one": "Fim {{count}} dia útil antes",
+        "earlier_other": "Fim {{count}} dias úteis antes",
+        "same": "Fim na data da linha de base"
+      },
+      "item": {
+        "later_one": "{{count}} dia útil depois",
+        "later_other": "{{count}} dias úteis depois",
+        "earlier_one": "{{count}} dia útil antes",
+        "earlier_other": "{{count}} dias úteis antes",
+        "same": "Na data da linha de base"
+      },
+      "details": {
+        "title": "Linha de base",
+        "start": "Início",
+        "end": "Fim",
+        "day": "Data",
+        "deviation": "Diferença",
+        "notIn": {
+          "Task": "Incluída depois da linha de base",
+          "Milestone": "Incluído depois da linha de base"
+        }
       }
     }
   }

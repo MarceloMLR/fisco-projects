@@ -11,6 +11,7 @@ import {
   type DemoProject,
   demoProjects,
   demoSchedule,
+  demoScheduleWithBaseline,
   demoScheduleWithSubtasks,
   problem,
   projectsPage,
@@ -151,6 +152,7 @@ describe('Aba Cronograma', () => {
     ).toEqual([
       text.timeline.legend.done,
       text.timeline.legend.todo,
+      text.timeline.legend.critical,
       text.timeline.legend.phase,
       text.timeline.legend.milestone,
       text.timeline.legend.nonWorking,
@@ -477,5 +479,86 @@ describe('Expandir o cronograma', () => {
       'data-detailed',
       'false',
     );
+  });
+});
+
+function legendEntries() {
+  return within(screen.getByRole('list', { name: text.timeline.legend.label }))
+    .getAllByRole('listitem')
+    .map((entry) => entry.textContent);
+}
+
+// Spec: cronograma, requirement "Caminho crítico pela tela".
+describe('Caminho crítico pela tela', () => {
+  it('Exibir sem linha de base e caminho crítico', async () => {
+    schedule = demoScheduleWithBaseline();
+    await openTimeline();
+
+    // Both are on at first, and the legend says what they are.
+    expect([received().showBaseline, received().showCritical]).toEqual([true, true]);
+    expect(legendEntries()).toEqual([
+      text.timeline.legend.done,
+      text.timeline.legend.todo,
+      text.timeline.legend.critical,
+      text.timeline.legend.baseline,
+      text.timeline.legend.phase,
+      text.timeline.legend.milestone,
+      text.timeline.legend.nonWorking,
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: text.baseline.display }));
+    const menu = screen.getByRole('menu', { name: text.baseline.displayLabel });
+    fireEvent.click(
+      within(menu).getByRole('menuitemcheckbox', { name: text.baseline.show.baseline }),
+    );
+    fireEvent.click(
+      within(menu).getByRole('menuitemcheckbox', { name: text.baseline.show.critical }),
+    );
+
+    // Each one on its own, and the menu stays open to turn the other.
+    expect(
+      within(menu)
+        .getAllByRole('menuitemcheckbox')
+        .map((option) => option.getAttribute('aria-checked')),
+    ).toEqual(['false', 'false']);
+    await waitFor(() => {
+      expect([received().showBaseline, received().showCritical]).toEqual([false, false]);
+    });
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+    expect(legendEntries()).toEqual([
+      text.timeline.legend.done,
+      text.timeline.legend.todo,
+      text.timeline.legend.phase,
+      text.timeline.legend.milestone,
+      text.timeline.legend.nonWorking,
+    ]);
+
+    // Expandir keeps what "Exibir" has, with the two options right in its header.
+    fireEvent.click(screen.getByRole('button', { name: text.timeline.expand }));
+    const expanded = await screen.findByRole('dialog', { name: text.timeline.expandedTitle });
+    const baseline = within(expanded).getByRole('checkbox', { name: text.baseline.show.baseline });
+    expect(baseline).not.toBeChecked();
+    expect(
+      within(expanded).getByRole('checkbox', { name: text.baseline.show.critical }),
+    ).not.toBeChecked();
+    fireEvent.click(baseline);
+    await waitFor(() => {
+      expect([received().detailed, received().showBaseline, received().showCritical]).toEqual([
+        true,
+        true,
+        false,
+      ]);
+    });
+  });
+
+  it('Sem linha de base, a legenda não a cita', async () => {
+    await openTimeline();
+
+    // With the baseline on in "Exibir", but none saved.
+    expect(received().showBaseline).toBe(true);
+    expect(legendEntries()).not.toContain(text.timeline.legend.baseline);
   });
 });
