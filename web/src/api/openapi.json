@@ -3242,6 +3242,73 @@
           }
         }
       }
+    },
+    "/api/projects/{id}/schedule/baseline": {
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "SaveScheduleBaseline",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4592,6 +4659,37 @@
           }
         }
       },
+      "ScheduleBaselineResponse": {
+        "required": [
+          "savedOn",
+          "start",
+          "end",
+          "deviation"
+        ],
+        "type": "object",
+        "properties": {
+          "savedOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "deviation": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the\nbusiness days the end of the project now is after (positive) or before (negative) it, null without items now."
+      },
       "ScheduleCreatedResponse": {
         "required": [
           "id"
@@ -4727,7 +4825,11 @@
           "owner",
           "predecessorIds",
           "parentId",
-          "hasSubtasks"
+          "hasSubtasks",
+          "critical",
+          "baselineStart",
+          "baselineEnd",
+          "baselineDeviation"
         ],
         "type": "object",
         "properties": {
@@ -4811,9 +4913,33 @@
           },
           "hasSubtasks": {
             "type": "boolean"
+          },
+          "critical": {
+            "type": "boolean"
+          },
+          "baselineStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "baselineEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "baselineDeviation": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         },
-        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088)."
+        "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."
       },
       "ScheduleOwnerResponse": {
         "required": [
@@ -4948,7 +5074,8 @@
           "lateTasks",
           "lateMilestones",
           "phases",
-          "nonWorkingDays"
+          "nonWorkingDays",
+          "baseline"
         ],
         "type": "object",
         "properties": {
@@ -4994,9 +5121,19 @@
               "type": "string",
               "format": "date"
             }
+          },
+          "baseline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ScheduleBaselineResponse"
+              }
+            ]
           }
         },
-        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the\nmonth before the start to the month after the end, for the timeline to shade (none without items)."
+        "description": "The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,\nhow many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month\nbefore the start to the month after the end, for the timeline to shade (none without items), and the baseline, none\nuntil the manager saves one."
       },
       "SessionUserResponse": {
         "required": [

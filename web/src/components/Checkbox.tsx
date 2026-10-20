@@ -89,3 +89,31 @@ export function Checkbox({
     </Box>
   );
 }
+
+/**
+ * The box of the Checkbox alone, for a menu item that is itself the control (role menuitemcheckbox): it only shows
+ * whether the option is on.
+ */
+export function CheckboxMark({ checked }: { checked: boolean }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        display: 'inline-grid',
+        placeItems: 'center',
+        flex: 'none',
+        boxSizing: 'border-box',
+        width: 18,
+        height: 18,
+        border: '2px solid',
+        borderColor: checked ? 'var(--control-selected)' : 'var(--border-control)',
+        borderRadius: 'var(--radius-sm)',
+        backgroundColor: checked ? 'var(--control-selected)' : 'var(--bg-surface)',
+        color: 'var(--on-control-selected)',
+        '& > svg': { fontSize: 14, visibility: checked ? 'visible' : 'hidden' },
+      }}
+    >
+      <CheckOutlined />
+    </Box>
+  );
+}

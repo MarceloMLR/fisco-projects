@@ -51,8 +51,9 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// <summary>
 /// A schedule as the Schedule tab shows it: the numbers of the day (<see cref="ScheduleFigures"/>), the names of the
 /// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043), the
-/// non-business days around its period, for the timeline to shade (ADR-0051), and the business days of delay of each
-/// late item (<see cref="ScheduleFigures.LateDaysOf"/>).
+/// non-business days around its period, for the timeline to shade (ADR-0051), the business days of delay of each
+/// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
+/// the schedule now, none until the manager saves one (ADR-0021).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -60,7 +61,9 @@ public sealed record ScheduleView(
     IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> Predecessors,
     IReadOnlySet<Guid> ProgressUpdatable,
     IReadOnlyList<DateOnly> NonWorkingDays,
-    IReadOnlyDictionary<Guid, int> LateDays);
+    IReadOnlyDictionary<Guid, int> LateDays,
+    IReadOnlySet<Guid> Critical,
+    BaselineComparison? Baseline);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -81,8 +84,8 @@ public sealed class GetSchedule(
         var names = await PeopleNames.OfAsync(
             users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
         var figures = schedule.Figures(today);
-        // Without items, there is nothing to shade nor to be late.
-        var days = figures.Start is null ? null : await calendar.GetAsync(cancellationToken);
+        // Without items nor a baseline, there is nothing to shade, to be late, on the path or to compare.
+        var days = figures.Start is null && schedule.Baseline is null ? null : await calendar.GetAsync(cancellationToken);
         var nonWorkingDays = days is not null && figures is { Start: { } start, End: { } end }
             ? Schedule.NonWorkingDaysAround(start, end, days)
             : [];
@@ -100,7 +103,9 @@ public sealed class GetSchedule(
                     .Select(item => item.Id)
                     .ToHashSet(),
             nonWorkingDays,
-            days is null ? new Dictionary<Guid, int>() : ScheduleFigures.LateDaysOf(schedule.Items, today, days));
+            days is null ? new Dictionary<Guid, int>() : ScheduleFigures.LateDaysOf(schedule.Items, today, days),
+            days is null ? new HashSet<Guid>() : ScheduleCriticalPath.Of(schedule.Items, schedule.Dependencies, days),
+            schedule.Baseline is { } baseline && days is not null ? baseline.CompareWith(schedule.Items, figures.End, days) : null);
     }
 }
 
@@ -139,6 +144,9 @@ public enum ScheduleField
 
     /// <summary>The task the item goes into: a task right in the same phase, one level only (ADR-0088).</summary>
     Parent = 10,
+
+    /// <summary>A baseline needs tasks or milestones in the schedule (ADR-0021).</summary>
+    Baseline = 11,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -488,6 +496,21 @@ public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore s
             schedule.SetReached(itemId, reached, today);
             return ScheduleResult.Done();
         }, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Saves the baseline of the project, or updates it, on the day in the time zone of the installation (ADR-0021): only
+/// the Administrator and the manager, while the project is open (ADR-0043), and only with tasks or milestones.
+/// </summary>
+public sealed class SaveScheduleBaseline(IProjectStore projects, IScheduleStore schedules, InstallationClock clock)
+{
+    public async Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var today = await clock.TodayAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+            schedule.SaveBaseline(today) ? ScheduleResult.Done() : ScheduleResult.InvalidFields([ScheduleField.Baseline]),
+            cancellationToken);
     }
 }
 

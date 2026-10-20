@@ -43,10 +43,12 @@ import { theme } from '../theme/theme';
 import { useProjectOutlet } from './projectOutlet';
 import {
   findItem,
+  fullDisplay,
   isPhaseRow,
   itemsOf,
   lateText,
   predecessorNames,
+  type ScheduleDisplay,
   type ScheduleRow,
   scheduleRows,
   showsDelay,
@@ -62,6 +64,13 @@ import {
   showRefusal,
   valuesOfItem,
 } from './scheduleItemValues';
+import {
+  BaselineMenu,
+  BaselineSection,
+  BaselineSummary,
+  DisplayChecks,
+  DisplayMenu,
+} from './ScheduleBaseline';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
 import { LateCounts, MilestoneStatus } from './ScheduleStatus';
@@ -79,6 +88,7 @@ const emptySchedule: Schedule = {
   lateMilestones: 0,
   phases: [],
   nonWorkingDays: [],
+  baseline: null,
 };
 
 /** The views of the tab (ADR-0071). */
@@ -118,6 +128,8 @@ export function ProjectSchedulePage() {
   /** "Nova tarefa" open, maybe inside a task ("Nova subtarefa", ADR-0088). */
   const [creating, setCreating] = useState<{ parentId?: string }>();
   const [expanded, setExpanded] = useState(false);
+  /** What "Exibir" shows in the Linha do tempo, the same in Expandir (ADR-0071). */
+  const [display, setDisplay] = useState<ScheduleDisplay>(fullDisplay);
   const [search, setSearch] = useSearchParams();
   const asked = search.get('view');
   const view: ScheduleView = isView(asked) ? asked : desktop ? 'timeline' : 'list';
@@ -378,7 +390,11 @@ export function ProjectSchedulePage() {
         />
       </Box>
       <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
+      <BaselineSummary schedule={schedule} />
     </Box>
+  );
+  const baselineMenu = canEdit && (
+    <BaselineMenu project={project} schedule={schedule} notify={notify} />
   );
   const newItemButton = (
     <Button
@@ -463,6 +479,7 @@ export function ProjectSchedulePage() {
           />
         )}
         {desktop && <Box sx={{ flex: 1 }} />}
+        {view === 'timeline' && <DisplayMenu display={display} onChange={setDisplay} />}
         {desktop && view === 'timeline' && (
           <Button
             variant="outlined"
@@ -477,6 +494,7 @@ export function ProjectSchedulePage() {
           </Button>
         )}
         {desktop && actions(false)}
+        {baselineMenu}
       </Box>
       {view === 'timeline' && expanded ? (
         // One timeline at a time: the Syncfusion Gantt finds some of its parts in the whole page (ADR-0051).
@@ -488,6 +506,7 @@ export function ProjectSchedulePage() {
           scale={scale}
           editable={canEdit && desktop}
           selectedId={chosen?.item.id ?? phaseDialog?.phase?.id}
+          display={display}
           ganttRef={timeline}
           onChoose={chooseInTimeline}
           notify={notify}
@@ -539,6 +558,7 @@ export function ProjectSchedulePage() {
                 expandedTimeline.current?.goToToday();
               }}
             />
+            <DisplayChecks display={display} onChange={setDisplay} />
             <Box sx={{ flex: 1 }} />
             {canEdit && newItemButton}
             <Button
@@ -562,6 +582,7 @@ export function ProjectSchedulePage() {
             editable={canEdit}
             detailed
             selectedId={chosen?.item.id ?? phaseDialog?.phase?.id}
+            display={display}
             ganttRef={expandedTimeline}
             onChoose={chooseInTimeline}
             notify={notify}
@@ -957,6 +978,7 @@ function ItemEditor({
         <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} onNew={onNewSubtask} />
       )}
       {item.hasSubtasks && <SummaryDates item={item} />}
+      <BaselineSection item={item} schedule={schedule} />
       <Box
         component="form"
         noValidate
@@ -1097,6 +1119,7 @@ function ItemDetails({
         <MilestoneState project={project} item={item} canEdit={false} onDone={onDone} />
       )}
       {subtasks > 0 && <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} />}
+      <BaselineSection item={item} schedule={schedule} />
       <Box component="dl" sx={detailsListSx}>
         {parent !== undefined && (
           <>

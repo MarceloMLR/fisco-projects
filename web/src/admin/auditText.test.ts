@@ -819,4 +819,51 @@ describe('Mudanças do cronograma na auditoria', () => {
       `Testes integrados · depende de Parametrizar regras de ICMS · ${project}`,
     );
   });
+
+  it('Linha de base na auditoria', () => {
+    const field = (name: string, before: string | null, after: string) => ({
+      field: name,
+      before,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const saved = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'ScheduleBaseline',
+        itemLabel: project,
+        changes: [
+          field('End', null, '2026-10-29'),
+          field('SavedOn', null, '2026-10-09'),
+          field('Start', null, '2026-10-05'),
+        ],
+      }),
+      t,
+    );
+    const updated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ScheduleBaseline',
+        itemLabel: project,
+        changes: [
+          field('End', '2026-10-29', '2026-11-03'),
+          field('SavedOn', '2026-10-09', '2026-10-16'),
+        ],
+      }),
+      t,
+    );
+
+    expect(saved.title).toBe('Salvou a linha de base');
+    expect(saved.summary).toBe(project);
+    expect(saved.properties).toEqual([{ label: 'Projeto', value: project }]);
+    expect(updated.title).toBe('Atualizou a linha de base');
+    expect(updated.summary).toBe(`${project} · salva em 09/10/2026 → 16/10/2026`);
+    // The day it was saved first, then the start and the end.
+    expect(saved.changes.map((change) => change.field)).toEqual(['Salva em', 'Início', 'Fim']);
+    expect(updated.changes).toEqual([
+      { field: 'Salva em', before: '09/10/2026', after: '16/10/2026' },
+      { field: 'Fim', before: '29/10/2026', after: '03/11/2026' },
+    ]);
+  });
 });

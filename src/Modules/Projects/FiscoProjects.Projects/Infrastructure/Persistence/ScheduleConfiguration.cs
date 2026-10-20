@@ -23,6 +23,7 @@ internal sealed class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
         schedule.HasMany(s => s.Phases).WithOne().HasForeignKey(p => p.ProjectId).OnDelete(DeleteBehavior.Cascade);
         schedule.HasMany(s => s.Items).WithOne().HasForeignKey(i => i.ProjectId).OnDelete(DeleteBehavior.Cascade);
         schedule.HasMany(s => s.Dependencies).WithOne().HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade);
+        schedule.HasOne(s => s.Baseline).WithOne().HasForeignKey<ScheduleBaseline>(b => b.Id).OnDelete(DeleteBehavior.Cascade);
         schedule.Navigation(s => s.Phases).UsePropertyAccessMode(PropertyAccessMode.Field);
         schedule.Navigation(s => s.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
         schedule.Navigation(s => s.Dependencies).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -67,6 +68,35 @@ internal sealed class ScheduleItemConfiguration : IEntityTypeConfiguration<Sched
         item.Property(i => i.PhaseId).IsAuditReference(ProjectsAudit.SchedulePhaseReference);
         item.Property(i => i.OwnerId).IsAuditReference(UserAudit.Reference);
         item.Property(i => i.ParentId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
+    }
+}
+
+/// <summary>
+/// The baseline of a project (ADR-0021), with the id of the project, and the dates of its items. The dates of the items
+/// are a copy, without a foreign key to the items: an item removed later stays in the copy unread.
+/// </summary>
+internal sealed class ScheduleBaselineConfiguration : IEntityTypeConfiguration<ScheduleBaseline>
+{
+    public void Configure(EntityTypeBuilder<ScheduleBaseline> baseline)
+    {
+        baseline.ToTable("schedule_baselines");
+        baseline.Property(b => b.Id).ValueGeneratedNever();
+        baseline.HasMany(b => b.Items).WithOne().HasForeignKey(i => i.ProjectId).OnDelete(DeleteBehavior.Cascade);
+        baseline.Navigation(b => b.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Audit (ADR-0039, ADR-0084): saving and updating the baseline, by the name of the project, with the day and the
+        // dates of the project before and after; the copy of the dates of each item stays out.
+        baseline.HasAuditLabelReference(b => b.Id, ProjectsAudit.ProjectReference);
+    }
+}
+
+internal sealed class ScheduleBaselineItemConfiguration : IEntityTypeConfiguration<ScheduleBaselineItem>
+{
+    public void Configure(EntityTypeBuilder<ScheduleBaselineItem> item)
+    {
+        item.ToTable("schedule_baseline_items");
+        item.HasIndex(i => new { i.ProjectId, i.ItemId }).IsUnique();
+        item.ExcludeFromAudit();
     }
 }
 

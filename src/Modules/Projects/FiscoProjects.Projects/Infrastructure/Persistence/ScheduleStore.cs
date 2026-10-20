@@ -11,6 +11,7 @@ internal sealed class ScheduleStore(ProjectsDbContext db) : IScheduleStore
             .Include(schedule => schedule.Phases)
             .Include(schedule => schedule.Items)
             .Include(schedule => schedule.Dependencies)
+            .Include(schedule => schedule.Baseline!.Items)
             .AsSplitQuery()
             .SingleOrDefaultAsync(schedule => schedule.Id == projectId, cancellationToken);
 

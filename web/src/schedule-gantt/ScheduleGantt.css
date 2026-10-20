@@ -212,6 +212,26 @@
   display: none;
 }
 
+/* The critical path (g-bar--critical): the bar in red, the part done still in green (ADR-0067). */
+.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-child-taskbar-inner-div,
+.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-child-manualtaskbar {
+  background: var(--gantt-critical-bar);
+  border-color: var(--gantt-critical-border);
+}
+
+.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-milestone {
+  background: var(--gantt-critical-bar);
+  box-shadow: inset 0 0 0 1px var(--gantt-critical-border);
+}
+
+/* The baseline (g-baseline): a thin bar under the bar of the task, at its dates in the baseline. */
+.fp-schedule-gantt .e-gantt .e-baseline-bar {
+  height: 4px !important;
+  background: var(--gantt-baseline);
+  border: 0;
+  border-radius: 1px;
+}
+
 /* The phases (g-summary): a bar with the ends pointing down, in the color of the summary. */
 .fp-schedule-gantt .e-gantt .e-gantt-parent-taskbar-inner-div {
   display: none;

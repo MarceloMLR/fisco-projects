@@ -49,6 +49,11 @@ export interface DemoItem {
   reached?: boolean;
   /** The name of the task it is inside, of the same phase and before it in the plan (ADR-0088). */
   inside?: string;
+  /**
+   * Days from the first day of the main project where the manager puts its start after saving the baseline, which
+   * pushes the items after it (ADR-0021).
+   */
+  movedTo?: number;
 }
 
 export interface DemoPhase {
@@ -64,6 +69,8 @@ export interface DemoProject {
   members?: readonly (readonly [DemoPerson, ProjectRole])[];
   /** The status it ends in; a new project starts in Planning. */
   status?: ProjectStatus;
+  /** The manager saves the baseline once the schedule is built, before moving the items with movedTo (ADR-0021). */
+  baseline?: boolean;
   phases: readonly DemoPhase[];
 }
 
@@ -103,6 +110,7 @@ export const demoProjects: readonly DemoProject[] = [
       ['beatriz', 'Viewer'],
     ],
     status: 'InProgress',
+    baseline: true,
     phases: [
       {
         name: 'Levantamento',
@@ -129,10 +137,12 @@ export const demoProjects: readonly DemoProject[] = [
       {
         name: 'Configuração',
         items: [
+          // Two days later than planned, after the baseline: everything after it and the project end later.
           task('Parametrizar regras de ICMS', 8, 8, {
             owner: 'rafael',
             progress: 50,
             after: ['Mapear processos fiscais'],
+            movedTo: 10,
           }),
           task('Configurar plano de contas', 9, 6, { owner: 'carla', progress: 70 }),
           task('Integrar emissão de NF-e', 14, 8, { owner: 'diego', progress: 30 }),

@@ -9,7 +9,7 @@ import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import type { GanttTarget } from '../schedule-gantt/ganttRows';
 import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { problemType } from './projectForm';
-import { findItem } from './schedule';
+import { findItem, type ScheduleDisplay } from './schedule';
 import { failureOf } from './scheduleItemValues';
 
 // The Syncfusion Gantt is large: it comes only when the Linha do tempo opens (ADR-0051).
@@ -29,6 +29,7 @@ export function ScheduleTimeline({
   editable,
   detailed = false,
   selectedId,
+  display,
   ganttRef,
   onChoose,
   notify,
@@ -40,6 +41,8 @@ export function ScheduleTimeline({
   editable: boolean;
   detailed?: boolean;
   selectedId?: string;
+  /** What "Exibir" has on: the baseline and the critical path (ADR-0071). */
+  display: ScheduleDisplay;
   ganttRef?: Ref<ScheduleGanttHandle>;
   onChoose: (target: GanttTarget) => void;
   notify: (message: string) => void;
@@ -202,6 +205,8 @@ export function ScheduleTimeline({
             editable={editable}
             detailed={detailed}
             selectedId={selectedId}
+            showBaseline={display.baseline}
+            showCritical={display.critical}
             license={settings.data?.timelineLicense ?? null}
             onChoose={onChoose}
             onMove={move}
@@ -220,7 +225,10 @@ export function ScheduleTimeline({
             gap: 'var(--space-2) var(--space-4)',
           }}
         >
-          <TimelineLegend />
+          <TimelineLegend
+            critical={display.critical}
+            baseline={display.baseline && schedule.baseline !== null}
+          />
           {aside}
         </Box>
       )}
@@ -228,10 +236,15 @@ export function ScheduleTimeline({
   );
 }
 
-/** What each color of the timeline is (Gantt.Legend of the design system). */
-function TimelineLegend() {
+type LegendKey = 'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'milestone' | 'nonWorking';
+
+/**
+ * What each color of the timeline is (Gantt.Legend of the design system), with the critical path and the baseline
+ * while they are shown.
+ */
+function TimelineLegend({ critical, baseline }: { critical: boolean; baseline: boolean }) {
   const { t } = useTranslation();
-  const swatch = (background: string, more: object = {}) => ({
+  const swatch = (background: string, more: object = {}): object => ({
     display: 'inline-block',
     width: 20,
     height: 10,
@@ -240,16 +253,27 @@ function TimelineLegend() {
     background: `var(--${background})`,
     ...more,
   });
-  const entries = [
+  const entries: { key: LegendKey; sx: object }[] = [
     { key: 'done', sx: swatch('gantt-progress') },
     { key: 'todo', sx: swatch('gantt-bar', { border: '1px solid var(--gantt-bar-border)' }) },
+  ];
+  if (critical) {
+    entries.push({
+      key: 'critical',
+      sx: swatch('gantt-critical-bar', { border: '1px solid var(--gantt-critical-border)' }),
+    });
+  }
+  if (baseline) {
+    entries.push({ key: 'baseline', sx: swatch('gantt-baseline', { height: 4 }) });
+  }
+  entries.push(
     { key: 'phase', sx: swatch('gantt-summary', { height: 6 }) },
     {
       key: 'milestone',
       sx: swatch('gantt-milestone', { width: 10, transform: 'rotate(45deg)', borderRadius: 0 }),
     },
     { key: 'nonWorking', sx: swatch('gantt-nonworking', { border: '1px solid var(--border)' }) },
-  ] as const;
+  );
   return (
     <Box
       component="ul"

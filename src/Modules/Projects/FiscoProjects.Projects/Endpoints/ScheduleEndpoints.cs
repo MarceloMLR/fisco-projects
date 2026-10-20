@@ -18,7 +18,9 @@ public sealed record ScheduleOwnerResponse(Guid Id, string Name);
 /// of its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person
 /// may update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the
 /// items it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows
-/// (ADR-0088).
+/// (ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline
+/// with the business days its end is after (positive) or before (negative) them, all null when it was not in the
+/// baseline (ADR-0021).
 /// </summary>
 public sealed record ScheduleItemResponse(
     Guid Id,
@@ -37,7 +39,17 @@ public sealed record ScheduleItemResponse(
     ScheduleOwnerResponse? Owner,
     IReadOnlyList<Guid> PredecessorIds,
     Guid? ParentId,
-    bool HasSubtasks);
+    bool HasSubtasks,
+    bool Critical,
+    DateOnly? BaselineStart,
+    DateOnly? BaselineEnd,
+    int? BaselineDeviation);
+
+/// <summary>
+/// The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
+/// business days the end of the project now is after (positive) or before (negative) it, null without items now.
+/// </summary>
+public sealed record ScheduleBaselineResponse(DateOnly SavedOn, DateOnly Start, DateOnly End, int? Deviation);
 
 /// <summary>
 /// A phase, with its dates (none without items), its progress weighted by duration and its items in order, each task
@@ -54,8 +66,9 @@ public sealed record SchedulePhaseResponse(
 
 /// <summary>
 /// The schedule of a project on the day <c>today</c> of the installation: its dates (none without items), its progress,
-/// how many tasks and milestones are late, the phases in order, and the non-business days of the calendar from the
-/// month before the start to the month after the end, for the timeline to shade (none without items).
+/// how many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month
+/// before the start to the month after the end, for the timeline to shade (none without items), and the baseline, none
+/// until the manager saves one.
 /// </summary>
 public sealed record ScheduleResponse(
     DateOnly Today,
@@ -65,7 +78,8 @@ public sealed record ScheduleResponse(
     int LateTasks,
     int LateMilestones,
     IReadOnlyList<SchedulePhaseResponse> Phases,
-    IReadOnlyList<DateOnly> NonWorkingDays);
+    IReadOnlyList<DateOnly> NonWorkingDays,
+    ScheduleBaselineResponse? Baseline);
 
 public sealed record SchedulePhaseRequest(string? Name);
 
@@ -156,6 +170,9 @@ internal static class ScheduleEndpoints
         projects.MapPut("/{id:guid}/schedule/items/{itemId:guid}/dates", RescheduleAsync).WithName("RescheduleScheduleItem")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapPut("/{id:guid}/schedule/baseline", SaveBaselineAsync).WithName("SaveScheduleBaseline")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static async Task<Results<Ok<ScheduleResponse>, NotFound>> GetAsync(
@@ -184,7 +201,10 @@ internal static class ScheduleEndpoints
                 phase.Progress,
                 phase.IsLate,
                 [.. phase.Items.Select(item => ItemOf(item, view))]))],
-            view.NonWorkingDays));
+            view.NonWorkingDays,
+            view.Baseline is { } baseline
+                ? new ScheduleBaselineResponse(baseline.SavedOn, baseline.Start, baseline.End, baseline.Deviation)
+                : null));
     }
 
     private static async Task<Results<Created<ScheduleCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddPhaseAsync(
@@ -348,8 +368,21 @@ internal static class ScheduleEndpoints
         };
     }
 
-    private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view) =>
-        new(
+    /// <summary>
+    /// Saves the baseline of the project, or updates it, with the dates of the schedule today (ADR-0021). Without a
+    /// body: the server copies the dates it has.
+    /// </summary>
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> SaveBaselineAsync(
+        Guid id, HttpContext http, IUserAccess access, SaveScheduleBaseline saveBaseline, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        return Answer(await saveBaseline.ExecuteAsync(id, viewer, cancellationToken));
+    }
+
+    private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view)
+    {
+        var baseline = view.Baseline is not null && view.Baseline.Items.TryGetValue(item.Id, out var saved) ? saved : null;
+        return new(
             item.Id,
             item.Kind,
             item.PhaseId,
@@ -368,7 +401,12 @@ internal static class ScheduleEndpoints
                 : null,
             view.Predecessors.TryGetValue(item.Id, out var predecessors) ? predecessors : [],
             item.ParentId,
-            view.Figures.Summaries.Contains(item.Id));
+            view.Figures.Summaries.Contains(item.Id),
+            view.Critical.Contains(item.Id),
+            baseline?.Start,
+            baseline?.End,
+            baseline?.Deviation);
+    }
 
     /// <summary>The answer to a change without a body of its own.</summary>
     private static Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult> Answer(ScheduleResult result) =>
@@ -404,6 +442,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Reached => "reached",
                 ScheduleField.End => "end",
                 ScheduleField.Parent => "parentId",
+                ScheduleField.Baseline => "baseline",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -419,6 +458,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.Reached => "Only a milestone is reached; a task has a progress.",
                     ScheduleField.End => "The end of a task comes on or after its start, up to 999 business days; a milestone has no end.",
                     ScheduleField.Parent => "The item goes into a task right in the same phase, which is not inside another; a task with subtasks goes into none.",
+                    ScheduleField.Baseline => "A baseline needs tasks or milestones in the schedule.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

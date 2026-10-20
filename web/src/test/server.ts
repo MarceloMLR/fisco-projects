@@ -315,6 +315,10 @@ function demoItem(
     reachedOn: null,
     late: false,
     lateDays: 0,
+    critical: false,
+    baselineStart: null,
+    baselineEnd: null,
+    baselineDeviation: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     predecessorIds: [],
@@ -375,12 +379,14 @@ const phaseIds = {
 /**
  * The schedule of ERP-FIN on 16/10/2026, as the canvas ProjetoCronograma, in business days with 12/10 and 02/11 as
  * holidays: Levantamento, late by Validar cadastro de produtos; Configuração; Homologação, with the milestone; and
- * Entrada em produção, still without items.
+ * Entrada em produção, still without items. The critical path goes from the opening to the acceptance, through
+ * Parametrizar regras de ICMS and Testes integrados.
  */
 export function demoSchedule(): Schedule {
   const marinaOwner = { id: demoPeople.marina.id, name: demoPeople.marina.name };
   const rafaelOwner = { id: demoPeople.rafael.id, name: demoPeople.rafael.name };
   const opening = demoItem(1, phaseIds.survey, {
+    critical: true,
     name: 'Reunião de abertura',
     start: '2026-10-05',
     end: '2026-10-05',
@@ -389,6 +395,7 @@ export function demoSchedule(): Schedule {
     owner: marinaOwner,
   });
   const mapping = demoItem(2, phaseIds.survey, {
+    critical: true,
     name: 'Mapear processos fiscais',
     start: '2026-10-06',
     end: '2026-10-09',
@@ -410,6 +417,7 @@ export function demoSchedule(): Schedule {
     predecessorIds: [mapping.id],
   });
   const icms = demoItem(4, phaseIds.configuration, {
+    critical: true,
     name: 'Parametrizar regras de ICMS',
     start: '2026-10-13',
     end: '2026-10-22',
@@ -426,6 +434,7 @@ export function demoSchedule(): Schedule {
     progress: 20,
   });
   const tests = demoItem(6, phaseIds.configuration, {
+    critical: true,
     name: 'Testes integrados',
     start: '2026-10-23',
     end: '2026-10-29',
@@ -434,6 +443,7 @@ export function demoSchedule(): Schedule {
     predecessorIds: [icms.id],
   });
   const clientTests = demoItem(7, phaseIds.approval, {
+    critical: true,
     name: 'Testes com a equipe do cliente',
     start: '2026-10-30',
     end: '2026-11-03',
@@ -441,6 +451,7 @@ export function demoSchedule(): Schedule {
     predecessorIds: [tests.id],
   });
   const acceptance = demoItem(8, phaseIds.approval, {
+    critical: true,
     kind: 'Milestone',
     name: 'Aceite da homologação',
     start: '2026-11-03',
@@ -456,6 +467,7 @@ export function demoSchedule(): Schedule {
     lateTasks: 1,
     lateMilestones: 0,
     nonWorkingDays: demoNonWorkingDays(),
+    baseline: null,
     phases: [
       {
         id: phaseIds.survey,
@@ -494,6 +506,36 @@ export function demoSchedule(): Schedule {
         items: [],
       },
     ],
+  };
+}
+
+/**
+ * The schedule of ERP-FIN with the baseline the manager saved on 09/10/2026 (ADR-0021), before Parametrizar regras de
+ * ICMS took two business days more: it and the items after it end 2 business days after the baseline, as the project
+ * does; the others are on it.
+ */
+export function demoScheduleWithBaseline(): Schedule {
+  const schedule = demoSchedule();
+  const slipped = new Map([
+    ['Parametrizar regras de ICMS', ['2026-10-13', '2026-10-20']],
+    ['Testes integrados', ['2026-10-21', '2026-10-27']],
+    ['Testes com a equipe do cliente', ['2026-10-28', '2026-10-29']],
+    ['Aceite da homologação', ['2026-10-29', '2026-10-29']],
+  ]);
+  for (const phase of schedule.phases) {
+    phase.items = phase.items.map((item) => {
+      const [start, end] = slipped.get(item.name) ?? [item.start, item.end];
+      return {
+        ...item,
+        baselineStart: start ?? item.start,
+        baselineEnd: end ?? item.end,
+        baselineDeviation: slipped.has(item.name) ? 2 : 0,
+      };
+    });
+  }
+  return {
+    ...schedule,
+    baseline: { savedOn: '2026-10-09', start: '2026-10-05', end: '2026-10-29', deviation: 2 },
   };
 }
 
@@ -556,6 +598,7 @@ export const emptySchedule: Schedule = {
   lateMilestones: 0,
   phases: [],
   nonWorkingDays: [],
+  baseline: null,
 };
 
 /**

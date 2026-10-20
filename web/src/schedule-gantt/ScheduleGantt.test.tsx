@@ -1,8 +1,8 @@
 import { cleanup, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Schedule } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { demoSchedule, demoScheduleWithSubtasks } from '../test/server';
+import { demoSchedule, demoScheduleWithBaseline, demoScheduleWithSubtasks } from '../test/server';
 import { areaWidth, barOf, drawWith, simulateLayout } from './ganttTesting';
 
 const text = ptBR.projects;
@@ -112,5 +112,44 @@ describe('Linha do tempo', () => {
       container.querySelector<HTMLElement>('.fp-gantt-task[aria-label^="Name Roteiro de testes "]')
         ?.style.cursor,
     ).toBe('move');
+  });
+});
+
+// Spec: cronograma, requirement "Caminho crítico pela tela".
+describe('Caminho crítico pela tela', () => {
+  const isCritical = (container: HTMLElement, name: string) =>
+    barOf(container, name)?.classList.contains('fp-gantt-critical');
+
+  it('Caminho crítico na linha do tempo', async () => {
+    const { container, redraw } = await drawWith({
+      schedule: demoScheduleWithBaseline(),
+      showBaseline: true,
+      showCritical: true,
+    });
+
+    // The tasks and the milestone of the critical path in red; the ones with float as they are.
+    expect(
+      [
+        'Reunião de abertura',
+        'Parametrizar regras de ICMS',
+        'Testes integrados',
+        'Aceite da homologação',
+        'Validar cadastro de produtos',
+        'Integrar emissão de NF-e',
+      ].map((name) => isCritical(container, name)),
+    ).toEqual([true, true, true, true, false, false]);
+    // A thin bar under each of the seven tasks, at its dates in the baseline: Parametrizar regras de ICMS from 13/10
+    // to 20/10, eight days.
+    const baselines = [...container.querySelectorAll('.e-baseline-bar')];
+    expect(baselines).toHaveLength(7);
+    const icms = baselines.find((bar) => daysOf(bar) === 8 && lengthOf(bar) === 8);
+    expect(icms).toBeDefined();
+
+    redraw({ showBaseline: false, showCritical: false });
+
+    await vi.waitFor(() => {
+      expect(container.querySelectorAll('.e-baseline-bar')).toHaveLength(0);
+      expect(container.querySelectorAll('.fp-gantt-critical')).toHaveLength(0);
+    });
   });
 });
