@@ -103,7 +103,7 @@ public interface ITicketStore
 
     Task<Ticket?> FindAsync(int number, CancellationToken cancellationToken);
 
-    /// <summary>How many messages each ticket has: its interactions in the lists.</summary>
+    /// <summary>How many messages and events each ticket has: its interactions in the lists.</summary>
     Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<TicketMessage>> MessagesAsync(Guid ticketId, CancellationToken cancellationToken);
@@ -115,6 +115,16 @@ public interface ITicketStore
     Task<bool> HasMessagesAsync(Guid ticketId, CancellationToken cancellationToken);
 
     void AddMessage(TicketMessage message);
+
+    /// <summary>The flow of the tickets, read from its table and checked (ADR-0024).</summary>
+    Task<TicketFlow> FlowAsync(CancellationToken cancellationToken);
+
+    void AddEvent(TicketEvent ticketEvent);
+
+    Task<IReadOnlyList<TicketEvent>> EventsAsync(Guid ticketId, CancellationToken cancellationToken);
+
+    /// <summary>The resolved tickets, to be changed: the automatic closing looks at them.</summary>
+    Task<IReadOnlyList<Ticket>> ResolvedAsync(CancellationToken cancellationToken);
 
     void AddAttachment(TicketAttachment attachment);
 
@@ -285,8 +295,11 @@ public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, Time
 /// <summary>A person of the conversation and the part the person plays in the ticket (ADR-0069).</summary>
 public sealed record TicketParticipant(Guid Id, string Name, TicketParticipantRole Role);
 
-/// <summary>What the person may do in the conversation: send messages, and attach files to the description.</summary>
-public sealed record TicketConversationPermissions(bool CanSend, bool CanAttachToDescription);
+/// <summary>
+/// What the person may do in the conversation: send messages, attach files to the description, and the actions of the
+/// flow open now (ADR-0024).
+/// </summary>
+public sealed record TicketConversationPermissions(bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketTransition> Actions);
 
 /// <summary>
 /// A ticket with its project, the requester, the assignee and the managers and tech leads of the project, and its
@@ -301,6 +314,7 @@ public sealed record TicketDetails(
     IReadOnlyList<TicketPerson> Managers,
     IReadOnlyList<TicketPerson> TechLeads,
     IReadOnlyList<TicketMessage> Messages,
+    IReadOnlyList<TicketEvent> Events,
     IReadOnlyList<TicketAttachment> Attachments,
     IReadOnlyList<Guid> Followers,
     IReadOnlyList<Guid> Mentionable,
@@ -328,6 +342,7 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
         var managers = members.Where(member => member.Role == ProjectMemberRole.Manager).Select(member => member.UserId).ToList();
         var techLeads = members.Where(member => member.Role == ProjectMemberRole.TechLead).Select(member => member.UserId).ToList();
         var messages = await store.MessagesAsync(ticket.Id, cancellationToken);
+        var events = await store.EventsAsync(ticket.Id, cancellationToken);
         var attachments = await store.AttachmentsAsync(ticket.Id, cancellationToken);
         var followers = await store.FollowersAsync(ticket.Id, cancellationToken);
         var mentionable = TicketAccess.Mentionable(ticket, members);
@@ -338,6 +353,7 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
             .. managers,
             .. techLeads,
             .. messages.Select(message => message.AuthorId),
+            .. events.Where(item => item.ActorId is not null).Select(item => item.ActorId!.Value),
             .. followers,
             .. mentionable,
             viewer.UserId,
@@ -354,7 +370,8 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
                     roles.TryGetValue(id, out var role) ? role : null,
                     id == viewer.UserId && viewer.IsAdministrator)))
             .ToList();
-        var canSend = TicketAccess.MaySend(viewer, project.Role, ticket);
+        var canSend = TicketAccess.MaySend(viewer, project.Role, ticket) && ticket.Status != TicketStatus.Closed;
+        var flow = await store.FlowAsync(cancellationToken);
         return new TicketDetails(
             ticket,
             new TicketProject(project.Id, project.Code, project.Name),
@@ -363,13 +380,15 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
             [.. managers.Select(id => TicketNames.PersonOf(id, names)).OrderBy(person => person.Name, StringComparer.CurrentCulture)],
             [.. techLeads.Select(id => TicketNames.PersonOf(id, names)).OrderBy(person => person.Name, StringComparer.CurrentCulture)],
             messages,
+            events,
             attachments,
             followers,
             mentionable,
             participants,
             new TicketConversationPermissions(
                 canSend,
-                ticket.RequesterId == viewer.UserId && messages.Count == 0),
+                ticket.RequesterId == viewer.UserId && messages.Count == 0 && ticket.Status != TicketStatus.Closed,
+                flow.AvailableTo(ticket.Status, TicketAccess.ActorsOf(viewer, project.Role, ticket))),
             followers.Contains(viewer.UserId));
     }
 }

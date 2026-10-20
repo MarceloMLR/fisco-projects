@@ -20,6 +20,10 @@ internal sealed class TicketsDbContext(DbContextOptions<TicketsDbContext> option
 
     public DbSet<TicketFollower> TicketFollowers => Set<TicketFollower>();
 
+    public DbSet<TicketTransition> TicketTransitions => Set<TicketTransition>();
+
+    public DbSet<TicketEvent> TicketEvents => Set<TicketEvent>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
         modelBuilder.HasSequence<int>(NumberSequence).StartsAt(1).IncrementsBy(1);

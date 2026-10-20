@@ -65,8 +65,46 @@ public sealed record TicketMessageResponse(Guid Id, Guid AuthorId, string Body, 
 /// <summary>A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069).</summary>
 public sealed record TicketParticipantResponse(Guid Id, string Name, TicketParticipantRole Role);
 
-/// <summary>What the person may do in the conversation.</summary>
-public sealed record TicketConversationPermissionsResponse(bool CanSend, bool CanAttachToDescription);
+/// <summary>An action of the flow the person may take now: where it leads and whether it needs a message (ADR-0024).</summary>
+public sealed record TicketActionResponse(TicketAction Action, TicketStatus To, bool RequiresMessage);
+
+/// <summary>What the person may do in the conversation, with the actions of the flow open now.</summary>
+public sealed record TicketConversationPermissionsResponse(bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketActionResponse> Actions);
+
+/// <summary>
+/// An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
+/// null when the system did it.
+/// </summary>
+public sealed record TicketEventResponse(
+    Guid Id,
+    TicketEventKind Kind,
+    Guid? ActorId,
+    TicketStatus? From,
+    TicketStatus? To,
+    TicketAction? Action,
+    Guid? AssigneeId,
+    DateTime At);
+
+/// <summary>An action of the flow taken in a ticket, with the message when the action needs one.</summary>
+public sealed record TicketTransitionRequest(
+    TicketAction? Action,
+    [property: Description("The message, as the JSON of the editor, without mentions; needed by the actions that ask for one.")] string? Body = null);
+
+/// <summary>A transition of the flow (ADR-0024): from a status to another by an action, who may take it, and how.</summary>
+public sealed record TicketTransitionResponse(
+    TicketStatus From,
+    TicketStatus To,
+    TicketAction Action,
+    [property: Description("Attendant, Requester, Manager, Administrator or System.")] IReadOnlyList<TicketActors> Actors,
+    bool RequiresMessage,
+    [property: Description("Taken by the system on its own, never offered as a button.")] bool Automatic);
+
+/// <summary>
+/// The flow of the tickets, read from its table, with the statuses in their order and after how many business days a
+/// resolved ticket without an answer closes.
+/// </summary>
+public sealed record TicketFlowResponse(
+    IReadOnlyList<TicketStatus> Statuses, IReadOnlyList<TicketTransitionResponse> Transitions, int AutoCloseBusinessDays);
 
 /// <summary>
 /// A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the
@@ -90,6 +128,7 @@ public sealed record TicketResponse(
     DateTime OpenedAt,
     DateTime UpdatedAt,
     IReadOnlyList<TicketMessageResponse> Messages,
+    IReadOnlyList<TicketEventResponse> Events,
     IReadOnlyList<TicketAttachmentResponse> Attachments,
     IReadOnlyList<Guid> Followers,
     IReadOnlyList<Guid> Mentionable,
@@ -111,6 +150,12 @@ public static class TicketProblems
     /// (TooLarge, Empty or Dangerous).
     /// </summary>
     public const string AttachmentRefused = "urn:fiscoprojects:problem:ticket-attachment-refused";
+
+    /// <summary>The ticket is closed and takes no more messages (ADR-0024); status 409.</summary>
+    public const string TicketClosed = "urn:fiscoprojects:problem:ticket-closed";
+
+    /// <summary>The action does not leave the status the ticket is in now (ADR-0024); status 409.</summary>
+    public const string ActionNotAllowedNow = "urn:fiscoprojects:problem:ticket-action-not-allowed-now";
 }
 
 /// <summary>
@@ -134,19 +179,26 @@ public static class TicketEndpoints
         tickets.MapPost("/", OpenAsync).WithName("OpenTicket")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapGet("/flow", FlowAsync).WithName("GetTicketFlow");
         tickets.MapGet("/{number:int}", GetAsync).WithName("GetTicket");
+        tickets.MapPost("/{number:int}/transitions", ChangeStatusAsync).WithName("ChangeTicketStatus")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         // The protection against other sites is the X-CSRF header of the application (ADR-0054), not the antiforgery
         // token of ASP.NET Core forms.
         tickets.MapPost("/{number:int}/messages", SendAsync).WithName("SendTicketMessage")
             .DisableAntiforgery()
             .WithMetadata(new RequestSizeLimitAttribute(UploadLimit))
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPost("/{number:int}/attachments", AttachAsync).WithName("AttachToTicketDescription")
             .DisableAntiforgery()
             .WithMetadata(new RequestSizeLimitAttribute(UploadLimit))
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/{number:int}/attachments/{id:guid}", OpenAttachmentAsync).WithName("OpenTicketAttachment")
             .Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
         tickets.MapPut("/{number:int}/following", (int number, HttpContext http, IUserAccess access, FollowTicket follow, CancellationToken cancellationToken) =>
@@ -268,13 +320,68 @@ public static class TicketEndpoints
             ticket.OpenedAt,
             ticket.UpdatedAt,
             [.. details.Messages.Select(message => new TicketMessageResponse(message.Id, message.AuthorId, message.Body, message.SentAt))],
+            [.. details.Events.Select(item => new TicketEventResponse(
+                item.Id, item.Kind, item.ActorId, item.FromStatus, item.ToStatus, item.Action, item.AssigneeId, item.At))],
             [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
             details.Followers,
             details.Mentionable,
             [.. details.Participants.Select(person => new TicketParticipantResponse(person.Id, person.Name, person.Role))],
-            new TicketConversationPermissionsResponse(details.Permissions.CanSend, details.Permissions.CanAttachToDescription),
+            new TicketConversationPermissionsResponse(
+                details.Permissions.CanSend,
+                details.Permissions.CanAttachToDescription,
+                [.. details.Permissions.Actions.Select(action => new TicketActionResponse(action.Action, action.To, action.RequiresMessage))]),
             details.Following));
+    }
+
+    private static async Task<Ok<TicketFlowResponse>> FlowAsync(
+        GetTicketFlow getFlow, TicketAutoCloseSettings autoClose, CancellationToken cancellationToken)
+    {
+        var flow = await getFlow.ExecuteAsync(cancellationToken);
+        return TypedResults.Ok(new TicketFlowResponse(
+            Enum.GetValues<TicketStatus>(),
+            [.. flow.Transitions.Select(transition => new TicketTransitionResponse(
+                transition.From,
+                transition.To,
+                transition.Action,
+                [.. Enum.GetValues<TicketActors>().Where(actor => actor != TicketActors.None && transition.Actors.HasFlag(actor))],
+                transition.RequiresMessage,
+                transition.Automatic))],
+            autoClose.BusinessDays));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangeStatusAsync(
+        int number,
+        TicketTransitionRequest request,
+        HttpContext http,
+        IUserAccess access,
+        ChangeTicketStatus changeStatus,
+        CancellationToken cancellationToken)
+    {
+        if (request.Action is not { } action || !Enum.IsDefined(action))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["action"] = ["The action is one of the flow of the tickets."],
+            });
+        }
+
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await changeStatus.ExecuteAsync(number, action, request.Body, viewer, cancellationToken) switch
+        {
+            StatusChangeOutcome.Done => TypedResults.NoContent(),
+            StatusChangeOutcome.NotFound => TypedResults.NotFound(),
+            StatusChangeOutcome.Forbidden => TypedResults.Forbid(),
+            StatusChangeOutcome.MessageNeeded => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["body"] = ["This action needs a message: the JSON of the editor, not empty, with only paragraphs, lists, bold and links."],
+            }),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Action not allowed now",
+                detail: "The action does not leave the status the ticket is in.",
+                type: TicketProblems.ActionNotAllowedNow),
+        };
     }
 
     private static async Task<Results<Created, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> SendAsync(
@@ -374,6 +481,11 @@ public static class TicketEndpoints
                 title: "Mention refused",
                 detail: "Only the managers of the project and the people involved in the ticket may be mentioned.",
                 type: TicketProblems.MentionRefused),
+            ConversationOutcome.Closed => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket closed",
+                detail: "A closed ticket takes no more messages; a new ticket is opened instead.",
+                type: TicketProblems.TicketClosed),
             _ => TypedResults.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Attachment refused",

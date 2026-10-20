@@ -106,12 +106,23 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
     }
 
     public async Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(
-        IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken) =>
-        await db.TicketMessages.AsNoTracking()
+        IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken)
+    {
+        // The interactions: the messages and the events (ADR-0069).
+        var messages = await db.TicketMessages.AsNoTracking()
             .Where(message => ticketIds.Contains(message.TicketId))
             .GroupBy(message => message.TicketId)
             .Select(group => new { group.Key, Count = group.Count() })
-            .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+            .ToListAsync(cancellationToken);
+        var events = await db.TicketEvents.AsNoTracking()
+            .Where(ticketEvent => ticketIds.Contains(ticketEvent.TicketId))
+            .GroupBy(ticketEvent => ticketEvent.TicketId)
+            .Select(group => new { group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        return messages.Concat(events)
+            .GroupBy(count => count.Key)
+            .ToDictionary(group => group.Key, group => group.Sum(count => count.Count));
+    }
 
     public async Task<IReadOnlyList<TicketMessage>> MessagesAsync(Guid ticketId, CancellationToken cancellationToken) =>
         await db.TicketMessages.AsNoTracking()
@@ -136,6 +147,22 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
         db.TicketMessages.AnyAsync(message => message.TicketId == ticketId, cancellationToken);
 
     public void AddMessage(TicketMessage message) => db.TicketMessages.Add(message);
+
+    public async Task<TicketFlow> FlowAsync(CancellationToken cancellationToken) =>
+        TicketFlow.From(await db.TicketTransitions.AsNoTracking().ToListAsync(cancellationToken));
+
+    public void AddEvent(TicketEvent ticketEvent) => db.TicketEvents.Add(ticketEvent);
+
+    public async Task<IReadOnlyList<TicketEvent>> EventsAsync(Guid ticketId, CancellationToken cancellationToken) =>
+        await db.TicketEvents.AsNoTracking()
+            .Where(ticketEvent => ticketEvent.TicketId == ticketId)
+            .OrderBy(ticketEvent => ticketEvent.At)
+            // The first answer sets the assignee and changes the status at once: the assignee comes first.
+            .ThenBy(ticketEvent => ticketEvent.Kind == TicketEventKind.AssigneeSet ? 0 : 1)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Ticket>> ResolvedAsync(CancellationToken cancellationToken) =>
+        await db.Tickets.Where(ticket => ticket.Status == TicketStatus.Resolved).ToListAsync(cancellationToken);
 
     public void AddAttachment(TicketAttachment attachment) => db.TicketAttachments.Add(attachment);
 

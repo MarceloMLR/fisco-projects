@@ -39,6 +39,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(512)")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(10000)
@@ -70,6 +74,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "User");
 
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
@@ -99,6 +107,8 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProjectId");
 
                     b.HasIndex("RequesterId");
+
+                    b.HasIndex("Status", "ResolvedAt");
 
                     b.ToTable("tickets", "tickets");
 
@@ -147,6 +157,49 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("ticket_attachments", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssigneeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FromStatus")
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ToStatus")
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketId", "At");
+
+                    b.ToTable("ticket_events", "tickets");
 
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
@@ -210,6 +263,156 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Actors")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<bool>("Automatic")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("From")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<bool>("RequiresMessage")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("To")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ticket_transitions", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000001"),
+                            Action = "StartTriage",
+                            Actors = "Attendant",
+                            Automatic = false,
+                            From = "Open",
+                            RequiresMessage = false,
+                            To = "Triage"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000002"),
+                            Action = "FirstResponse",
+                            Actors = "Attendant",
+                            Automatic = true,
+                            From = "Open",
+                            RequiresMessage = true,
+                            To = "InProgress"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000003"),
+                            Action = "StartWork",
+                            Actors = "Attendant",
+                            Automatic = false,
+                            From = "Triage",
+                            RequiresMessage = false,
+                            To = "InProgress"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000004"),
+                            Action = "AskForInformation",
+                            Actors = "Attendant",
+                            Automatic = false,
+                            From = "InProgress",
+                            RequiresMessage = true,
+                            To = "WaitingForRequester"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000005"),
+                            Action = "Reply",
+                            Actors = "Attendant, Requester",
+                            Automatic = true,
+                            From = "WaitingForRequester",
+                            RequiresMessage = true,
+                            To = "InProgress"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000006"),
+                            Action = "Resolve",
+                            Actors = "Attendant",
+                            Automatic = false,
+                            From = "InProgress",
+                            RequiresMessage = false,
+                            To = "Resolved"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000007"),
+                            Action = "ConfirmAndClose",
+                            Actors = "Requester, Manager, Administrator",
+                            Automatic = false,
+                            From = "Resolved",
+                            RequiresMessage = false,
+                            To = "Closed"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000008"),
+                            Action = "AutoClose",
+                            Actors = "System",
+                            Automatic = true,
+                            From = "Resolved",
+                            RequiresMessage = false,
+                            To = "Closed"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000009"),
+                            Action = "Reopen",
+                            Actors = "Requester",
+                            Automatic = false,
+                            From = "Resolved",
+                            RequiresMessage = true,
+                            To = "InProgress"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000010"),
+                            Action = "Cancel",
+                            Actors = "Requester, Manager, Administrator",
+                            Automatic = false,
+                            From = "Open",
+                            RequiresMessage = true,
+                            To = "Closed"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a2-0000-7000-8000-000000000011"),
+                            Action = "Cancel",
+                            Actors = "Requester, Manager, Administrator",
+                            Automatic = false,
+                            From = "Triage",
+                            RequiresMessage = true,
+                            To = "Closed"
+                        });
+                });
+
             modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketAttachment", b =>
                 {
                     b.HasOne("FiscoProjects.Tickets.Domain.TicketMessage", null)
@@ -217,6 +420,15 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketEvent", b =>
+                {
                     b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
                         .WithMany()
                         .HasForeignKey("TicketId")

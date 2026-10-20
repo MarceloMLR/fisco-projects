@@ -106,10 +106,37 @@ public sealed class Ticket : Entity
     /// <summary>The last time anything changed in the ticket.</summary>
     public DateTime UpdatedAt { get; private set; }
 
+    /// <summary>When it was resolved the last time; the automatic closing counts from it (ADR-0024).</summary>
+    public DateTime? ResolvedAt { get; private set; }
+
+    public DateTime? ClosedAt { get; private set; }
+
     public bool IsOpen => OpenStatuses.Contains(Status);
 
     /// <summary>Something changed in the ticket now, such as a new message.</summary>
     public void Touch(DateTime now) => UpdatedAt = now;
+
+    /// <summary>Takes a transition of the flow from the status the ticket is in (ADR-0024).</summary>
+    public void Apply(TicketTransition transition, DateTime now)
+    {
+        ArgumentNullException.ThrowIfNull(transition);
+        if (transition.From != Status)
+        {
+            throw new InvalidOperationException($"The ticket is {Status}, not {transition.From}.");
+        }
+
+        Status = transition.To;
+        ResolvedAt = transition.To == TicketStatus.Resolved ? now : null;
+        ClosedAt = transition.To == TicketStatus.Closed ? now : null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>The person in charge of the ticket from now on (ADR-0068).</summary>
+    public void Assign(Guid assigneeId, DateTime now)
+    {
+        AssigneeId = assigneeId;
+        UpdatedAt = now;
+    }
 
     /// <summary>Keeps the folder of the attachments, made with the first one.</summary>
     public void KeepAttachmentFolder(string folderId) => AttachmentFolderId ??= folderId;

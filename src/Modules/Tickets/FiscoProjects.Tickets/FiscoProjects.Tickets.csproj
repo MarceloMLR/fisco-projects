@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="../../../FiscoProjects.Persistence/FiscoProjects.Persistence.csproj" />
     <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+    <ProjectReference Include="../../Administration/FiscoProjects.Administration.Contracts/FiscoProjects.Administration.Contracts.csproj" />
+    <ProjectReference Include="../../Calendar/FiscoProjects.Calendar.Contracts/FiscoProjects.Calendar.Contracts.csproj" />
     <ProjectReference Include="../../Files/FiscoProjects.Files.Contracts/FiscoProjects.Files.Contracts.csproj" />
     <ProjectReference Include="../../Projects/FiscoProjects.Projects.Contracts/FiscoProjects.Projects.Contracts.csproj" />
     <ProjectReference Include="../../Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />
