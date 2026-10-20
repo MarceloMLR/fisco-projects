@@ -23,4 +23,4 @@
 
 - [x] 5.1 O fim da carga de demonstração com o endereço das telas; testes "Carregar dados de demonstração" e "Dados já carregados"
 - [x] 5.2 `CLAUDE.md` (o `lateDays` e a seção Subtarefas) e o roadmap da Cronograma-4.1
-- [ ] 5.3 Build sem avisos, testes, format, frontend e specs; conferir no navegador, nos temas claro e escuro, no computador e no celular
+- [x] 5.3 Build sem avisos, testes, format, frontend e specs; conferir no navegador, nos temas claro e escuro, no computador e no celular
