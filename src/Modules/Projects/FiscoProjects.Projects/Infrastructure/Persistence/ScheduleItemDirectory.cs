@@ -4,7 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Projects.Infrastructure.Persistence;
 
-/// <summary>The phases, tasks and milestones of a schedule, read from the tables of the module for the other modules (ADR-0047).</summary>
+/// <summary>
+/// The phases, tasks and milestones of a schedule, read from the tables of the module for the other modules (ADR-0047);
+/// a milestone with its day and the day it was reached.
+/// </summary>
 internal sealed class ScheduleItemDirectory(ProjectsDbContext db) : IScheduleItems
 {
     public async Task<IReadOnlyList<ScheduleItemInfo>> ItemsAsync(Guid projectId, CancellationToken cancellationToken)
@@ -17,7 +20,7 @@ internal sealed class ScheduleItemDirectory(ProjectsDbContext db) : IScheduleIte
         var positions = phases.ToDictionary(phase => phase.Id, phase => phase.Position);
         var items = await db.ScheduleItems.AsNoTracking()
             .Where(item => item.ProjectId == projectId)
-            .Select(item => new { item.Id, item.PhaseId, item.Kind, item.Name, item.Start })
+            .Select(item => new { item.Id, item.PhaseId, item.Kind, item.Name, item.Start, item.ReachedOn })
             .ToListAsync(cancellationToken);
         return
         [
@@ -26,10 +29,9 @@ internal sealed class ScheduleItemDirectory(ProjectsDbContext db) : IScheduleIte
                 .OrderBy(item => positions.GetValueOrDefault(item.PhaseId))
                 .ThenBy(item => item.Start)
                 .ThenBy(item => item.Name, StringComparer.CurrentCulture)
-                .Select(item => new ScheduleItemInfo(
-                    item.Id,
-                    item.Kind == ScheduleItemKind.Milestone ? ScheduleItemType.Milestone : ScheduleItemType.Task,
-                    item.Name)),
+                .Select(item => item.Kind == ScheduleItemKind.Milestone
+                    ? new ScheduleItemInfo(item.Id, ScheduleItemType.Milestone, item.Name, item.Start, item.ReachedOn)
+                    : new ScheduleItemInfo(item.Id, ScheduleItemType.Task, item.Name)),
         ];
     }
 }

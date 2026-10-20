@@ -45,6 +45,8 @@ public static class ProjectsModule
         services.AddScoped<ProjectNotices>();
         services.AddScoped<IUpcomingTasks, UpcomingTaskDirectory>();
         services.AddScoped<IScheduleItems, ScheduleItemDirectory>();
+        // The milestones reached by the signed acceptance terms (ADR-0035).
+        services.AddScoped<IScheduleMilestones, ScheduleMilestones>();
         services.AddScoped<IProjectSetupNotices, ProjectSetupNotices>();
         services.AddScoped<GetSchedule>();
         services.AddScoped<AddSchedulePhase>();

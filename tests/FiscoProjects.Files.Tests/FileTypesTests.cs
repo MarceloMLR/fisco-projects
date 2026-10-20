@@ -28,6 +28,26 @@ public sealed class FileTypesTests
         content.Position.Should().Be(0);
     }
 
+    [Theory(DisplayName = "Só PDF")]
+    [InlineData("termo-assinado.pdf", "%PDF-1.7", true)]
+    [InlineData("TERMO.PDF", "%PDF-1.4", true)]
+    [InlineData("termo.pdf", "PK", false)]
+    [InlineData("termo.docx", "%PDF-1.7", false)]
+    [InlineData("termo", "%PDF-1.7", false)]
+    public void Pdf_IsToldByTheNameAndTheStart(string name, string start, bool pdf) =>
+        FileTypes.IsPdf(name, Encoding.ASCII.GetBytes(start)).Should().Be(pdf);
+
+    [Fact(DisplayName = "Conferir o PDF e voltar")]
+    public async Task IsPdfAsync_ReadsTheStartAndGoesBack()
+    {
+        await using var content = new MemoryStream(Encoding.ASCII.GetBytes("%PDF-1.7 e o resto do termo"));
+
+        var pdf = await FileTypes.IsPdfAsync("termo.pdf", content, TestContext.Current.CancellationToken);
+
+        pdf.Should().BeTrue();
+        content.Position.Should().Be(0);
+    }
+
     [Theory(DisplayName = "Tipo do arquivo para o navegador")]
     [InlineData("Especificação.PDF", "application/pdf", true, false)]
     [InlineData("fluxo.png", "image/png", true, false)]

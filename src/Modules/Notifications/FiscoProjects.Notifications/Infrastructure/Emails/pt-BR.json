@@ -60,6 +60,16 @@
       "subject": "Prazo vencido no chamado #{{number}}: {{title}}",
       "body": "O prazo de {{deadline}} do chamado #{{number}}, \"{{title}}\", do projeto {{project}}, venceu em {{dueOn}}.",
       "action": "Abrir o chamado"
+    },
+    "acceptanceRequested": {
+      "subject": "Pedido de aceite: {{title}}",
+      "body": "{{actor}} pediu o seu aceite do marco {{item}}, no projeto {{project}}: \"{{title}}\". Assine o termo em PDF e envie pelo {{installation}}, ou recuse com o motivo.",
+      "action": "Abrir o termo"
+    },
+    "acceptanceReminded": {
+      "subject": "Lembrete do pedido de aceite: {{title}}",
+      "body": "{{actor}} lembrou o pedido de aceite \"{{title}}\", do marco {{item}}, no projeto {{project}}, que espera a sua resposta.",
+      "action": "Abrir o termo"
     }
   },
   "summary": {
@@ -70,17 +80,23 @@
     "note": "Para não receber mais o resumo, desligue em Meu perfil. Os avisos que pedem a sua ação continuam chegando na hora.",
     "sections": {
       "tasks": "Tarefas que vencem nos próximos dias",
+      "pendingAcceptances": "Termos de aceite esperando a sua resposta",
       "tickets": "Chamados que você acompanha",
       "schedule": "Datas alteradas no cronograma",
+      "acceptances": "Termos de aceite",
       "projects": "Projetos"
     },
     "lines": {
       "task": "{{item}}, do projeto {{project}}, termina em {{end}}",
+      "pendingAcceptance": "{{title}}, do projeto {{project}}, pedido em {{requestedOn}}",
       "ticketStatusChanged": "#{{number}} {{title}}: {{from}} → {{to}}, por {{actor}}",
       "ticketStatusChangedBySystem": "#{{number}} {{title}}: {{from}} → {{to}}, fechado automaticamente",
       "ticketClosedWithProject": "#{{number}} {{title}}: fechado com o cancelamento do projeto {{project}}, por {{actor}}",
       "vendorTicketUpdated": "#{{number}} {{title}}: {{actor}} registrou que o chamado no {{vendor}} está {{vendorStatus}}",
       "scheduleDatesChanged": "{{item}}, do projeto {{project}}: agora de {{start}} a {{end}}",
+      "acceptanceSigned": "{{title}}, do projeto {{project}}: termo assinado enviado por {{actor}}",
+      "acceptanceAttached": "{{title}}, do projeto {{project}}: termo assinado anexado por {{actor}}",
+      "acceptanceRefused": "{{title}}, do projeto {{project}}: recusado por {{actor}}",
       "projectMemberAdded": "{{actor}} incluiu você no projeto {{project}} como {{role}}",
       "projectRoleChanged": "{{actor}} mudou o seu papel no projeto {{project}} para {{role}}",
       "projectStatusChanged": "{{actor}} mudou o status do projeto {{project}} para {{status}}"

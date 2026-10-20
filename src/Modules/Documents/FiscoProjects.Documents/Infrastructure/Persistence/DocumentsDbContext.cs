@@ -21,6 +21,10 @@ internal sealed class DocumentsDbContext(DbContextOptions<DocumentsDbContext> op
 
     public DbSet<ProjectLink> Links => Set<ProjectLink>();
 
+    public DbSet<AcceptanceTerm> AcceptanceTerms => Set<AcceptanceTerm>();
+
+    public DbSet<AcceptanceEvent> AcceptanceEvents => Set<AcceptanceEvent>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DocumentsDbContext).Assembly);
 }

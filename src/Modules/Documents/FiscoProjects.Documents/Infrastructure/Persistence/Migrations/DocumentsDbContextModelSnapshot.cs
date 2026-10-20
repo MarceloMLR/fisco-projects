@@ -23,6 +23,122 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("TermId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TermId", "At");
+
+                    b.ToTable("acceptance_events", "documents");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AnsweredAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid?>("AnsweredById")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid?>("DocumentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("FileId")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("MilestoneId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.Property<string>("RefusalReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("RequestedById")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ProjectId", "RecipientId");
+
+                    b.ToTable("acceptance_terms", "documents");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Title");
+                });
+
             modelBuilder.Entity("FiscoProjects.Documents.Domain.DefaultFolder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -351,6 +467,23 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Label", "Title");
                 });
 
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceEvent", b =>
+                {
+                    b.HasOne("FiscoProjects.Documents.Domain.AcceptanceTerm", null)
+                        .WithMany("Events")
+                        .HasForeignKey("TermId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
+                {
+                    b.HasOne("FiscoProjects.Documents.Domain.Document", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("FiscoProjects.Documents.Domain.Document", b =>
                 {
                     b.HasOne("FiscoProjects.Documents.Domain.DocumentFolder", null)
@@ -376,6 +509,11 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("FiscoProjects.Documents.Domain.Document", b =>

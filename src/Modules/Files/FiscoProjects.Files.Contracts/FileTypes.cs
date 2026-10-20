@@ -77,6 +77,23 @@ public static class FileTypes
         return Check(name, size, start.AsSpan(0, read), maxBytes);
     }
 
+    /// <summary>Whether the file is a PDF: the extension .pdf and the start of a PDF, as the acceptance terms take (ADR-0035).</summary>
+    public static bool IsPdf(string name, ReadOnlySpan<byte> start) =>
+        string.Equals(Path.GetExtension(name), ".pdf", StringComparison.OrdinalIgnoreCase) && start.StartsWith("%PDF-"u8);
+
+    /// <summary>
+    /// Whether the file is a PDF, reading its first bytes and going back to the start of the content, which must be
+    /// seekable.
+    /// </summary>
+    public static async Task<bool> IsPdfAsync(string name, Stream content, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var start = new byte[StartLength];
+        var read = await content.ReadAtLeastAsync(start, start.Length, throwOnEndOfStream: false, cancellationToken);
+        content.Position = 0;
+        return IsPdf(name, start.AsSpan(0, read));
+    }
+
     /// <summary>The type of the file by its extension, for the browser; a download of bytes when unknown.</summary>
     public static string ContentTypeOf(string name) =>
         Types.TryGetValue(Path.GetExtension(name), out var type) ? type : Bytes;

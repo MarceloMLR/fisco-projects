@@ -152,6 +152,7 @@ public static class DocumentEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status409Conflict);
         api.MapLinkEndpoints();
+        api.MapAcceptanceEndpoints();
         return api;
     }
 

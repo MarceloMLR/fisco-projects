@@ -50,6 +50,18 @@ public enum NoticeKind
 
     /// <summary>The dates of a task of the person changed, also pushed by another one.</summary>
     ScheduleDatesChanged = 16,
+
+    /// <summary>The acceptance of a milestone was asked of the person (ADR-0035).</summary>
+    AcceptanceRequested = 17,
+
+    /// <summary>The person was reminded of a request of acceptance waiting for the answer.</summary>
+    AcceptanceReminded = 18,
+
+    /// <summary>A term the person asked for, or of a project the person manages, was signed, also attached by someone.</summary>
+    AcceptanceSigned = 19,
+
+    /// <summary>A term the person asked for, or of a project the person manages, was refused.</summary>
+    AcceptanceRefused = 20,
 }
 
 /// <summary>
@@ -106,7 +118,7 @@ public static class NoticeValues
     /// <summary>The number of a ticket.</summary>
     public const string Number = "number";
 
-    /// <summary>The title of a ticket.</summary>
+    /// <summary>The title of a ticket or of an acceptance term.</summary>
     public const string Title = "title";
 
     /// <summary>The code of the project.</summary>
@@ -150,4 +162,7 @@ public static class NoticeValues
 
     /// <summary>Present when a ticket was closed because its project was cancelled (ADR-0043).</summary>
     public const string ClosedWithProject = "closedWithProject";
+
+    /// <summary>Present when the signed term was attached by the Administrator or the manager, not sent by the person (ADR-0095).</summary>
+    public const string Attached = "attached";
 }

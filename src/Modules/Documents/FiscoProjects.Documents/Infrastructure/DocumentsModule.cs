@@ -1,4 +1,5 @@
 using FiscoProjects.Documents.Application;
+using FiscoProjects.Documents.Contracts;
 using FiscoProjects.Documents.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Contracts;
@@ -9,7 +10,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FiscoProjects.Documents.Infrastructure;
 
-/// <summary>Services of the Documents module: the folders, the documents and the links of the projects (ADR-0031, ADR-0032, ADR-0092).</summary>
+/// <summary>
+/// Services of the Documents module: the folders, the documents, the links and the acceptance terms of the projects
+/// (ADR-0031, ADR-0032, ADR-0035, ADR-0092).
+/// </summary>
 public static class DocumentsModule
 {
     public static IServiceCollection AddDocumentsModule(this IServiceCollection services, IConfiguration configuration)
@@ -49,6 +53,24 @@ public static class DocumentsModule
         services.AddScoped<AddLink>();
         services.AddScoped<ChangeLink>();
         services.AddScoped<RemoveLink>();
+        // The acceptance terms (ADR-0035, ADR-0095), with the summary of the closing and the daily summary.
+        services.AddScoped<IAcceptanceStore, AcceptanceStore>();
+        services.AddScoped<IProjectAcceptances, ProjectAcceptances>();
+        services.AddScoped<IPendingAcceptances, PendingAcceptanceDirectory>();
+        services.AddScoped<AcceptanceAreas>();
+        services.AddScoped<AcceptanceViews>();
+        services.AddScoped<AcceptanceFiles>();
+        services.AddScoped<AcceptanceNotices>();
+        services.AddScoped<ListAcceptances>();
+        services.AddScoped<GetAcceptance>();
+        services.AddScoped<OpenAcceptanceFile>();
+        services.AddScoped<ListAcceptanceMilestones>();
+        services.AddScoped<RequestAcceptance>();
+        services.AddScoped<AttachAcceptance>();
+        services.AddScoped<SignAcceptance>();
+        services.AddScoped<RefuseAcceptance>();
+        services.AddScoped<RemindAcceptance>();
+        services.AddScoped<CancelAcceptance>();
         return services;
     }
 }
