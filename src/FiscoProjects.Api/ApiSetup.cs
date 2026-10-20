@@ -10,6 +10,8 @@ using FiscoProjects.Files.Infrastructure;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Endpoints;
 using FiscoProjects.Projects.Infrastructure;
+using FiscoProjects.Tickets.Endpoints;
+using FiscoProjects.Tickets.Infrastructure;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -58,6 +60,7 @@ public static class ApiSetup
         builder.Services.AddAdministrationModule(builder.Configuration);
         builder.Services.AddCalendarModule(builder.Configuration);
         builder.Services.AddProjectsModule(builder.Configuration);
+        builder.Services.AddTicketsModule(builder.Configuration);
 
         return builder;
     }
@@ -86,6 +89,7 @@ public static class ApiSetup
             .MapAdministrationEndpoints()
             .MapCalendarEndpoints()
             .MapProjectsEndpoints()
+            .MapTicketsEndpoints()
             .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();

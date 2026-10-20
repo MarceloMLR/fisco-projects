@@ -122,8 +122,8 @@ A página Chamados MUST ter as visões ao lado da lista, os filtros e "Abrir cha
 
 ### Requirement: Chamados na auditoria
 
-A abertura de um chamado MUST entrar na auditoria como "Chamado", identificada pelo número e pelo título, no contexto do projeto (ADR-0039).
+A abertura de um chamado MUST entrar na auditoria como "Chamado", identificada pelo título, com o número entre os campos, no contexto do projeto (ADR-0039).
 
 #### Scenario: Abertura na auditoria
 - **WHEN** alguém abre um chamado
-- **THEN** a auditoria registra a criação do chamado com o número e o título, no projeto dele
+- **THEN** a auditoria registra a criação do chamado pelo título, com o número, no projeto dele

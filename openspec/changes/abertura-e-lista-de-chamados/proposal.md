@@ -32,7 +32,7 @@ O canvas aprovado desenhou a página Chamados, a aba Chamados do projeto, o "Abr
   - a página **Chamados**, com as visões ao lado, os filtros e a tabela;
   - a aba **Chamados** do projeto, com "Todos", "Em aberto", "Sem responsável" e "Abertos por mim";
   - o **Abrir chamado**, pela página Chamados e pela aba do projeto, com o projeto já preenchido. Nunca pela tela inicial (ADR-0068).
-- **Auditoria:** a abertura entra na auditoria como "Chamado", pelo número e pelo título, no contexto do projeto.
+- **Auditoria:** a abertura entra na auditoria como "Chamado", pelo título, com o número entre os campos, no contexto do projeto.
 - **Dados de demonstração:** chamados fictícios nos projetos, abertos por pessoas diferentes.
 
 ## Non-goals

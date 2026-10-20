@@ -44,7 +44,7 @@ As regras ficam em `TicketAccess`, no domínio do `Tickets`, a partir do papel n
 
 ### 3. Número por sequência do banco
 
-- O número sai da sequência `tickets.ticket_numbers`, pedida na hora de salvar (`NEXT VALUE FOR`, pelo `HasDefaultValueSql`).
+- O número sai da sequência `tickets.ticket_numbers`, pedida pouco antes de salvar (`NEXT VALUE FOR`), para a auditoria da abertura já ter o número.
 - A sequência não repete o número em aberturas simultâneas, sem trava na tabela.
 - Uma abertura que falha depois de pegar o número deixa um buraco na sequência. Isso é aceitável: o ADR-0029 pede números únicos e curtos, não contínuos.
 - **Alternativa:** `MAX(Number) + 1` numa transação serializável. Recusada: trava a tabela a cada abertura e precisa de novas tentativas.
