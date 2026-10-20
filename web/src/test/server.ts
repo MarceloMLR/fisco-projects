@@ -15,6 +15,7 @@ import type {
   Project,
   ProjectMember,
   ProjectRow,
+  ProjectTemplate,
   ProjectScheduleSummary,
   ProjectStatus,
   Schedule,
@@ -1009,6 +1010,57 @@ export function calendarYearOf(calendar: DemoCalendar, year: number): CalendarYe
   };
 }
 
+/**
+ * The models of project of the demonstration (ADR-0017): "Implantação de ERP", active, made from ERP-FIN, and "Revisão
+ * tributária de filial", inactive.
+ */
+export function demoTemplates(): ProjectTemplate[] {
+  const task = (name: string, startOffset: number, duration: number, isSubtask = false) => ({
+    kind: 'Task' as const,
+    name,
+    startOffset,
+    duration,
+    isSubtask,
+  });
+  const milestone = (name: string, startOffset: number) => ({
+    kind: 'Milestone' as const,
+    name,
+    startOffset,
+    duration: 0,
+    isSubtask: false,
+  });
+  return [
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-700000000001',
+      name: 'Implantação de ERP',
+      description: 'Fases de uma implantação de ERP financeiro',
+      isActive: true,
+      phases: [
+        {
+          name: 'Levantamento',
+          items: [task('Reunião de abertura', 0, 1), task('Mapear processos fiscais', 1, 4)],
+        },
+        {
+          name: 'Configuração',
+          items: [
+            task('Parametrizar regras de ICMS', 5, 8),
+            task('Testes integrados', 13, 5),
+            task('Roteiro de testes', 13, 2, true),
+          ],
+        },
+        { name: 'Homologação', items: [milestone('Aceite da homologação', 18)] },
+      ],
+    },
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-700000000002',
+      name: 'Revisão tributária de filial',
+      description: null,
+      isActive: false,
+      phases: [{ name: 'Diagnóstico', items: [task('Levantar obrigações da filial', 0, 5)] }],
+    },
+  ];
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
@@ -1037,6 +1089,10 @@ export const handlers = [
   http.get('/api/people', () => HttpResponse.json([])),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
+  http.get('/api/project-templates', () =>
+    HttpResponse.json(demoTemplates().filter((template) => template.isActive)),
+  ),
+  http.get('/api/admin/project-templates', () => HttpResponse.json(demoTemplates())),
 ];
 
 export const server = setupServer(...handlers);

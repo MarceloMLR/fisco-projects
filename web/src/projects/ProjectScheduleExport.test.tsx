@@ -101,4 +101,30 @@ describe('Exportar o cronograma pela tela', () => {
       `/api/projects/${project.id}/schedule/ms-project`,
     );
   });
+
+  it('Salvar como modelo pela tela', async () => {
+    const bodies: unknown[] = [];
+    server.use(
+      http.post('/api/projects/:id/schedule/template', async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({ id: '0199f5a2-7c1e-7d40-9a1b-700000000009' }, { status: 201 });
+      }),
+    );
+    const menu = await openMore();
+
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.templates.save }));
+    const dialog = await screen.findByRole('dialog', { name: text.templates.saveDialog.title });
+    const name = within(dialog).getByRole('textbox', { name: text.templates.saveDialog.name });
+    // The name of the project comes first.
+    expect(name).toHaveValue(project.name);
+    fireEvent.change(name, { target: { value: 'Implantação de ERP' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.templates.saveDialog.save }));
+
+    expect(
+      await screen.findByText(
+        text.templates.messages.saved.replace('{{name}}', 'Implantação de ERP'),
+      ),
+    ).toBeVisible();
+    expect(bodies).toEqual([{ name: 'Implantação de ERP', description: null }]);
+  });
 });

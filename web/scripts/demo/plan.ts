@@ -71,6 +71,8 @@ export interface DemoProject {
   status?: ProjectStatus;
   /** The manager saves the baseline once the schedule is built, before moving the items with movedTo (ADR-0021). */
   baseline?: boolean;
+  /** The manager saves the schedule as a model of project, with this name and description (ADR-0017). */
+  template?: { name: string; description: string };
   phases: readonly DemoPhase[];
 }
 
@@ -111,6 +113,11 @@ export const demoProjects: readonly DemoProject[] = [
     ],
     status: 'InProgress',
     baseline: true,
+    template: {
+      name: 'Implantação de ERP',
+      description:
+        'Levantamento, configuração, homologação e entrada em produção de um ERP financeiro.',
+    },
     phases: [
       {
         name: 'Levantamento',
@@ -212,6 +219,10 @@ export const demoProjects: readonly DemoProject[] = [
   },
   {
     code: 'TRIB-RS',
+    template: {
+      name: 'Revisão tributária de filial',
+      description: 'Diagnóstico, apuração, revisão e entrega da revisão tributária de uma filial.',
+    },
     name: 'Revisão tributária da filial RS',
     client: 'Beta Alimentos',
     phases: [

@@ -866,4 +866,27 @@ describe('Mudanças do cronograma na auditoria', () => {
       { field: 'Fim', before: '29/10/2026', after: '03/11/2026' },
     ]);
   });
+
+  it('Modelo na auditoria', () => {
+    const field = (name: string, before: string | null, after: string | null) => ({
+      field: name,
+      before,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const deactivated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ProjectTemplate',
+        itemLabel: 'Implantação de ERP',
+        changes: [field('IsActive', 'true', 'false')],
+      }),
+      t,
+    );
+
+    expect(deactivated.title).toBe('Alterou um modelo');
+    expect(deactivated.summary).toBe('Implantação de ERP · situação Ativo → Inativo');
+    expect(deactivated.properties).toEqual([{ label: 'Modelo', value: 'Implantação de ERP' }]);
+  });
 });

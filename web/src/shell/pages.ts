@@ -44,6 +44,7 @@ export type PageTitleKey =
   | 'pages.settings.title'
   | 'pages.calendar.title'
   | 'pages.clients.title'
+  | 'pages.templates.title'
   | 'pages.newProject.title'
   | 'pages.project.title'
   | 'pages.projectSchedule.title'

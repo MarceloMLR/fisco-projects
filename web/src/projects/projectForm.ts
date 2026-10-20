@@ -10,6 +10,9 @@ export const projectFieldErrors = {
   managerRequired: 'projects.errors.managerRequired',
   managerInvalid: 'projects.errors.managerInvalid',
   techLeadInvalid: 'projects.errors.techLeadInvalid',
+  templateRequired: 'projects.errors.templateRequired',
+  templateInvalid: 'projects.errors.templateInvalid',
+  scheduleStartRequired: 'projects.errors.scheduleStartRequired',
 } as const;
 
 export type ProjectFieldError = (typeof projectFieldErrors)[keyof typeof projectFieldErrors];

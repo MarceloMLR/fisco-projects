@@ -181,3 +181,17 @@ describe('Linha de base na demonstração', () => {
     ).toMatchObject([{ name: 'Parametrizar regras de ICMS', day: 8, movedTo: 10 }]);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Modelos na demonstração".
+describe('Modelos na demonstração', () => {
+  it('Modelos na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The manager saves the two models, from ERP-FIN and from TRIB-RS.
+    expect(people(/ POST .*\/schedule\/template$/)).toEqual(['marina']);
+    const names = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/schedule/template'))
+      .flatMap(([, saved]) => saved.map((body) => (body as { name: string }).name));
+    expect(names.sort()).toEqual(['Implantação de ERP', 'Revisão tributária de filial']);
+  });
+});

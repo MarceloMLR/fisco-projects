@@ -60,6 +60,9 @@
     },
     "projectSchedule": {
       "title": "Cronograma"
+    },
+    "templates": {
+      "title": "Modelos de projeto"
     }
   },
   "signIn": {
@@ -197,7 +200,8 @@
       "SchedulePhase": "Fases dos cronogramas",
       "ScheduleItem": "Tarefas e marcos",
       "ScheduleDependency": "Dependências",
-      "ScheduleBaseline": "Linhas de base"
+      "ScheduleBaseline": "Linhas de base",
+      "ProjectTemplate": "Modelos de projeto"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -280,6 +284,11 @@
         "Created": "Salvou a linha de base",
         "Updated": "Atualizou a linha de base",
         "Deleted": "Excluiu a linha de base"
+      },
+      "ProjectTemplate": {
+        "Created": "Salvou um modelo",
+        "Updated": "Alterou um modelo",
+        "Deleted": "Excluiu um modelo"
       }
     },
     "providers": {
@@ -311,7 +320,8 @@
         "SchedulePhase": "Fase",
         "ScheduleItem": "Tarefa ou marco",
         "ScheduleDependency": "Seguinte",
-        "ScheduleBaseline": "Projeto"
+        "ScheduleBaseline": "Projeto",
+        "ProjectTemplate": "Modelo"
       },
       "secret": "Alterado",
       "none": "—",
@@ -385,6 +395,11 @@
         "SavedOn": "Salva em",
         "Start": "Início",
         "End": "Fim"
+      },
+      "ProjectTemplate": {
+        "Name": "Nome",
+        "Description": "Descrição",
+        "IsActive": "Situação"
       }
     },
     "dependsOn": "depende de {{name}}"
@@ -673,7 +688,23 @@
       "create": "Criar projeto",
       "save": "Salvar alterações",
       "noPeople": "Nenhuma pessoa encontrada",
-      "editTitle": "Editar dados do projeto"
+      "editTitle": "Editar dados do projeto",
+      "schedule": "Cronograma",
+      "blank": "Em branco",
+      "blankHelper": "O projeto começa sem cronograma.",
+      "fromTemplate": "A partir de um modelo",
+      "fromTemplateHelper": "O cronograma vem do modelo, a partir do início.",
+      "noTemplates": "Nenhum modelo ativo. Salve um cronograma como modelo pelo menu ⋮ da aba Cronograma.",
+      "template": "Modelo",
+      "scheduleStart": "Início",
+      "preview": "Prévia do cronograma",
+      "previewCounts": "{{tasks}} · {{milestones}}",
+      "previewTasks_one": "{{count}} tarefa",
+      "previewTasks_other": "{{count}} tarefas",
+      "previewMilestones_one": "{{count}} marco",
+      "previewMilestones_other": "{{count}} marcos",
+      "previewMilestone": "Marco: {{name}}",
+      "previewDates": "As datas saem do calendário da instalação ao criar o projeto."
     },
     "errors": {
       "codeInvalid": "Use de 2 a 15 letras, algarismos e hífens, começando por letra, como ERP-FIN.",
@@ -684,7 +715,10 @@
       "clientInvalid": "Escolha um cliente ativo.",
       "managerRequired": "Escolha o gerente.",
       "managerInvalid": "Escolha um gerente de projeto ou administrador ativo.",
-      "techLeadInvalid": "Escolha uma pessoa ativa diferente do gerente."
+      "techLeadInvalid": "Escolha uma pessoa ativa diferente do gerente.",
+      "templateRequired": "Escolha um modelo.",
+      "scheduleStartRequired": "Informe o início do cronograma.",
+      "templateInvalid": "Esse modelo não está mais ativo. Escolha outro."
     },
     "header": {
       "manager": "Gerente",
@@ -1124,6 +1158,78 @@
       "table": "Cronograma para impressão",
       "loading": "Carregando o cronograma…",
       "failed": "Não foi possível carregar o cronograma. Feche a aba e tente de novo."
+    },
+    "templates": {
+      "save": "Salvar como modelo",
+      "saveDialog": {
+        "title": "Salvar como modelo",
+        "text": "O modelo guarda as fases, as tarefas, os marcos, as dependências e as durações, sem datas nem responsáveis.",
+        "name": "Nome do modelo",
+        "description": "Descrição",
+        "optional": "(opcional)",
+        "save": "Salvar modelo",
+        "cancel": "Cancelar"
+      },
+      "errors": {
+        "nameRequired": "Informe o nome do modelo, com até 150 caracteres.",
+        "descriptionTooLong": "A descrição tem até 500 caracteres.",
+        "nameInUse": "Já existe um modelo com esse nome.",
+        "noItems": "Inclua tarefas ou marcos antes de salvar o cronograma como modelo.",
+        "failed": "Não foi possível salvar o modelo. Tente de novo."
+      },
+      "messages": {
+        "saved": "Modelo {{name}} salvo."
+      }
+    }
+  },
+  "templates": {
+    "table": "Modelos de projeto",
+    "empty": "Nenhum modelo. Para criar um, abra o cronograma de um projeto e escolha \"Salvar como modelo\" no menu ⋮.",
+    "columns": {
+      "name": "Modelo",
+      "structure": "Fases e itens",
+      "status": "Situação",
+      "description": "Descrição",
+      "actions": "Ações"
+    },
+    "structure": "{{phases}} · {{items}}",
+    "phases_one": "{{count}} fase",
+    "phases_other": "{{count}} fases",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} itens",
+    "total_one": "{{count}} modelo",
+    "total_other": "{{count}} modelos",
+    "statuses": {
+      "Active": "Ativo",
+      "Inactive": "Inativo"
+    },
+    "menu": {
+      "button": "Ações do modelo {{name}}",
+      "edit": "Editar",
+      "deactivate": "Inativar",
+      "reactivate": "Reativar",
+      "remove": "Excluir"
+    },
+    "dialog": {
+      "title": "Editar modelo",
+      "name": "Nome",
+      "description": "Descrição",
+      "optional": "(opcional)",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "remove": {
+      "title": "Excluir o modelo?",
+      "text": "O modelo {{name}} sai da lista. Os projetos criados a partir dele continuam como estão.",
+      "confirm": "Excluir modelo",
+      "cancel": "Cancelar"
+    },
+    "messages": {
+      "saved": "Modelo {{name}} salvo.",
+      "deactivated": "Modelo {{name}} inativado.",
+      "reactivated": "Modelo {{name}} reativado.",
+      "removed": "Modelo {{name}} excluído.",
+      "failed": "Não foi possível salvar o modelo. Tente de novo."
     }
   }
 }

@@ -512,6 +512,113 @@
         }
       }
     },
+    "/api/projects/{id}/schedule/template": {
+      "post": {
+        "tags": [
+          "Templates"
+        ],
+        "operationId": "SaveScheduleAsTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/project-templates": {
+      "get": {
+        "tags": [
+          "Templates"
+        ],
+        "operationId": "ListTemplates",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/client-settings": {
       "get": {
         "tags": [
@@ -3481,6 +3588,141 @@
           }
         }
       }
+    },
+    "/api/admin/project-templates": {
+      "get": {
+        "tags": [
+          "Templates"
+        ],
+        "operationId": "ListAllTemplates",
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/project-templates/{id}": {
+      "put": {
+        "tags": [
+          "Templates"
+        ],
+        "operationId": "ChangeTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Templates"
+        ],
+        "operationId": "RemoveTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4211,9 +4453,23 @@
               "null",
               "string"
             ]
+          },
+          "templateId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "scheduleStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         },
-        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005)."
+        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the\nschedule is made from it, starting on `scheduleStart` (ADR-0017)."
       },
       "NewScheduleItemRequest": {
         "required": [
@@ -4279,6 +4535,28 @@
           }
         },
         "description": "A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a\nmilestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to\n100 (zero for a milestone), the items it depends on, and the task it goes into, right in the same phase (none for\nright in the phase). The first subtask of a task takes the dependencies of the task (ADR-0088)."
+      },
+      "NewTemplateRequest": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new model from a schedule: its name and, optionally, its description."
       },
       "PersonResponse": {
         "required": [
@@ -5412,6 +5690,128 @@
         ],
         "description": "Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a\nvalid role."
       },
+      "TemplateCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "TemplateItemResponse": {
+        "required": [
+          "kind",
+          "name",
+          "startOffset",
+          "duration",
+          "isSubtask"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startOffset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isSubtask": {
+            "type": "boolean"
+          }
+        },
+        "description": "A task or milestone of a model: its kind, name, duration in business days, how many business days after the start\nit starts, and whether it is a subtask."
+      },
+      "TemplatePhaseResponse": {
+        "required": [
+          "name",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateItemResponse"
+            }
+          }
+        },
+        "description": "A phase of a model with its items in order."
+      },
+      "TemplateRequest": {
+        "required": [
+          "name",
+          "description",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "description": "The name, the description and the situation of a model."
+      },
+      "TemplateResponse": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "isActive",
+          "phases"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplatePhaseResponse"
+            }
+          }
+        },
+        "description": "A model of project: its name, description and situation, and its phases with their items (ADR-0017)."
+      },
       "ThemePreference": {
         "enum": [
           "Automatic",
@@ -5534,6 +5934,9 @@
     },
     {
       "name": "Users"
+    },
+    {
+      "name": "Templates"
     },
     {
       "name": "FiscoProjects.Api"

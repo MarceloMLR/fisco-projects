@@ -180,6 +180,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SaveScheduleAsTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/project-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/client-settings": {
         parameters: {
             query?: never;
@@ -740,6 +772,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/project-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListAllTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/project-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeTemplate"];
+        post?: never;
+        delete: operations["RemoveTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -941,7 +1005,8 @@ export interface components {
         /**
          * @description The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
          *     project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
-         *     the company directory who never signed in, by the `directoryId` of the people search (ADR-0005).
+         *     the company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the
+         *     schedule is made from it, starting on `scheduleStart` (ADR-0017).
          */
         NewProjectRequest: {
             code: null | string;
@@ -954,6 +1019,10 @@ export interface components {
             /** Format: uuid */
             techLeadId: null | string;
             techLeadDirectoryId?: null | string;
+            /** Format: uuid */
+            templateId?: null | string;
+            /** Format: date */
+            scheduleStart?: null | string;
         };
         /**
          * @description A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
@@ -977,6 +1046,11 @@ export interface components {
             predecessorIds: null | string[];
             /** Format: uuid */
             parentId?: null | string;
+        };
+        /** @description A new model from a schedule: its name and, optionally, its description. */
+        NewTemplateRequest: {
+            name: null | string;
+            description: null | string;
         };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
@@ -1360,6 +1434,43 @@ export interface components {
          * @enum {unknown}
          */
         SystemRole: "User" | "ProjectManager" | "Administrator";
+        TemplateCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /**
+         * @description A task or milestone of a model: its kind, name, duration in business days, how many business days after the start
+         *     it starts, and whether it is a subtask.
+         */
+        TemplateItemResponse: {
+            kind: components["schemas"]["ScheduleItemKind"];
+            name: string;
+            /** Format: int32 */
+            startOffset: number;
+            /** Format: int32 */
+            duration: number;
+            isSubtask: boolean;
+        };
+        /** @description A phase of a model with its items in order. */
+        TemplatePhaseResponse: {
+            name: string;
+            items: components["schemas"]["TemplateItemResponse"][];
+        };
+        /** @description The name, the description and the situation of a model. */
+        TemplateRequest: {
+            name: null | string;
+            description: null | string;
+            isActive: boolean;
+        };
+        /** @description A model of project: its name, description and situation, and its phases with their items (ADR-0017). */
+        TemplateResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            isActive: boolean;
+            phases: components["schemas"]["TemplatePhaseResponse"][];
+        };
         /**
          * @description The theme a person chose in the profile (ADR-0014); Automatic follows the operating system.
          * @enum {unknown}
@@ -1826,6 +1937,95 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SaveScheduleAsTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4329,6 +4529,129 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+        };
+    };
+    ListAllTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
