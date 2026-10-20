@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { api } from './client';
 import type { operations } from './schema';
 
@@ -53,6 +53,7 @@ export const queryKeys = {
   ticketDeadlines: ['ticket-deadlines'],
   vendors: ['vendors'],
   email: ['email'],
+  notifications: ['notifications'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -285,6 +286,29 @@ export function emailStatusQuery() {
     queryKey: queryKeys.email,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/email', { signal })),
     refetchInterval: (query) => (query.state.data?.lastTest?.status === 'Pending' ? 5000 : false),
+  });
+}
+
+/** How many notifications of the person are not read, read again every minute (ADR-0038). */
+export function unreadNotificationsQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.notifications, 'unread-count'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/notifications/unread-count', { signal })),
+    refetchInterval: 60_000,
+  });
+}
+
+/** The notifications of the person, the newest first, page by page (ADR-0038). */
+export function notificationsQuery(unread: boolean) {
+  return infiniteQueryOptions({
+    queryKey: [...queryKeys.notifications, 'list', { unread }] as const,
+    initialPageParam: 0,
+    queryFn: ({ pageParam, signal }) =>
+      dataOf(
+        api.GET('/api/notifications', { params: { query: { unread, skip: pageParam } }, signal }),
+      ),
+    getNextPageParam: (last, pages) =>
+      last.hasMore ? pages.reduce((count, page) => count + page.items.length, 0) : undefined,
   });
 }
 

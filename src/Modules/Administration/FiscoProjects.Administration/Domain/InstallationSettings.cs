@@ -6,8 +6,8 @@ namespace FiscoProjects.Administration.Domain;
 
 /// <summary>
 /// The settings of the installation the Administrator changes in General settings (ADR-0003, ADR-0011): the name
-/// shown, the logo, the main color, the time zone and the time of the daily summary. There is one, created with the
-/// database.
+/// shown, the logo, the main color, the time zone, the time of the daily summary and how long the notifications are
+/// kept. There is one, created with the database.
 /// </summary>
 public sealed partial class InstallationSettings : Entity
 {
@@ -23,6 +23,13 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>The time of the daily summary of e-mails while nobody changes it (ADR-0037).</summary>
     public static readonly TimeOnly DefaultDailySummaryAt = new(7, 30);
+
+    /// <summary>How many days the notifications of the bell are kept while nobody changes it (ADR-0038).</summary>
+    public const int DefaultNotificationRetentionDays = 90;
+
+    public const int MinNotificationRetentionDays = 1;
+
+    public const int MaxNotificationRetentionDays = 365;
 
     /// <summary>
     /// Contrast a main color needs with white (ADR-0082): it is the background of the white label of the main button
@@ -44,6 +51,9 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>The time of the daily summary of e-mails, in the time zone of the installation (ADR-0037).</summary>
     public TimeOnly DailySummaryAt { get; private set; } = DefaultDailySummaryAt;
+
+    /// <summary>How many days the notifications of the bell are kept, read or not (ADR-0038).</summary>
+    public int NotificationRetentionDays { get; private set; } = DefaultNotificationRetentionDays;
 
     /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082).</summary>
     public string? MainColor { get; private set; }
@@ -121,6 +131,15 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>The daily summary at the hour and minute, without seconds.</summary>
     public void ChangeDailySummaryAt(TimeOnly at) => DailySummaryAt = new TimeOnly(at.Hour, at.Minute);
+
+    public static bool IsValidNotificationRetention(int days) =>
+        days is >= MinNotificationRetentionDays and <= MaxNotificationRetentionDays;
+
+    public void ChangeNotificationRetention(int days) =>
+        NotificationRetentionDays = IsValidNotificationRetention(days)
+            ? days
+            : throw new ArgumentOutOfRangeException(
+                nameof(days), days, $"The notifications are kept from {MinNotificationRetentionDays} to {MaxNotificationRetentionDays} days.");
 
     public void Rename(string name) =>
         Name = ValidName(name) ?? throw new ArgumentException(

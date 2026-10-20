@@ -5426,6 +5426,151 @@
         }
       }
     },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "description": "The notifications of the person, the newest first, 30 at a time; with unread, only the ones not read.",
+        "operationId": "ListNotifications",
+        "parameters": [
+          {
+            "name": "unread",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "CountUnreadNotifications",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "ReadNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "ReadAllNotifications",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/admin/email": {
       "get": {
         "tags": [
@@ -6119,7 +6264,8 @@
       "GeneralRulesResponse": {
         "required": [
           "timeZone",
-          "dailySummaryAt"
+          "dailySummaryAt",
+          "notificationRetentionDays"
         ],
         "type": "object",
         "properties": {
@@ -6129,9 +6275,13 @@
           "dailySummaryAt": {
             "type": "string",
             "format": "time"
+          },
+          "notificationRetentionDays": {
+            "type": "integer",
+            "format": "int32"
           }
         },
-        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037)."
+        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037), and how many days the notifications are kept (ADR-0038)."
       },
       "HttpValidationProblemDetails": {
         "type": "object",
@@ -6514,6 +6664,95 @@
           }
         },
         "description": "A new vendor, active."
+      },
+      "NoticeKind": {
+        "enum": [
+          "TicketOpened",
+          "TicketMessage",
+          "TicketMentioned",
+          "TicketInformationRequested",
+          "TicketResolved",
+          "TicketAssigned",
+          "TicketRequesterChanged",
+          "TicketTransferred",
+          "TicketDueSoon",
+          "TicketOverdue",
+          "TicketStatusChanged",
+          "VendorTicketUpdated",
+          "ProjectMemberAdded",
+          "ProjectRoleChanged",
+          "ProjectStatusChanged",
+          "ScheduleDatesChanged"
+        ],
+        "description": "What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037."
+      },
+      "NotificationPageResponse": {
+        "required": [
+          "items",
+          "unread",
+          "hasMore"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          },
+          "unread": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "description": "A page of the bell, the newest first, with how many are not read and whether there are older ones."
+      },
+      "NotificationResponse": {
+        "required": [
+          "id",
+          "kind",
+          "actor",
+          "path",
+          "values",
+          "createdAt",
+          "read"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NoticeKind"
+          },
+          "actor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "read": {
+            "type": "boolean"
+          }
+        },
+        "description": "A notification of the bell (ADR-0038): what happened, the current name of who did it (null for the system), the\naddress of the item, its data (codes as the names of the enums, days as yyyy-MM-dd), when it arrived and whether it\nwas read."
       },
       "OutboxEmailStatus": {
         "enum": [
@@ -9025,12 +9264,26 @@
         ],
         "description": "The lists of tickets (ADR-0029, ADR-0068)."
       },
+      "UnreadNotificationsResponse": {
+        "required": [
+          "unread"
+        ],
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many notifications of the person are not read."
+      },
       "UpdateInstallationRequest": {
         "required": [
           "name",
           "timeZone",
           "mainColor",
-          "dailySummaryAt"
+          "dailySummaryAt",
+          "notificationRetentionDays"
         ],
         "type": "object",
         "properties": {
@@ -9052,9 +9305,16 @@
               "string"
             ],
             "format": "time"
+          },
+          "notificationRetentionDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system) and the time of the daily summary (HH:mm:ss, in the time zone)."
+        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone) and how many days the\nnotifications are kept (1 to 365)."
       },
       "UserPageResponse": {
         "required": [

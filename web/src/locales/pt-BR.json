@@ -399,7 +399,8 @@
         "LogoFileName": "Logo",
         "TimeZone": "Fuso horário",
         "MainColor": "Cor principal",
-        "DailySummaryAt": "Horário do resumo diário"
+        "DailySummaryAt": "Horário do resumo diário",
+        "NotificationRetentionDays": "Guardar notificações por"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -515,6 +516,8 @@
     "noTimeZones": "Nenhum fuso encontrado",
     "dailySummaryAt": "Horário do resumo diário",
     "dailySummaryHint": "No fuso da instalação. O resumo sai uma vez por dia, só para quem tem novidades.",
+    "notificationRetention": "Guardar notificações por (dias)",
+    "notificationRetentionHint": "De 1 a 365 dias. As mais antigas saem do sino, lidas ou não.",
     "m365": "Microsoft 365",
     "mailbox": "Caixa de envio",
     "mailboxHint": "Os e-mails do sistema saem por ela.",
@@ -540,7 +543,8 @@
       "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro.",
       "colorFormat": "Use uma cor em hexadecimal, como {{example}}.",
       "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro.",
-      "dailySummaryRequired": "Informe o horário do resumo, como 07:30."
+      "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
+      "retentionRange": "Use de 1 a 365 dias."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",
@@ -1851,5 +1855,58 @@
     "saved": "Prazos salvos. Valem para os chamados abertos a partir de agora.",
     "saveFailed": "Não foi possível salvar os prazos. Tente de novo.",
     "loadFailed": "Não foi possível carregar os prazos. Tente de novo."
+  },
+  "notifications": {
+    "title": "Notificações",
+    "bell": "Notificações",
+    "bellUnread_one": "Notificações, {{count}} não lida",
+    "bellUnread_other": "Notificações, {{count}} não lidas",
+    "show": "Mostrar",
+    "unread": "Não lidas",
+    "all": "Todas",
+    "readAll": "Marcar todas como lidas",
+    "seeAll": "Ver todas",
+    "more": "Mostrar mais",
+    "unreadMark": "Não lida.",
+    "emptyUnread": "Nenhuma notificação não lida.",
+    "empty": "Nenhuma notificação nos últimos dias.",
+    "loadFailed": "Não foi possível carregar as notificações. Tente de novo.",
+    "system": "O sistema",
+    "groups": {
+      "today": "Hoje",
+      "yesterday": "Ontem"
+    },
+    "when": {
+      "now": "agora",
+      "minutes_one": "há {{count}} min",
+      "minutes_other": "há {{count}} min",
+      "hours_one": "há {{count}} h",
+      "hours_other": "há {{count}} h",
+      "yesterday": "ontem, {{time}}",
+      "before": "{{day}}, {{time}}"
+    },
+    "deadlines": {
+      "FirstResponse": "primeira resposta",
+      "Resolution": "resolução"
+    },
+    "kinds": {
+      "ticketOpened": "{{actor}} abriu o chamado #{{number}} para o time {{team}}",
+      "ticketMessage": "{{actor}} respondeu no chamado #{{number}}",
+      "ticketMentioned": "{{actor}} mencionou você no chamado #{{number}}",
+      "ticketInformationRequested": "{{actor}} pediu informações no chamado #{{number}}",
+      "ticketResolved": "O chamado #{{number}} foi resolvido e aguarda a sua confirmação",
+      "ticketAssigned": "{{actor}} passou o chamado #{{number}} para você",
+      "ticketRequesterChanged": "{{actor}} colocou você como solicitante do chamado #{{number}}",
+      "ticketTransferred": "O chamado #{{number}} foi transferido para o time {{team}}",
+      "ticketDueSoon": "O prazo de {{deadline}} do chamado #{{number}} vence em {{dueOn}}",
+      "ticketOverdue": "O prazo de {{deadline}} do chamado #{{number}} venceu em {{dueOn}}",
+      "ticketStatusChanged": "O chamado #{{number}} passou para {{to}}",
+      "ticketClosedWithProject": "O chamado #{{number}} foi fechado com o cancelamento do projeto",
+      "vendorTicketUpdated": "O chamado #{{number}} está {{vendorStatus}} no {{vendor}}",
+      "projectMemberAdded": "{{actor}} incluiu você no projeto {{project}} como {{role}}",
+      "projectRoleChanged": "Seu papel no projeto {{project}} mudou para {{role}}",
+      "projectStatusChanged": "O projeto {{project}} passou para {{status}}",
+      "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}"
+    }
   }
 }

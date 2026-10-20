@@ -42,13 +42,20 @@ const userFields: readonly string[] = ['Name', 'Email', 'Role', 'IsActive'] sati
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
 
-type SettingsField = 'Name' | 'LogoFileName' | 'TimeZone' | 'MainColor' | 'DailySummaryAt';
+type SettingsField =
+  | 'Name'
+  | 'LogoFileName'
+  | 'TimeZone'
+  | 'MainColor'
+  | 'DailySummaryAt'
+  | 'NotificationRetentionDays';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
   'TimeZone',
   'MainColor',
   'DailySummaryAt',
+  'NotificationRetentionDays',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);

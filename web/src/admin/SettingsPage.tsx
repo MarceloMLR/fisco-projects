@@ -33,6 +33,7 @@ const fieldErrors = {
   colorFormat: 'settings.errors.colorFormat',
   colorContrast: 'settings.errors.colorContrast',
   dailySummaryRequired: 'settings.errors.dailySummaryRequired',
+  retentionRange: 'settings.errors.retentionRange',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
@@ -46,6 +47,12 @@ const form = z.object({
   timeZone: z.string().min(1, { error: fieldErrors.timeZoneRequired }),
   // Hours and minutes, in the time zone of the installation (ADR-0037).
   dailySummaryAt: z.string().regex(/^\d{2}:\d{2}$/, { error: fieldErrors.dailySummaryRequired }),
+  // From 1 to 365 days (ADR-0038).
+  notificationRetentionDays: z.coerce
+    .number({ error: fieldErrors.retentionRange })
+    .int({ error: fieldErrors.retentionRange })
+    .min(1, { error: fieldErrors.retentionRange })
+    .max(365, { error: fieldErrors.retentionRange }),
   // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
   mainColor: z
     .string()
@@ -149,7 +156,13 @@ export function SettingsPage() {
     formState: { errors, isDirty, isSubmitting },
   } = useForm<z.input<typeof form>, unknown, z.output<typeof form>>({
     resolver: zodResolver(form),
-    defaultValues: { name: '', timeZone: '', mainColor: '', dailySummaryAt: '' },
+    defaultValues: {
+      name: '',
+      timeZone: '',
+      mainColor: '',
+      dailySummaryAt: '',
+      notificationRetentionDays: '',
+    },
     values:
       installation === undefined || rules === undefined
         ? undefined
@@ -158,6 +171,7 @@ export function SettingsPage() {
             timeZone: rules.timeZone,
             mainColor: installation.mainColor ?? '',
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
+            notificationRetentionDays: String(rules.notificationRetentionDays),
           },
   });
 
@@ -201,75 +215,87 @@ export function SettingsPage() {
     setLogoError(undefined);
   };
 
-  const save = handleSubmit(async ({ name, timeZone, mainColor, dailySummaryAt }) => {
-    // The new logo stays on screen until the brand is read again, so the old one never flashes back.
-    let logoSaved = false;
-    try {
-      if (logo.kind === 'new') {
-        const body = new FormData();
-        body.append('file', logo.file, logo.file.name);
-        const { error, response } = await api.PUT('/api/installation/logo', {
-          body: {},
-          bodySerializer: () => body,
-        });
-        if (response.status === 400 || response.status === 413) {
-          setLogoError(response.status === 413 ? 'logoTooLarge' : logoErrorOf(error?.type));
-          return;
+  const save = handleSubmit(
+    async ({ name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays }) => {
+      // The new logo stays on screen until the brand is read again, so the old one never flashes back.
+      let logoSaved = false;
+      try {
+        if (logo.kind === 'new') {
+          const body = new FormData();
+          body.append('file', logo.file, logo.file.name);
+          const { error, response } = await api.PUT('/api/installation/logo', {
+            body: {},
+            bodySerializer: () => body,
+          });
+          if (response.status === 400 || response.status === 413) {
+            setLogoError(response.status === 413 ? 'logoTooLarge' : logoErrorOf(error?.type));
+            return;
+          }
+          if (!response.ok) {
+            throw new Error(`The API answered ${String(response.status)}.`);
+          }
+        } else if (logo.kind === 'removed') {
+          const { response } = await api.DELETE('/api/installation/logo');
+          if (!response.ok) {
+            throw new Error(`The API answered ${String(response.status)}.`);
+          }
         }
-        if (!response.ok) {
-          throw new Error(`The API answered ${String(response.status)}.`);
-        }
-      } else if (logo.kind === 'removed') {
-        const { response } = await api.DELETE('/api/installation/logo');
-        if (!response.ok) {
-          throw new Error(`The API answered ${String(response.status)}.`);
-        }
-      }
-      logoSaved = logo.kind !== 'saved';
+        logoSaved = logo.kind !== 'saved';
 
-      if (isDirty) {
-        const { error, response } = await api.PUT('/api/installation', {
-          body: { name, timeZone, mainColor, dailySummaryAt: `${dailySummaryAt}:00` },
-        });
-        if (response.status === 400) {
-          // The screen checks the name before sending; the time zone only the server can check.
-          const invalid = invalidFields(error);
-          if (invalid.includes('name')) {
-            setError('name', { message: fieldErrors.nameRequired });
+        if (isDirty) {
+          const { error, response } = await api.PUT('/api/installation', {
+            body: {
+              name,
+              timeZone,
+              mainColor,
+              dailySummaryAt: `${dailySummaryAt}:00`,
+              notificationRetentionDays,
+            },
+          });
+          if (response.status === 400) {
+            // The screen checks the name before sending; the time zone only the server can check.
+            const invalid = invalidFields(error);
+            if (invalid.includes('name')) {
+              setError('name', { message: fieldErrors.nameRequired });
+            }
+            if (invalid.includes('mainColor')) {
+              setError('mainColor', { message: fieldErrors.colorContrast });
+            }
+            if (invalid.includes('dailySummaryAt')) {
+              setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
+            }
+            if (invalid.includes('notificationRetentionDays')) {
+              setError('notificationRetentionDays', { message: fieldErrors.retentionRange });
+            }
+            if (invalid.includes('timeZone') || invalid.length === 0) {
+              setError('timeZone', { message: fieldErrors.timeZoneInvalid });
+            }
+            return;
           }
-          if (invalid.includes('mainColor')) {
-            setError('mainColor', { message: fieldErrors.colorContrast });
+          if (!response.ok) {
+            throw new Error(`The API answered ${String(response.status)}.`);
           }
-          if (invalid.includes('dailySummaryAt')) {
-            setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
-          }
-          if (invalid.includes('timeZone') || invalid.length === 0) {
-            setError('timeZone', { message: fieldErrors.timeZoneInvalid });
-          }
-          return;
         }
-        if (!response.ok) {
-          throw new Error(`The API answered ${String(response.status)}.`);
+        setMessage(t('settings.saved'));
+      } catch {
+        setMessage(t('settings.saveFailed'));
+      } finally {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.installation }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
+        ]);
+        if (logoSaved) {
+          setLogo({ kind: 'saved' });
         }
       }
-      setMessage(t('settings.saved'));
-    } catch {
-      setMessage(t('settings.saveFailed'));
-    } finally {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.installation }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
-      ]);
-      if (logoSaved) {
-        setLogo({ kind: 'saved' });
-      }
-    }
-  });
+    },
+  );
 
   const nameError = errors.name?.message as FieldError | undefined;
   const timeZoneError = errors.timeZone?.message as FieldError | undefined;
   const colorError = errors.mainColor?.message as FieldError | undefined;
   const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
+  const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -488,6 +514,16 @@ export function SettingsPage() {
                       helper={t('settings.dailySummaryHint')}
                       error={summaryError === undefined ? undefined : t(summaryError)}
                       {...register('dailySummaryAt')}
+                    />
+                    <TextField
+                      label={t('settings.notificationRetention')}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={365}
+                      helper={t('settings.notificationRetentionHint')}
+                      error={retentionError === undefined ? undefined : t(retentionError)}
+                      {...register('notificationRetentionDays')}
                     />
                   </Box>
                 </Box>
