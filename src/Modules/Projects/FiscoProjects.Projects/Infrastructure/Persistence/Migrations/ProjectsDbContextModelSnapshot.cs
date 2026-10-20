@@ -173,6 +173,56 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleBaseline", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("SavedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("schedule_baselines", "projects");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "Id")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "Project");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleBaselineItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "ItemId")
+                        .IsUnique();
+
+                    b.ToTable("schedule_baseline_items", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -327,6 +377,24 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleBaseline", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithOne("Baseline")
+                        .HasForeignKey("FiscoProjects.Projects.Domain.ScheduleBaseline", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleBaselineItem", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.ScheduleBaseline", null)
+                        .WithMany("Items")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
                 {
                     b.HasOne("FiscoProjects.Projects.Domain.ScheduleItem", null)
@@ -384,11 +452,18 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
                 {
+                    b.Navigation("Baseline");
+
                     b.Navigation("Dependencies");
 
                     b.Navigation("Items");
 
                     b.Navigation("Phases");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleBaseline", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

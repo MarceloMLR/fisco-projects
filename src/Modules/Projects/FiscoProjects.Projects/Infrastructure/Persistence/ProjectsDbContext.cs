@@ -23,6 +23,8 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<ScheduleDependency> ScheduleDependencies => Set<ScheduleDependency>();
 
+    public DbSet<ScheduleBaseline> ScheduleBaselines => Set<ScheduleBaseline>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }
