@@ -11,6 +11,7 @@ import { ApiError, queryKeys, ticketQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { useDates } from '../format/useDates';
 import { useSession } from '../session/SessionContext';
+import { ProgressBar } from '../components/ProgressBar';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
@@ -20,6 +21,7 @@ import { AttachmentChip, PersonAvatar, TicketConversation } from './TicketConver
 import { TicketReply } from './TicketReply';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { ticketNumberOf } from './tickets';
+import { TicketDue } from './TicketDue';
 
 const tagSx = {
   display: 'inline-flex',
@@ -66,6 +68,85 @@ function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
       sx={{ margin: '0 0 var(--space-2)', fontSize: 13, lineHeight: '18px', fontWeight: 500 }}
     >
       {children}
+    </Box>
+  );
+}
+
+/**
+ * The deadlines of the ticket (canvas Chamado, section Prazos, ADR-0025): the business days used of the resolution,
+ * the resolution, the first answer and how long it waited for the requester.
+ */
+function DeadlinesSection({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation();
+  const { formatDateTime } = useDates();
+  const deadlines = ticket.deadlines;
+  return (
+    <Box
+      component="section"
+      aria-labelledby="ticket-deadlines"
+      sx={{ paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}
+    >
+      <SectionTitle id="ticket-deadlines">{t('tickets.panel.deadlines')}</SectionTitle>
+      {deadlines === null ? (
+        <Box component="span" sx={labelSx}>
+          {t('tickets.panel.noDeadlines')}
+        </Box>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <ProgressBar
+                value={
+                  deadlines.totalDays === 0 ? 0 : (deadlines.usedDays / deadlines.totalDays) * 100
+                }
+                label={t('tickets.panel.usedLabel')}
+              />
+            </Box>
+            <Box
+              component="span"
+              sx={{ ...labelSx, flex: 'none', fontVariantNumeric: 'tabular-nums' }}
+            >
+              {t('tickets.panel.used', { used: deadlines.usedDays, total: deadlines.totalDays })}
+            </Box>
+          </Box>
+          <Box
+            component="dl"
+            sx={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}
+          >
+            <PanelRow label={t('tickets.panel.resolution')}>
+              <TicketDue due={deadlines.resolution} />
+            </PanelRow>
+            {deadlines.firstResponse !== null && (
+              <PanelRow label={t('tickets.panel.firstResponse')}>
+                <TicketDue
+                  due={deadlines.firstResponse}
+                  metText={
+                    deadlines.firstRespondedAt === null
+                      ? undefined
+                      : t('tickets.due.firstMet', {
+                          when: formatDateTime(deadlines.firstRespondedAt),
+                        })
+                  }
+                />
+              </PanelRow>
+            )}
+            <PanelRow label={t('tickets.panel.paused')}>
+              <Box component="span" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                {deadlines.pausedDays === 0
+                  ? t('tickets.panel.neverPaused')
+                  : t('tickets.panel.pausedDays', { count: deadlines.pausedDays })}
+              </Box>
+            </PanelRow>
+          </Box>
+        </>
+      )}
     </Box>
   );
 }
@@ -200,6 +281,7 @@ function SidePanel({
           {ticket.following ? t('tickets.panel.unfollow') : t('tickets.panel.follow')}
         </Button>
       </Box>
+      <DeadlinesSection ticket={ticket} />
       <Box
         component="section"
         aria-labelledby="ticket-attachments"
@@ -363,6 +445,9 @@ export function TicketPage() {
       >
         <TicketStatusBadge status={ticket.status} />
         <PriorityTag priority={ticket.priority} />
+        {ticket.deadlines !== null && ticket.deadlines.resolution.state !== 'Met' && (
+          <TicketDue due={ticket.deadlines.resolution} />
+        )}
         <Box component="span" sx={labelSx}>
           {t('tickets.details.openedBy', {
             name: ticket.requester.name,

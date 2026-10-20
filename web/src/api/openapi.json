@@ -4023,6 +4023,83 @@
         }
       }
     },
+    "/api/tickets/{number}/priority": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeTicketPriority",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketPriorityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tickets/{number}": {
       "get": {
         "tags": [
@@ -4441,6 +4518,100 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/admin/ticket-deadlines": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "GetTicketDeadlines",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketDeadlineSettingResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ChangeTicketDeadlines",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDeadlinesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -6687,7 +6858,8 @@
         "required": [
           "canSend",
           "canAttachToDescription",
-          "actions"
+          "actions",
+          "canChangePriority"
         ],
         "type": "object",
         "properties": {
@@ -6702,9 +6874,12 @@
             "items": {
               "$ref": "#/components/schemas/TicketActionResponse"
             }
+          },
+          "canChangePriority": {
+            "type": "boolean"
           }
         },
-        "description": "What the person may do in the conversation, with the actions of the flow open now."
+        "description": "What the person may do in the conversation, with the actions of the flow open now and the priority."
       },
       "TicketCountsResponse": {
         "required": [
@@ -6766,10 +6941,164 @@
           }
         }
       },
+      "TicketDeadlineSettingRequest": {
+        "required": [
+          "priority",
+          "firstResponseDays",
+          "resolutionDays"
+        ],
+        "type": "object",
+        "properties": {
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
+          "firstResponseDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resolutionDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The deadlines of a priority to save, from 1 to 365 business days."
+      },
+      "TicketDeadlineSettingResponse": {
+        "required": [
+          "priority",
+          "firstResponseDays",
+          "resolutionDays"
+        ],
+        "type": "object",
+        "properties": {
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "firstResponseDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resolutionDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The deadlines of a priority, in business days (ADR-0025)."
+      },
+      "TicketDeadlinesRequest": {
+        "required": [
+          "deadlines"
+        ],
+        "type": "object",
+        "properties": {
+          "deadlines": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TicketDeadlineSettingRequest"
+            }
+          }
+        },
+        "description": "The deadlines of the four priorities, all at once."
+      },
+      "TicketDeadlinesResponse": {
+        "required": [
+          "firstResponse",
+          "firstRespondedAt",
+          "resolution",
+          "usedDays",
+          "totalDays",
+          "pausedDays"
+        ],
+        "type": "object",
+        "properties": {
+          "firstResponse": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketDueResponse"
+              }
+            ]
+          },
+          "firstRespondedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/TicketDueResponse"
+          },
+          "usedDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pausedDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The deadlines of a ticket today (ADR-0025): the first answer (null once the ticket finished without one) and when it\nwas given, the resolution, the business days used of the total and the business days it waited for the requester."
+      },
+      "TicketDueResponse": {
+        "required": [
+          "state",
+          "dueOn",
+          "daysLate"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/TicketDueState"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "Where a deadline stands (ADR-0025): its state, the day it is due and, when overdue, by how many business days."
+      },
+      "TicketDueState": {
+        "enum": [
+          "OnTrack",
+          "Soon",
+          "Overdue",
+          "Paused",
+          "Met"
+        ],
+        "description": "Where a deadline stands today (ADR-0025), for the icon, the color and the text (ADR-0065)."
+      },
       "TicketEventKind": {
         "enum": [
           "StatusChanged",
-          "AssigneeSet"
+          "AssigneeSet",
+          "PriorityChanged"
         ],
         "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
       },
@@ -6782,6 +7111,8 @@
           "to",
           "action",
           "assigneeId",
+          "fromPriority",
+          "toPriority",
           "at"
         ],
         "type": "object",
@@ -6837,6 +7168,26 @@
             ],
             "format": "uuid"
           },
+          "fromPriority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
+          "toPriority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
           "at": {
             "type": "string",
             "format": "date-time"
@@ -6884,7 +7235,8 @@
           "assignee",
           "openedAt",
           "updatedAt",
-          "interactions"
+          "interactions",
+          "resolution"
         ],
         "type": "object",
         "properties": {
@@ -6934,8 +7286,19 @@
           },
           "interactions": {
             "type": "integer",
-            "description": "How many messages the ticket has.",
+            "description": "How many messages and events the ticket has.",
             "format": "int32"
+          },
+          "resolution": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The deadline of the resolution today (ADR-0025); null for a ticket opened before the deadlines.",
+                "$ref": "#/components/schemas/TicketDueResponse"
+              }
+            ]
           }
         },
         "description": "A ticket of a list; without an assignee until someone of the team answers it (ADR-0068)."
@@ -7046,6 +7409,25 @@
         ],
         "description": "How urgent a ticket is, from the lowest to the highest."
       },
+      "TicketPriorityRequest": {
+        "required": [
+          "priority"
+        ],
+        "type": "object",
+        "properties": {
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          }
+        },
+        "description": "A new priority for the ticket."
+      },
       "TicketProjectChoiceResponse": {
         "required": [
           "id",
@@ -7127,7 +7509,8 @@
           "mentionable",
           "participants",
           "permissions",
-          "following"
+          "following",
+          "deadlines"
         ],
         "type": "object",
         "properties": {
@@ -7240,6 +7623,16 @@
           },
           "following": {
             "type": "boolean"
+          },
+          "deadlines": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketDeadlinesResponse"
+              }
+            ]
           }
         },
         "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the\nproject; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be\nmentioned, the parts of the people who appear in it and what the person may do."

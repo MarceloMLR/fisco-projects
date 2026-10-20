@@ -24,6 +24,7 @@ import { AppShell } from './shell/AppShell';
 import { OpenTicketPage } from './tickets/OpenTicketPage';
 import { ProjectTicketsPage } from './tickets/ProjectTicketsPage';
 import { TicketFlowPage } from './tickets/TicketFlowPage';
+import { TicketDeadlinesPage } from './admin/TicketDeadlinesPage';
 import { TicketPage } from './tickets/TicketPage';
 import { TicketsPage } from './tickets/TicketsPage';
 import type { PageHandle } from './shell/pages';
@@ -232,6 +233,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.clients.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'ticket-deadlines',
+                element: <TicketDeadlinesPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.ticketDeadlines.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },

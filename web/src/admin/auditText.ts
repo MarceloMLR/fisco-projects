@@ -170,6 +170,9 @@ const ticketFields: readonly string[] = [
 ] satisfies TicketField[];
 
 const isTicketField = (field: string): field is TicketField => ticketFields.includes(field);
+type TicketDeadlineField = 'FirstResponseDays' | 'ResolutionDays';
+const isTicketDeadlineField = (field: string): field is TicketDeadlineField =>
+  field === 'FirstResponseDays' || field === 'ResolutionDays';
 const isTicketTeam = (value: string): value is TicketTeam =>
   ticketTeams.some((team) => team === value);
 const isTicketPriority = (value: string): value is TicketPriority =>
@@ -285,8 +288,18 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   return value;
 }
 
-/** The item as the screen names it: a calculated holiday by its translated name, every other by its label. */
+/**
+ * The item as the screen names it: a calculated holiday by its translated name, the deadlines of the tickets by the
+ * priority, every other by its label.
+ */
 function labelOf(entry: AuditEntry, t: TFunction): string | null {
+  if (
+    entry.itemType === 'TicketDeadlineSetting' &&
+    entry.itemLabel !== null &&
+    isTicketPriority(entry.itemLabel)
+  ) {
+    return t(`tickets.priorities.${entry.itemLabel}`);
+  }
   return entry.itemType === 'CalculatedHoliday' && entry.itemLabel !== null
     ? calculatedHolidayName(entry.itemLabel, t)
     : entry.itemLabel;
@@ -340,6 +353,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'Ticket' && isTicketField(field)) {
     return t(`audit.fields.Ticket.${field}`);
   }
+  if (entry.itemType === 'TicketDeadlineSetting' && isTicketDeadlineField(field)) {
+    return t(`audit.fields.TicketDeadlineSetting.${field}`);
+  }
   return field;
 }
 
@@ -383,6 +399,10 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
+  }
+  // The deadlines of a priority, changed by the Administrator (ADR-0025).
+  if (entry.itemType === 'TicketDeadlineSetting') {
+    return t('audit.actions.TicketDeadlineSetting.Updated');
   }
   // A ticket of a project, opened (ADR-0029).
   if (entry.itemType === 'Ticket') {
@@ -581,6 +601,9 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.details.item.ProjectMember'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
+  }
+  if (entry.itemType === 'TicketDeadlineSetting') {
+    return [{ label: t('audit.details.item.TicketDeadlineSetting'), value: label }];
   }
   if (entry.itemType === 'Ticket') {
     return [

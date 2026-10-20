@@ -2,6 +2,7 @@ import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
+import HourglassEmptyOutlined from '@mui/icons-material/HourglassEmptyOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import Box from '@mui/material/Box';
@@ -39,6 +40,12 @@ const sections = [
         path: '/admin/calendar',
         labelKey: 'pages.calendar.title',
         icon: CalendarTodayOutlined,
+        count: null,
+      },
+      {
+        path: '/admin/ticket-deadlines',
+        labelKey: 'pages.ticketDeadlines.title',
+        icon: HourglassEmptyOutlined,
         count: null,
       },
     ],
