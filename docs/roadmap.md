@@ -81,7 +81,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-5 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021, 0043, 0067, 0071 | Concluída em 20/10/2026 ([#32](https://github.com/MarceloMLR/fisco-projects/pull/32)) |
 | Cronograma-6 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021, 0071, 0091 | Concluída em 20/10/2026 ([#33](https://github.com/MarceloMLR/fisco-projects/pull/33)) |
 | Cronograma-7 | `exportar-cronograma` | PDF e XML do MS Project | 0021, 0043, 0051, 0071 | Concluída em 20/10/2026 ([#34](https://github.com/MarceloMLR/fisco-projects/pull/34)) |
-| Cronograma-8 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017 | Planejada |
+| Cronograma-8 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017, 0043, 0046 | Em andamento |
 
 ## 5. Chamados
 
