@@ -10,6 +10,11 @@ import {
   type ScheduleItemKind,
   systemRoles,
   type SystemRole,
+  ticketPriorities,
+  type TicketPriority,
+  type TicketStatus,
+  type TicketTeam,
+  ticketTeams,
   weekdays,
 } from '../api/client';
 import { formatCnpj } from '../format/cnpj';
@@ -142,6 +147,43 @@ const projectTemplateFields: readonly string[] = [
 const isProjectTemplateField = (field: string): field is ProjectTemplateField =>
   projectTemplateFields.includes(field);
 
+type TicketField =
+  | 'Number'
+  | 'ProjectId'
+  | 'Team'
+  | 'Priority'
+  | 'Title'
+  | 'Description'
+  | 'Status'
+  | 'RequesterId'
+  | 'AssigneeId';
+const ticketFields: readonly string[] = [
+  'Number',
+  'ProjectId',
+  'Team',
+  'Priority',
+  'Title',
+  'Description',
+  'Status',
+  'RequesterId',
+  'AssigneeId',
+] satisfies TicketField[];
+
+const isTicketField = (field: string): field is TicketField => ticketFields.includes(field);
+const isTicketTeam = (value: string): value is TicketTeam =>
+  ticketTeams.some((team) => team === value);
+const isTicketPriority = (value: string): value is TicketPriority =>
+  ticketPriorities.some((priority) => priority === value);
+const ticketStatuses: readonly string[] = [
+  'Open',
+  'Triage',
+  'InProgress',
+  'WaitingForRequester',
+  'Resolved',
+  'Closed',
+] satisfies TicketStatus[];
+const isTicketStatus = (value: string): value is TicketStatus => ticketStatuses.includes(value);
+
 type ScheduleBaselineField = 'SavedOn' | 'Start' | 'End';
 const scheduleBaselineFields: readonly string[] = [
   'SavedOn',
@@ -231,6 +273,15 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'ProjectTemplate' && field === 'IsActive') {
     return t(value === 'true' ? 'templates.statuses.Active' : 'templates.statuses.Inactive');
   }
+  if (entry.itemType === 'Ticket' && field === 'Team' && isTicketTeam(value)) {
+    return t(`tickets.teams.${value}`);
+  }
+  if (entry.itemType === 'Ticket' && field === 'Priority' && isTicketPriority(value)) {
+    return t(`tickets.priorities.${value}`);
+  }
+  if (entry.itemType === 'Ticket' && field === 'Status' && isTicketStatus(value)) {
+    return t(`tickets.statuses.${value}`);
+  }
   return value;
 }
 
@@ -286,6 +337,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'ProjectTemplate' && isProjectTemplateField(field)) {
     return t(`audit.fields.ProjectTemplate.${field}`);
   }
+  if (entry.itemType === 'Ticket' && isTicketField(field)) {
+    return t(`audit.fields.Ticket.${field}`);
+  }
   return field;
 }
 
@@ -329,6 +383,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
+  }
+  // A ticket of a project, opened (ADR-0029).
+  if (entry.itemType === 'Ticket') {
+    return t(
+      `audit.actions.Ticket.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
   }
   // A model of project, saved from a schedule, changed and removed (ADR-0017).
   if (entry.itemType === 'ProjectTemplate') {
@@ -519,6 +579,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'ProjectMember') {
     return [
       { label: t('audit.details.item.ProjectMember'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'Ticket') {
+    return [
+      { label: t('audit.details.item.Ticket'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

@@ -889,4 +889,43 @@ describe('Mudanças do cronograma na auditoria', () => {
     expect(deactivated.summary).toBe('Implantação de ERP · situação Ativo → Inativo');
     expect(deactivated.properties).toEqual([{ label: 'Modelo', value: 'Implantação de ERP' }]);
   });
+  // Spec: chamados, requirement "Chamados na auditoria".
+  it('Abertura do chamado na auditoria', () => {
+    const field = (name: string, after: string | null) => ({
+      field: name,
+      before: null,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const opened = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'Ticket',
+        itemLabel: 'Rejeição 539 ao emitir nota de devolução',
+        changes: [
+          field('Number', '104'),
+          field('ProjectId', 'Implantação do ERP financeiro'),
+          field('Team', 'Development'),
+          field('Priority', 'High'),
+          field('Status', 'Open'),
+        ],
+      }),
+      t,
+    );
+
+    expect(opened.title).toBe('Abriu um chamado');
+    expect(opened.properties).toEqual([
+      { label: 'Chamado', value: 'Rejeição 539 ao emitir nota de devolução' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(opened.changes).toEqual(
+      expect.arrayContaining([
+        { field: 'Número', before: '—', after: '104' },
+        { field: 'Time', before: '—', after: 'Desenvolvimento' },
+        { field: 'Prioridade', before: '—', after: 'Alta' },
+        { field: 'Status', before: '—', after: 'Aberto' },
+      ]),
+    );
+  });
 });

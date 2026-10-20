@@ -2,10 +2,12 @@ import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useQuery } from '@tanstack/react-query';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
+import { ticketCountsQuery } from '../api/queries';
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
 import { theme } from '../theme/theme';
@@ -19,7 +21,7 @@ const namesWith = (project: Project, role: Project['members'][number]['role']) =
     .join(', ');
 
 /** The tabs of a project, each at its own address under the project. */
-export type ProjectTab = 'overview' | 'schedule' | 'members';
+export type ProjectTab = 'overview' | 'schedule' | 'tickets' | 'members';
 
 const tabSx = {
   position: 'relative',
@@ -86,6 +88,8 @@ export function ProjectHeader({
   onOpenActions?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   const { t } = useTranslation();
+  // The count of the tab Chamados: all the tickets of the project, any status (canvas ProjetoChamados).
+  const tickets = useQuery(ticketCountsQuery(project.id)).data?.all;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -269,6 +273,22 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectSchedule.title')}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/tickets`}
+          role="tab"
+          id="project-tab-tickets"
+          aria-selected={tab === 'tickets'}
+          aria-controls={tab === 'tickets' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectTickets.title')}
+          {tickets !== undefined && (
+            <Box component="span" sx={countSx}>
+              {tickets}
+            </Box>
+          )}
         </Box>
         <Box
           component={Link}

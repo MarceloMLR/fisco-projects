@@ -63,6 +63,15 @@
     },
     "templates": {
       "title": "Modelos de projeto"
+    },
+    "projectTickets": {
+      "title": "Chamados"
+    },
+    "newTicket": {
+      "title": "Abrir chamado"
+    },
+    "ticket": {
+      "title": "Chamado"
     }
   },
   "signIn": {
@@ -201,7 +210,8 @@
       "ScheduleItem": "Tarefas e marcos",
       "ScheduleDependency": "Dependências",
       "ScheduleBaseline": "Linhas de base",
-      "ProjectTemplate": "Modelos de projeto"
+      "ProjectTemplate": "Modelos de projeto",
+      "Ticket": "Chamados"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -289,6 +299,11 @@
         "Created": "Salvou um modelo",
         "Updated": "Alterou um modelo",
         "Deleted": "Excluiu um modelo"
+      },
+      "Ticket": {
+        "Created": "Abriu um chamado",
+        "Updated": "Alterou um chamado",
+        "Deleted": "Excluiu um chamado"
       }
     },
     "providers": {
@@ -321,7 +336,8 @@
         "ScheduleItem": "Tarefa ou marco",
         "ScheduleDependency": "Seguinte",
         "ScheduleBaseline": "Projeto",
-        "ProjectTemplate": "Modelo"
+        "ProjectTemplate": "Modelo",
+        "Ticket": "Chamado"
       },
       "secret": "Alterado",
       "none": "—",
@@ -400,6 +416,17 @@
         "Name": "Nome",
         "Description": "Descrição",
         "IsActive": "Situação"
+      },
+      "Ticket": {
+        "Number": "Número",
+        "ProjectId": "Projeto",
+        "Team": "Time",
+        "Priority": "Prioridade",
+        "Title": "Título",
+        "Description": "Descrição",
+        "Status": "Status",
+        "RequesterId": "Solicitante",
+        "AssigneeId": "Responsável"
       }
     },
     "dependsOn": "depende de {{name}}"
@@ -1230,6 +1257,111 @@
       "reactivated": "Modelo {{name}} reativado.",
       "removed": "Modelo {{name}} excluído.",
       "failed": "Não foi possível salvar o modelo. Tente de novo."
+    }
+  },
+  "tickets": {
+    "views": {
+      "label": "Visões",
+      "AssignedToMe": "Atribuídos a mim",
+      "UnassignedInMyTeams": "Sem responsável nos meus times",
+      "OpenedByMe": "Abertos por mim",
+      "All": "Todos os abertos"
+    },
+    "viewLabel": "Visão",
+    "segments": {
+      "all": "Todos",
+      "open": "Em aberto",
+      "unassigned": "Sem responsável",
+      "openedByMe": "Abertos por mim"
+    },
+    "open": "Abrir chamado",
+    "search": "Buscar por número ou título",
+    "projectFilter": "Projeto",
+    "allProjects": "Todos os projetos",
+    "teamFilter": "Time",
+    "allTeams": "Todos os times",
+    "situationFilter": "Situação",
+    "situations": {
+      "Open": "Em aberto",
+      "Finished": "Encerrados",
+      "All": "Todos"
+    },
+    "table": "Lista de chamados",
+    "columns": {
+      "number": "Nº",
+      "title": "Título",
+      "status": "Status",
+      "assignee": "Responsável",
+      "priority": "Prioridade"
+    },
+    "row": "{{team}} · aberto por {{name}}",
+    "projectRow": "{{team}} · aberto por {{name}} em {{day}}",
+    "number": "#{{number}}",
+    "noAssignee": "Sem responsável",
+    "teams": {
+      "Functional": "Funcional",
+      "Development": "Desenvolvimento"
+    },
+    "priorities": {
+      "Low": "Baixa",
+      "Medium": "Média",
+      "High": "Alta",
+      "Critical": "Crítica"
+    },
+    "statuses": {
+      "Open": "Aberto",
+      "Triage": "Em triagem",
+      "InProgress": "Em andamento",
+      "WaitingForRequester": "Aguardando solicitante",
+      "Resolved": "Resolvido",
+      "Closed": "Fechado"
+    },
+    "total_one": "{{count}} chamado",
+    "total_other": "{{count}} chamados",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "empty": "Nenhum chamado nesta visão.",
+    "emptyFiltered": "Nenhum chamado com esses filtros.",
+    "loadFailed": "Não foi possível carregar os chamados. Tente de novo.",
+    "form": {
+      "project": "Projeto",
+      "projectPlaceholder": "Escolha o projeto",
+      "team": "Time",
+      "priority": "Prioridade",
+      "title": "Título",
+      "description": "Descrição",
+      "submit": "Abrir chamado",
+      "cancel": "Cancelar",
+      "noTeams": "Ninguém atende chamados neste projeto. Inclua colaboradores ou desenvolvedores na aba Membros.",
+      "noProjects": "Você não está em nenhum projeto aberto que receba chamados."
+    },
+    "errors": {
+      "projectRequired": "Escolha o projeto.",
+      "teamRequired": "Escolha o time.",
+      "priorityRequired": "Escolha a prioridade.",
+      "titleRequired": "Digite o título.",
+      "titleTooLong": "Use até 200 caracteres.",
+      "descriptionRequired": "Descreva o que aconteceu.",
+      "descriptionTooLong": "Use até 10.000 caracteres.",
+      "projectClosed": "O projeto está encerrado e não recebe chamados. Reabra o projeto para abrir chamados.",
+      "forbidden": "Você não pode abrir chamados neste projeto.",
+      "failed": "Não foi possível abrir o chamado. Tente de novo."
+    },
+    "opened": "Chamado #{{number}} aberto.",
+    "details": {
+      "openedBy": "Aberto por {{name}} em {{when}}",
+      "description": "Descrição",
+      "requesterTag": "Solicitante",
+      "people": "Pessoas",
+      "requester": "Solicitante",
+      "assignee": "Responsável",
+      "team": "Time",
+      "manager": "Gerente",
+      "techLead": "Líder técnico",
+      "project": "Projeto",
+      "updated": "Atualizado",
+      "none": "—",
+      "notFound": "Chamado não encontrado. Ele pode não existir ou estar num projeto de que você não participa.",
+      "loadFailed": "Não foi possível carregar o chamado. Tente de novo."
     }
   }
 }

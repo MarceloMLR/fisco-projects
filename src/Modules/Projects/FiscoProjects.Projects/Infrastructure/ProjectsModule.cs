@@ -1,5 +1,6 @@
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Application;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Infrastructure.Persistence;
 using FiscoProjects.SharedKernel;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +11,8 @@ namespace FiscoProjects.Projects.Infrastructure;
 
 /// <summary>
 /// Services of the Projects module: the clients (ADR-0015), the projects and the people in them (ADR-0016, ADR-0072),
-/// the schedules (ADR-0018 to ADR-0020), and the names of all of them for the audit (ADR-0084).
+/// the schedules (ADR-0018 to ADR-0020), the names of all of them for the audit (ADR-0084) and who is in each project,
+/// for the other modules (<see cref="IProjectAccess"/>).
 /// </summary>
 public static class ProjectsModule
 {
@@ -21,6 +23,7 @@ public static class ProjectsModule
         services.AddScoped<IClientStore, ClientStore>();
         services.AddScoped<IProjectStore, ProjectStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
+        services.AddScoped<IProjectAccess, ProjectAccessDirectory>();
         services.AddScoped<IAuditReferenceNames, ProjectReferenceNames>();
         services.AddScoped<IAuditReferenceNames, ClientReferenceNames>();
         services.AddScoped<IAuditReferenceNames, SchedulePhaseReferenceNames>();

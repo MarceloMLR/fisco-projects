@@ -49,6 +49,9 @@ export type PageTitleKey =
   | 'pages.project.title'
   | 'pages.projectSchedule.title'
   | 'pages.projectMembers.title'
+  | 'pages.projectTickets.title'
+  | 'pages.newTicket.title'
+  | 'pages.ticket.title'
   | 'pages.profile.title';
 
 /**

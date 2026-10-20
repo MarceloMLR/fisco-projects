@@ -804,6 +804,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListTickets"];
+        put?: never;
+        post: operations["OpenTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CountTickets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListTicketChoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTicket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1050,6 +1114,15 @@ export interface components {
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
             name: null | string;
+            description: null | string;
+        };
+        /** @description A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). */
+        NewTicketRequest: {
+            /** Format: uuid */
+            projectId: null | string;
+            team: null | components["schemas"]["TicketTeam"];
+            priority: null | components["schemas"]["TicketPriority"];
+            title: null | string;
             description: null | string;
         };
         /**
@@ -1476,6 +1549,130 @@ export interface components {
          * @enum {unknown}
          */
         ThemePreference: "Automatic" | "Light" | "Dark";
+        /**
+         * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
+         *     without an assignee in the teams of the person, in charge of the person and opened by the person.
+         */
+        TicketCountsResponse: {
+            /** Format: int32 */
+            all: number;
+            /** Format: int32 */
+            open: number;
+            /** Format: int32 */
+            unassigned: number;
+            /** Format: int32 */
+            unassignedInMyTeams: number;
+            /** Format: int32 */
+            assignedToMe: number;
+            /** Format: int32 */
+            openedByMe: number;
+        };
+        TicketCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+        };
+        /** @description A ticket of a list; without an assignee until someone of the team answers it (ADR-0068). */
+        TicketListItemResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            title: string;
+            project: components["schemas"]["TicketProjectResponse"];
+            team: components["schemas"]["TicketTeam"];
+            priority: components["schemas"]["TicketPriority"];
+            status: components["schemas"]["TicketStatus"];
+            requester: components["schemas"]["TicketPersonResponse"];
+            assignee: null | components["schemas"]["TicketPersonResponse"];
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        TicketPageResponse: {
+            items: components["schemas"]["TicketListItemResponse"][];
+            /** Format: int32 */
+            total: number;
+        };
+        /** @description A person of a ticket. */
+        TicketPersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /**
+         * @description How urgent a ticket is, from the lowest to the highest.
+         * @enum {unknown}
+         */
+        TicketPriority: "Low" | "Medium" | "High" | "Critical";
+        /**
+         * @description A project the person sees, for the filters and the opening: whether it is closed, whether the person may open
+         *     tickets in it and the teams with someone to serve them (ADR-0068).
+         */
+        TicketProjectChoiceResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            isClosed: boolean;
+            canOpen: boolean;
+            teams: components["schemas"]["TicketTeam"][];
+        };
+        /** @description The project of a ticket: the screens show the code beside the number (ADR-0029). */
+        TicketProjectResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+        };
+        /** @description A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the project. */
+        TicketResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            number: number;
+            title: string;
+            description: string;
+            project: components["schemas"]["TicketProjectResponse"];
+            team: components["schemas"]["TicketTeam"];
+            priority: components["schemas"]["TicketPriority"];
+            status: components["schemas"]["TicketStatus"];
+            requester: components["schemas"]["TicketPersonResponse"];
+            assignee: null | components["schemas"]["TicketPersonResponse"];
+            managers: components["schemas"]["TicketPersonResponse"][];
+            techLeads: components["schemas"]["TicketPersonResponse"][];
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @description Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all.
+         * @enum {unknown}
+         */
+        TicketSituation: "Open" | "Finished" | "All";
+        /**
+         * @description The order of a list: by the priority, the highest first and the oldest first in each, or by the number.
+         * @enum {unknown}
+         */
+        TicketSort: "Priority" | "Number";
+        /**
+         * @description The status of a ticket (ADR-0024). A ticket is opened as Open; the flow between them comes from a table.
+         * @enum {unknown}
+         */
+        TicketStatus: "Open" | "Triage" | "InProgress" | "WaitingForRequester" | "Resolved" | "Closed";
+        /**
+         * @description The team a ticket goes to (ADR-0068): only these two, without queues.
+         * @enum {unknown}
+         */
+        TicketTeam: "Functional" | "Development";
+        /**
+         * @description The lists of tickets (ADR-0029, ADR-0068).
+         * @enum {unknown}
+         */
+        TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe";
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
          *     null for the color of the design system).
@@ -4639,6 +4836,234 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListTickets: {
+        parameters: {
+            query?: {
+                /** @description All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned or OpenedByMe. */
+                view?: components["schemas"]["TicketView"];
+                /** @description Only the tickets of this project. */
+                projectId?: string;
+                /** @description Only the tickets of this team. */
+                team?: components["schemas"]["TicketTeam"];
+                /** @description Open (the default: not resolved nor closed), Finished (resolved and closed) or All. */
+                situation?: components["schemas"]["TicketSituation"];
+                /** @description The number, with or without #, or part of the title or of the description, without telling case or accents apart. */
+                search?: string;
+                /** @description Priority (the default, the oldest first in each) or Number. */
+                sort?: components["schemas"]["TicketSort"];
+                /** @description From the highest priority or number to the lowest (the default). */
+                descending?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketPageResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    OpenTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewTicketRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CountTickets: {
+        parameters: {
+            query?: {
+                /** @description Only the tickets of this project. */
+                projectId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketCountsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListTicketChoices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketProjectChoiceResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

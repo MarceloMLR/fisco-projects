@@ -19,9 +19,12 @@ import { ProjectsPage } from './projects/ProjectsPage';
 import { RequireProjectCreator } from './projects/RequireProjectCreator';
 import { ProfilePage } from './profile/ProfilePage';
 import { SignInPage } from './pages/SignInPage';
-import { TicketsPage } from './pages/TicketsPage';
 import { RequireSession } from './session/RequireSession';
 import { AppShell } from './shell/AppShell';
+import { OpenTicketPage } from './tickets/OpenTicketPage';
+import { ProjectTicketsPage } from './tickets/ProjectTicketsPage';
+import { TicketPage } from './tickets/TicketPage';
+import { TicketsPage } from './tickets/TicketsPage';
 import type { PageHandle } from './shell/pages';
 
 // Every screen and its address (ADR-0077). Paths are in English (ADR-0074).
@@ -104,6 +107,18 @@ export const routes: RouteObject[] = [
                 } satisfies PageHandle,
               },
               {
+                path: 'tickets',
+                element: <ProjectTicketsPage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectTickets.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
                 path: 'members',
                 element: <ProjectMembersPage />,
                 handle: {
@@ -118,9 +133,36 @@ export const routes: RouteObject[] = [
             ],
           },
           {
+            path: 'projects/:projectId/tickets/new',
+            element: <OpenTicketPage />,
+            handle: {
+              navigation: 'projects',
+              titleKey: 'pages.newTicket.title',
+              trail: [{ titleKey: 'pages.projects.title', path: '/projects' }, { project: true }],
+            } satisfies PageHandle,
+          },
+          {
             path: 'tickets',
             element: <TicketsPage />,
             handle: { navigation: 'tickets', titleKey: 'pages.tickets.title' } satisfies PageHandle,
+          },
+          {
+            path: 'tickets/new',
+            element: <OpenTicketPage />,
+            handle: {
+              navigation: 'tickets',
+              titleKey: 'pages.newTicket.title',
+              trail: [{ titleKey: 'pages.tickets.title', path: '/tickets' }],
+            } satisfies PageHandle,
+          },
+          {
+            path: 'tickets/:number',
+            element: <TicketPage />,
+            handle: {
+              navigation: 'tickets',
+              titleKey: 'pages.ticket.title',
+              trail: [{ titleKey: 'pages.tickets.title', path: '/tickets' }],
+            } satisfies PageHandle,
           },
           // My profile is reached from the account menu (and the phone menu); it is no item of the sidebar.
           {

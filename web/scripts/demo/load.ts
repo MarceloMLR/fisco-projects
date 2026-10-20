@@ -166,8 +166,12 @@ export async function loadDemo(
   for (const project of demoProjects) {
     items += await loadProject(project, firstDay, admin.api, clients, personOf);
   }
+  const tickets = demoProjects.reduce(
+    (total, project) => total + (project.tickets?.length ?? 0),
+    0,
+  );
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}.`,
+    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, e ${String(tickets)} chamados.`,
   );
   log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
@@ -289,6 +293,22 @@ async function loadProject(
         body: project.template,
       }),
       `Modelo ${project.template.name}`,
+    );
+  }
+
+  // Each ticket opened by its person, while the project is open (ADR-0022).
+  for (const ticket of project.tickets ?? []) {
+    done(
+      await personOf(ticket.by).api.POST('/api/tickets', {
+        body: {
+          projectId: id,
+          team: ticket.team,
+          priority: ticket.priority,
+          title: ticket.title,
+          description: ticket.description,
+        },
+      }),
+      `Chamado ${ticket.title}`,
     );
   }
 

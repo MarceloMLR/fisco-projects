@@ -2,13 +2,15 @@ import type { components } from '../../src/api/schema';
 
 /**
  * The fictitious demonstration data (ADR-0002, ADR-0089): the people of the demo directory of the local sign-in
- * (ADR-0078), the clients, the projects with their people and the schedules. The days of the schedules count from the
+ * (ADR-0078), the clients, the projects with their people, the schedules and the tickets. The days of the schedules count from the
  * first day of the main project, the Monday two weeks before the week the data is loaded; the server moves each start to
  * a business day (ADR-0018).
  */
 
 type ProjectRole = components['schemas']['ProjectRole'];
 type ProjectStatus = components['schemas']['ProjectStatus'];
+type TicketTeam = components['schemas']['TicketTeam'];
+type TicketPriority = components['schemas']['TicketPriority'];
 
 /** The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). */
 export const demoPeople = {
@@ -61,6 +63,16 @@ export interface DemoPhase {
   items: readonly DemoItem[];
 }
 
+/** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
+export interface DemoTicket {
+  title: string;
+  team: TicketTeam;
+  priority: TicketPriority;
+  /** Who opens it: anyone in the project but a viewer, or the Administrator (ADR-0044). */
+  by: DemoPerson;
+  description: string;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -74,6 +86,8 @@ export interface DemoProject {
   /** The manager saves the schedule as a model of project, with this name and description (ADR-0017). */
   template?: { name: string; description: string };
   phases: readonly DemoPhase[];
+  /** The tickets opened in the project once it is built, before it gets its status. */
+  tickets?: readonly DemoTicket[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -191,6 +205,56 @@ export const demoProjects: readonly DemoProject[] = [
       },
       { name: 'Encerramento', items: [] },
     ],
+    tickets: [
+      {
+        title: 'Rejeição 539 ao emitir nota de devolução',
+        team: 'Development',
+        priority: 'High',
+        by: 'carla',
+        description:
+          'Ao emitir a nota de devolução da venda 3381, a SEFAZ retorna a rejeição 539.\n\nAcontece com todas as devoluções da filial desde ontem. Esperava a autorização normal, como no mês passado.',
+      },
+      {
+        title: 'Dúvida sobre o CFOP de transferência entre filiais',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'diego',
+        description:
+          'Qual CFOP usar na transferência de mercadoria entre a matriz e a filial de outro estado?',
+      },
+      {
+        title: 'Relatório de ICMS-ST sem as notas de devolução',
+        team: 'Development',
+        priority: 'Medium',
+        by: 'carla',
+        description:
+          'O relatório de ICMS-ST de outubro não traz as notas de devolução, e o total fica diferente da apuração.',
+      },
+      {
+        title: 'Liberar ambiente de homologação ao cliente',
+        team: 'Development',
+        priority: 'High',
+        by: 'marina',
+        description:
+          'O cliente precisa de acesso ao ambiente de homologação para os testes da próxima semana.',
+      },
+      {
+        title: 'Importar a tabela de NCM atualizada',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'rafael',
+        description:
+          'A tabela de NCM mudou neste mês. Precisamos importar a versão nova antes dos testes.',
+      },
+      {
+        title: 'Erro ao importar XML de entrada',
+        team: 'Development',
+        priority: 'Critical',
+        by: 'carla',
+        description:
+          'Os XML de entrada de um fornecedor são recusados na importação, com a mensagem "Esquema inválido".',
+      },
+    ],
   },
   {
     code: 'SPED-27',
@@ -225,6 +289,24 @@ export const demoProjects: readonly DemoProject[] = [
     },
     name: 'Revisão tributária da filial RS',
     client: 'Beta Alimentos',
+    members: [['carla', 'Contributor']],
+    tickets: [
+      {
+        title: 'Dúvida sobre o fechamento do SPED',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'paulo',
+        description: 'O fechamento do SPED da filial RS deve sair com os créditos já revisados?',
+      },
+      {
+        title: 'Ajustar alíquota de ICMS-ST para RS',
+        team: 'Functional',
+        priority: 'Critical',
+        by: 'marina',
+        description:
+          'A alíquota de ICMS-ST de autopeças mudou no RS. Precisamos ajustar o cadastro.',
+      },
+    ],
     phases: [
       { name: 'Diagnóstico', items: [task('Levantar créditos de ICMS', 21, 15)] },
       {

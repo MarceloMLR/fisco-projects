@@ -1,0 +1,28 @@
+using FiscoProjects.Persistence;
+using FiscoProjects.Tickets.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace FiscoProjects.Tickets.Infrastructure.Persistence;
+
+internal sealed class TicketsDbContext(DbContextOptions<TicketsDbContext> options)
+    : ModuleDbContext<TicketsDbContext>(options), IModuleSchema
+{
+    /// <summary>The numbers of the tickets, one sequence for the installation (ADR-0029).</summary>
+    public const string NumberSequence = "ticket_numbers";
+
+    public static string Schema => "tickets";
+
+    public DbSet<Ticket> Tickets => Set<Ticket>();
+
+    protected override void ConfigureModel(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasSequence<int>(NumberSequence).StartsAt(1).IncrementsBy(1);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TicketsDbContext).Assembly);
+    }
+}
+
+// For dotnet ef to create the context without starting the API.
+internal sealed class TicketsDbContextFactory : ModuleDesignTimeDbContextFactory<TicketsDbContext>
+{
+    protected override TicketsDbContext CreateContext(DbContextOptions<TicketsDbContext> options) => new(options);
+}

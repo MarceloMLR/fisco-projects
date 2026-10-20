@@ -3723,6 +3723,319 @@
           }
         }
       }
+    },
+    "/api/tickets": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ListTickets",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "description": "All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned or OpenedByMe.",
+            "schema": {
+              "default": "All",
+              "$ref": "#/components/schemas/TicketView"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "Only the tickets of this project.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "team",
+            "in": "query",
+            "description": "Only the tickets of this team.",
+            "schema": {
+              "$ref": "#/components/schemas/TicketTeam"
+            }
+          },
+          {
+            "name": "situation",
+            "in": "query",
+            "description": "Open (the default: not resolved nor closed), Finished (resolved and closed) or All.",
+            "schema": {
+              "default": "Open",
+              "$ref": "#/components/schemas/TicketSituation"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "The number, with or without #, or part of the title or of the description, without telling case or accents apart.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Priority (the default, the oldest first in each) or Number.",
+            "schema": {
+              "default": "Priority",
+              "$ref": "#/components/schemas/TicketSort"
+            }
+          },
+          {
+            "name": "descending",
+            "in": "query",
+            "description": "From the highest priority or number to the lowest (the default).",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "OpenTicket",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewTicketRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/counts": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "CountTickets",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "Only the tickets of this project.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketCountsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/tickets/choices": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "ListTicketChoices",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketProjectChoiceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "GetTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4557,6 +4870,58 @@
           }
         },
         "description": "A new model from a schedule: its name and, optionally, its description."
+      },
+      "NewTicketRequest": {
+        "required": [
+          "projectId",
+          "team",
+          "priority",
+          "title",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "team": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketTeam"
+              }
+            ]
+          },
+          "priority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPriority"
+              }
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068)."
       },
       "PersonResponse": {
         "required": [
@@ -5820,6 +6185,350 @@
         ],
         "description": "The theme a person chose in the profile (ADR-0014); Automatic follows the operating system."
       },
+      "TicketCountsResponse": {
+        "required": [
+          "all",
+          "open",
+          "unassigned",
+          "unassignedInMyTeams",
+          "assignedToMe",
+          "openedByMe"
+        ],
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "open": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unassigned": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unassignedInMyTeams": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assignedToMe": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "openedByMe": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,\nwithout an assignee in the teams of the person, in charge of the person and opened by the person."
+      },
+      "TicketCreatedResponse": {
+        "required": [
+          "id",
+          "number"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TicketListItemResponse": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "project",
+          "team",
+          "priority",
+          "status",
+          "requester",
+          "assignee",
+          "openedAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/TicketProjectResponse"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TicketTeam"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/TicketPersonResponse"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPersonResponse"
+              }
+            ]
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A ticket of a list; without an assignee until someone of the team answers it (ADR-0068)."
+      },
+      "TicketPageResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketListItemResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TicketPersonResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "A person of a ticket."
+      },
+      "TicketPriority": {
+        "enum": [
+          "Low",
+          "Medium",
+          "High",
+          "Critical"
+        ],
+        "description": "How urgent a ticket is, from the lowest to the highest."
+      },
+      "TicketProjectChoiceResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "isClosed",
+          "canOpen",
+          "teams"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isClosed": {
+            "type": "boolean"
+          },
+          "canOpen": {
+            "type": "boolean"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketTeam"
+            }
+          }
+        },
+        "description": "A project the person sees, for the filters and the opening: whether it is closed, whether the person may open\ntickets in it and the teams with someone to serve them (ADR-0068)."
+      },
+      "TicketProjectResponse": {
+        "required": [
+          "id",
+          "code",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "The project of a ticket: the screens show the code beside the number (ADR-0029)."
+      },
+      "TicketResponse": {
+        "required": [
+          "id",
+          "number",
+          "title",
+          "description",
+          "project",
+          "team",
+          "priority",
+          "status",
+          "requester",
+          "assignee",
+          "managers",
+          "techLeads",
+          "openedAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/TicketProjectResponse"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TicketTeam"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/TicketPersonResponse"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPersonResponse"
+              }
+            ]
+          },
+          "managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketPersonResponse"
+            }
+          },
+          "techLeads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketPersonResponse"
+            }
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the project."
+      },
+      "TicketSituation": {
+        "enum": [
+          "Open",
+          "Finished",
+          "All"
+        ],
+        "description": "Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all."
+      },
+      "TicketSort": {
+        "enum": [
+          "Priority",
+          "Number"
+        ],
+        "description": "The order of a list: by the priority, the highest first and the oldest first in each, or by the number."
+      },
+      "TicketStatus": {
+        "enum": [
+          "Open",
+          "Triage",
+          "InProgress",
+          "WaitingForRequester",
+          "Resolved",
+          "Closed"
+        ],
+        "description": "The status of a ticket (ADR-0024). A ticket is opened as Open; the flow between them comes from a table."
+      },
+      "TicketTeam": {
+        "enum": [
+          "Functional",
+          "Development"
+        ],
+        "description": "The team a ticket goes to (ADR-0068): only these two, without queues."
+      },
+      "TicketView": {
+        "enum": [
+          "All",
+          "AssignedToMe",
+          "UnassignedInMyTeams",
+          "Unassigned",
+          "OpenedByMe"
+        ],
+        "description": "The lists of tickets (ADR-0029, ADR-0068)."
+      },
       "UpdateInstallationRequest": {
         "required": [
           "name",
@@ -5955,6 +6664,9 @@
     },
     {
       "name": "Projects"
+    },
+    {
+      "name": "Tickets"
     }
   ]
 }
