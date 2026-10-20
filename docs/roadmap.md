@@ -23,7 +23,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 10 | 10 |
 | 5. Chamados | 7 | 7 |
-| 6. Avisos | 3 | 0 |
+| 6. Avisos | 3 | 2 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
@@ -99,8 +99,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | PR aberto |
-| Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | PR aberto |
+| Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | Concluída em 20/10/2026 ([#45](https://github.com/MarceloMLR/fisco-projects/pull/45)) |
+| Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Concluída em 20/10/2026 ([#46](https://github.com/MarceloMLR/fisco-projects/pull/46)) |
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | PR aberto |
 
 ## 7. Documentos, links, acessos e termos
