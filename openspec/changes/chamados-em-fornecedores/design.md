@@ -37,7 +37,8 @@
   - não se apaga, só se desativa, porque os registros guardam o fornecedor.
 - **`vendor_tickets`:**
   - campos: o chamado, o fornecedor, o número (até 60), a data de abertura, o status, o link (até 500, http ou https), a observação (até 1.000), quem registrou, quando e a última atualização;
-  - fica fora da auditoria, como a conversa, porque cada registro e cada atualização já viram eventos.
+  - fica na auditoria, como mostra a tela de Auditoria aprovada ("Registrou um chamado no fornecedor"), com o número como rótulo e o chamado e o fornecedor em todo registro (`IsAuditContext`), pelos nomes atuais (`TicketReferenceNames` e `VendorReferenceNames`, ADR-0084);
+  - cada registro e cada atualização também viram eventos da conversa.
 - **Por que no Tickets:** os fornecedores só servem aos chamados.
 
 ### 2. Status do lado do fornecedor
