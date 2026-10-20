@@ -165,6 +165,17 @@ public sealed class Ticket : Entity
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// The project was cancelled (ADR-0043): the ticket closes from any status, without the flow of the table; a
+    /// resolved one keeps when it was resolved.
+    /// </summary>
+    public void CloseWithProject(DateTime now)
+    {
+        Status = TicketStatus.Closed;
+        ClosedAt = now;
+        UpdatedAt = now;
+    }
+
     /// <summary>The deadlines of the priority, and the days they are due (ADR-0025).</summary>
     public void UseDeadlines(int firstResponseDays, int resolutionDays, DateOnly firstResponseDueOn, DateOnly? resolutionDueOn)
     {

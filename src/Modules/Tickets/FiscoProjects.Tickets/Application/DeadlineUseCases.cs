@@ -76,6 +76,26 @@ public sealed class TicketDeadlines(ITicketStore store, IWorkCalendar calendar, 
         store.AddEvent(TicketEvent.StatusChanged(ticket.Id, actorId, transition, now));
     }
 
+    /// <summary>
+    /// Closes the ticket because its project was cancelled (ADR-0043), and records it in the conversation: a ticket
+    /// waiting for the requester stops waiting first, so its paused days do not grow afterwards.
+    /// </summary>
+    public async Task CloseWithProjectAsync(Ticket ticket, Guid actorId, DateTime now, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        var from = ticket.Status;
+        if (ticket.PausedSince is { } since)
+        {
+            var day = await TodayAsync(cancellationToken);
+            var paused = PausedDays(day, since, day.DayOf(now));
+            ticket.Resume(paused, day.Days.AddBusinessDays(
+                day.DayOf(ticket.OpenedAt), ticket.ResolutionDays + ticket.PausedBusinessDays + paused));
+        }
+
+        ticket.CloseWithProject(now);
+        store.AddEvent(TicketEvent.ClosedWithProject(ticket.Id, actorId, from, now));
+    }
+
     /// <summary>The deadlines of the ticket today; null for a ticket opened before there were deadlines.</summary>
     public static TicketDeadlineFigures? FiguresOf(Ticket ticket, TicketDay day)
     {

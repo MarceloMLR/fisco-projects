@@ -1,5 +1,6 @@
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import Box from '@mui/material/Box';
 import type { ReactNode } from 'react';
 
@@ -8,6 +9,11 @@ const tones = {
     background: 'var(--status-info-bg)',
     accent: 'var(--status-info-text)',
     Icon: InfoOutlined,
+  },
+  warning: {
+    background: 'var(--status-warning-bg)',
+    accent: 'var(--status-warning-text)',
+    Icon: WarningAmberOutlined,
   },
   danger: {
     background: 'var(--status-danger-bg)',

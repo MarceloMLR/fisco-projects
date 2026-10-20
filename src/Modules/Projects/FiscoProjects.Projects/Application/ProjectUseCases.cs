@@ -1,4 +1,5 @@
 using FiscoProjects.Calendar.Contracts;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
 
@@ -437,27 +438,65 @@ public enum ProjectStatusOutcome
     Saved = 1,
     NotFound = 2,
     Forbidden = 3,
+
+    /// <summary>The project has tickets not closed, which keep it from being completed (ADR-0043).</summary>
+    HasOpenTickets = 4,
+
+    /// <summary>Someone changed a ticket while the cancellation closed them; nothing changed.</summary>
+    TicketsChanged = 5,
 }
+
+/// <summary>What happened to a change of status, with the tickets not closed that kept the project from being completed.</summary>
+public sealed record ProjectStatusResult(ProjectStatusOutcome Outcome, int OpenTickets = 0);
 
 /// <summary>
 /// Moves a project to another status, including reopening a closed one: the Administrator and the manager of the
-/// project (ADR-0016, ADR-0043).
+/// project (ADR-0016, ADR-0043). A project is completed only with all its tickets closed; cancelling it closes the open
+/// tickets first, so a failure of the project is settled by cancelling it again.
 /// </summary>
-public sealed class ChangeProjectStatus(IProjectStore store)
+public sealed class ChangeProjectStatus(IProjectStore store, IEnumerable<IProjectClosing> closing)
 {
-    public async Task<ProjectStatusOutcome> ExecuteAsync(
+    public async Task<ProjectStatusResult> ExecuteAsync(
         Guid id, ProjectStatus status, ProjectViewer viewer, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(viewer);
         var project = await store.FindAsync(id, cancellationToken);
         var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
         if (project is null || permissions is not { CanView: true })
         {
-            return ProjectStatusOutcome.NotFound;
+            return new ProjectStatusResult(ProjectStatusOutcome.NotFound);
         }
 
         if (!permissions.CanChangeStatus)
         {
-            return ProjectStatusOutcome.Forbidden;
+            return new ProjectStatusResult(ProjectStatusOutcome.Forbidden);
+        }
+
+        if (status == ProjectStatus.Completed && project.Status != ProjectStatus.Completed)
+        {
+            var open = 0;
+            foreach (var module in closing)
+            {
+                open += await module.OpenTicketsAsync(id, cancellationToken);
+            }
+
+            if (open > 0)
+            {
+                return new ProjectStatusResult(ProjectStatusOutcome.HasOpenTickets, open);
+            }
+        }
+
+        if (status == ProjectStatus.Cancelled)
+        {
+            // Also when it is already cancelled: a cancellation that closed the tickets and failed to save the project
+            // is settled by cancelling it again.
+            foreach (var module in closing)
+            {
+                if (!await module.CloseOpenTicketsAsync(id, viewer.UserId, cancellationToken))
+                {
+                    return new ProjectStatusResult(ProjectStatusOutcome.TicketsChanged);
+                }
+            }
         }
 
         if (project.Status != status)
@@ -466,6 +505,45 @@ public sealed class ChangeProjectStatus(IProjectStore store)
             await store.SaveChangesAsync(cancellationToken);
         }
 
-        return ProjectStatusOutcome.Saved;
+        return new ProjectStatusResult(ProjectStatusOutcome.Saved);
+    }
+}
+
+/// <summary>What closing a project would leave behind: the tickets not closed and the tasks below 100% (ADR-0043).</summary>
+public sealed record ProjectClosing(int OpenTickets, int IncompleteTasks);
+
+/// <summary>
+/// The summary of the closing of a project, for who changes its status (ADR-0043): null for whom does not see the
+/// project, and forbidden for the others.
+/// </summary>
+public sealed class GetProjectClosing(IProjectStore store, IScheduleStore schedules, IEnumerable<IProjectClosing> closing)
+{
+    public async Task<(ProjectStatusOutcome Outcome, ProjectClosing? Closing)> ExecuteAsync(
+        Guid id, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var project = await store.FindAsync(id, cancellationToken);
+        var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
+        if (project is null || permissions is not { CanView: true })
+        {
+            return (ProjectStatusOutcome.NotFound, null);
+        }
+
+        if (!permissions.CanChangeStatus)
+        {
+            return (ProjectStatusOutcome.Forbidden, null);
+        }
+
+        var open = 0;
+        foreach (var module in closing)
+        {
+            open += await module.OpenTicketsAsync(id, cancellationToken);
+        }
+
+        // The tasks with dates of their own: a summary task follows its subtasks.
+        var schedule = await schedules.FindAsync(id, cancellationToken);
+        var incomplete = schedule?.Items.Count(item =>
+            item.Kind == ScheduleItemKind.Task && !schedule.IsSummary(item.Id) && item.Progress < 100) ?? 0;
+        return (ProjectStatusOutcome.Saved, new ProjectClosing(open, incomplete));
     }
 }

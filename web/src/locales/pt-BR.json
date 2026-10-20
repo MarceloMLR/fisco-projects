@@ -817,7 +817,14 @@
       "cancelTitle": "Cancelar projeto",
       "cancelText": "O projeto {{name}} fica somente leitura até ser reaberto. Nada é apagado.",
       "cancelAction": "Cancelar projeto",
-      "back": "Voltar"
+      "back": "Voltar",
+      "openTickets_one": "O projeto tem {{count}} chamado não fechado. Feche ou cancele o chamado antes de concluir.",
+      "openTickets_other": "O projeto tem {{count}} chamados não fechados. Feche ou cancele os chamados antes de concluir.",
+      "seeTickets": "Ver chamados",
+      "incompleteTasks_one": "{{count}} tarefa está abaixo de 100%. O projeto pode ser concluído assim mesmo.",
+      "incompleteTasks_other": "{{count}} tarefas estão abaixo de 100%. O projeto pode ser concluído assim mesmo.",
+      "ticketsClosed_one": "{{count}} chamado aberto será fechado, com o motivo \"projeto cancelado\" na conversa.",
+      "ticketsClosed_other": "Os {{count}} chamados abertos serão fechados, com o motivo \"projeto cancelado\" na conversa."
     },
     "closed": {
       "Completed": "Projeto concluído: somente leitura. Reabra o projeto para alterar.",
@@ -840,7 +847,8 @@
     "messages": {
       "changed": "Projeto {{name}} alterado.",
       "status": "{{name}}: {{status}}.",
-      "failed": "Não foi possível salvar. Tente de novo."
+      "failed": "Não foi possível salvar. Tente de novo.",
+      "ticketsChanged": "Alguém mudou um chamado do projeto ao mesmo tempo. Tente de novo."
     },
     "notFound": "Projeto não encontrado. Ele não existe ou você não está nele.",
     "loadFailed": "Não foi possível carregar o projeto. Tente de novo.",
@@ -1619,7 +1627,8 @@
       "teamChanged": "transferiu · {{from}} → {{to}}",
       "vendorRegistered": "registrou o chamado {{code}} no fornecedor {{vendor}}",
       "vendorUpdated": "atualizou o chamado {{code}} no {{vendor}} · {{from}} → {{to}}",
-      "vendorUpdatedSame": "atualizou o chamado {{code}} no {{vendor}} · {{status}}"
+      "vendorUpdatedSame": "atualizou o chamado {{code}} no {{vendor}} · {{status}}",
+      "closedWithProject": "fechou o chamado · projeto cancelado · {{from}} → {{to}}"
     },
     "flow": {
       "link": "Fluxo de chamados",

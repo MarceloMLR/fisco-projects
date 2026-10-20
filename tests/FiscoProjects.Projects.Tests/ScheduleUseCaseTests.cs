@@ -119,8 +119,8 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
         (await AddItemAsync(Marina, Form(_phase, name, day, 0), ScheduleItemKind.Milestone)).Id!.Value;
 
     private Task<ProjectStatusOutcome> CompleteProjectAsync() =>
-        _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change =>
-            change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation));
+        _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(async change =>
+            (await change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation)).Outcome);
 
     private ProjectViewer ViewerOf(string person) =>
         new(person switch { "Rafael" => _rafael, "Carla" => _carla, "Diego" => _diego, _ => _lucas }, false);

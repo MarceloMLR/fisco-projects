@@ -282,6 +282,42 @@ describe('Histórico na conversa', () => {
     expect(screen.queryByRole('button', { name: text.actionMenu })).not.toBeInTheDocument();
   });
 
+  // Spec: chamados, requirement "Chamados de um projeto cancelado".
+  it('Fechado pelo cancelamento do projeto', async () => {
+    ticket = {
+      ...ticket,
+      status: 'Closed',
+      events: [
+        ...tookIt,
+        {
+          id: '0199f5a2-7c1e-7d40-9a1b-a00000000010',
+          kind: 'ClosedWithProject',
+          actorId: marina.id,
+          from: 'WaitingForRequester',
+          to: 'Closed',
+          action: null,
+          assigneeId: null,
+          fromPriority: null,
+          toPriority: null,
+          fromTeam: null,
+          toTeam: null,
+          fromPersonId: null,
+          toPersonId: null,
+          vendorTicketId: null,
+          fromVendorStatus: null,
+          toVendorStatus: null,
+          note: null,
+          at: '2026-10-22T12:00:00Z',
+        },
+      ],
+    };
+    await openTicket();
+
+    expect(
+      screen.getByText(/fechou o chamado · projeto cancelado · Aguardando solicitante → Fechado/),
+    ).toHaveTextContent(`${marina.name} fechou o chamado`);
+  });
+
   it('Status mudou antes da ação', async () => {
     server.use(
       http.post('/api/tickets/1/transitions', () =>

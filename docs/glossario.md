@@ -157,6 +157,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Passar pendências | (tela) | Os chamados de quem sai, passados a outra pessoa |
 | Mudanças das pessoas de um projeto (contrato) | IProjectMemberChanges | O Projects avisa os outros módulos depois de gravar (ADR-0042) |
 | Fechamento automático | TicketAutoClose | Processo em segundo plano; `Tickets:AutoCloseBusinessDays` (5) |
+| Fechado pelo cancelamento do projeto | TicketEventKind.ClosedWithProject | Evento "projeto cancelado" na conversa, de qualquer status (ADR-0043) |
+| Encerramento do projeto (contrato) | IProjectClosing | O `Projects` pergunta os chamados não fechados e pede o fechamento ao cancelar |
+| Resumo do encerramento | ProjectClosing | Chamados não fechados e tarefas abaixo de 100%, antes de concluir ou cancelar |
 
 ## Documentos, links, acessos e termos
 

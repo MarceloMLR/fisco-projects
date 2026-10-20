@@ -2251,6 +2251,71 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/closing": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "What completing or cancelling the project would leave behind (ADR-0043), for who changes its status.",
+        "operationId": "GetProjectClosing",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectClosingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -6383,6 +6448,24 @@
         },
         "description": "The client of a project, with the address of its current logo (null without one)."
       },
+      "ProjectClosingResponse": {
+        "required": [
+          "openTickets",
+          "incompleteTasks"
+        ],
+        "type": "object",
+        "properties": {
+          "openTickets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "incompleteTasks": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from\nbeing completed and are closed by the cancellation, and the tasks below 100%, a warning."
+      },
       "ProjectCreatedResponse": {
         "required": [
           "id"
@@ -7892,7 +7975,8 @@
           "RequesterChanged",
           "TeamChanged",
           "VendorTicketRegistered",
-          "VendorStatusChanged"
+          "VendorStatusChanged",
+          "ClosedWithProject"
         ],
         "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
       },

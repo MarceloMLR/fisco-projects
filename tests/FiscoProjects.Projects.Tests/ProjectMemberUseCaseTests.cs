@@ -254,8 +254,8 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
     public async Task ClosedProject_KeepsItsPeople()
     {
         await AddAsync(Marina, _diego, ProjectRole.Developer);
-        await _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change =>
-            change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation));
+        await _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(async change =>
+            (await change.ExecuteAsync(_project, ProjectStatus.Completed, Marina, Cancellation)).Outcome);
 
         (await AddAsync(Marina, _lucas, ProjectRole.Viewer)).Outcome.Should().Be(MemberOutcome.Closed);
         (await ChangeRoleAsync(Marina, _diego, ProjectRole.Viewer)).Should().Be(MemberOutcome.Closed);

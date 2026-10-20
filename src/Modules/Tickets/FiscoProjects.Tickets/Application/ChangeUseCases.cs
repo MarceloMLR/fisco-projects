@@ -325,3 +325,30 @@ internal static class TicketChanges
         }
     }
 }
+
+/// <summary>
+/// The tickets of a project being completed or cancelled (ADR-0043): the ones not closed keep it from being completed,
+/// and cancelling it closes them all at once, with the reason in each conversation. Idempotent.
+/// </summary>
+public sealed class TicketProjectClosing(ITicketStore store, TicketDeadlines deadlines, TimeProvider clock) : IProjectClosing
+{
+    public Task<int> OpenTicketsAsync(Guid projectId, CancellationToken cancellationToken) =>
+        store.CountNotClosedAsync(projectId, cancellationToken);
+
+    public async Task<bool> CloseOpenTicketsAsync(Guid projectId, Guid actorId, CancellationToken cancellationToken)
+    {
+        var tickets = await store.NotClosedAsync(projectId, cancellationToken);
+        if (tickets.Count == 0)
+        {
+            return true;
+        }
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        foreach (var ticket in tickets)
+        {
+            await deadlines.CloseWithProjectAsync(ticket, actorId, now, cancellationToken);
+        }
+
+        return (await TicketChanges.SaveAsync(store, cancellationToken)).Outcome == TicketChangeOutcome.Done;
+    }
+}

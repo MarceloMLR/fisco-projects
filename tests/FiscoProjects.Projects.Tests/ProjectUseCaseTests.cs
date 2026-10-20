@@ -333,7 +333,8 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         _database.RunAsync<ChangeProject, ProjectSaveResult>(change => change.ExecuteAsync(id, changes, viewer, Cancellation));
 
     private Task<ProjectStatusOutcome> ChangeStatusAsync(Guid id, ProjectStatus status, ProjectViewer viewer) =>
-        _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(change => change.ExecuteAsync(id, status, viewer, Cancellation));
+        _database.RunAsync<ChangeProjectStatus, ProjectStatusOutcome>(async change =>
+            (await change.ExecuteAsync(id, status, viewer, Cancellation)).Outcome);
 
     private Task<ProjectListPage> ListAsync(
         ProjectViewer viewer,

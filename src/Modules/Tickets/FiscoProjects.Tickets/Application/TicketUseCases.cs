@@ -111,6 +111,12 @@ public interface ITicketStore
     /// <summary>The tickets of the numbers, tracked, in any order; the missing ones are left out.</summary>
     Task<IReadOnlyList<Ticket>> FindManyAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken);
 
+    /// <summary>The tickets of a project that are not closed, tracked.</summary>
+    Task<IReadOnlyList<Ticket>> NotClosedAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>How many tickets of a project are not closed.</summary>
+    Task<int> CountNotClosedAsync(Guid projectId, CancellationToken cancellationToken);
+
     /// <summary>The open tickets of a project with the person as the assignee, tracked.</summary>
     Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken);
 

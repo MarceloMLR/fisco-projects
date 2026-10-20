@@ -96,6 +96,15 @@ export function projectQuery(id: string) {
   });
 }
 
+/** What completing or cancelling the project would leave behind (ADR-0043): the open tickets and the incomplete tasks. */
+export function projectClosingQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'closing'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/closing', { params: { path: { id } }, signal })),
+  });
+}
+
 /** The people of a project, by name, with their role, when they joined and their last access. */
 export function projectMembersQuery(id: string) {
   return queryOptions({

@@ -40,6 +40,8 @@ public static class TicketsModule
         services.AddScoped<TransferTicket>();
         // The tickets of a person who leaves a project or gets another role (ADR-0042).
         services.AddScoped<IProjectMemberChanges, TicketMemberChanges>();
+        // The tickets of a project being completed or cancelled (ADR-0043).
+        services.AddScoped<IProjectClosing, TicketProjectClosing>();
         services.AddScoped<ChangeTicketPriority>();
         services.AddScoped<GetTicketDeadlines>();
         services.AddScoped<ChangeTicketDeadlines>();
