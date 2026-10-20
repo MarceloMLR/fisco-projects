@@ -202,8 +202,12 @@ export async function loadDemo(
     (total, project) => total + (project.credentials?.length ?? 0),
     0,
   );
+  const acceptances = demoProjects.reduce(
+    (total, project) => total + (project.acceptances?.length ?? 0),
+    0,
+  );
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos, ${String(links)} links e ${String(credentials)} acessos.`,
+    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos, ${String(links)} links, ${String(credentials)} acessos e ${String(acceptances)} termos de aceite.`,
   );
   log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
@@ -458,6 +462,10 @@ async function loadProject(
     await loadCredentials(project, id, personOf);
   }
 
+  if ((project.acceptances ?? []).length > 0) {
+    await loadAcceptances(project, id, ids, personOf);
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {
@@ -614,6 +622,90 @@ async function loadCredentials(
         },
       }),
       `Acesso ${credential.portal} de ${credential.environment}`,
+    );
+  }
+}
+
+/** A PDF of the plan, as the form of a term takes it, with the other fields (ADR-0035). */
+function termForm(
+  fields: Record<string, string>,
+  name: string,
+  lines: readonly string[],
+): FormData {
+  const form = new FormData();
+  for (const [field, value] of Object.entries(fields)) {
+    form.append(field, value);
+  }
+  form.append('file', new Blob([pdfOf(lines)], { type: 'application/pdf' }), name);
+  return form;
+}
+
+/**
+ * The acceptance terms of the project (ADR-0035, ADR-0095): each request by the manager to its person, then the answer
+ * of the person, signed or refused; and the terms signed outside the system, attached by the manager.
+ */
+async function loadAcceptances(
+  project: DemoProject,
+  projectId: string,
+  items: ReadonlyMap<string, string>,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+): Promise<void> {
+  for (const term of project.acceptances ?? []) {
+    const milestoneId = items.get(term.milestone);
+    if (milestoneId === undefined) {
+      throw new Error(`${term.title} aceita ${term.milestone}, que ${project.code} não tem.`);
+    }
+    const fields = { milestoneId, recipientId: personOf(term.to).id, title: term.title };
+    const by = personOf(term.by).api;
+    if (term.attached === true) {
+      const form = termForm(fields, term.file, term.lines);
+      must(
+        await by.POST('/api/projects/{projectId}/acceptances/attached', {
+          params: { path: { projectId } },
+          body: {},
+          bodySerializer: () => form,
+        }),
+        `Termo ${term.title}`,
+      );
+      continue;
+    }
+    const request = termForm(
+      term.message === undefined ? fields : { ...fields, message: term.message },
+      term.file,
+      term.lines,
+    );
+    const termId = must(
+      await by.POST('/api/projects/{projectId}/acceptances', {
+        params: { path: { projectId } },
+        body: {},
+        bodySerializer: () => request,
+      }),
+      `Pedido de aceite ${term.title}`,
+    ).id;
+    const answer = term.answer;
+    if (answer === undefined) {
+      continue;
+    }
+    const path = { params: { path: { projectId, termId } } };
+    const person = personOf(term.to).api;
+    if ('refused' in answer) {
+      done(
+        await person.POST('/api/projects/{projectId}/acceptances/{termId}/refusal', {
+          ...path,
+          body: { reason: answer.refused },
+        }),
+        `Recusa de ${term.title}`,
+      );
+      continue;
+    }
+    const signed = termForm({}, answer.signed, answer.lines);
+    done(
+      await person.POST('/api/projects/{projectId}/acceptances/{termId}/signed', {
+        ...path,
+        body: {},
+        bodySerializer: () => signed,
+      }),
+      `Termo assinado ${term.title}`,
     );
   }
 }
