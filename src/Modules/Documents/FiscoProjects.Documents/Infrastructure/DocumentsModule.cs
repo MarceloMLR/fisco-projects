@@ -1,0 +1,44 @@
+using FiscoProjects.Documents.Application;
+using FiscoProjects.Documents.Infrastructure.Persistence;
+using FiscoProjects.Persistence;
+using FiscoProjects.Projects.Contracts;
+using FiscoProjects.SharedKernel;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace FiscoProjects.Documents.Infrastructure;
+
+/// <summary>Services of the Documents module: the folders and the documents of the projects (ADR-0031, ADR-0092).</summary>
+public static class DocumentsModule
+{
+    public static IServiceCollection AddDocumentsModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddModuleDbContext<DocumentsDbContext>(configuration);
+        services.AddScoped<DocumentStores>();
+        services.AddScoped<IFolderStore>(provider => provider.GetRequiredService<DocumentStores>());
+        services.AddScoped<IDocumentStore>(provider => provider.GetRequiredService<DocumentStores>());
+        services.AddScoped<IAuditReferenceNames, FolderReferenceNames>();
+        // Up to 25 MB per document by default, as each installation sets (ADR-0031).
+        var megabytes = Math.Max(1, configuration.GetValue("Documents:MaxMegabytes", DocumentSettings.DefaultMaxMegabytes));
+        services.AddSingleton(new DocumentSettings(megabytes * 1024L * 1024L));
+        services.AddScoped<ListDefaultFolders>();
+        services.AddScoped<AddDefaultFolder>();
+        services.AddScoped<ChangeDefaultFolder>();
+        services.AddScoped<ProjectFolders>();
+        // The folders of a new project (ADR-0092).
+        services.AddScoped<IProjectSetup, DocumentProjectSetup>();
+        services.AddScoped<DocumentAreas>();
+        services.AddScoped<DocumentViews>();
+        services.AddScoped<ListDocumentFolders>();
+        services.AddScoped<ListDocuments>();
+        services.AddScoped<GetDocument>();
+        services.AddScoped<UploadDocument>();
+        services.AddScoped<OpenDocument>();
+        services.AddScoped<ChangeDocumentStatus>();
+        services.AddScoped<LinkDocument>();
+        services.AddScoped<RemoveDocument>();
+        return services;
+    }
+}

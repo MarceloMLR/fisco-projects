@@ -54,6 +54,14 @@ export type TicketVendor = components['schemas']['TicketVendorResponse'];
 export type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 export type EmailStatus = components['schemas']['EmailStatusResponse'];
 export type EmailTest = components['schemas']['EmailTestResponse'];
+export type DefaultFolder = components['schemas']['DefaultFolderResponse'];
+export type DocumentFolders = components['schemas']['DocumentFoldersResponse'];
+export type DocumentFolder = components['schemas']['DocumentFolderResponse'];
+export type DocumentRow = components['schemas']['DocumentResponse'];
+export type DocumentDetails = components['schemas']['DocumentDetailsResponse'];
+export type DocumentStatus = components['schemas']['DocumentStatus'];
+export type DocumentStatusFilter = NonNullable<components['schemas']['DocumentStatusFilter']>;
+export type ScheduleItemType = components['schemas']['ScheduleItemType'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
@@ -127,6 +135,8 @@ export const auditItemTypes = [
   'TicketDeadlineSetting',
   'Vendor',
   'VendorTicket',
+  'DefaultFolder',
+  'Document',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -149,6 +159,14 @@ export const vendorTicketStatuses = [
   'Resolved',
   'Closed',
 ] as const satisfies readonly VendorTicketStatus[];
+
+/** The statuses of a document, in the order of its life (ADR-0031). */
+export const documentStatuses = [
+  'Draft',
+  'InReview',
+  'Approved',
+  'Obsolete',
+] as const satisfies readonly DocumentStatus[];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
 export const systemRoles = [
@@ -202,6 +220,15 @@ export const ticketProblems = {
   personRefused: 'urn:fiscoprojects:problem:ticket-person-refused',
   ticketFinished: 'urn:fiscoprojects:problem:ticket-finished',
   vendorNameInUse: 'urn:fiscoprojects:problem:vendor-name-in-use',
+} as const;
+
+/** Problem types of the documents (DocumentProblems in the Documents module). */
+export const documentProblems = {
+  projectClosed: 'urn:fiscoprojects:problem:project-closed',
+  documentRefused: 'urn:fiscoprojects:problem:document-refused',
+  acceptanceFolderReadOnly: 'urn:fiscoprojects:problem:acceptance-folder-read-only',
+  documentChanged: 'urn:fiscoprojects:problem:document-changed',
+  folderNameInUse: 'urn:fiscoprojects:problem:document-folder-name-in-use',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

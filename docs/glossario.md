@@ -169,10 +169,18 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Armazenamento de arquivos | FileStorage | SharePoint em produção; pasta local no desenvolvimento |
 | Pasta, arquivo guardado | StoredFolder, StoredFile | Identificados por ids opacos, guardados por quem usa |
 | Mesmo nome: nova versão, manter os dois | SameNameAction: NewVersion, KeepBoth | |
+| Regras de tipo de arquivo | FileTypes, FileRefusal | No `Files.Contracts`: programa ou script recusado e o tipo para o navegador, usadas por anexos e documentos |
+| Documentos (módulo) | Documents | Documentos, links e termos de aceite (ADR-0092) |
 | Documento | Document | |
 | Versão do documento | DocumentVersion | |
-| Status do documento: Rascunho, Em revisão, Aprovado, Obsoleto | DocumentStatus: Draft, InReview, Approved, Obsolete | |
-| Pasta padrão | DefaultFolder | |
+| Status do documento: Rascunho, Em revisão, Aprovado, Obsoleto | DocumentStatus: Draft, InReview, Approved, Obsolete | A nova versão de um aprovado volta para Em revisão (ADR-0093) |
+| Pasta padrão | DefaultFolder | Lista da Administração, copiada para cada projeto novo |
+| Pasta do projeto | DocumentFolder | Cópia de uma pasta padrão, com a pasta no armazenamento |
+| Pasta de termos de aceite | `IsAcceptance` | Só leitura na área de documentos, só para a gestão (ADR-0093) |
+| Enviar arquivos | UploadDocument | Um arquivo por vez; o mesmo nome na mesma pasta vira nova versão |
+| Vincular ao cronograma | LinkDocument | A uma fase, tarefa ou marco do mesmo projeto |
+| Projeto criado (contrato) | IProjectSetup | O `Projects` avisa o projeto novo; o `Documents` cria as pastas |
+| Itens do cronograma (contrato) | IScheduleItems | Fases, tarefas e marcos de um projeto, com o nome atual |
 | Link | Link | |
 | Categoria de link | LinkCategory | |
 | Acesso (login e senha de um portal) | PortalCredential | Módulo `Credentials` |

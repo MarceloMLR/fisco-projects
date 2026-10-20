@@ -62,6 +62,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
 - Local dos arquivos no SharePoint (ADR-0030), com o armazenamento escolhido em `FileStorage:Provider`. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
 - Endereço da caixa de envio, em `Email:Mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036). O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
+- Tamanho máximo de cada documento enviado, em `Documents:MaxMegabytes`, padrão 25 MB (ADR-0031). As pastas padrão dos projetos novos ficam em "Pastas padrão" na Administração; a migração cria as seis do MVP (ADR-0031, ADR-0093).
 - Horário do resumo diário de e-mails, padrão 07:30 no fuso da instalação, em "Horário do resumo diário" das Configurações gerais (ADR-0037).
 - Prazo de guarda das notificações do sino, padrão 90 dias (de 1 a 365), em "Guardar notificações por" das Configurações gerais (ADR-0038).
 - Prazo de retenção da auditoria, padrão 5 anos, a validar com a assessoria jurídica da empresa (ADR-0058).

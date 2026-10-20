@@ -1,3 +1,4 @@
+using FiscoProjects.Files.Contracts;
 using FiscoProjects.Tickets.Domain;
 
 namespace FiscoProjects.Tickets.Tests;
@@ -47,12 +48,12 @@ public sealed class RichTextTests
         RichText.Parse(RichText.OfPlain("Linha 1\n\nLinha 3").Json)!.Text.Should().Be("Linha 1\n\nLinha 3");
 
     [Theory(DisplayName = "Anexos recusados")]
-    [InlineData("nota.xml", 10, "<nfe/>", AttachmentRefusal.None)]
-    [InlineData("nota.xml", 0, "", AttachmentRefusal.Empty)]
-    [InlineData("nota.xml", 2048, "<nfe/>", AttachmentRefusal.TooLarge)]
-    [InlineData("setup.EXE", 10, "abc", AttachmentRefusal.Dangerous)]
-    [InlineData("script.ps1", 10, "abc", AttachmentRefusal.Dangerous)]
-    [InlineData("foto.png", 10, "MZ", AttachmentRefusal.Dangerous)]
-    public void Attachments_AreCheckedByNameSizeAndStart(string name, long size, string start, AttachmentRefusal refusal) =>
-        TicketAttachments.Check(name, size, System.Text.Encoding.ASCII.GetBytes(start), maxBytes: 1024).Should().Be(refusal);
+    [InlineData("nota.xml", 10, "<nfe/>", FileRefusal.None)]
+    [InlineData("nota.xml", 0, "", FileRefusal.Empty)]
+    [InlineData("nota.xml", 2048, "<nfe/>", FileRefusal.TooLarge)]
+    [InlineData("setup.EXE", 10, "abc", FileRefusal.Dangerous)]
+    [InlineData("script.ps1", 10, "abc", FileRefusal.Dangerous)]
+    [InlineData("foto.png", 10, "MZ", FileRefusal.Dangerous)]
+    public void Attachments_AreCheckedByNameSizeAndStart(string name, long size, string start, FileRefusal refusal) =>
+        FileTypes.Check(name, size, System.Text.Encoding.ASCII.GetBytes(start), maxBytes: 1024).Should().Be(refusal);
 }

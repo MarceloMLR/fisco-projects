@@ -305,7 +305,8 @@ public sealed class CreateProject(
     IScheduleStore schedules,
     IWorkCalendar calendar,
     InstallationClock installationClock,
-    ProjectNotices notices)
+    ProjectNotices notices,
+    IProjectSetupNotices setup)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -381,6 +382,9 @@ public sealed class CreateProject(
         var saved = await ProjectSaving.SaveAsync(store, project, cancellationToken);
         if (saved.Outcome == ProjectSaveOutcome.Saved)
         {
+            // The other modules set up what a new project has, as the folders of the documents (ADR-0092).
+            await setup.ProjectCreatedAsync(project.Id, cancellationToken);
+
             // The manager and the tech lead chosen hear about it, unless they created it (ADR-0037, ADR-0072).
             await notices.IncludedAsync(
                 project, [.. project.Members.Select(member => (member.UserId, member.Role))], creatorId, cancellationToken);
@@ -388,6 +392,12 @@ public sealed class CreateProject(
 
         return saved;
     }
+}
+
+/// <summary>Tells the other modules that a project was created, after it is saved (<see cref="IProjectSetup"/>).</summary>
+public interface IProjectSetupNotices
+{
+    Task ProjectCreatedAsync(Guid projectId, CancellationToken cancellationToken);
 }
 
 /// <summary>The data of a project that may change after its creation.</summary>

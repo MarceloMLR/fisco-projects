@@ -1,6 +1,13 @@
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { components } from '../api/schema';
+import {
+  demoDefaultFolders,
+  demoDocumentArea,
+  demoDocumentDetails,
+  demoDocuments,
+  documentsPage,
+} from './demoDocuments';
 import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
@@ -1446,6 +1453,18 @@ export const handlers = [
   ),
   http.get('/api/admin/project-templates', () => HttpResponse.json(demoTemplates())),
   http.get('/api/admin/vendors', () => HttpResponse.json(demoVendors())),
+  // The documents of a project, as Marina sees them (ADR-0031).
+  http.get('/api/admin/document-folders', () => HttpResponse.json(demoDefaultFolders())),
+  http.get('/api/projects/:id/documents/folders', () => HttpResponse.json(demoDocumentArea())),
+  http.get('/api/projects/:id/documents', ({ request }) =>
+    HttpResponse.json(documentsPage(demoDocuments(), new URL(request.url))),
+  ),
+  http.get('/api/projects/:id/documents/:documentId', ({ params }) => {
+    const row = demoDocuments().find((document) => document.id === params.documentId);
+    return row === undefined
+      ? new HttpResponse(null, { status: 404 })
+      : HttpResponse.json(demoDocumentDetails(row));
+  }),
   http.get('/api/tickets', ({ request }) =>
     HttpResponse.json(ticketsPage(demoTickets(), new URL(request.url))),
   ),

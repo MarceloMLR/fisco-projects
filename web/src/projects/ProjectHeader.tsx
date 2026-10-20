@@ -7,7 +7,7 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
-import { ticketCountsQuery } from '../api/queries';
+import { documentFoldersQuery, ticketCountsQuery } from '../api/queries';
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
 import { theme } from '../theme/theme';
@@ -21,7 +21,7 @@ const namesWith = (project: Project, role: Project['members'][number]['role']) =
     .join(', ');
 
 /** The tabs of a project, each at its own address under the project. */
-export type ProjectTab = 'overview' | 'schedule' | 'tickets' | 'members';
+export type ProjectTab = 'overview' | 'schedule' | 'tickets' | 'documents' | 'members';
 
 const tabSx = {
   position: 'relative',
@@ -90,6 +90,8 @@ export function ProjectHeader({
   const { t } = useTranslation();
   // The count of the tab Chamados: all the tickets of the project, any status (canvas ProjetoChamados).
   const tickets = useQuery(ticketCountsQuery(project.id)).data?.all;
+  // The count of the tab Documentos: the documents not obsolete in the folders the person sees.
+  const documents = useQuery(documentFoldersQuery(project.id)).data?.total;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -287,6 +289,22 @@ export function ProjectHeader({
           {tickets !== undefined && (
             <Box component="span" sx={countSx}>
               {tickets}
+            </Box>
+          )}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/documents`}
+          role="tab"
+          id="project-tab-documents"
+          aria-selected={tab === 'documents'}
+          aria-controls={tab === 'documents' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectDocuments.title')}
+          {documents !== undefined && (
+            <Box component="span" sx={countSx}>
+              {documents}
             </Box>
           )}
         </Box>

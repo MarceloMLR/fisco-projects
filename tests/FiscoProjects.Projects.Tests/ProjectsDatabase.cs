@@ -32,7 +32,7 @@ internal sealed class ProjectsDatabase : IAsyncDisposable
 
     public PeopleOfTheTest People { get; }
 
-    public static async Task<ProjectsDatabase> CreateAsync(SqlServerFixture sqlServer)
+    public static async Task<ProjectsDatabase> CreateAsync(SqlServerFixture sqlServer, Action<IServiceCollection>? configure = null)
     {
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 12, 0, 0, TimeSpan.Zero));
         var files = new MemoryFileStorage();
@@ -48,6 +48,7 @@ internal sealed class ProjectsDatabase : IAsyncDisposable
             services.AddSingleton<IWorkCalendar>(installation);
             services.AddSingleton<IInstallationSettings>(installation);
             services.AddProjectsModule(configuration);
+            configure?.Invoke(services);
         });
         await database.MigrateAsync();
         return new ProjectsDatabase(database, clock, files, people);

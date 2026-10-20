@@ -1,9 +1,11 @@
 import createClient from 'openapi-fetch';
 import type { paths } from '../../src/api/schema';
+import { pdfOf } from './pdf.ts';
 import {
   administrator,
   dayFrom,
   demoClients,
+  type DemoDocument,
   type DemoMessage,
   demoNames,
   type DemoPerson,
@@ -191,8 +193,12 @@ export async function loadDemo(
     (total, project) => total + (project.tickets?.length ?? 0),
     0,
   );
+  const documents = demoProjects.reduce(
+    (total, project) => total + (project.documents?.length ?? 0),
+    0,
+  );
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, e ${String(tickets)} chamados.`,
+    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados e ${String(documents)} documentos.`,
   );
   log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
@@ -252,6 +258,7 @@ async function loadProject(
 
   const builder = personOf(manager).api;
   const ids = new Map<string, string>();
+  const phaseIds = new Map<string, string>();
   const idOf = (name: string, by: string) => {
     const found = ids.get(name);
     if (found === undefined) {
@@ -267,6 +274,7 @@ async function loadProject(
       }),
       `Fase ${phase.name} de ${project.code}`,
     ).id;
+    phaseIds.set(phase.name, phaseId);
     for (const item of phase.items) {
       const itemId = must(
         await builder.POST('/api/projects/{id}/schedule/items', {
@@ -433,6 +441,10 @@ async function loadProject(
     }
   }
 
+  if ((project.documents ?? []).length > 0) {
+    await loadDocuments(project, id, ids, phaseIds, builder, personOf);
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {
@@ -443,4 +455,94 @@ async function loadProject(
     );
   }
   return ids.size;
+}
+
+/** The content of a document of the plan: a PDF with the lines, or the lines as text (CSV, TXT). */
+function fileOf(document: { name: string }, lines: readonly string[]): Blob {
+  return document.name.toLowerCase().endsWith('.pdf')
+    ? new Blob([pdfOf(lines)], { type: 'application/pdf' })
+    : new Blob([lines.join('\n')], { type: 'text/plain' });
+}
+
+/** Sends a file to a folder, as the person who sends it (ADR-0031); gives the id of the document. */
+async function sendDocument(
+  api: Api,
+  projectId: string,
+  folderId: string,
+  document: DemoDocument,
+  lines: readonly string[],
+): Promise<string> {
+  const form = new FormData();
+  form.append('folderId', folderId);
+  form.append('file', fileOf(document, lines), document.name);
+  return must(
+    await api.POST('/api/projects/{projectId}/documents', {
+      params: { path: { projectId } },
+      body: { folderId, file: '' },
+      bodySerializer: () => form,
+    }),
+    `Documento ${document.name}`,
+  ).id;
+}
+
+/**
+ * Sends the documents of the project to their folders, each by its person, then the new versions, the status and the
+ * link with the schedule (ADR-0031, ADR-0045).
+ */
+async function loadDocuments(
+  project: DemoProject,
+  projectId: string,
+  items: ReadonlyMap<string, string>,
+  phases: ReadonlyMap<string, string>,
+  builder: Api,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+): Promise<void> {
+  const area = must(
+    await builder.GET('/api/projects/{projectId}/documents/folders', {
+      params: { path: { projectId } },
+    }),
+    `Pastas de ${project.code}`,
+  );
+  for (const document of project.documents ?? []) {
+    const folderId = area.folders.find((folder) => folder.name === document.folder)?.id;
+    if (folderId === undefined) {
+      throw new Error(`${document.name} vai para ${document.folder}, que ${project.code} não tem.`);
+    }
+    const documentId = await sendDocument(
+      personOf(document.by).api,
+      projectId,
+      folderId,
+      document,
+      document.lines,
+    );
+    for (const version of document.versions ?? []) {
+      await sendDocument(personOf(version.by).api, projectId, folderId, document, version.lines);
+    }
+    const path = { params: { path: { projectId, documentId } } };
+    if (document.status !== undefined) {
+      done(
+        await personOf(document.status.by).api.PUT(
+          '/api/projects/{projectId}/documents/{documentId}/status',
+          { ...path, body: { status: document.status.to } },
+        ),
+        `Status de ${document.name}`,
+      );
+    }
+    if (document.link !== undefined) {
+      const phaseId = phases.get(document.link.to) ?? null;
+      const itemId = phaseId === null ? (items.get(document.link.to) ?? null) : null;
+      if (phaseId === null && itemId === null) {
+        throw new Error(
+          `${document.name} se liga a ${document.link.to}, que ${project.code} não tem.`,
+        );
+      }
+      done(
+        await personOf(document.link.by).api.PUT(
+          '/api/projects/{projectId}/documents/{documentId}/link',
+          { ...path, body: { phaseId, itemId } },
+        ),
+        `Vínculo de ${document.name}`,
+      );
+    }
+  }
 }

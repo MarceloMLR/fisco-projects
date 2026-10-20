@@ -24,6 +24,7 @@ import {
 } from '../api/client';
 import { ticketChoicesQuery, ticketCountsQuery, ticketsQuery } from '../api/queries';
 import { Select } from '../components/Select';
+import { SideNav } from '../components/SideNav';
 import { TextField } from '../components/TextField';
 import { useDebounced } from '../hooks/useDebounced';
 import { Page } from '../shell/Page';
@@ -252,120 +253,18 @@ export function TicketsPage() {
         overflow: 'hidden',
       }}
     >
-      <Box
-        component="nav"
-        aria-label={t('tickets.views.label')}
-        sx={{
-          minHeight: 0,
-          boxSizing: 'border-box',
-          padding: 'var(--space-5) var(--space-3)',
-          backgroundColor: 'var(--bg-subtle)',
-          borderRight: '1px solid var(--border)',
-          overflow: 'auto',
-        }}
-      >
-        <Box
-          component="ul"
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            margin: 0,
-            padding: 0,
-            listStyle: 'none',
-          }}
-        >
-          <Box
-            component="li"
-            aria-hidden="true"
-            sx={{
-              padding: '0 var(--space-3) var(--space-1)',
-              fontSize: 12,
-              lineHeight: '16px',
-              fontWeight: 500,
-              color: 'var(--text-secondary)',
-            }}
-          >
-            {t('tickets.views.label')}
-          </Box>
-          {views.map(({ view: item, icon: Icon, count, alert = false }) => {
-            const value = counts?.[count];
-            return (
-              <li key={item}>
-                <Box
-                  component="button"
-                  type="button"
-                  aria-current={item === view ? 'page' : undefined}
-                  onClick={() => {
-                    choose(item);
-                  }}
-                  sx={{
-                    display: 'flex',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    alignItems: 'flex-start',
-                    gap: 'var(--space-2)',
-                    minHeight: 36,
-                    padding: 'var(--space-2) var(--space-3)',
-                    border: 0,
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--text)',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: 14,
-                    lineHeight: '20px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    '& > svg': { fontSize: 18, marginTop: '1px', color: 'var(--text-secondary)' },
-                    '&:hover': { backgroundColor: 'var(--bg-hover)' },
-                    '&:focus-visible': {
-                      outline: '2px solid var(--focus-ring)',
-                      outlineOffset: -2,
-                    },
-                    '&[aria-current="page"]': {
-                      backgroundColor: 'var(--bg-surface)',
-                      boxShadow: '0 0 0 1px var(--border)',
-                      fontWeight: 500,
-                      '& > svg': { color: 'var(--action-text)' },
-                    },
-                  }}
-                >
-                  <Icon />
-                  <Box component="span" sx={{ flex: 1, minWidth: 0 }}>
-                    {t(`tickets.views.${item}`)}
-                  </Box>
-                  {value !== undefined && (
-                    <Box
-                      component="span"
-                      data-alert={alert && value > 0}
-                      sx={{
-                        flex: 'none',
-                        minWidth: 20,
-                        boxSizing: 'border-box',
-                        padding: '0 6px',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: 12,
-                        lineHeight: '20px',
-                        fontWeight: 400,
-                        textAlign: 'center',
-                        color: 'var(--text-secondary)',
-                        fontVariantNumeric: 'tabular-nums',
-                        '&[data-alert="true"]': {
-                          backgroundColor: 'var(--status-danger-bg)',
-                          color: 'var(--status-danger-text)',
-                          fontWeight: 500,
-                        },
-                      }}
-                    >
-                      {value}
-                    </Box>
-                  )}
-                </Box>
-              </li>
-            );
-          })}
-        </Box>
-      </Box>
+      <SideNav<PageView>
+        label={t('tickets.views.label')}
+        items={views.map(({ view: item, icon, count, alert }) => ({
+          key: item,
+          label: t(`tickets.views.${item}`),
+          icon,
+          count: counts?.[count],
+          alert,
+        }))}
+        current={view}
+        onChoose={choose}
+      />
       <Box sx={{ minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{list}</Box>
     </Box>
   );

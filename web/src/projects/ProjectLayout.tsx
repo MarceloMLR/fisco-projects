@@ -7,6 +7,7 @@ import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import { ProjectDialog } from './ProjectDialog';
 import { ProjectHeader } from './ProjectHeader';
 import type { ProjectOutlet } from './projectOutlet';
 import { projectStatusLook } from './projectStatus';
+import { theme } from '../theme/theme';
 
 const openStatuses = [
   'Planning',
@@ -44,7 +46,7 @@ function problemField(problem: unknown, name: string): unknown {
 }
 
 /**
- * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral, Cronograma, Chamados or Membros,
+ * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral, Cronograma, Chamados, Documentos or Membros,
  * each at its own address. "Ações do projeto", in every tab, offers to edit the data and to change the status, as the person may
  * (ADR-0043); a closed project says it is read-only (ADR-0016). The tabs get the project and the message at the bottom
  * (useProjectOutlet).
@@ -55,7 +57,19 @@ export function ProjectLayout() {
   const onMembers = useMatch('/projects/:projectId/members') !== null;
   const onSchedule = useMatch('/projects/:projectId/schedule') !== null;
   const onTickets = useMatch('/projects/:projectId/tickets') !== null;
-  const tab = onMembers ? 'members' : onSchedule ? 'schedule' : onTickets ? 'tickets' : 'overview';
+  const onDocuments = useMatch('/projects/:projectId/documents') !== null;
+  const tab = onMembers
+    ? 'members'
+    : onSchedule
+      ? 'schedule'
+      : onTickets
+        ? 'tickets'
+        : onDocuments
+          ? 'documents'
+          : 'overview';
+  const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  // The documents are split in panes with margins of their own, as in the canvas (fp-split).
+  const flush = desktop && tab === 'documents';
   const queryClient = useQueryClient();
   const { data: project, error, isPending } = useQuery(projectQuery(projectId));
   const [menu, setMenu] = useState<HTMLElement>();
@@ -94,6 +108,7 @@ export function ProjectLayout() {
       );
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.documents });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
     onError: (error) => {
@@ -159,7 +174,7 @@ export function ProjectLayout() {
             : undefined
         }
       />
-      <Page withTitle={false}>
+      <Page withTitle={false} flush={flush}>
         <Box
           role="tabpanel"
           id="project-panel"
@@ -167,14 +182,14 @@ export function ProjectLayout() {
           sx={{
             flex: 1,
             minHeight: 0,
-            overflow: 'auto',
+            overflow: flush ? 'hidden' : 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--space-4)',
+            gap: flush ? 0 : 'var(--space-4)',
           }}
         >
           {closed && (
-            <Box sx={{ flex: 'none' }}>
+            <Box sx={{ flex: 'none', padding: flush ? 'var(--space-4) var(--space-6) 0' : 0 }}>
               <Alert tone="info">
                 {t(`projects.closed.${project.status as 'Completed' | 'Cancelled'}`)}
               </Alert>

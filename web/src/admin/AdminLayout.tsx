@@ -1,5 +1,6 @@
 import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
+import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import HourglassEmptyOutlined from '@mui/icons-material/HourglassEmptyOutlined';
@@ -11,7 +12,13 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
-import { allTemplatesQuery, allVendorsQuery, clientsQuery, usersQuery } from '../api/queries';
+import {
+  allTemplatesQuery,
+  allVendorsQuery,
+  clientsQuery,
+  defaultFoldersQuery,
+  usersQuery,
+} from '../api/queries';
 import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
 
@@ -72,6 +79,12 @@ const sections = [
         icon: TimelineOutlined,
         count: 'templates',
       },
+      {
+        path: '/admin/document-folders',
+        labelKey: 'pages.defaultFolders.title',
+        icon: FolderOutlined,
+        count: 'defaultFolders',
+      },
     ],
   },
 ] as const;
@@ -90,6 +103,7 @@ export function AdminLayout() {
 
   const templatesTotal = useQuery(allTemplatesQuery()).data?.length ?? null;
   const vendorsTotal = useQuery(allVendorsQuery()).data?.length ?? null;
+  const defaultFoldersTotal = useQuery(defaultFoldersQuery()).data?.length ?? null;
 
   const context: AdminContext = { usersTotal, clientsTotal };
   const counts = {
@@ -97,6 +111,7 @@ export function AdminLayout() {
     clients: clientsTotal,
     templates: templatesTotal,
     vendors: vendorsTotal,
+    defaultFolders: defaultFoldersTotal,
   };
 
   return (

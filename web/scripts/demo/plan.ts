@@ -13,6 +13,7 @@ type TicketTeam = components['schemas']['TicketTeam'];
 type TicketPriority = components['schemas']['TicketPriority'];
 type TicketAction = components['schemas']['TicketAction'];
 type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
+type DocumentStatus = components['schemas']['DocumentStatus'];
 
 /** The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). */
 export const demoPeople = {
@@ -136,6 +137,23 @@ export interface DemoTicket {
   atVendors?: readonly DemoVendorTicket[];
 }
 
+/**
+ * A document sent to a folder of the project by a person who sends documents (ADR-0031, ADR-0045): the content is
+ * fictitious, made by the command (a PDF with the lines, or the text of a CSV or TXT); then the new versions, the
+ * status and the link with the schedule, each by its person.
+ */
+export interface DemoDocument {
+  folder: string;
+  name: string;
+  by: DemoPerson;
+  lines: readonly string[];
+  /** Sent again with the same name: the next versions (ADR-0093). */
+  versions?: readonly { by: DemoPerson; lines: readonly string[] }[];
+  status?: { by: DemoPerson; to: DocumentStatus };
+  /** The name of a phase, task or milestone of the project. */
+  link?: { by: DemoPerson; to: string };
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -151,6 +169,8 @@ export interface DemoProject {
   phases: readonly DemoPhase[];
   /** The tickets opened in the project once it is built, before it gets its status. */
   tickets?: readonly DemoTicket[];
+  /** The documents sent once the schedule is built, before the project gets its status. */
+  documents?: readonly DemoDocument[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -370,6 +390,82 @@ export const demoProjects: readonly DemoProject[] = [
         description:
           'Os XML de entrada de um fornecedor são recusados na importação, com a mensagem "Esquema inválido".',
         assignee: { by: 'marina', to: 'diego' },
+      },
+    ],
+    documents: [
+      {
+        folder: '01 Gestão do projeto',
+        name: 'Plano do projeto.pdf',
+        by: 'marina',
+        lines: [
+          'Plano do projeto ERP-FIN',
+          'Escopo: financeiro e contabilidade da matriz.',
+          'Fases: levantamento, configuração, homologação e entrada em produção.',
+        ],
+        status: { by: 'marina', to: 'Approved' },
+        link: { by: 'marina', to: 'Levantamento' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Especificação das regras de ICMS-ST.pdf',
+        by: 'rafael',
+        lines: ['Regras de ICMS-ST', 'Versão inicial com as operações de venda.'],
+        versions: [
+          {
+            by: 'carla',
+            lines: [
+              'Regras de ICMS-ST',
+              'Versão revista com as operações de venda e de devolução.',
+            ],
+          },
+        ],
+        status: { by: 'rafael', to: 'Approved' },
+        link: { by: 'carla', to: 'Parametrizar regras de ICMS' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Mapa de processos fiscais.pdf',
+        by: 'carla',
+        lines: ['Mapa de processos fiscais', 'Compras, vendas, devoluções e transferências.'],
+        status: { by: 'marina', to: 'Approved' },
+        link: { by: 'carla', to: 'Mapear processos fiscais' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Regras de CFOP por operação.csv',
+        by: 'carla',
+        lines: [
+          'Operação;CFOP;Descrição',
+          'Venda dentro do estado;5102;Venda de mercadoria',
+          'Devolução de venda;1202;Devolução de venda de mercadoria',
+        ],
+        status: { by: 'carla', to: 'InReview' },
+        link: { by: 'carla', to: 'Parametrizar regras de ICMS' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Especificação de relatórios fiscais v1.txt',
+        by: 'rafael',
+        lines: ['Relatórios fiscais', 'Substituída pela especificação do relatório de ICMS-ST.'],
+        status: { by: 'rafael', to: 'Obsolete' },
+      },
+      {
+        folder: '04 Atas de reunião',
+        name: 'Ata da reunião de abertura.txt',
+        by: 'marina',
+        lines: [
+          'Ata da reunião de abertura',
+          'Presentes: equipe do projeto e equipe do cliente.',
+          'Decidido: homologação com a equipe do cliente antes da virada.',
+        ],
+        link: { by: 'marina', to: 'Reunião de abertura' },
+      },
+      {
+        folder: '05 Entregas e manuais',
+        name: 'Plano de testes integrados.txt',
+        by: 'diego',
+        lines: ['Plano de testes integrados', 'Roteiros de compras, vendas e apuração.'],
+        link: { by: 'diego', to: 'Testes integrados' },
       },
     ],
   },

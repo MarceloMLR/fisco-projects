@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using FiscoProjects.Files.Contracts;
 using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Users.Contracts;
@@ -907,7 +908,7 @@ public static class TicketEndpoints
         }
 
         var contentType = opened.Attachment.ContentType;
-        var inline = TicketAttachments.OpensInBrowser(contentType);
+        var inline = FileTypes.OpensInBrowser(contentType);
         var headers = http.Response.Headers;
         // The browser neither guesses another type nor runs anything of the file (ADR-0026).
         headers.XContentTypeOptions = "nosniff";

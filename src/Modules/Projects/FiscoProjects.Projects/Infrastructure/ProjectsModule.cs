@@ -44,6 +44,8 @@ public static class ProjectsModule
         services.AddScoped<IMemberChangeNotices, MemberChangeNotices>();
         services.AddScoped<ProjectNotices>();
         services.AddScoped<IUpcomingTasks, UpcomingTaskDirectory>();
+        services.AddScoped<IScheduleItems, ScheduleItemDirectory>();
+        services.AddScoped<IProjectSetupNotices, ProjectSetupNotices>();
         services.AddScoped<GetSchedule>();
         services.AddScoped<AddSchedulePhase>();
         services.AddScoped<RenameSchedulePhase>();
