@@ -139,6 +139,7 @@ export function AcceptanceDrawer({
       {isError && <Alert tone="danger">{t('acceptances.details.notLoaded')}</Alert>}
       {data !== undefined && data.term.id === termId && (
         <AcceptanceContent
+          key={data.term.id}
           project={project}
           details={data}
           onCancelled={onClose}
