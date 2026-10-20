@@ -56,9 +56,14 @@ export function noticeText(notification: BellNotification, t: TFunction): string
     item: value('item'),
     start: value('start'),
     end: value('end'),
+    title: value('title'),
   };
   if (notification.kind === 'TicketStatusChanged' && 'closedWithProject' in notification.values) {
     return t('notifications.kinds.ticketClosedWithProject', values);
+  }
+  // A signed term the Administrator or the manager attached in the name of the person (ADR-0095).
+  if (notification.kind === 'AcceptanceSigned' && 'attached' in notification.values) {
+    return t('notifications.kinds.acceptanceAttached', values);
   }
   return t(`notifications.kinds.${keyOf(notification.kind)}`, values);
 }

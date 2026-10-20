@@ -183,7 +183,7 @@ public sealed class ProjectClosingTests(SqlServerFixture sqlServer)
     }
 
     [Fact(DisplayName = "Resumo do encerramento")]
-    public async Task Summary_TellsTheOpenTicketsAndTheIncompleteTasks()
+    public async Task Summary_TellsTheOpenTickets_TheIncompleteTasks_AndThePendingAcceptances()
     {
         await using var scene = await StartAsync();
         await OpenAsync(scene, "Rejeição 539");
@@ -209,11 +209,23 @@ public sealed class ProjectClosingTests(SqlServerFixture sqlServer)
             progress = 100,
             predecessorIds = Array.Empty<Guid>(),
         }));
+        // A request of acceptance waiting for Carla, straight in the database: the requests are of AcceptanceTests.
+        await scene.App.CountAsync(
+            """
+            INSERT INTO [documents].[acceptance_terms]
+                (Id, ProjectId, MilestoneId, Title, RecipientId, Status, RequestedById, RequestedAt, FileId, FileName, FileSize)
+            VALUES (NEWID(), @project, NEWID(), 'Aceite da homologação', @carla, 'Pending', @marina, SYSUTCDATETIME(), 'f', 'termo.pdf', 10);
+            SELECT 0
+            """,
+            ("@project", scene.Erp),
+            ("@carla", scene.Carla),
+            ("@marina", scene.Marina));
         using var marina = await scene.App.SignInAsync(scene.Marina);
 
         var closing = await marina.GetFromJsonAsync<JsonElement>($"{scene.Path}/closing", Cancellation);
 
-        (closing.GetProperty("openTickets").GetInt32(), closing.GetProperty("incompleteTasks").GetInt32()).Should().Be((1, 1));
+        (closing.GetProperty("openTickets").GetInt32(), closing.GetProperty("incompleteTasks").GetInt32(), closing.GetProperty("pendingAcceptances").GetInt32())
+            .Should().Be((1, 1, 1));
     }
 
     [Fact(DisplayName = "Resumo só de quem muda o status")]

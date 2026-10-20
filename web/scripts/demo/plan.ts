@@ -176,6 +176,28 @@ export interface DemoCredential {
   by: DemoPerson;
 }
 
+/**
+ * An acceptance term of a milestone (ADR-0035, ADR-0095), with PDFs made by the command: a request of the manager to a
+ * person of the project, then the answer of the person, the signed term or the refusal; or, without a request, a term
+ * signed outside the system that the manager attaches in the name of the person.
+ */
+export interface DemoAcceptance {
+  milestone: string;
+  title: string;
+  /** The person of the term, of any role in the project. */
+  to: DemoPerson;
+  /** Who asks for it, or attaches it: the manager. */
+  by: DemoPerson;
+  message?: string;
+  /** The PDF to sign of a request, or the signed term attached without one. */
+  file: string;
+  lines: readonly string[];
+  /** Without a request: the signed term attached by the manager in the name of the person. */
+  attached?: boolean;
+  /** The answer of the person: the signed PDF, or the reason of the refusal. */
+  answer?: { signed: string; lines: readonly string[] } | { refused: string };
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -197,6 +219,8 @@ export interface DemoProject {
   links?: readonly DemoLink[];
   /** The credentials included once the schedule is built, before the project gets its status. */
   credentials?: readonly DemoCredential[];
+  /** The acceptance terms asked for, answered and attached once the schedule is built, before the status. */
+  acceptances?: readonly DemoAcceptance[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -578,6 +602,73 @@ export const demoProjects: readonly DemoProject[] = [
         username: 'marina.costa',
         notes: 'Registro de chamados no fornecedor.',
         by: 'marina',
+      },
+    ],
+    acceptances: [
+      {
+        milestone: 'Processos mapeados',
+        title: 'Aceite do mapa de processos',
+        to: 'carla',
+        by: 'marina',
+        message:
+          'Carla, o mapa de processos fiscais está fechado. Assine o termo e envie por aqui.',
+        file: 'termo-mapa-de-processos.pdf',
+        lines: [
+          'Termo de aceite - Mapa de processos fiscais',
+          'Projeto ERP-FIN - Implantação do ERP financeiro',
+          'Declaro que o mapa de processos fiscais foi revisado e aprovado.',
+          'Assinatura: ____________________',
+        ],
+        answer: {
+          signed: 'termo-mapa-de-processos-assinado.pdf',
+          lines: [
+            'Termo de aceite - Mapa de processos fiscais',
+            'Declaro que o mapa de processos fiscais foi revisado e aprovado.',
+            'Assinado por Carla Mendes (assinatura fictícia de demonstração).',
+          ],
+        },
+      },
+      {
+        milestone: 'Processos mapeados',
+        title: 'Aceite do levantamento',
+        to: 'beatriz',
+        by: 'marina',
+        file: 'termo-levantamento-assinado.pdf',
+        lines: [
+          'Termo de aceite - Levantamento',
+          'Projeto ERP-FIN - Implantação do ERP financeiro',
+          'Recebido assinado por e-mail (assinatura fictícia de demonstração).',
+        ],
+        attached: true,
+      },
+      {
+        milestone: 'Roteiro aprovado',
+        title: 'Aceite do roteiro de testes',
+        to: 'carla',
+        by: 'marina',
+        message: 'Carla, segue o roteiro dos testes integrados para o seu aceite.',
+        file: 'termo-roteiro-de-testes.pdf',
+        lines: [
+          'Termo de aceite - Roteiro de testes integrados',
+          'Projeto ERP-FIN - Implantação do ERP financeiro',
+          'Assinatura: ____________________',
+        ],
+        answer: { refused: 'Falta incluir os testes de nota de devolução no roteiro.' },
+      },
+      {
+        milestone: 'Aceite da homologação',
+        title: 'Aceite da homologação',
+        to: 'carla',
+        by: 'marina',
+        message:
+          'Carla, quando os testes de homologação terminarem, assine o termo e envie por aqui.',
+        file: 'termo-homologacao-erp-fin.pdf',
+        lines: [
+          'Termo de aceite - Homologação',
+          'Projeto ERP-FIN - Implantação do ERP financeiro',
+          'Declaro que a homologação foi concluída sem pendências.',
+          'Assinatura: ____________________',
+        ],
       },
     ],
   },

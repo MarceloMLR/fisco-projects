@@ -130,6 +130,8 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, TimeProv
         NoticeKind.TicketTransferred,
         NoticeKind.TicketDueSoon,
         NoticeKind.TicketOverdue,
+        NoticeKind.AcceptanceRequested,
+        NoticeKind.AcceptanceReminded,
     };
 
     public async Task DeliverAsync(

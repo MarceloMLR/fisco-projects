@@ -1,5 +1,6 @@
 using FiscoProjects.Administration.Contracts;
 using FiscoProjects.Calendar.Contracts;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
 
@@ -649,6 +650,35 @@ public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore s
             schedule.SetReached(itemId, reached, today);
             return ScheduleResult.Done()
                 .Labeled(reached ? ScheduleAction.MilestoneReached : ScheduleAction.MilestoneUnmarked, item.Name);
+        }, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Reaches a milestone for another module, as the signed acceptance term of it (ADR-0035): on the day of the
+/// installation, if it was not reached yet, in the transaction of the schedule. The change is of no person, so it stays
+/// out of the undo of everyone (ADR-0091).
+/// </summary>
+public sealed class ScheduleMilestones(IProjectStore projects, IScheduleStore schedules, InstallationClock clock) : IScheduleMilestones
+{
+    public async Task<bool> ReachAsync(Guid projectId, Guid milestoneId, CancellationToken cancellationToken)
+    {
+        var today = await clock.TodayAsync(cancellationToken);
+        return await projects.InSerializableTransactionAsync(async token =>
+        {
+            var schedule = await schedules.FindAsync(projectId, token);
+            if (schedule?.ItemOf(milestoneId) is not { Kind: ScheduleItemKind.Milestone } milestone)
+            {
+                return false;
+            }
+
+            if (milestone.ReachedOn is null)
+            {
+                schedule.SetReached(milestoneId, reached: true, today);
+                await projects.SaveChangesAsync(token);
+            }
+
+            return true;
         }, cancellationToken);
     }
 }

@@ -11,6 +11,7 @@ import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
+import { ProjectAcceptancesPage } from './acceptances/ProjectAcceptancesPage';
 import { ProjectCredentialsPage } from './credentials/ProjectCredentialsPage';
 import { LinkCategoriesPage } from './admin/LinkCategoriesPage';
 import { InstallationRoot } from './installation/InstallationRoot';
@@ -156,6 +157,18 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'projects',
                   titleKey: 'pages.projectCredentials.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'acceptances',
+                element: <ProjectAcceptancesPage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectAcceptances.title',
                   trail: [
                     { titleKey: 'pages.projects.title', path: '/projects' },
                     { project: true },

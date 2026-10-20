@@ -96,9 +96,10 @@ public sealed record ProjectStatusRequest(ProjectStatus Status);
 
 /// <summary>
 /// What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from
-/// being completed and are closed by the cancellation, and the tasks below 100%, a warning.
+/// being completed and are closed by the cancellation, and the tasks below 100% and the requests of acceptance waiting
+/// for the answer, warnings.
 /// </summary>
-public sealed record ProjectClosingResponse(int OpenTickets, int IncompleteTasks);
+public sealed record ProjectClosingResponse(int OpenTickets, int IncompleteTasks, int PendingAcceptances);
 
 public sealed record ProjectCreatedResponse(Guid Id);
 
@@ -323,7 +324,7 @@ internal static class ProjectEndpoints
         var (outcome, closing) = await getClosing.ExecuteAsync(id, viewer, cancellationToken);
         return outcome switch
         {
-            ProjectStatusOutcome.Saved => TypedResults.Ok(new ProjectClosingResponse(closing!.OpenTickets, closing.IncompleteTasks)),
+            ProjectStatusOutcome.Saved => TypedResults.Ok(new ProjectClosingResponse(closing!.OpenTickets, closing.IncompleteTasks, closing.PendingAcceptances)),
             ProjectStatusOutcome.NotFound => TypedResults.NotFound(),
             _ => TypedResults.Forbid(),
         };

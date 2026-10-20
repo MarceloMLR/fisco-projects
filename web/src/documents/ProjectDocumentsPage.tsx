@@ -407,6 +407,7 @@ export function ProjectDocumentsPage() {
     <DocumentDrawer
       projectId={project.id}
       documentId={chosen}
+      termsFolderId={folders.find((item) => item.isAcceptance)?.id}
       onClose={() => {
         setChosen(undefined);
       }}

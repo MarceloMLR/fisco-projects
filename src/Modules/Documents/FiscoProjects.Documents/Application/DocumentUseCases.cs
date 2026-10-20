@@ -11,14 +11,19 @@ public sealed record DocumentSettings(long MaxBytes)
     public const int DefaultMaxMegabytes = 25;
 }
 
-/// <summary>Which documents a list asks for: of a folder or, with a search, of all the folders the person sees.</summary>
+/// <summary>
+/// Which documents a list asks for: of a folder or, with a search, of all the folders the person sees; in the folder of
+/// the terms of someone who only sees the own terms, only those (ADR-0045).
+/// </summary>
 public sealed record DocumentQuery(
     Guid ProjectId,
     IReadOnlyCollection<Guid> FolderIds,
     string? Search,
     bool WithObsolete,
     int Page,
-    int PageSize);
+    int PageSize,
+    Guid? LimitedFolderId = null,
+    IReadOnlyCollection<Guid>? LimitedTo = null);
 
 /// <summary>A page of documents and how many match in all pages.</summary>
 public sealed record DocumentRows(IReadOnlyList<Document> Items, int Total);
@@ -61,17 +66,36 @@ public enum DocumentOutcome
 /// <summary>What happened to a document: its id and version, or why nothing was saved.</summary>
 public sealed record DocumentResult(DocumentOutcome Outcome, Guid? Id = null, int? Version = null, FileRefusal Refusal = FileRefusal.None);
 
-/// <summary>A project as the person sees it in the documents: the project, the permissions and the folders the person sees.</summary>
-public sealed record DocumentArea(ProjectAccess Project, DocumentPermissions Permissions, IReadOnlyList<DocumentFolder> Folders)
+/// <summary>
+/// A project as the person sees it in the documents: the project, the permissions and the folders the person sees; in
+/// the folder of the terms, every document, or only the signed terms of the person (ADR-0045).
+/// </summary>
+public sealed record DocumentArea(
+    ProjectAccess Project, DocumentPermissions Permissions, IReadOnlyList<DocumentFolder> Folders, IReadOnlySet<Guid>? OwnTerms = null)
 {
     /// <summary>The folder of the project the person sees; null when it is not one of them.</summary>
     public DocumentFolder? FolderOf(Guid folderId) => Folders.FirstOrDefault(folder => folder.Id == folderId);
+
+    /// <summary>The folder of the document, when the person sees the document; null otherwise.</summary>
+    public DocumentFolder? FolderOf(Document document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return FolderOf(document.FolderId) is { } folder && (!folder.IsAcceptance || OwnTerms is null || OwnTerms.Contains(document.Id))
+            ? folder
+            : null;
+    }
+
+    /// <summary>The folder of the terms when the person sees only the own terms in it.</summary>
+    public Guid? LimitedFolderId => OwnTerms is null ? null : Folders.FirstOrDefault(folder => folder.IsAcceptance)?.Id;
 }
 
 /// <summary>The project, the permissions and the folders of a person, read once for each action (ADR-0045).</summary>
-public sealed class DocumentAreas(IProjectAccess projects, ProjectFolders folders)
+public sealed class DocumentAreas(IProjectAccess projects, ProjectFolders folders, IAcceptanceStore acceptances)
 {
-    /// <summary>The area of the project; null when the person does not see the project (404).</summary>
+    /// <summary>
+    /// The area of the project; null when the person does not see the project (404). The folder of the terms is of who
+    /// manages the terms, and of who has a signed term, with only the own terms (ADR-0045).
+    /// </summary>
     public async Task<DocumentArea?> OfAsync(Guid projectId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(viewer);
@@ -82,7 +106,15 @@ public sealed class DocumentAreas(IProjectAccess projects, ProjectFolders folder
 
         var permissions = DocumentAccess.Of(viewer, project);
         var all = await folders.OfAsync(projectId, cancellationToken);
-        return new(project, permissions, [.. all.Where(folder => !folder.IsAcceptance || permissions.SeesAcceptanceFolder)]);
+        if (permissions.SeesAcceptanceFolder)
+        {
+            return new(project, permissions, all);
+        }
+
+        var own = await acceptances.SignedDocumentsOfAsync(projectId, viewer.UserId, cancellationToken);
+        return own.Count == 0
+            ? new(project, permissions, [.. all.Where(folder => !folder.IsAcceptance)])
+            : new(project, permissions, all, own);
     }
 }
 
@@ -158,7 +190,10 @@ public sealed class ListDocumentFolders(DocumentAreas areas, IDocumentStore docu
         }
 
         var counts = await documents.CountsAsync(projectId, cancellationToken);
-        var folders = area.Folders.Select(folder => new FolderCount(folder, counts.GetValueOrDefault(folder.Id))).ToList();
+        // The signed terms are approved and stay (ADR-0093): the own ones are all the person sees in the folder.
+        var folders = area.Folders.Select(folder => new FolderCount(
+            folder,
+            folder.Id == area.LimitedFolderId ? area.OwnTerms!.Count : counts.GetValueOrDefault(folder.Id))).ToList();
         return new(folders, folders.Sum(folder => folder.Count), area.Permissions, area.Project.IsClosed, settings.MaxBytes);
     }
 }
@@ -190,7 +225,8 @@ public sealed class ListDocuments(DocumentAreas areas, IDocumentStore documents,
         var page = Math.Max(1, filter.Page);
         var size = Math.Clamp(filter.PageSize, 1, MaxPageSize);
         var rows = await documents.ListAsync(
-            new DocumentQuery(projectId, folderIds, search, filter.WithObsolete, page, size), cancellationToken);
+            new DocumentQuery(projectId, folderIds, search, filter.WithObsolete, page, size, area.LimitedFolderId, area.OwnTerms),
+            cancellationToken);
         return new(await views.OfAsync(area, rows.Items, cancellationToken), rows.Total);
     }
 }
@@ -206,7 +242,7 @@ public sealed class GetDocument(DocumentAreas areas, IDocumentStore documents, D
     {
         if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
             || await documents.FindAsync(projectId, documentId, withVersions: true, cancellationToken) is not { } document
-            || area.FolderOf(document.FolderId) is null)
+            || area.FolderOf(document) is null)
         {
             return null;
         }
@@ -311,7 +347,7 @@ public sealed class OpenDocument(DocumentAreas areas, IDocumentStore documents, 
     {
         if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
             || await documents.FindAsync(projectId, documentId, withVersions: true, cancellationToken) is not { } document
-            || area.FolderOf(document.FolderId) is null
+            || area.FolderOf(document) is null
             || document.Versions.FirstOrDefault(item => item.Number == (version ?? document.Version)) is not { } chosen
             || await files.OpenAsync(document.FileId, chosen.StorageVersionId, cancellationToken) is not { } file)
         {
@@ -437,7 +473,7 @@ internal static class DocumentChanges
     {
         if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
             || await documents.FindAsync(projectId, documentId, withVersions: false, cancellationToken) is not { } document
-            || area.FolderOf(document.FolderId) is not { } folder)
+            || area.FolderOf(document) is not { } folder)
         {
             return (DocumentOutcome.NotFound, null);
         }

@@ -478,3 +478,33 @@ describe('Acessos na demonstração', () => {
     expect(JSON.stringify(demoProjects)).not.toContain('password');
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Termos na demonstração".
+describe('Termos na demonstração', () => {
+  it('Termos na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    const main = demoProjects.find((project) => project.code === 'ERP-FIN');
+    const terms = main?.acceptances ?? [];
+    const requests = terms.filter((term) => term.attached !== true);
+    // The requests and the attached term by the manager; the answers by the person of each request (ADR-0045).
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toHaveLength(requests.length);
+    expect(people(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toEqual(['marina']);
+    expect(people(/ POST \/api\/projects\/[^/]+\/acceptances\/attached$/)).toEqual(['marina']);
+    expect(people(/ POST .*\/acceptances\/[^/]+\/signed$/)).toEqual(['carla']);
+    expect(people(/ POST .*\/acceptances\/[^/]+\/refusal$/)).toEqual(['carla']);
+    // Signed, attached, refused and pending, each with a PDF made by the command.
+    expect(terms.some((term) => term.attached === true)).toBe(true);
+    expect(terms.some((term) => term.answer !== undefined && 'signed' in term.answer)).toBe(true);
+    expect(terms.some((term) => term.answer !== undefined && 'refused' in term.answer)).toBe(true);
+    expect(terms.some((term) => term.attached !== true && term.answer === undefined)).toBe(true);
+    const forms = [...bodies.entries()]
+      .filter(([path]) => /\/acceptances(\/attached|\/[^/]+\/signed)?$/.test(path))
+      .flatMap(([, saved]) => saved) as string[];
+    expect(forms.every((form) => form.includes('%PDF-1.4'))).toBe(true);
+    // Before the project gets its status.
+    const lastTerm = calls.findLastIndex((call) => call.includes('/acceptances'));
+    const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
+    expect(lastTerm).toBeLessThan(status);
+  });
+});

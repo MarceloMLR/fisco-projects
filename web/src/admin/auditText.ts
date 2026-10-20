@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import {
+  type AcceptanceStatus,
   type AuditEntry,
   type AuditField,
   documentStatuses,
@@ -284,6 +285,30 @@ const portalCredentialFields: readonly string[] = [
 const isPortalCredentialField = (field: string): field is PortalCredentialField =>
   portalCredentialFields.includes(field);
 
+type AcceptanceTermField =
+  | 'ProjectId'
+  | 'MilestoneId'
+  | 'Title'
+  | 'Message'
+  | 'RecipientId'
+  | 'Status'
+  | 'FileName'
+  | 'RefusalReason';
+const acceptanceTermFields: readonly string[] = [
+  'ProjectId',
+  'MilestoneId',
+  'Title',
+  'Message',
+  'RecipientId',
+  'Status',
+  'FileName',
+  'RefusalReason',
+] satisfies AcceptanceTermField[];
+const isAcceptanceTermField = (field: string): field is AcceptanceTermField =>
+  acceptanceTermFields.includes(field);
+const isAcceptanceStatus = (value: string | null | undefined): value is AcceptanceStatus =>
+  value === 'Pending' || value === 'Signed' || value === 'Refused';
+
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
 /** A record of a phase, a task or milestone, or a dependency of a schedule. */
@@ -392,6 +417,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'Document' && field === 'Status' && isDocumentStatus(value)) {
     return t(`documents.statuses.${value}`);
   }
+  if (entry.itemType === 'AcceptanceTerm' && field === 'Status' && isAcceptanceStatus(value)) {
+    return t(`acceptances.statuses.${value}`);
+  }
   if (entry.itemType === 'LinkCategory' && field === 'IsActive') {
     return t(
       value === 'true' ? 'linkCategories.statuses.Active' : 'linkCategories.statuses.Inactive',
@@ -493,7 +521,30 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'PortalCredential' && isPortalCredentialField(field)) {
     return t(`audit.fields.PortalCredential.${field}`);
   }
+  if (entry.itemType === 'AcceptanceTerm' && isAcceptanceTermField(field)) {
+    return t(`audit.fields.AcceptanceTerm.${field}`);
+  }
   return field;
+}
+
+/**
+ * What happened to a term: asked for, or attached when it was saved signed; signed or refused when its situation
+ * changed; cancelled when removed.
+ */
+function acceptanceActionOf(
+  entry: AuditEntry,
+): 'Created' | 'Attached' | 'Signed' | 'Refused' | 'Updated' | 'Deleted' {
+  const status = changeOf(entry, 'Status');
+  if (entry.action === 'Created') {
+    return status?.after === 'Signed' ? 'Attached' : 'Created';
+  }
+  if (entry.action === 'Deleted') {
+    return 'Deleted';
+  }
+  if (status?.after === 'Signed') {
+    return 'Signed';
+  }
+  return status?.after === 'Refused' ? 'Refused' : 'Updated';
 }
 
 function titleOf(entry: AuditEntry, t: TFunction): string {
@@ -596,6 +647,10 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
     return t(
       `audit.actions.PortalCredential.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
+  }
+  // A term of acceptance asked for, attached, signed, refused and cancelled (ADR-0035, ADR-0095).
+  if (entry.itemType === 'AcceptanceTerm') {
+    return t(`audit.actions.AcceptanceTerm.${acceptanceActionOf(entry)}`);
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
@@ -778,9 +833,11 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'LinkCategory' && changeOf(entry, 'IsActive') !== undefined) {
     return label;
   }
-  // A link or a credential included or removed says the project.
+  // A link, a credential or a term included or removed says the project.
   if (
-    (entry.itemType === 'ProjectLink' || entry.itemType === 'PortalCredential') &&
+    (entry.itemType === 'ProjectLink' ||
+      entry.itemType === 'PortalCredential' ||
+      entry.itemType === 'AcceptanceTerm') &&
     entry.action !== 'Updated'
   ) {
     return join(label, projectOfMember(entry));
@@ -908,6 +965,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'PortalCredential') {
     return [
       { label: t('audit.details.item.PortalCredential'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'AcceptanceTerm') {
+    return [
+      { label: t('audit.details.item.AcceptanceTerm'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

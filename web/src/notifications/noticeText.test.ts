@@ -62,6 +62,29 @@ describe('Texto das notificações', () => {
     ).toBe('O chamado #14 foi fechado com o cancelamento do projeto');
   });
 
+  // Spec: avisos, requirement "Avisos dos termos de aceite".
+  it('Avisos dos termos de aceite', () => {
+    const values = { project: 'ERP-FIN', title: 'Aceite da homologação', item: 'Homologação' };
+    expect(noticeText(notification('AcceptanceRequested', values, 'Marina Costa'), t)).toBe(
+      'Marina Costa pediu o seu aceite: Aceite da homologação',
+    );
+    expect(noticeText(notification('AcceptanceReminded', values, 'Marina Costa'), t)).toBe(
+      'Marina Costa lembrou o pedido de aceite: Aceite da homologação',
+    );
+    expect(noticeText(notification('AcceptanceSigned', values, 'Carla Mendes'), t)).toBe(
+      'Carla Mendes enviou o termo assinado: Aceite da homologação',
+    );
+    expect(
+      noticeText(
+        notification('AcceptanceSigned', { ...values, attached: 'true' }, 'Marina Costa'),
+        t,
+      ),
+    ).toBe('Marina Costa anexou o termo assinado: Aceite da homologação');
+    expect(noticeText(notification('AcceptanceRefused', values, 'Carla Mendes'), t)).toBe(
+      'Carla Mendes recusou o termo: Aceite da homologação',
+    );
+  });
+
   it('Inclusão no projeto, com o papel', () => {
     expect(
       noticeText(

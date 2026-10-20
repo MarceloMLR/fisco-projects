@@ -360,6 +360,23 @@ export function ProjectLayout() {
               {t('projects.confirm.incompleteTasks', { count: closing.incompleteTasks })}
             </Alert>
           )}
+          {confirming === 'Completed' &&
+            closing !== undefined &&
+            closing.pendingAcceptances > 0 && (
+              <Alert tone="warning">
+                {t('projects.confirm.pendingAcceptances', { count: closing.pendingAcceptances })}{' '}
+                <Box
+                  component={Link}
+                  to={`/projects/${projectId}/acceptances`}
+                  onClick={() => {
+                    setConfirming(undefined);
+                  }}
+                  sx={{ color: 'inherit', fontWeight: 500 }}
+                >
+                  {t('projects.confirm.seeAcceptances')}
+                </Box>
+              </Alert>
+            )}
           {confirming === 'Cancelled' && openTickets > 0 && (
             <Alert tone="warning">
               {t('projects.confirm.ticketsClosed', { count: openTickets })}

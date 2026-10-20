@@ -1400,6 +1400,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{projectId}/acceptances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListAcceptances"];
+        put?: never;
+        post: operations["RequestAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/milestones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListAcceptanceMilestones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetAcceptance"];
+        put?: never;
+        post?: never;
+        delete: operations["CancelAcceptance"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OpenAcceptanceFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/attached": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttachAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}/signed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SignAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}/attached": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttachAcceptanceToRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}/refusal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RefuseAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/acceptances/{termId}/reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RemindAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{projectId}/credentials": {
         parameters: {
             query?: never;
@@ -1582,6 +1726,117 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description What the person may do with the term now. */
+        AcceptanceActionsResponse: {
+            canAnswer: boolean;
+            canAttach: boolean;
+            canRemind: boolean;
+            canCancel: boolean;
+        };
+        /** @description How many terms of each status the person sees. */
+        AcceptanceCountsResponse: {
+            /** Format: int32 */
+            all: number;
+            /** Format: int32 */
+            pending: number;
+            /** Format: int32 */
+            signed: number;
+            /** Format: int32 */
+            refused: number;
+        };
+        AcceptanceCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description A term with the message, the term to sign, the signed term, the reason of the refusal and the history. */
+        AcceptanceDetailsResponse: {
+            term: components["schemas"]["AcceptanceResponse"];
+            message: null | string;
+            toSign: null | components["schemas"]["AcceptanceFileResponse"];
+            signed: null | components["schemas"]["AcceptanceSignedResponse"];
+            refusalReason: null | string;
+            events: components["schemas"]["AcceptanceEventResponse"][];
+            actions: components["schemas"]["AcceptanceActionsResponse"];
+        };
+        /**
+         * @description What happened to a term, for its history (ADR-0095).
+         * @enum {unknown}
+         */
+        AcceptanceEventKind: "Requested" | "Reminded" | "Signed" | "Attached" | "Refused";
+        /** @description An event of the history: what happened, who did it and when. */
+        AcceptanceEventResponse: {
+            kind: components["schemas"]["AcceptanceEventKind"];
+            actor: components["schemas"]["AcceptancePersonResponse"];
+            /** Format: date-time */
+            at: string;
+        };
+        /** @description A file of a term: the name and the size. */
+        AcceptanceFileResponse: {
+            name: string;
+            /** Format: int64 */
+            size: number;
+        };
+        /**
+         * @description The terms the person sees, the counts, whether the person sees every term of the project (who manages them) and
+         *     whether the person asks for and attaches terms now, which a closed project does not let.
+         */
+        AcceptanceListResponse: {
+            items: components["schemas"]["AcceptanceResponse"][];
+            counts: components["schemas"]["AcceptanceCountsResponse"];
+            canManage: boolean;
+            canRequest: boolean;
+        };
+        /** @description A milestone of the schedule with its current name, its day and the day it was reached. */
+        AcceptanceMilestoneResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            day: null | string;
+            /** Format: date */
+            reachedOn: null | string;
+        };
+        /** @description A person and the name. */
+        AcceptancePersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description The reason why the person refuses the term. */
+        AcceptanceRefusalRequest: {
+            reason: null | string;
+        };
+        /**
+         * @description A term of a list: the title, the status, the milestone (null when it left the schedule), the person of the term, who
+         *     asked and when (who attached it, for a term without a request), who answered and when, and whether it was asked for
+         *     in the system.
+         */
+        AcceptanceResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            status: components["schemas"]["AcceptanceStatus"];
+            /** Format: uuid */
+            milestoneId: string;
+            milestone: null | components["schemas"]["AcceptanceMilestoneResponse"];
+            recipient: components["schemas"]["AcceptancePersonResponse"];
+            requested: components["schemas"]["DocumentActionResponse"];
+            answered: null | components["schemas"]["DocumentActionResponse"];
+            isRequest: boolean;
+        };
+        /** @description The document of the signed term in the folder of the terms, opened by the documents. */
+        AcceptanceSignedResponse: {
+            /** Format: uuid */
+            documentId: string;
+            name: string;
+            /** Format: int64 */
+            size: number;
+        };
+        /**
+         * @description Where a term stands (ADR-0035): waiting for the answer, signed, or refused with a reason.
+         * @enum {unknown}
+         */
+        AcceptanceStatus: "Pending" | "Signed" | "Refused";
         /** @description A new local holiday: the name, the date and whether it repeats every year. */
         AddLocalHolidayRequest: {
             name: null | string;
@@ -2124,7 +2379,7 @@ export interface components {
          * @description What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037.
          * @enum {unknown}
          */
-        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged";
+        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged" | "AcceptanceRequested" | "AcceptanceReminded" | "AcceptanceSigned" | "AcceptanceRefused";
         /** @description A page of the bell, the newest first, with how many are not read and whether there are older ones. */
         NotificationPageResponse: {
             items: components["schemas"]["NotificationResponse"][];
@@ -2201,13 +2456,16 @@ export interface components {
         };
         /**
          * @description What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from
-         *     being completed and are closed by the cancellation, and the tasks below 100%, a warning.
+         *     being completed and are closed by the cancellation, and the tasks below 100% and the requests of acceptance waiting
+         *     for the answer, warnings.
          */
         ProjectClosingResponse: {
             /** Format: int32 */
             openTickets: number;
             /** Format: int32 */
             incompleteTasks: number;
+            /** Format: int32 */
+            pendingAcceptances: number;
         };
         ProjectCreatedResponse: {
             /** Format: uuid */
@@ -8657,6 +8915,665 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListAcceptances: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AcceptanceStatus"];
+            };
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RequestAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: uuid */
+                    milestoneId?: string;
+                } & {
+                    /** Format: uuid */
+                    recipientId?: string;
+                } & {
+                    title?: string;
+                } & {
+                    message?: string;
+                } & {
+                    file?: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListAcceptanceMilestones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceMilestoneResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceDetailsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CancelAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    OpenAcceptanceFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: uuid */
+                    milestoneId?: string;
+                } & {
+                    /** Format: uuid */
+                    recipientId?: string;
+                } & {
+                    title?: string;
+                } & {
+                    file?: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SignAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    file?: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    AttachAcceptanceToRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    file?: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RefuseAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptanceRefusalRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemindAcceptance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                termId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
             /** @description Unauthorized */

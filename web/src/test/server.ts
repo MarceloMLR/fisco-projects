@@ -1448,7 +1448,7 @@ export const handlers = [
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
   http.get('/api/projects/:id/closing', () =>
-    HttpResponse.json({ openTickets: 0, incompleteTasks: 0 }),
+    HttpResponse.json({ openTickets: 0, incompleteTasks: 0, pendingAcceptances: 0 }),
   ),
   http.get('/api/project-templates', () =>
     HttpResponse.json(demoTemplates().filter((template) => template.isActive)),
@@ -1475,6 +1475,15 @@ export const handlers = [
     HttpResponse.json(demoLinkCategories().filter((category) => category.isActive)),
   ),
   http.get('/api/admin/link-categories', () => HttpResponse.json(demoLinkCategories())),
+  // The acceptance terms of a project: none, and the person does not manage them (ADR-0045).
+  http.get('/api/projects/:id/acceptances', () =>
+    HttpResponse.json({
+      items: [],
+      counts: { all: 0, pending: 0, signed: 0, refused: 0 },
+      canManage: false,
+      canRequest: false,
+    }),
+  ),
   // The credentials of a project, without the passwords (ADR-0034).
   http.get('/api/projects/:id/credentials', ({ request }) =>
     HttpResponse.json(credentialsList(demoCredentials(), new URL(request.url))),

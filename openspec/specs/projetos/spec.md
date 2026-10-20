@@ -260,11 +260,11 @@ Ao cancelar o projeto, os chamados que não estão fechados MUST ser fechados, c
 
 ### Requirement: Resumo do encerramento
 
-Quem muda o status do projeto MUST poder ver, antes de concluir ou cancelar, quantos chamados não estão fechados e quantas tarefas estão abaixo de 100%; as outras pessoas do projeto MUST receber 403 (ADR-0043).
+Quem muda o status do projeto MUST poder ver, antes de concluir ou cancelar, quantos chamados não estão fechados, quantas tarefas estão abaixo de 100% e quantos pedidos de aceite estão pendentes; as outras pessoas do projeto MUST receber 403 (ADR-0043).
 
 #### Scenario: Resumo do encerramento
-- **WHEN** o gerente pede o resumo do encerramento de um projeto com um chamado aberto e uma tarefa em 40%
-- **THEN** a API responde com um chamado não fechado e uma tarefa abaixo de 100%
+- **WHEN** o gerente pede o resumo do encerramento de um projeto com um chamado aberto, uma tarefa em 40% e um pedido de aceite pendente
+- **THEN** a API responde com um chamado não fechado, uma tarefa abaixo de 100% e um aceite pendente
 
 #### Scenario: Resumo só de quem muda o status
 - **WHEN** um colaborador do projeto pede o resumo do encerramento
@@ -272,7 +272,7 @@ Quem muda o status do projeto MUST poder ver, antes de concluir ou cancelar, qua
 
 ### Requirement: Encerramento pela tela
 
-"Concluir projeto" MUST mostrar, antes de confirmar, os chamados não fechados, que impedem a conclusão, com o link para a aba Chamados do projeto e sem deixar confirmar, e as tarefas abaixo de 100% como aviso, que deixa confirmar. "Cancelar projeto" MUST dizer quantos chamados serão fechados (ADR-0043, ADR-0065).
+"Concluir projeto" MUST mostrar, antes de confirmar, os chamados não fechados, que impedem a conclusão, com o link para a aba Chamados do projeto e sem deixar confirmar, e as tarefas abaixo de 100% e os pedidos de aceite pendentes como aviso, que deixa confirmar. "Cancelar projeto" MUST dizer quantos chamados serão fechados (ADR-0043, ADR-0065).
 
 #### Scenario: Conclusão impedida pela tela
 - **WHEN** o gerente escolhe "Concluir projeto" num projeto com chamados não fechados
@@ -281,6 +281,10 @@ Quem muda o status do projeto MUST poder ver, antes de concluir ou cancelar, qua
 #### Scenario: Aviso de tarefas incompletas
 - **WHEN** o gerente escolhe "Concluir projeto" num projeto sem chamados abertos e com tarefas abaixo de 100%
 - **THEN** o diálogo avisa quantas são e deixa concluir
+
+#### Scenario: Aviso de aceites pendentes
+- **WHEN** o gerente escolhe "Concluir projeto" num projeto sem chamados abertos e com um pedido de aceite pendente
+- **THEN** o diálogo avisa o aceite pendente e deixa concluir
 
 #### Scenario: Cancelamento pela tela
 - **WHEN** o gerente escolhe "Cancelar projeto" num projeto com chamados abertos e confirma

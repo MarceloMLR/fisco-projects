@@ -12,6 +12,9 @@ export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['q
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the list of tickets, as the contract has them. */
 export type TicketsParams = NonNullable<operations['ListTickets']['parameters']['query']>;
+/** Filters of the list of acceptance terms, as the contract has them. */
+export type AcceptancesParams = NonNullable<operations['ListAcceptances']['parameters']['query']>;
+
 /** Filters of the list of credentials, as the contract has them. */
 export type CredentialsParams = NonNullable<operations['ListCredentials']['parameters']['query']>;
 
@@ -67,6 +70,7 @@ export const queryKeys = {
   links: ['links'],
   linkCategories: ['link-categories'],
   credentials: ['credentials'],
+  acceptances: ['acceptances'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -449,6 +453,51 @@ export function credentialsQuery(projectId: string, params: CredentialsParams = 
       dataOf(
         api.GET('/api/projects/{projectId}/credentials', {
           params: { path: { projectId }, query: params },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
+ * The acceptance terms of a project the person sees, of one status when asked; the counts are of all of them, with
+ * whether the person manages the terms (ADR-0045).
+ */
+export function acceptancesQuery(projectId: string, params: AcceptancesParams = {}) {
+  return queryOptions({
+    queryKey: [...queryKeys.acceptances, projectId, 'list', params] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/acceptances', {
+          params: { path: { projectId }, query: params },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** A term with its history and what the person may do with it (ADR-0095). */
+export function acceptanceQuery(projectId: string, termId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.acceptances, projectId, 'term', termId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/acceptances/{termId}', {
+          params: { path: { projectId, termId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** The milestones of the schedule, with their days, for asking for and attaching terms. */
+export function acceptanceMilestonesQuery(projectId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.acceptances, projectId, 'milestones'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/acceptances/milestones', {
+          params: { path: { projectId } },
           signal,
         }),
       ),

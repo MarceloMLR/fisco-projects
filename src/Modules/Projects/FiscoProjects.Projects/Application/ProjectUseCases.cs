@@ -530,14 +530,18 @@ public sealed class ChangeProjectStatus(IProjectStore store, IEnumerable<IProjec
     }
 }
 
-/// <summary>What closing a project would leave behind: the tickets not closed and the tasks below 100% (ADR-0043).</summary>
-public sealed record ProjectClosing(int OpenTickets, int IncompleteTasks);
+/// <summary>
+/// What closing a project would leave behind: the tickets not closed, the tasks below 100% and the requests of
+/// acceptance waiting for the answer (ADR-0043).
+/// </summary>
+public sealed record ProjectClosing(int OpenTickets, int IncompleteTasks, int PendingAcceptances);
 
 /// <summary>
 /// The summary of the closing of a project, for who changes its status (ADR-0043): null for whom does not see the
 /// project, and forbidden for the others.
 /// </summary>
-public sealed class GetProjectClosing(IProjectStore store, IScheduleStore schedules, IEnumerable<IProjectClosing> closing)
+public sealed class GetProjectClosing(
+    IProjectStore store, IScheduleStore schedules, IEnumerable<IProjectClosing> closing, IEnumerable<IProjectAcceptances> acceptances)
 {
     public async Task<(ProjectStatusOutcome Outcome, ProjectClosing? Closing)> ExecuteAsync(
         Guid id, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -565,6 +569,12 @@ public sealed class GetProjectClosing(IProjectStore store, IScheduleStore schedu
         var schedule = await schedules.FindAsync(id, cancellationToken);
         var incomplete = schedule?.Items.Count(item =>
             item.Kind == ScheduleItemKind.Task && !schedule.IsSummary(item.Id) && item.Progress < 100) ?? 0;
-        return (ProjectStatusOutcome.Saved, new ProjectClosing(open, incomplete));
+        var pending = 0;
+        foreach (var module in acceptances)
+        {
+            pending += await module.PendingAsync(id, cancellationToken);
+        }
+
+        return (ProjectStatusOutcome.Saved, new ProjectClosing(open, incomplete, pending));
     }
 }

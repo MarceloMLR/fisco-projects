@@ -379,6 +379,35 @@ describe('Documentos', () => {
     expect(screen.queryByRole('button', { name: text.upload })).not.toBeInTheDocument();
   });
 
+  // Spec: documentos, requirement "Permissões nos documentos" (ADR-0093).
+  it('Termo assinado sem ações pela tela', async () => {
+    const [first] = documents;
+    if (first === undefined) {
+      throw new Error('No documents.');
+    }
+    documents = [
+      ...documents,
+      {
+        ...first,
+        id: '0199f5a2-7c1e-7d40-9a1b-d00000000099',
+        name: 'termo-homologacao-assinado.pdf',
+        folderId: folderIds.terms,
+        folderName: '06 Termos de aceite',
+        version: 1,
+      },
+    ];
+    await openDocuments();
+    fireEvent.click(screen.getByRole('button', { name: /06 Termos de aceite/ }));
+    await waitFor(() => {
+      expect(names()[0]).toContain('termo-homologacao-assinado.pdf');
+    });
+
+    const drawer = await choose('termo-homologacao-assinado.pdf');
+
+    expect(within(drawer).getByRole('link', { name: text.details.open })).toBeVisible();
+    expect(within(drawer).queryByRole('button', { name: text.details.more })).toBeNull();
+  });
+
   it('Documentos no celular', async () => {
     await openDocuments(phoneWidth);
 
