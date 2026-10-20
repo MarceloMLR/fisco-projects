@@ -136,6 +136,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Anexo | Attachment | |
 | Transferência entre times | Transfer | |
 | Chamado em fornecedor | VendorTicket | |
+| Visões: Atribuídos a mim, Sem responsável nos meus times, Abertos por mim, Todos os abertos | TicketView: AssignedToMe, UnassignedInMyTeams, OpenedByMe, All | "Sem responsável" da aba do projeto é `Unassigned` (ADR-0068) |
+| Situação na lista: Em aberto, Encerrados, Todos | TicketSituation: Open, Finished, All | Encerrados são os resolvidos e os fechados |
+| Acesso aos projetos (contrato) | IProjectAccess | Os projetos que cada pessoa vê e o papel dela, para os outros módulos |
 
 ## Documentos, links, acessos e termos
 

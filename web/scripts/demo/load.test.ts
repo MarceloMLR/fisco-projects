@@ -195,3 +195,34 @@ describe('Modelos na demonstração', () => {
     expect(names.sort()).toEqual(['Implantação de ERP', 'Revisão tributária de filial']);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Chamados na demonstração".
+describe('Chamados na demonstração', () => {
+  it('Chamados na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each ticket opened by its person, before the projects get their status.
+    expect(people(/ POST \/api\/tickets$/)).toEqual([
+      'carla',
+      'diego',
+      'marina',
+      'paulo',
+      'rafael',
+    ]);
+    const opened = (bodies.get('/api/tickets') ?? []) as { title: string; team: string }[];
+    const planned = demoProjects.flatMap((project) => project.tickets ?? []);
+    expect(opened.map((ticket) => ticket.title)).toEqual(planned.map((ticket) => ticket.title));
+    expect(new Set(opened.map((ticket) => ticket.team))).toEqual(
+      new Set(['Functional', 'Development']),
+    );
+    const firstStatus = calls.findIndex((call) => / PUT .*\/status$/.test(call));
+    expect(calls.findIndex((call) => call.endsWith('POST /api/tickets'))).toBeLessThan(firstStatus);
+    // Nobody opens a ticket as a viewer (ADR-0044).
+    for (const project of demoProjects) {
+      const viewers = (project.members ?? [])
+        .filter(([, role]) => role === 'Viewer')
+        .map(([person]) => person);
+      expect((project.tickets ?? []).filter((ticket) => viewers.includes(ticket.by))).toEqual([]);
+    }
+  });
+});

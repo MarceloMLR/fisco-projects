@@ -452,11 +452,19 @@ describe('Abas do projeto', () => {
       'aria-selected',
       'true',
     );
-    expect(
-      within(screen.getByRole('tablist', { name: ptBR.projects.header.tabs }))
-        .getAllByRole('tab')
-        .map((tab) => tab.textContent),
-    ).toEqual([ptBR.pages.project.title, ptBR.pages.projectSchedule.title, 'Membros5']);
+    // Chamados with all the tickets of the project, any status (canvas ProjetoChamados).
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole('tablist', { name: ptBR.projects.header.tabs }))
+          .getAllByRole('tab')
+          .map((tab) => tab.textContent),
+      ).toEqual([
+        ptBR.pages.project.title,
+        ptBR.pages.projectSchedule.title,
+        'Chamados4',
+        'Membros5',
+      ]);
+    });
 
     fireEvent.click(members);
 
