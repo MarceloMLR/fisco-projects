@@ -18,6 +18,9 @@ const rowHeight = 30;
 const headHeight = 48;
 const barHeight = 16;
 const barTop = Math.round((rowHeight - barHeight) / 2) - 2;
+/** The least distance between two numbers of the days, and the least width of a month for its name. */
+const dayLabelGap = 20;
+const monthLabelWidth = 64;
 
 /** The width of an element, followed as the window changes; a width of reference where it cannot be measured. */
 function useWidth() {
@@ -74,21 +77,33 @@ function Scale({ scale, today }: { scale: PrintScale; today: DayValue }) {
           />,
         );
       }
-      shapes.push(
-        <text key={`t-${span.from}`} className="g-scale-month" x={left + 6} y={17}>
-          {span.label}
-        </text>,
-      );
+      if (scale.xEnd(span.to) - left >= monthLabelWidth) {
+        shapes.push(
+          <text key={`t-${span.from}`} className="g-scale-month" x={left + 6} y={17}>
+            {span.label}
+          </text>,
+        );
+      }
     }
+    // Today always has its number; another number shows only where it does not run into the one before nor today's.
+    const todayCenter = scale.x(today) + unit / 2;
+    const hasToday = today >= from && today <= to;
+    let last = Number.NEGATIVE_INFINITY;
     for (let index = 0; index < scale.days; index++) {
       const day = dayOfNumber(scale.first + index);
       const isToday = day === today;
-      if (unit >= 17 || weekdayOf(day) === 1 || index === 0 || isToday) {
+      const center = scale.x(day) + unit / 2;
+      const wanted = unit >= 17 || weekdayOf(day) === 1 || index === 0;
+      const room =
+        center - last >= dayLabelGap &&
+        (!hasToday || Math.abs(center - todayCenter) >= dayLabelGap);
+      if (isToday || (wanted && room)) {
+        last = center;
         shapes.push(
           <text
             key={`d-${day}`}
             className={isToday ? 'g-scale-text g-scale-today' : 'g-scale-text'}
-            x={scale.x(day) + unit / 2}
+            x={center}
             y={41}
             textAnchor="middle"
           >

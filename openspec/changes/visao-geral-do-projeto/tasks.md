@@ -7,11 +7,11 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Os quatro números e a barra do andamento
-- [ ] 2.2 A linha do tempo menor das fases e dos marcos
-- [ ] 2.3 Precisa de atenção, a equipe e o celular
-- [ ] 2.4 Testes das telas
+- [x] 2.1 Os quatro números e a barra do andamento
+- [x] 2.2 A linha do tempo menor das fases e dos marcos
+- [x] 2.3 Precisa de atenção, a equipe e o celular
+- [x] 2.4 Testes das telas
 
 ## 3. Documentação
 
-- [ ] 3.1 `CLAUDE.md`, glossário e roadmap
+- [x] 3.1 `CLAUDE.md`, glossário e roadmap

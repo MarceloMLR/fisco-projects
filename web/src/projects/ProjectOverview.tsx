@@ -104,6 +104,8 @@ const footSx = {
   lineHeight: '18px',
   color: 'var(--text-secondary)',
   fontVariantNumeric: 'tabular-nums',
+  // A long deadline breaks the line in a narrow number, as on the phone, instead of running out of it.
+  '& > [data-state]': { whiteSpace: 'normal', minWidth: 0 },
 } as const;
 
 /** The progress against the planned for today (fp-planbar): the part done in green and the mark of the planned. */
@@ -433,7 +435,15 @@ function TeamCard({ teams, fill }: { teams: OverviewTeam[]; fill: boolean }) {
 }
 
 /** Fases e marcos (ADR-0071): the smaller timeline, or the message of a project without a schedule. */
-function TimelineCard({ overview, desktop }: { overview: Overview; desktop: boolean }) {
+function TimelineCard({
+  overview,
+  listWidth,
+  maxHeight,
+}: {
+  overview: Overview;
+  listWidth: number;
+  maxHeight?: number;
+}) {
   const { t } = useTranslation();
   const { project } = useProjectOutlet();
   return (
@@ -454,13 +464,11 @@ function TimelineCard({ overview, desktop }: { overview: Overview; desktop: bool
       {overview.timeline === null ? (
         <Box sx={emptySx}>{t('projects.overview.timeline.empty')}</Box>
       ) : (
-        <Box
-          sx={{ display: 'flex', flexDirection: 'column', maxHeight: desktop ? 230 : undefined }}
-        >
+        <Box sx={{ display: 'flex', flexDirection: 'column', maxHeight }}>
           <OverviewTimeline
             timeline={overview.timeline}
             today={overview.today}
-            listWidth={desktop ? 264 : 148}
+            listWidth={listWidth}
           />
         </Box>
       )}
@@ -476,6 +484,7 @@ function TimelineCard({ overview, desktop }: { overview: Overview; desktop: bool
 export function ProjectOverview() {
   const { project } = useProjectOutlet();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  const wide = useMediaQuery(theme.breakpoints.up('lg'), { noSsr: true });
   const { data: overview } = useQuery(projectOverviewQuery(project.id));
 
   if (overview === undefined) {
@@ -487,7 +496,7 @@ export function ProjectOverview() {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', flex: 'none' }}>
         <Numbers overview={overview} />
         <AttentionCard overview={overview} fill={false} />
-        <TimelineCard overview={overview} desktop={false} />
+        <TimelineCard overview={overview} listWidth={148} />
         <TeamCard teams={overview.teams} fill={false} />
       </Box>
     );
@@ -509,7 +518,9 @@ export function ProjectOverview() {
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(360px, 1fr)',
+          gridTemplateColumns: wide
+            ? 'minmax(0, 2fr) minmax(360px, 1fr)'
+            : 'minmax(0, 2fr) minmax(320px, 1fr)',
           gap: 'var(--space-4)',
         }}
       >
@@ -522,7 +533,7 @@ export function ProjectOverview() {
             gap: 'var(--space-4)',
           }}
         >
-          <TimelineCard overview={overview} desktop />
+          <TimelineCard overview={overview} listWidth={wide ? 264 : 180} maxHeight={230} />
           <TeamCard teams={overview.teams} fill />
         </Box>
         <Box sx={{ minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
