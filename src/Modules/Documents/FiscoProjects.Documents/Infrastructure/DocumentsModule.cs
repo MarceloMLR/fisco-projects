@@ -1,6 +1,7 @@
 using FiscoProjects.Documents.Application;
 using FiscoProjects.Documents.Contracts;
 using FiscoProjects.Documents.Infrastructure.Persistence;
+using FiscoProjects.MyWork.Contracts;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
@@ -57,6 +58,8 @@ public static class DocumentsModule
         services.AddScoped<IAcceptanceStore, AcceptanceStore>();
         services.AddScoped<IProjectAcceptances, ProjectAcceptances>();
         services.AddScoped<IPendingAcceptances, PendingAcceptanceDirectory>();
+        // The requests of the person in Meu trabalho (ADR-0096).
+        services.AddScoped<IMyWorkSource, AcceptanceWorkSource>();
         services.AddScoped<AcceptanceAreas>();
         services.AddScoped<AcceptanceViews>();
         services.AddScoped<AcceptanceFiles>();

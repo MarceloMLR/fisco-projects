@@ -28,6 +28,12 @@ public interface IAcceptanceStore
     /// <summary>Every request waiting for the answer, oldest first, for the daily summary.</summary>
     Task<IReadOnlyList<AcceptanceTerm>> PendingAsync(CancellationToken cancellationToken);
 
+    /// <summary>The requests waiting for the answer for the person or made by the person, oldest first, for Meu trabalho.</summary>
+    Task<IReadOnlyList<AcceptanceTerm>> PendingOfAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>The milestones of the projects with a request waiting for the answer.</summary>
+    Task<IReadOnlySet<Guid>> PendingMilestonesAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken);
+
     void Add(AcceptanceTerm term);
 
     void Remove(AcceptanceTerm term);
@@ -732,11 +738,19 @@ public sealed class AcceptanceNotices(IEnumerable<INoticeBoard> boards, IProject
         };
 }
 
-/// <summary>The requests pending in a project, for the summary of its closing (ADR-0043).</summary>
+/// <summary>
+/// The requests pending in the projects, for the summary of the closing (ADR-0043) and the next milestones of Meu
+/// trabalho (ADR-0096).
+/// </summary>
 public sealed class ProjectAcceptances(IAcceptanceStore acceptances) : IProjectAcceptances
 {
     public Task<int> PendingAsync(Guid projectId, CancellationToken cancellationToken) =>
         acceptances.PendingCountAsync(projectId, cancellationToken);
+
+    public Task<IReadOnlySet<Guid>> RequestedMilestonesAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken) =>
+        projectIds.Count == 0
+            ? Task.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>())
+            : acceptances.PendingMilestonesAsync(projectIds, cancellationToken);
 }
 
 /// <summary>

@@ -21,7 +21,7 @@ A lista de projetos MUST trazer, no cronograma de cada projeto, o atraso em dias
 - **THEN** a API responde os dois marcos nessa ordem, com 10 e 18 dias úteis, e o aceite pedido só no primeiro
 
 #### Scenario: Marco atingido ou passado fica fora
-- **WHEN** um marco do projeto foi atingido e outro venceu ontem sem ser atingido
+- **WHEN** hoje é 19/10/2026, um marco de 21/10 já foi atingido e outro, de 16/10, não foi
 - **THEN** nenhum dos dois aparece nos próximos marcos
 
 #### Scenario: Só projetos da pessoa

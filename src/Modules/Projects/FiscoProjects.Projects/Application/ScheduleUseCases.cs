@@ -37,6 +37,20 @@ public interface IScheduleStore
     /// <summary>The name of each task or milestone found.</summary>
     Task<IReadOnlyDictionary<Guid, string>> ItemNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The tasks of the person for Meu trabalho (ADR-0096): with dates of their own, below 100%, that end up to the day,
+    /// in projects not completed nor cancelled the person is in (any project, for the Administrator), by the end.
+    /// </summary>
+    Task<IReadOnlyList<OwnedTask>> OwnedTasksAsync(
+        Guid ownerId, bool isAdministrator, DateOnly until, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The milestones not reached, from the day on, of the projects not completed nor cancelled the person is in, by the
+    /// day and the code of the project, as many as asked (ADR-0096).
+    /// </summary>
+    Task<IReadOnlyList<UpcomingMilestone>> UpcomingMilestonesAsync(
+        Guid userId, DateOnly firstDay, int count, CancellationToken cancellationToken);
+
     /// <summary>The changes a person keeps in the schedule of a project, tracked, in order (ADR-0091).</summary>
     Task<IReadOnlyList<ScheduleChange>> ChangesOfAsync(Guid projectId, Guid actorId, CancellationToken cancellationToken);
 
@@ -51,8 +65,7 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
     public async Task<DateOnly> TodayAsync(CancellationToken cancellationToken)
     {
         var installation = await settings.GetAsync(cancellationToken);
-        var zone = TimeZoneInfo.TryFindSystemTimeZoneById(installation.TimeZone, out var found) ? found : TimeZoneInfo.Utc;
-        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(clock.GetUtcNow().UtcDateTime, zone));
+        return installation.DayOf(clock.GetUtcNow().UtcDateTime);
     }
 }
 

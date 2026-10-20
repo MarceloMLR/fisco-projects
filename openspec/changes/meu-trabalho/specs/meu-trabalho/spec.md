@@ -49,8 +49,8 @@ O grupo Aguardando você MUST reunir, qualquer que seja o prazo, os chamados abe
 - **THEN** o chamado aparece em "Para mim" do gerente, do líder técnico e dos desenvolvedores, e não na do colaborador
 
 #### Scenario: Primeira resposta e resolução
-- **WHEN** um chamado ainda sem resposta tem a primeira resposta para hoje e a resolução para daqui a 10 dias úteis
-- **THEN** o chamado entra na fila pela primeira resposta e, depois de respondido, pela resolução
+- **WHEN** hoje é 19/10/2026 e um chamado ainda sem resposta tem a primeira resposta para amanhã e a resolução para 26/10
+- **THEN** o chamado entra em Hoje e o próximo dia útil, pela primeira resposta, e, depois de respondido, em Próximos 7 dias, pela resolução
 
 #### Scenario: Tarefa concluída e tarefa com subtarefas ficam fora
 - **WHEN** a pessoa é responsável por uma tarefa a 100% e por uma tarefa com subtarefas
@@ -90,7 +90,7 @@ A fila MUST trazer só itens da pessoa na sessão, de projetos que ela vê e que
 
 ### Requirement: Ação de cada linha
 
-Cada linha MUST ter uma ação: Responder (o chamado e o pedido que aguardam a pessoa), Atribuir (o chamado sem responsável, só para o gerente e o líder técnico), Abrir (os outros chamados), Iniciar (a tarefa em 0%), Concluir (a tarefa atrasada, de hoje ou do próximo dia útil), Atualizar (as outras tarefas) e Lembrar (o pedido que a pessoa fez) (ADR-0070, ADR-0096).
+Cada linha MUST ter uma ação: Responder (o chamado e o pedido que aguardam a pessoa), Atribuir (o chamado sem responsável, só para quem troca o responsável: o gerente, o líder técnico e o administrador, ADR-0068), Abrir (os outros chamados), Iniciar (a tarefa em 0%), Concluir (a tarefa atrasada, de hoje ou do próximo dia útil), Atualizar (as outras tarefas) e Lembrar (o pedido que a pessoa fez) (ADR-0070, ADR-0096).
 
 #### Scenario: Atribuir só para o gerente e o líder técnico
 - **WHEN** um chamado sem responsável do time Desenvolvimento aparece na fila do gerente, do líder técnico e de um desenvolvedor

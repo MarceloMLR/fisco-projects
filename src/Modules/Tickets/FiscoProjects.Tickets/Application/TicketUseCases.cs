@@ -103,6 +103,12 @@ public interface ITicketStore
 
     Task<TicketRows> ListAsync(TicketQuery query, TicketScope scope, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The open tickets of the person for Meu trabalho (ADR-0096): in charge of, opened by or followed by the person, or
+    /// without an assignee in the teams of the person, with the ones the person follows.
+    /// </summary>
+    Task<TicketWork> WorkOfAsync(TicketScope scope, CancellationToken cancellationToken);
+
     /// <summary>The counts of the lists of the person, in one project or in all the person sees.</summary>
     Task<TicketCounts> CountAsync(TicketScope scope, Guid? projectId, CancellationToken cancellationToken);
 

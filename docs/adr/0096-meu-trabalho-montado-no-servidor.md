@@ -71,7 +71,7 @@ Regras:
 | Hoje e o próximo dia útil | Prazo de hoje até o próximo dia útil do calendário da instalação |
 | Próximos 7 dias | Prazo depois do próximo dia útil, até 7 dias corridos depois de hoje |
 | Fora da fila | Prazo depois dos 7 dias, chamado resolvido ou fechado, chamado que aguarda outra pessoa, tarefa concluída ou com subtarefas (as subtarefas entram), projeto concluído ou cancelado e projeto que a pessoa não vê |
-| Ação | Responder: o chamado e o pedido que aguardam a pessoa. Atribuir: o chamado sem responsável, só para o gerente e o líder técnico. Abrir: os outros chamados. Iniciar: a tarefa em 0%. Concluir: a tarefa atrasada, de hoje ou do próximo dia útil. Atualizar: as outras tarefas. Lembrar: o pedido que a pessoa fez |
+| Ação | Responder: o chamado e o pedido que aguardam a pessoa. Atribuir: o chamado sem responsável, só para quem troca o responsável (o gerente, o líder técnico e o administrador, ADR-0068). Abrir: os outros chamados. Iniciar: a tarefa em 0%. Concluir: a tarefa atrasada, de hoje ou do próximo dia útil. Atualizar: as outras tarefas. Lembrar: o pedido que a pessoa fez |
 | Ordem | Pelo prazo, o mais antigo primeiro; em Aguardando você, pela espera mais antiga |
 | Meus projetos | Os projetos abertos de que a pessoa participa, como na barra lateral, com a faixa de fases, a porcentagem concluída e o atraso do item mais atrasado |
 | Próximos marcos | Os 10 primeiros marcos não atingidos dos mesmos projetos, de hoje em diante, com o dia, os dias úteis que faltam e "aceite pedido" quando há pedido pendente para o marco |
@@ -85,7 +85,7 @@ Regras:
 
 ### Confirmação
 
-Testes cobrindo: cada item no grupo certo, inclusive na sexta-feira, no fim de semana e na véspera de feriado; um item com prazo depois dos 7 dias fica fora; "Atribuir" só para o gerente e o líder técnico; só itens de projetos que a pessoa vê; o atraso do projeto pelo item mais atrasado.
+Testes cobrindo: cada item no grupo certo, inclusive na sexta-feira, no fim de semana e na véspera de feriado; um item com prazo depois dos 7 dias fica fora; "Atribuir" só para quem troca o responsável; só itens de projetos que a pessoa vê; o atraso do projeto pelo item mais atrasado.
 
 ## Prós e contras das opções
 

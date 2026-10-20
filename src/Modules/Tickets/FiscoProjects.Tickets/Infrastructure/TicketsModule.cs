@@ -1,3 +1,4 @@
+using FiscoProjects.MyWork.Contracts;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
@@ -42,6 +43,8 @@ public static class TicketsModule
         services.AddScoped<IProjectMemberChanges, TicketMemberChanges>();
         // The tickets of a project being completed or cancelled (ADR-0043).
         services.AddScoped<IProjectClosing, TicketProjectClosing>();
+        // The tickets of the person in Meu trabalho (ADR-0096).
+        services.AddScoped<IMyWorkSource, TicketWorkSource>();
         services.AddScoped<ChangeTicketPriority>();
         services.AddScoped<GetTicketDeadlines>();
         services.AddScoped<ChangeTicketDeadlines>();

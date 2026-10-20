@@ -12,6 +12,7 @@
     <ProjectReference Include="../../../FiscoProjects.Persistence/FiscoProjects.Persistence.csproj" />
     <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
     <ProjectReference Include="../../Files/FiscoProjects.Files.Contracts/FiscoProjects.Files.Contracts.csproj" />
+    <ProjectReference Include="../../MyWork/FiscoProjects.MyWork.Contracts/FiscoProjects.MyWork.Contracts.csproj" />
     <ProjectReference Include="../../Notifications/FiscoProjects.Notifications.Contracts/FiscoProjects.Notifications.Contracts.csproj" />
     <ProjectReference Include="../../Projects/FiscoProjects.Projects.Contracts/FiscoProjects.Projects.Contracts.csproj" />
     <ProjectReference Include="../../Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />

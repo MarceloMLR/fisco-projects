@@ -235,6 +235,30 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
     public async Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken) =>
         await Open(db.Tickets.Where(ticket => ticket.ProjectId == projectId && ticket.AssigneeId == userId)).ToListAsync(cancellationToken);
 
+    public async Task<TicketWork> WorkOfAsync(TicketScope scope, CancellationToken cancellationToken)
+    {
+        var userId = scope.UserId;
+        var both = scope.BothTeamsProjects;
+        var functional = scope.FunctionalProjects;
+        var development = scope.DevelopmentProjects;
+        var tickets = await Open(Seen(scope))
+            .Where(ticket => ticket.AssigneeId == userId
+                || ticket.RequesterId == userId
+                || db.TicketFollowers.Any(follower => follower.TicketId == ticket.Id && follower.UserId == userId)
+                || (ticket.AssigneeId == null
+                    && (both.Contains(ticket.ProjectId)
+                        || (ticket.Team == TicketTeam.Functional && functional.Contains(ticket.ProjectId))
+                        || (ticket.Team == TicketTeam.Development && development.Contains(ticket.ProjectId)))))
+            .OrderBy(ticket => ticket.Number)
+            .ToListAsync(cancellationToken);
+        var ids = tickets.Select(ticket => ticket.Id).ToList();
+        var followed = await db.TicketFollowers.AsNoTracking()
+            .Where(follower => follower.UserId == userId && ids.Contains(follower.TicketId))
+            .Select(follower => follower.TicketId)
+            .ToListAsync(cancellationToken);
+        return new TicketWork(tickets, followed.ToHashSet());
+    }
+
     private IQueryable<Ticket> Seen(TicketScope scope)
     {
         var projectIds = scope.ProjectIds;
