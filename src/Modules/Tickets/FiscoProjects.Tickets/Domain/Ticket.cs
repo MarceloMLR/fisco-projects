@@ -111,6 +111,27 @@ public sealed class Ticket : Entity
 
     public DateTime? ClosedAt { get; private set; }
 
+    /// <summary>The business days of the priority for the first answer, kept from the opening (ADR-0025).</summary>
+    public int FirstResponseDays { get; private set; }
+
+    /// <summary>The business days of the priority to resolve, kept from the opening (ADR-0025).</summary>
+    public int ResolutionDays { get; private set; }
+
+    /// <summary>The day the first answer is due; null for a ticket opened before the deadlines.</summary>
+    public DateOnly? FirstResponseDueOn { get; private set; }
+
+    /// <summary>The day the resolution is due; null while it waits for the requester, and for a ticket without deadlines.</summary>
+    public DateOnly? ResolutionDueOn { get; private set; }
+
+    /// <summary>When someone who serves the team answered the first time (ADR-0025).</summary>
+    public DateTime? FirstRespondedAt { get; private set; }
+
+    /// <summary>When the ticket started to wait for the requester, while it waits.</summary>
+    public DateTime? PausedSince { get; private set; }
+
+    /// <summary>The business days it waited for the requester before, which push the resolution further.</summary>
+    public int PausedBusinessDays { get; private set; }
+
     public bool IsOpen => OpenStatuses.Contains(Status);
 
     /// <summary>Something changed in the ticket now, such as a new message.</summary>
@@ -125,9 +146,43 @@ public sealed class Ticket : Entity
             throw new InvalidOperationException($"The ticket is {Status}, not {transition.From}.");
         }
 
+        if (transition.To == TicketStatus.WaitingForRequester)
+        {
+            // The resolution stops while the ticket waits for the requester (ADR-0025).
+            PausedSince = now;
+            ResolutionDueOn = null;
+        }
+
         Status = transition.To;
         ResolvedAt = transition.To == TicketStatus.Resolved ? now : null;
         ClosedAt = transition.To == TicketStatus.Closed ? now : null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>The deadlines of the priority, and the days they are due (ADR-0025).</summary>
+    public void UseDeadlines(int firstResponseDays, int resolutionDays, DateOnly firstResponseDueOn, DateOnly? resolutionDueOn)
+    {
+        FirstResponseDays = firstResponseDays;
+        ResolutionDays = resolutionDays;
+        FirstResponseDueOn = firstResponseDueOn;
+        ResolutionDueOn = resolutionDueOn;
+    }
+
+    /// <summary>The ticket stops waiting for the requester: the paused days push the resolution (ADR-0025).</summary>
+    public void Resume(int pausedBusinessDays, DateOnly resolutionDueOn)
+    {
+        PausedBusinessDays += pausedBusinessDays;
+        PausedSince = null;
+        ResolutionDueOn = resolutionDueOn;
+    }
+
+    /// <summary>The first answer of who serves the team; the later ones change nothing.</summary>
+    public void RespondFirst(DateTime now) => FirstRespondedAt ??= now;
+
+    /// <summary>A new priority, whose deadlines the caller sets again from the opening (ADR-0025).</summary>
+    public void ChangePriority(TicketPriority priority, DateTime now)
+    {
+        Priority = priority;
         UpdatedAt = now;
     }
 

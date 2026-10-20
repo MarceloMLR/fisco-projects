@@ -153,6 +153,9 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
 
     public void AddEvent(TicketEvent ticketEvent) => db.TicketEvents.Add(ticketEvent);
 
+    public async Task<IReadOnlyList<TicketDeadlineSetting>> DeadlinesAsync(CancellationToken cancellationToken) =>
+        [.. (await db.TicketDeadlines.ToListAsync(cancellationToken)).OrderBy(setting => setting.Priority)];
+
     public async Task<IReadOnlyList<TicketEvent>> EventsAsync(Guid ticketId, CancellationToken cancellationToken) =>
         await db.TicketEvents.AsNoTracking()
             .Where(ticketEvent => ticketEvent.TicketId == ticketId)

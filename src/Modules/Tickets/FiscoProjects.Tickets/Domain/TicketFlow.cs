@@ -146,6 +146,9 @@ public enum TicketEventKind
 {
     StatusChanged = 1,
     AssigneeSet = 2,
+
+    /// <summary>Who serves the ticket changed its priority, and its deadlines with it (ADR-0025).</summary>
+    PriorityChanged = 3,
 }
 
 /// <summary>An event of the conversation: who did it (none for the system), what and when.</summary>
@@ -177,6 +180,10 @@ public sealed class TicketEvent : Entity
 
     public Guid? AssigneeId { get; private init; }
 
+    public TicketPriority? FromPriority { get; private init; }
+
+    public TicketPriority? ToPriority { get; private init; }
+
     public DateTime At { get; private init; }
 
     public static TicketEvent StatusChanged(Guid ticketId, Guid? actorId, TicketTransition transition, DateTime at)
@@ -189,6 +196,9 @@ public sealed class TicketEvent : Entity
             Action = transition.Action,
         };
     }
+
+    public static TicketEvent PriorityChanged(Guid ticketId, Guid actorId, TicketPriority from, TicketPriority to, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.PriorityChanged, at) { FromPriority = from, ToPriority = to };
 
     public static TicketEvent AssigneeSet(Guid ticketId, Guid actorId, Guid assigneeId, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.AssigneeSet, at) { AssigneeId = assigneeId };

@@ -113,7 +113,8 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
 /// Sends a message, with its files, in a ticket (ADR-0026, ADR-0044): by the Administrator, the managers, who serves
 /// the team and the requester; mentioning only who may be mentioned, who then follows the ticket.
 /// </summary>
-public sealed class SendTicketMessage(IProjectAccess projects, ITicketStore store, TicketFiles files, TimeProvider clock)
+public sealed class SendTicketMessage(
+    IProjectAccess projects, ITicketStore store, TicketFiles files, TicketDeadlines deadlines, TimeProvider clock)
 {
     public async Task<ConversationResult> ExecuteAsync(
         int number, string? body, IReadOnlyList<NewAttachment> attachments, TicketViewer viewer, CancellationToken cancellationToken)
@@ -196,29 +197,30 @@ public sealed class SendTicketMessage(IProjectAccess projects, ITicketStore stor
     {
         var flow = await store.FlowAsync(cancellationToken);
         // The requester who also serves the team still answers as the requester, without taking the ticket.
-        if (ticket.AssigneeId is null && ticket.RequesterId != viewer.UserId
-            && project.Role is { } role && TicketAccess.Serves(ticket.Team, role))
+        var serves = ticket.RequesterId != viewer.UserId
+            && project.Role is { } role && TicketAccess.Serves(ticket.Team, role);
+        if (serves)
+        {
+            // The first answer of who serves the team meets its deadline (ADR-0025).
+            ticket.RespondFirst(now);
+        }
+
+        if (ticket.AssigneeId is null && serves)
         {
             ticket.Assign(viewer.UserId, now);
             store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, viewer.UserId, now));
             await store.FollowAsync(ticket.Id, viewer.UserId, now, cancellationToken);
             if (flow.Of(ticket.Status, TicketAction.FirstResponse) is { } first)
             {
-                Take(ticket, first, viewer.UserId, now);
+                await deadlines.TakeAsync(ticket, first, viewer.UserId, now, cancellationToken);
             }
         }
 
         if (flow.Of(ticket.Status, TicketAction.Reply) is { } reply
             && (reply.Actors & TicketAccess.ActorsOf(viewer, project.Role, ticket)) != 0)
         {
-            Take(ticket, reply, viewer.UserId, now);
+            await deadlines.TakeAsync(ticket, reply, viewer.UserId, now, cancellationToken);
         }
-    }
-
-    private void Take(Ticket ticket, TicketTransition transition, Guid actorId, DateTime now)
-    {
-        ticket.Apply(transition, now);
-        store.AddEvent(TicketEvent.StatusChanged(ticket.Id, actorId, transition, now));
     }
 }
 
