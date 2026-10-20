@@ -1,9 +1,9 @@
 ## 1. Backend
 
-- [ ] 1.1 Previsto no domínio (`SchedulePlan`), pelo cronograma e pela linha de base, em dias úteis, com testes
-- [ ] 1.2 Chamados do projeto: o contrato `IProjectTickets`, o prazo que conta num lugar só (`TicketDueNow`) e a implementação no `Tickets`, com testes
-- [ ] 1.3 Aceites pendentes que a pessoa vê (`IProjectAcceptances.PendingForAsync`), com testes
-- [ ] 1.4 `GET /api/projects/{id}/overview`: números, próximo marco, linha do tempo, atenção e equipe, com testes da API
+- [x] 1.1 Previsto no domínio (`SchedulePlan`), pelo cronograma e pela linha de base, em dias úteis, com testes
+- [x] 1.2 Chamados do projeto: o contrato `IProjectTickets`, o prazo que conta num lugar só (`TicketDueNow`) e a implementação no `Tickets`, com testes
+- [x] 1.3 Aceites pendentes que a pessoa vê (`IProjectAcceptances.PendingForAsync`), com testes
+- [x] 1.4 `GET /api/projects/{id}/overview`: números, próximo marco, linha do tempo, atenção e equipe, com testes da API
 
 ## 2. Frontend
 

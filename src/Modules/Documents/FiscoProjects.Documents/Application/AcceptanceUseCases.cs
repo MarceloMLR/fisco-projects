@@ -739,11 +739,32 @@ public sealed class AcceptanceNotices(IEnumerable<INoticeBoard> boards, IProject
 }
 
 /// <summary>
-/// The requests pending in the projects, for the summary of the closing (ADR-0043) and the next milestones of Meu
-/// trabalho (ADR-0096).
+/// The requests pending in the projects, for the summary of the closing (ADR-0043), the next milestones of Meu trabalho
+/// (ADR-0096) and the overview of the project, where the person sees only the terms of the matrix (ADR-0045, ADR-0073).
 /// </summary>
-public sealed class ProjectAcceptances(IAcceptanceStore acceptances) : IProjectAcceptances
+public sealed class ProjectAcceptances(IAcceptanceStore acceptances, IProjectAccess projects) : IProjectAcceptances
 {
+    public async Task<IReadOnlyList<PendingProjectAcceptance>> PendingForAsync(
+        Guid projectId, Guid userId, bool isAdministrator, CancellationToken cancellationToken)
+    {
+        var project = await projects.FindAsync(projectId, userId, isAdministrator, cancellationToken);
+        if (project is null)
+        {
+            return [];
+        }
+
+        var viewer = new DocumentViewer(userId, isAdministrator);
+        var terms = await acceptances.ListAsync(
+            projectId, AcceptanceAccess.Manages(viewer, project) ? null : userId, cancellationToken);
+        return
+        [
+            .. terms
+                .Where(term => term.Status == AcceptanceStatus.Pending && AcceptanceAccess.Sees(viewer, project, term))
+                .OrderBy(term => term.RequestedAt)
+                .Select(term => new PendingProjectAcceptance(term.Id, term.Title, term.MilestoneId, term.RecipientId, term.RequestedAt)),
+        ];
+    }
+
     public Task<int> PendingAsync(Guid projectId, CancellationToken cancellationToken) =>
         acceptances.PendingCountAsync(projectId, cancellationToken);
 

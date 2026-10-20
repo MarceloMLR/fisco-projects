@@ -235,6 +235,12 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
     public async Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken) =>
         await Open(db.Tickets.Where(ticket => ticket.ProjectId == projectId && ticket.AssigneeId == userId)).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Ticket>> OfProjectAsync(Guid projectId, CancellationToken cancellationToken) =>
+        await db.Tickets.AsNoTracking()
+            .Where(ticket => ticket.ProjectId == projectId)
+            .OrderBy(ticket => ticket.Number)
+            .ToListAsync(cancellationToken);
+
     public async Task<TicketWork> WorkOfAsync(TicketScope scope, CancellationToken cancellationToken)
     {
         var userId = scope.UserId;
