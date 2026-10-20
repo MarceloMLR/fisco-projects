@@ -366,6 +366,24 @@ async function loadProject(
         `Status do chamado ${ticket.title}`,
       );
     }
+    // Then the people and the team, each by who may change them (ADR-0068).
+    if (ticket.assignee !== undefined) {
+      done(
+        await personOf(ticket.assignee.by).api.PUT('/api/tickets/assignee', {
+          body: { numbers: [opened.number], assigneeId: personOf(ticket.assignee.to).id },
+        }),
+        `Responsável do chamado ${ticket.title}`,
+      );
+    }
+    if (ticket.transfer !== undefined) {
+      done(
+        await personOf(ticket.transfer.by).api.PUT('/api/tickets/{number}/team', {
+          params: { path: { number: opened.number } },
+          body: { team: ticket.transfer.to },
+        }),
+        `Time do chamado ${ticket.title}`,
+      );
+    }
   }
 
   if (project.status !== undefined) {

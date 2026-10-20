@@ -106,6 +106,10 @@ export interface DemoTicket {
   messages?: readonly DemoMessage[];
   /** The actions of the flow taken after the conversation, in order. */
   changes?: readonly DemoStatusChange[];
+  /** Assigned by the manager or the tech lead to someone who serves the team (ADR-0068). */
+  assignee?: { by: DemoPerson; to: DemoPerson };
+  /** Transferred to the other team by who serves it, left without an assignee (ADR-0068). */
+  transfer?: { by: DemoPerson; to: TicketTeam };
 }
 
 export interface DemoProject {
@@ -302,6 +306,7 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'marina',
         description:
           'O cliente precisa de acesso ao ambiente de homologação para os testes da próxima semana.',
+        transfer: { by: 'rafael', to: 'Functional' },
       },
       {
         title: 'Importar a tabela de NCM atualizada',
@@ -326,6 +331,7 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'carla',
         description:
           'Os XML de entrada de um fornecedor são recusados na importação, com a mensagem "Esquema inválido".',
+        assignee: { by: 'marina', to: 'diego' },
       },
     ],
   },
