@@ -146,7 +146,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Texto formatado | RichText | O JSON do editor (Tiptap), validado no servidor |
 | Ações do fluxo: Iniciar triagem, Primeira resposta, Iniciar atendimento, Pedir informações, Enviar resposta, Marcar como resolvido, Confirmar e fechar, Fechamento automático, Reabrir, Cancelar chamado | TicketAction: StartTriage, FirstResponse, StartWork, AskForInformation, Reply, Resolve, ConfirmAndClose, AutoClose, Reopen, Cancel | A primeira resposta, a resposta em Aguardando solicitante e o fechamento automático são do sistema, nunca botões |
 | Quem pode no fluxo: quem atende, solicitante, gestor, administrador, sistema | TicketActors: Attendant, Requester, Manager, Administrator, System | Quem atende inclui o administrador e os gestores (ADR-0044) |
-| Evento da conversa: mudança de status, responsável definido | TicketEvent: StatusChanged, AssigneeSet | Fora da auditoria, como as mensagens |
+| Evento da conversa: mudança de status, responsável definido, prioridade, responsável tirado, solicitante trocado, time trocado | TicketEvent: StatusChanged, AssigneeSet, PriorityChanged, AssigneeCleared, RequesterChanged, TeamChanged | Fora da auditoria, como as mensagens |
+| Trocar o responsável, em lote | ChangeTicketAssignees | Só o administrador, o gerente e o líder técnico (ADR-0068) |
+| Trocar o solicitante | ChangeTicketRequesters | O próprio solicitante troca um a um; em lote, só os gestores |
+| Transferir de time | TransferTicket | Deixa o chamado sem responsável |
+| Passar pendências | (tela) | Os chamados de quem sai, passados a outra pessoa |
+| Mudanças das pessoas de um projeto (contrato) | IProjectMemberChanges | O Projects avisa os outros módulos depois de gravar (ADR-0042) |
 | Fechamento automático | TicketAutoClose | Processo em segundo plano; `Tickets:AutoCloseBusinessDays` (5) |
 
 ## Documentos, links, acessos e termos
