@@ -1,3 +1,4 @@
+using FiscoProjects.Notifications.Application;
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing.Handlers;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace FiscoProjects.Api.Tests;
@@ -24,14 +26,20 @@ internal sealed class SessionApp : IAsyncDisposable
     private readonly WebApplication _app;
     private readonly string _connectionString;
 
-    private SessionApp(WebApplication app, string connectionString, FakeTimeProvider clock)
+    private SessionApp(WebApplication app, string connectionString, FakeTimeProvider clock, RecordingEmailSender emails)
     {
         _app = app;
         _connectionString = connectionString;
         Clock = clock;
+        Emails = emails;
     }
 
     public FakeTimeProvider Clock { get; }
+
+    /// <summary>The e-mails the queue sent, kept in memory instead of leaving (ADR-0036).</summary>
+    public RecordingEmailSender Emails { get; }
+
+    public IServiceProvider Services => _app.Services;
 
     public int Changes { get; private set; }
 
@@ -39,6 +47,7 @@ internal sealed class SessionApp : IAsyncDisposable
     {
         var connectionString = sqlServer.NewDatabase();
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero));
+        var emails = new RecordingEmailSender();
         SessionApp? session = null;
 
         // Development, so the API creates the database and applies the migrations when it starts.
@@ -62,9 +71,10 @@ internal sealed class SessionApp : IAsyncDisposable
             builder.Configuration[TestApp.ConnectionStringKey] = connectionString;
             builder.Services.AddSingleton<TimeProvider>(clock);
             configure?.Invoke(builder);
+            builder.Services.TryAddSingleton<IEmailSender>(emails);
         });
 
-        session = new SessionApp(app, connectionString, clock);
+        session = new SessionApp(app, connectionString, clock, emails);
         return session;
     }
 

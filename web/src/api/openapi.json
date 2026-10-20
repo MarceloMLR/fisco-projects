@@ -5392,6 +5392,97 @@
           }
         }
       }
+    },
+    "/api/admin/email": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "GetEmailStatus",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/email/test": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Puts in the queue an e-mail to the Administrator, sent in the background.",
+        "operationId": "SendTestEmail",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailTestQueuedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5918,6 +6009,68 @@
           "Saturday"
         ]
       },
+      "EmailStatusResponse": {
+        "required": [
+          "mailbox",
+          "lastTest"
+        ],
+        "type": "object",
+        "properties": {
+          "mailbox": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastTest": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EmailTestResponse"
+              }
+            ]
+          }
+        },
+        "description": "The shared mailbox the e-mails leave from (null while none is configured) and the last test of the sending."
+      },
+      "EmailTestQueuedResponse": {
+        "required": [
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          }
+        },
+        "description": "The test e-mail is in the queue, to this address."
+      },
+      "EmailTestResponse": {
+        "required": [
+          "status",
+          "at",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/OutboxEmailStatus"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The last test of the sending: where it stands, when and to whom (null once the queue forgot it)."
+      },
       "GeneralRulesResponse": {
         "required": [
           "timeZone"
@@ -6311,6 +6464,14 @@
           }
         },
         "description": "A new vendor, active."
+      },
+      "OutboxEmailStatus": {
+        "enum": [
+          "Pending",
+          "Sent",
+          "Failed"
+        ],
+        "description": "Where an e-mail of the queue stands (ADR-0036)."
       },
       "PersonResponse": {
         "required": [
@@ -9188,6 +9349,9 @@
     },
     {
       "name": "Tickets"
+    },
+    {
+      "name": "Notifications"
     }
   ]
 }

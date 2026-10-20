@@ -7,6 +7,8 @@ using FiscoProjects.Audit.Infrastructure;
 using FiscoProjects.Calendar.Endpoints;
 using FiscoProjects.Calendar.Infrastructure;
 using FiscoProjects.Files.Infrastructure;
+using FiscoProjects.Notifications.Endpoints;
+using FiscoProjects.Notifications.Infrastructure;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Endpoints;
 using FiscoProjects.Projects.Infrastructure;
@@ -61,6 +63,7 @@ public static class ApiSetup
         builder.Services.AddCalendarModule(builder.Configuration);
         builder.Services.AddProjectsModule(builder.Configuration);
         builder.Services.AddTicketsModule(builder.Configuration);
+        builder.Services.AddNotificationsModule(builder.Configuration);
 
         return builder;
     }
@@ -90,6 +93,7 @@ public static class ApiSetup
             .MapCalendarEndpoints()
             .MapProjectsEndpoints()
             .MapTicketsEndpoints()
+            .MapNotificationsEndpoints()
             .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();

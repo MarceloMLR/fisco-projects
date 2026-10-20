@@ -1,0 +1,12 @@
+{
+  "layout": {
+    "footer": "Este e-mail foi enviado automaticamente pelo {{installation}}. As respostas a ele não são lidas pelo sistema.",
+    "linkHint": "Se o botão não abrir, copie este endereço no navegador:"
+  },
+  "test": {
+    "subject": "Teste de envio do {{installation}}",
+    "greeting": "Olá, {{name}}.",
+    "body": "Este é um e-mail de teste. Se você o recebeu, o envio de e-mails do {{installation}} está funcionando.",
+    "action": "Abrir as Configurações gerais"
+  }
+}
