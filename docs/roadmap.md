@@ -24,11 +24,11 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 4. Cronograma | 10 | 10 |
 | 5. Chamados | 7 | 7 |
 | 6. Avisos | 3 | 3 |
-| 7. Documentos, links, acessos e termos | 5 | 3 |
+| 7. Documentos, links, acessos e termos | 5 | 4 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **60** | **44** |
+| **Total** | **60** | **45** |
 
 ## 1. Fundação
 
@@ -110,7 +110,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045, 0092, 0093 | Concluída em 20/10/2026 ([#48](https://github.com/MarceloMLR/fisco-projects/pull/48)) |
 | Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Concluída em 20/10/2026 ([#49](https://github.com/MarceloMLR/fisco-projects/pull/49)) |
 | Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | Concluída em 20/10/2026 ([#50](https://github.com/MarceloMLR/fisco-projects/pull/50)) |
-| Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034, 0094 | PR aberto ([#51](https://github.com/MarceloMLR/fisco-projects/pull/51)) |
+| Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034, 0094 | Concluída em 20/10/2026 ([#51](https://github.com/MarceloMLR/fisco-projects/pull/51)) |
 | Documentos-5 | `termos-de-aceite` | Pedido, resposta com PDF assinado, recusa | 0035, 0045 | Planejada |
 
 ## 8. Telas de síntese
