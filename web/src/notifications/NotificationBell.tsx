@@ -1,6 +1,7 @@
 import AlternateEmailOutlined from '@mui/icons-material/AlternateEmailOutlined';
 import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined';
 import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
+import BlockOutlined from '@mui/icons-material/BlockOutlined';
 import ChatBubbleOutlineOutlined from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
@@ -15,6 +16,7 @@ import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import SyncOutlined from '@mui/icons-material/SyncOutlined';
+import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -55,6 +57,10 @@ const icons: Record<NoticeKind, typeof SvgIcon> = {
   ProjectRoleChanged: BadgeOutlined,
   ProjectStatusChanged: FolderOutlined,
   ScheduleDatesChanged: EventOutlined,
+  AcceptanceRequested: TaskAltOutlined,
+  AcceptanceReminded: TaskAltOutlined,
+  AcceptanceSigned: TaskAltOutlined,
+  AcceptanceRefused: BlockOutlined,
 };
 
 type Filter = 'unread' | 'all';

@@ -62,12 +62,15 @@ const quietSx = {
 export function DocumentDrawer({
   projectId,
   documentId,
+  termsFolderId,
   onClose,
   notify,
 }: {
   projectId: string;
   /** The document chosen; none while the drawer is closed. */
   documentId: string | undefined;
+  /** The folder of the signed terms, whose documents do not change (ADR-0093). */
+  termsFolderId?: string;
   onClose: () => void;
   notify: (message: string) => void;
 }) {
@@ -87,6 +90,7 @@ export function DocumentDrawer({
         <DocumentDetailsContent
           projectId={projectId}
           details={data}
+          signedTerm={data.document.folderId === termsFolderId}
           onRemoved={onClose}
           notify={notify}
         />
@@ -98,11 +102,14 @@ export function DocumentDrawer({
 function DocumentDetailsContent({
   projectId,
   details,
+  signedTerm,
   onRemoved,
   notify,
 }: {
   projectId: string;
   details: DocumentDetails;
+  /** A signed term, which neither changes status nor is removed (ADR-0093). */
+  signedTerm: boolean;
   onRemoved: () => void;
   notify: (message: string) => void;
 }) {
@@ -114,8 +121,8 @@ function DocumentDetailsContent({
   const [linking, setLinking] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [failure, setFailure] = useState<string>();
-  const statuses = statusesFor(permissions);
-  const hasActions = statuses.length > 0 || permissions.canDelete;
+  const statuses = signedTerm ? [] : statusesFor(permissions);
+  const hasActions = statuses.length > 0 || (permissions.canDelete && !signedTerm);
 
   const changed = () => {
     void queryClient.invalidateQueries({ queryKey: [...queryKeys.documents, projectId] });
@@ -414,7 +421,7 @@ function DocumentDetailsContent({
           );
         })}
         {statuses.length > 0 && <Divider sx={{ margin: 'var(--space-1) 0' }} />}
-        {permissions.canUpload && (
+        {permissions.canUpload && !signedTerm && (
           <MenuItem
             onClick={() => {
               setMenu(undefined);
@@ -425,7 +432,7 @@ function DocumentDetailsContent({
             {t('documents.menu.link')}
           </MenuItem>
         )}
-        {permissions.canDelete && (
+        {permissions.canDelete && !signedTerm && (
           <MenuItem
             onClick={() => {
               setMenu(undefined);

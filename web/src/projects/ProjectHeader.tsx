@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
 import {
+  acceptancesQuery,
   credentialsQuery,
   documentFoldersQuery,
   linksQuery,
@@ -99,6 +100,10 @@ export function ProjectHeader({
   const links = useQuery(linksQuery(project.id)).data?.total;
   // The count of the tab Acessos: all the credentials of the project.
   const credentials = useQuery(credentialsQuery(project.id)).data?.total;
+  // The tab Termos de aceite, for who manages the terms and who has one (ADR-0045), with all the terms the person sees.
+  const acceptances = useQuery(acceptancesQuery(project.id)).data;
+  const seesAcceptances =
+    acceptances !== undefined && (acceptances.canManage || acceptances.counts.all > 0);
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -347,6 +352,24 @@ export function ProjectHeader({
             </Box>
           )}
         </Box>
+        {(seesAcceptances || tab === 'acceptances') && (
+          <Box
+            component={Link}
+            to={`/projects/${project.id}/acceptances`}
+            role="tab"
+            id="project-tab-acceptances"
+            aria-selected={tab === 'acceptances'}
+            aria-controls={tab === 'acceptances' ? 'project-panel' : undefined}
+            sx={tabSx}
+          >
+            {t('pages.projectAcceptances.title')}
+            {acceptances !== undefined && (
+              <Box component="span" sx={countSx}>
+                {acceptances.counts.all}
+              </Box>
+            )}
+          </Box>
+        )}
         <Box
           component={Link}
           to={`/projects/${project.id}/members`}

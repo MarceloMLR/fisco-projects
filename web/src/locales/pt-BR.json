@@ -96,6 +96,9 @@
     },
     "projectCredentials": {
       "title": "Acessos"
+    },
+    "projectAcceptances": {
+      "title": "Termos de aceite"
     }
   },
   "signIn": {
@@ -256,7 +259,8 @@
       "Document": "Documentos",
       "LinkCategory": "Categorias de links",
       "ProjectLink": "Links",
-      "PortalCredential": "Acessos"
+      "PortalCredential": "Acessos",
+      "AcceptanceTerm": "Termos de aceite"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -396,6 +400,14 @@
         "Created": "Incluiu um acesso",
         "Updated": "Alterou um acesso",
         "Deleted": "Excluiu um acesso"
+      },
+      "AcceptanceTerm": {
+        "Created": "Pediu um aceite",
+        "Attached": "Anexou um termo assinado",
+        "Signed": "Registrou um termo assinado",
+        "Refused": "Recusou um termo de aceite",
+        "Updated": "Alterou um termo de aceite",
+        "Deleted": "Cancelou um pedido de aceite"
       }
     },
     "providers": {
@@ -437,7 +449,8 @@
         "Document": "Documento",
         "LinkCategory": "Categoria",
         "ProjectLink": "Link",
-        "PortalCredential": "Acesso"
+        "PortalCredential": "Acesso",
+        "AcceptanceTerm": "Termo"
       },
       "secret": "Alterado",
       "none": "—",
@@ -582,6 +595,16 @@
         "Username": "Usuário",
         "ProtectedPassword": "Senha",
         "Notes": "Observação"
+      },
+      "AcceptanceTerm": {
+        "ProjectId": "Projeto",
+        "MilestoneId": "Marco",
+        "Title": "Título",
+        "Message": "Mensagem",
+        "RecipientId": "Para",
+        "Status": "Situação",
+        "FileName": "Termo para assinar",
+        "RefusalReason": "Motivo da recusa"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -951,6 +974,9 @@
       "seeTickets": "Ver chamados",
       "incompleteTasks_one": "{{count}} tarefa está abaixo de 100%. O projeto pode ser concluído assim mesmo.",
       "incompleteTasks_other": "{{count}} tarefas estão abaixo de 100%. O projeto pode ser concluído assim mesmo.",
+      "pendingAcceptances_one": "{{count}} pedido de aceite espera a resposta. O projeto pode ser concluído assim mesmo.",
+      "pendingAcceptances_other": "{{count}} pedidos de aceite esperam a resposta. O projeto pode ser concluído assim mesmo.",
+      "seeAcceptances": "Ver termos",
       "ticketsClosed_one": "{{count}} chamado aberto será fechado, com o motivo \"projeto cancelado\" na conversa.",
       "ticketsClosed_other": "Os {{count}} chamados abertos serão fechados, com o motivo \"projeto cancelado\" na conversa."
     },
@@ -1998,7 +2024,12 @@
       "projectMemberAdded": "{{actor}} incluiu você no projeto {{project}} como {{role}}",
       "projectRoleChanged": "Seu papel no projeto {{project}} mudou para {{role}}",
       "projectStatusChanged": "O projeto {{project}} passou para {{status}}",
-      "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}"
+      "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}",
+      "acceptanceRequested": "{{actor}} pediu o seu aceite: {{title}}",
+      "acceptanceReminded": "{{actor}} lembrou o pedido de aceite: {{title}}",
+      "acceptanceSigned": "{{actor}} enviou o termo assinado: {{title}}",
+      "acceptanceAttached": "{{actor}} anexou o termo assinado: {{title}}",
+      "acceptanceRefused": "{{actor}} recusou o termo: {{title}}"
     }
   },
   "documents": {
@@ -2395,6 +2426,138 @@
         "TooLarge": "A planilha passa de 5 MB.",
         "TooManyRows": "A planilha passa de 2.000 linhas ou de 50 colunas."
       }
+    }
+  },
+  "acceptances": {
+    "table": "Termos de aceite",
+    "filter": "Situação",
+    "filters": {
+      "All": "Todos",
+      "Pending": "Pendentes",
+      "Signed": "Assinados",
+      "Refused": "Recusados"
+    },
+    "statuses": {
+      "Pending": "Aceite pendente",
+      "Signed": "Termo assinado",
+      "Refused": "Recusado"
+    },
+    "request": "Pedir aceite",
+    "attach": "Anexar termo assinado",
+    "columns": {
+      "term": "Termo e marco",
+      "recipient": "Para",
+      "requestedAt": "Pedido em",
+      "status": "Situação"
+    },
+    "milestone": "{{name}} · {{day}}",
+    "milestoneRemoved": "Marco fora do cronograma",
+    "total_one": "{{count}} termo",
+    "total_other": "{{count}} termos",
+    "pending_one": "{{count}} pendente",
+    "pending_other": "{{count}} pendentes",
+    "empty": "Nenhum termo de aceite ainda. Peça o aceite de um marco do cronograma ou anexe um termo assinado.",
+    "emptyStatus": "Nenhum termo nesta situação.",
+    "emptyOwn": "Nenhum termo de aceite para você neste projeto.",
+    "loadFailed": "Não foi possível carregar os termos de aceite. Tente de novo.",
+    "details": {
+      "label": "Termo selecionado",
+      "milestone": "Marco",
+      "recipient": "Para",
+      "requested": "Pedido",
+      "attached": "Anexado",
+      "byOn": "{{date}} por {{name}}",
+      "message": "Mensagem",
+      "toSign": "Termo para assinar",
+      "sent": "Termo enviado",
+      "signed": "Termo assinado",
+      "refusal": "Motivo da recusa",
+      "history": "Histórico",
+      "open": "Abrir {{name}}",
+      "answer": "Assine o termo fora do sistema e envie aqui o PDF assinado, ou recuse dizendo o motivo.",
+      "notLoaded": "Não foi possível carregar o termo. Tente de novo."
+    },
+    "history": {
+      "Requested": "Pedido enviado a {{recipient}}",
+      "RequestedMeta": "{{when}} · por e-mail e no sino",
+      "Reminded": "Lembrete enviado",
+      "RemindedMeta": "{{when}} · por {{actor}}",
+      "Signed": "Termo assinado enviado por {{actor}}",
+      "Attached": "Termo assinado anexado por {{actor}} em nome de {{recipient}}",
+      "Refused": "Recusado por {{actor}}",
+      "Meta": "{{when}}"
+    },
+    "actions": {
+      "remind": "Lembrar {{name}}",
+      "cancel": "Cancelar pedido",
+      "attach": "Anexar termo assinado",
+      "choose": "Escolher PDF",
+      "change": "Trocar PDF",
+      "send": "Enviar termo",
+      "refuse": "Recusar"
+    },
+    "dialog": {
+      "requestTitle": "Pedir aceite",
+      "attachTitle": "Anexar termo assinado",
+      "onBehalfSubtitle": "Em nome de {{name}}",
+      "onBehalfHelp": "Use quando {{name}} assinou o termo e mandou por fora, por e-mail ou em papel. O termo fica assinado em nome de {{name}}, com você como quem anexou.",
+      "attachHelp": "Use para um termo assinado recebido por fora, sem pedido no sistema. O termo fica em nome da pessoa escolhida, e o marco, atingido.",
+      "milestone": "Marco",
+      "chooseMilestone": "Escolha o marco",
+      "noMilestones": "O cronograma não tem marcos. Inclua um marco antes de pedir o aceite.",
+      "recipient": "Para",
+      "recipientAttached": "Em nome de",
+      "chooseRecipient": "Escolha a pessoa",
+      "recipientHelp": "Qualquer pessoa do projeto, em qualquer papel.",
+      "title": "Título",
+      "titleHelp": "Como o termo aparece na lista, por exemplo Aceite da homologação.",
+      "message": "Mensagem",
+      "messageHelp": "O que a pessoa precisa saber para assinar. Vai no termo, não no e-mail.",
+      "file": "Termo em PDF",
+      "signedFile": "Termo assinado em PDF",
+      "fileHelp": "Só PDF.",
+      "noFile": "Nenhum arquivo escolhido",
+      "cancel": "Cancelar",
+      "submitRequest": "Pedir aceite",
+      "submitAttach": "Anexar termo"
+    },
+    "refuse": {
+      "title": "Recusar termo",
+      "text": "Diga o que falta para assinar {{title}}. Quem pediu recebe o aviso, e o marco continua em aberto.",
+      "reason": "Motivo",
+      "cancel": "Voltar",
+      "submit": "Recusar"
+    },
+    "cancelRequest": {
+      "title": "Cancelar pedido?",
+      "text": "O pedido {{title}} sai da lista com o termo enviado, e {{name}} não poderá mais responder. A auditoria guarda o cancelamento.",
+      "back": "Voltar",
+      "confirm": "Cancelar pedido"
+    },
+    "errors": {
+      "milestoneRequired": "Escolha o marco.",
+      "recipientRequired": "Escolha a pessoa.",
+      "titleRequired": "Digite o título, com até 120 caracteres.",
+      "messageTooLong": "A mensagem tem até 2.000 caracteres.",
+      "fileRequired": "Escolha o termo em PDF.",
+      "fileNotPdf": "Escolha um arquivo PDF.",
+      "reasonRequired": "Digite o motivo, com até 1.000 caracteres."
+    },
+    "messages": {
+      "requested": "Aceite pedido a {{name}}.",
+      "attached": "Termo assinado anexado.",
+      "signed": "Termo assinado enviado.",
+      "refused": "Termo recusado.",
+      "reminded": "Lembrete enviado a {{name}}.",
+      "cancelled": "Pedido cancelado.",
+      "closed": "O projeto está encerrado e só pode ser consultado.",
+      "answered": "Este pedido já foi respondido ou cancelado.",
+      "failed": "Não foi possível concluir. Tente de novo."
+    },
+    "fileRefused": {
+      "Empty": "O arquivo está vazio.",
+      "TooLarge": "O arquivo passa do tamanho que o termo aceita.",
+      "NotPdf": "O termo precisa ser um PDF."
     }
   }
 }

@@ -56,6 +56,7 @@ export type PageTitleKey =
   | 'pages.projectDocuments.title'
   | 'pages.projectLinks.title'
   | 'pages.projectCredentials.title'
+  | 'pages.projectAcceptances.title'
   | 'pages.newTicket.title'
   | 'pages.ticket.title'
   | 'pages.ticketFlow.title'

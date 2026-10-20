@@ -61,6 +61,12 @@ export type DocumentRow = components['schemas']['DocumentResponse'];
 export type DocumentDetails = components['schemas']['DocumentDetailsResponse'];
 export type DocumentStatus = components['schemas']['DocumentStatus'];
 export type DocumentStatusFilter = NonNullable<components['schemas']['DocumentStatusFilter']>;
+export type Acceptance = components['schemas']['AcceptanceResponse'];
+export type AcceptanceList = components['schemas']['AcceptanceListResponse'];
+export type AcceptanceDetails = components['schemas']['AcceptanceDetailsResponse'];
+export type AcceptanceStatus = components['schemas']['AcceptanceStatus'];
+export type AcceptanceEventKind = components['schemas']['AcceptanceEventKind'];
+export type AcceptanceMilestone = components['schemas']['AcceptanceMilestoneResponse'];
 export type ScheduleItemType = components['schemas']['ScheduleItemType'];
 export type LinkCategory = components['schemas']['LinkCategoryResponse'];
 export type LinkList = components['schemas']['LinkListResponse'];
@@ -147,6 +153,7 @@ export const auditItemTypes = [
   'LinkCategory',
   'ProjectLink',
   'PortalCredential',
+  'AcceptanceTerm',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -244,6 +251,13 @@ export const documentProblems = {
 /** Problem types of the credentials (CredentialProblems in the Credentials module). */
 export const credentialProblems = {
   projectClosed: 'urn:fiscoprojects:problem:project-closed',
+} as const;
+
+/** Problem types of the acceptance terms (AcceptanceProblems in the Documents module). */
+export const acceptanceProblems = {
+  projectClosed: 'urn:fiscoprojects:problem:project-closed',
+  answered: 'urn:fiscoprojects:problem:acceptance-answered',
+  fileRefused: 'urn:fiscoprojects:problem:acceptance-file-refused',
 } as const;
 
 /** Problem types of the links (LinkProblems in the Documents module). */

@@ -335,10 +335,10 @@ describe('Ações do projeto', () => {
 
 // Spec: projetos, requirement "Encerramento pela tela".
 describe('Encerramento pela tela', () => {
-  const summary = (openTickets: number, incompleteTasks: number) => {
+  const summary = (openTickets: number, incompleteTasks: number, pendingAcceptances = 0) => {
     server.use(
       http.get('/api/projects/:id/closing', () =>
-        HttpResponse.json({ openTickets, incompleteTasks }),
+        HttpResponse.json({ openTickets, incompleteTasks, pendingAcceptances }),
       ),
     );
   };
@@ -403,6 +403,27 @@ describe('Encerramento pela tela', () => {
         '3 tarefas estão abaixo de 100%. O projeto pode ser concluído assim mesmo.',
       ),
     ).toBeInTheDocument();
+    fireEvent.click(within(confirm).getByRole('button', { name: text.confirm.completeAction }));
+
+    expect(await screen.findByText(text.closed.Completed)).toBeVisible();
+    expect(requests).toEqual(['PUT status Completed']);
+  });
+
+  it('Aviso de aceites pendentes', async () => {
+    summary(0, 0, 1);
+    await openProject();
+
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.complete }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.confirm.completeTitle });
+    expect(
+      await within(confirm).findByText(
+        /1 pedido de aceite espera a resposta\. O projeto pode ser concluído assim mesmo\./,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(confirm).getByRole('link', { name: text.confirm.seeAcceptances }),
+    ).toHaveAttribute('href', `/projects/${erpFin}/acceptances`);
     fireEvent.click(within(confirm).getByRole('button', { name: text.confirm.completeAction }));
 
     expect(await screen.findByText(text.closed.Completed)).toBeVisible();
