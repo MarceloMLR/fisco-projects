@@ -3,6 +3,7 @@ import { AdminLayout } from './admin/AdminLayout';
 import { AuditPage } from './admin/AuditPage';
 import { CalendarPage } from './admin/CalendarPage';
 import { ClientsPage } from './admin/ClientsPage';
+import { TemplatesPage } from './admin/TemplatesPage';
 import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
@@ -179,6 +180,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.clients.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'templates',
+                element: <TemplatesPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.templates.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },

@@ -342,3 +342,64 @@ describe('Gerente e cliente no Novo projeto', () => {
     expect(await screen.findByText(form.noPeople)).toBeVisible();
   });
 });
+
+// Spec: modelos-de-projeto, requirement "Modelos pela tela".
+describe('Novo projeto a partir de um modelo', () => {
+  it('Novo projeto a partir de um modelo pela tela', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+
+    // "Em branco" at first; the model comes with the first active one.
+    expect(screen.getByRole('radio', { name: new RegExp(form.blank) })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromTemplate) }));
+    const preview = await screen.findByRole('complementary', { name: form.preview });
+    expect(within(preview).getByRole('heading', { name: 'Implantação de ERP' })).toBeVisible();
+    expect(preview).toHaveTextContent('5 tarefas · 1 marco');
+    expect(within(preview).getByText('Marco: Aceite da homologação')).toBeVisible();
+    // The start is needed.
+    create();
+    expect(await screen.findByText(text.errors.scheduleStartRequired)).toBeVisible();
+    expect(bodies).toEqual([]);
+    fireEvent.change(screen.getByLabelText(form.scheduleStart), {
+      target: { value: '2026-11-03' },
+    });
+    create();
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    expect(bodies[0]).toMatchObject({
+      code: 'ERP-RH',
+      templateId: '0199f5a2-7c1e-7d40-9a1b-700000000001',
+      scheduleStart: '2026-11-03',
+    });
+  });
+
+  it('Projeto em branco pela tela', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+    create();
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    expect(bodies[0]).toMatchObject({ templateId: null, scheduleStart: null });
+    expect(screen.queryByRole('complementary', { name: form.preview })).not.toBeInTheDocument();
+  });
+});

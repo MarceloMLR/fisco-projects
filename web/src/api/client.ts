@@ -28,6 +28,7 @@ export type ProjectScheduleSummary = components['schemas']['ProjectScheduleSumma
 export type Schedule = components['schemas']['ScheduleResponse'];
 export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
 export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
+export type ProjectTemplate = components['schemas']['TemplateResponse'];
 export type ScheduleItemKind = components['schemas']['ScheduleItemKind'];
 
 /** Statuses of a project in the order of its life (ADR-0016); the last two close it. */
@@ -95,6 +96,7 @@ export const auditItemTypes = [
   'ScheduleItem',
   'ScheduleDependency',
   'ScheduleBaseline',
+  'ProjectTemplate',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -135,6 +137,7 @@ export const projectProblems = {
   scheduleCycle: 'urn:fiscoprojects:problem:schedule-cycle',
   scheduleNothingToUndo: 'urn:fiscoprojects:problem:schedule-nothing-to-undo',
   scheduleUndoBlocked: 'urn:fiscoprojects:problem:schedule-undo-blocked',
+  templateNameInUse: 'urn:fiscoprojects:problem:template-name-in-use',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

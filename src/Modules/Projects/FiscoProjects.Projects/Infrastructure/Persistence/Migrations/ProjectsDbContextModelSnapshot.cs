@@ -161,6 +161,123 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:LabelReference", "User");
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("project_templates", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplateDependency", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PredecessorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SuccessorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("project_template_dependencies", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplateItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PhaseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StartOffset")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("project_template_items", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplatePhase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("project_template_phases", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -409,6 +526,33 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplateDependency", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.ProjectTemplate", null)
+                        .WithMany("Dependencies")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplateItem", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.ProjectTemplate", null)
+                        .WithMany("Items")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplatePhase", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.ProjectTemplate", null)
+                        .WithMany("Phases")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>
                 {
                     b.HasOne("FiscoProjects.Projects.Domain.Project", null)
@@ -498,6 +642,15 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ProjectTemplate", b =>
+                {
+                    b.Navigation("Dependencies");
+
+                    b.Navigation("Items");
+
+                    b.Navigation("Phases");
                 });
 
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Schedule", b =>

@@ -132,6 +132,16 @@ const scheduleDependencyFields: readonly string[] = [
 const isScheduleDependencyField = (field: string): field is ScheduleDependencyField =>
   scheduleDependencyFields.includes(field);
 
+type ProjectTemplateField = 'Name' | 'Description' | 'IsActive';
+const projectTemplateFields: readonly string[] = [
+  'Name',
+  'Description',
+  'IsActive',
+] satisfies ProjectTemplateField[];
+
+const isProjectTemplateField = (field: string): field is ProjectTemplateField =>
+  projectTemplateFields.includes(field);
+
 type ScheduleBaselineField = 'SavedOn' | 'Start' | 'End';
 const scheduleBaselineFields: readonly string[] = [
   'SavedOn',
@@ -218,6 +228,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'ScheduleBaseline' && isScheduleBaselineField(field)) {
     return formatDayText(value);
   }
+  if (entry.itemType === 'ProjectTemplate' && field === 'IsActive') {
+    return t(value === 'true' ? 'templates.statuses.Active' : 'templates.statuses.Inactive');
+  }
   return value;
 }
 
@@ -270,6 +283,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'ScheduleBaseline' && isScheduleBaselineField(field)) {
     return t(`audit.fields.ScheduleBaseline.${field}`);
   }
+  if (entry.itemType === 'ProjectTemplate' && isProjectTemplateField(field)) {
+    return t(`audit.fields.ProjectTemplate.${field}`);
+  }
   return field;
 }
 
@@ -313,6 +329,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
+  }
+  // A model of project, saved from a schedule, changed and removed (ADR-0017).
+  if (entry.itemType === 'ProjectTemplate') {
+    return t(
+      `audit.actions.ProjectTemplate.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
   }
   // The baseline of a project, saved and saved again (ADR-0021).
   if (entry.itemType === 'ScheduleBaseline') {
@@ -490,6 +512,9 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   }
   if (entry.itemType === 'ScheduleBaseline') {
     return [{ label: t('audit.details.item.ScheduleBaseline'), value: label }];
+  }
+  if (entry.itemType === 'ProjectTemplate') {
+    return [{ label: t('audit.details.item.ProjectTemplate'), value: label }];
   }
   if (entry.itemType === 'ProjectMember') {
     return [

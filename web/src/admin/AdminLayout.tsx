@@ -3,12 +3,13 @@ import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
+import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet } from 'react-router';
-import { clientsQuery, usersQuery } from '../api/queries';
+import { allTemplatesQuery, clientsQuery, usersQuery } from '../api/queries';
 import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
 
@@ -51,6 +52,12 @@ const sections = [
         icon: BusinessOutlined,
         count: 'clients',
       },
+      {
+        path: '/admin/templates',
+        labelKey: 'pages.templates.title',
+        icon: TimelineOutlined,
+        count: 'templates',
+      },
     ],
   },
 ] as const;
@@ -67,8 +74,10 @@ export function AdminLayout() {
   const usersTotal = useQuery(usersQuery({ pageSize: 1 })).data?.total ?? null;
   const clientsTotal = useQuery(clientsQuery({ pageSize: 1 })).data?.total ?? null;
 
+  const templatesTotal = useQuery(allTemplatesQuery()).data?.length ?? null;
+
   const context: AdminContext = { usersTotal, clientsTotal };
-  const counts = { users: usersTotal, clients: clientsTotal };
+  const counts = { users: usersTotal, clients: clientsTotal, templates: templatesTotal };
 
   return (
     <Box

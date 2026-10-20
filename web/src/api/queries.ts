@@ -46,6 +46,7 @@ export const queryKeys = {
   clients: ['clients'],
   projects: ['projects'],
   people: ['people'],
+  templates: ['templates'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -169,5 +170,21 @@ export function calendarYearQuery(year: number) {
     queryKey: [...queryKeys.calendar, year] as const,
     queryFn: ({ signal }) =>
       dataOf(api.GET('/api/calendar/{year}', { params: { path: { year } }, signal })),
+  });
+}
+
+/** The active models of project, for a new project (ADR-0017). */
+export function templatesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.templates, 'active'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/project-templates', { signal })),
+  });
+}
+
+/** Every model of project, for the Administrator (ADR-0046). */
+export function allTemplatesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.templates, 'all'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/project-templates', { signal })),
   });
 }

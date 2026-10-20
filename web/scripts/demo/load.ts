@@ -282,6 +282,16 @@ async function loadProject(
     }
   }
 
+  if (project.template !== undefined) {
+    done(
+      await builder.POST('/api/projects/{id}/schedule/template', {
+        params: { path: { id } },
+        body: project.template,
+      }),
+      `Modelo ${project.template.name}`,
+    );
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {

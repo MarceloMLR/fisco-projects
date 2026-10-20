@@ -37,3 +37,11 @@ O projeto principal MUST ter a linha de base salva pela gerente antes de uma tar
 #### Scenario: Linha de base na demonstração
 - **WHEN** o comando carrega os dados de demonstração
 - **THEN** a gerente salva a linha de base do ERP-FIN e depois adia "Parametrizar regras de ICMS", que empurra as seguintes e deixa o fim do projeto depois da linha de base
+
+### Requirement: Modelos na demonstração
+
+A carga de demonstração MUST deixar dois modelos de exemplo, fictícios, salvos pela gerente: "Implantação de ERP", do ERP-FIN, e "Revisão tributária de filial", do TRIB-RS (ADR-0017, ADR-0089).
+
+#### Scenario: Modelos na demonstração
+- **WHEN** o comando carrega os dados de demonstração
+- **THEN** a gerente salva os dois modelos, e o "Novo projeto" os oferece

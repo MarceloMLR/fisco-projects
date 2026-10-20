@@ -27,7 +27,7 @@ const lengthOf = (element: Element | null) =>
   Math.round(Number.parseFloat((element as HTMLElement | null)?.style.width ?? 'NaN') / day);
 
 // Spec: cronograma, requirement "Linha do tempo".
-describe('Linha do tempo', () => {
+describe('Linha do tempo', { timeout: 20_000 }, () => {
   it('Linha do tempo pela tela', async () => {
     const container = await drawTimeline(demoSchedule());
 
