@@ -54,3 +54,74 @@ public sealed class EmailRendererTests
         render.Should().Throw<KeyNotFoundException>();
     }
 }
+
+public sealed class NoticeEmailTests
+{
+    [Fact]
+    public void CodesAndDaysAreShownInWords()
+    {
+        var notice = new FiscoProjects.Notifications.Contracts.Notice(
+            FiscoProjects.Notifications.Contracts.NoticeKind.TicketDueSoon,
+            [Guid.NewGuid()],
+            null,
+            Guid.NewGuid(),
+            "/tickets/7",
+            new Dictionary<string, string>
+            {
+                ["number"] = "7",
+                ["title"] = "Erro no DIFAL",
+                ["project"] = "ERP-FIN",
+                ["team"] = "Development",
+                ["deadline"] = "FirstResponse",
+                ["dueOn"] = "2026-10-21",
+            });
+
+        var email = new EmailRenderer("https://projetos.empresa.example")
+            .Render(NoticeEmails.ContentOf(notice, "Diego Torres", null), "FiscoProjects");
+
+        email.Subject.Should().Be("Prazo vencendo no chamado #7: Erro no DIFAL");
+        email.TextBody.Should().Contain("Olá, Diego Torres.")
+            .And.Contain("O prazo de primeira resposta do chamado #7, \"Erro no DIFAL\", do projeto ERP-FIN, vence em 21/10/2026.")
+            .And.Contain("Abrir o chamado: https://projetos.empresa.example/tickets/7");
+    }
+
+    [Fact]
+    public void EveryKindHasItsTexts()
+    {
+        var renderer = new EmailRenderer("https://projetos.empresa.example");
+        foreach (var kind in EmailChannel.Immediate)
+        {
+            var notice = new FiscoProjects.Notifications.Contracts.Notice(
+                kind, [Guid.NewGuid()], Guid.NewGuid(), null, "/tickets/1", new Dictionary<string, string>());
+
+            var render = () => renderer.Render(NoticeEmails.ContentOf(notice, "Carla Mendes", "Diego Torres"), "FiscoProjects");
+
+            render.Should().NotThrow($"{kind} has a subject, a body and an action");
+        }
+    }
+
+    [Fact]
+    public void ASummaryHasItsSectionsWithLinks()
+    {
+        var content = new EmailContent("summary.subject", ["summary.greeting"], new Dictionary<string, string> { ["name"] = "Carla" })
+        {
+            Sections =
+            [
+                new EmailSection("summary.sections.tickets",
+                [
+                    new EmailLine("summary.lines.ticketStatusChanged", new Dictionary<string, string>
+                    {
+                        ["number"] = "1", ["title"] = "Rejeição 539", ["from"] = "Open", ["to"] = "Triage", ["actor"] = "Rafael Souza",
+                    }, "/tickets/1"),
+                ]),
+            ],
+            NoteKey = "summary.note",
+        };
+
+        var email = new EmailRenderer("https://projetos.empresa.example").Render(content, "FiscoProjects");
+
+        email.TextBody.Should().Contain("Chamados que você acompanha\n- #1 Rejeição 539: Aberto → Em triagem, por Rafael Souza: https://projetos.empresa.example/tickets/1");
+        email.HtmlBody.Should().Contain("<a href=\"https://projetos.empresa.example/tickets/1\"");
+        email.TextBody.Should().Contain("desligue em Meu perfil");
+    }
+}

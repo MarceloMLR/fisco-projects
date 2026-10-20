@@ -176,6 +176,19 @@
       "Automatic": "Automático"
     },
     "themeFailed": "Não foi possível salvar o tema. Tente de novo.",
+    "notices": {
+      "title": "Avisos por e-mail",
+      "summary": "Resumo diário",
+      "receiveSummary": "Receber às {{time}}, com as novidades do dia e as tarefas que vencem",
+      "now": "Na hora",
+      "immediate": {
+        "messages": "Menções, respostas e pedidos de informação",
+        "assigned": "Chamados novos, transferidos e atribuídos a mim",
+        "deadlines": "Prazos dos meus chamados vencendo ou vencidos"
+      },
+      "alwaysOn": "Os avisos que pedem a sua ação não podem ser desligados.",
+      "failed": "Não foi possível salvar o resumo diário. Tente de novo."
+    },
     "account": "Conta",
     "role": "Papel no sistema",
     "signIn": "Entrada",
@@ -385,7 +398,8 @@
         "Name": "Nome exibido",
         "LogoFileName": "Logo",
         "TimeZone": "Fuso horário",
-        "MainColor": "Cor principal"
+        "MainColor": "Cor principal",
+        "DailySummaryAt": "Horário do resumo diário"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -499,6 +513,8 @@
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
+    "dailySummaryAt": "Horário do resumo diário",
+    "dailySummaryHint": "No fuso da instalação. O resumo sai uma vez por dia, só para quem tem novidades.",
     "m365": "Microsoft 365",
     "mailbox": "Caixa de envio",
     "mailboxHint": "Os e-mails do sistema saem por ela.",
@@ -523,7 +539,8 @@
       "timeZoneRequired": "Escolha o fuso horário.",
       "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro.",
       "colorFormat": "Use uma cor em hexadecimal, como {{example}}.",
-      "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro."
+      "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro.",
+      "dailySummaryRequired": "Informe o horário do resumo, como 07:30."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",

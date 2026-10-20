@@ -146,6 +146,14 @@ public interface ITicketStore
     /// <summary>The resolved tickets, to be changed: the automatic closing looks at them.</summary>
     Task<IReadOnlyList<Ticket>> ResolvedAsync(CancellationToken cancellationToken);
 
+    /// <summary>The open tickets with deadlines: the alerts of the deadlines look at them.</summary>
+    Task<IReadOnlyList<Ticket>> OpenWithDeadlinesAsync(CancellationToken cancellationToken);
+
+    /// <summary>The alerts told of the deadlines of the tickets, tracked.</summary>
+    Task<IReadOnlyList<TicketDeadlineAlert>> AlertsAsync(IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken);
+
+    void AddAlert(TicketDeadlineAlert alert);
+
     void AddAttachment(TicketAttachment attachment);
 
     /// <summary>The person starts to follow the ticket, unless already following it.</summary>
@@ -299,7 +307,8 @@ public sealed record OpenTicketResult(OpenTicketOutcome Outcome, Guid? Id, int? 
 /// team with someone to serve it. Who is not in the project gets 404, the viewer 403 (ADR-0044), and a completed or
 /// cancelled project 409, until it is reopened.
 /// </summary>
-public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TimeProvider clock)
+public sealed class OpenTicket(
+    IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TimeProvider clock, TicketNotices notices)
 {
     public async Task<OpenTicketResult> ExecuteAsync(NewTicket ticket, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -350,6 +359,8 @@ public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, Tick
         // The requester follows the ticket from the start (ADR-0026).
         await store.FollowAsync(opened.Id, viewer.UserId, now, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        // Who serves the team hears about it now (ADR-0037).
+        await notices.OpenedAsync(opened, project, viewer.UserId, cancellationToken);
         return new OpenTicketResult(OpenTicketOutcome.Opened, opened.Id, opened.Number, []);
     }
 }

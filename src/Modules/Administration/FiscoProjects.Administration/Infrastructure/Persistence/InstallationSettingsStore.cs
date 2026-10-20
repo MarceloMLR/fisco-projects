@@ -15,6 +15,6 @@ internal sealed class InstallationSettingsStore(AdministrationDbContext db) : II
     Task<InstallationInfo> IInstallationSettings.GetAsync(CancellationToken cancellationToken) =>
         db.InstallationSettings.AsNoTracking()
             .Where(settings => settings.Id == InstallationSettings.SingleId)
-            .Select(settings => new InstallationInfo(settings.Name, settings.TimeZone))
+            .Select(settings => new InstallationInfo(settings.Name, settings.TimeZone, settings.DailySummaryAt))
             .SingleAsync(cancellationToken);
 }

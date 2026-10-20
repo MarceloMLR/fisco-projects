@@ -34,6 +34,7 @@ public static class UsersModule
         services.AddScoped<IUserProvisioning, UserFromDirectory>();
         services.AddScoped<GetProfile>();
         services.AddScoped<ChooseTheme>();
+        services.AddScoped<ChooseDailySummary>();
 
         services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
         services.AddAuthorizationBuilder()

@@ -14,6 +14,8 @@ internal sealed class TicketsDbContext(DbContextOptions<TicketsDbContext> option
 
     public DbSet<Ticket> Tickets => Set<Ticket>();
 
+    public DbSet<TicketDeadlineAlert> TicketDeadlineAlerts => Set<TicketDeadlineAlert>();
+
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
 
     public DbSet<TicketAttachment> TicketAttachments => Set<TicketAttachment>();

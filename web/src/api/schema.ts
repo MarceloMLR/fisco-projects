@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/daily-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChooseDailySummary"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1305,6 +1321,10 @@ export interface components {
         ChangeRoleRequest: {
             role: components["schemas"]["SystemRole"];
         };
+        /** @description Whether the person receives the daily summary of e-mails (ADR-0037). */
+        ChooseDailySummaryRequest: {
+            receives: boolean;
+        };
         ChooseThemeRequest: {
             theme: components["schemas"]["ThemePreference"];
         };
@@ -1375,9 +1395,14 @@ export interface components {
             at: string;
             to: null | string;
         };
-        /** @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013). */
+        /**
+         * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
+         *     daily summary of e-mails, in that time zone (ADR-0037).
+         */
         GeneralRulesResponse: {
             timeZone: string;
+            /** Format: time */
+            dailySummaryAt: string;
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -1519,8 +1544,8 @@ export interface components {
             instance?: null | string;
         };
         /**
-         * @description My profile: who the person is, how they sign in and the theme they chose. Sign-in providers come as their codes
-         *     ("local", and "entra" later); the screen says them in words.
+         * @description My profile: who the person is, how they sign in, the theme they chose and whether they receive the daily summary of
+         *     e-mails. Sign-in providers come as their codes ("local", and "entra" later); the screen says them in words.
          */
         ProfileResponse: {
             /** Format: uuid */
@@ -1532,6 +1557,7 @@ export interface components {
             /** Format: date-time */
             lastSignInAt: string;
             signInMethods: string[];
+            receivesDailySummary: boolean;
         };
         /** @description The client of a project, with the address of its current logo (null without one). */
         ProjectClientResponse: {
@@ -2301,13 +2327,15 @@ export interface components {
          */
         TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe" | "Following" | "WithVendor";
         /**
-         * @description The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
-         *     null for the color of the design system).
+         * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
+         *     for the color of the design system) and the time of the daily summary (HH:mm:ss, in the time zone).
          */
         UpdateInstallationRequest: {
             name: string;
             timeZone: string;
             mainColor: null | string;
+            /** Format: time */
+            dailySummaryAt: null | string;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -2574,6 +2602,37 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChooseDailySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChooseDailySummaryRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

@@ -33,7 +33,7 @@ public sealed class GetTicketFlow(ITicketStore store)
 /// in; the action that needs a message gets it as a message of the conversation.
 /// </summary>
 public sealed class ChangeTicketStatus(
-    IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TicketAnswers answers, TimeProvider clock)
+    IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TicketAnswers answers, TimeProvider clock, TicketNotices notices)
 {
     public async Task<StatusChangeOutcome> ExecuteAsync(
         int number, TicketAction action, string? body, TicketViewer viewer, CancellationToken cancellationToken)
@@ -80,6 +80,7 @@ public sealed class ChangeTicketStatus(
             await answers.ClaimAsync(ticket, project, viewer, now, cancellationToken);
         }
 
+        var from = ticket.Status;
         await deadlines.TakeAsync(ticket, transition, viewer.UserId, now, cancellationToken);
         try
         {
@@ -91,6 +92,16 @@ public sealed class ChangeTicketStatus(
             return StatusChangeOutcome.NotAllowedNow;
         }
 
+        // An action with a message is told as the message; without one, as the change of status (ADR-0037).
+        if (text is not null)
+        {
+            await notices.MessageAsync(ticket, project, viewer.UserId, [], transition, cancellationToken);
+        }
+        else
+        {
+            await notices.StatusChangedAsync([(ticket, from)], viewer.UserId, cancellationToken);
+        }
+
         return StatusChangeOutcome.Done;
     }
 }
@@ -100,7 +111,7 @@ public sealed class ChangeTicketStatus(
 /// calendar of the installation and on its day.
 /// </summary>
 public sealed class CloseResolvedTickets(
-    ITicketStore store, TicketDeadlines deadlines, TicketAutoCloseSettings settings, TimeProvider clock)
+    ITicketStore store, TicketDeadlines deadlines, TicketAutoCloseSettings settings, TimeProvider clock, TicketNotices notices)
 {
     /// <summary>How many tickets were closed.</summary>
     public async Task<int> ExecuteAsync(CancellationToken cancellationToken)
@@ -119,23 +130,25 @@ public sealed class CloseResolvedTickets(
 
         var day = await deadlines.TodayAsync(cancellationToken);
         var now = clock.GetUtcNow().UtcDateTime;
-        var closed = 0;
+        var closed = new List<(Ticket Ticket, TicketStatus From)>();
         foreach (var ticket in resolved.Where(ticket => ticket.ResolvedAt is not null))
         {
             var due = day.Days.AddBusinessDays(day.DayOf(ticket.ResolvedAt!.Value), settings.BusinessDays);
             if (day.Today >= due)
             {
                 await deadlines.TakeAsync(ticket, close, null, now, cancellationToken);
-                closed++;
+                closed.Add((ticket, TicketStatus.Resolved));
             }
         }
 
-        if (closed > 0)
+        if (closed.Count > 0)
         {
             await store.SaveChangesAsync(cancellationToken);
+            // Who follows each ticket hears about it in the daily summary (ADR-0037).
+            await notices.StatusChangedAsync(closed, null, cancellationToken);
         }
 
-        return closed;
+        return closed.Count;
     }
 
 }

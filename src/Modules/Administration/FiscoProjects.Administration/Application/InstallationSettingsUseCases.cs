@@ -46,13 +46,19 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
     }
 }
 
-/// <summary>The rules of the installation every person in a session needs: the time zone of the screens.</summary>
-public sealed record GeneralRules(string TimeZone);
+/// <summary>
+/// The rules of the installation every person in a session needs: the time zone of the screens and the time of the
+/// daily summary, which the profile shows.
+/// </summary>
+public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt);
 
 public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
-    public async Task<GeneralRules> ExecuteAsync(CancellationToken cancellationToken) =>
-        new((await store.GetAsync(cancellationToken)).TimeZone);
+    public async Task<GeneralRules> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var settings = await store.GetAsync(cancellationToken);
+        return new GeneralRules(settings.TimeZone, settings.DailySummaryAt);
+    }
 }
 
 /// <summary>A field of the General settings form.</summary>
@@ -61,10 +67,14 @@ public enum InstallationField
     Name = 1,
     TimeZone = 2,
     MainColor = 3,
+    DailySummaryAt = 4,
 }
 
-/// <summary>The General settings form, saved as a whole: the name shown, the time zone and the main color.</summary>
-public sealed record InstallationChanges(string? Name, string? TimeZone, string? MainColor);
+/// <summary>
+/// The General settings form, saved as a whole: the name shown, the time zone, the main color and the time of the daily
+/// summary.
+/// </summary>
+public sealed record InstallationChanges(string? Name, string? TimeZone, string? MainColor, TimeOnly? DailySummaryAt);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -94,6 +104,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.MainColor);
         }
 
+        if (changes.DailySummaryAt is null)
+        {
+            invalid.Add(InstallationField.DailySummaryAt);
+        }
+
         if (name is null || invalid.Count > 0)
         {
             return invalid;
@@ -103,6 +118,7 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeMainColor(mainColor);
+        settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         await store.SaveChangesAsync(cancellationToken);
         return [];
     }

@@ -3,16 +3,16 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { profileQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { useDates } from '../format/useDates';
 import { useSession } from '../session/SessionContext';
+import { EmailNotices } from './EmailNotices';
+import { ProfileCard, ProfileRow, singleColumn } from './ProfileCard';
 import { ThemeOptions } from './ThemeOptions';
 import { useThemeChoice } from './themeChoice';
-
-/** Below this width the account goes under the preferences, as fp-split in the design system. */
-const singleColumn = '@media (max-width: 1100px)';
 
 const knownSignInMethods = ['local', 'entra'] as const;
 type KnownSignInMethod = (typeof knownSignInMethods)[number];
@@ -20,8 +20,8 @@ const isKnown = (method: string): method is KnownSignInMethod =>
   (knownSignInMethods as readonly string[]).includes(method);
 
 /**
- * My profile, as in the canvas: who the person is, the preferences (today the theme, ADR-0014) and, on the side,
- * the account (role, how they sign in, last access) and Sign out. Name, e-mail and role show from the session at
+ * My profile, as in the canvas: who the person is, the preferences (today the theme, ADR-0014), the e-mails
+ * (ADR-0037) and, on the side, the account (role, how they sign in, last access) and Sign out. Name, e-mail and role show from the session at
  * once; the account comes from the profile.
  */
 export function ProfilePage() {
@@ -29,6 +29,7 @@ export function ProfilePage() {
   const { formatLastAccess } = useDates();
   const { session, signOut } = useSession();
   const { theme, choose, message, dismiss } = useThemeChoice();
+  const [notice, setNotice] = useState<string>();
   const profile = useQuery(profileQuery()).data;
 
   if (session.status !== 'signed-in') {
@@ -93,57 +94,12 @@ export function ProfilePage() {
             </Box>
           </Box>
         </Box>
-        <Box
-          component="section"
-          aria-labelledby="profile-preferences"
-          sx={{
-            boxSizing: 'border-box',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              minHeight: 48,
-              boxSizing: 'border-box',
-              padding: 'var(--space-2) var(--space-2) var(--space-2) var(--space-4)',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            <Box
-              component="h2"
-              id="profile-preferences"
-              sx={{
-                margin: 0,
-                fontSize: 15,
-                lineHeight: '22px',
-                fontWeight: 500,
-                color: 'var(--text)',
-              }}
-            >
-              {t('profile.preferences')}
-            </Box>
-          </Box>
-          <Box sx={{ padding: '0 var(--space-4)' }}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '200px minmax(0, 1fr)',
-                gap: 'var(--space-6)',
-                padding: 'var(--space-5) 0',
-                [singleColumn]: { gridTemplateColumns: 'minmax(0, 1fr)', gap: 'var(--space-3)' },
-              }}
-            >
-              <Box component="span" sx={{ fontWeight: 500, color: 'var(--text)' }}>
-                {t('profile.theme')}
-              </Box>
-              <ThemeOptions label={t('profile.theme')} value={theme} onChange={choose} />
-            </Box>
-          </Box>
-        </Box>
+        <ProfileCard id="profile-preferences" title={t('profile.preferences')}>
+          <ProfileRow label={t('profile.theme')}>
+            <ThemeOptions label={t('profile.theme')} value={theme} onChange={choose} />
+          </ProfileRow>
+        </ProfileCard>
+        <EmailNotices onMessage={setNotice} />
       </Box>
       <Box
         component="aside"
@@ -225,11 +181,14 @@ export function ProfilePage() {
         </Box>
       </Box>
       <Snackbar
-        open={message !== undefined}
-        message={message}
+        open={(message ?? notice) !== undefined}
+        message={message ?? notice}
         autoHideDuration={6000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        onClose={dismiss}
+        onClose={() => {
+          dismiss();
+          setNotice(undefined);
+        }}
       />
     </Box>
   );

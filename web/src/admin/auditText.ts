@@ -42,12 +42,13 @@ const userFields: readonly string[] = ['Name', 'Email', 'Role', 'IsActive'] sati
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
 
-type SettingsField = 'Name' | 'LogoFileName' | 'TimeZone' | 'MainColor';
+type SettingsField = 'Name' | 'LogoFileName' | 'TimeZone' | 'MainColor' | 'DailySummaryAt';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
   'TimeZone',
   'MainColor',
+  'DailySummaryAt',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
@@ -316,6 +317,10 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   }
   if (entry.itemType === 'VendorTicket' && field === 'OpenedOn') {
     return formatDayText(value);
+  }
+  // A time of day (07:30:00) without the seconds.
+  if (entry.itemType === 'InstallationSettings' && field === 'DailySummaryAt') {
+    return value.slice(0, 5);
   }
   return value;
 }

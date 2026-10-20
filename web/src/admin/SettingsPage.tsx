@@ -32,6 +32,7 @@ const fieldErrors = {
   timeZoneInvalid: 'settings.errors.timeZoneInvalid',
   colorFormat: 'settings.errors.colorFormat',
   colorContrast: 'settings.errors.colorContrast',
+  dailySummaryRequired: 'settings.errors.dailySummaryRequired',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
@@ -43,6 +44,8 @@ const form = z.object({
     .min(1, { error: fieldErrors.nameRequired })
     .max(60, { error: fieldErrors.nameTooLong }),
   timeZone: z.string().min(1, { error: fieldErrors.timeZoneRequired }),
+  // Hours and minutes, in the time zone of the installation (ADR-0037).
+  dailySummaryAt: z.string().regex(/^\d{2}:\d{2}$/, { error: fieldErrors.dailySummaryRequired }),
   // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
   mainColor: z
     .string()
@@ -146,7 +149,7 @@ export function SettingsPage() {
     formState: { errors, isDirty, isSubmitting },
   } = useForm<z.input<typeof form>, unknown, z.output<typeof form>>({
     resolver: zodResolver(form),
-    defaultValues: { name: '', timeZone: '', mainColor: '' },
+    defaultValues: { name: '', timeZone: '', mainColor: '', dailySummaryAt: '' },
     values:
       installation === undefined || rules === undefined
         ? undefined
@@ -154,6 +157,7 @@ export function SettingsPage() {
             name: installation.name,
             timeZone: rules.timeZone,
             mainColor: installation.mainColor ?? '',
+            dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
           },
   });
 
@@ -197,7 +201,7 @@ export function SettingsPage() {
     setLogoError(undefined);
   };
 
-  const save = handleSubmit(async ({ name, timeZone, mainColor }) => {
+  const save = handleSubmit(async ({ name, timeZone, mainColor, dailySummaryAt }) => {
     // The new logo stays on screen until the brand is read again, so the old one never flashes back.
     let logoSaved = false;
     try {
@@ -225,7 +229,7 @@ export function SettingsPage() {
 
       if (isDirty) {
         const { error, response } = await api.PUT('/api/installation', {
-          body: { name, timeZone, mainColor },
+          body: { name, timeZone, mainColor, dailySummaryAt: `${dailySummaryAt}:00` },
         });
         if (response.status === 400) {
           // The screen checks the name before sending; the time zone only the server can check.
@@ -235,6 +239,9 @@ export function SettingsPage() {
           }
           if (invalid.includes('mainColor')) {
             setError('mainColor', { message: fieldErrors.colorContrast });
+          }
+          if (invalid.includes('dailySummaryAt')) {
+            setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
           }
           if (invalid.includes('timeZone') || invalid.length === 0) {
             setError('timeZone', { message: fieldErrors.timeZoneInvalid });
@@ -262,6 +269,7 @@ export function SettingsPage() {
   const nameError = errors.name?.message as FieldError | undefined;
   const timeZoneError = errors.timeZone?.message as FieldError | undefined;
   const colorError = errors.mainColor?.message as FieldError | undefined;
+  const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -463,6 +471,23 @@ export function SettingsPage() {
                           error={timeZoneError === undefined ? undefined : t(timeZoneError)}
                         />
                       )}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gap: 'var(--space-4)',
+                      [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
+                    }}
+                  >
+                    <TextField
+                      label={t('settings.dailySummaryAt')}
+                      type="time"
+                      step={60}
+                      helper={t('settings.dailySummaryHint')}
+                      error={summaryError === undefined ? undefined : t(summaryError)}
+                      {...register('dailySummaryAt')}
                     />
                   </Box>
                 </Box>

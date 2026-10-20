@@ -177,6 +177,39 @@
         }
       }
     },
+    "/api/profile/daily-summary": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "ChooseDailySummary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseDailySummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -5802,6 +5835,18 @@
           }
         }
       },
+      "ChooseDailySummaryRequest": {
+        "required": [
+          "receives"
+        ],
+        "type": "object",
+        "properties": {
+          "receives": {
+            "type": "boolean"
+          }
+        },
+        "description": "Whether the person receives the daily summary of e-mails (ADR-0037)."
+      },
       "ChooseThemeRequest": {
         "required": [
           "theme"
@@ -6073,15 +6118,20 @@
       },
       "GeneralRulesResponse": {
         "required": [
-          "timeZone"
+          "timeZone",
+          "dailySummaryAt"
         ],
         "type": "object",
         "properties": {
           "timeZone": {
             "type": "string"
+          },
+          "dailySummaryAt": {
+            "type": "string",
+            "format": "time"
           }
         },
-        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013)."
+        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037)."
       },
       "HttpValidationProblemDetails": {
         "type": "object",
@@ -6552,7 +6602,8 @@
           "role",
           "theme",
           "lastSignInAt",
-          "signInMethods"
+          "signInMethods",
+          "receivesDailySummary"
         ],
         "type": "object",
         "properties": {
@@ -6581,9 +6632,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "receivesDailySummary": {
+            "type": "boolean"
           }
         },
-        "description": "My profile: who the person is, how they sign in and the theme they chose. Sign-in providers come as their codes\n(\"local\", and \"entra\" later); the screen says them in words."
+        "description": "My profile: who the person is, how they sign in, the theme they chose and whether they receive the daily summary of\ne-mails. Sign-in providers come as their codes (\"local\", and \"entra\" later); the screen says them in words."
       },
       "ProjectClientResponse": {
         "required": [
@@ -8975,7 +9029,8 @@
         "required": [
           "name",
           "timeZone",
-          "mainColor"
+          "mainColor",
+          "dailySummaryAt"
         ],
         "type": "object",
         "properties": {
@@ -8990,9 +9045,16 @@
               "null",
               "string"
             ]
+          },
+          "dailySummaryAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or\nnull for the color of the design system)."
+        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system) and the time of the daily summary (HH:mm:ss, in the time zone)."
       },
       "UserPageResponse": {
         "required": [

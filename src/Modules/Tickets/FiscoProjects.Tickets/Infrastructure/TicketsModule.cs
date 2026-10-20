@@ -51,6 +51,8 @@ public static class TicketsModule
         services.AddSingleton(new TicketAutoCloseSettings(
             Math.Max(1, configuration.GetValue("Tickets:AutoCloseBusinessDays", TicketAutoCloseSettings.Default))));
         services.AddScoped<CloseResolvedTickets>();
+        services.AddScoped<TicketNotices>();
+        services.AddScoped<AlertTicketDeadlines>();
         // The vendors and the tickets at them (ADR-0028): stale after 5 business days without an update, as each
         // installation sets.
         services.AddScoped<IVendorStore, VendorStore>();
@@ -64,6 +66,7 @@ public static class TicketsModule
         services.AddScoped<IAuditReferenceNames, TicketReferenceNames>();
         services.AddScoped<IAuditReferenceNames, VendorReferenceNames>();
         services.AddHostedService<TicketAutoClose>();
+        services.AddHostedService<TicketDeadlineAlerts>();
         return services;
     }
 }

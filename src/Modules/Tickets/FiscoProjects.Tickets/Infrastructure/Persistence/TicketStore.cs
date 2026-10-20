@@ -184,6 +184,18 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
     public async Task<IReadOnlyList<Ticket>> ResolvedAsync(CancellationToken cancellationToken) =>
         await db.Tickets.Where(ticket => ticket.Status == TicketStatus.Resolved).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<TicketDeadlineAlert>> AlertsAsync(
+        IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken) =>
+        await db.TicketDeadlineAlerts.Where(alert => ticketIds.Contains(alert.TicketId)).ToListAsync(cancellationToken);
+
+    public void AddAlert(TicketDeadlineAlert alert) => db.TicketDeadlineAlerts.Add(alert);
+
+    public async Task<IReadOnlyList<Ticket>> OpenWithDeadlinesAsync(CancellationToken cancellationToken) =>
+        await db.Tickets.AsNoTracking()
+            .Where(ticket => ticket.Status != TicketStatus.Resolved && ticket.Status != TicketStatus.Closed
+                && ticket.FirstResponseDueOn != null)
+            .ToListAsync(cancellationToken);
+
     public void AddAttachment(TicketAttachment attachment) => db.TicketAttachments.Add(attachment);
 
     public async Task FollowAsync(Guid ticketId, Guid userId, DateTime since, CancellationToken cancellationToken)

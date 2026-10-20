@@ -19,14 +19,27 @@ public interface IEmailSender
 
 /// <summary>
 /// What an e-mail says, as the keys of the texts of the e-mails (ADR-0013) and their values: the subject, the
-/// paragraphs, and the button with the address of the item in the screens (ADR-0037).
+/// paragraphs, and the button with the address of the item in the screens (ADR-0037); a summary has sections of lines,
+/// each line with the address of its item.
 /// </summary>
 public sealed record EmailContent(
     string SubjectKey,
     IReadOnlyList<string> ParagraphKeys,
     IReadOnlyDictionary<string, string> Values,
     string? ActionKey = null,
-    string? Path = null);
+    string? Path = null)
+{
+    public IReadOnlyList<EmailSection> Sections { get; init; } = [];
+
+    /// <summary>A last paragraph, after the sections and the button, as how to stop receiving the summary.</summary>
+    public string? NoteKey { get; init; }
+}
+
+/// <summary>A titled list of lines of a summary.</summary>
+public sealed record EmailSection(string TitleKey, IReadOnlyList<EmailLine> Lines);
+
+/// <summary>A line of a summary: the text, by its key and values, and the address of its item.</summary>
+public sealed record EmailLine(string Key, IReadOnlyDictionary<string, string> Values, string? Path);
 
 /// <summary>The texts of an e-mail, put in the layout of the installation.</summary>
 public sealed record RenderedEmail(string Subject, string HtmlBody, string TextBody);
@@ -73,11 +86,13 @@ public static class EmailKinds
 /// </summary>
 public sealed class EmailQueue(IOutboxStore store, IEmailRenderer renderer, IInstallationSettings installation, TimeProvider clock)
 {
+    private string? _installationName;
+
     public async Task EnqueueAsync(string kind, string toAddress, string toName, EmailContent content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);
-        var info = await installation.GetAsync(cancellationToken);
-        var rendered = renderer.Render(content, info.Name);
+        _installationName ??= (await installation.GetAsync(cancellationToken)).Name;
+        var rendered = renderer.Render(content, _installationName);
         store.Add(new OutboxEmail(
             kind, toAddress, toName, rendered.Subject, rendered.HtmlBody, rendered.TextBody, clock.GetUtcNow().UtcDateTime));
     }

@@ -304,7 +304,8 @@ public sealed class CreateProject(
     ITemplateStore templates,
     IScheduleStore schedules,
     IWorkCalendar calendar,
-    InstallationClock installationClock)
+    InstallationClock installationClock,
+    ProjectNotices notices)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -377,7 +378,15 @@ public sealed class CreateProject(
                 await installationClock.TodayAsync(cancellationToken));
         }
 
-        return await ProjectSaving.SaveAsync(store, project, cancellationToken);
+        var saved = await ProjectSaving.SaveAsync(store, project, cancellationToken);
+        if (saved.Outcome == ProjectSaveOutcome.Saved)
+        {
+            // The manager and the tech lead chosen hear about it, unless they created it (ADR-0037, ADR-0072).
+            await notices.IncludedAsync(
+                project, [.. project.Members.Select(member => (member.UserId, member.Role))], creatorId, cancellationToken);
+        }
+
+        return saved;
     }
 }
 
@@ -454,7 +463,7 @@ public sealed record ProjectStatusResult(ProjectStatusOutcome Outcome, int OpenT
 /// project (ADR-0016, ADR-0043). A project is completed only with all its tickets closed; cancelling it closes the open
 /// tickets first, so a failure of the project is settled by cancelling it again.
 /// </summary>
-public sealed class ChangeProjectStatus(IProjectStore store, IEnumerable<IProjectClosing> closing)
+public sealed class ChangeProjectStatus(IProjectStore store, IEnumerable<IProjectClosing> closing, ProjectNotices notices)
 {
     public async Task<ProjectStatusResult> ExecuteAsync(
         Guid id, ProjectStatus status, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -503,6 +512,8 @@ public sealed class ChangeProjectStatus(IProjectStore store, IEnumerable<IProjec
         {
             project.ChangeStatus(status);
             await store.SaveChangesAsync(cancellationToken);
+            // The people of the project hear about it in the daily summary (ADR-0037).
+            await notices.StatusChangedAsync(project, viewer.UserId, cancellationToken);
         }
 
         return new ProjectStatusResult(ProjectStatusOutcome.Saved);

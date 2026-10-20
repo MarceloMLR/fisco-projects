@@ -13,5 +13,5 @@ internal sealed class TestInstallation : IWorkCalendar, IInstallationSettings
         Task.FromResult<IBusinessDays>(TestBusinessDays.Of2026);
 
     Task<InstallationInfo> IInstallationSettings.GetAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(new InstallationInfo("Empresa de demonstração", "America/Sao_Paulo"));
+        Task.FromResult(new InstallationInfo("Empresa de demonstração", "America/Sao_Paulo", new TimeOnly(7, 30)));
 }

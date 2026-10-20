@@ -17,13 +17,16 @@ namespace FiscoProjects.Administration.Endpoints;
 public sealed record InstallationResponse(string Name, string? LogoUrl, string? MainColor);
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
-/// null for the color of the design system).
+/// The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
+/// for the color of the design system) and the time of the daily summary (HH:mm:ss, in the time zone).
 /// </summary>
-public sealed record UpdateInstallationRequest(string Name, string TimeZone, string? MainColor);
+public sealed record UpdateInstallationRequest(string Name, string TimeZone, string? MainColor, TimeOnly? DailySummaryAt);
 
-/// <summary>The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013).</summary>
-public sealed record GeneralRulesResponse(string TimeZone);
+/// <summary>
+/// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
+/// daily summary of e-mails, in that time zone (ADR-0037).
+/// </summary>
+public sealed record GeneralRulesResponse(string TimeZone, TimeOnly DailySummaryAt);
 
 /// <summary>Problem types of the logo, so the screen can tell the reason.</summary>
 public static class InstallationProblems
@@ -104,14 +107,17 @@ internal static class InstallationEndpoints
     }
 
     private static async Task<Ok<GeneralRulesResponse>> GetRulesAsync(
-        GetGeneralRules getRules, CancellationToken cancellationToken) =>
-        TypedResults.Ok(new GeneralRulesResponse((await getRules.ExecuteAsync(cancellationToken)).TimeZone));
+        GetGeneralRules getRules, CancellationToken cancellationToken)
+    {
+        var rules = await getRules.ExecuteAsync(cancellationToken);
+        return TypedResults.Ok(new GeneralRulesResponse(rules.TimeZone, rules.DailySummaryAt));
+    }
 
     private static async Task<Results<NoContent, ValidationProblem>> UpdateAsync(
         UpdateInstallationRequest request, UpdateInstallation updateInstallation, CancellationToken cancellationToken)
     {
         var invalid = await updateInstallation.ExecuteAsync(
-            new InstallationChanges(request.Name, request.TimeZone, request.MainColor), cancellationToken);
+            new InstallationChanges(request.Name, request.TimeZone, request.MainColor, request.DailySummaryAt), cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
             : TypedResults.ValidationProblem(invalid.ToDictionary(KeyOf, field => new[] { ReasonOf(field) }));
@@ -150,6 +156,7 @@ internal static class InstallationEndpoints
     {
         InstallationField.Name => "name",
         InstallationField.TimeZone => "timeZone",
+        InstallationField.DailySummaryAt => "dailySummaryAt",
         _ => "mainColor",
     };
 
@@ -157,6 +164,7 @@ internal static class InstallationEndpoints
     {
         InstallationField.Name => "The name is needed and has up to 60 characters.",
         InstallationField.TimeZone => "Choose an IANA time zone, such as America/Sao_Paulo.",
+        InstallationField.DailySummaryAt => "Choose the time of the daily summary, such as 07:30:00.",
         _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
     };
 

@@ -164,6 +164,9 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
             .Where(user => userIds.Contains(user.Id))
             .Select(user => new PersonInfo(
                 user.Id, user.Name, user.Email, user.LastSignInAt, user.IsActive,
-                user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager)))
+                user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager))
+            {
+                ReceivesDailySummary = user.ReceivesDailySummary,
+            })
             .ToListAsync(cancellationToken);
 }

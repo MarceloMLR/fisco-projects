@@ -148,6 +148,20 @@ internal sealed class SessionApp : IAsyncDisposable
         return (Enum.Parse<SystemRole>(reader.GetString(0)), reader.GetBoolean(1));
     }
 
+    public async Task<int> CountAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -161,6 +175,62 @@ internal sealed class SessionApp : IAsyncDisposable
 
         await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
     }
+
+    /// <summary>
+    /// The e-mails sent so far, once the queue sent the ones waiting; with a condition, waits up to 30 seconds for the
+    /// e-mails that the background processes, woken by the clock, put in the queue.
+    /// </summary>
+    public async Task<IReadOnlyList<EmailMessage>> EmailsAsync(Func<IReadOnlyList<EmailMessage>, bool>? until = null)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (true)
+        {
+            await using (var scope = _app.Services.CreateAsyncScope())
+            {
+                await scope.ServiceProvider.GetRequiredService<DispatchEmails>().ExecuteAsync(TestContext.Current.CancellationToken);
+            }
+
+            var sent = Emails.Sent;
+            if (until is null || until(sent) || DateTime.UtcNow > deadline)
+            {
+                return sent;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Moves the clock to 07:31 of the next morning in America/Sao_Paulo, the time zone of the installation, past the time
+    /// of the daily summary (07:30), waits for the summary of the day, sent in the background, and returns the e-mails
+    /// sent so far.
+    /// </summary>
+    public async Task<IReadOnlyList<EmailMessage>> DailySummaryAsync()
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var local = TimeZoneInfo.ConvertTimeFromUtc(Clock.GetUtcNow().UtcDateTime, zone);
+        var target = local.Date + new TimeSpan(7, 31, 0);
+        if (target <= local)
+        {
+            target = target.AddDays(1);
+        }
+
+        Clock.Advance(TimeZoneInfo.ConvertTimeToUtc(target, zone) - Clock.GetUtcNow().UtcDateTime);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (await CountAsync(
+                   "SELECT COUNT(*) FROM [notifications].[daily_summaries] WHERE Day = @day AND FinishedAt IS NOT NULL",
+                   ("@day", target.Date)) == 0
+               && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+
+        return await EmailsAsync();
+    }
+
+    /// <summary>The e-mails sent to the address.</summary>
+    public async Task<IReadOnlyList<EmailMessage>> EmailsToAsync(string address) =>
+        [.. (await EmailsAsync()).Where(email => email.ToAddress == address)];
 
     public ValueTask DisposeAsync() => _app.DisposeAsync();
 }

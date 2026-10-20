@@ -274,3 +274,62 @@ public sealed class ChangeTicketDeadlines(ITicketStore store)
         return [];
     }
 }
+
+/// <summary>
+/// Tells the deadlines of the open tickets that became due soon (today or on the next business day) or overdue
+/// (ADR-0025, ADR-0037), each state once per deadline, to the assignee or, without one, to who serves the team. A
+/// paused or met deadline tells nothing.
+/// </summary>
+public sealed class AlertTicketDeadlines(ITicketStore store, TicketDeadlines deadlines, TicketNotices notices)
+{
+    /// <summary>How many alerts were told.</summary>
+    public async Task<int> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var tickets = await store.OpenWithDeadlinesAsync(cancellationToken);
+        if (tickets.Count == 0)
+        {
+            return 0;
+        }
+
+        var day = await deadlines.TodayAsync(cancellationToken);
+        var told = (await store.AlertsAsync([.. tickets.Select(ticket => ticket.Id)], cancellationToken))
+            .ToDictionary(alert => (alert.TicketId, alert.Deadline));
+        var alerts = new List<TicketDueAlert>();
+        foreach (var ticket in tickets)
+        {
+            if (TicketDeadlines.FiguresOf(ticket, day) is not { } figures)
+            {
+                continue;
+            }
+
+            foreach (var (deadline, due) in new[] { (TicketDeadline.FirstResponse, figures.FirstResponse), (TicketDeadline.Resolution, figures.Resolution) })
+            {
+                var last = told.GetValueOrDefault((ticket.Id, deadline));
+                if (due is not { DueOn: { } dueOn } || !TicketDeadlineAlert.IsNews(last, due.State, dueOn))
+                {
+                    continue;
+                }
+
+                if (last is null)
+                {
+                    store.AddAlert(new TicketDeadlineAlert(ticket.Id, deadline, due.State, dueOn));
+                }
+                else
+                {
+                    last.Told(due.State, dueOn);
+                }
+
+                alerts.Add(new TicketDueAlert(ticket, deadline, due.State, dueOn));
+            }
+        }
+
+        if (alerts.Count == 0)
+        {
+            return 0;
+        }
+
+        await store.SaveChangesAsync(cancellationToken);
+        await notices.DueAsync(alerts, cancellationToken);
+        return alerts.Count;
+    }
+}

@@ -28,6 +28,11 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<TimeOnly>("DailySummaryAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("time")
+                        .HasDefaultValue(new TimeOnly(7, 30, 0));
+
                     b.Property<DateTime?>("LogoChangedAt")
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
@@ -70,6 +75,7 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("0199f2a0-6b5c-7d1e-9a42-3c8e5f7a1b20"),
+                            DailySummaryAt = new TimeOnly(7, 30, 0),
                             Name = "FiscoProjects",
                             TimeZone = "America/Sao_Paulo"
                         });
