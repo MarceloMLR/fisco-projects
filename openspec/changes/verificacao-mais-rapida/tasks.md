@@ -10,4 +10,4 @@
 ## 3. Documentação e conferência
 
 - [x] 3.1 ADR-0090 e ADR-0055 marcado como substituído em parte; `CLAUDE.md` (verificação do PR) e roadmap com a Fundação-3.2
-- [ ] 3.2 Build, testes, format e specs na máquina; no PR, conferir a verificação completa num commit com código e só as specs num commit só de documentação, com os tempos
+- [x] 3.2 Build, testes, format e specs na máquina; no PR, conferir a verificação completa num commit com código e só as specs num commit só de documentação, com os tempos
