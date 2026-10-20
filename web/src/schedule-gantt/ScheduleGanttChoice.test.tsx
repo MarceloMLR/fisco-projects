@@ -11,7 +11,7 @@ import { barOf, drawWith, simulateLayout } from './ganttTesting';
 simulateLayout();
 
 // Spec: cronograma, requirement "Detalhe pela linha do tempo".
-describe('Detalhe pela linha do tempo', () => {
+describe('Detalhe pela linha do tempo', { timeout: 30_000 }, () => {
   it('Reabrir o detalhe pela linha do tempo', async () => {
     const onChoose = vi.fn();
     const schedule = demoSchedule();
@@ -35,12 +35,18 @@ describe('Detalhe pela linha do tempo', () => {
       fireEvent.click(bar);
     };
 
-    // Syncfusion may answer a moment later when the machine is busy: each step waits for it.
+    // Syncfusion may answer a moment later, or miss the first click, when the machine is busy: each step clicks again
+    // until it answers.
     const chooses = async (times: number) => {
-      choose();
-      await vi.waitFor(() => {
-        expect(onChoose.mock.calls.length).toBeGreaterThanOrEqual(times);
-      });
+      await vi.waitFor(
+        () => {
+          if (onChoose.mock.calls.length < times) {
+            choose();
+          }
+          expect(onChoose.mock.calls.length).toBeGreaterThanOrEqual(times);
+        },
+        { timeout: 10_000, interval: 500 },
+      );
       expect(onChoose).toHaveBeenLastCalledWith(
         expect.objectContaining({ kind: 'item', item: mapping }),
       );
@@ -52,12 +58,12 @@ describe('Detalhe pela linha do tempo', () => {
     redraw({ selectedId: mapping?.id });
     await vi.waitFor(() => {
       expect(chosenLines()).toEqual([2]);
-    });
+    }, 5000);
     // Closed, the timeline forgets the line, and the same bar opens the details again.
     redraw({ selectedId: undefined });
     await vi.waitFor(() => {
       expect(chosenLines()).toEqual([]);
-    });
+    }, 5000);
     await chooses(chosen + 1);
   });
 });

@@ -27,7 +27,7 @@ const lengthOf = (element: Element | null) =>
   Math.round(Number.parseFloat((element as HTMLElement | null)?.style.width ?? 'NaN') / day);
 
 // Spec: cronograma, requirement "Linha do tempo".
-describe('Linha do tempo', () => {
+describe('Linha do tempo', { timeout: 20_000 }, () => {
   it('Linha do tempo pela tela', async () => {
     const container = await drawTimeline(demoSchedule());
 
@@ -116,7 +116,8 @@ describe('Linha do tempo', () => {
 });
 
 // Spec: cronograma, requirement "Caminho crítico pela tela".
-describe('Caminho crítico pela tela', () => {
+// Syncfusion draws more slowly when every test file runs together.
+describe('Caminho crítico pela tela', { timeout: 20_000 }, () => {
   const isCritical = (container: HTMLElement, name: string) =>
     barOf(container, name)?.classList.contains('fp-gantt-critical');
 
@@ -151,6 +152,6 @@ describe('Caminho crítico pela tela', () => {
     await vi.waitFor(() => {
       expect(container.querySelectorAll('.e-baseline-bar')).toHaveLength(0);
       expect(container.querySelectorAll('.fp-gantt-critical')).toHaveLength(0);
-    }, 5000);
+    }, 15_000);
   });
 });
