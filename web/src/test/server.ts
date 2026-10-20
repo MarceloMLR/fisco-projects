@@ -1100,6 +1100,8 @@ function demoTicketRow(
     updatedAt: openedAt,
     interactions: 0,
     resolution: { state: 'OnTrack', dueOn: '2026-10-26', daysLate: null },
+    canChangeAssignee: false,
+    canChangeRequester: false,
   };
 }
 
@@ -1221,6 +1223,9 @@ export function demoTicket(row: TicketRow): Ticket {
       canAttachToDescription: false,
       actions: [],
       canChangePriority: false,
+      canChangeAssignee: false,
+      canChangeRequester: false,
+      canTransfer: false,
     },
     following: row.requester.id === marina.id,
     deadlines: {

@@ -3,6 +3,7 @@ import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
+import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { Fragment, useMemo, useState } from 'react';
@@ -126,11 +127,15 @@ function EventLine({
   const { formatTime } = useDates();
   const actor = event.actorId === null ? t('tickets.events.system') : personOf(event.actorId).name;
   const Icon =
-    event.kind === 'AssigneeSet'
+    event.kind === 'AssigneeSet' ||
+    event.kind === 'AssigneeCleared' ||
+    event.kind === 'RequesterChanged'
       ? PersonOutlined
-      : event.kind === 'PriorityChanged'
-        ? FlagOutlined
-        : AutorenewOutlined;
+      : event.kind === 'TeamChanged'
+        ? SwapHorizOutlined
+        : event.kind === 'PriorityChanged'
+          ? FlagOutlined
+          : AutorenewOutlined;
   const changed = () => {
     const text = t('tickets.events.changed', {
       action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
@@ -149,12 +154,29 @@ function EventLine({
       ? event.assigneeId === event.actorId || event.assigneeId === null
         ? t('tickets.events.took')
         : t('tickets.events.assigned', { name: personOf(event.assigneeId).name })
-      : event.kind === 'PriorityChanged'
-        ? t('tickets.events.priority', {
-            from: event.fromPriority === null ? '' : t(`tickets.priorities.${event.fromPriority}`),
-            to: event.toPriority === null ? '' : t(`tickets.priorities.${event.toPriority}`),
+      : event.kind === 'AssigneeCleared'
+        ? t('tickets.events.assigneeCleared', {
+            name: event.fromPersonId === null ? '' : personOf(event.fromPersonId).name,
           })
-        : changed();
+        : event.kind === 'RequesterChanged'
+          ? t('tickets.events.requesterChanged', {
+              from: event.fromPersonId === null ? '' : personOf(event.fromPersonId).name,
+              to: event.toPersonId === null ? '' : personOf(event.toPersonId).name,
+            })
+          : event.kind === 'TeamChanged'
+            ? t('tickets.events.teamChanged', {
+                from: event.fromTeam === null ? '' : t(`tickets.teams.${event.fromTeam}`),
+                to: event.toTeam === null ? '' : t(`tickets.teams.${event.toTeam}`),
+              })
+            : event.kind === 'PriorityChanged'
+              ? t('tickets.events.priority', {
+                  from:
+                    event.fromPriority === null
+                      ? ''
+                      : t(`tickets.priorities.${event.fromPriority}`),
+                  to: event.toPriority === null ? '' : t(`tickets.priorities.${event.toPriority}`),
+                })
+              : changed();
   return (
     <Box
       component="li"

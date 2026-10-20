@@ -853,8 +853,8 @@
       },
       "remove": {
         "title": "Remover do projeto",
-        "text": "{{name}} perde o acesso ao projeto {{project}} na hora. As tarefas dessa pessoa no cronograma ficam sem responsável.",
-        "self": "Você perde o acesso ao projeto {{project}} na hora. As suas tarefas no cronograma ficam sem responsável.",
+        "text": "{{name}} perde o acesso ao projeto {{project}} na hora. As tarefas dessa pessoa no cronograma e os chamados de que é responsável ficam sem responsável.",
+        "self": "Você perde o acesso ao projeto {{project}} na hora. As suas tarefas no cronograma e os chamados de que você é responsável ficam sem responsável.",
         "confirm": "Remover do projeto",
         "back": "Voltar"
       },
@@ -870,6 +870,23 @@
         "roleChanged": "{{name}} agora é {{role}}.",
         "removed": "{{name}} saiu do projeto.",
         "failed": "Não foi possível salvar. Tente de novo."
+      },
+      "tickets": {
+        "title": "Chamados em aberto",
+        "none": "Nenhum chamado em aberto.",
+        "loadFailed": "Não foi possível carregar os chamados.",
+        "assignee": "Responsável",
+        "requester": "Solicitante",
+        "handOver": "Passar pendências",
+        "handOverTitle": "Passar pendências de {{name}}",
+        "handOverText": "Os chamados em aberto de {{name}} passam para as pessoas escolhidas.",
+        "newAssignee_one": "Novo responsável ({{count}} chamado)",
+        "newAssignee_other": "Novo responsável ({{count}} chamados)",
+        "newRequester_one": "Novo solicitante ({{count}} chamado)",
+        "newRequester_other": "Novo solicitante ({{count}} chamados)",
+        "keep": "Manter como está",
+        "done": "Pendências de {{name}} passadas.",
+        "failed": "Não foi possível passar as pendências. Tente de novo."
       }
     },
     "schedule": {
@@ -1512,7 +1529,10 @@
       },
       "priority": "mudou a prioridade · {{from}} → {{to}}",
       "pausedNote": "{{text}} · prazo pausado",
-      "resumedNote": "{{text}} · prazo retomado"
+      "resumedNote": "{{text}} · prazo retomado",
+      "assigneeCleared": "deixou sem responsável · {{name}} saiu do projeto ou do time",
+      "requesterChanged": "trocou o solicitante · {{from}} → {{to}}",
+      "teamChanged": "transferiu · {{from}} → {{to}}"
     },
     "flow": {
       "link": "Fluxo de chamados",
@@ -1565,6 +1585,56 @@
       "back": "Voltar",
       "done": "Prioridade alterada.",
       "failed": "Não foi possível mudar a prioridade. Tente de novo."
+    },
+    "select": {
+      "all": "Selecionar todos os chamados da página",
+      "one": "Selecionar o chamado #{{number}}"
+    },
+    "bulk": {
+      "label": "Ações em lote",
+      "selected_one": "{{count}} selecionado",
+      "selected_other": "{{count}} selecionados",
+      "assign": "Atribuir a…",
+      "requester": "Trocar solicitante",
+      "clear": "Limpar seleção"
+    },
+    "assignLink": "Atribuir",
+    "people": {
+      "assignTitle_one": "Atribuir o chamado",
+      "assignTitle_other": "Atribuir {{count}} chamados",
+      "requesterTitle_one": "Trocar o solicitante",
+      "requesterTitle_other": "Trocar o solicitante de {{count}} chamados",
+      "assignText": "O novo responsável passa a acompanhar o chamado. Só aparecem as pessoas que atendem o time de todos os chamados e o gerente do projeto.",
+      "requesterText": "O novo solicitante passa a responder pelo chamado, e o anterior continua acompanhando.",
+      "assignee": "Novo responsável",
+      "requester": "Novo solicitante",
+      "choose": "Escolha uma pessoa",
+      "none": "Ninguém do projeto serve para todos os chamados escolhidos. Escolha chamados de um projeto e de um time.",
+      "loadFailed": "Não foi possível carregar as pessoas. Tente de novo.",
+      "save": "Confirmar",
+      "back": "Voltar",
+      "assigned_one": "Chamado atribuído a {{name}}.",
+      "assigned_other": "{{count}} chamados atribuídos a {{name}}.",
+      "requesterChanged_one": "{{name}} é o novo solicitante.",
+      "requesterChanged_other": "{{name}} é o novo solicitante de {{count}} chamados.",
+      "refused": "{{name}} não serve para os chamados {{numbers}}.",
+      "finished": "Os chamados {{numbers}} estão resolvidos ou fechados e não mudam mais.",
+      "forbidden": "Você não pode fazer essa troca em todos os chamados escolhidos.",
+      "failed": "Não foi possível fazer a troca. Tente de novo."
+    },
+    "transfer": {
+      "menu": "Transferir para {{team}}",
+      "title": "Transferir para {{team}}",
+      "text": "O chamado fica sem responsável até alguém do time {{team}} responder.",
+      "confirm": "Transferir",
+      "back": "Voltar",
+      "done": "Chamado transferido para {{team}}.",
+      "refused": "O time {{team}} não tem ninguém no projeto para atender.",
+      "failed": "Não foi possível transferir o chamado. Tente de novo."
+    },
+    "changeMenu": {
+      "assignee": "Trocar responsável",
+      "requester": "Trocar solicitante"
     }
   },
   "editor": {

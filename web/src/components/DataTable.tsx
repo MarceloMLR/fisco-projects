@@ -47,6 +47,11 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   groupRowsChoosable?: boolean;
   /** Search and filters above the table (fp-gt-tools). */
   tools?: ReactNode;
+  /**
+   * The actions on the rows the person marked, under the tools (fp-gt-tools in the selected background), as
+   * "2 selecionados · Atribuir a…"; shown while there are marked rows.
+   */
+  selectionActions?: { label: string; content: ReactNode };
   rowHeight?: number;
   /** Message of a table without rows. */
   emptyLabel?: string;
@@ -83,6 +88,18 @@ const toolsSx: SxProps<Theme> = {
   flexWrap: 'wrap',
   padding: 'var(--space-3)',
   borderBottom: '1px solid var(--border)',
+};
+
+/** The actions on the marked rows: the tools in the selected background. */
+const selectionActionsSx: SxProps<Theme> = {
+  flex: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'var(--space-3)',
+  flexWrap: 'wrap',
+  padding: 'var(--space-2) var(--space-3)',
+  borderBottom: '1px solid var(--border)',
+  backgroundColor: 'var(--bg-selected)',
 };
 
 /** Height of a group row (fp-group-row). */
@@ -197,6 +214,7 @@ export function DataTable<Row extends GridValidRowModel>({
   isGroupRow,
   groupRowsChoosable = false,
   tools,
+  selectionActions,
   rowHeight = 56,
   emptyLabel,
   selectedRowId,
@@ -281,6 +299,15 @@ export function DataTable<Row extends GridValidRowModel>({
   return (
     <Box component="section" aria-label={label} sx={sectionSx}>
       {tools !== undefined && <Box sx={toolsSx}>{tools}</Box>}
+      {selectionActions !== undefined && (
+        <Box
+          role="region"
+          aria-label={selectionActions.label}
+          sx={selectionActionsSx}
+        >
+          {selectionActions.content}
+        </Box>
+      )}
       <Box sx={gridAreaSx}>
         <DataGrid<Row>
           label={label}

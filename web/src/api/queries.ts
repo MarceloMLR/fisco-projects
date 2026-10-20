@@ -201,6 +201,22 @@ export function ticketsQuery(params: TicketsParams) {
   });
 }
 
+/**
+ * Who may be the assignee or the requester of all the tickets of the numbers (ADR-0027, ADR-0068); the rule is the
+ * server's.
+ */
+export function ticketPeopleChoicesQuery(kind: 'assignee' | 'requester', numbers: readonly number[]) {
+  return queryOptions({
+    queryKey: [...queryKeys.tickets, 'people-choices', kind, [...numbers].sort((a, b) => a - b)] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        kind === 'assignee'
+          ? api.GET('/api/tickets/assignee-choices', { params: { query: { number: [...numbers] } }, signal })
+          : api.GET('/api/tickets/requester-choices', { params: { query: { number: [...numbers] } }, signal }),
+      ),
+  });
+}
+
 /** How many tickets each view has, in all the projects the person sees or in one of them. */
 export function ticketCountsQuery(projectId?: string) {
   return queryOptions({

@@ -20,6 +20,7 @@ import { ApiError, projectMembersQuery, queryKeys } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
+import { MemberTickets } from './MemberTickets';
 import { Dialog } from '../components/Dialog';
 import { FormField } from '../components/FormField';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -456,6 +457,14 @@ function MemberDetails({
           <dd>{formatLastAccess(member.lastSignInAt, t)}</dd>
         </Box>
       </Box>
+      <MemberTickets
+        projectId={project.id}
+        member={member}
+        canHandOver={permissions.canManagePeople}
+        onDone={(message) => {
+          onDone(message, false);
+        }}
+      />
       {mayManage(permissions, member.role, null) && (
         <Box>
           <Button

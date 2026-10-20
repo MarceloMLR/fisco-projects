@@ -868,6 +868,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/assignee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeTicketAssignees"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/requester": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeTicketRequesters"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/assignee-choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The people who may be the assignee of all the tickets of the numbers (ADR-0068). */
+        get: operations["ListTicketAssigneeChoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/requester-choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The people who may be the requester of all the tickets of the numbers (ADR-0027). */
+        get: operations["ListTicketRequesterChoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["TransferTicket"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{number}/priority": {
         parameters: {
             query?: never;
@@ -1695,6 +1777,12 @@ export interface components {
         };
         /** @description Who may take an action of the flow (ADR-0024, ADR-0044); a transition takes several. */
         TicketActors: string;
+        /** @description A new assignee for the tickets, one or many (ADR-0027, ADR-0068). */
+        TicketAssigneeRequest: {
+            numbers: null | number[];
+            /** Format: uuid */
+            assigneeId: null | string;
+        };
         /** @description An attachment of a ticket: of a message, or of the description when the message is null. */
         TicketAttachmentResponse: {
             /** Format: uuid */
@@ -1714,6 +1802,9 @@ export interface components {
             canAttachToDescription: boolean;
             actions: components["schemas"]["TicketActionResponse"][];
             canChangePriority: boolean;
+            canChangeAssignee: boolean;
+            canChangeRequester: boolean;
+            canTransfer: boolean;
         };
         /**
          * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
@@ -1794,7 +1885,7 @@ export interface components {
          * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
          * @enum {unknown}
          */
-        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged";
+        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged";
         /**
          * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
          *     null when the system did it.
@@ -1812,6 +1903,18 @@ export interface components {
             assigneeId: null | string;
             fromPriority: null | components["schemas"]["TicketPriority"];
             toPriority: null | components["schemas"]["TicketPriority"];
+            fromTeam: null | components["schemas"]["TicketTeam"];
+            toTeam: null | components["schemas"]["TicketTeam"];
+            /**
+             * Format: uuid
+             * @description The requester before, or the assignee who left.
+             */
+            fromPersonId: null | string;
+            /**
+             * Format: uuid
+             * @description The new requester.
+             */
+            toPersonId: null | string;
             /** Format: date-time */
             at: string;
         };
@@ -1848,6 +1951,10 @@ export interface components {
              */
             interactions: number;
             resolution: null | components["schemas"]["TicketDueResponse"];
+            /** @description The person may change the assignee, also with others at once (ADR-0068). */
+            canChangeAssignee: boolean;
+            /** @description The person may change the requester with others at once (ADR-0027). */
+            canChangeRequester: boolean;
         };
         /** @description A message of the conversation, with its text as the JSON of the editor. */
         TicketMessageResponse: {
@@ -1913,6 +2020,12 @@ export interface components {
             code: string;
             name: string;
         };
+        /** @description A new requester for the tickets, one or many (ADR-0027). */
+        TicketRequesterRequest: {
+            numbers: null | number[];
+            /** Format: uuid */
+            requesterId: null | string;
+        };
         /**
          * @description A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the
          *     project; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be
@@ -1969,6 +2082,10 @@ export interface components {
          * @enum {unknown}
          */
         TicketTeam: "Functional" | "Development";
+        /** @description The other team for the ticket (ADR-0068). */
+        TicketTeamRequest: {
+            team: null | components["schemas"]["TicketTeam"];
+        };
         /** @description An action of the flow taken in a ticket, with the message when the action needs one. */
         TicketTransitionRequest: {
             action: null | components["schemas"]["TicketAction"];
@@ -5189,6 +5306,8 @@ export interface operations {
                 descending?: boolean;
                 page?: number;
                 pageSize?: number;
+                /** @description Only the tickets of which this person is the assignee or the requester. */
+                personId?: string;
             };
             header?: never;
             path?: never;
@@ -5380,6 +5499,279 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTicketAssignees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketAssigneeRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTicketRequesters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketRequesterRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListTicketAssigneeChoices: {
+        parameters: {
+            query: {
+                number: number[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketPersonResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListTicketRequesterChoices: {
+        parameters: {
+            query: {
+                number: number[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketPersonResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    TransferTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketTeamRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

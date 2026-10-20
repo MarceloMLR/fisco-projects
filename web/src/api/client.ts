@@ -179,6 +179,8 @@ export const ticketProblems = {
   ticketClosed: 'urn:fiscoprojects:problem:ticket-closed',
   actionNotAllowedNow: 'urn:fiscoprojects:problem:ticket-action-not-allowed-now',
   ticketChanged: 'urn:fiscoprojects:problem:ticket-changed',
+  personRefused: 'urn:fiscoprojects:problem:ticket-person-refused',
+  ticketFinished: 'urn:fiscoprojects:problem:ticket-finished',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

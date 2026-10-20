@@ -1,6 +1,9 @@
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
+import PersonOutlined from '@mui/icons-material/PersonOutlined';
+import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import PlayArrowOutlined from '@mui/icons-material/PlayArrowOutlined';
@@ -24,6 +27,8 @@ import {
 import { queryKeys } from '../api/queries';
 import { Dialog } from '../components/Dialog';
 import { Select } from '../components/Select';
+import type { PeopleChange } from './ticketChanges';
+import { PeopleChangeDialog, TransferDialog } from './TicketPeopleDialogs';
 
 const RichTextEditor = lazy(async () => ({
   default: (await import('../components/RichTextEditor')).RichTextEditor,
@@ -213,6 +218,8 @@ export function TicketActions({
   const [anchor, setAnchor] = useState<HTMLElement>();
   const [asking, setAsking] = useState<TicketAction>();
   const [prioritizing, setPrioritizing] = useState(false);
+  const [changing, setChanging] = useState<PeopleChange>();
+  const [transferring, setTransferring] = useState(false);
   const [busy, setBusy] = useState(false);
   const [primary, ...others] = orderedActions(ticket.permissions.actions);
 
@@ -271,7 +278,10 @@ export function TicketActions({
   };
 
   const canPrioritize = ticket.permissions.canChangePriority;
-  if (primary === undefined && !canPrioritize) {
+  const { canChangeAssignee, canChangeRequester, canTransfer } = ticket.permissions;
+  const otherTeam = ticket.team === 'Development' ? 'Functional' : 'Development';
+  const inMenu = canPrioritize || canChangeAssignee || canChangeRequester || canTransfer;
+  if (primary === undefined && !inMenu) {
     return null;
   }
 
@@ -290,7 +300,7 @@ export function TicketActions({
           {t(`tickets.actions.${primary.action}`)}
         </Button>
       )}
-      {(others.length > 0 || canPrioritize) && (
+      {(others.length > 0 || inMenu) && (
         <>
           <IconButton
             aria-label={t('tickets.actionMenu')}
@@ -345,8 +355,67 @@ export function TicketActions({
                 {t('tickets.priorityChange.menu')}
               </MenuItem>
             )}
+            {canChangeAssignee && (
+              <MenuItem
+                onClick={() => {
+                  setAnchor(undefined);
+                  setChanging('assignee');
+                }}
+              >
+                <AssignmentIndOutlined aria-hidden />
+                {t('tickets.changeMenu.assignee')}
+              </MenuItem>
+            )}
+            {canChangeRequester && (
+              <MenuItem
+                onClick={() => {
+                  setAnchor(undefined);
+                  setChanging('requester');
+                }}
+              >
+                <PersonOutlined aria-hidden />
+                {t('tickets.changeMenu.requester')}
+              </MenuItem>
+            )}
+            {canTransfer && (
+              <MenuItem
+                onClick={() => {
+                  setAnchor(undefined);
+                  setTransferring(true);
+                }}
+              >
+                <SwapHorizOutlined aria-hidden />
+                {t('tickets.transfer.menu', { team: t(`tickets.teams.${otherTeam}`) })}
+              </MenuItem>
+            )}
           </Menu>
         </>
+      )}
+      {changing !== undefined && (
+        <PeopleChangeDialog
+          kind={changing}
+          numbers={[ticket.number]}
+          onClose={() => {
+            setChanging(undefined);
+          }}
+          onDone={(text) => {
+            setChanging(undefined);
+            onMessage(text);
+          }}
+        />
+      )}
+      {transferring && (
+        <TransferDialog
+          number={ticket.number}
+          team={otherTeam}
+          onClose={() => {
+            setTransferring(false);
+          }}
+          onDone={(text) => {
+            setTransferring(false);
+            onMessage(text);
+          }}
+        />
       )}
       {prioritizing && (
         <PriorityDialog
