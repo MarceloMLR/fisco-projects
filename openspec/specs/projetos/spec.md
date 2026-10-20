@@ -178,6 +178,14 @@ A página do projeto MUST ter o cabeçalho do canvas ProjetoCabecalho: o logo do
 - **WHEN** o cronograma do projeto vai de 05/10/2026 a 13/11/2026
 - **THEN** o cabeçalho mostra "05/10 – 13/11/2026" no lugar de "Sem cronograma"
 
+### Requirement: Abas do projeto sem rolagem vertical
+
+A linha das abas do projeto MUST NOT rolar na vertical nem mostrar barra de rolagem; ela só rola para o lado quando as abas não cabem na largura, como no celular (ADR-0066, ADR-0071).
+
+#### Scenario: Abas sem barra de rolagem
+- **WHEN** uma pessoa abre a página de um projeto no computador
+- **THEN** a linha das abas não rola na vertical e não mostra barra de rolagem, e o traço da aba escolhida fica sobre a linha do cabeçalho
+
 ### Requirement: Ações do projeto
 
 "Ações do projeto" MUST oferecer "Editar dados" a quem altera os dados e as mudanças de status a quem muda o status; concluir e cancelar MUST pedir confirmação. Um projeto encerrado MUST mostrar que está somente leitura, com "Reabrir projeto" para quem muda o status (ADR-0016, ADR-0043).
