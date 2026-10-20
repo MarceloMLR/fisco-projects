@@ -18,6 +18,7 @@ export function FieldFrame({
   width,
   size = 'md',
   multiline = false,
+  readOnly = false,
   icon: Icon,
   children,
 }: {
@@ -31,6 +32,8 @@ export function FieldFrame({
   size?: 'sm' | 'md' | 'lg';
   /** A control of several lines (fp-field__control--multiline): its height follows the text. */
   multiline?: boolean;
+  /** A value shown but not edited, such as the mailbox of the installation (fp-field--readonly). */
+  readOnly?: boolean;
   icon?: typeof SvgIcon;
   children: ReactNode;
 }) {
@@ -61,13 +64,19 @@ export function FieldFrame({
           boxSizing: 'border-box',
           height: multiline ? 'auto' : `var(--control-${size})`,
           padding: multiline ? 'var(--space-2) var(--space-3)' : '0 var(--space-3)',
-          backgroundColor: 'var(--bg-surface)',
+          backgroundColor: readOnly ? 'var(--bg-subtle)' : 'var(--bg-surface)',
           border: '1px solid',
-          borderColor: error === undefined ? 'var(--border-control)' : 'var(--status-danger-text)',
+          borderColor:
+            error !== undefined
+              ? 'var(--status-danger-text)'
+              : readOnly
+                ? 'var(--border)'
+                : 'var(--border-control)',
           borderRadius: 'var(--radius-md)',
           color: 'var(--text)',
           transition: 'border-color 150ms ease-out',
-          '&:hover': error === undefined ? { borderColor: 'var(--text-secondary)' } : {},
+          '&:hover':
+            error === undefined && !readOnly ? { borderColor: 'var(--text-secondary)' } : {},
           '&:focus-within': { borderColor: accent, boxShadow: `inset 0 0 0 1px ${accent}` },
         }}
       >

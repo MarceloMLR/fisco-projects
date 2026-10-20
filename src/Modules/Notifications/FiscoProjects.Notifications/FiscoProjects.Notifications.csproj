@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../FiscoProjects.Persistence/FiscoProjects.Persistence.csproj" />
+    <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+    <ProjectReference Include="../../Administration/FiscoProjects.Administration.Contracts/FiscoProjects.Administration.Contracts.csproj" />
+    <ProjectReference Include="../../Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />
+    <ProjectReference Include="../FiscoProjects.Notifications.Contracts/FiscoProjects.Notifications.Contracts.csproj" />
+  </ItemGroup>
+
+  <!-- The texts of the e-mails (ADR-0013) and the colors of the design system, the same file the screens use. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Infrastructure/Emails/pt-BR.json" LogicalName="FiscoProjects.Notifications.Emails.pt-BR.json" />
+    <EmbeddedResource Include="../../../../web/src/theme/tokens.json" LogicalName="FiscoProjects.Notifications.Emails.tokens.json" Link="Infrastructure/Emails/tokens.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FiscoProjects.Notifications.Tests" />
+  </ItemGroup>
+
+</Project>

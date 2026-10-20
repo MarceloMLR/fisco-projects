@@ -52,6 +52,7 @@ export const queryKeys = {
   tickets: ['tickets'],
   ticketDeadlines: ['ticket-deadlines'],
   vendors: ['vendors'],
+  email: ['email'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -272,6 +273,18 @@ export function ticketDeadlinesQuery() {
   return queryOptions({
     queryKey: queryKeys.ticketDeadlines,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/ticket-deadlines', { signal })),
+  });
+}
+
+/**
+ * The shared mailbox the e-mails leave from and the last test of the sending (ADR-0036), read again every 5 seconds
+ * while the test waits in the queue.
+ */
+export function emailStatusQuery() {
+  return queryOptions({
+    queryKey: queryKeys.email,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/email', { signal })),
+    refetchInterval: (query) => (query.state.data?.lastTest?.status === 'Pending' ? 5000 : false),
   });
 }
 

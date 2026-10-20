@@ -21,6 +21,10 @@
     <Project Path="src/Modules/Files/FiscoProjects.Files.Contracts/FiscoProjects.Files.Contracts.csproj" />
     <Project Path="src/Modules/Files/FiscoProjects.Files/FiscoProjects.Files.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/FiscoProjects.Notifications.Contracts/FiscoProjects.Notifications.Contracts.csproj" />
+    <Project Path="src/Modules/Notifications/FiscoProjects.Notifications/FiscoProjects.Notifications.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Projects/">
     <Project Path="src/Modules/Projects/FiscoProjects.Projects.Contracts/FiscoProjects.Projects.Contracts.csproj" />
     <Project Path="src/Modules/Projects/FiscoProjects.Projects/FiscoProjects.Projects.csproj" />
@@ -40,6 +44,7 @@
     <Project Path="tests/FiscoProjects.Audit.Tests/FiscoProjects.Audit.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Calendar.Tests/FiscoProjects.Calendar.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Files.Tests/FiscoProjects.Files.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.Notifications.Tests/FiscoProjects.Notifications.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Persistence.Tests/FiscoProjects.Persistence.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Pipeline.Tests/FiscoProjects.Pipeline.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Projects.Tests/FiscoProjects.Projects.Tests.csproj" />

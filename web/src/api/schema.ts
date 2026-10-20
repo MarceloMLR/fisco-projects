@@ -1176,6 +1176,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetEmailStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/email/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Puts in the queue an e-mail to the Administrator, sent in the background. */
+        post: operations["SendTestEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1326,6 +1359,22 @@ export interface components {
         };
         /** @enum {unknown} */
         DayOfWeek: "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
+        /** @description The shared mailbox the e-mails leave from (null while none is configured) and the last test of the sending. */
+        EmailStatusResponse: {
+            mailbox: null | string;
+            lastTest: null | components["schemas"]["EmailTestResponse"];
+        };
+        /** @description The test e-mail is in the queue, to this address. */
+        EmailTestQueuedResponse: {
+            to: string;
+        };
+        /** @description The last test of the sending: where it stands, when and to whom (null once the queue forgot it). */
+        EmailTestResponse: {
+            status: components["schemas"]["OutboxEmailStatus"];
+            /** Format: date-time */
+            at: string;
+            to: null | string;
+        };
         /** @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013). */
         GeneralRulesResponse: {
             timeZone: string;
@@ -1443,6 +1492,11 @@ export interface components {
             name: null | string;
             portalUrl?: null | string;
         };
+        /**
+         * @description Where an e-mail of the queue stands (ADR-0036).
+         * @enum {unknown}
+         */
+        OutboxEmailStatus: "Pending" | "Sent" | "Failed";
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
@@ -6877,6 +6931,91 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetEmailStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailStatusResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SendTestEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailTestQueuedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

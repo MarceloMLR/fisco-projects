@@ -185,7 +185,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | --- | --- | --- |
 | Aviso, notificação | Notification | |
 | Resumo diário | DailyDigest | |
-| Fila de e-mails | EmailOutbox | |
+| Fila de e-mails | OutboxEmail (`notifications.outbox_emails`) | Módulo `Notifications`; todo e-mail entra na fila e sai em segundo plano (ADR-0036) |
+| Na fila, Enviado, Falhou | OutboxEmailStatus: Pending, Sent, Failed | Falhou depois da sexta tentativa |
+| Envio em segundo plano | EmailDispatcher (`DispatchEmails`) | A cada 30 segundos, com a reserva de cada e-mail e as novas tentativas |
+| Caixa de envio | `Email:Mailbox` | Caixa compartilhada de onde os e-mails saem; só leitura nas Configurações gerais |
+| Endereço das telas | `Email:SiteUrl` | Base dos links dos e-mails |
+| Envio local | LocalEmailSender (`Email:Provider` = `Local`) | Grava `.eml` numa pasta, sem enviar; recusado em produção |
+| Teste de envio | SendTestEmail (`POST /api/admin/email/test`) | E-mail para o próprio administrador, na seção Microsoft 365 |
 | Auditoria | Audit | Módulo `Audit`, dono das tabelas da auditoria (schema `audit`) |
 | Registro de auditoria | AuditEntry | Só acrescentado, nunca alterado nem apagado (ADR-0039) |
 | Ação: criou, alterou, excluiu, entrou, recusou uma entrada | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused | |
