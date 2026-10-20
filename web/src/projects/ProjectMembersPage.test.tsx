@@ -453,7 +453,8 @@ describe('Abas do projeto', () => {
       'aria-selected',
       'true',
     );
-    // Chamados with all the tickets of the project, any status (canvas ProjetoChamados).
+    // Chamados with all the tickets of the project, any status (canvas ProjetoChamados), and Documentos with the
+    // documents not obsolete (canvas ProjetoCabecalho).
     await waitFor(() => {
       expect(
         within(screen.getByRole('tablist', { name: ptBR.projects.header.tabs }))
@@ -463,6 +464,7 @@ describe('Abas do projeto', () => {
         ptBR.pages.project.title,
         ptBR.pages.projectSchedule.title,
         'Chamados4',
+        'Documentos4',
         'Membros5',
       ]);
     });

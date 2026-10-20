@@ -12,6 +12,8 @@ export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['q
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the list of tickets, as the contract has them. */
 export type TicketsParams = NonNullable<operations['ListTickets']['parameters']['query']>;
+/** Filters of the list of documents, as the contract has them. */
+export type DocumentsParams = NonNullable<operations['ListDocuments']['parameters']['query']>;
 /** Filters of the audit, as the contract has them. */
 export type AuditParams = NonNullable<operations['ListAuditEntries']['parameters']['query']>;
 
@@ -54,6 +56,8 @@ export const queryKeys = {
   vendors: ['vendors'],
   email: ['email'],
   notifications: ['notifications'],
+  documents: ['documents'],
+  defaultFolders: ['default-folders'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -342,5 +346,55 @@ export function ticketQuery(number: number) {
     queryKey: [...queryKeys.tickets, number] as const,
     queryFn: ({ signal }) =>
       dataOf(api.GET('/api/tickets/{number}', { params: { path: { number } }, signal })),
+  });
+}
+
+/** The folders of the documents of a project the person sees, with the counts, the total and the permissions. */
+export function documentFoldersQuery(projectId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.documents, projectId, 'folders'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/documents/folders', {
+          params: { path: { projectId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** A page of the documents of a folder, or of the search in the project. */
+export function documentsQuery(projectId: string, params: DocumentsParams) {
+  return queryOptions({
+    queryKey: [...queryKeys.documents, projectId, 'list', params] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/documents', {
+          params: { path: { projectId }, query: params },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** A document with its versions. */
+export function documentQuery(projectId: string, documentId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.documents, projectId, 'document', documentId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/documents/{documentId}', {
+          params: { path: { projectId, documentId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** The default folders of the installation, for the Administration. */
+export function defaultFoldersQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.defaultFolders] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/document-folders', { signal })),
   });
 }

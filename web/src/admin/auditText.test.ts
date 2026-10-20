@@ -1002,4 +1002,143 @@ describe('Mudanças do cronograma na auditoria', () => {
       { label: 'Chamado', value: '#1 Rejeição 539 ao emitir nota de devolução' },
     ]);
   });
+
+  it('Documento enviado e nova versão na auditoria', () => {
+    const project = {
+      field: 'ProjectId',
+      before: null,
+      after: 'Implantação do ERP financeiro',
+      secret: false,
+      reference: 'Project',
+    };
+    const sent = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'Document',
+        itemLabel: 'Mapa de processos fiscais.docx',
+        changes: [
+          {
+            field: 'FolderId',
+            before: null,
+            after: '03 Requisitos e especificações',
+            secret: false,
+            reference: 'DocumentFolder',
+          },
+          {
+            field: 'Name',
+            before: null,
+            after: 'Mapa de processos fiscais.docx',
+            secret: false,
+            reference: null,
+          },
+          project,
+          { field: 'Status', before: null, after: 'Draft', secret: false, reference: null },
+          { field: 'Version', before: null, after: '1', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+    const version = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Document',
+        itemLabel: 'Mapa de processos fiscais.docx',
+        changes: [
+          { ...project, before: project.after },
+          {
+            field: 'Status',
+            before: 'Approved',
+            after: 'InReview',
+            secret: false,
+            reference: null,
+          },
+          { field: 'Version', before: '1', after: '2', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(sent.title).toBe('Enviou um documento');
+    expect(sent.summary).toBe(
+      'Mapa de processos fiscais.docx · 03 Requisitos e especificações · Implantação do ERP financeiro',
+    );
+    expect(sent.properties).toEqual([
+      { label: 'Documento', value: 'Mapa de processos fiscais.docx' },
+      { label: 'Pasta', value: '03 Requisitos e especificações' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(version.title).toBe('Enviou uma nova versão');
+    expect(version.changes).toEqual([
+      { field: 'Status', before: 'Aprovado', after: 'Em revisão' },
+      { field: 'Versão', before: '1', after: '2' },
+    ]);
+  });
+
+  it('Status e vínculo do documento na auditoria', () => {
+    const status = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Document',
+        itemLabel: 'Regras de CFOP.xlsx',
+        changes: [
+          {
+            field: 'Status',
+            before: 'InReview',
+            after: 'Approved',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+    const linked = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Document',
+        itemLabel: 'Regras de CFOP.xlsx',
+        changes: [
+          {
+            field: 'ScheduleItemId',
+            before: null,
+            after: 'Parametrizar regras de ICMS',
+            secret: false,
+            reference: 'ScheduleItem',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect([status.title, status.summary]).toEqual([
+      'Mudou o status de um documento',
+      'Regras de CFOP.xlsx · status Em revisão → Aprovado',
+    ]);
+    expect([linked.title, linked.summary]).toEqual([
+      'Vinculou um documento ao cronograma',
+      'Regras de CFOP.xlsx · tarefa ou marco — → Parametrizar regras de ICMS',
+    ]);
+  });
+
+  it('Pasta padrão inativada na auditoria', () => {
+    const deactivated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'DefaultFolder',
+        itemLabel: '04 Atas de reunião',
+        changes: [
+          { field: 'IsActive', before: 'true', after: 'false', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(deactivated).toEqual({
+      title: 'Inativou uma pasta padrão',
+      summary: '04 Atas de reunião',
+      sentence: 'Paulo Nogueira inativou uma pasta padrão',
+      properties: [{ label: 'Pasta', value: '04 Atas de reunião' }],
+      changes: [{ field: 'Situação', before: 'Ativa', after: 'Inativa' }],
+    });
+  });
 });

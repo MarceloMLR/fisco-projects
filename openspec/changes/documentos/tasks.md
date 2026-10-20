@@ -10,13 +10,13 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 `SideNav` em `web/src/components`, usado também na página Chamados
-- [ ] 2.2 Aba Documentos: pastas, lista, busca, filtro, envio e arrastar e soltar
-- [ ] 2.3 Gaveta do documento: abrir, baixar, status, vínculo, exclusão e versões
-- [ ] 2.4 "Pastas padrão" na Administração
-- [ ] 2.5 Testes das telas
+- [x] 2.1 `SideNav` em `web/src/components`, usado também na página Chamados
+- [x] 2.2 Aba Documentos: pastas, lista, busca, filtro, envio e arrastar e soltar
+- [x] 2.3 Gaveta do documento: abrir, baixar, status, vínculo, exclusão e versões
+- [x] 2.4 "Pastas padrão" na Administração
+- [x] 2.5 Testes das telas
 
 ## 3. Demonstração e documentação
 
-- [ ] 3.1 Documentos nos dados de demonstração, com o teste
-- [ ] 3.2 `CLAUDE.md`, glossário, roadmap e instalação
+- [x] 3.1 Documentos nos dados de demonstração, com o teste
+- [x] 3.2 `CLAUDE.md`, glossário, roadmap e instalação

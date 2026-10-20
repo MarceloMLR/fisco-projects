@@ -87,6 +87,27 @@ beforeEach(() => {
         today: '2026-10-19',
       }),
     ),
+    // The six default folders every new project gets (ADR-0031).
+    http.get(`${base}/api/projects/:id/documents/folders`, () =>
+      HttpResponse.json({
+        folders: [
+          '01 Gestão do projeto',
+          '02 Contratos e compras',
+          '03 Requisitos e especificações',
+          '04 Atas de reunião',
+          '05 Entregas e manuais',
+          '06 Termos de aceite',
+        ].map((name, index) => ({
+          id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
+          name,
+          isAcceptance: index === 5,
+          count: 0,
+        })),
+        total: 0,
+        permissions: { canUpload: true, canApprove: true, canDelete: true },
+        maxBytes: 25 * 1024 * 1024,
+      }),
+    ),
     http.post(`${base}/api/tickets`, () =>
       HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
     ),
@@ -131,7 +152,7 @@ describe('Carga dos dados de demonstração', () => {
     // The manager builds the schedules, marks the milestones and changes the status.
     expect(people(/\/schedule\/(phases|items)$/)).toEqual(['marina']);
     expect(people(/\/reached$/)).toEqual(['marina']);
-    expect(people(/\/status$/)).toEqual(['marina']);
+    expect(people(/\/projects\/[^/]+\/status$/)).toEqual(['marina']);
     // Each person in charge updates the progress of the task; the manager, of the tasks of no one.
     expect(people(/\/progress$/)).toEqual(['carla', 'diego', 'marina', 'rafael']);
     // The dates follow the day it runs: 19/10/2026 starts the main project on 05/10/2026.
@@ -336,5 +357,56 @@ describe('Fornecedores na demonstração', () => {
     expect(bodies.get('/api/tickets/1/vendor-tickets')).toEqual([
       expect.objectContaining({ code: 'FX-20931', openedOn: '2026-10-19', status: 'Open' }),
     ]);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Documentos na demonstração".
+describe('Documentos na demonstração', () => {
+  it('Documentos na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each document sent by a person of the project who sends documents, never the viewer (ADR-0045).
+    const sent = callsBy(/ POST \/api\/projects\/[^/]+\/documents$/);
+    const main = demoProjects.find((project) => project.code === 'ERP-FIN');
+    const documents = main?.documents ?? [];
+    const versions = documents.reduce(
+      (total, document) => total + (document.versions?.length ?? 0),
+      0,
+    );
+    expect(sent).toHaveLength(documents.length + versions);
+    expect(people(/ POST \/api\/projects\/[^/]+\/documents$/)).toEqual([
+      'carla',
+      'diego',
+      'marina',
+      'rafael',
+    ]);
+    // In more than one folder, one of them in version 2, with statuses and links.
+    expect(new Set(documents.map((document) => document.folder)).size).toBeGreaterThan(1);
+    expect(documents.filter((document) => (document.versions?.length ?? 0) > 0)).toHaveLength(1);
+    expect(new Set(documents.map((document) => document.status?.to))).toEqual(
+      new Set(['Approved', 'InReview', 'Obsolete', undefined]),
+    );
+    const forms = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/documents'))
+      .flatMap(([, saved]) => saved) as string[];
+    expect(
+      forms.some(
+        (form) => form.includes('filename="Plano do projeto.pdf"') && form.includes('%PDF-1.4'),
+      ),
+    ).toBe(true);
+    // The approvals by the manager and the tech lead; the links after the documents.
+    expect(people(/ PUT .*\/documents\/[^/]+\/status$/)).toEqual(['carla', 'marina', 'rafael']);
+    expect(callsBy(/ PUT .*\/documents\/[^/]+\/link$/)).toHaveLength(
+      documents.filter((document) => document.link !== undefined).length,
+    );
+    const links = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/link'))
+      .flatMap(([, saved]) => saved) as { phaseId: string | null; itemId: string | null }[];
+    expect(links.some((link) => link.phaseId !== null)).toBe(true);
+    expect(links.some((link) => link.itemId !== null)).toBe(true);
+    // Before the project gets its status.
+    const lastDocument = calls.findLastIndex((call) => call.includes('/documents'));
+    const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
+    expect(lastDocument).toBeLessThan(status);
   });
 });

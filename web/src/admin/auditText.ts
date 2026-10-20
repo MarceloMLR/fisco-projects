@@ -2,6 +2,8 @@ import type { TFunction } from 'i18next';
 import {
   type AuditEntry,
   type AuditField,
+  documentStatuses,
+  type DocumentStatus,
   isClosedStatus,
   projectRoles,
   type ProjectRole,
@@ -228,6 +230,30 @@ const scheduleBaselineFields: readonly string[] = [
 const isScheduleBaselineField = (field: string): field is ScheduleBaselineField =>
   scheduleBaselineFields.includes(field);
 
+type DefaultFolderField = 'Name' | 'IsAcceptance' | 'IsActive';
+const defaultFolderFields: readonly string[] = [
+  'Name',
+  'IsAcceptance',
+  'IsActive',
+] satisfies DefaultFolderField[];
+const isDefaultFolderField = (field: string): field is DefaultFolderField =>
+  defaultFolderFields.includes(field);
+
+type DocumentField =
+  'ProjectId' | 'FolderId' | 'Name' | 'Status' | 'Version' | 'SchedulePhaseId' | 'ScheduleItemId';
+const documentFields: readonly string[] = [
+  'ProjectId',
+  'FolderId',
+  'Name',
+  'Status',
+  'Version',
+  'SchedulePhaseId',
+  'ScheduleItemId',
+] satisfies DocumentField[];
+const isDocumentField = (field: string): field is DocumentField => documentFields.includes(field);
+const isDocumentStatus = (value: string): value is DocumentStatus =>
+  documentStatuses.some((status) => status === value);
+
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
 /** A record of a phase, a task or milestone, or a dependency of a schedule. */
@@ -325,6 +351,17 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'VendorTicket' && field === 'OpenedOn') {
     return formatDayText(value);
   }
+  if (entry.itemType === 'DefaultFolder' && field === 'IsActive') {
+    return t(
+      value === 'true' ? 'defaultFolders.statuses.Active' : 'defaultFolders.statuses.Inactive',
+    );
+  }
+  if (entry.itemType === 'DefaultFolder' && field === 'IsAcceptance') {
+    return t(value === 'true' ? 'audit.details.yes' : 'audit.details.no');
+  }
+  if (entry.itemType === 'Document' && field === 'Status' && isDocumentStatus(value)) {
+    return t(`documents.statuses.${value}`);
+  }
   // A time of day (07:30:00) without the seconds.
   if (entry.itemType === 'InstallationSettings' && field === 'DailySummaryAt') {
     return value.slice(0, 5);
@@ -406,6 +443,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'VendorTicket' && isVendorTicketField(field)) {
     return t(`audit.fields.VendorTicket.${field}`);
   }
+  if (entry.itemType === 'DefaultFolder' && isDefaultFolderField(field)) {
+    return t(`audit.fields.DefaultFolder.${field}`);
+  }
+  if (entry.itemType === 'Document' && isDocumentField(field)) {
+    return t(`audit.fields.Document.${field}`);
+  }
   return field;
 }
 
@@ -467,6 +510,23 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'ProjectMember') {
     return t(`audit.actions.ProjectMember.${entry.action}`);
   }
+  // A default folder of the documents, included, renamed, deactivated and reactivated (ADR-0031).
+  if (entry.itemType === 'DefaultFolder') {
+    const situation = entry.action === 'Updated' ? changeOf(entry, 'IsActive') : undefined;
+    if (situation !== undefined) {
+      return t(
+        situation.after === 'false'
+          ? 'audit.actions.DefaultFolder.Deactivated'
+          : 'audit.actions.DefaultFolder.Reactivated',
+      );
+    }
+    return t(
+      `audit.actions.DefaultFolder.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  if (entry.itemType === 'Document') {
+    return documentTitleOf(entry, t);
+  }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
   }
@@ -527,6 +587,35 @@ function projectTitleOf(entry: AuditEntry, t: TFunction): string {
   return isProjectStatus(only.before) && isClosedStatus(only.before)
     ? t('audit.actions.Project.Reopened')
     : t('audit.actions.Project.StatusChanged');
+}
+
+/** A change of a document says what it was: a new version, the status or the link with the schedule (ADR-0031). */
+function documentTitleOf(entry: AuditEntry, t: TFunction): string {
+  if (entry.action === 'Created' || entry.action === 'Deleted') {
+    return t(`audit.actions.Document.${entry.action}`);
+  }
+  const changed = entry.changes
+    .filter((change) => !isContext(entry, change))
+    .map((change) => change.field);
+  if (changed.includes('Version')) {
+    return t('audit.actions.Document.NewVersion');
+  }
+  if (changed.length > 0 && changed.every((field) => field === 'Status')) {
+    return t('audit.actions.Document.StatusChanged');
+  }
+  if (
+    changed.length > 0 &&
+    changed.every((field) => field === 'SchedulePhaseId' || field === 'ScheduleItemId')
+  ) {
+    return t('audit.actions.Document.Linked');
+  }
+  return t('audit.actions.Document.Updated');
+}
+
+/** The folder of a document, by its current name. */
+function folderOf(entry: AuditEntry): string {
+  const folder = changeOf(entry, 'FolderId');
+  return folder?.after ?? folder?.before ?? '';
 }
 
 /** A change of a schedule says whether it was a phase, a task, a milestone or a dependency. */
@@ -612,6 +701,13 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.itemType === 'Vendor' && changeOf(entry, 'IsActive') !== undefined) {
     return label;
+  }
+  if (entry.itemType === 'DefaultFolder' && changeOf(entry, 'IsActive') !== undefined) {
+    return label;
+  }
+  // A document sent or removed says the folder and the project.
+  if (entry.itemType === 'Document' && entry.action !== 'Updated') {
+    return join(label, folderOf(entry), projectOfMember(entry));
   }
   if (entry.action !== 'Updated') {
     return label;
@@ -702,6 +798,18 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.details.item.VendorTicket'), value: label },
       { label: t('audit.fields.VendorTicket.VendorId'), value: vendorOf(entry) },
       { label: t('audit.fields.VendorTicket.TicketId'), value: ticketOf(entry) },
+    ];
+  }
+  if (entry.itemType === 'DefaultFolder') {
+    return [{ label: t('audit.details.item.DefaultFolder'), value: label }];
+  }
+  if (entry.itemType === 'Document') {
+    return [
+      { label: t('audit.details.item.Document'), value: label },
+      ...(folderOf(entry) === ''
+        ? []
+        : [{ label: t('audit.fields.Document.FolderId'), value: folderOf(entry) }]),
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }
   if (entry.itemType === 'Ticket') {

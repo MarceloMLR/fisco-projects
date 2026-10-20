@@ -2,12 +2,14 @@ import { Navigate, type RouteObject } from 'react-router';
 import { AdminLayout } from './admin/AdminLayout';
 import { AuditPage } from './admin/AuditPage';
 import { CalendarPage } from './admin/CalendarPage';
+import { DefaultFoldersPage } from './admin/DefaultFoldersPage';
 import { ClientsPage } from './admin/ClientsPage';
 import { TemplatesPage } from './admin/TemplatesPage';
 import { VendorsPage } from './admin/VendorsPage';
 import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
+import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { InstallationRoot } from './installation/InstallationRoot';
 import { HomePage } from './pages/HomePage';
 import { NewProjectPage } from './projects/NewProjectPage';
@@ -115,6 +117,18 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'projects',
                   titleKey: 'pages.projectTickets.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'documents',
+                element: <ProjectDocumentsPage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectDocuments.title',
                   trail: [
                     { titleKey: 'pages.projects.title', path: '/projects' },
                     { project: true },
@@ -252,6 +266,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.templates.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'document-folders',
+                element: <DefaultFoldersPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.defaultFolders.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },

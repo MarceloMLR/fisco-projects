@@ -21,9 +21,9 @@ import {
   type MessageTone,
   type ParticipantRole,
   shownInteractions,
-  sizeText,
   toneOf,
 } from './conversation';
+import { sizeText } from '../format/size';
 
 type Attachment = Ticket['attachments'][number];
 type Participant = Ticket['participants'][number];

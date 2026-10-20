@@ -11,12 +11,13 @@ import { useCurrentPage } from './pages';
  * A screen inside the shell (fp-page): page title, with an optional count (fp-count), and content with the design
  * system margins. On the phone the title is in the top bar, so the heading stays only for screen readers.
  * With actions, the title and the actions share a row (fp-head). A screen with a header of its own, as a project,
- * leaves the title out.
+ * leaves the title out; a screen split in panes leaves the margins to them (flush).
  */
 export function Page({
   count,
   actions,
   withTitle = true,
+  flush = false,
   children,
 }: {
   count?: number;
@@ -24,6 +25,8 @@ export function Page({
   actions?: ReactNode;
   /** False when the screen has a header of its own, with the main heading. */
   withTitle?: boolean;
+  /** Without the margins, for a screen split in panes with margins of their own (fp-split), as the documents. */
+  flush?: boolean;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -60,7 +63,11 @@ export function Page({
         minWidth: 0,
         minHeight: 0,
         boxSizing: 'border-box',
-        padding: desktop ? 'var(--space-5) var(--space-6) var(--space-6)' : 'var(--space-3)',
+        padding: flush
+          ? 0
+          : desktop
+            ? 'var(--space-5) var(--space-6) var(--space-6)'
+            : 'var(--space-3)',
       }}
     >
       {!withTitle ? null : desktop && actions !== undefined ? (

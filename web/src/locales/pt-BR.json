@@ -81,6 +81,12 @@
     },
     "ticketDeadlines": {
       "title": "Prazos dos chamados"
+    },
+    "projectDocuments": {
+      "title": "Documentos"
+    },
+    "defaultFolders": {
+      "title": "Pastas padrão"
     }
   },
   "signIn": {
@@ -236,7 +242,9 @@
       "Ticket": "Chamados",
       "TicketDeadlineSetting": "Prazos dos chamados",
       "Vendor": "Fornecedores",
-      "VendorTicket": "Chamados em fornecedores"
+      "VendorTicket": "Chamados em fornecedores",
+      "DefaultFolder": "Pastas padrão",
+      "Document": "Documentos"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -344,6 +352,21 @@
         "Created": "Registrou um chamado no fornecedor",
         "Updated": "Atualizou um chamado no fornecedor",
         "Deleted": "Excluiu um chamado no fornecedor"
+      },
+      "DefaultFolder": {
+        "Created": "Incluiu uma pasta padrão",
+        "Updated": "Alterou uma pasta padrão",
+        "Deleted": "Excluiu uma pasta padrão",
+        "Deactivated": "Inativou uma pasta padrão",
+        "Reactivated": "Reativou uma pasta padrão"
+      },
+      "Document": {
+        "Created": "Enviou um documento",
+        "Updated": "Alterou um documento",
+        "Deleted": "Excluiu um documento",
+        "NewVersion": "Enviou uma nova versão",
+        "StatusChanged": "Mudou o status de um documento",
+        "Linked": "Vinculou um documento ao cronograma"
       }
     },
     "providers": {
@@ -380,7 +403,9 @@
         "Ticket": "Chamado",
         "TicketDeadlineSetting": "Prioridade",
         "Vendor": "Fornecedor",
-        "VendorTicket": "Chamado no fornecedor"
+        "VendorTicket": "Chamado no fornecedor",
+        "DefaultFolder": "Pasta",
+        "Document": "Documento"
       },
       "secret": "Alterado",
       "none": "—",
@@ -491,6 +516,20 @@
         "Link": "Link",
         "Note": "Observação",
         "RegisteredById": "Registrado por"
+      },
+      "DefaultFolder": {
+        "Name": "Nome",
+        "IsAcceptance": "Pasta de termos",
+        "IsActive": "Situação"
+      },
+      "Document": {
+        "ProjectId": "Projeto",
+        "FolderId": "Pasta",
+        "Name": "Nome",
+        "Status": "Status",
+        "Version": "Versão",
+        "SchedulePhaseId": "Fase",
+        "ScheduleItemId": "Tarefa ou marco"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -1907,6 +1946,149 @@
       "projectRoleChanged": "Seu papel no projeto {{project}} mudou para {{role}}",
       "projectStatusChanged": "O projeto {{project}} passou para {{status}}",
       "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}"
+    }
+  },
+  "documents": {
+    "folders": "Pastas do projeto",
+    "folderLabel": "Pasta",
+    "termsFolderNote": "Os termos assinados chegam aqui pelos termos de aceite.",
+    "search": "Buscar nos documentos do projeto",
+    "searchResults": "Resultados da busca",
+    "statusFilter": "Status",
+    "filters": {
+      "Active": "Todos, menos obsoletos",
+      "All": "Todos"
+    },
+    "upload": "Enviar arquivos",
+    "uploading": "Enviando {{current}} de {{total}}…",
+    "dropHere": "Solte para enviar a {{folder}}",
+    "table": "Documentos",
+    "columns": {
+      "name": "Nome",
+      "status": "Status",
+      "updated": "Atualizado",
+      "size": "Tamanho"
+    },
+    "version": "Versão {{version}}",
+    "noLink": "sem vínculo",
+    "total_zero": "Nenhum documento",
+    "total_one": "{{count}} documento",
+    "total_other": "{{count}} documentos",
+    "empty": "Nenhum documento nesta pasta. Envie arquivos pelo botão ou arraste-os para cá.",
+    "emptyReadOnly": "Nenhum documento nesta pasta.",
+    "emptyTerms": "Nenhum termo assinado ainda.",
+    "emptySearch": "Nenhum documento com esse nome no projeto.",
+    "loadFailed": "Não foi possível carregar os documentos. Tente de novo.",
+    "statuses": {
+      "Draft": "Rascunho",
+      "InReview": "Em revisão",
+      "Approved": "Aprovado",
+      "Obsolete": "Obsoleto"
+    },
+    "uploaded_one": "{{count}} arquivo enviado.",
+    "uploaded_other": "{{count}} arquivos enviados.",
+    "refused": {
+      "Empty": "{{name}} está vazio.",
+      "TooLarge": "{{name}} passa de {{size}}.",
+      "Dangerous": "{{name}} é um programa ou script e não pode ser enviado.",
+      "Changed": "{{name}} foi enviado por outra pessoa ao mesmo tempo. Envie de novo.",
+      "Failed": "Não foi possível enviar {{name}}. Tente de novo."
+    },
+    "details": {
+      "label": "Documento selecionado",
+      "sizeAndVersion": "{{size}} · versão {{version}}",
+      "open": "Abrir",
+      "download": "Baixar",
+      "more": "Mais ações do documento",
+      "status": "Status",
+      "approvedBy": "Aprovado por",
+      "statusBy": "Status mudado por",
+      "byOn": "{{name}} em {{date}}",
+      "schedule": "Cronograma",
+      "folder": "Pasta",
+      "versions": "Versões",
+      "versionChip": "v{{number}}",
+      "versionWhen": "{{when}} · {{size}}",
+      "downloadVersion": "Baixar a versão {{number}}"
+    },
+    "menu": {
+      "status": "Mudar o status",
+      "link": "Vincular ao cronograma",
+      "remove": "Excluir"
+    },
+    "link": {
+      "title": "Vincular ao cronograma",
+      "field": "Fase, tarefa ou marco",
+      "none": "Sem vínculo",
+      "help": "O documento aparece com o nome do item do cronograma.",
+      "save": "Vincular",
+      "cancel": "Cancelar",
+      "types": {
+        "Phase": "Fase",
+        "Task": "Tarefa",
+        "Milestone": "Marco"
+      }
+    },
+    "remove": {
+      "title": "Excluir documento",
+      "text": "{{name}} e todas as versões serão apagados. Isso não pode ser desfeito.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar"
+    },
+    "messages": {
+      "statusChanged": "{{name}} agora está {{status}}.",
+      "linked": "Vínculo de {{name}} salvo.",
+      "removed": "{{name}} excluído.",
+      "closed": "O projeto está encerrado e só pode ser lido.",
+      "failed": "Não foi possível salvar. Tente de novo."
+    }
+  },
+  "defaultFolders": {
+    "table": "Pastas padrão",
+    "note": "Todo projeto novo recebe as pastas ativas. As mudanças valem só para os projetos criados depois.",
+    "empty": "Nenhuma pasta padrão.",
+    "columns": {
+      "name": "Pasta",
+      "use": "Uso",
+      "status": "Situação",
+      "actions": "Ações"
+    },
+    "acceptance": "Termos de aceite",
+    "regular": "Documentos",
+    "total_zero": "Nenhuma pasta",
+    "total_one": "{{count}} pasta",
+    "total_other": "{{count}} pastas",
+    "statuses": {
+      "Active": "Ativa",
+      "Inactive": "Inativa"
+    },
+    "newFolder": "Nova pasta",
+    "menu": {
+      "button": "Ações da pasta {{name}}",
+      "edit": "Renomear",
+      "deactivate": "Inativar",
+      "reactivate": "Reativar"
+    },
+    "dialog": {
+      "newTitle": "Nova pasta padrão",
+      "editTitle": "Renomear pasta padrão",
+      "name": "Nome",
+      "nameHelp": "Use um número no começo para a ordem, como 07 Treinamentos.",
+      "add": "Incluir",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "nameRequired": "Informe o nome, com até 120 caracteres, sem \" * : < > ? / \\ | e sem ponto no fim.",
+      "nameInUse": "Já existe uma pasta padrão com esse nome."
+    },
+    "messages": {
+      "added": "Pasta {{name}} incluída.",
+      "saved": "Pasta {{name}} salva.",
+      "deactivated": "Pasta {{name}} inativada.",
+      "reactivated": "Pasta {{name}} reativada.",
+      "acceptanceAlwaysActive": "A pasta de termos de aceite fica sempre ativa.",
+      "failed": "Não foi possível salvar a pasta. Tente de novo."
     }
   }
 }

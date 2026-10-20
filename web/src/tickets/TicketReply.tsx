@@ -11,7 +11,7 @@ import { api, type Ticket } from '../api/client';
 import { queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import type { MentionChoice } from '../components/RichTextEditor';
-import { sizeText } from './conversation';
+import { sizeText } from '../format/size';
 import { ticketProblemText } from './ticketProblems';
 
 // The editor only loads on the screens of the tickets.

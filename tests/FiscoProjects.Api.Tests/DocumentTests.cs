@@ -128,6 +128,17 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
             .Select(System.IO.Path.GetFileName).Should().HaveCount(6, "the folders are made in the storage with the project");
     }
 
+    [Fact]
+    public async Task ProjectMadeBeforeTheModule_GetsTheFoldersWhenOpened()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        await team.App.CountAsync("DELETE FROM [documents].[folders] WHERE ProjectId = @project; SELECT 0", ("@project", team.Erp));
+
+        (await FolderNamesAsync(team.Admin, team.Erp)).Should().HaveCount(6);
+        (await team.App.CountAsync("SELECT COUNT(*) FROM [documents].[folders] WHERE ProjectId = @project", ("@project", team.Erp)))
+            .Should().Be(6);
+    }
+
     [Fact(DisplayName = "Pasta desativada fica fora dos projetos novos")]
     public async Task DeactivatedFolder_IsLeftOutOfNewProjects()
     {

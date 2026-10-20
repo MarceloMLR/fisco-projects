@@ -19,14 +19,6 @@ export const toneOf: Record<ParticipantRole, MessageTone> = {
 /** Above this many interactions, the older ones are folded (ADR-0069). */
 export const shownInteractions = 10;
 
-/** The size of a file as the attachments show it: "184 KB", "1,2 MB". */
-export function sizeText(bytes: number): string {
-  if (bytes < 1024 * 1024) {
-    return `${String(Math.max(1, Math.round(bytes / 1024)))} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`;
-}
-
 /** The address of an attachment of a ticket. */
 export const attachmentUrl = (number: number, id: string) =>
   `/api/tickets/${String(number)}/attachments/${id}`;
