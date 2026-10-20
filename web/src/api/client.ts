@@ -29,6 +29,7 @@ export type Schedule = components['schemas']['ScheduleResponse'];
 export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
 export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
 export type ProjectTemplate = components['schemas']['TemplateResponse'];
+export type ProjectClosing = components['schemas']['ProjectClosingResponse'];
 export type ScheduleItemKind = components['schemas']['ScheduleItemKind'];
 export type TicketRow = components['schemas']['TicketListItemResponse'];
 export type Ticket = components['schemas']['TicketResponse'];
@@ -185,6 +186,8 @@ export const projectProblems = {
   scheduleNothingToUndo: 'urn:fiscoprojects:problem:schedule-nothing-to-undo',
   scheduleUndoBlocked: 'urn:fiscoprojects:problem:schedule-undo-blocked',
   templateNameInUse: 'urn:fiscoprojects:problem:template-name-in-use',
+  hasOpenTickets: 'urn:fiscoprojects:problem:project-has-open-tickets',
+  ticketsChanged: 'urn:fiscoprojects:problem:project-tickets-changed',
 } as const;
 
 /** Problem types of the tickets (TicketProblems in the Tickets module). */

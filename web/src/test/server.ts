@@ -1419,6 +1419,9 @@ export const handlers = [
   http.get('/api/people', () => HttpResponse.json([])),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
+  http.get('/api/projects/:id/closing', () =>
+    HttpResponse.json({ openTickets: 0, incompleteTasks: 0 }),
+  ),
   http.get('/api/project-templates', () =>
     HttpResponse.json(demoTemplates().filter((template) => template.isActive)),
   ),

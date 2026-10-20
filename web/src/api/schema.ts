@@ -532,6 +532,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/closing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What completing or cancelling the project would leave behind (ADR-0043), for who changes its status. */
+        get: operations["GetProjectClosing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/members": {
         parameters: {
             query?: never;
@@ -1469,6 +1486,16 @@ export interface components {
             name: string;
             logoUrl: null | string;
         };
+        /**
+         * @description What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from
+         *     being completed and are closed by the cancellation, and the tasks below 100%, a warning.
+         */
+        ProjectClosingResponse: {
+            /** Format: int32 */
+            openTickets: number;
+            /** Format: int32 */
+            incompleteTasks: number;
+        };
         ProjectCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -1975,7 +2002,7 @@ export interface components {
          * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
          * @enum {unknown}
          */
-        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged" | "VendorTicketRegistered" | "VendorStatusChanged";
+        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged" | "VendorTicketRegistered" | "VendorStatusChanged" | "ClosedWithProject";
         /**
          * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
          *     null when the system did it.
@@ -4219,6 +4246,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetProjectClosing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectClosingResponse"];
+                };
             };
             /** @description Unauthorized */
             401: {

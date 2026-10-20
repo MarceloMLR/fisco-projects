@@ -332,3 +332,100 @@ describe('Ações do projeto', () => {
     expect(screen.queryByRole('button', { name: text.actions.button })).not.toBeInTheDocument();
   });
 });
+
+// Spec: projetos, requirement "Encerramento pela tela".
+describe('Encerramento pela tela', () => {
+  const summary = (openTickets: number, incompleteTasks: number) => {
+    server.use(
+      http.get('/api/projects/:id/closing', () =>
+        HttpResponse.json({ openTickets, incompleteTasks }),
+      ),
+    );
+  };
+
+  it('Conclusão impedida pela tela', async () => {
+    summary(2, 0);
+    await openProject();
+
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.complete }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.confirm.completeTitle });
+
+    expect(
+      await within(confirm).findByText(/O projeto tem 2 chamados não fechados/),
+    ).toBeInTheDocument();
+    expect(within(confirm).getByRole('link', { name: text.confirm.seeTickets })).toHaveAttribute(
+      'href',
+      `/projects/${erpFin}/tickets`,
+    );
+    expect(
+      within(confirm).getByRole('button', { name: text.confirm.completeAction }),
+    ).toBeDisabled();
+    expect(requests).toEqual([]);
+  });
+
+  it('Conclusão recusada pela API', async () => {
+    server.use(
+      http.put('/api/projects/:id/status', () =>
+        HttpResponse.json(
+          {
+            status: 409,
+            title: 'Open tickets',
+            type: 'urn:fiscoprojects:problem:project-has-open-tickets',
+            openTickets: 1,
+          },
+          { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    await openProject();
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.complete }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.confirm.completeTitle });
+
+    fireEvent.click(within(confirm).getByRole('button', { name: text.confirm.completeAction }));
+
+    expect(
+      await within(confirm).findByText(/O projeto tem 1 chamado não fechado/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(text.closed.Completed)).not.toBeInTheDocument();
+  });
+
+  it('Aviso de tarefas incompletas', async () => {
+    summary(0, 3);
+    await openProject();
+
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.complete }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.confirm.completeTitle });
+    expect(
+      await within(confirm).findByText(
+        '3 tarefas estão abaixo de 100%. O projeto pode ser concluído assim mesmo.',
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(within(confirm).getByRole('button', { name: text.confirm.completeAction }));
+
+    expect(await screen.findByText(text.closed.Completed)).toBeVisible();
+    expect(requests).toEqual(['PUT status Completed']);
+  });
+
+  it('Cancelamento pela tela', async () => {
+    summary(2, 1);
+    await openProject();
+
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.cancel }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.confirm.cancelTitle });
+    expect(
+      await within(confirm).findByText(
+        'Os 2 chamados abertos serão fechados, com o motivo "projeto cancelado" na conversa.',
+      ),
+    ).toBeInTheDocument();
+    // The tasks below 100% do not matter to a cancellation.
+    expect(within(confirm).queryByText(/abaixo de 100%/)).not.toBeInTheDocument();
+    fireEvent.click(within(confirm).getByRole('button', { name: text.confirm.cancelAction }));
+
+    expect(await screen.findByText(text.closed.Cancelled)).toBeVisible();
+    expect(requests).toEqual(['PUT status Cancelled']);
+  });
+});

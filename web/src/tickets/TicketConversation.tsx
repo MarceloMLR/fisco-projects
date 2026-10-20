@@ -206,7 +206,12 @@ function EventLine({
                 })
               : event.kind === 'VendorTicketRegistered' || event.kind === 'VendorStatusChanged'
                 ? vendorText()
-                : changed();
+                : event.kind === 'ClosedWithProject'
+                  ? t('tickets.events.closedWithProject', {
+                      from: event.from === null ? '' : t(`tickets.statuses.${event.from}`),
+                      to: event.to === null ? '' : t(`tickets.statuses.${event.to}`),
+                    })
+                  : changed();
   return (
     <Box
       component="li"

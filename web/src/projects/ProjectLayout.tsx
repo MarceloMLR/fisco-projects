@@ -10,9 +10,15 @@ import Snackbar from '@mui/material/Snackbar';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useMatch, useParams } from 'react-router';
-import { api, isClosedStatus, type Project, type ProjectStatus } from '../api/client';
-import { ApiError, projectQuery, queryKeys } from '../api/queries';
+import { Link, Outlet, useMatch, useParams } from 'react-router';
+import {
+  api,
+  isClosedStatus,
+  type Project,
+  projectProblems,
+  type ProjectStatus,
+} from '../api/client';
+import { ApiError, projectClosingQuery, projectQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { Page } from '../shell/Page';
@@ -29,6 +35,13 @@ const openStatuses = [
 const ReopenIcon = projectStatusLook.InProgress.icon;
 const CompleteIcon = projectStatusLook.Completed.icon;
 const CancelIcon = projectStatusLook.Cancelled.icon;
+
+/** A field of a problem the API returned, such as its type or the open tickets. */
+function problemField(problem: unknown, name: string): unknown {
+  return typeof problem === 'object' && problem !== null && name in problem
+    ? (problem as Record<string, unknown>)[name]
+    : undefined;
+}
 
 /**
  * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral, Cronograma, Chamados or Membros,
@@ -48,7 +61,14 @@ export function ProjectLayout() {
   const [menu, setMenu] = useState<HTMLElement>();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();
+  // The tickets not closed the API found when it refused to complete the project (ADR-0043).
+  const [refusedTickets, setRefusedTickets] = useState<number>();
   const [message, setMessage] = useState<string>();
+  // What closing the project would leave behind, read when the confirmation opens (ADR-0043).
+  const { data: closing } = useQuery({
+    ...projectClosingQuery(projectId),
+    enabled: confirming !== undefined,
+  });
   const outlet = useMemo<ProjectOutlet | undefined>(
     () => (project === undefined ? undefined : { project, notify: setMessage }),
     [project],
@@ -56,15 +76,16 @@ export function ProjectLayout() {
 
   const changeStatus = useMutation({
     mutationFn: async ({ status }: { status: ProjectStatus; project: Project }) => {
-      const { response } = await api.PUT('/api/projects/{id}/status', {
+      const { response, error } = await api.PUT('/api/projects/{id}/status', {
         params: { path: { id: projectId } },
         body: { status },
       });
       if (!response.ok) {
-        throw new ApiError(response.status, null);
+        throw new ApiError(response.status, error);
       }
     },
     onSuccess: (_result, { status, project: changed }) => {
+      setConfirming(undefined);
       setMessage(
         t('projects.messages.status', {
           name: changed.name,
@@ -72,13 +93,26 @@ export function ProjectLayout() {
         }),
       );
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    onError: () => {
-      setMessage(t('projects.messages.failed'));
-    },
-    onSettled: () => {
+    onError: (error) => {
+      const problem = error instanceof ApiError ? error.problem : undefined;
+      const open = problemField(problem, 'openTickets');
+      if (
+        problemField(problem, 'type') === projectProblems.hasOpenTickets &&
+        typeof open === 'number'
+      ) {
+        // A ticket opened while the confirmation was open: the dialog stays, saying it.
+        setRefusedTickets(open);
+        return;
+      }
       setConfirming(undefined);
+      setMessage(
+        problemField(problem, 'type') === projectProblems.ticketsChanged
+          ? t('projects.messages.ticketsChanged')
+          : t('projects.messages.failed'),
+      );
     },
   });
 
@@ -99,9 +133,13 @@ export function ProjectLayout() {
   const { permissions } = project;
   const closed = isClosedStatus(project.status);
   const hasActions = permissions.canEdit || permissions.canChangeStatus;
+  // The tickets not closed keep the project from being completed; the cancellation closes them (ADR-0043).
+  const openTickets = refusedTickets ?? closing?.openTickets ?? 0;
+  const blocked = confirming === 'Completed' && openTickets > 0;
   const choose = (status: ProjectStatus) => {
     setMenu(undefined);
     if (status === 'Completed' || status === 'Cancelled') {
+      setRefusedTickets(undefined);
       setConfirming(status);
     } else if (status !== project.status) {
       changeStatus.mutate({ status, project });
@@ -270,7 +308,7 @@ export function ProjectLayout() {
             <Button
               variant="contained"
               color={confirming === 'Cancelled' ? 'error' : 'primary'}
-              disabled={changeStatus.isPending}
+              disabled={changeStatus.isPending || blocked}
               onClick={() => {
                 if (confirming !== undefined) {
                   changeStatus.mutate({ status: confirming, project });
@@ -286,14 +324,43 @@ export function ProjectLayout() {
           </>
         }
       >
-        {t(
-          confirming === 'Cancelled'
-            ? 'projects.confirm.cancelText'
-            : 'projects.confirm.completeText',
-          {
-            name: project.name,
-          },
-        )}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <span>
+            {t(
+              confirming === 'Cancelled'
+                ? 'projects.confirm.cancelText'
+                : 'projects.confirm.completeText',
+              {
+                name: project.name,
+              },
+            )}
+          </span>
+          {blocked && (
+            <Alert tone="danger">
+              {t('projects.confirm.openTickets', { count: openTickets })}{' '}
+              <Box
+                component={Link}
+                to={`/projects/${projectId}/tickets`}
+                onClick={() => {
+                  setConfirming(undefined);
+                }}
+                sx={{ color: 'inherit', fontWeight: 500 }}
+              >
+                {t('projects.confirm.seeTickets')}
+              </Box>
+            </Alert>
+          )}
+          {confirming === 'Completed' && closing !== undefined && closing.incompleteTasks > 0 && (
+            <Alert tone="warning">
+              {t('projects.confirm.incompleteTasks', { count: closing.incompleteTasks })}
+            </Alert>
+          )}
+          {confirming === 'Cancelled' && openTickets > 0 && (
+            <Alert tone="warning">
+              {t('projects.confirm.ticketsClosed', { count: openTickets })}
+            </Alert>
+          )}
+        </Box>
       </Dialog>
       <Snackbar
         open={message !== undefined}
