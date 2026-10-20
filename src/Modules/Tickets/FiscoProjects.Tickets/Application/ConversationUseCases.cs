@@ -157,7 +157,8 @@ public sealed class SendTicketMessage(
     TicketFiles files,
     TicketDeadlines deadlines,
     TicketAnswers answers,
-    TimeProvider clock)
+    TimeProvider clock,
+    TicketNotices notices)
 {
     public async Task<ConversationResult> ExecuteAsync(
         int number, string? body, IReadOnlyList<NewAttachment> attachments, TicketViewer viewer, CancellationToken cancellationToken)
@@ -231,6 +232,8 @@ public sealed class SendTicketMessage(
             throw;
         }
 
+        // The mentioned people and who follows the ticket hear about it now (ADR-0037).
+        await notices.MessageAsync(ticket, project, viewer.UserId, text.Mentions, transition: null, cancellationToken);
         return ConversationResult.Done;
     }
 

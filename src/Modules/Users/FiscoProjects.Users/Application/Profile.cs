@@ -11,7 +11,8 @@ public sealed record Profile(
     SystemRole Role,
     ThemePreference Theme,
     DateTime LastSignInAt,
-    IReadOnlyList<string> SignInProviders);
+    IReadOnlyList<string> SignInProviders,
+    bool ReceivesDailySummary);
 
 /// <summary>The profile of the person in the session, while the user exists and is active.</summary>
 public sealed class GetProfile(IUserStore store)
@@ -26,7 +27,8 @@ public sealed class GetProfile(IUserStore store)
 
         var providers = await store.SignInProvidersAsync(userId, cancellationToken);
         // The person in the session has signed in; only a user from the directory has no sign-in yet.
-        return new Profile(user.Id, user.Name, user.Email, user.Role, user.Theme, user.LastSignInAt ?? user.CreatedAt, providers);
+        return new Profile(
+            user.Id, user.Name, user.Email, user.Role, user.Theme, user.LastSignInAt ?? user.CreatedAt, providers, user.ReceivesDailySummary);
     }
 }
 
@@ -43,6 +45,24 @@ public sealed class ChooseTheme(IUserStore store)
         }
 
         user.ChooseTheme(theme);
+        await store.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+/// <summary>Turns the daily summary of e-mails of the person on or off (ADR-0037).</summary>
+public sealed class ChooseDailySummary(IUserStore store)
+{
+    /// <returns>False when the user no longer exists or may no longer use the system.</returns>
+    public async Task<bool> ExecuteAsync(Guid userId, bool receives, CancellationToken cancellationToken)
+    {
+        var user = await store.FindAsync(userId, cancellationToken);
+        if (user is not { IsActive: true })
+        {
+            return false;
+        }
+
+        user.ChooseDailySummary(receives);
         await store.SaveChangesAsync(cancellationToken);
         return true;
     }

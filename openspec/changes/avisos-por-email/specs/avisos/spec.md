@@ -77,7 +77,7 @@ A cada hora, um processo da aplicação MUST avisar na hora quando um prazo de u
 As mudanças de status (inclusive o fechamento automático e o fechamento pelo cancelamento do projeto) e os registros e atualizações em fornecedores MUST entrar no resumo diário de quem acompanha o chamado, salvo de quem recebeu um aviso na hora da mesma ação (ADR-0037).
 
 #### Scenario: Mudança de status no resumo
-- **WHEN** quem atende coloca em andamento um chamado que o gerente acompanha
+- **WHEN** quem atende muda o status, sem mensagem, de um chamado que o gerente acompanha
 - **THEN** a mudança entra no próximo resumo diário do gerente, sem e-mail na hora
 
 #### Scenario: Fornecedor no resumo

@@ -12,27 +12,31 @@ const logoUrl = '/api/installation/logo?v=1';
 /** The installation as the simulated API keeps it, changed by the requests as the real one would. */
 let installation: Installation;
 let timeZone: string;
+let dailySummaryAt: string;
 const requests: string[] = [];
 
 beforeEach(() => {
   installation = { name: 'FiscoProjects', logoUrl: null, mainColor: null };
   timeZone = 'America/Sao_Paulo';
+  dailySummaryAt = '07:30:00';
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
     http.get('/api/installation', () => HttpResponse.json(installation)),
-    http.get('/api/installation/rules', () => HttpResponse.json({ timeZone })),
+    http.get('/api/installation/rules', () => HttpResponse.json({ timeZone, dailySummaryAt })),
     http.put('/api/installation', async ({ request }) => {
       const body = (await request.json()) as {
         name: string;
         timeZone: string;
         mainColor: string | null;
+        dailySummaryAt: string;
       };
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
       );
       installation = { ...installation, name: body.name, mainColor: body.mainColor };
       timeZone = body.timeZone;
+      dailySummaryAt = body.dailySummaryAt;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -515,5 +519,45 @@ describe('Cor principal nas Configurações gerais', () => {
 
     expect(colorField()).toHaveValue('');
     expect(saveButton()).toBeDisabled();
+  });
+});
+
+// Spec: configuracao-da-instalacao, requirement "Horário do resumo diário".
+describe('Horário do resumo diário', () => {
+  function summaryField() {
+    return within(screen.getByRole('region', { name: text.rules })).getByLabelText(
+      text.dailySummaryAt,
+    );
+  }
+
+  it('Horário padrão', async () => {
+    await openSettings();
+
+    await waitFor(() => {
+      expect(summaryField()).toHaveValue('07:30');
+    });
+  });
+
+  it('Trocar o horário', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(summaryField()).toHaveValue('07:30');
+    });
+
+    fireEvent.change(summaryField(), { target: { value: '08:00' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(dailySummaryAt).toBe('08:00:00');
+  });
+
+  it('Horário inválido', async () => {
+    await openSettings();
+
+    fireEvent.change(summaryField(), { target: { value: '' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.dailySummaryRequired)).toBeInTheDocument();
+    expect(requests).toEqual([]);
   });
 });

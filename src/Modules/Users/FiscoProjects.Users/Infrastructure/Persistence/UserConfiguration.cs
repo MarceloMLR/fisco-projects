@@ -26,8 +26,12 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         user.HasAuditLabel(u => u.Name);
         user.Property(u => u.LastSignInAt).ExcludeFromAudit();
         user.Property(u => u.CreatedAt).ExcludeFromAudit();
-        // A personal preference, not data of the business: changing it is no audit record.
+        // People who signed in before the daily summary existed receive it (ADR-0037).
+        user.Property(u => u.ReceivesDailySummary).HasDefaultValue(true).HasSentinel(true);
+
+        // Personal preferences, not data of the business: changing them is no audit record.
         user.Property(u => u.Theme).ExcludeFromAudit();
+        user.Property(u => u.ReceivesDailySummary).ExcludeFromAudit();
     }
 }
 

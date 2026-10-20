@@ -276,7 +276,7 @@ internal static class VendorTicketAccess
 /// note. The conversation records it; our deadlines keep running.
 /// </summary>
 public sealed class RegisterVendorTicket(
-    IProjectAccess projects, ITicketStore store, IVendorStore vendors, TicketDeadlines deadlines, TimeProvider clock)
+    IProjectAccess projects, ITicketStore store, IVendorStore vendors, TicketDeadlines deadlines, TimeProvider clock, TicketNotices notices)
 {
     public async Task<VendorTicketResult> ExecuteAsync(
         int number, NewVendorTicket request, TicketViewer viewer, CancellationToken cancellationToken)
@@ -336,6 +336,12 @@ public sealed class RegisterVendorTicket(
         store.AddEvent(TicketEvent.VendorTicketRegistered(ticket.Id, viewer.UserId, registered, now));
         ticket.Touch(now);
         var outcome = await VendorTicketAccess.SaveAsync(store, cancellationToken);
+        if (outcome == VendorTicketOutcome.Done)
+        {
+            // Who follows the ticket hears about it in the daily summary (ADR-0037).
+            await notices.VendorUpdatedAsync(ticket, vendor.Name, registered.Status, viewer.UserId, cancellationToken);
+        }
+
         return VendorTicketResult.Of(outcome, outcome == VendorTicketOutcome.Done ? registered.Id : null);
     }
 }
@@ -344,7 +350,8 @@ public sealed class RegisterVendorTicket(
 /// Who serves the ticket updates the status of a ticket at a vendor, with a note (ADR-0028), until our ticket is closed:
 /// any status follows any other, and the conversation records the update, which also ends the staleness.
 /// </summary>
-public sealed class UpdateVendorTicket(IProjectAccess projects, ITicketStore store, IVendorStore vendors, TimeProvider clock)
+public sealed class UpdateVendorTicket(
+    IProjectAccess projects, ITicketStore store, IVendorStore vendors, TimeProvider clock, TicketNotices notices)
 {
     public async Task<VendorTicketResult> ExecuteAsync(
         int number, Guid id, VendorTicketStatus? status, string? note, TicketViewer viewer, CancellationToken cancellationToken)
@@ -384,6 +391,12 @@ public sealed class UpdateVendorTicket(IProjectAccess projects, ITicketStore sto
         store.AddEvent(TicketEvent.VendorStatusChanged(ticket.Id, viewer.UserId, vendorTicket.Id, before, status.Value, text, now));
         ticket.Touch(now);
         var outcome = await VendorTicketAccess.SaveAsync(store, cancellationToken);
+        if (outcome == VendorTicketOutcome.Done && await vendors.FindAsync(vendorTicket.VendorId, cancellationToken) is { } vendor)
+        {
+            // Who follows the ticket hears about it in the daily summary (ADR-0037).
+            await notices.VendorUpdatedAsync(ticket, vendor.Name, vendorTicket.Status, viewer.UserId, cancellationToken);
+        }
+
         return VendorTicketResult.Of(outcome, outcome == VendorTicketOutcome.Done ? vendorTicket.Id : null);
     }
 }

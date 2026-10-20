@@ -55,6 +55,21 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
     }
 }
 
+// The alerts of the deadlines told (ADR-0037): technical, out of the audit, apart from the ticket, so telling them never
+// finds a ticket changed by a person at the same time.
+internal sealed class TicketDeadlineAlertConfiguration : IEntityTypeConfiguration<TicketDeadlineAlert>
+{
+    public void Configure(EntityTypeBuilder<TicketDeadlineAlert> alert)
+    {
+        alert.ToTable("ticket_deadline_alerts");
+        alert.HasKey(a => new { a.TicketId, a.Deadline });
+        alert.Property(a => a.Deadline).HasConversion<string>().HasMaxLength(16);
+        alert.Property(a => a.State).HasConversion<string>().HasMaxLength(16);
+        alert.HasOne<Ticket>().WithMany().HasForeignKey(a => a.TicketId).OnDelete(DeleteBehavior.Cascade);
+        alert.ExcludeFromAudit();
+    }
+}
+
 // The vendors of the installation (ADR-0028): changed by the Administrator, with the change in the audit; never removed.
 internal sealed class VendorConfiguration : IEntityTypeConfiguration<Vendor>
 {

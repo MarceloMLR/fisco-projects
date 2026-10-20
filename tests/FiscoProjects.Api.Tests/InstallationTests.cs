@@ -251,6 +251,39 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         Fields(entry).Should().Equal(("TimeZone", "America/Sao_Paulo", "America/Manaus"));
     }
 
+    [Fact(DisplayName = "Trocar o horário")]
+    public async Task ChangeOfTheDailySummaryTime_IsReadByEveryone_AndAudited()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        var (user, _) = await app.SignedInClientAsync();
+        using var _user = user;
+
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", dailySummaryAt: "08:00:00"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await user.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("dailySummaryAt").GetString()
+            .Should().Be("08:00:00");
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
+        var entry = page.GetProperty("items").EnumerateArray().Should().ContainSingle().Subject;
+        Fields(entry).Should().ContainSingle().Which.Field.Should().Be("DailySummaryAt");
+    }
+
+    [Fact]
+    public async Task WithoutTheDailySummaryTime_IsABadRequest()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("Outro nome", dailySummaryAt: null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("dailySummaryAt");
+    }
+
     [Fact(DisplayName = "Trocar a cor principal")]
     public async Task MainColor_IsReadWithoutASession()
     {
@@ -354,8 +387,9 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
     }
 
     /// <summary>The General settings form, with the default time zone unless another is given.</summary>
-    private static object Form(string name, string timeZone = "America/Sao_Paulo", string? mainColor = null) =>
-        new { name, timeZone, mainColor };
+    private static object Form(
+        string name, string timeZone = "America/Sao_Paulo", string? mainColor = null, string? dailySummaryAt = "07:30:00") =>
+        new { name, timeZone, mainColor, dailySummaryAt };
 
     private static async Task<string?> MainColorAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation)).GetProperty("mainColor").GetString();

@@ -72,7 +72,7 @@ public sealed class TicketBatch(IProjectAccess projects, ITicketStore store)
 /// lead, of open tickets, to a person of the project who serves the team of each ticket or is its manager. The new
 /// assignee follows the ticket, and the conversation records the change. All or nothing.
 /// </summary>
-public sealed class ChangeTicketAssignees(TicketBatch batch, ITicketStore store, TimeProvider clock)
+public sealed class ChangeTicketAssignees(TicketBatch batch, ITicketStore store, TimeProvider clock, TicketNotices notices)
 {
     public async Task<TicketChangeResult> ExecuteAsync(
         IReadOnlyCollection<int>? numbers, Guid? assigneeId, TicketViewer viewer, CancellationToken cancellationToken)
@@ -111,14 +111,22 @@ public sealed class ChangeTicketAssignees(TicketBatch batch, ITicketStore store,
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
-        foreach (var ticket in tickets.Select(item => item.Ticket).Where(ticket => ticket.AssigneeId != assignee))
+        var changed = tickets.Where(item => item.Ticket.AssigneeId != assignee).ToList();
+        foreach (var ticket in changed.Select(item => item.Ticket))
         {
             ticket.Assign(assignee, now);
             store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, assignee, now));
             await store.FollowAsync(ticket.Id, assignee, now, cancellationToken);
         }
 
-        return await TicketChanges.SaveAsync(store, cancellationToken);
+        var result = await TicketChanges.SaveAsync(store, cancellationToken);
+        if (result.Outcome == TicketChangeOutcome.Done)
+        {
+            // The new assignee hears about it now (ADR-0037).
+            await notices.AssignedAsync(changed, viewer.UserId, cancellationToken);
+        }
+
+        return result;
     }
 
     internal static ProjectMemberRole? RoleOf(
@@ -131,7 +139,7 @@ public sealed class ChangeTicketAssignees(TicketBatch batch, ITicketStore store,
 /// closed; the requester, of the own ticket, one at a time. The new requester is a person of the project who opens
 /// tickets; the former one keeps following, and the conversation records the change. All or nothing.
 /// </summary>
-public sealed class ChangeTicketRequesters(TicketBatch batch, ITicketStore store, TimeProvider clock)
+public sealed class ChangeTicketRequesters(TicketBatch batch, ITicketStore store, TimeProvider clock, TicketNotices notices)
 {
     public async Task<TicketChangeResult> ExecuteAsync(
         IReadOnlyCollection<int>? numbers, Guid? requesterId, TicketViewer viewer, CancellationToken cancellationToken)
@@ -173,7 +181,8 @@ public sealed class ChangeTicketRequesters(TicketBatch batch, ITicketStore store
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
-        foreach (var ticket in tickets.Select(item => item.Ticket).Where(ticket => ticket.RequesterId != requester))
+        var changed = tickets.Where(item => item.Ticket.RequesterId != requester).ToList();
+        foreach (var ticket in changed.Select(item => item.Ticket))
         {
             var before = ticket.RequesterId;
             ticket.ChangeRequester(requester, now);
@@ -182,7 +191,14 @@ public sealed class ChangeTicketRequesters(TicketBatch batch, ITicketStore store
             await store.FollowAsync(ticket.Id, requester, now, cancellationToken);
         }
 
-        return await TicketChanges.SaveAsync(store, cancellationToken);
+        var result = await TicketChanges.SaveAsync(store, cancellationToken);
+        if (result.Outcome == TicketChangeOutcome.Done)
+        {
+            // The new requester hears about it now (ADR-0037).
+            await notices.RequesterChangedAsync(changed, viewer.UserId, cancellationToken);
+        }
+
+        return result;
     }
 }
 
@@ -233,7 +249,7 @@ public sealed class ListTicketPeopleChoices(TicketBatch batch, IUserDirectory us
 /// Transfers an open ticket to the other team (ADR-0044, ADR-0068): who serves it, when the other team has someone in
 /// the project to serve it. The ticket is left without an assignee until someone of the new team answers.
 /// </summary>
-public sealed class TransferTicket(IProjectAccess projects, ITicketStore store, TimeProvider clock)
+public sealed class TransferTicket(IProjectAccess projects, ITicketStore store, TimeProvider clock, TicketNotices notices)
 {
     public async Task<TicketChangeResult> ExecuteAsync(
         int number, TicketTeam? team, TicketViewer viewer, CancellationToken cancellationToken)
@@ -279,7 +295,14 @@ public sealed class TransferTicket(IProjectAccess projects, ITicketStore store, 
         var before = ticket.Team;
         ticket.Transfer(target, now);
         store.AddEvent(TicketEvent.TeamChanged(ticket.Id, viewer.UserId, before, target, now));
-        return await TicketChanges.SaveAsync(store, cancellationToken);
+        var result = await TicketChanges.SaveAsync(store, cancellationToken);
+        if (result.Outcome == TicketChangeOutcome.Done)
+        {
+            // Who serves the new team hears about it now (ADR-0037).
+            await notices.TransferredAsync(ticket, project, viewer.UserId, cancellationToken);
+        }
+
+        return result;
     }
 }
 
@@ -330,7 +353,8 @@ internal static class TicketChanges
 /// The tickets of a project being completed or cancelled (ADR-0043): the ones not closed keep it from being completed,
 /// and cancelling it closes them all at once, with the reason in each conversation. Idempotent.
 /// </summary>
-public sealed class TicketProjectClosing(ITicketStore store, TicketDeadlines deadlines, TimeProvider clock) : IProjectClosing
+public sealed class TicketProjectClosing(ITicketStore store, TicketDeadlines deadlines, TimeProvider clock, TicketNotices notices)
+    : IProjectClosing
 {
     public Task<int> OpenTicketsAsync(Guid projectId, CancellationToken cancellationToken) =>
         store.CountNotClosedAsync(projectId, cancellationToken);
@@ -344,11 +368,19 @@ public sealed class TicketProjectClosing(ITicketStore store, TicketDeadlines dea
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
+        var closed = tickets.Select(ticket => (ticket, ticket.Status)).ToList();
         foreach (var ticket in tickets)
         {
             await deadlines.CloseWithProjectAsync(ticket, actorId, now, cancellationToken);
         }
 
-        return (await TicketChanges.SaveAsync(store, cancellationToken)).Outcome == TicketChangeOutcome.Done;
+        if ((await TicketChanges.SaveAsync(store, cancellationToken)).Outcome != TicketChangeOutcome.Done)
+        {
+            return false;
+        }
+
+        // Who follows each ticket hears about it in the daily summary (ADR-0037).
+        await notices.ClosedWithProjectAsync(closed, actorId, cancellationToken);
+        return true;
     }
 }

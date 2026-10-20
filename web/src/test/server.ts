@@ -886,7 +886,12 @@ export const defaultInstallation: Installation = {
 
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */
 export function profileOf(person: SessionUser): Profile {
-  return { ...person, lastSignInAt: '2026-10-19T12:12:00Z', signInMethods: ['local'] };
+  return {
+    ...person,
+    lastSignInAt: '2026-10-19T12:12:00Z',
+    signInMethods: ['local'],
+    receivesDailySummary: true,
+  };
 }
 
 /** A local holiday of the simulated calendar, as the Calendar module keeps it. */
@@ -1404,7 +1409,10 @@ export const handlers = [
   http.get('/api/profile', () => HttpResponse.json(profileOf(marina))),
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
-  http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
+  http.get('/api/installation/rules', () =>
+    HttpResponse.json({ timeZone: 'America/Sao_Paulo', dailySummaryAt: '07:30:00' }),
+  ),
+  http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),
   // The mailbox of the demonstration, never tested.
   http.get('/api/admin/email', () =>
     HttpResponse.json({ mailbox: 'projetos@empresa.example', lastTest: null }),

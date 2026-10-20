@@ -25,7 +25,7 @@ public sealed class ProfileTests(SqlServerFixture sqlServer)
         chosen.Should().BeTrue();
         profile.Should().BeEquivalentTo(new Profile(
             marina, "Marina Costa", "marina.costa@empresa.example", SystemRole.User, ThemePreference.Dark,
-            new DateTime(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc), ["local"]));
+            new DateTime(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc), ["local"], ReceivesDailySummary: true));
         session!.Theme.Should().Be(ThemePreference.Dark);
     }
 

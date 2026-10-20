@@ -11,6 +11,10 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<OutboxEmail> OutboxEmails => Set<OutboxEmail>();
 
+    public DbSet<DigestItem> DigestItems => Set<DigestItem>();
+
+    public DbSet<DailySummaryRun> DailySummaries => Set<DailySummaryRun>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationsDbContext).Assembly);
 }

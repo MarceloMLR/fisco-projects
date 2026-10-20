@@ -8,7 +8,11 @@ import { auditPage, demoAuditEntries, server, signedInAs } from '../test/server'
 const asked: URL[] = [];
 
 function installationIn(timeZone: string) {
-  server.use(http.get('/api/installation/rules', () => HttpResponse.json({ timeZone })));
+  server.use(
+    http.get('/api/installation/rules', () =>
+      HttpResponse.json({ timeZone, dailySummaryAt: '07:30:00' }),
+    ),
+  );
 }
 
 beforeEach(() => {

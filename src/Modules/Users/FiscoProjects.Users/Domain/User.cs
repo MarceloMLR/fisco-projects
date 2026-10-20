@@ -37,6 +37,9 @@ public sealed class User : Entity
     /// <summary>Theme of the person's screens, kept in the profile so it follows them to any browser (ADR-0014).</summary>
     public ThemePreference Theme { get; private set; }
 
+    /// <summary>Whether the person receives the daily summary of e-mails (ADR-0037); the e-mails sent now are never off.</summary>
+    public bool ReceivesDailySummary { get; private set; } = true;
+
     public static User Create(string name, string email, DateTime now) =>
         new(name.Trim(), email.Trim(), SystemRole.User, isActive: true, createdAt: now, lastSignInAt: now);
 
@@ -80,6 +83,8 @@ public sealed class User : Entity
 
         Theme = theme;
     }
+
+    public void ChooseDailySummary(bool receives) => ReceivesDailySummary = receives;
 
     /// <summary>Blocks the access from the next request on; name, e-mail, role and history stay (ADR-0008).</summary>
     public void Deactivate() => IsActive = false;

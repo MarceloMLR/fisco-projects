@@ -195,6 +195,30 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketDeadlineAlert", b =>
+                {
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Deadline")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateOnly>("DueOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.HasKey("TicketId", "Deadline");
+
+                    b.ToTable("ticket_deadline_alerts", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketDeadlineSetting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -634,6 +658,15 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MessageId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketDeadlineAlert", b =>
+                {
                     b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
                         .WithMany()
                         .HasForeignKey("TicketId")

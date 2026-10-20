@@ -8,5 +8,129 @@
     "greeting": "Olá, {{name}}.",
     "body": "Este é um e-mail de teste. Se você o recebeu, o envio de e-mails do {{installation}} está funcionando.",
     "action": "Abrir as Configurações gerais"
+  },
+  "notices": {
+    "greeting": "Olá, {{name}}.",
+    "ticketOpened": {
+      "subject": "Chamado novo #{{number}}: {{title}}",
+      "body": "{{actor}} abriu o chamado #{{number}}, \"{{title}}\", no projeto {{project}}, para o time {{team}}.",
+      "action": "Abrir o chamado"
+    },
+    "ticketMessage": {
+      "subject": "Nova mensagem no chamado #{{number}}: {{title}}",
+      "body": "{{actor}} mandou uma mensagem no chamado #{{number}}, \"{{title}}\", do projeto {{project}}.",
+      "action": "Ler a mensagem"
+    },
+    "ticketMentioned": {
+      "subject": "{{actor}} mencionou você no chamado #{{number}}",
+      "body": "{{actor}} mencionou você numa mensagem do chamado #{{number}}, \"{{title}}\", do projeto {{project}}.",
+      "action": "Ler a mensagem"
+    },
+    "ticketInformationRequested": {
+      "subject": "Informações pedidas no chamado #{{number}}: {{title}}",
+      "body": "{{actor}} pediu informações a você no chamado #{{number}}, \"{{title}}\", do projeto {{project}}. O prazo de resolução fica parado até a sua resposta.",
+      "action": "Responder"
+    },
+    "ticketResolved": {
+      "subject": "Chamado #{{number}} resolvido: {{title}}",
+      "body": "{{actor}} resolveu o chamado #{{number}}, \"{{title}}\", do projeto {{project}}. Confira e confirme a solução, ou reabra o chamado.",
+      "action": "Abrir o chamado"
+    },
+    "ticketAssigned": {
+      "subject": "Chamado #{{number}} atribuído a você: {{title}}",
+      "body": "{{actor}} passou para você o chamado #{{number}}, \"{{title}}\", do projeto {{project}}.",
+      "action": "Abrir o chamado"
+    },
+    "ticketRequesterChanged": {
+      "subject": "Você é o solicitante do chamado #{{number}}: {{title}}",
+      "body": "{{actor}} colocou você como solicitante do chamado #{{number}}, \"{{title}}\", do projeto {{project}}.",
+      "action": "Abrir o chamado"
+    },
+    "ticketTransferred": {
+      "subject": "Chamado #{{number}} transferido para o time {{team}}: {{title}}",
+      "body": "{{actor}} transferiu o chamado #{{number}}, \"{{title}}\", do projeto {{project}}, para o time {{team}}. Ele está sem responsável.",
+      "action": "Abrir o chamado"
+    },
+    "ticketDueSoon": {
+      "subject": "Prazo vencendo no chamado #{{number}}: {{title}}",
+      "body": "O prazo de {{deadline}} do chamado #{{number}}, \"{{title}}\", do projeto {{project}}, vence em {{dueOn}}.",
+      "action": "Abrir o chamado"
+    },
+    "ticketOverdue": {
+      "subject": "Prazo vencido no chamado #{{number}}: {{title}}",
+      "body": "O prazo de {{deadline}} do chamado #{{number}}, \"{{title}}\", do projeto {{project}}, venceu em {{dueOn}}.",
+      "action": "Abrir o chamado"
+    }
+  },
+  "summary": {
+    "subject": "Seu resumo do dia no {{installation}}",
+    "greeting": "Olá, {{name}}.",
+    "intro": "Estas são as novidades desde o último resumo.",
+    "action": "Abrir o {{installation}}",
+    "note": "Para não receber mais o resumo, desligue em Meu perfil. Os avisos que pedem a sua ação continuam chegando na hora.",
+    "sections": {
+      "tasks": "Tarefas que vencem nos próximos dias",
+      "tickets": "Chamados que você acompanha",
+      "schedule": "Datas alteradas no cronograma",
+      "projects": "Projetos"
+    },
+    "lines": {
+      "task": "{{item}}, do projeto {{project}}, termina em {{end}}",
+      "ticketStatusChanged": "#{{number}} {{title}}: {{from}} → {{to}}, por {{actor}}",
+      "ticketStatusChangedBySystem": "#{{number}} {{title}}: {{from}} → {{to}}, fechado automaticamente",
+      "ticketClosedWithProject": "#{{number}} {{title}}: fechado com o cancelamento do projeto {{project}}, por {{actor}}",
+      "vendorTicketUpdated": "#{{number}} {{title}}: {{actor}} registrou que o chamado no {{vendor}} está {{vendorStatus}}",
+      "scheduleDatesChanged": "{{item}}, do projeto {{project}}: agora de {{start}} a {{end}}",
+      "projectMemberAdded": "{{actor}} incluiu você no projeto {{project}} como {{role}}",
+      "projectRoleChanged": "{{actor}} mudou o seu papel no projeto {{project}} para {{role}}",
+      "projectStatusChanged": "{{actor}} mudou o status do projeto {{project}} para {{status}}"
+    }
+  },
+  "values": {
+    "team": {
+      "Functional": "Funcional",
+      "Development": "Desenvolvimento"
+    },
+    "deadline": {
+      "FirstResponse": "primeira resposta",
+      "Resolution": "resolução"
+    },
+    "from": {
+      "Open": "Aberto",
+      "Triage": "Em triagem",
+      "InProgress": "Em andamento",
+      "WaitingForRequester": "Aguardando solicitante",
+      "Resolved": "Resolvido",
+      "Closed": "Fechado"
+    },
+    "to": {
+      "Open": "Aberto",
+      "Triage": "Em triagem",
+      "InProgress": "Em andamento",
+      "WaitingForRequester": "Aguardando solicitante",
+      "Resolved": "Resolvido",
+      "Closed": "Fechado"
+    },
+    "vendorStatus": {
+      "Open": "aberto",
+      "InAnalysis": "em análise",
+      "WaitingForUs": "aguardando nosso retorno",
+      "Resolved": "resolvido",
+      "Closed": "fechado"
+    },
+    "role": {
+      "Manager": "Gerente de projeto",
+      "TechLead": "Líder técnico",
+      "Contributor": "Colaborador",
+      "Developer": "Desenvolvedor",
+      "Viewer": "Leitor"
+    },
+    "status": {
+      "Planning": "Planejamento",
+      "InProgress": "Em andamento",
+      "Paused": "Pausado",
+      "Completed": "Concluído",
+      "Cancelled": "Cancelado"
+    }
   }
 }

@@ -1,4 +1,5 @@
 using FiscoProjects.Notifications.Application;
+using FiscoProjects.Notifications.Contracts;
 using FiscoProjects.Notifications.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -10,8 +11,9 @@ using Microsoft.Extensions.Options;
 namespace FiscoProjects.Notifications.Infrastructure;
 
 /// <summary>
-/// Services of the Notifications module: the queue of the e-mails, sent in the background by the implementation the
-/// configuration chooses (ADR-0036).
+/// Services of the Notifications module: the board of the notices of the other modules (ADR-0038), the queue of the
+/// e-mails, sent in the background by the implementation the configuration chooses (ADR-0036), and the daily summary
+/// (ADR-0037).
 /// </summary>
 public static class NotificationsModule
 {
@@ -47,7 +49,13 @@ public static class NotificationsModule
         services.AddScoped<ForgetOldEmails>();
         services.AddScoped<GetEmailStatus>();
         services.AddScoped<SendTestEmail>();
+        services.AddScoped<IDigestStore, DigestStore>();
+        services.AddScoped<INoticeChannel, EmailChannel>();
+        services.AddScoped<DeliverNotices>();
+        services.AddScoped<SendDailySummaries>();
+        services.AddSingleton<INoticeBoard, NoticeBoard>();
         services.AddHostedService<EmailDispatcher>();
+        services.AddHostedService<DailySummaryScheduler>();
         return services;
     }
 }

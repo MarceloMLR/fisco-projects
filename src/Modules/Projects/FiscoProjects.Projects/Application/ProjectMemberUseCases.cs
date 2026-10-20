@@ -109,7 +109,8 @@ internal static class MemberChecks
 /// who never signed in becomes a user first (ADR-0005), only after the permission and the role are checked, so a
 /// refused request creates nobody.
 /// </summary>
-public sealed class AddProjectMember(IProjectStore store, IUserAccess access, IUserProvisioning provisioning, TimeProvider clock)
+public sealed class AddProjectMember(
+    IProjectStore store, IUserAccess access, IUserProvisioning provisioning, TimeProvider clock, ProjectNotices notices)
 {
     public async Task<MemberAdded> ExecuteAsync(
         Guid projectId, NewProjectMember form, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -167,7 +168,8 @@ public sealed class AddProjectMember(IProjectStore store, IUserAccess access, IU
             userId = created;
         }
 
-        return await store.InSerializableTransactionAsync<MemberAdded>(async token =>
+        Project? saved = null;
+        var added = await store.InSerializableTransactionAsync<MemberAdded>(async token =>
         {
             var current = await store.FindAsync(projectId, token);
             if (MemberChecks.Refusal(current, viewer, current: null, form.Role) is { } late)
@@ -182,8 +184,16 @@ public sealed class AddProjectMember(IProjectStore store, IUserAccess access, IU
 
             current.AddMember(userId, form.Role, clock.GetUtcNow().UtcDateTime);
             await store.SaveChangesAsync(token);
+            saved = current;
             return new(MemberOutcome.Done, userId);
         }, cancellationToken);
+        if (added.Outcome == MemberOutcome.Done && saved is not null)
+        {
+            // The person hears about it in the daily summary (ADR-0037).
+            await notices.IncludedAsync(saved, [(userId, form.Role)], viewer.UserId, cancellationToken);
+        }
+
+        return added;
     }
 }
 
@@ -208,7 +218,7 @@ public interface IMemberChangeNotices
 }
 
 public sealed class ChangeProjectMemberRole(
-    IProjectStore store, IScheduleStore schedules, IUserAccess access, IMemberChangeNotices notices)
+    IProjectStore store, IScheduleStore schedules, IUserAccess access, IMemberChangeNotices notices, ProjectNotices projectNotices)
 {
     public async Task<MemberOutcome> ExecuteAsync(
         Guid projectId, Guid userId, ProjectRole role, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -232,6 +242,7 @@ public sealed class ChangeProjectMemberRole(
             return MemberOutcome.Done;
         }
 
+        Project? saved = null;
         var outcome = await store.InSerializableTransactionAsync(async token =>
         {
             var current = await store.FindAsync(projectId, token);
@@ -256,11 +267,14 @@ public sealed class ChangeProjectMemberRole(
             }
 
             await store.SaveChangesAsync(token);
+            saved = current;
             return MemberOutcome.Done;
         }, cancellationToken);
         if (outcome == MemberOutcome.Done)
         {
             await notices.NotifyAsync(projectId, userId, role, viewer.UserId, cancellationToken);
+            // The person hears about the new role in the daily summary (ADR-0037).
+            await projectNotices.RoleChangedAsync(saved!, userId, role, viewer.UserId, cancellationToken);
         }
 
         return outcome;

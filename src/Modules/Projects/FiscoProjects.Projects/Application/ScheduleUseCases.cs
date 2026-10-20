@@ -208,9 +208,24 @@ internal static class ScheduleEditing
     /// A change that whoever <paramref name="mayChange"/> allows makes, looking at the schedule (the owner of a task).
     /// The check runs before the transaction, so a refusal opens none, and again in it, on what is in the database then.
     /// </summary>
+    public static Task<ScheduleResult> RunAsync(
+        IProjectStore projects,
+        IScheduleStore schedules,
+        Guid projectId,
+        ProjectViewer viewer,
+        Func<ProjectPermissions, Schedule, bool>? mayChange,
+        Func<Project, Schedule, ScheduleResult> change,
+        CancellationToken cancellationToken) =>
+        RunAsync(projects, schedules, notices: null, projectId, viewer, mayChange, change, cancellationToken);
+
+    /// <summary>
+    /// A change that may move dates: once it is saved, the owners of the tasks whose dates changed hear about it, also
+    /// when the change pushed them in chain (ADR-0037).
+    /// </summary>
     public static async Task<ScheduleResult> RunAsync(
         IProjectStore projects,
         IScheduleStore schedules,
+        ProjectNotices? notices,
         Guid projectId,
         ProjectViewer viewer,
         Func<ProjectPermissions, Schedule, bool>? mayChange,
@@ -226,7 +241,8 @@ internal static class ScheduleEditing
             return refusal;
         }
 
-        return await projects.InSerializableTransactionAsync(async token =>
+        Moved? moved = null;
+        var outcome = await projects.InSerializableTransactionAsync(async token =>
         {
             var project = await projects.FindAsync(projectId, token);
             var schedule = project is null ? null : await schedules.GetOrAddAsync(projectId, token);
@@ -239,16 +255,20 @@ internal static class ScheduleEditing
             var result = change(project!, schedule);
             if (result.Outcome == ScheduleOutcome.Done)
             {
+                var after = schedule.Snapshot();
                 if (result.Label is { } label && PermissionsOf(project!, viewer).CanEditSchedule)
                 {
-                    await RecordAsync(schedules, schedule, viewer, label, ScheduleDiff.Between(before, schedule.Snapshot()), token);
+                    await RecordAsync(schedules, schedule, viewer, label, ScheduleDiff.Between(before, after), token);
                 }
 
                 await projects.SaveChangesAsync(token);
+                moved = new Moved(project!, before, after);
             }
 
             return result;
         }, cancellationToken);
+        await TellAsync(notices, moved, outcome, viewer, cancellationToken);
+        return outcome;
     }
 
     /// <summary>
@@ -285,14 +305,21 @@ internal static class ScheduleEditing
     /// someone changed after it is blocked and leaves the history of the person.
     /// </summary>
     public static async Task<ScheduleResult> StepAsync(
-        IProjectStore projects, IScheduleStore schedules, Guid projectId, ProjectViewer viewer, bool undo, CancellationToken cancellationToken)
+        IProjectStore projects,
+        IScheduleStore schedules,
+        ProjectNotices notices,
+        Guid projectId,
+        ProjectViewer viewer,
+        bool undo,
+        CancellationToken cancellationToken)
     {
         if (Refusal(await projects.FindAsync(projectId, cancellationToken), viewer, permissions => permissions.CanEditSchedule) is { } refusal)
         {
             return refusal;
         }
 
-        return await projects.InSerializableTransactionAsync(async token =>
+        Moved? moved = null;
+        var outcome = await projects.InSerializableTransactionAsync(async token =>
         {
             var project = await projects.FindAsync(projectId, token);
             if (Refusal(project, viewer, permissions => permissions.CanEditSchedule) is { } late)
@@ -308,6 +335,7 @@ internal static class ScheduleEditing
                 return ScheduleResult.Of(ScheduleOutcome.NothingToUndo);
             }
 
+            var before = schedule.Snapshot();
             var done = undo ? next.UndoIn(schedule) : next.RedoIn(schedule);
             if (!done)
             {
@@ -315,11 +343,24 @@ internal static class ScheduleEditing
             }
 
             await projects.SaveChangesAsync(token);
+            moved = done ? new Moved(project!, before, schedule.Snapshot()) : null;
             return done
                 ? ScheduleResult.Done() with { Label = next.Label }
                 : ScheduleResult.Of(ScheduleOutcome.UndoBlocked) with { Label = next.Label };
         }, cancellationToken);
+        await TellAsync(notices, moved, outcome, viewer, cancellationToken);
+        return outcome;
     }
+
+    /// <summary>Once the change is saved, the owners of the tasks whose dates changed hear about it (ADR-0037).</summary>
+    private static Task TellAsync(
+        ProjectNotices? notices, Moved? moved, ScheduleResult outcome, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        notices is not null && moved is not null && outcome.Outcome == ScheduleOutcome.Done
+            ? notices.DatesChangedAsync(moved.Project, moved.Before, moved.After, viewer.UserId, cancellationToken)
+            : Task.CompletedTask;
+
+    /// <summary>The schedule of a project before and after a change saved.</summary>
+    private sealed record Moved(Project Project, ScheduleSnapshot Before, ScheduleSnapshot After);
 
     private static ProjectPermissions PermissionsOf(Project project, ProjectViewer viewer) =>
         ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
@@ -509,7 +550,8 @@ public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore sched
 /// Changes a task or a milestone and pushes, in chain, the items after it that would start before it ends; an earlier
 /// start pulls nobody (ADR-0019). A task that reaches 100% keeps today as the day it was completed (ADR-0020).
 /// </summary>
-public sealed class ChangeScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+public sealed class ChangeScheduleItem(
+    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock, ProjectNotices notices)
 {
     public async Task<ScheduleResult> ExecuteAsync(
         Guid projectId, Guid itemId, ScheduleItemForm form, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -517,7 +559,7 @@ public sealed class ChangeScheduleItem(IProjectStore projects, IScheduleStore sc
         ArgumentNullException.ThrowIfNull(form);
         var days = await calendar.GetAsync(cancellationToken);
         var today = await clock.TodayAsync(cancellationToken);
-        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
+        return await ScheduleEditing.RunAsync(projects, schedules, notices, projectId, viewer, mayChange: null, (project, schedule) =>
         {
             if (schedule.ItemOf(itemId) is not { } item)
             {
@@ -634,7 +676,7 @@ public sealed record ScheduleItemDates(DateOnly Start, DateOnly? End);
 /// lasts the business days between them, counted by the calendar of the installation. The items after it are pushed.
 /// </summary>
 public sealed class RescheduleScheduleItem(
-    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock, ProjectNotices notices)
 {
     public async Task<ScheduleResult> ExecuteAsync(
         Guid projectId, Guid itemId, ScheduleItemDates dates, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -642,7 +684,7 @@ public sealed class RescheduleScheduleItem(
         ArgumentNullException.ThrowIfNull(dates);
         var days = await calendar.GetAsync(cancellationToken);
         var today = await clock.TodayAsync(cancellationToken);
-        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+        return await ScheduleEditing.RunAsync(projects, schedules, notices, projectId, viewer, mayChange: null, (_, schedule) =>
         {
             if (schedule.ItemOf(itemId) is not { } item)
             {
@@ -674,12 +716,12 @@ public sealed class RescheduleScheduleItem(
 /// Removes a task or milestone and its dependencies; no other item moves (ADR-0019). A task with subtasks goes with
 /// them, and the last subtask of a task leaves its dependencies to it (ADR-0088).
 /// </summary>
-public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar)
+public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, ProjectNotices notices)
 {
     public async Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid itemId, ProjectViewer viewer, CancellationToken cancellationToken)
     {
         var days = await calendar.GetAsync(cancellationToken);
-        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
+        return await ScheduleEditing.RunAsync(projects, schedules, notices, projectId, viewer, mayChange: null, (_, schedule) =>
             schedule.ItemOf(itemId) is { } item && schedule.RemoveItem(itemId, days)
                 ? ScheduleResult.Done().Labeled(
                     item.Kind == ScheduleItemKind.Task ? ScheduleAction.TaskRemoved : ScheduleAction.MilestoneRemoved, item.Name)
@@ -689,17 +731,17 @@ public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore sc
 }
 
 /// <summary>Undoes the last change of the schedule the person made and has not undone (ADR-0021, ADR-0091).</summary>
-public sealed class UndoScheduleChange(IProjectStore projects, IScheduleStore schedules)
+public sealed class UndoScheduleChange(IProjectStore projects, IScheduleStore schedules, ProjectNotices notices)
 {
     public Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken) =>
-        ScheduleEditing.StepAsync(projects, schedules, projectId, viewer, undo: true, cancellationToken);
+        ScheduleEditing.StepAsync(projects, schedules, notices, projectId, viewer, undo: true, cancellationToken);
 }
 
 /// <summary>Redoes the last change of the schedule the person undid (ADR-0071, ADR-0091).</summary>
-public sealed class RedoScheduleChange(IProjectStore projects, IScheduleStore schedules)
+public sealed class RedoScheduleChange(IProjectStore projects, IScheduleStore schedules, ProjectNotices notices)
 {
     public Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken) =>
-        ScheduleEditing.StepAsync(projects, schedules, projectId, viewer, undo: false, cancellationToken);
+        ScheduleEditing.StepAsync(projects, schedules, notices, projectId, viewer, undo: false, cancellationToken);
 }
 
 /// <summary>A file to download: its name, its media type and its content.</summary>

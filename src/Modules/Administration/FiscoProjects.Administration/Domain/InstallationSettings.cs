@@ -6,7 +6,8 @@ namespace FiscoProjects.Administration.Domain;
 
 /// <summary>
 /// The settings of the installation the Administrator changes in General settings (ADR-0003, ADR-0011): the name
-/// shown, the logo, the main color and the time zone. There is one, created with the database.
+/// shown, the logo, the main color, the time zone and the time of the daily summary. There is one, created with the
+/// database.
 /// </summary>
 public sealed partial class InstallationSettings : Entity
 {
@@ -19,6 +20,9 @@ public sealed partial class InstallationSettings : Entity
     public const string DefaultTimeZone = "America/Sao_Paulo";
 
     public const int TimeZoneMaxLength = 64;
+
+    /// <summary>The time of the daily summary of e-mails while nobody changes it (ADR-0037).</summary>
+    public static readonly TimeOnly DefaultDailySummaryAt = new(7, 30);
 
     /// <summary>
     /// Contrast a main color needs with white (ADR-0082): it is the background of the white label of the main button
@@ -37,6 +41,9 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>The IANA id of the time zone the screens show dates and times in (ADR-0013).</summary>
     public string TimeZone { get; private set; } = DefaultTimeZone;
+
+    /// <summary>The time of the daily summary of e-mails, in the time zone of the installation (ADR-0037).</summary>
+    public TimeOnly DailySummaryAt { get; private set; } = DefaultDailySummaryAt;
 
     /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082).</summary>
     public string? MainColor { get; private set; }
@@ -111,6 +118,9 @@ public sealed partial class InstallationSettings : Entity
             ? normalized
             : throw new ArgumentException(
                 $"'{color}' is no #RRGGBB color with a contrast of {MinimumContrastWithWhite}:1 with white.", nameof(color));
+
+    /// <summary>The daily summary at the hour and minute, without seconds.</summary>
+    public void ChangeDailySummaryAt(TimeOnly at) => DailySummaryAt = new TimeOnly(at.Hour, at.Minute);
 
     public void Rename(string name) =>
         Name = ValidName(name) ?? throw new ArgumentException(

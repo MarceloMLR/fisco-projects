@@ -20,7 +20,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
         installation.Should().Be(new Installation("FiscoProjects", null, null));
-        info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo"));
+        info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30)));
     }
 
     [Fact(DisplayName = "Fuso padrão")]
@@ -30,7 +30,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var rules = await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation));
 
-        rules.Should().Be(new GeneralRules("America/Sao_Paulo"));
+        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30)));
     }
 
     [Fact(DisplayName = "Trocar o nome e o fuso")]
@@ -45,7 +45,42 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         settings.Name.Should().Be("Consultoria Fictícia");
         settings.TimeZone.Should().Be("America/Manaus");
         (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
-            .Should().Be(new InstallationInfo("Consultoria Fictícia", "America/Manaus"));
+            .Should().Be(new InstallationInfo("Consultoria Fictícia", "America/Manaus", new TimeOnly(7, 30)));
+    }
+
+    [Fact(DisplayName = "Horário padrão")]
+    public async Task NewInstallation_SendsTheDailySummaryAtHalfPastSeven()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var settings = await SettingsAsync(database);
+
+        settings.DailySummaryAt.Should().Be(new TimeOnly(7, 30));
+    }
+
+    [Fact(DisplayName = "Trocar o horário")]
+    public async Task Update_KeepsTheTimeOfTheDailySummary_WithoutSeconds()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", dailySummaryAt: new TimeOnly(8, 0, 42));
+
+        invalid.Should().BeEmpty();
+        (await SettingsAsync(database)).DailySummaryAt.Should().Be(new TimeOnly(8, 0));
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .DailySummaryAt.Should().Be(new TimeOnly(8, 0));
+    }
+
+    [Fact(DisplayName = "Horário inválido")]
+    public async Task UpdateWithoutTheTime_ChangesNothing()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", null, null), Cancellation));
+
+        invalid.Should().Equal(InstallationField.DailySummaryAt);
+        (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
     }
 
     [Theory(DisplayName = "Nome inválido")]
@@ -184,9 +219,10 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     }
 
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
-        AdministrationDatabase database, string? name, string? timeZone, string? mainColor = null) =>
+        AdministrationDatabase database, string? name, string? timeZone, string? mainColor = null, TimeOnly? dailySummaryAt = null) =>
         database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges(name, timeZone, mainColor), Cancellation));
+            update.ExecuteAsync(
+                new InstallationChanges(name, timeZone, mainColor, dailySummaryAt ?? new TimeOnly(7, 30)), Cancellation));
 
     private static Task<LogoRefusal?> SendAsync(AdministrationDatabase database, string fileName, byte[] content) =>
         database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>

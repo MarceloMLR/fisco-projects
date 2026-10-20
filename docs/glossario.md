@@ -183,8 +183,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 
 | Português | Código | Observação |
 | --- | --- | --- |
-| Aviso, notificação | Notification | |
-| Resumo diário | DailyDigest | |
+| Aviso, notificação | Notice (`INoticeBoard`, `NoticeKind`) | O que um módulo conta que aconteceu; o `Notifications` decide quem recebe e por qual canal (ADR-0038) |
+| Canal de aviso | INoticeChannel (`EmailChannel`) | E-mail agora; sino na Avisos-3, Teams depois |
+| Aviso na hora | `EmailChannel.Immediate` | O que pede ação da pessoa, por e-mail logo (ADR-0037); não se desliga |
+| Resumo diário | DailySummary (`SendDailySummaries`, `DigestItem`) | Um e-mail por dia com o restante e as tarefas que vencem; a pessoa desliga em Meu perfil (`ReceivesDailySummary`) |
+| Horário do resumo diário | InstallationSettings.DailySummaryAt | Padrão 07:30, no fuso da instalação |
+| Alerta de prazo | TicketDeadlineAlert (`AlertTicketDeadlines`) | Prazo de chamado vencendo (hoje ou no próximo dia útil) ou vencido, uma vez por estado |
+| Tarefas que vencem | UpcomingTask (`IUpcomingTasks`) | Tarefas abaixo de 100% com responsável que terminam até o segundo dia útil |
 | Fila de e-mails | OutboxEmail (`notifications.outbox_emails`) | Módulo `Notifications`; todo e-mail entra na fila e sai em segundo plano (ADR-0036) |
 | Na fila, Enviado, Falhou | OutboxEmailStatus: Pending, Sent, Failed | Falhou depois da sexta tentativa |
 | Envio em segundo plano | EmailDispatcher (`DispatchEmails`) | A cada 30 segundos, com a reserva de cada e-mail e as novas tentativas |

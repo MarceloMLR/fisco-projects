@@ -51,6 +51,51 @@ public sealed class TicketDeadlineSetting : Entity
     ];
 }
 
+/// <summary>The two deadlines of a ticket (ADR-0025).</summary>
+public enum TicketDeadline
+{
+    FirstResponse = 1,
+    Resolution = 2,
+}
+
+/// <summary>
+/// The last alert told of a deadline of a ticket (ADR-0037): the state and the day it was due then. Each state is told
+/// once, and a deadline that moved, as with a new priority or after waiting for the requester, starts over.
+/// </summary>
+public sealed class TicketDeadlineAlert
+{
+    private TicketDeadlineAlert()
+    {
+    }
+
+    public TicketDeadlineAlert(Guid ticketId, TicketDeadline deadline, TicketDueState state, DateOnly dueOn)
+    {
+        TicketId = ticketId;
+        Deadline = deadline;
+        State = state;
+        DueOn = dueOn;
+    }
+
+    public Guid TicketId { get; private init; }
+
+    public TicketDeadline Deadline { get; private init; }
+
+    public TicketDueState State { get; private set; }
+
+    public DateOnly DueOn { get; private set; }
+
+    /// <summary>Whether a deadline due soon or overdue is news after the alert told, if any.</summary>
+    public static bool IsNews(TicketDeadlineAlert? told, TicketDueState state, DateOnly dueOn) =>
+        state is TicketDueState.Soon or TicketDueState.Overdue
+        && (told is null || told.DueOn != dueOn || state > told.State);
+
+    public void Told(TicketDueState state, DateOnly dueOn)
+    {
+        State = state;
+        DueOn = dueOn;
+    }
+}
+
 /// <summary>Where a deadline stands today (ADR-0025), for the icon, the color and the text (ADR-0065).</summary>
 public enum TicketDueState
 {
