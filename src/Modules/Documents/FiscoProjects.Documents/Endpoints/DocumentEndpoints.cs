@@ -151,6 +151,7 @@ public static class DocumentEndpoints
         folders.MapPut("/{id:guid}", ChangeDefaultFolderAsync).WithName("ChangeDefaultFolder")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        api.MapLinkEndpoints();
         return api;
     }
 
@@ -404,7 +405,7 @@ public static class DocumentEndpoints
     }
 
     /// <summary>The person of the session, and whether the person is the Administrator, read from the database now.</summary>
-    private static async Task<DocumentViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
+    internal static async Task<DocumentViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
     {
         var userId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("The documents are read in a session.");

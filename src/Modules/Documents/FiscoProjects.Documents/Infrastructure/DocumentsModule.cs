@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FiscoProjects.Documents.Infrastructure;
 
-/// <summary>Services of the Documents module: the folders and the documents of the projects (ADR-0031, ADR-0092).</summary>
+/// <summary>Services of the Documents module: the folders, the documents and the links of the projects (ADR-0031, ADR-0032, ADR-0092).</summary>
 public static class DocumentsModule
 {
     public static IServiceCollection AddDocumentsModule(this IServiceCollection services, IConfiguration configuration)
@@ -20,6 +20,8 @@ public static class DocumentsModule
         services.AddScoped<IFolderStore>(provider => provider.GetRequiredService<DocumentStores>());
         services.AddScoped<IDocumentStore>(provider => provider.GetRequiredService<DocumentStores>());
         services.AddScoped<IAuditReferenceNames, FolderReferenceNames>();
+        services.AddScoped<IAuditReferenceNames, LinkCategoryReferenceNames>();
+        services.AddScoped<ILinkStore, LinkStore>();
         // Up to 25 MB per document by default, as each installation sets (ADR-0031).
         var megabytes = Math.Max(1, configuration.GetValue("Documents:MaxMegabytes", DocumentSettings.DefaultMaxMegabytes));
         services.AddSingleton(new DocumentSettings(megabytes * 1024L * 1024L));
@@ -39,6 +41,14 @@ public static class DocumentsModule
         services.AddScoped<ChangeDocumentStatus>();
         services.AddScoped<LinkDocument>();
         services.AddScoped<RemoveDocument>();
+        // The links of the projects and their categories (ADR-0032).
+        services.AddScoped<ListLinkCategories>();
+        services.AddScoped<AddLinkCategory>();
+        services.AddScoped<ChangeLinkCategory>();
+        services.AddScoped<ListLinks>();
+        services.AddScoped<AddLink>();
+        services.AddScoped<ChangeLink>();
+        services.AddScoped<RemoveLink>();
         return services;
     }
 }

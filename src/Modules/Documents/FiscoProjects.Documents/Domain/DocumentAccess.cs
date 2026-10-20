@@ -41,4 +41,15 @@ public static class DocumentAccess
             _ => new(CanUpload: false, CanApprove: false, CanDelete: false, SeesAcceptanceFolder: false),
         };
     }
+
+    /// <summary>
+    /// Whether the person includes, changes and removes the links of a project the person sees (ADR-0045): everyone but
+    /// the viewer, who only sees them.
+    /// </summary>
+    public static bool MayEditLinks(DocumentViewer viewer, ProjectAccess project)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        ArgumentNullException.ThrowIfNull(project);
+        return viewer.IsAdministrator || project.Role is not (null or ProjectMemberRole.Viewer);
+    }
 }
