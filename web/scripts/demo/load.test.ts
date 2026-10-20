@@ -254,3 +254,29 @@ describe('Conversa na demonstração', () => {
     expect(callsBy(/ POST \/api\/tickets\/3\/messages$/)).toHaveLength(1);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Status na demonstração".
+describe('Status na demonstração', () => {
+  it('Status na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The tech lead resolves the third ticket he answered; the contributor asks for information in the fifth.
+    expect(callsBy(/ POST \/api\/tickets\/\d+\/transitions$/)).toEqual([
+      'rafael POST /api/tickets/3/transitions',
+      'carla POST /api/tickets/5/transitions',
+    ]);
+    expect(bodies.get('/api/tickets/3/transitions')).toEqual([{ action: 'Resolve', body: null }]);
+    const [ask] = (bodies.get('/api/tickets/5/transitions') ?? []) as {
+      action: string;
+      body: string;
+    }[];
+    expect(ask?.action).toBe('AskForInformation');
+    expect(ask?.body).toContain('data de vigência');
+    // Each change after the conversation of its ticket.
+    const fifth = callsBy(/ POST \/api\/tickets\/5\//);
+    expect(fifth).toEqual([
+      'carla POST /api/tickets/5/messages',
+      'carla POST /api/tickets/5/transitions',
+    ]);
+  });
+});

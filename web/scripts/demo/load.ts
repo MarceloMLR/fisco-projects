@@ -350,6 +350,22 @@ async function loadProject(
         `Mensagem no chamado ${ticket.title}`,
       );
     }
+    // Then the status, each action by who may take it (ADR-0024).
+    for (const change of ticket.changes ?? []) {
+      done(
+        await personOf(change.by).api.POST('/api/tickets/{number}/transitions', {
+          params: { path: { number: opened.number } },
+          body: {
+            action: change.action,
+            body:
+              change.text === undefined
+                ? null
+                : JSON.stringify(documentOf({ by: change.by, text: change.text }, personOf)),
+          },
+        }),
+        `Status do chamado ${ticket.title}`,
+      );
+    }
   }
 
   if (project.status !== undefined) {

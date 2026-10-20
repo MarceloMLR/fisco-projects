@@ -11,6 +11,7 @@ type ProjectRole = components['schemas']['ProjectRole'];
 type ProjectStatus = components['schemas']['ProjectStatus'];
 type TicketTeam = components['schemas']['TicketTeam'];
 type TicketPriority = components['schemas']['TicketPriority'];
+type TicketAction = components['schemas']['TicketAction'];
 
 /** The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). */
 export const demoPeople = {
@@ -83,6 +84,13 @@ export interface DemoMessage {
   file?: { name: string; content: string };
 }
 
+/** An action of the flow taken by a person who may take it, with the message when it asks for one (ADR-0024). */
+export interface DemoStatusChange {
+  by: DemoPerson;
+  action: TicketAction;
+  text?: string;
+}
+
 /** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
 export interface DemoTicket {
   title: string;
@@ -91,8 +99,13 @@ export interface DemoTicket {
   /** Who opens it: anyone in the project but a viewer, or the Administrator (ADR-0044). */
   by: DemoPerson;
   description: string;
-  /** The conversation, in order (ADR-0069). */
+  /**
+   * The conversation, in order (ADR-0069): the first message of who serves the team makes the person the assignee and
+   * the ticket Em andamento.
+   */
   messages?: readonly DemoMessage[];
+  /** The actions of the flow taken after the conversation, in order. */
+  changes?: readonly DemoStatusChange[];
 }
 
 export interface DemoProject {
@@ -280,6 +293,7 @@ export const demoProjects: readonly DemoProject[] = [
             text: 'Já vi o filtro do relatório. Corrijo junto com a próxima versão.',
           },
         ],
+        changes: [{ by: 'rafael', action: 'Resolve' }],
       },
       {
         title: 'Liberar ambiente de homologação ao cliente',
@@ -296,6 +310,14 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'rafael',
         description:
           'A tabela de NCM mudou neste mês. Precisamos importar a versão nova antes dos testes.',
+        messages: [{ by: 'carla', text: 'Importo hoje à tarde.' }],
+        changes: [
+          {
+            by: 'carla',
+            action: 'AskForInformation',
+            text: 'Qual a data de vigência da tabela nova? O arquivo da Receita traz duas.',
+          },
+        ],
       },
       {
         title: 'Erro ao importar XML de entrada',
