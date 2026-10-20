@@ -308,7 +308,7 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         var result = await ChangeItemAsync(Marina, a, TaskForm("A", D(10, 5), 6));
 
-        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 2));
+        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 2).Labeled(ScheduleAction.TaskChanged, "A"));
         (await ItemAsync(a)).Predecessors.Should().BeEmpty();
         ((await ItemAsync(b)).Item.Start, (await ItemAsync(c)).Item.Start).Should().Be((D(10, 14), D(10, 16)));
     }
@@ -539,7 +539,7 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         var result = await RescheduleAsync(Marina, task, D(10, 16));
 
-        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 1));
+        result.Should().BeEquivalentTo(ScheduleResult.Done(pushed: 1).Labeled(ScheduleAction.DatesChanged, "Parametrizar ICMS"));
         (await ItemAsync(task)).Item.Should().Match<ScheduleItem>(item =>
             item.Start == D(10, 16) && item.End == D(10, 20) && item.Duration == 3 && item.Progress == 40);
         (await ItemAsync(next)).Item.Start.Should().Be(D(10, 21));
