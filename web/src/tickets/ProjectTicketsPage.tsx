@@ -130,7 +130,7 @@ export function ProjectTicketsPage() {
             type="search"
             size="sm"
             icon={SearchOutlined}
-            width={desktop ? 240 : undefined}
+            width={desktop ? 264 : undefined}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);

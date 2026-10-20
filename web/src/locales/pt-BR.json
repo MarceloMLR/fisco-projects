@@ -1268,12 +1268,6 @@
       "All": "Todos os abertos"
     },
     "viewLabel": "Visão",
-    "subtitles": {
-      "AssignedToMe": "Os chamados de que você é responsável",
-      "UnassignedInMyTeams": "Os chamados sem responsável dos times que você atende ou distribui",
-      "OpenedByMe": "Os chamados que você abriu",
-      "All": "Todos os chamados dos meus projetos"
-    },
     "segments": {
       "all": "Todos",
       "open": "Em aberto",
