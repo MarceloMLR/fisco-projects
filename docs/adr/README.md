@@ -154,3 +154,5 @@ Regras:
 | [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
 | [0090](0090-verificacao-do-pr-em-paralelo.md) | Verificação do PR em partes paralelas, com só as specs quando o commit muda apenas a documentação | aceita | 2026-10-19 |
 | [0091](0091-desfazer-e-refazer-pelo-servidor.md) | Desfazer e refazer no cronograma pelo servidor, com o histórico de cada pessoa | aceita | 2026-10-19 |
+| [0092](0092-modulo-documents-com-links-e-termos.md) | Documentos, links e termos de aceite no módulo `Documents`, e os acessos no `Credentials` | aceita | 2026-10-20 |
+| [0093](0093-nova-versao-de-aprovado-e-pasta-de-termos.md) | Nova versão de um documento aprovado volta para revisão, e a pasta de termos recebe só os termos assinados | aceita | 2026-10-20 |
