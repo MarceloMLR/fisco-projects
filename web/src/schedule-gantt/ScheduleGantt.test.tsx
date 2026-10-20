@@ -147,9 +147,10 @@ describe('Caminho crítico pela tela', () => {
 
     redraw({ showBaseline: false, showCritical: false });
 
+    // Drawn again by Syncfusion, which takes longer when the tests run together.
     await vi.waitFor(() => {
       expect(container.querySelectorAll('.e-baseline-bar')).toHaveLength(0);
       expect(container.querySelectorAll('.fp-gantt-critical')).toHaveLength(0);
-    });
+    }, 5000);
   });
 });

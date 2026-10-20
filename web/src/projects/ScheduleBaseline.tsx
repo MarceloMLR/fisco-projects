@@ -1,11 +1,13 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
+import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
+import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
@@ -17,9 +19,10 @@ import { Checkbox, CheckboxMark } from '../components/Checkbox';
 import { Dialog } from '../components/Dialog';
 import { DueDate } from '../components/DueDate';
 import { formatDayText } from '../format/dates';
-import type { ScheduleDisplay } from './schedule';
+import { type ScheduleDisplay, stepText } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
+import { useScheduleStep } from './useScheduleStep';
 
 const displayOptions = ['baseline', 'critical'] as const;
 
@@ -112,10 +115,11 @@ export function DisplayChecks({
 }
 
 /**
- * The "⋮" of the tab, for who edits the schedule (ADR-0071): "Salvar linha de base" saves it right away, and, with one
- * saved, "Atualizar linha de base" asks first, saying the day of the baseline it replaces (ADR-0021).
+ * The "⋮" of the tab, for who edits the schedule (ADR-0071): "Refazer" the last change undone (ADR-0091), and
+ * "Salvar linha de base", which saves it right away, or, with one saved, "Atualizar linha de base", which asks first,
+ * saying the day of the baseline it replaces (ADR-0021).
  */
-export function BaselineMenu({
+export function ScheduleMoreMenu({
   project,
   schedule,
   notify,
@@ -130,6 +134,7 @@ export function BaselineMenu({
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const saved = schedule.baseline;
+  const steps = useScheduleStep(project, notify);
 
   const save = async () => {
     setPending(true);
@@ -187,6 +192,22 @@ export function BaselineMenu({
           list: { 'aria-label': t('projects.baseline.more') },
         }}
       >
+        <MenuItem
+          disabled={schedule.redo === null || steps.pending}
+          title={
+            schedule.redo === null
+              ? undefined
+              : t('projects.steps.redoWhat', { what: stepText(schedule.redo, t) })
+          }
+          onClick={() => {
+            setAnchor(undefined);
+            void steps.run('redo', schedule);
+          }}
+        >
+          <RedoOutlined aria-hidden />
+          {t('projects.steps.redo')}
+        </MenuItem>
+        <Divider sx={{ margin: 'var(--space-1) 0' }} />
         <MenuItem
           disabled={schedule.start === null || pending}
           onClick={() => {

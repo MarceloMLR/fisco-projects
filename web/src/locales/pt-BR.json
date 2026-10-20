@@ -1072,6 +1072,35 @@
           "Milestone": "Incluído depois da linha de base"
         }
       }
+    },
+    "steps": {
+      "undo": "Desfazer",
+      "undoWhat": "Desfazer {{what}}",
+      "nothingToUndo": "Nada a desfazer",
+      "redo": "Refazer",
+      "redoWhat": "Refazer {{what}}",
+      "what": {
+        "PhaseAdded": "a inclusão da fase {{name}}",
+        "PhaseRenamed": "a troca do nome da fase para {{name}}",
+        "PhaseRemoved": "a exclusão da fase {{name}}",
+        "TaskAdded": "a inclusão da tarefa {{name}}",
+        "MilestoneAdded": "a inclusão do marco {{name}}",
+        "TaskChanged": "a alteração da tarefa {{name}}",
+        "MilestoneChanged": "a alteração do marco {{name}}",
+        "TaskRemoved": "a exclusão da tarefa {{name}}",
+        "MilestoneRemoved": "a exclusão do marco {{name}}",
+        "DatesChanged": "a mudança das datas de {{name}}",
+        "ProgressUpdated": "a atualização do progresso de {{name}}",
+        "MilestoneReached": "a marcação do marco {{name}} como atingido",
+        "MilestoneUnmarked": "a desmarcação do marco {{name}}"
+      },
+      "messages": {
+        "undone": "{{what}} foi desfeita.",
+        "redone": "{{what}} foi refeita.",
+        "undoBlocked": "Não dá para desfazer {{what}}: alguém mudou esses itens depois.",
+        "redoBlocked": "Não dá para refazer {{what}}: alguém mudou esses itens depois.",
+        "nothing": "Não há mais o que desfazer nem refazer."
+      }
     }
   }
 }
