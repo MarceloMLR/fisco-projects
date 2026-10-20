@@ -48,6 +48,7 @@ public static class ProjectsModule
         services.AddScoped<SaveScheduleBaseline>();
         services.AddScoped<UndoScheduleChange>();
         services.AddScoped<RedoScheduleChange>();
+        services.AddScoped<ExportScheduleToMsProject>();
         services.AddScoped<RescheduleScheduleItem>();
         services.AddScoped<ListClients>();
         services.AddScoped<AddClient>();

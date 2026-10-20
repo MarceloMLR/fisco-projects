@@ -183,6 +183,13 @@ describe('Linha de base pela tela', () => {
 
     // The summary shows the baseline to everyone in the project; only who edits saves it.
     expect(screen.getByText(text.baseline.summary.replace('{{day}}', '09/10/2026'))).toBeVisible();
-    expect(screen.queryByRole('button', { name: text.baseline.more })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: text.baseline.more }));
+    const menu = await screen.findByRole('menu', { name: text.baseline.more });
+    expect(
+      within(menu).queryByRole('menuitem', { name: text.baseline.save }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menu).queryByRole('menuitem', { name: text.baseline.update }),
+    ).not.toBeInTheDocument();
   });
 });

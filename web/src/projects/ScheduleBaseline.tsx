@@ -1,5 +1,7 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
+import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
@@ -19,6 +21,8 @@ import { Checkbox, CheckboxMark } from '../components/Checkbox';
 import { Dialog } from '../components/Dialog';
 import { DueDate } from '../components/DueDate';
 import { formatDayText } from '../format/dates';
+import type { GanttScale } from '../schedule-gantt/ganttLayout';
+import { ExportPdfDialog } from './ExportPdfDialog';
 import { type ScheduleDisplay, stepText } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
@@ -115,17 +119,24 @@ export function DisplayChecks({
 }
 
 /**
- * The "⋮" of the tab, for who edits the schedule (ADR-0071): "Refazer" the last change undone (ADR-0091), and
- * "Salvar linha de base", which saves it right away, or, with one saved, "Atualizar linha de base", which asks first,
- * saying the day of the baseline it replaces (ADR-0021).
+ * The "⋮" of the tab (ADR-0071). For who edits the schedule: "Refazer" the last change undone (ADR-0091), and "Salvar
+ * linha de base", which saves it right away, or, with one saved, "Atualizar linha de base", which asks first, saying
+ * the day of the baseline it replaces (ADR-0021). For everyone who sees it: "Exportar em PDF", by the print page, and
+ * "Exportar para o MS Project (XML)", a file the server makes (ADR-0021, ADR-0043).
  */
 export function ScheduleMoreMenu({
   project,
   schedule,
+  canEdit,
+  scale,
+  display,
   notify,
 }: {
   project: Project;
   schedule: Schedule;
+  canEdit: boolean;
+  scale: GanttScale;
+  display: ScheduleDisplay;
   notify: (message: string) => void;
 }) {
   const { t } = useTranslation();
@@ -133,6 +144,7 @@ export function ScheduleMoreMenu({
   const [anchor, setAnchor] = useState<HTMLElement>();
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const saved = schedule.baseline;
   const steps = useScheduleStep(project, notify);
 
@@ -192,35 +204,62 @@ export function ScheduleMoreMenu({
           list: { 'aria-label': t('projects.baseline.more') },
         }}
       >
-        <MenuItem
-          disabled={schedule.redo === null || steps.pending}
-          title={
-            schedule.redo === null
-              ? undefined
-              : t('projects.steps.redoWhat', { what: stepText(schedule.redo, t) })
-          }
-          onClick={() => {
-            setAnchor(undefined);
-            void steps.run('redo', schedule);
-          }}
-        >
-          <RedoOutlined aria-hidden />
-          {t('projects.steps.redo')}
-        </MenuItem>
-        <Divider sx={{ margin: 'var(--space-1) 0' }} />
-        <MenuItem
-          disabled={schedule.start === null || pending}
-          onClick={() => {
-            setAnchor(undefined);
-            if (saved === null) {
-              void save();
-            } else {
-              setConfirming(true);
+        {canEdit && [
+          <MenuItem
+            key="redo"
+            disabled={schedule.redo === null || steps.pending}
+            title={
+              schedule.redo === null
+                ? undefined
+                : t('projects.steps.redoWhat', { what: stepText(schedule.redo, t) })
             }
+            onClick={() => {
+              setAnchor(undefined);
+              void steps.run('redo', schedule);
+            }}
+          >
+            <RedoOutlined aria-hidden />
+            {t('projects.steps.redo')}
+          </MenuItem>,
+          <Divider key="steps" sx={{ margin: 'var(--space-1) 0' }} />,
+          <MenuItem
+            key="baseline"
+            disabled={schedule.start === null || pending}
+            onClick={() => {
+              setAnchor(undefined);
+              if (saved === null) {
+                void save();
+              } else {
+                setConfirming(true);
+              }
+            }}
+          >
+            <SaveOutlined aria-hidden />
+            {t(saved === null ? 'projects.baseline.save' : 'projects.baseline.update')}
+          </MenuItem>,
+          <Divider key="baseline" sx={{ margin: 'var(--space-1) 0' }} />,
+        ]}
+        <MenuItem
+          disabled={schedule.start === null}
+          onClick={() => {
+            setAnchor(undefined);
+            setExporting(true);
           }}
         >
-          <SaveOutlined aria-hidden />
-          {t(saved === null ? 'projects.baseline.save' : 'projects.baseline.update')}
+          <PictureAsPdfOutlined aria-hidden />
+          {t('projects.export.pdf')}
+        </MenuItem>
+        <MenuItem
+          component="a"
+          href={`/api/projects/${project.id}/schedule/ms-project`}
+          download
+          disabled={schedule.start === null}
+          onClick={() => {
+            setAnchor(undefined);
+          }}
+        >
+          <FileDownloadOutlined aria-hidden />
+          {t('projects.export.xml')}
         </MenuItem>
       </Menu>
       <Dialog
@@ -255,6 +294,18 @@ export function ScheduleMoreMenu({
         {saved !== null &&
           t('projects.baseline.confirm.text', { day: formatDayText(saved.savedOn) })}
       </Dialog>
+      {exporting && schedule.start !== null && schedule.end !== null && (
+        <ExportPdfDialog
+          projectId={project.id}
+          start={schedule.start}
+          end={schedule.end}
+          scale={scale}
+          display={display}
+          onClose={() => {
+            setExporting(false);
+          }}
+        />
+      )}
     </>
   );
 }

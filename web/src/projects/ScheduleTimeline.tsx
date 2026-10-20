@@ -242,7 +242,7 @@ type LegendKey = 'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'mileston
  * What each color of the timeline is (Gantt.Legend of the design system), with the critical path and the baseline
  * while they are shown.
  */
-function TimelineLegend({ critical, baseline }: { critical: boolean; baseline: boolean }) {
+export function TimelineLegend({ critical, baseline }: { critical: boolean; baseline: boolean }) {
   const { t } = useTranslation();
   const swatch = (background: string, more: object = {}): object => ({
     display: 'inline-block',

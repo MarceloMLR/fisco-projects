@@ -396,8 +396,15 @@ export function ProjectSchedulePage() {
       <BaselineSummary schedule={schedule} />
     </Box>
   );
-  const moreMenu = canEdit && (
-    <ScheduleMoreMenu project={project} schedule={schedule} notify={notify} />
+  const moreMenu = (
+    <ScheduleMoreMenu
+      project={project}
+      schedule={schedule}
+      canEdit={canEdit}
+      scale={scale}
+      display={display}
+      notify={notify}
+    />
   );
   const undoButton = canEdit && (
     <UndoButton project={project} schedule={schedule} notify={notify} />
