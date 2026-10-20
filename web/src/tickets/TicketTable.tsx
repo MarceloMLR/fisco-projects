@@ -107,7 +107,7 @@ export function TicketTable({
     [rows],
   );
 
-  // The vendor of the ticket at the end of the second line of the title (ADR-0028).
+  // The vendor of the ticket in the second line of the title (ADR-0028).
   const atVendor = useCallback(
     (row: TicketRow) =>
       row.vendor === null ? '' : ` · ${t('tickets.atVendor', { vendor: row.vendor.vendor })}`,
@@ -171,7 +171,8 @@ export function TicketTable({
         flex: 2,
         minWidth: 232,
         renderCell: ({ row }) => {
-          const team = t(`tickets.teams.${row.team}`);
+          // The vendor right after the team, so a long name of the requester does not hide it (ADR-0028).
+          const team = t(`tickets.teams.${row.team}`) + atVendor(row);
           return (
             <Box sx={{ minWidth: 0 }}>
               <Box
@@ -197,7 +198,7 @@ export function TicketTable({
                     team,
                     name: row.requester.name,
                     day: formatDayMonth(row.openedAt),
-                  }) + atVendor(row)
+                  })
                 ) : (
                   <>
                     <Box
@@ -206,7 +207,7 @@ export function TicketTable({
                     >
                       {row.project.code}
                     </Box>
-                    {` · ${t('tickets.row', { team, name: row.requester.name })}${atVendor(row)}`}
+                    {` · ${t('tickets.row', { team, name: row.requester.name })}`}
                   </>
                 )}
               </Box>

@@ -43,6 +43,8 @@ export function Select<Value extends string>({
   return (
     <MuiSelect<Value>
       value={value}
+      // An empty value shows its option, such as "Escolha o fornecedor" or "Manter como está".
+      displayEmpty
       disabled={disabled}
       onChange={(event) => {
         onChange(event.target.value as Value);

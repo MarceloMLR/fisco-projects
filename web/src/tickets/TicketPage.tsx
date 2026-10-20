@@ -531,6 +531,8 @@ export function TicketPage() {
         flexDirection: 'column',
         gridTemplateColumns: 'minmax(0, 1fr) 340px',
         overflow: desktop ? 'hidden' : 'auto',
+        // On the phone the page scrolls: the conversation and the panel keep their heights, one under the other.
+        ...(desktop ? {} : { '& > *': { flexShrink: 0 } }),
       }}
     >
       {conversation}
