@@ -12,6 +12,9 @@ export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['q
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the list of tickets, as the contract has them. */
 export type TicketsParams = NonNullable<operations['ListTickets']['parameters']['query']>;
+/** Filters of the list of credentials, as the contract has them. */
+export type CredentialsParams = NonNullable<operations['ListCredentials']['parameters']['query']>;
+
 /** Filters of the list of links, as the contract has them. */
 export type LinksParams = NonNullable<operations['ListLinks']['parameters']['query']>;
 
@@ -63,6 +66,7 @@ export const queryKeys = {
   defaultFolders: ['default-folders'],
   links: ['links'],
   linkCategories: ['link-categories'],
+  credentials: ['credentials'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -431,5 +435,22 @@ export function linkCategoriesQuery() {
   return queryOptions({
     queryKey: [...queryKeys.linkCategories, 'all'] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/link-categories', { signal })),
+  });
+}
+
+/**
+ * The credentials of a project without the passwords, with the search and the environment; the environments and the
+ * total come without them. A password is asked for apart and never kept here (ADR-0034).
+ */
+export function credentialsQuery(projectId: string, params: CredentialsParams = {}) {
+  return queryOptions({
+    queryKey: [...queryKeys.credentials, projectId, params] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/credentials', {
+          params: { path: { projectId }, query: params },
+          signal,
+        }),
+      ),
   });
 }

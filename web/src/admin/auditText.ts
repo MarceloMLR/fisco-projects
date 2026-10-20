@@ -270,6 +270,20 @@ const projectLinkFields: readonly string[] = [
 const isProjectLinkField = (field: string): field is ProjectLinkField =>
   projectLinkFields.includes(field);
 
+type PortalCredentialField =
+  'ProjectId' | 'Portal' | 'Environment' | 'Url' | 'Username' | 'ProtectedPassword' | 'Notes';
+const portalCredentialFields: readonly string[] = [
+  'ProjectId',
+  'Portal',
+  'Environment',
+  'Url',
+  'Username',
+  'ProtectedPassword',
+  'Notes',
+] satisfies PortalCredentialField[];
+const isPortalCredentialField = (field: string): field is PortalCredentialField =>
+  portalCredentialFields.includes(field);
+
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
 /** A record of a phase, a task or milestone, or a dependency of a schedule. */
@@ -476,6 +490,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'ProjectLink' && isProjectLinkField(field)) {
     return t(`audit.fields.ProjectLink.${field}`);
   }
+  if (entry.itemType === 'PortalCredential' && isPortalCredentialField(field)) {
+    return t(`audit.fields.PortalCredential.${field}`);
+  }
   return field;
 }
 
@@ -572,6 +589,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'ProjectLink') {
     return t(
       `audit.actions.ProjectLink.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // A credential of a project, included, changed and removed (ADR-0034); the password only as changed.
+  if (entry.itemType === 'PortalCredential') {
+    return t(
+      `audit.actions.PortalCredential.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
   }
   if (isSchedule(entry)) {
@@ -755,8 +778,11 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'LinkCategory' && changeOf(entry, 'IsActive') !== undefined) {
     return label;
   }
-  // A link included or removed says the project.
-  if (entry.itemType === 'ProjectLink' && entry.action !== 'Updated') {
+  // A link or a credential included or removed says the project.
+  if (
+    (entry.itemType === 'ProjectLink' || entry.itemType === 'PortalCredential') &&
+    entry.action !== 'Updated'
+  ) {
     return join(label, projectOfMember(entry));
   }
   // A document sent or removed says the folder and the project.
@@ -787,6 +813,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   const change = entry.changes.find((candidate) => !isContext(entry, candidate));
   if (change === undefined) {
     return label;
+  }
+  // The password of a credential says only that it changed (ADR-0033).
+  if (entry.itemType === 'PortalCredential' && change.field === 'ProtectedPassword') {
+    return join(label, t('audit.passwordChanged'));
   }
   const field = fieldLabel(entry, change.field, t).toLowerCase();
   return change.secret
@@ -872,6 +902,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'ProjectLink') {
     return [
       { label: t('audit.details.item.ProjectLink'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'PortalCredential') {
+    return [
+      { label: t('audit.details.item.PortalCredential'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

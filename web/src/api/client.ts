@@ -66,6 +66,8 @@ export type LinkCategory = components['schemas']['LinkCategoryResponse'];
 export type LinkList = components['schemas']['LinkListResponse'];
 export type ProjectLink = components['schemas']['LinkResponse'];
 export type LinkCategoryCount = components['schemas']['LinkCategoryCountResponse'];
+export type Credential = components['schemas']['CredentialResponse'];
+export type CredentialList = components['schemas']['CredentialListResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
@@ -143,6 +145,7 @@ export const auditItemTypes = [
   'Document',
   'LinkCategory',
   'ProjectLink',
+  'PortalCredential',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -235,6 +238,11 @@ export const documentProblems = {
   acceptanceFolderReadOnly: 'urn:fiscoprojects:problem:acceptance-folder-read-only',
   documentChanged: 'urn:fiscoprojects:problem:document-changed',
   folderNameInUse: 'urn:fiscoprojects:problem:document-folder-name-in-use',
+} as const;
+
+/** Problem types of the credentials (CredentialProblems in the Credentials module). */
+export const credentialProblems = {
+  projectClosed: 'urn:fiscoprojects:problem:project-closed',
 } as const;
 
 /** Problem types of the links (LinkProblems in the Documents module). */

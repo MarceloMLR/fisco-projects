@@ -7,7 +7,12 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
-import { documentFoldersQuery, linksQuery, ticketCountsQuery } from '../api/queries';
+import {
+  credentialsQuery,
+  documentFoldersQuery,
+  linksQuery,
+  ticketCountsQuery,
+} from '../api/queries';
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
 import { theme } from '../theme/theme';
@@ -92,6 +97,8 @@ export function ProjectHeader({
   const documents = useQuery(documentFoldersQuery(project.id)).data?.total;
   // The count of the tab Links: all the links of the project.
   const links = useQuery(linksQuery(project.id)).data?.total;
+  // The count of the tab Acessos: all the credentials of the project.
+  const credentials = useQuery(credentialsQuery(project.id)).data?.total;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -321,6 +328,22 @@ export function ProjectHeader({
           {links !== undefined && (
             <Box component="span" sx={countSx}>
               {links}
+            </Box>
+          )}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/credentials`}
+          role="tab"
+          id="project-tab-credentials"
+          aria-selected={tab === 'credentials'}
+          aria-controls={tab === 'credentials' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectCredentials.title')}
+          {credentials !== undefined && (
+            <Box component="span" sx={countSx}>
+              {credentials}
             </Box>
           )}
         </Box>
