@@ -93,7 +93,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Concluída em 20/10/2026 ([#39](https://github.com/MarceloMLR/fisco-projects/pull/39)) |
 | Chamados-5 | `trocas-e-transferencias` | Troca de responsável e solicitante, em lote, transferência entre times, pendências de quem sai | 0027, 0042 | Concluída em 20/10/2026 ([#40](https://github.com/MarceloMLR/fisco-projects/pull/40)) |
 | Chamados-6 | `chamados-em-fornecedores`* | Cadastro de fornecedores e registros no chamado | 0028 | Concluída em 20/10/2026 ([#41](https://github.com/MarceloMLR/fisco-projects/pull/41)) |
-| Chamados-7 | `encerramento-do-projeto` | Concluir só com chamados fechados; cancelar fecha os abertos | 0043 | Planejada |
+| Chamados-7 | `encerramento-do-projeto` | Concluir só com chamados fechados; cancelar fecha os abertos | 0043 | Em andamento |
 
 ## 6. Avisos
 
