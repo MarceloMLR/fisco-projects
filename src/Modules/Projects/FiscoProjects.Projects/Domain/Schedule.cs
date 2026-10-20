@@ -430,6 +430,137 @@ public sealed class Schedule : Entity
     /// <summary>The dates, the progress and the delays of the schedule on a day (<see cref="ScheduleFigures"/>).</summary>
     public ScheduleFigures Figures(DateOnly today) => ScheduleFigures.Of(_phases, _items, today);
 
+    /// <summary>The phases, items and dependencies as they are now, to compare with after a change (ADR-0091).</summary>
+    public ScheduleSnapshot Snapshot() =>
+        new([.. _phases.Select(phase => phase.State())],
+            [.. _items.Select(item => item.State())],
+            [.. _dependencies.Select(dependency => dependency.State())]);
+
+    /// <summary>
+    /// Applies a change of the schedule, to undo or redo it (ADR-0091): every record it touches must be as the change
+    /// found it, and the schedule it leaves must hold together (each item in a phase, each subtask in a task, each
+    /// dependency between items, without cycles). Then each record becomes as the change left it, with the same ids.
+    /// False, changing nothing, otherwise: someone changed those records after it.
+    /// </summary>
+    public bool ApplyChange(ScheduleDiff diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+        var phases = _phases.ToDictionary(phase => phase.Id, phase => phase.State());
+        var items = _items.ToDictionary(item => item.Id, item => item.State());
+        var dependencies = _dependencies.ToDictionary(dependency => dependency.Id, dependency => dependency.State());
+        if (!Found(diff.Phases, phases, phase => phase.Id)
+            || !Found(diff.Items, items, item => item.Id)
+            || !Found(diff.Dependencies, dependencies, dependency => dependency.Id))
+        {
+            return false;
+        }
+
+        Leave(diff.Phases, phases, phase => phase.Id);
+        Leave(diff.Items, items, item => item.Id);
+        Leave(diff.Dependencies, dependencies, dependency => dependency.Id);
+        if (!HoldsTogether(phases, items, dependencies))
+        {
+            return false;
+        }
+
+        foreach (var change in diff.Dependencies)
+        {
+            var id = (change.Before ?? change.After)!.Id;
+            _dependencies.RemoveAll(dependency => dependency.Id == id);
+            if (change.After is { } state)
+            {
+                _dependencies.Add(new ScheduleDependency(Id, state));
+            }
+        }
+
+        foreach (var change in diff.Items)
+        {
+            var id = (change.Before ?? change.After)!.Id;
+            if (change.After is not { } state)
+            {
+                _items.RemoveAll(item => item.Id == id);
+            }
+            else if (ItemOf(id) is { } item)
+            {
+                item.Restore(state);
+            }
+            else
+            {
+                _items.Add(new ScheduleItem(Id, state));
+            }
+        }
+
+        foreach (var change in diff.Phases)
+        {
+            var id = (change.Before ?? change.After)!.Id;
+            if (change.After is not { } state)
+            {
+                _phases.RemoveAll(phase => phase.Id == id);
+            }
+            else if (PhaseOf(id) is { } phase)
+            {
+                phase.Rename(state.Name);
+            }
+            else
+            {
+                _phases.Add(new SchedulePhase(Id, state));
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether each record a change touches is now as the change found it.</summary>
+    private static bool Found<T>(IEnumerable<RecordChange<T>> changes, Dictionary<Guid, T> now, Func<T, Guid> idOf)
+        where T : class =>
+        changes.All(change => Equals(now.GetValueOrDefault(idOf((change.Before ?? change.After)!)), change.Before));
+
+    private static void Leave<T>(IEnumerable<RecordChange<T>> changes, Dictionary<Guid, T> now, Func<T, Guid> idOf)
+        where T : class
+    {
+        foreach (var change in changes)
+        {
+            var id = idOf((change.Before ?? change.After)!);
+            if (change.After is { } state)
+            {
+                now[id] = state;
+            }
+            else
+            {
+                now.Remove(id);
+            }
+        }
+    }
+
+    private static bool HoldsTogether(
+        Dictionary<Guid, PhaseState> phases, Dictionary<Guid, ItemState> items, Dictionary<Guid, DependencyState> dependencies)
+    {
+        if (items.Values.Any(item => !phases.ContainsKey(item.PhaseId) || (item.ParentId is { } parent && !items.ContainsKey(parent)))
+            || dependencies.Values.Any(dependency => !items.ContainsKey(dependency.PredecessorId) || !items.ContainsKey(dependency.SuccessorId)))
+        {
+            return false;
+        }
+
+        // No cycles: every item can be put after the ones before it.
+        var waiting = items.Keys.ToDictionary(id => id, id => dependencies.Values.Count(dependency => dependency.SuccessorId == id));
+        var successors = dependencies.Values.ToLookup(dependency => dependency.PredecessorId, dependency => dependency.SuccessorId);
+        var ready = new Queue<Guid>(waiting.Where(pair => pair.Value == 0).Select(pair => pair.Key));
+        var placed = 0;
+        while (ready.TryDequeue(out var id))
+        {
+            placed++;
+            foreach (var successor in successors[id])
+            {
+                if (--waiting[successor] == 0)
+                {
+                    ready.Enqueue(successor);
+                }
+            }
+        }
+
+        return placed == items.Count;
+    }
+
     private static string? Trimmed(string? text, int maxLength)
     {
         var trimmed = text?.Trim();
@@ -674,6 +805,15 @@ public sealed class SchedulePhase : Entity
         Position = position;
     }
 
+    /// <summary>A phase back as it was, with its id (ADR-0091).</summary>
+    internal SchedulePhase(Guid projectId, PhaseState state)
+    {
+        Id = state.Id;
+        ProjectId = projectId;
+        Name = state.Name;
+        Position = state.Position;
+    }
+
     public Guid ProjectId { get; private init; }
 
     public string Name { get; private set; }
@@ -682,6 +822,8 @@ public sealed class SchedulePhase : Entity
     public int Position { get; private init; }
 
     internal void Rename(string name) => Name = name;
+
+    internal PhaseState State() => new(Id, Name, Position);
 }
 
 /// <summary>
@@ -702,6 +844,16 @@ public sealed class ScheduleItem : Entity
         ProjectId = projectId;
         Kind = kind;
         Name = string.Empty;
+    }
+
+    /// <summary>A task or milestone back as it was, with its id (ADR-0091).</summary>
+    internal ScheduleItem(Guid projectId, ItemState state)
+    {
+        Id = state.Id;
+        ProjectId = projectId;
+        Kind = state.Kind;
+        Name = string.Empty;
+        Restore(state);
     }
 
     public Guid ProjectId { get; private init; }
@@ -802,6 +954,24 @@ public sealed class ScheduleItem : Entity
     internal void Unassign() => OwnerId = null;
 
     internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
+
+    internal ItemState State() =>
+        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn);
+
+    /// <summary>Every field as it was; the kind never changes.</summary>
+    internal void Restore(ItemState state)
+    {
+        PhaseId = state.PhaseId;
+        ParentId = state.ParentId;
+        Name = state.Name;
+        Start = state.Start;
+        Duration = state.Duration;
+        End = state.End;
+        Progress = state.Progress;
+        OwnerId = state.OwnerId;
+        CompletedOn = state.CompletedOn;
+        ReachedOn = state.ReachedOn;
+    }
 }
 
 /// <summary>An item that starts only after another ends (ADR-0019).</summary>
@@ -817,6 +987,15 @@ public sealed class ScheduleDependency : Entity
         PredecessorId = predecessorId;
         SuccessorId = successorId;
     }
+
+    /// <summary>A dependency back as it was, with its id (ADR-0091).</summary>
+    internal ScheduleDependency(Guid projectId, DependencyState state)
+        : this(projectId, state.PredecessorId, state.SuccessorId)
+    {
+        Id = state.Id;
+    }
+
+    internal DependencyState State() => new(Id, PredecessorId, SuccessorId);
 
     public Guid ProjectId { get; private init; }
 
