@@ -2,7 +2,7 @@
 
 ### Requirement: Quem vê e quem edita o cronograma
 
-Todas as pessoas do projeto e o administrador MUST ver o cronograma. Só o administrador e o gerente do projeto MUST poder editá-lo: fases, tarefas, marcos, dependências, responsáveis, o marco atingido, a linha de base e desfazer e refazer as próprias mudanças. O líder técnico, o colaborador, o desenvolvedor e o leitor MUST receber 403 ao editar; o progresso das tarefas tem regra própria. Para quem não está no projeto e não é administrador, o cronograma não existe (404); sem sessão, 401 (ADR-0043).
+Todas as pessoas do projeto e o administrador MUST ver o cronograma. Só o administrador e o gerente MUST poder editá-lo: fases, tarefas, marcos, dependências, responsáveis, marco atingido, linha de base, desfazer e refazer. O líder técnico, o colaborador, o desenvolvedor e o leitor MUST receber 403 ao editar; o progresso tem regra própria. Para quem não está no projeto e não é administrador, o cronograma não existe (404); sem sessão, 401 (ADR-0043).
 
 #### Scenario: Gerente edita o cronograma
 - **WHEN** o gerente do projeto inclui uma fase, uma tarefa e um marco, altera a tarefa e exclui o marco
