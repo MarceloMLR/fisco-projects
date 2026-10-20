@@ -450,3 +450,31 @@ describe('Links na demonstração', () => {
     expect(lastLink).toBeLessThan(status);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Acessos na demonstração".
+describe('Acessos na demonstração', () => {
+  it('Acessos na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each credential included by a person of the project who keeps credentials, never the viewer (ADR-0045).
+    const main = demoProjects.find((project) => project.code === 'ERP-FIN');
+    const credentials = main?.credentials ?? [];
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/credentials$/)).toHaveLength(credentials.length);
+    expect(people(/ POST \/api\/projects\/[^/]+\/credentials$/)).toEqual([
+      'carla',
+      'diego',
+      'marina',
+      'rafael',
+    ]);
+    expect(new Set(credentials.map((credential) => credential.environment))).toEqual(
+      new Set(['Produção', 'Homologação', 'Fornecedores']),
+    );
+    // Fictitious passwords made when it runs, each one different.
+    const sent = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/credentials'))
+      .flatMap(([, saved]) => saved) as { password: string }[];
+    expect(sent.every((credential) => credential.password.startsWith('Demo-'))).toBe(true);
+    expect(new Set(sent.map((credential) => credential.password)).size).toBe(sent.length);
+    expect(JSON.stringify(demoProjects)).not.toContain('password');
+  });
+});

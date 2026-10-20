@@ -9,6 +9,7 @@ import {
   documentsPage,
 } from './demoDocuments';
 import { demoLinkCategories, demoLinks, linksList } from './demoLinks';
+import { credentialsList, demoCredentials } from './demoCredentials';
 import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
@@ -1474,6 +1475,10 @@ export const handlers = [
     HttpResponse.json(demoLinkCategories().filter((category) => category.isActive)),
   ),
   http.get('/api/admin/link-categories', () => HttpResponse.json(demoLinkCategories())),
+  // The credentials of a project, without the passwords (ADR-0034).
+  http.get('/api/projects/:id/credentials', ({ request }) =>
+    HttpResponse.json(credentialsList(demoCredentials(), new URL(request.url))),
+  ),
   http.get('/api/tickets', ({ request }) =>
     HttpResponse.json(ticketsPage(demoTickets(), new URL(request.url))),
   ),

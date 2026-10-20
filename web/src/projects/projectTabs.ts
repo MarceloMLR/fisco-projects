@@ -5,6 +5,7 @@ export const projectTabs = [
   'tickets',
   'documents',
   'links',
+  'credentials',
   'members',
 ] as const;
 

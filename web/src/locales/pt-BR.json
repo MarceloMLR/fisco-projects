@@ -93,6 +93,9 @@
     },
     "linkCategories": {
       "title": "Categorias de links"
+    },
+    "projectCredentials": {
+      "title": "Acessos"
     }
   },
   "signIn": {
@@ -252,7 +255,8 @@
       "DefaultFolder": "Pastas padrão",
       "Document": "Documentos",
       "LinkCategory": "Categorias de links",
-      "ProjectLink": "Links"
+      "ProjectLink": "Links",
+      "PortalCredential": "Acessos"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -387,6 +391,11 @@
         "Created": "Incluiu um link",
         "Updated": "Alterou um link",
         "Deleted": "Excluiu um link"
+      },
+      "PortalCredential": {
+        "Created": "Incluiu um acesso",
+        "Updated": "Alterou um acesso",
+        "Deleted": "Excluiu um acesso"
       }
     },
     "providers": {
@@ -427,7 +436,8 @@
         "DefaultFolder": "Pasta",
         "Document": "Documento",
         "LinkCategory": "Categoria",
-        "ProjectLink": "Link"
+        "ProjectLink": "Link",
+        "PortalCredential": "Acesso"
       },
       "secret": "Alterado",
       "none": "—",
@@ -563,10 +573,20 @@
         "Title": "Título",
         "Url": "Endereço",
         "Description": "Para que serve"
+      },
+      "PortalCredential": {
+        "ProjectId": "Projeto",
+        "Portal": "Portal",
+        "Environment": "Ambiente",
+        "Url": "Endereço",
+        "Username": "Usuário",
+        "ProtectedPassword": "Senha",
+        "Notes": "Observação"
       }
     },
     "dependsOn": "depende de {{name}}",
-    "vendorTicket": "{{code}} no {{vendor}}"
+    "vendorTicket": "{{code}} no {{vendor}}",
+    "passwordChanged": "senha alterada"
   },
   "settings": {
     "brand": "Marca",
@@ -2229,6 +2249,82 @@
       "deactivated": "Categoria {{name}} inativada.",
       "reactivated": "Categoria {{name}} reativada.",
       "failed": "Não foi possível salvar a categoria. Tente de novo."
+    }
+  },
+  "credentials": {
+    "table": "Acessos",
+    "search": "Buscar por portal ou usuário",
+    "environment": "Ambiente",
+    "all": "Todos",
+    "newCredential": "Novo acesso",
+    "mask": "••••••••••",
+    "columns": {
+      "portal": "Portal",
+      "url": "Endereço",
+      "username": "Usuário",
+      "password": "Senha",
+      "notes": "Observação",
+      "actions": "Ações"
+    },
+    "total_zero": "Nenhum acesso",
+    "total_one": "{{count}} acesso",
+    "total_other": "{{count}} acessos",
+    "empty": "Nenhum acesso no projeto. Inclua os portais que o time usa, com o usuário e a senha.",
+    "emptyReadOnly": "Nenhum acesso no projeto.",
+    "emptySearch": "Nenhum acesso com esse portal ou usuário.",
+    "loadFailed": "Não foi possível carregar os acessos. Tente de novo.",
+    "show": "Mostrar senha de {{portal}}",
+    "hide": "Esconder senha de {{portal}}",
+    "copyPassword": "Copiar senha de {{portal}}",
+    "copyUsername": "Copiar usuário de {{portal}}",
+    "passwordCopied": "Senha copiada.",
+    "usernameCopied": "Usuário copiado.",
+    "menu": {
+      "button": "Ações do acesso {{portal}}",
+      "edit": "Editar",
+      "remove": "Excluir"
+    },
+    "dialog": {
+      "newTitle": "Novo acesso",
+      "editTitle": "Editar acesso",
+      "portal": "Portal",
+      "environment": "Ambiente",
+      "environmentHelp": "Por exemplo Produção ou Homologação.",
+      "url": "Endereço (opcional)",
+      "urlHelp": "Comece com https:// ou http://.",
+      "username": "Usuário",
+      "password": "Senha",
+      "passwordKeep": "Deixe em branco para manter a senha atual.",
+      "showPassword": "Mostrar senha",
+      "notes": "Observação",
+      "notesHelp": "Opcional, até 500 caracteres.",
+      "add": "Incluir",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "remove": {
+      "title": "Excluir acesso",
+      "text": "O acesso {{portal}} de {{environment}} sai da aba Acessos do projeto, com a senha.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "portalRequired": "Informe o portal, com até 120 caracteres.",
+      "environmentRequired": "Informe o ambiente, com até 60 caracteres.",
+      "urlInvalid": "Use um endereço que comece com https:// ou http://, com até 2.000 caracteres.",
+      "usernameRequired": "Informe o usuário, com até 200 caracteres.",
+      "passwordRequired": "Informe a senha.",
+      "passwordTooLong": "Use até 500 caracteres.",
+      "notesTooLong": "Use até 500 caracteres."
+    },
+    "messages": {
+      "added": "Acesso {{portal}} incluído.",
+      "saved": "Acesso {{portal}} salvo.",
+      "removed": "Acesso {{portal}} excluído.",
+      "closed": "O projeto está encerrado e não aceita mudanças.",
+      "failed": "Não foi possível salvar o acesso. Tente de novo.",
+      "passwordFailed": "Não foi possível buscar a senha. Tente de novo.",
+      "copyFailed": "Não foi possível copiar."
     }
   }
 }

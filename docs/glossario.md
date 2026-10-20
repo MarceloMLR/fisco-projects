@@ -186,7 +186,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Cadastrar links | `DocumentAccess.MayEditLinks` | Todos do projeto, menos o leitor (ADR-0045) |
 | Endereço da web | WebAddress | No `SharedKernel`: http ou https, até um tamanho, usado por links e fornecedores |
 | Busca sem acento | SearchText | No `SharedKernel`: busca numa lista em memória sem caixa e sem acento |
-| Acesso (login e senha de um portal) | PortalCredential | Módulo `Credentials` |
+| Acessos (módulo) | Credentials | Acessos aos portais, com as senhas cifradas (ADR-0092) |
+| Acesso (login e senha de um portal) | PortalCredential | Portal, ambiente, endereço, usuário, senha e observação (ADR-0034) |
+| Ambiente do acesso | `Environment` | Texto, como Produção; os do projeto viram sugestão |
+| Senha cifrada | `ProtectedPassword`, IPasswordProtector | Data Protection só dos acessos, com as chaves no banco (ADR-0033) |
+| Mostrar e copiar a senha | RevealPassword | Só quando pedida, sem guardar no navegador e sem registro de quem pediu |
+| Certificado das chaves | `Credentials:KeyCertificate` | Opcional; cifra o conjunto de chaves |
 | Termo de aceite | AcceptanceRequest | Pedido de aceite de um marco, respondido com PDF assinado (ADR-0035) |
 | Termo assinado | SignedAcceptance | |
 

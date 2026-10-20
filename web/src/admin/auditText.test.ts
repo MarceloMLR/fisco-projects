@@ -1237,4 +1237,32 @@ describe('Mudanças do cronograma na auditoria', () => {
       changes: [{ field: 'Situação', before: 'Ativa', after: 'Inativa' }],
     });
   });
+
+  it('Troca de senha do acesso na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'PortalCredential',
+        itemLabel: 'ERP',
+        changes: [
+          {
+            field: 'ProjectId',
+            before: 'Implantação do ERP financeiro',
+            after: 'Implantação do ERP financeiro',
+            secret: false,
+            reference: 'Project',
+          },
+          { field: 'ProtectedPassword', before: null, after: null, secret: true, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.title).toBe('Alterou um acesso');
+    expect(changed.summary).toBe('ERP · senha alterada');
+    expect(changed.properties).toEqual([
+      { label: 'Acesso', value: 'ERP' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+  });
 });

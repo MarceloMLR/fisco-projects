@@ -17,6 +17,9 @@
     <Project Path="src/Modules/Calendar/FiscoProjects.Calendar.Contracts/FiscoProjects.Calendar.Contracts.csproj" />
     <Project Path="src/Modules/Calendar/FiscoProjects.Calendar/FiscoProjects.Calendar.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Credentials/">
+    <Project Path="src/Modules/Credentials/FiscoProjects.Credentials/FiscoProjects.Credentials.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Documents/">
     <Project Path="src/Modules/Documents/FiscoProjects.Documents.Contracts/FiscoProjects.Documents.Contracts.csproj" />
     <Project Path="src/Modules/Documents/FiscoProjects.Documents/FiscoProjects.Documents.csproj" />
@@ -47,6 +50,7 @@
     <Project Path="tests/FiscoProjects.Architecture.Tests/FiscoProjects.Architecture.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Audit.Tests/FiscoProjects.Audit.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Calendar.Tests/FiscoProjects.Calendar.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.Credentials.Tests/FiscoProjects.Credentials.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Documents.Tests/FiscoProjects.Documents.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Files.Tests/FiscoProjects.Files.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Notifications.Tests/FiscoProjects.Notifications.Tests.csproj" />

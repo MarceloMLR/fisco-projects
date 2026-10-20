@@ -454,7 +454,7 @@ describe('Abas do projeto', () => {
       'true',
     );
     // Chamados with all the tickets of the project, any status (canvas ProjetoChamados), Documentos with the
-    // documents not obsolete and Links with all the links (canvas ProjetoCabecalho).
+    // documents not obsolete, Links with all the links and Acessos with all the credentials (canvas ProjetoCabecalho).
     await waitFor(() => {
       expect(
         within(screen.getByRole('tablist', { name: ptBR.projects.header.tabs }))
@@ -466,6 +466,7 @@ describe('Abas do projeto', () => {
         'Chamados4',
         'Documentos4',
         'Links5',
+        'Acessos4',
         'Membros5',
       ]);
     });

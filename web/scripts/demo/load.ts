@@ -198,8 +198,12 @@ export async function loadDemo(
     0,
   );
   const links = demoProjects.reduce((total, project) => total + (project.links?.length ?? 0), 0);
+  const credentials = demoProjects.reduce(
+    (total, project) => total + (project.credentials?.length ?? 0),
+    0,
+  );
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos e ${String(links)} links.`,
+    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos, ${String(links)} links e ${String(credentials)} acessos.`,
   );
   log(screensLine);
   return { loaded: true, firstDay, projects: demoProjects.length, items };
@@ -450,6 +454,10 @@ async function loadProject(
     await loadLinks(project, id, builder, personOf);
   }
 
+  if ((project.credentials ?? []).length > 0) {
+    await loadCredentials(project, id, personOf);
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {
@@ -576,6 +584,36 @@ async function loadLinks(
         },
       }),
       `Link ${link.title}`,
+    );
+  }
+}
+
+/** A fictitious password, different each time the command runs (ADR-0002): never a password of the plan. */
+export function demoPassword(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return `Demo-${Buffer.from(bytes).toString('base64url')}`;
+}
+
+/** Includes the credentials of the project, each by its person, with a fictitious password (ADR-0033, ADR-0034). */
+async function loadCredentials(
+  project: DemoProject,
+  projectId: string,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+): Promise<void> {
+  for (const credential of project.credentials ?? []) {
+    must(
+      await personOf(credential.by).api.POST('/api/projects/{projectId}/credentials', {
+        params: { path: { projectId } },
+        body: {
+          portal: credential.portal,
+          environment: credential.environment,
+          url: credential.url ?? null,
+          username: credential.username,
+          password: demoPassword(),
+          notes: credential.notes ?? null,
+        },
+      }),
+      `Acesso ${credential.portal} de ${credential.environment}`,
     );
   }
 }

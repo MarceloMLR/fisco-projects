@@ -163,6 +163,19 @@ export interface DemoLink {
   by: DemoPerson;
 }
 
+/**
+ * A credential of a portal of the project, included by a person who keeps credentials (ADR-0034, ADR-0045); its
+ * password is made by the command when it runs, fictitious and different each time, never written here.
+ */
+export interface DemoCredential {
+  portal: string;
+  environment: string;
+  url?: string;
+  username: string;
+  notes?: string;
+  by: DemoPerson;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -182,6 +195,8 @@ export interface DemoProject {
   documents?: readonly DemoDocument[];
   /** The links included once the schedule is built, before the project gets its status. */
   links?: readonly DemoLink[];
+  /** The credentials included once the schedule is built, before the project gets its status. */
+  credentials?: readonly DemoCredential[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -521,6 +536,48 @@ export const demoProjects: readonly DemoProject[] = [
         category: 'Repositórios',
         description: 'Layouts de arquivo trocados com o emissor.',
         by: 'diego',
+      },
+    ],
+    credentials: [
+      {
+        portal: 'ERP',
+        environment: 'Produção',
+        url: 'https://erp.alfadistribuidora.example',
+        username: 'consultoria.leitura',
+        notes: 'Somente leitura.',
+        by: 'rafael',
+      },
+      {
+        portal: 'SEFAZ',
+        environment: 'Produção',
+        url: 'https://nfe.sefaz.example',
+        username: '12.345.678/0001-90',
+        notes: 'Certificado A1 no cofre.',
+        by: 'marina',
+      },
+      {
+        portal: 'ERP',
+        environment: 'Homologação',
+        url: 'https://hml-erp.alfadistribuidora.example',
+        username: 'consultoria.fiscal',
+        notes: 'Perfil de administrador do módulo fiscal.',
+        by: 'carla',
+      },
+      {
+        portal: 'ERP · banco de dados',
+        environment: 'Homologação',
+        url: 'https://hml-db.alfadistribuidora.example',
+        username: 'migracao_app',
+        notes: 'Usado pelos scripts de carga.',
+        by: 'diego',
+      },
+      {
+        portal: 'Portal de suporte',
+        environment: 'Fornecedores',
+        url: 'https://suporte.emissor-exemplo.example',
+        username: 'marina.costa',
+        notes: 'Registro de chamados no fornecedor.',
+        by: 'marina',
       },
     ],
   },
