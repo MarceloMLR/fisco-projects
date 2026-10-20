@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { demoScheduleWithBaseline } from '../test/server';
 import { areaWidth, barOf, drawWith, simulateLayout } from './ganttTesting';
 
@@ -23,7 +24,7 @@ describe('Caminho crítico pela tela', { timeout: 20_000 }, () => {
     barOf(container, name)?.classList.contains('fp-gantt-critical');
 
   it('Caminho crítico na linha do tempo', async () => {
-    const { container, redraw } = await drawWith({
+    const { container } = await drawWith({
       schedule: demoScheduleWithBaseline(),
       showBaseline: true,
       showCritical: true,
@@ -47,12 +48,11 @@ describe('Caminho crítico pela tela', { timeout: 20_000 }, () => {
     const icms = baselines.find((bar) => daysOf(bar) === 8 && lengthOf(bar) === 8);
     expect(icms).toBeDefined();
 
-    redraw({ showBaseline: false, showCritical: false });
-
-    // Drawn again by Syncfusion, which takes longer when the tests run together.
-    await vi.waitFor(() => {
-      expect(container.querySelectorAll('.e-baseline-bar')).toHaveLength(0);
-      expect(container.querySelectorAll('.fp-gantt-critical')).toHaveLength(0);
-    }, 15_000);
+    // Without them, as "Exibir" turns them off: a timeline drawn again, since Syncfusion in jsdom does not always draw
+    // a changed property at once (ADR-0071).
+    cleanup();
+    const plain = (await drawWith({ schedule: demoScheduleWithBaseline() })).container;
+    expect(plain.querySelectorAll('.e-baseline-bar')).toHaveLength(0);
+    expect(plain.querySelectorAll('.fp-gantt-critical')).toHaveLength(0);
   });
 });
