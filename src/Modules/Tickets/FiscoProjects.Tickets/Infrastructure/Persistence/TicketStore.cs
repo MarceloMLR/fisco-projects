@@ -26,7 +26,17 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
 
     public void Add(Ticket ticket) => db.Tickets.Add(ticket);
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new TicketChangedException(exception);
+        }
+    }
 
     public async Task<TicketRows> ListAsync(TicketQuery query, TicketScope scope, CancellationToken cancellationToken)
     {
@@ -152,6 +162,9 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
         TicketFlow.From(await db.TicketTransitions.AsNoTracking().ToListAsync(cancellationToken));
 
     public void AddEvent(TicketEvent ticketEvent) => db.TicketEvents.Add(ticketEvent);
+
+    public async Task<IReadOnlyList<TicketDeadlineSetting>> DeadlinesAsync(CancellationToken cancellationToken) =>
+        [.. (await db.TicketDeadlines.ToListAsync(cancellationToken)).OrderBy(setting => setting.Priority)];
 
     public async Task<IReadOnlyList<TicketEvent>> EventsAsync(Guid ticketId, CancellationToken cancellationToken) =>
         await db.TicketEvents.AsNoTracking()

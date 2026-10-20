@@ -9,12 +9,15 @@ export function ProgressBar({
   value,
   label,
   width,
+  valueText,
 }: {
   /** From 0 to 100. */
   value: number;
   /** Accessible name, such as "Progresso da tarefa". */
   label: string;
   width?: number | string;
+  /** The text beside the bar in place of the percentage, such as "1 de 2 dias úteis". */
+  valueText?: string;
 }) {
   const shown = Math.max(0, Math.min(100, Math.round(value)));
   return (
@@ -55,6 +58,7 @@ export function ProgressBar({
         aria-hidden
         sx={{
           minWidth: 36,
+          flex: 'none',
           textAlign: 'right',
           fontSize: 12,
           lineHeight: '16px',
@@ -63,7 +67,7 @@ export function ProgressBar({
           fontVariantNumeric: 'tabular-nums',
         }}
       >
-        {`${String(shown)}%`}
+        {valueText ?? `${String(shown)}%`}
       </Box>
     </Box>
   );

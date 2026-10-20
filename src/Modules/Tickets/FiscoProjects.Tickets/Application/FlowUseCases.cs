@@ -1,5 +1,3 @@
-using FiscoProjects.Administration.Contracts;
-using FiscoProjects.Calendar.Contracts;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Tickets.Domain;
 
@@ -34,7 +32,8 @@ public sealed class GetTicketFlow(ITicketStore store)
 /// Takes an action of the flow in a ticket (ADR-0024, ADR-0044): only who may take it, from the status the ticket is
 /// in; the action that needs a message gets it as a message of the conversation.
 /// </summary>
-public sealed class ChangeTicketStatus(IProjectAccess projects, ITicketStore store, TimeProvider clock)
+public sealed class ChangeTicketStatus(
+    IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TicketAnswers answers, TimeProvider clock)
 {
     public async Task<StatusChangeOutcome> ExecuteAsync(
         int number, TicketAction action, string? body, TicketViewer viewer, CancellationToken cancellationToken)
@@ -76,12 +75,22 @@ public sealed class ChangeTicketStatus(IProjectAccess projects, ITicketStore sto
         var now = clock.GetUtcNow().UtcDateTime;
         if (text is not null)
         {
+            // The message of the action is an answer like any other (ADR-0068).
             store.AddMessage(new TicketMessage(ticket.Id, viewer.UserId, text, now));
+            await answers.ClaimAsync(ticket, project, viewer, now, cancellationToken);
         }
 
-        ticket.Apply(transition, now);
-        store.AddEvent(TicketEvent.StatusChanged(ticket.Id, viewer.UserId, transition, now));
-        await store.SaveChangesAsync(cancellationToken);
+        await deadlines.TakeAsync(ticket, transition, viewer.UserId, now, cancellationToken);
+        try
+        {
+            await store.SaveChangesAsync(cancellationToken);
+        }
+        catch (TicketChangedException)
+        {
+            // Someone changed the ticket meanwhile: the person sees it as it is now and decides again.
+            return StatusChangeOutcome.NotAllowedNow;
+        }
+
         return StatusChangeOutcome.Done;
     }
 }
@@ -91,7 +100,7 @@ public sealed class ChangeTicketStatus(IProjectAccess projects, ITicketStore sto
 /// calendar of the installation and on its day.
 /// </summary>
 public sealed class CloseResolvedTickets(
-    ITicketStore store, IWorkCalendar calendar, IInstallationSettings installation, TicketAutoCloseSettings settings, TimeProvider clock)
+    ITicketStore store, TicketDeadlines deadlines, TicketAutoCloseSettings settings, TimeProvider clock)
 {
     /// <summary>How many tickets were closed.</summary>
     public async Task<int> ExecuteAsync(CancellationToken cancellationToken)
@@ -108,18 +117,15 @@ public sealed class CloseResolvedTickets(
             return 0;
         }
 
-        var zone = await ZoneAsync(cancellationToken);
-        var days = await calendar.GetAsync(cancellationToken);
+        var day = await deadlines.TodayAsync(cancellationToken);
         var now = clock.GetUtcNow().UtcDateTime;
-        var today = DayOf(now, zone);
         var closed = 0;
         foreach (var ticket in resolved.Where(ticket => ticket.ResolvedAt is not null))
         {
-            var due = days.AddBusinessDays(DayOf(ticket.ResolvedAt!.Value, zone), settings.BusinessDays);
-            if (today >= due)
+            var due = day.Days.AddBusinessDays(day.DayOf(ticket.ResolvedAt!.Value), settings.BusinessDays);
+            if (day.Today >= due)
             {
-                ticket.Apply(close, now);
-                store.AddEvent(TicketEvent.StatusChanged(ticket.Id, null, close, now));
+                await deadlines.TakeAsync(ticket, close, null, now, cancellationToken);
                 closed++;
             }
         }
@@ -132,12 +138,4 @@ public sealed class CloseResolvedTickets(
         return closed;
     }
 
-    private async Task<TimeZoneInfo> ZoneAsync(CancellationToken cancellationToken)
-    {
-        var info = await installation.GetAsync(cancellationToken);
-        return TimeZoneInfo.TryFindSystemTimeZoneById(info.TimeZone, out var zone) ? zone : TimeZoneInfo.Utc;
-    }
-
-    private static DateOnly DayOf(DateTime utc, TimeZoneInfo zone) =>
-        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zone));
 }

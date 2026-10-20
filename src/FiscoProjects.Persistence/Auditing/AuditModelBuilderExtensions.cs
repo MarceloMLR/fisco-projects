@@ -29,9 +29,12 @@ public static class AuditModelBuilderExtensions
     public static PropertyBuilder<TProperty> IsAuditSecret<TProperty>(this PropertyBuilder<TProperty> property) =>
         property.HasAnnotation(Secret, true);
 
-    /// <summary>The field that identifies the item on the Audit screen, such as the person name.</summary>
-    public static EntityTypeBuilder<TEntity> HasAuditLabel<TEntity>(
-        this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, string?>> property)
+    /// <summary>
+    /// The field that identifies the item on the Audit screen, such as the person name, or the priority of the deadlines
+    /// of the tickets, by its name.
+    /// </summary>
+    public static EntityTypeBuilder<TEntity> HasAuditLabel<TEntity, TProperty>(
+        this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, TProperty>> property)
         where TEntity : class =>
         entity.HasAnnotation(Label, PropertyName(property));
 

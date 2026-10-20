@@ -41,6 +41,36 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         ticket.Property(t => t.ResolvedAt).ExcludeFromAudit();
         ticket.Property(t => t.ClosedAt).ExcludeFromAudit();
         ticket.HasIndex(t => new { t.Status, t.ResolvedAt });
+        // The deadlines follow the priority and the status, which the audit already has (ADR-0025).
+        ticket.Property(t => t.FirstResponseDays).ExcludeFromAudit();
+        ticket.Property(t => t.ResolutionDays).ExcludeFromAudit();
+        ticket.Property(t => t.FirstResponseDueOn).ExcludeFromAudit();
+        ticket.Property(t => t.ResolutionDueOn).ExcludeFromAudit();
+        ticket.Property(t => t.FirstRespondedAt).ExcludeFromAudit();
+        ticket.Property(t => t.PausedSince).ExcludeFromAudit();
+        ticket.Property(t => t.PausedBusinessDays).ExcludeFromAudit();
+        // Two changes at once never overwrite each other: the second finds the ticket changed (TicketChangedException).
+        ticket.Property<byte[]>("Version").IsRowVersion().ExcludeFromAudit();
+    }
+}
+
+// The deadlines of each priority (ADR-0025): the table starts with the ones of the MVP, and the Administrator changes
+// them, with the change in the audit (ADR-0039, ADR-0046).
+internal sealed class TicketDeadlineSettingConfiguration : IEntityTypeConfiguration<TicketDeadlineSetting>
+{
+    public void Configure(EntityTypeBuilder<TicketDeadlineSetting> setting)
+    {
+        setting.ToTable("ticket_deadlines");
+        setting.Property(d => d.Priority).HasConversion<string>().HasMaxLength(16);
+        setting.HasIndex(d => d.Priority).IsUnique();
+        setting.HasAuditLabel(d => d.Priority);
+        setting.HasData(TicketDeadlineSetting.Defaults.Select((item, index) => new
+        {
+            Id = Guid.Parse($"0199f5a3-0000-7000-8000-{index + 1:D12}"),
+            item.Priority,
+            item.FirstResponseDays,
+            item.ResolutionDays,
+        }));
     }
 }
 
@@ -79,6 +109,8 @@ internal sealed class TicketEventConfiguration : IEntityTypeConfiguration<Ticket
         ticketEvent.Property(e => e.FromStatus).HasConversion<string>().HasMaxLength(24);
         ticketEvent.Property(e => e.ToStatus).HasConversion<string>().HasMaxLength(24);
         ticketEvent.Property(e => e.Action).HasConversion<string>().HasMaxLength(32);
+        ticketEvent.Property(e => e.FromPriority).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.ToPriority).HasConversion<string>().HasMaxLength(16);
         ticketEvent.HasOne<Ticket>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Cascade);
         ticketEvent.HasIndex(e => new { e.TicketId, e.At });
         ticketEvent.ExcludeFromAudit();

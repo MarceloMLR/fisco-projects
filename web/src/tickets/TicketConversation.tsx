@@ -1,5 +1,6 @@
 import AutorenewOutlined from '@mui/icons-material/AutorenewOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
@@ -124,17 +125,36 @@ function EventLine({
   const { t } = useTranslation();
   const { formatTime } = useDates();
   const actor = event.actorId === null ? t('tickets.events.system') : personOf(event.actorId).name;
-  const Icon = event.kind === 'AssigneeSet' ? PersonOutlined : AutorenewOutlined;
+  const Icon =
+    event.kind === 'AssigneeSet'
+      ? PersonOutlined
+      : event.kind === 'PriorityChanged'
+        ? FlagOutlined
+        : AutorenewOutlined;
+  const changed = () => {
+    const text = t('tickets.events.changed', {
+      action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
+      from: event.from === null ? '' : t(`tickets.statuses.${event.from}`),
+      to: event.to === null ? '' : t(`tickets.statuses.${event.to}`),
+    });
+    // The resolution stops while the ticket waits for the requester (ADR-0025).
+    return event.to === 'WaitingForRequester'
+      ? t('tickets.events.pausedNote', { text })
+      : event.from === 'WaitingForRequester'
+        ? t('tickets.events.resumedNote', { text })
+        : text;
+  };
   const what =
     event.kind === 'AssigneeSet'
       ? event.assigneeId === event.actorId || event.assigneeId === null
         ? t('tickets.events.took')
         : t('tickets.events.assigned', { name: personOf(event.assigneeId).name })
-      : t('tickets.events.changed', {
-          action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
-          from: event.from === null ? '' : t(`tickets.statuses.${event.from}`),
-          to: event.to === null ? '' : t(`tickets.statuses.${event.to}`),
-        });
+      : event.kind === 'PriorityChanged'
+        ? t('tickets.events.priority', {
+            from: event.fromPriority === null ? '' : t(`tickets.priorities.${event.fromPriority}`),
+            to: event.toPriority === null ? '' : t(`tickets.priorities.${event.toPriority}`),
+          })
+        : changed();
   return (
     <Box
       component="li"

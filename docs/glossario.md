@@ -129,8 +129,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Status: Aberto, Em triagem, Em andamento, Aguardando solicitante, Resolvido, Fechado | TicketStatus: Open, Triage, InProgress, WaitingForRequester, Resolved, Closed | |
 | Transição do fluxo | TicketTransition | Lida da tabela `ticket_transitions` e conferida pelo `TicketFlow` (ADR-0024) |
 | Prioridade: baixa, média, alta, crítica | Priority: Low, Medium, High, Critical | |
-| Prazo de primeira resposta | FirstResponseDeadline | |
-| Prazo de resolução | ResolutionDeadline | |
+| Prazo de primeira resposta | FirstResponseDays, FirstResponseDueOn | Os dias da prioridade e o dia em que vence, guardados no chamado (ADR-0025) |
+| Prazo de resolução | ResolutionDays, ResolutionDueOn | Sem vencimento enquanto Aguardando solicitante; estendido pelos dias pausados (ADR-0025) |
+| Prazos dos chamados (Administração) | TicketDeadlineSetting | Uma linha por prioridade, na tabela `ticket_deadlines` |
+| Estado do prazo: em dia, vencendo, vencido, pausado, cumprido | TicketDueState: OnTrack, Soon, Overdue, Paused, Met | Vencendo é hoje ou no próximo dia útil |
 | Mensagem | Message | |
 | Menção | Mention | |
 | Anexo | Attachment | |

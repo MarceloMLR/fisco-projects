@@ -40,6 +40,10 @@ export type TicketStatus = components['schemas']['TicketStatus'];
 export type TicketView = components['schemas']['TicketView'];
 export type TicketSituation = components['schemas']['TicketSituation'];
 export type TicketAction = components['schemas']['TicketAction'];
+export type TicketDue = components['schemas']['TicketDueResponse'];
+export type TicketDueState = components['schemas']['TicketDueState'];
+export type TicketDeadlines = components['schemas']['TicketDeadlinesResponse'];
+export type TicketDeadlineSetting = components['schemas']['TicketDeadlineSettingResponse'];
 export type TicketEvent = components['schemas']['TicketEventResponse'];
 export type TicketFlow = components['schemas']['TicketFlowResponse'];
 export type TicketTransition = components['schemas']['TicketTransitionResponse'];
@@ -113,6 +117,7 @@ export const auditItemTypes = [
   'ScheduleBaseline',
   'ProjectTemplate',
   'Ticket',
+  'TicketDeadlineSetting',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -173,6 +178,7 @@ export const ticketProblems = {
   attachmentRefused: 'urn:fiscoprojects:problem:ticket-attachment-refused',
   ticketClosed: 'urn:fiscoprojects:problem:ticket-closed',
   actionNotAllowedNow: 'urn:fiscoprojects:problem:ticket-action-not-allowed-now',
+  ticketChanged: 'urn:fiscoprojects:problem:ticket-changed',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

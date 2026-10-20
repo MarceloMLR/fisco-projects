@@ -53,10 +53,30 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
+                    b.Property<DateTime?>("FirstRespondedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<int>("FirstResponseDays")
+                        .HasColumnType("int")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<DateOnly?>("FirstResponseDueOn")
+                        .HasColumnType("date")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<int>("PausedBusinessDays")
+                        .HasColumnType("int")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<DateTime?>("PausedSince")
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
@@ -73,6 +93,14 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("RequesterId")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.Property<int>("ResolutionDays")
+                        .HasColumnType("int")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<DateOnly?>("ResolutionDueOn")
+                        .HasColumnType("date")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2")
@@ -95,6 +123,12 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.HasKey("Id");
@@ -161,6 +195,62 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketDeadlineSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FirstResponseDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<int>("ResolutionDays")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Priority")
+                        .IsUnique();
+
+                    b.ToTable("ticket_deadlines", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Priority");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0199f5a3-0000-7000-8000-000000000001"),
+                            FirstResponseDays = 1,
+                            Priority = "Low",
+                            ResolutionDays = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a3-0000-7000-8000-000000000002"),
+                            FirstResponseDays = 1,
+                            Priority = "Medium",
+                            ResolutionDays = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a3-0000-7000-8000-000000000003"),
+                            FirstResponseDays = 1,
+                            Priority = "High",
+                            ResolutionDays = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("0199f5a3-0000-7000-8000-000000000004"),
+                            FirstResponseDays = 1,
+                            Priority = "Critical",
+                            ResolutionDays = 1
+                        });
+                });
+
             modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -179,6 +269,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("At")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FromPriority")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
                     b.Property<string>("FromStatus")
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
@@ -190,6 +284,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("TicketId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ToPriority")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.Property<string>("ToStatus")
                         .HasMaxLength(24)

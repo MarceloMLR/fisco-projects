@@ -29,7 +29,8 @@ public sealed record TicketListItemResponse(
     TicketPersonResponse? Assignee,
     DateTime OpenedAt,
     DateTime UpdatedAt,
-    [property: Description("How many messages the ticket has.")] int Interactions);
+    [property: Description("How many messages and events the ticket has.")] int Interactions,
+    [property: Description("The deadline of the resolution today (ADR-0025); null for a ticket opened before the deadlines.")] TicketDueResponse? Resolution);
 
 public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> Items, int Total);
 
@@ -65,11 +66,39 @@ public sealed record TicketMessageResponse(Guid Id, Guid AuthorId, string Body, 
 /// <summary>A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069).</summary>
 public sealed record TicketParticipantResponse(Guid Id, string Name, TicketParticipantRole Role);
 
+/// <summary>Where a deadline stands (ADR-0025): its state, the day it is due and, when overdue, by how many business days.</summary>
+public sealed record TicketDueResponse(TicketDueState State, DateOnly? DueOn, int? DaysLate);
+
+/// <summary>
+/// The deadlines of a ticket today (ADR-0025): the first answer (null once the ticket finished without one) and when it
+/// was given, the resolution, the business days used of the total and the business days it waited for the requester.
+/// </summary>
+public sealed record TicketDeadlinesResponse(
+    TicketDueResponse? FirstResponse,
+    DateTime? FirstRespondedAt,
+    [property: Description("Null for a ticket closed without being resolved, as a cancelled one.")] TicketDueResponse? Resolution,
+    int UsedDays,
+    int TotalDays,
+    int PausedDays);
+
+/// <summary>The deadlines of a priority, in business days (ADR-0025).</summary>
+public sealed record TicketDeadlineSettingResponse(TicketPriority Priority, int FirstResponseDays, int ResolutionDays);
+
+/// <summary>The deadlines of a priority to save, from 1 to 365 business days.</summary>
+public sealed record TicketDeadlineSettingRequest(TicketPriority? Priority, int FirstResponseDays, int ResolutionDays);
+
+/// <summary>The deadlines of the four priorities, all at once.</summary>
+public sealed record TicketDeadlinesRequest(IReadOnlyList<TicketDeadlineSettingRequest>? Deadlines);
+
+/// <summary>A new priority for the ticket.</summary>
+public sealed record TicketPriorityRequest(TicketPriority? Priority);
+
 /// <summary>An action of the flow the person may take now: where it leads and whether it needs a message (ADR-0024).</summary>
 public sealed record TicketActionResponse(TicketAction Action, TicketStatus To, bool RequiresMessage);
 
-/// <summary>What the person may do in the conversation, with the actions of the flow open now.</summary>
-public sealed record TicketConversationPermissionsResponse(bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketActionResponse> Actions);
+/// <summary>What the person may do in the conversation, with the actions of the flow open now and the priority.</summary>
+public sealed record TicketConversationPermissionsResponse(
+    bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketActionResponse> Actions, bool CanChangePriority);
 
 /// <summary>
 /// An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
@@ -83,6 +112,8 @@ public sealed record TicketEventResponse(
     TicketStatus? To,
     TicketAction? Action,
     Guid? AssigneeId,
+    TicketPriority? FromPriority,
+    TicketPriority? ToPriority,
     DateTime At);
 
 /// <summary>An action of the flow taken in a ticket, with the message when the action needs one.</summary>
@@ -134,7 +165,8 @@ public sealed record TicketResponse(
     IReadOnlyList<Guid> Mentionable,
     IReadOnlyList<TicketParticipantResponse> Participants,
     TicketConversationPermissionsResponse Permissions,
-    bool Following);
+    bool Following,
+    TicketDeadlinesResponse? Deadlines);
 
 /// <summary>Problem types of the tickets, so the screen can tell the reason.</summary>
 public static class TicketProblems
@@ -153,6 +185,9 @@ public static class TicketProblems
 
     /// <summary>The ticket is closed and takes no more messages (ADR-0024); status 409.</summary>
     public const string TicketClosed = "urn:fiscoprojects:problem:ticket-closed";
+
+    /// <summary>Someone changed the ticket at the same time, and nothing was saved; status 409.</summary>
+    public const string TicketChanged = "urn:fiscoprojects:problem:ticket-changed";
 
     /// <summary>The action does not leave the status the ticket is in now (ADR-0024); status 409.</summary>
     public const string ActionNotAllowedNow = "urn:fiscoprojects:problem:ticket-action-not-allowed-now";
@@ -180,6 +215,10 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/flow", FlowAsync).WithName("GetTicketFlow");
+        tickets.MapPut("/{number:int}/priority", ChangePriorityAsync).WithName("ChangeTicketPriority")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/{number:int}", GetAsync).WithName("GetTicket");
         tickets.MapPost("/{number:int}/transitions", ChangeStatusAsync).WithName("ChangeTicketStatus")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -207,6 +246,16 @@ public static class TicketEndpoints
         tickets.MapDelete("/{number:int}/following", (int number, HttpContext http, IUserAccess access, FollowTicket follow, CancellationToken cancellationToken) =>
                 FollowAsync(number, false, http, access, follow, cancellationToken))
             .WithName("UnfollowTicket");
+
+        // The deadlines of the priorities, only for the Administrator (ADR-0025, ADR-0046).
+        var deadlines = api.MapGroup("/admin/ticket-deadlines")
+            .WithTags("Tickets")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        deadlines.MapGet("/", DeadlinesAsync).WithName("GetTicketDeadlines");
+        deadlines.MapPut("/", ChangeDeadlinesAsync).WithName("ChangeTicketDeadlines")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
     }
 
@@ -321,7 +370,16 @@ public static class TicketEndpoints
             ticket.UpdatedAt,
             [.. details.Messages.Select(message => new TicketMessageResponse(message.Id, message.AuthorId, message.Body, message.SentAt))],
             [.. details.Events.Select(item => new TicketEventResponse(
-                item.Id, item.Kind, item.ActorId, item.FromStatus, item.ToStatus, item.Action, item.AssigneeId, item.At))],
+                item.Id,
+                item.Kind,
+                item.ActorId,
+                item.FromStatus,
+                item.ToStatus,
+                item.Action,
+                item.AssigneeId,
+                item.FromPriority,
+                item.ToPriority,
+                item.At))],
             [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
             details.Followers,
@@ -330,8 +388,62 @@ public static class TicketEndpoints
             new TicketConversationPermissionsResponse(
                 details.Permissions.CanSend,
                 details.Permissions.CanAttachToDescription,
-                [.. details.Permissions.Actions.Select(action => new TicketActionResponse(action.Action, action.To, action.RequiresMessage))]),
-            details.Following));
+                [.. details.Permissions.Actions.Select(action => new TicketActionResponse(action.Action, action.To, action.RequiresMessage))],
+                details.Permissions.CanChangePriority),
+            details.Following,
+            details.Deadlines is { } figures ? DeadlinesOf(figures) : null));
+    }
+
+    private static async Task<Ok<IReadOnlyList<TicketDeadlineSettingResponse>>> DeadlinesAsync(
+        GetTicketDeadlines getDeadlines, CancellationToken cancellationToken)
+    {
+        var settings = await getDeadlines.ExecuteAsync(cancellationToken);
+        return TypedResults.Ok<IReadOnlyList<TicketDeadlineSettingResponse>>([.. settings.Select(setting =>
+            new TicketDeadlineSettingResponse(setting.Priority, setting.FirstResponseDays, setting.ResolutionDays))]);
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem>> ChangeDeadlinesAsync(
+        TicketDeadlinesRequest request, ChangeTicketDeadlines changeDeadlines, CancellationToken cancellationToken)
+    {
+        var invalid = await changeDeadlines.ExecuteAsync(
+            [.. (request.Deadlines ?? []).Select(item => new TicketDeadlineChange(item.Priority, item.FirstResponseDays, item.ResolutionDays))],
+            cancellationToken);
+        return invalid.Count == 0
+            ? TypedResults.NoContent()
+            : TypedResults.ValidationProblem(invalid.ToDictionary(
+                key => key,
+                key => new[]
+                {
+                    key == "deadlines"
+                        ? "The deadlines come once for each priority: Low, Medium, High and Critical."
+                        : $"The deadlines go from {TicketDeadlineSetting.MinDays} to {TicketDeadlineSetting.MaxDays} business days.",
+                }));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangePriorityAsync(
+        int number,
+        TicketPriorityRequest request,
+        HttpContext http,
+        IUserAccess access,
+        ChangeTicketPriority changePriority,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await changePriority.ExecuteAsync(number, request.Priority, viewer, cancellationToken) switch
+        {
+            PriorityChangeOutcome.Done => TypedResults.NoContent(),
+            PriorityChangeOutcome.NotFound => TypedResults.NotFound(),
+            PriorityChangeOutcome.Forbidden => TypedResults.Forbid(),
+            PriorityChangeOutcome.Invalid => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["priority"] = ["The priority is Low, Medium, High or Critical."],
+            }),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket finished",
+                detail: "A resolved or closed ticket keeps its priority.",
+                type: TicketProblems.ActionNotAllowedNow),
+        };
     }
 
     private static async Task<Ok<TicketFlowResponse>> FlowAsync(
@@ -486,6 +598,11 @@ public static class TicketEndpoints
                 title: "Ticket closed",
                 detail: "A closed ticket takes no more messages; a new ticket is opened instead.",
                 type: TicketProblems.TicketClosed),
+            ConversationOutcome.Changed => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket changed",
+                detail: "Someone changed the ticket at the same time; nothing was saved.",
+                type: TicketProblems.TicketChanged),
             _ => TypedResults.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Attachment refused",
@@ -520,7 +637,19 @@ public static class TicketEndpoints
             item.Assignee is { } assignee ? PersonOf(assignee) : null,
             item.Ticket.OpenedAt,
             item.Ticket.UpdatedAt,
-            item.Interactions);
+            item.Interactions,
+            item.Deadlines?.Resolution is { } resolution ? DueOf(resolution) : null);
+
+    private static TicketDueResponse DueOf(TicketDue due) => new(due.State, due.DueOn, due.DaysLate);
+
+    private static TicketDeadlinesResponse DeadlinesOf(TicketDeadlineFigures figures) =>
+        new(
+            figures.FirstResponse is { } first ? DueOf(first) : null,
+            figures.FirstRespondedAt,
+            figures.Resolution is { } resolution ? DueOf(resolution) : null,
+            figures.UsedDays,
+            figures.TotalDays,
+            figures.PausedDays);
 
     private static TicketProjectResponse ProjectOf(TicketProject project) => new(project.Id, project.Code, project.Name);
 

@@ -50,6 +50,7 @@ export const queryKeys = {
   people: ['people'],
   templates: ['templates'],
   tickets: ['tickets'],
+  ticketDeadlines: ['ticket-deadlines'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -226,6 +227,14 @@ export function ticketChoicesQuery() {
 }
 
 /** One ticket by its number, with its people. */
+/** The deadlines of each priority, for the Administration (ADR-0025). */
+export function ticketDeadlinesQuery() {
+  return queryOptions({
+    queryKey: queryKeys.ticketDeadlines,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/ticket-deadlines', { signal })),
+  });
+}
+
 /** The flow of the tickets, read from its table (ADR-0024); it changes only with a new version of the application. */
 export function ticketFlowQuery() {
   return queryOptions({

@@ -1099,6 +1099,7 @@ function demoTicketRow(
     openedAt,
     updatedAt: openedAt,
     interactions: 0,
+    resolution: { state: 'OnTrack', dueOn: '2026-10-26', daysLate: null },
   };
 }
 
@@ -1215,8 +1216,21 @@ export function demoTicket(row: TicketRow): Ticket {
         role: row.requester.id === demoPeople.diego.id ? 'Requester' : 'Development',
       },
     ],
-    permissions: { canSend: true, canAttachToDescription: false, actions: [] },
+    permissions: {
+      canSend: true,
+      canAttachToDescription: false,
+      actions: [],
+      canChangePriority: false,
+    },
     following: row.requester.id === marina.id,
+    deadlines: {
+      firstResponse: { state: 'Soon', dueOn: '2026-10-20', daysLate: null },
+      firstRespondedAt: null,
+      resolution: row.resolution ?? { state: 'OnTrack', dueOn: '2026-10-26', daysLate: null },
+      usedDays: 0,
+      totalDays: 5,
+      pausedDays: 0,
+    },
   };
 }
 

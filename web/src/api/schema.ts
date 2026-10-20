@@ -868,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/{number}/priority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeTicketPriority"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{number}": {
         parameters: {
             query?: never;
@@ -959,6 +975,22 @@ export interface paths {
         put: operations["FollowTicket"];
         post?: never;
         delete: operations["UnfollowTicket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ticket-deadlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTicketDeadlines"];
+        put: operations["ChangeTicketDeadlines"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1676,11 +1708,12 @@ export interface components {
             /** Format: date-time */
             uploadedAt: string;
         };
-        /** @description What the person may do in the conversation, with the actions of the flow open now. */
+        /** @description What the person may do in the conversation, with the actions of the flow open now and the priority. */
         TicketConversationPermissionsResponse: {
             canSend: boolean;
             canAttachToDescription: boolean;
             actions: components["schemas"]["TicketActionResponse"][];
+            canChangePriority: boolean;
         };
         /**
          * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
@@ -1708,11 +1741,60 @@ export interface components {
             /** Format: int32 */
             number: number;
         };
+        /** @description The deadlines of a priority to save, from 1 to 365 business days. */
+        TicketDeadlineSettingRequest: {
+            priority: null | components["schemas"]["TicketPriority"];
+            /** Format: int32 */
+            firstResponseDays: number;
+            /** Format: int32 */
+            resolutionDays: number;
+        };
+        /** @description The deadlines of a priority, in business days (ADR-0025). */
+        TicketDeadlineSettingResponse: {
+            priority: components["schemas"]["TicketPriority"];
+            /** Format: int32 */
+            firstResponseDays: number;
+            /** Format: int32 */
+            resolutionDays: number;
+        };
+        /** @description The deadlines of the four priorities, all at once. */
+        TicketDeadlinesRequest: {
+            deadlines: null | components["schemas"]["TicketDeadlineSettingRequest"][];
+        };
+        /**
+         * @description The deadlines of a ticket today (ADR-0025): the first answer (null once the ticket finished without one) and when it
+         *     was given, the resolution, the business days used of the total and the business days it waited for the requester.
+         */
+        TicketDeadlinesResponse: {
+            firstResponse: null | components["schemas"]["TicketDueResponse"];
+            /** Format: date-time */
+            firstRespondedAt: null | string;
+            resolution: null | components["schemas"]["TicketDueResponse"];
+            /** Format: int32 */
+            usedDays: number;
+            /** Format: int32 */
+            totalDays: number;
+            /** Format: int32 */
+            pausedDays: number;
+        };
+        /** @description Where a deadline stands (ADR-0025): its state, the day it is due and, when overdue, by how many business days. */
+        TicketDueResponse: {
+            state: components["schemas"]["TicketDueState"];
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: int32 */
+            daysLate: null | number;
+        };
+        /**
+         * @description Where a deadline stands today (ADR-0025), for the icon, the color and the text (ADR-0065).
+         * @enum {unknown}
+         */
+        TicketDueState: "OnTrack" | "Soon" | "Overdue" | "Paused" | "Met";
         /**
          * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
          * @enum {unknown}
          */
-        TicketEventKind: "StatusChanged" | "AssigneeSet";
+        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged";
         /**
          * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
          *     null when the system did it.
@@ -1728,6 +1810,8 @@ export interface components {
             action: null | components["schemas"]["TicketAction"];
             /** Format: uuid */
             assigneeId: null | string;
+            fromPriority: null | components["schemas"]["TicketPriority"];
+            toPriority: null | components["schemas"]["TicketPriority"];
             /** Format: date-time */
             at: string;
         };
@@ -1760,9 +1844,10 @@ export interface components {
             updatedAt: string;
             /**
              * Format: int32
-             * @description How many messages the ticket has.
+             * @description How many messages and events the ticket has.
              */
             interactions: number;
+            resolution: null | components["schemas"]["TicketDueResponse"];
         };
         /** @description A message of the conversation, with its text as the JSON of the editor. */
         TicketMessageResponse: {
@@ -1804,6 +1889,10 @@ export interface components {
          * @enum {unknown}
          */
         TicketPriority: "Low" | "Medium" | "High" | "Critical";
+        /** @description A new priority for the ticket. */
+        TicketPriorityRequest: {
+            priority: null | components["schemas"]["TicketPriority"];
+        };
         /**
          * @description A project the person sees, for the filters and the opening: whether it is closed, whether the person may open
          *     tickets in it and the teams with someone to serve them (ADR-0068).
@@ -1858,6 +1947,7 @@ export interface components {
             participants: components["schemas"]["TicketParticipantResponse"][];
             permissions: components["schemas"]["TicketConversationPermissionsResponse"];
             following: boolean;
+            deadlines: null | components["schemas"]["TicketDeadlinesResponse"];
         };
         /**
          * @description Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all.
@@ -5299,6 +5389,73 @@ export interface operations {
             };
         };
     };
+    ChangeTicketPriority: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketPriorityRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     GetTicket: {
         parameters: {
             query?: never;
@@ -5650,6 +5807,93 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GetTicketDeadlines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDeadlineSettingResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTicketDeadlines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketDeadlinesRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };

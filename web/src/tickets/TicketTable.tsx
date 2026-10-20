@@ -7,6 +7,7 @@ import type { TicketRow } from '../api/client';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { useDates } from '../format/useDates';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
+import { TicketDue } from './TicketDue';
 
 export const ticketPageSize = 25;
 
@@ -112,9 +113,26 @@ export function TicketTable({
       },
       {
         field: 'status',
-        headerName: t('tickets.columns.status'),
-        width: 196,
-        renderCell: ({ row }) => <TicketStatusBadge status={row.status} />,
+        headerName: t('tickets.columns.statusAndDue'),
+        width: 212,
+        // The status with the deadline of the resolution under it, while it is open (canvas Chamados, ADR-0025).
+        renderCell: ({ row }) => (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              gap: '2px',
+              height: '100%',
+            }}
+          >
+            <TicketStatusBadge status={row.status} />
+            {row.resolution !== null && row.status !== 'Resolved' && row.status !== 'Closed' && (
+              <TicketDue due={row.resolution} />
+            )}
+          </Box>
+        ),
       },
       {
         field: 'assignee',

@@ -1,5 +1,6 @@
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import PlayArrowOutlined from '@mui/icons-material/PlayArrowOutlined';
@@ -13,9 +14,16 @@ import type SvgIcon from '@mui/material/SvgIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Ticket, type TicketAction } from '../api/client';
+import {
+  api,
+  type Ticket,
+  type TicketAction,
+  type TicketPriority,
+  ticketPriorities,
+} from '../api/client';
 import { queryKeys } from '../api/queries';
 import { Dialog } from '../components/Dialog';
+import { Select } from '../components/Select';
 
 const RichTextEditor = lazy(async () => ({
   default: (await import('../components/RichTextEditor')).RichTextEditor,
@@ -136,6 +144,58 @@ function ActionMessageDialog({
   );
 }
 
+/** A new priority for the ticket (ADR-0025): its deadlines start again from the opening. */
+function PriorityDialog({
+  current,
+  busy,
+  onClose,
+  onConfirm,
+}: {
+  current: TicketPriority;
+  busy: boolean;
+  onClose: () => void;
+  onConfirm: (priority: TicketPriority) => void;
+}) {
+  const { t } = useTranslation();
+  const [priority, setPriority] = useState(current);
+  return (
+    <Dialog
+      open
+      title={t('tickets.priorityChange.title')}
+      onClose={onClose}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onConfirm(priority);
+      }}
+      actions={
+        <>
+          <Button variant="outlined" onClick={onClose}>
+            {t('tickets.priorityChange.back')}
+          </Button>
+          <Button type="submit" variant="contained" disabled={busy || priority === current}>
+            {t('tickets.priorityChange.save')}
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <Box component="p" sx={{ margin: 0, fontSize: 14, lineHeight: '20px' }}>
+          {t('tickets.priorityChange.text')}
+        </Box>
+        <Select<TicketPriority>
+          label={t('tickets.priorityChange.label')}
+          value={priority}
+          options={ticketPriorities.map((item) => ({
+            value: item,
+            label: t(`tickets.priorities.${item}`),
+          }))}
+          onChange={setPriority}
+        />
+      </Box>
+    </Dialog>
+  );
+}
+
 /**
  * The actions of the flow in the header of the ticket (canvas Chamado, ADR-0024): the first open to the person is the
  * button, the others go in the "⋮"; the one that asks for a message opens a dialog for the text. Automatic actions, as
@@ -152,6 +212,7 @@ export function TicketActions({
   const queryClient = useQueryClient();
   const [anchor, setAnchor] = useState<HTMLElement>();
   const [asking, setAsking] = useState<TicketAction>();
+  const [prioritizing, setPrioritizing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [primary, ...others] = orderedActions(ticket.permissions.actions);
 
@@ -180,6 +241,27 @@ export function TicketActions({
     }
   };
 
+  const prioritize = async (priority: TicketPriority) => {
+    setBusy(true);
+    try {
+      const { response } = await api.PUT('/api/tickets/{number}/priority', {
+        params: { path: { number: ticket.number } },
+        body: { priority },
+      });
+      if (response.ok) {
+        setPrioritizing(false);
+        onMessage(t('tickets.priorityChange.done'));
+      } else {
+        onMessage(t('tickets.priorityChange.failed'));
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
+    } catch {
+      onMessage(t('tickets.priorityChange.failed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const choose = (action: OpenAction) => {
     if (action.requiresMessage) {
       setAsking(action.action);
@@ -188,24 +270,27 @@ export function TicketActions({
     }
   };
 
-  if (primary === undefined) {
+  const canPrioritize = ticket.permissions.canChangePriority;
+  if (primary === undefined && !canPrioritize) {
     return null;
   }
 
-  const PrimaryIcon = actionIcons[primary.action];
+  const PrimaryIcon = primary === undefined ? undefined : actionIcons[primary.action];
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', flex: 'none' }}>
-      <Button
-        variant="contained"
-        disabled={busy}
-        startIcon={PrimaryIcon === undefined ? undefined : <PrimaryIcon aria-hidden />}
-        onClick={() => {
-          choose(primary);
-        }}
-      >
-        {t(`tickets.actions.${primary.action}`)}
-      </Button>
-      {others.length > 0 && (
+      {primary !== undefined && (
+        <Button
+          variant="contained"
+          disabled={busy}
+          startIcon={PrimaryIcon === undefined ? undefined : <PrimaryIcon aria-hidden />}
+          onClick={() => {
+            choose(primary);
+          }}
+        >
+          {t(`tickets.actions.${primary.action}`)}
+        </Button>
+      )}
+      {(others.length > 0 || canPrioritize) && (
         <>
           <IconButton
             aria-label={t('tickets.actionMenu')}
@@ -248,8 +333,32 @@ export function TicketActions({
                 </MenuItem>
               );
             })}
+            {canPrioritize && (
+              <MenuItem
+                disabled={busy}
+                onClick={() => {
+                  setAnchor(undefined);
+                  setPrioritizing(true);
+                }}
+              >
+                <FlagOutlined aria-hidden />
+                {t('tickets.priorityChange.menu')}
+              </MenuItem>
+            )}
           </Menu>
         </>
+      )}
+      {prioritizing && (
+        <PriorityDialog
+          current={ticket.priority}
+          busy={busy}
+          onClose={() => {
+            setPrioritizing(false);
+          }}
+          onConfirm={(priority) => {
+            void prioritize(priority);
+          }}
+        />
       )}
       {asking !== undefined && (
         <ActionMessageDialog

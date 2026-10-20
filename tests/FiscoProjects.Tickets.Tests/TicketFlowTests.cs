@@ -59,6 +59,8 @@ public sealed class TicketFlowTests
         ticket.Apply(flow.Of(TicketStatus.InProgress, TicketAction.Resolve)!, Now.AddHours(4));
         ticket.Apply(flow.Of(TicketStatus.Resolved, TicketAction.ConfirmAndClose)!, Now.AddHours(5));
         (ticket.Status, ticket.ClosedAt, ticket.UpdatedAt).Should().Be((TicketStatus.Closed, Now.AddHours(5), Now.AddHours(5)));
+        // Closing keeps when it was resolved, for the deadline of the resolution.
+        ticket.ResolvedAt.Should().Be(Now.AddHours(4));
 
         FluentActions.Invoking(() => ticket.Apply(flow.Of(TicketStatus.InProgress, TicketAction.Resolve)!, Now.AddHours(6)))
             .Should().Throw<InvalidOperationException>();

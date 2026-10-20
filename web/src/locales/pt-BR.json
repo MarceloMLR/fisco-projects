@@ -75,6 +75,9 @@
     },
     "ticketFlow": {
       "title": "Fluxo de chamados"
+    },
+    "ticketDeadlines": {
+      "title": "Prazos dos chamados"
     }
   },
   "signIn": {
@@ -214,7 +217,8 @@
       "ScheduleDependency": "Dependências",
       "ScheduleBaseline": "Linhas de base",
       "ProjectTemplate": "Modelos de projeto",
-      "Ticket": "Chamados"
+      "Ticket": "Chamados",
+      "TicketDeadlineSetting": "Prazos dos chamados"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -307,6 +311,9 @@
         "Created": "Abriu um chamado",
         "Updated": "Alterou um chamado",
         "Deleted": "Excluiu um chamado"
+      },
+      "TicketDeadlineSetting": {
+        "Updated": "Mudou os prazos dos chamados"
       }
     },
     "providers": {
@@ -340,7 +347,8 @@
         "ScheduleDependency": "Seguinte",
         "ScheduleBaseline": "Projeto",
         "ProjectTemplate": "Modelo",
-        "Ticket": "Chamado"
+        "Ticket": "Chamado",
+        "TicketDeadlineSetting": "Prioridade"
       },
       "secret": "Alterado",
       "none": "—",
@@ -430,6 +438,10 @@
         "Status": "Status",
         "RequesterId": "Solicitante",
         "AssigneeId": "Responsável"
+      },
+      "TicketDeadlineSetting": {
+        "FirstResponseDays": "1ª resposta (dias úteis)",
+        "ResolutionDays": "Resolução (dias úteis)"
       }
     },
     "dependsOn": "depende de {{name}}"
@@ -1297,7 +1309,8 @@
       "status": "Status",
       "assignee": "Responsável",
       "priority": "Prioridade",
-      "interactions": "Interações"
+      "interactions": "Interações",
+      "statusAndDue": "Status e prazo"
     },
     "row": "{{team}} · aberto por {{name}}",
     "projectRow": "{{team}} · aberto por {{name}} em {{day}}",
@@ -1419,7 +1432,9 @@
         "TooLarge": "O arquivo {{name}} passa do tamanho aceito.",
         "Empty": "O arquivo {{name}} está vazio.",
         "Dangerous": "O arquivo {{name}} não é aceito: programas e scripts são recusados."
-      }
+      },
+      "changed": "O chamado mudou enquanto você escrevia. Confira e envie de novo.",
+      "closed": "O chamado foi fechado e não recebe mais mensagens."
     },
     "panel": {
       "followers": "Acompanham",
@@ -1429,7 +1444,17 @@
       "following": "Você acompanha este chamado.",
       "attachments": "Anexos da conversa",
       "noAttachments": "Nenhum anexo.",
-      "followFailed": "Não foi possível mudar o acompanhamento. Tente de novo."
+      "followFailed": "Não foi possível mudar o acompanhamento. Tente de novo.",
+      "deadlines": "Prazos",
+      "used": "{{used}} de {{total}} dias úteis",
+      "usedLabel": "Prazo de resolução usado",
+      "resolution": "Resolução",
+      "firstResponse": "1ª resposta",
+      "paused": "Pausado",
+      "pausedDays_one": "{{count}} dia útil aguardando o solicitante",
+      "pausedDays_other": "{{count}} dias úteis aguardando o solicitante",
+      "neverPaused": "Não pausou",
+      "noDeadlines": "Chamado aberto antes dos prazos."
     },
     "actions": {
       "StartTriage": "Iniciar triagem",
@@ -1484,7 +1509,10 @@
         "AutoClose": "fechou sem retorno do solicitante",
         "Reopen": "reabriu",
         "Cancel": "cancelou o chamado"
-      }
+      },
+      "priority": "mudou a prioridade · {{from}} → {{to}}",
+      "pausedNote": "{{text}} · prazo pausado",
+      "resumedNote": "{{text}} · prazo retomado"
     },
     "flow": {
       "link": "Fluxo de chamados",
@@ -1516,6 +1544,27 @@
       "loadFailed": "Não foi possível carregar o fluxo. Tente de novo.",
       "range_one": "{{count}} transição",
       "range_other": "{{count}} transições"
+    },
+    "due": {
+      "onTrack": "Vence {{day}}",
+      "soon": "Vence {{day}}",
+      "overdue_one": "Venceu há {{count}} dia útil",
+      "overdue_other": "Venceu há {{count}} dias úteis",
+      "paused": "Prazo pausado",
+      "met": "Cumprido",
+      "firstMet": "Cumprida em {{day}}, {{time}}",
+      "lateResolved_one": "Resolvido com {{count}} dia útil de atraso",
+      "lateResolved_other": "Resolvido com {{count}} dias úteis de atraso"
+    },
+    "priorityChange": {
+      "menu": "Mudar prioridade",
+      "title": "Mudar prioridade",
+      "text": "Os prazos são recalculados a partir da abertura, com os dias da nova prioridade.",
+      "label": "Prioridade",
+      "save": "Mudar prioridade",
+      "back": "Voltar",
+      "done": "Prioridade alterada.",
+      "failed": "Não foi possível mudar a prioridade. Tente de novo."
     }
   },
   "editor": {
@@ -1530,5 +1579,22 @@
     "linkSave": "Aplicar",
     "linkCancel": "Cancelar",
     "linkPlaceholder": "https://"
+  },
+  "ticketDeadlines": {
+    "intro": "Quantos dias úteis cada prioridade tem para a primeira resposta e para a resolução. O prazo de resolução para enquanto o chamado aguarda o solicitante.",
+    "section": "Prazos por prioridade",
+    "priority": "Prioridade",
+    "firstResponse": "1ª resposta",
+    "resolution": "Resolução",
+    "days": "dias úteis",
+    "firstResponseOf": "Primeira resposta da prioridade {{priority}}, em dias úteis",
+    "resolutionOf": "Resolução da prioridade {{priority}}, em dias úteis",
+    "help": "Os prazos valem para os chamados abertos depois de salvar. Os chamados em andamento mantêm os prazos da abertura.",
+    "invalid": "De 1 a 365 dias úteis.",
+    "save": "Salvar",
+    "discard": "Descartar",
+    "saved": "Prazos salvos. Valem para os chamados abertos a partir de agora.",
+    "saveFailed": "Não foi possível salvar os prazos. Tente de novo.",
+    "loadFailed": "Não foi possível carregar os prazos. Tente de novo."
   }
 }

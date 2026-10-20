@@ -41,6 +41,8 @@ const tookIt: Ticket['events'] = [
     to: null,
     action: null,
     assigneeId: demoPeople.diego.id,
+    fromPriority: null,
+    toPriority: null,
     at: '2026-10-15T10:00:00Z',
   },
   {
@@ -51,6 +53,8 @@ const tookIt: Ticket['events'] = [
     to: 'InProgress',
     action: 'FirstResponse',
     assigneeId: null,
+    fromPriority: null,
+    toPriority: null,
     at: '2026-10-15T10:00:00Z',
   },
 ];
@@ -74,6 +78,7 @@ beforeEach(() => {
         { action: 'AskForInformation', to: 'WaitingForRequester', requiresMessage: true },
         { action: 'Resolve', to: 'Resolved', requiresMessage: false },
       ],
+      canChangePriority: true,
     },
   };
   taken.length = 0;
@@ -110,10 +115,12 @@ beforeEach(() => {
             to,
             action: body.action as 'Resolve',
             assigneeId: null,
+            fromPriority: null,
+            toPriority: null,
             at,
           },
         ],
-        permissions: { ...ticket.permissions, actions: [] },
+        permissions: { ...ticket.permissions, actions: [], canChangePriority: false },
       };
       return new HttpResponse(null, { status: 204 });
     }),
@@ -206,10 +213,17 @@ describe('Histórico na conversa', () => {
           to: 'Closed',
           action: 'AutoClose',
           assigneeId: null,
+          fromPriority: null,
+          toPriority: null,
           at: '2026-10-22T12:00:00Z',
         },
       ],
-      permissions: { canSend: false, canAttachToDescription: false, actions: [] },
+      permissions: {
+        canSend: false,
+        canAttachToDescription: false,
+        actions: [],
+        canChangePriority: false,
+      },
     };
     await openTicket();
 

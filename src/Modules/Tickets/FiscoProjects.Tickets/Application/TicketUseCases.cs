@@ -94,6 +94,7 @@ public interface ITicketStore
 
     void Add(Ticket ticket);
 
+    /// <summary>Saves; throws <see cref="TicketChangedException"/> when someone changed the ticket since it was read.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);
 
     Task<TicketRows> ListAsync(TicketQuery query, TicketScope scope, CancellationToken cancellationToken);
@@ -121,6 +122,9 @@ public interface ITicketStore
 
     void AddEvent(TicketEvent ticketEvent);
 
+    /// <summary>The deadlines of each priority (ADR-0025), tracked so the Administrator changes them.</summary>
+    Task<IReadOnlyList<TicketDeadlineSetting>> DeadlinesAsync(CancellationToken cancellationToken);
+
     Task<IReadOnlyList<TicketEvent>> EventsAsync(Guid ticketId, CancellationToken cancellationToken);
 
     /// <summary>The resolved tickets, to be changed: the automatic closing looks at them.</summary>
@@ -143,12 +147,22 @@ public sealed record TicketProject(Guid Id, string Code, string Name);
 
 /// <summary>A ticket of a list, with its project, the names of the requester and the assignee and its messages.</summary>
 public sealed record TicketListItem(
-    Ticket Ticket, TicketProject Project, TicketPerson Requester, TicketPerson? Assignee, int Interactions);
+    Ticket Ticket, TicketProject Project, TicketPerson Requester, TicketPerson? Assignee, int Interactions)
+{
+    /// <summary>The deadlines of the ticket today (ADR-0025).</summary>
+    public TicketDeadlineFigures? Deadlines { get; init; }
+}
 
 public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
 
+/// <summary>
+/// Someone else changed the ticket between reading and saving it, as two first answers at once or a reopening while
+/// the automatic closing runs: nothing was saved, and the person tries again on the ticket as it is now.
+/// </summary>
+public sealed class TicketChangedException(Exception inner) : InvalidOperationException("The ticket changed since it was read.", inner);
+
 /// <summary>Lists the tickets the person sees (ADR-0044), filtered (ADR-0029).</summary>
-public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUserDirectory users)
+public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUserDirectory users, TicketDeadlines deadlines)
 {
     public async Task<TicketPage> ExecuteAsync(TicketQuery query, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -157,8 +171,10 @@ public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUs
         var visible = await projects.VisibleAsync(viewer.UserId, viewer.IsAdministrator, cancellationToken);
         var rows = await store.ListAsync(query, TicketScope.Of(viewer, visible), cancellationToken);
         var interactions = await store.MessageCountsAsync([.. rows.Items.Select(ticket => ticket.Id)], cancellationToken);
+        var items = await TicketNames.ItemsOfAsync(rows.Items, visible, interactions, users, cancellationToken);
+        var day = await deadlines.TodayAsync(cancellationToken);
         return new TicketPage(
-            await TicketNames.ItemsOfAsync(rows.Items, visible, interactions, users, cancellationToken), rows.Total);
+            [.. items.Select(item => item with { Deadlines = TicketDeadlines.FiguresOf(item.Ticket, day) })], rows.Total);
     }
 }
 
@@ -238,7 +254,7 @@ public sealed record OpenTicketResult(OpenTicketOutcome Outcome, Guid? Id, int? 
 /// team with someone to serve it. Who is not in the project gets 404, the viewer 403 (ADR-0044), and a completed or
 /// cancelled project 409, until it is reopened.
 /// </summary>
-public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, TimeProvider clock)
+public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TimeProvider clock)
 {
     public async Task<OpenTicketResult> ExecuteAsync(NewTicket ticket, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -284,6 +300,7 @@ public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, Time
 
         var now = clock.GetUtcNow().UtcDateTime;
         var opened = Ticket.Open(await store.NextNumberAsync(cancellationToken), projectId, form, viewer.UserId, now);
+        await deadlines.StartAsync(opened, cancellationToken);
         store.Add(opened);
         // The requester follows the ticket from the start (ADR-0026).
         await store.FollowAsync(opened.Id, viewer.UserId, now, cancellationToken);
@@ -299,7 +316,8 @@ public sealed record TicketParticipant(Guid Id, string Name, TicketParticipantRo
 /// What the person may do in the conversation: send messages, attach files to the description, and the actions of the
 /// flow open now (ADR-0024).
 /// </summary>
-public sealed record TicketConversationPermissions(bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketTransition> Actions);
+public sealed record TicketConversationPermissions(
+    bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketTransition> Actions, bool CanChangePriority);
 
 /// <summary>
 /// A ticket with its project, the requester, the assignee and the managers and tech leads of the project, and its
@@ -320,10 +338,14 @@ public sealed record TicketDetails(
     IReadOnlyList<Guid> Mentionable,
     IReadOnlyList<TicketParticipant> Participants,
     TicketConversationPermissions Permissions,
-    bool Following);
+    bool Following)
+{
+    /// <summary>The deadlines of the ticket today (ADR-0025).</summary>
+    public TicketDeadlineFigures? Deadlines { get; init; }
+}
 
 /// <summary>A ticket by its number, for everyone in its project and the Administrator (ADR-0044); null for anyone else.</summary>
-public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUserDirectory users)
+public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUserDirectory users, TicketDeadlines deadlines)
 {
     public async Task<TicketDetails?> ExecuteAsync(int number, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -372,6 +394,8 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
             .ToList();
         var canSend = TicketAccess.MaySend(viewer, project.Role, ticket) && ticket.Status != TicketStatus.Closed;
         var flow = await store.FlowAsync(cancellationToken);
+        var actors = TicketAccess.ActorsOf(viewer, project.Role, ticket);
+        var day = await deadlines.TodayAsync(cancellationToken);
         return new TicketDetails(
             ticket,
             new TicketProject(project.Id, project.Code, project.Name),
@@ -388,8 +412,12 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
             new TicketConversationPermissions(
                 canSend,
                 ticket.RequesterId == viewer.UserId && messages.Count == 0 && ticket.Status != TicketStatus.Closed,
-                flow.AvailableTo(ticket.Status, TicketAccess.ActorsOf(viewer, project.Role, ticket))),
-            followers.Contains(viewer.UserId));
+                flow.AvailableTo(ticket.Status, actors),
+                ticket.IsOpen && (actors & TicketActors.Attendant) != 0),
+            followers.Contains(viewer.UserId))
+        {
+            Deadlines = TicketDeadlines.FiguresOf(ticket, day),
+        };
     }
 }
 

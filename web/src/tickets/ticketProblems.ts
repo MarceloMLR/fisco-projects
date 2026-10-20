@@ -23,6 +23,12 @@ export function ticketProblemText(status: number, problem: unknown, t: TFunction
   if (type === ticketProblems.mentionRefused) {
     return t('tickets.reply.mentionRefused');
   }
+  if (type === ticketProblems.ticketChanged) {
+    return t('tickets.reply.changed');
+  }
+  if (type === ticketProblems.ticketClosed) {
+    return t('tickets.reply.closed');
+  }
   if (status === 400) {
     return t('tickets.reply.invalid');
   }
