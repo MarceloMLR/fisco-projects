@@ -264,6 +264,24 @@ async function loadProject(
     }
   }
 
+  if (project.baseline === true) {
+    done(
+      await builder.PUT('/api/projects/{id}/schedule/baseline', { params: { path: { id } } }),
+      `Linha de base de ${project.code}`,
+    );
+  }
+  for (const item of project.phases.flatMap((phase) => phase.items)) {
+    if (item.movedTo !== undefined) {
+      done(
+        await builder.PUT('/api/projects/{id}/schedule/items/{itemId}/dates', {
+          params: { path: { id, itemId: idOf(item.name, 'movedTo') } },
+          body: { start: dayFrom(firstDay, item.movedTo), end: null },
+        }),
+        `Datas de ${item.name}`,
+      );
+    }
+  }
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {

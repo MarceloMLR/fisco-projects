@@ -158,3 +158,26 @@ describe('Carga dos dados de demonstração', () => {
     expect(calls).toEqual(['anonymous GET /api/session/sign-in-options']);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Linha de base na demonstração".
+describe('Linha de base na demonstração', () => {
+  it('Linha de base na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The manager saves the baseline of ERP-FIN and then puts off Parametrizar regras de ICMS, in the same project.
+    const changes = callsBy(/ PUT .*\/schedule\/(baseline|items\/[^/]+\/dates)$/);
+    expect(changes).toHaveLength(2);
+    const [saved, moved] = changes;
+    expect(saved).toMatch(/^marina PUT \/api\/projects\/[^/]+\/schedule\/baseline$/);
+    expect(moved).toMatch(/^marina PUT \/api\/projects\/[^/]+\/schedule\/items\/[^/]+\/dates$/);
+    expect(moved?.startsWith(saved?.replace(/\/baseline$/, '') ?? '')).toBe(true);
+    // Two days later than planned, from 13/10/2026 to 15/10/2026: the API pushes the items after it.
+    const dates = [...bodies.entries()].find(([path]) => path.endsWith('/dates'))?.[1];
+    expect(dates).toEqual([{ start: '2026-10-15', end: null }]);
+    const main = demoProjects.find((project) => project.code === 'ERP-FIN');
+    expect(main?.baseline).toBe(true);
+    expect(
+      main?.phases.flatMap((phase) => phase.items).filter((item) => item.movedTo !== undefined),
+    ).toMatchObject([{ name: 'Parametrizar regras de ICMS', day: 8, movedTo: 10 }]);
+  });
+});
