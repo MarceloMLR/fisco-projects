@@ -1097,6 +1097,7 @@ function demoTicketRow(
     assignee: null,
     openedAt,
     updatedAt: openedAt,
+    interactions: 0,
   };
 }
 
@@ -1169,6 +1170,7 @@ export const demoTicketCounts: TicketCounts = {
   unassignedInMyTeams: 4,
   assignedToMe: 0,
   openedByMe: 1,
+  following: 1,
 };
 
 /** A ticket of the list as its page shows it. */
@@ -1189,6 +1191,30 @@ export function demoTicket(row: TicketRow): Ticket {
     techLeads: row.project.id === erpFin.id ? [demoPeople.rafael] : [],
     openedAt: row.openedAt,
     updatedAt: row.updatedAt,
+    descriptionBody: null,
+    messages: [],
+    attachments: [],
+    followers: [row.requester.id],
+    mentionable: [
+      demoPeople.marina.id,
+      demoPeople.rafael.id,
+      row.requester.id,
+      demoPeople.diego.id,
+    ],
+    participants: [
+      { ...row.requester, role: 'Requester' },
+      {
+        ...demoPeople.marina,
+        role: row.requester.id === demoPeople.marina.id ? 'Requester' : 'Manager',
+      },
+      { ...demoPeople.rafael, role: 'TechLead' },
+      {
+        ...demoPeople.diego,
+        role: row.requester.id === demoPeople.diego.id ? 'Requester' : 'Development',
+      },
+    ],
+    permissions: { canSend: true, canAttachToDescription: false },
+    following: row.requester.id === marina.id,
   };
 }
 
@@ -1204,6 +1230,7 @@ export function ticketsPage(tickets: TicketRow[], url: URL) {
       (team === null || ticket.team === team) &&
       (view !== 'OpenedByMe' || ticket.requester.id === marina.id) &&
       (view !== 'AssignedToMe' || ticket.assignee?.id === marina.id) &&
+      (view !== 'Following' || ticket.requester.id === marina.id) &&
       (search === undefined ||
         ticket.title.toLowerCase().includes(search) ||
         `#${String(ticket.number)}` === search),

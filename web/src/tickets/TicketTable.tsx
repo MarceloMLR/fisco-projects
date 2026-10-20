@@ -1,3 +1,4 @@
+import ForumOutlined from '@mui/icons-material/ForumOutlined';
 import Box from '@mui/material/Box';
 import { type ReactNode, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -126,6 +127,28 @@ export function TicketTable({
         headerName: t('tickets.columns.priority'),
         width: 112,
         renderCell: ({ row }) => <PriorityTag priority={row.priority} />,
+      },
+      {
+        field: 'interactions',
+        headerName: t('tickets.columns.interactions'),
+        width: 60,
+        align: 'right',
+        headerAlign: 'right',
+        renderHeader: () => (
+          <ForumOutlined
+            aria-label={t('tickets.columns.interactions')}
+            titleAccess={t('tickets.columns.interactions')}
+            sx={{ fontSize: 18, color: 'var(--text-secondary)' }}
+          />
+        ),
+        renderCell: ({ row }) => (
+          <Box
+            component="span"
+            sx={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+          >
+            {row.interactions}
+          </Box>
+        ),
       },
     ],
     [t, inProject, formatDayMonth],

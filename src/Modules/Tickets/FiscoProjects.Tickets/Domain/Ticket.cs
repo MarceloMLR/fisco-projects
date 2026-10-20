@@ -202,7 +202,8 @@ public sealed class TicketForm
 
         var rich = body is null ? null : RichText.Parse(body);
         var trimmedDescription = rich?.Text ?? description?.Trim();
-        if ((body is not null && rich is null)
+        // Mentions go in the messages, where who is mentioned starts to follow the ticket (ADR-0026).
+        if ((body is not null && (rich is null || rich.Mentions.Count > 0))
             || string.IsNullOrEmpty(trimmedDescription) || trimmedDescription.Length > Ticket.DescriptionMaxLength)
         {
             invalid.Add(TicketField.Description);

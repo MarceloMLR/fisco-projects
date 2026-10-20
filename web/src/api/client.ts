@@ -161,6 +161,12 @@ export const projectProblems = {
   templateNameInUse: 'urn:fiscoprojects:problem:template-name-in-use',
 } as const;
 
+/** Problem types of the tickets (TicketProblems in the Tickets module). */
+export const ticketProblems = {
+  mentionRefused: 'urn:fiscoprojects:problem:ticket-mention-refused',
+  attachmentRefused: 'urn:fiscoprojects:problem:ticket-attachment-refused',
+} as const;
+
 /** Problem types of the user administration (UserProblems in the Users module). */
 export const userProblems = {
   lastAdministrator: 'urn:fiscoprojects:problem:last-administrator',
