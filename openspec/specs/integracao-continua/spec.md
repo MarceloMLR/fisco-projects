@@ -15,8 +15,8 @@ Todo pull request para a `main` MUST passar por estas verificações: build do b
 - **THEN** a verificação do pull request roda
 
 #### Scenario: Todas as verificações no pull request
-- **WHEN** a verificação do pull request roda
-- **THEN** ela executa build, testes, formatação, frontend e specs, cada um como uma etapa própria e nessa ordem
+- **WHEN** a verificação do pull request roda num commit que muda código
+- **THEN** build e testes, formatação, frontend e specs rodam em jobs paralelos, e o job `verify` só aprova quando todos passaram
 
 #### Scenario: Comando que falha reprova a verificação
 - **WHEN** qualquer comando de uma verificação termina com erro
@@ -48,12 +48,40 @@ A lógica de cada verificação MUST ficar num script versionado no repositório
 
 ### Requirement: Workflow sem segredos e com versões fixadas
 
-O workflow da verificação MUST NOT usar segredos, MUST pedir só permissão de leitura do conteúdo do repositório e MUST usar versões fixas das ações, do executor e das ferramentas (ADR-0060).
+O workflow da verificação MUST NOT usar segredos, MUST pedir só permissões de leitura (do conteúdo, das verificações e dos pull requests) e MUST usar versões fixas das ações, do executor e das ferramentas (ADR-0060, ADR-0090).
 
 #### Scenario: Sem segredos
 - **WHEN** o workflow da verificação é lido
-- **THEN** ele não referencia segredos e só pede permissão de leitura do conteúdo
+- **THEN** ele não referencia segredos e só pede permissões de leitura do conteúdo, das verificações e dos pull requests
 
 #### Scenario: Versões fixadas
 - **WHEN** o workflow da verificação é lido
 - **THEN** toda ação é fixada pelo commit, o executor tem versão explícita e as versões do .NET e do Node vêm dos arquivos de versão do repositório
+
+### Requirement: Commit que só muda documentação
+
+Num commit cujo código é igual ao do último commit do pull request aprovado na verificação, a verificação MUST pular build, testes, formatação e frontend e rodar as specs. Só conta como documentação o que está em `docs/`, `openspec/` e `.claude/` e os arquivos `.md` fora de `web/`. Sem commit aprovado, a comparação MUST ser com a `main` (ADR-0090).
+
+#### Scenario: Archive só com documentação
+- **WHEN** o último commit do pull request passou na verificação e o commit novo só muda `openspec/` e `docs/roadmap.md`
+- **THEN** só as specs rodam, e o job `verify` aprova se elas passarem
+
+#### Scenario: Código depois de um commit aprovado
+- **WHEN** o commit novo muda um arquivo em `src/`, `tests/`, `web/` ou qualquer outro lugar que não seja documentação
+- **THEN** todas as verificações rodam
+
+#### Scenario: Commit aprovado anterior a uma falha
+- **WHEN** o último commit verificado do pull request falhou e o commit novo só muda documentação
+- **THEN** a comparação usa o último commit aprovado, ou a `main` sem nenhum, e o código que mudou desde então faz tudo rodar
+
+#### Scenario: Parte pulada sem motivo
+- **WHEN** build, testes, formatação ou frontend não rodaram e o commit muda código
+- **THEN** o job `verify` reprova
+
+### Requirement: Cache dos pacotes
+
+A verificação MUST guardar em cache os pacotes do NuGet, pela chave dos arquivos de projeto e do `global.json`, e os do npm, pelos `package-lock.json`, para não baixá-los de novo a cada execução (ADR-0090).
+
+#### Scenario: Pacotes em cache
+- **WHEN** o workflow da verificação é lido
+- **THEN** o job do backend e o da formatação restauram o cache do NuGet, e os jobs do frontend e das specs, o do npm

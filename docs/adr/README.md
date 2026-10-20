@@ -152,4 +152,4 @@ Regras:
 | [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
 | [0088](0088-subtarefas-na-v1.md) | Subtarefas na v1, em um nível, com a tarefa-resumo calculada e dependências só entre quem faz o trabalho | aceita | 2026-10-19 |
 | [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
-| [0090](0090-verificacao-do-pr-em-paralelo.md) | Verificação do PR em partes paralelas, com só as specs quando o commit muda apenas a documentação | proposta | 2026-10-19 |
+| [0090](0090-verificacao-do-pr-em-paralelo.md) | Verificação do PR em partes paralelas, com só as specs quando o commit muda apenas a documentação | aceita | 2026-10-19 |
