@@ -49,6 +49,8 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         ticket.Property(t => t.FirstRespondedAt).ExcludeFromAudit();
         ticket.Property(t => t.PausedSince).ExcludeFromAudit();
         ticket.Property(t => t.PausedBusinessDays).ExcludeFromAudit();
+        // Two changes at once never overwrite each other: the second finds the ticket changed (TicketChangedException).
+        ticket.Property<byte[]>("Version").IsRowVersion().ExcludeFromAudit();
     }
 }
 

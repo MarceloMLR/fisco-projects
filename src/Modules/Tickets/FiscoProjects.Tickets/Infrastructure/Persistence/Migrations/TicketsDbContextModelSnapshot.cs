@@ -125,6 +125,12 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssigneeId");
@@ -211,6 +217,8 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ticket_deadlines", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Priority");
 
                     b.HasData(
                         new

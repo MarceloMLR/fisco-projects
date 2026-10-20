@@ -222,6 +222,66 @@ public sealed class TicketDeadlineTests(SqlServerFixture sqlServer)
         deadlines.GetProperty("usedDays").GetInt32().Should().Be(1);
     }
 
+    [Fact(DisplayName = "Mensagem da ação conta como resposta")]
+    public async Task MessageOfAnAction_IsAnAnswer()
+    {
+        await using var scene = await StartAsync();
+        var path = await OpenAsync(scene, "Medium");
+        using var marina = await scene.App.SignInAsync(scene.Marina);
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+        (await SendAsync(marina, HttpMethod.Post, $"{path}/transitions", new { action = "StartTriage" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await SendAsync(marina, HttpMethod.Post, $"{path}/transitions", new { action = "StartWork" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var asked = await SendAsync(diego, HttpMethod.Post, $"{path}/transitions", new { action = "AskForInformation", body = Doc("Qual a série?") });
+
+        asked.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var ticket = await TicketAsync(diego, path);
+        ticket.GetProperty("assignee").GetProperty("id").GetGuid().Should().Be(scene.Diego);
+        ticket.GetProperty("following").GetBoolean().Should().BeTrue();
+        ticket.GetProperty("deadlines").GetProperty("firstResponse").GetProperty("state").GetString().Should().Be("Met");
+    }
+
+    [Fact(DisplayName = "Resolução com atraso")]
+    public async Task ResolvedLate_StaysLate_AfterClosing()
+    {
+        await using var scene = await StartAsync();
+        var path = await OpenAsync(scene, "Critical");
+        using (var diego = await scene.App.SignInAsync(scene.Diego))
+        {
+            await AnswerAsync(diego, path, "Vou olhar.");
+        }
+
+        // Resolved on Thursday: it was due on Tuesday.
+        scene.App.Clock.Advance(TimeSpan.FromDays(3));
+        using (var diego = await scene.App.SignInAsync(scene.Diego))
+        {
+            (await SendAsync(diego, HttpMethod.Post, $"{path}/transitions", new { action = "Resolve" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
+        using var carla = await scene.App.SignInAsync(scene.Carla);
+        (await SendAsync(carla, HttpMethod.Post, $"{path}/transitions", new { action = "ConfirmAndClose" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var deadlines = (await TicketAsync(carla, path)).GetProperty("deadlines");
+        var resolution = deadlines.GetProperty("resolution");
+        (resolution.GetProperty("state").GetString(), resolution.GetProperty("daysLate").GetInt32()).Should().Be(("Overdue", 2));
+        (deadlines.GetProperty("usedDays").GetInt32(), deadlines.GetProperty("totalDays").GetInt32()).Should().Be((1, 1));
+    }
+
+    [Fact(DisplayName = "Chamado cancelado sem resolução")]
+    public async Task CancelledTicket_HasNoResolution()
+    {
+        await using var scene = await StartAsync();
+        var path = await OpenAsync(scene, "Medium");
+        using var carla = await scene.App.SignInAsync(scene.Carla);
+
+        (await SendAsync(carla, HttpMethod.Post, $"{path}/transitions", new { action = "Cancel", body = Doc("Abri no projeto errado.") }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var deadlines = (await TicketAsync(carla, path)).GetProperty("deadlines");
+        deadlines.GetProperty("resolution").ValueKind.Should().Be(JsonValueKind.Null);
+        deadlines.GetProperty("firstResponse").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     [Fact(DisplayName = "Subir a prioridade")]
     public async Task Manager_RaisesThePriority_AndTheDeadlinesFollow()
     {

@@ -94,6 +94,7 @@ public interface ITicketStore
 
     void Add(Ticket ticket);
 
+    /// <summary>Saves; throws <see cref="TicketChangedException"/> when someone changed the ticket since it was read.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken);
 
     Task<TicketRows> ListAsync(TicketQuery query, TicketScope scope, CancellationToken cancellationToken);
@@ -153,6 +154,12 @@ public sealed record TicketListItem(
 }
 
 public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
+
+/// <summary>
+/// Someone else changed the ticket between reading and saving it, as two first answers at once or a reopening while
+/// the automatic closing runs: nothing was saved, and the person tries again on the ticket as it is now.
+/// </summary>
+public sealed class TicketChangedException(Exception inner) : InvalidOperationException("The ticket changed since it was read.", inner);
 
 /// <summary>Lists the tickets the person sees (ADR-0044), filtered (ADR-0029).</summary>
 public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUserDirectory users, TicketDeadlines deadlines)

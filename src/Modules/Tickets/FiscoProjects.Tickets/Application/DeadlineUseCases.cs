@@ -18,10 +18,11 @@ public sealed record TicketDue(TicketDueState State, DateOnly? DueOn, int? DaysL
 
 /// <summary>
 /// The deadlines of a ticket today (ADR-0025): the first answer (null once the ticket finished without one), the
-/// resolution, the business days used of the total and the business days it waited for the requester.
+/// resolution (null for a ticket closed without being resolved, as a cancelled one; once resolved, met or late by the
+/// day it was resolved), the business days used of the total and the business days it waited for the requester.
 /// </summary>
 public sealed record TicketDeadlineFigures(
-    TicketDue? FirstResponse, DateTime? FirstRespondedAt, TicketDue Resolution, int UsedDays, int TotalDays, int PausedDays);
+    TicketDue? FirstResponse, DateTime? FirstRespondedAt, TicketDue? Resolution, int UsedDays, int TotalDays, int PausedDays);
 
 /// <summary>
 /// The deadlines of the tickets in one place (ADR-0025): set at the opening and at a new priority, from the day of the
@@ -93,13 +94,27 @@ public sealed class TicketDeadlines(ITicketStore store, IWorkCalendar calendar, 
             ? new TicketDue(TicketDueState.Met, firstDue, null)
             : finished ? null : StateOf(firstDue, day);
         var resolution = finished
-            ? new TicketDue(TicketDueState.Met, ticket.ResolutionDueOn, null)
+            ? ResolvedDue(ticket, day)
             : ticket.Status == TicketStatus.WaitingForRequester || ticket.ResolutionDueOn is null
                 ? new TicketDue(TicketDueState.Paused, null, null)
                 : StateOf(ticket.ResolutionDueOn.Value, day);
         var used = day.Days.CountBusinessDays(day.DayOf(ticket.OpenedAt).AddDays(1), end) - paused;
         return new TicketDeadlineFigures(
             firstResponse, ticket.FirstRespondedAt, resolution, Math.Clamp(used, 0, ticket.ResolutionDays), ticket.ResolutionDays, paused);
+    }
+
+    /// <summary>The resolution of a finished ticket: met, or late by the business days after it was due.</summary>
+    private static TicketDue? ResolvedDue(Ticket ticket, TicketDay day)
+    {
+        if (ticket.ResolvedAt is not { } resolvedAt)
+        {
+            return null;
+        }
+
+        var resolved = day.DayOf(resolvedAt);
+        return ticket.ResolutionDueOn is { } due && resolved > due
+            ? new TicketDue(TicketDueState.Overdue, due, Math.Max(1, day.Days.CountBusinessDays(due.AddDays(1), resolved)))
+            : new TicketDue(TicketDueState.Met, ticket.ResolutionDueOn, null);
     }
 
     /// <summary>The business days after the day the waiting started, up to the given day.</summary>
@@ -174,7 +189,15 @@ public sealed class ChangeTicketPriority(IProjectAccess projects, ITicketStore s
         ticket.ChangePriority(chosen, now);
         await deadlines.StartAsync(ticket, cancellationToken);
         store.AddEvent(TicketEvent.PriorityChanged(ticket.Id, viewer.UserId, before, chosen, now));
-        await store.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await store.SaveChangesAsync(cancellationToken);
+        }
+        catch (TicketChangedException)
+        {
+            return PriorityChangeOutcome.NotAllowedNow;
+        }
+
         return PriorityChangeOutcome.Done;
     }
 }

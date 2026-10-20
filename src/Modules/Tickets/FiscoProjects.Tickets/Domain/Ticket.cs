@@ -154,7 +154,13 @@ public sealed class Ticket : Entity
         }
 
         Status = transition.To;
-        ResolvedAt = transition.To == TicketStatus.Resolved ? now : null;
+        // Closing keeps when it was resolved, for the deadline; reopening forgets it.
+        ResolvedAt = transition.To switch
+        {
+            TicketStatus.Resolved => now,
+            TicketStatus.Closed => ResolvedAt,
+            _ => null,
+        };
         ClosedAt = transition.To == TicketStatus.Closed ? now : null;
         UpdatedAt = now;
     }

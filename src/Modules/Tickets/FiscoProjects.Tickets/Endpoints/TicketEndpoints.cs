@@ -74,7 +74,12 @@ public sealed record TicketDueResponse(TicketDueState State, DateOnly? DueOn, in
 /// was given, the resolution, the business days used of the total and the business days it waited for the requester.
 /// </summary>
 public sealed record TicketDeadlinesResponse(
-    TicketDueResponse? FirstResponse, DateTime? FirstRespondedAt, TicketDueResponse Resolution, int UsedDays, int TotalDays, int PausedDays);
+    TicketDueResponse? FirstResponse,
+    DateTime? FirstRespondedAt,
+    [property: Description("Null for a ticket closed without being resolved, as a cancelled one.")] TicketDueResponse? Resolution,
+    int UsedDays,
+    int TotalDays,
+    int PausedDays);
 
 /// <summary>The deadlines of a priority, in business days (ADR-0025).</summary>
 public sealed record TicketDeadlineSettingResponse(TicketPriority Priority, int FirstResponseDays, int ResolutionDays);
@@ -180,6 +185,9 @@ public static class TicketProblems
 
     /// <summary>The ticket is closed and takes no more messages (ADR-0024); status 409.</summary>
     public const string TicketClosed = "urn:fiscoprojects:problem:ticket-closed";
+
+    /// <summary>Someone changed the ticket at the same time, and nothing was saved; status 409.</summary>
+    public const string TicketChanged = "urn:fiscoprojects:problem:ticket-changed";
 
     /// <summary>The action does not leave the status the ticket is in now (ADR-0024); status 409.</summary>
     public const string ActionNotAllowedNow = "urn:fiscoprojects:problem:ticket-action-not-allowed-now";
@@ -590,6 +598,11 @@ public static class TicketEndpoints
                 title: "Ticket closed",
                 detail: "A closed ticket takes no more messages; a new ticket is opened instead.",
                 type: TicketProblems.TicketClosed),
+            ConversationOutcome.Changed => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket changed",
+                detail: "Someone changed the ticket at the same time; nothing was saved.",
+                type: TicketProblems.TicketChanged),
             _ => TypedResults.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Attachment refused",
@@ -625,7 +638,7 @@ public static class TicketEndpoints
             item.Ticket.OpenedAt,
             item.Ticket.UpdatedAt,
             item.Interactions,
-            item.Deadlines is { } figures ? DueOf(figures.Resolution) : null);
+            item.Deadlines?.Resolution is { } resolution ? DueOf(resolution) : null);
 
     private static TicketDueResponse DueOf(TicketDue due) => new(due.State, due.DueOn, due.DaysLate);
 
@@ -633,7 +646,7 @@ public static class TicketEndpoints
         new(
             figures.FirstResponse is { } first ? DueOf(first) : null,
             figures.FirstRespondedAt,
-            DueOf(figures.Resolution),
+            figures.Resolution is { } resolution ? DueOf(resolution) : null,
             figures.UsedDays,
             figures.TotalDays,
             figures.PausedDays);

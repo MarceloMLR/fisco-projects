@@ -21,6 +21,9 @@ public enum ConversationOutcome
 
     /// <summary>The ticket is closed and takes no more messages (ADR-0024).</summary>
     Closed = 7,
+
+    /// <summary>Someone changed the ticket at the same time; nothing was saved.</summary>
+    Changed = 8,
 }
 
 /// <summary>What happened: done, or why not; with a refused file, its name and the reason.</summary>
@@ -113,8 +116,48 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
 /// Sends a message, with its files, in a ticket (ADR-0026, ADR-0044): by the Administrator, the managers, who serves
 /// the team and the requester; mentioning only who may be mentioned, who then follows the ticket.
 /// </summary>
+/// <summary>
+/// What a message of the conversation says about who serves the ticket (ADR-0025, ADR-0068), whether it comes alone or
+/// with an action of the flow: the first one of who serves its team meets the first answer and, without an assignee,
+/// makes the person the assignee, who follows the ticket. The requester who also serves the team still answers as the
+/// requester; the manager who does not serve it and who only follows never take the ticket.
+/// </summary>
+public sealed class TicketAnswers(ITicketStore store)
+{
+    /// <summary>Whether the message made the person the assignee.</summary>
+    public async Task<bool> ClaimAsync(
+        Ticket ticket, ProjectAccess project, TicketViewer viewer, DateTime now, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(viewer);
+        var serves = ticket.RequesterId != viewer.UserId
+            && project.Role is { } role && TicketAccess.Serves(ticket.Team, role);
+        if (!serves)
+        {
+            return false;
+        }
+
+        ticket.RespondFirst(now);
+        if (ticket.AssigneeId is not null)
+        {
+            return false;
+        }
+
+        ticket.Assign(viewer.UserId, now);
+        store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, viewer.UserId, now));
+        await store.FollowAsync(ticket.Id, viewer.UserId, now, cancellationToken);
+        return true;
+    }
+}
+
 public sealed class SendTicketMessage(
-    IProjectAccess projects, ITicketStore store, TicketFiles files, TicketDeadlines deadlines, TimeProvider clock)
+    IProjectAccess projects,
+    ITicketStore store,
+    TicketFiles files,
+    TicketDeadlines deadlines,
+    TicketAnswers answers,
+    TimeProvider clock)
 {
     public async Task<ConversationResult> ExecuteAsync(
         int number, string? body, IReadOnlyList<NewAttachment> attachments, TicketViewer viewer, CancellationToken cancellationToken)
@@ -177,6 +220,11 @@ public sealed class SendTicketMessage(
             await AnswerAsync(ticket, project, viewer, now, cancellationToken);
             await store.SaveChangesAsync(cancellationToken);
         }
+        catch (TicketChangedException)
+        {
+            await files.RemoveAsync(stored, CancellationToken.None);
+            return new ConversationResult(ConversationOutcome.Changed);
+        }
         catch
         {
             await files.RemoveAsync(stored, CancellationToken.None);
@@ -196,24 +244,10 @@ public sealed class SendTicketMessage(
         Ticket ticket, ProjectAccess project, TicketViewer viewer, DateTime now, CancellationToken cancellationToken)
     {
         var flow = await store.FlowAsync(cancellationToken);
-        // The requester who also serves the team still answers as the requester, without taking the ticket.
-        var serves = ticket.RequesterId != viewer.UserId
-            && project.Role is { } role && TicketAccess.Serves(ticket.Team, role);
-        if (serves)
+        if (await answers.ClaimAsync(ticket, project, viewer, now, cancellationToken)
+            && flow.Of(ticket.Status, TicketAction.FirstResponse) is { } first)
         {
-            // The first answer of who serves the team meets its deadline (ADR-0025).
-            ticket.RespondFirst(now);
-        }
-
-        if (ticket.AssigneeId is null && serves)
-        {
-            ticket.Assign(viewer.UserId, now);
-            store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, viewer.UserId, now));
-            await store.FollowAsync(ticket.Id, viewer.UserId, now, cancellationToken);
-            if (flow.Of(ticket.Status, TicketAction.FirstResponse) is { } first)
-            {
-                await deadlines.TakeAsync(ticket, first, viewer.UserId, now, cancellationToken);
-            }
+            await deadlines.TakeAsync(ticket, first, viewer.UserId, now, cancellationToken);
         }
 
         if (flow.Of(ticket.Status, TicketAction.Reply) is { } reply
@@ -275,6 +309,11 @@ public sealed class AttachToDescription(IProjectAccess projects, ITicketStore st
 
             ticket.Touch(now);
             await store.SaveChangesAsync(cancellationToken);
+        }
+        catch (TicketChangedException)
+        {
+            await files.RemoveAsync(stored, CancellationToken.None);
+            return new ConversationResult(ConversationOutcome.Changed);
         }
         catch
         {

@@ -26,7 +26,17 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
 
     public void Add(Ticket ticket) => db.Tickets.Add(ticket);
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
+    public async Task SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new TicketChangedException(exception);
+        }
+    }
 
     public async Task<TicketRows> ListAsync(TicketQuery query, TicketScope scope, CancellationToken cancellationToken)
     {
