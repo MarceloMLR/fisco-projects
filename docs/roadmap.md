@@ -21,14 +21,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 9 | 7 |
 | 2. Acesso e administração | 10 | 10 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 10 | 9 |
+| 4. Cronograma | 10 | 10 |
 | 5. Chamados | 7 | 0 |
 | 6. Avisos | 3 | 0 |
 | 7. Documentos, links, acessos e termos | 5 | 0 |
 | 8. Telas de síntese | 2 | 0 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **60** | **30** |
+| **Total** | **60** | **31** |
 
 ## 1. Fundação
 
@@ -81,7 +81,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-5 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021, 0043, 0067, 0071 | Concluída em 20/10/2026 ([#32](https://github.com/MarceloMLR/fisco-projects/pull/32)) |
 | Cronograma-6 | `desfazer-no-cronograma` | Desfazer as próprias ações, inclusive em cadeia | 0021, 0071, 0091 | Concluída em 20/10/2026 ([#33](https://github.com/MarceloMLR/fisco-projects/pull/33)) |
 | Cronograma-7 | `exportar-cronograma` | PDF e XML do MS Project | 0021, 0043, 0051, 0071 | Concluída em 20/10/2026 ([#34](https://github.com/MarceloMLR/fisco-projects/pull/34)) |
-| Cronograma-8 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017, 0043, 0046 | Em andamento |
+| Cronograma-8 | `modelos-de-projeto`* | "Salvar como modelo" e criar projeto a partir de um modelo | 0017, 0043, 0046 | Concluída em 20/10/2026 ([#35](https://github.com/MarceloMLR/fisco-projects/pull/35)) |
 
 ## 5. Chamados
 
