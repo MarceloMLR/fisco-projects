@@ -71,6 +71,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             HttpStatusCode.NoContent),
         new("Remove a phase", (client, scene) => SendAsync(client, HttpMethod.Delete, $"{scene.Path}/phases/{scene.EmptyPhase}"),
             HttpStatusCode.NoContent),
+        new("Save as a template", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/template", new { name = "Implantação de ERP" }),
+            HttpStatusCode.Created),
         new("Undo the last change", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/undo"), HttpStatusCode.OK),
         new("Redo the change", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/redo"), HttpStatusCode.OK),
     ];

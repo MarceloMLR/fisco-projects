@@ -1,3 +1,4 @@
+using FiscoProjects.Calendar.Contracts;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
 
@@ -183,6 +184,12 @@ public enum ProjectField
     Client = 4,
     Manager = 5,
     TechLead = 6,
+
+    /// <summary>The model is an active model of project (ADR-0017).</summary>
+    Template = 7,
+
+    /// <summary>A project made from a model needs the day its schedule starts.</summary>
+    ScheduleStart = 8,
 }
 
 public enum ProjectSaveOutcome
@@ -278,7 +285,9 @@ public sealed record NewProject(
     Guid? ClientId,
     Guid? ManagerId,
     Guid? TechLeadId,
-    string? TechLeadDirectoryId = null);
+    string? TechLeadDirectoryId = null,
+    Guid? TemplateId = null,
+    DateOnly? ScheduleStart = null);
 
 /// <summary>
 /// Creates a project in Planning (ADR-0016) with its manager and, optionally, its tech lead (ADR-0072). The manager is
@@ -286,7 +295,15 @@ public sealed record NewProject(
 /// the person who creates it does not join the project. The tech lead is another active person.
 /// </summary>
 public sealed class CreateProject(
-    IProjectStore store, IClientStore clients, IUserAccess access, IUserProvisioning provisioning, TimeProvider clock)
+    IProjectStore store,
+    IClientStore clients,
+    IUserAccess access,
+    IUserProvisioning provisioning,
+    TimeProvider clock,
+    ITemplateStore templates,
+    IScheduleStore schedules,
+    IWorkCalendar calendar,
+    InstallationClock installationClock)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -313,6 +330,18 @@ public sealed class CreateProject(
             invalid.Add(ProjectField.TechLead);
         }
 
+        // From a model, the schedule is made with the project (ADR-0017).
+        var template = form.TemplateId is { } templateId ? await templates.FindAsync(templateId, cancellationToken) : null;
+        if (form.TemplateId is not null && template is not { IsActive: true })
+        {
+            invalid.Add(ProjectField.Template);
+        }
+
+        if (form.TemplateId is not null && (form.ScheduleStart is not { } day || !Schedule.IsValidDay(day)))
+        {
+            invalid.Add(ProjectField.ScheduleStart);
+        }
+
         if (invalid.Count > 0)
         {
             return ProjectSaveResult.InvalidFields(invalid);
@@ -337,6 +366,16 @@ public sealed class CreateProject(
         var project = Project.Create(
             data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, clock.GetUtcNow().UtcDateTime);
         store.Add(project);
+        if (template is not null)
+        {
+            var schedule = await schedules.GetOrAddAsync(project.Id, cancellationToken);
+            schedule.ApplyTemplate(
+                template,
+                form.ScheduleStart!.Value,
+                await calendar.GetAsync(cancellationToken),
+                await installationClock.TodayAsync(cancellationToken));
+        }
+
         return await ProjectSaving.SaveAsync(store, project, cancellationToken);
     }
 }

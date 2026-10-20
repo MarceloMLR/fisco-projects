@@ -27,6 +27,8 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<ScheduleChange> ScheduleChanges => Set<ScheduleChange>();
 
+    public DbSet<ProjectTemplate> ProjectTemplates => Set<ProjectTemplate>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }

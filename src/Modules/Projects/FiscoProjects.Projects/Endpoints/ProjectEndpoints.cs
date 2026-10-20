@@ -75,7 +75,8 @@ public sealed record ProjectResponse(
 /// <summary>
 /// The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
 /// project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
-/// the company directory who never signed in, by the <c>directoryId</c> of the people search (ADR-0005).
+/// the company directory who never signed in, by the <c>directoryId</c> of the people search (ADR-0005). With a model, the
+/// schedule is made from it, starting on <c>scheduleStart</c> (ADR-0017).
 /// </summary>
 public sealed record NewProjectRequest(
     string? Code,
@@ -84,7 +85,9 @@ public sealed record NewProjectRequest(
     Guid? ClientId,
     Guid? ManagerId,
     Guid? TechLeadId,
-    string? TechLeadDirectoryId = null);
+    string? TechLeadDirectoryId = null,
+    Guid? TemplateId = null,
+    DateOnly? ScheduleStart = null);
 
 /// <summary>The data of a project that may change after its creation.</summary>
 public sealed record ProjectRequest(string? Code, string? Name, string? Description, Guid? ClientId);
@@ -198,7 +201,7 @@ internal static class ProjectEndpoints
         var result = await createProject.ExecuteAsync(
             new NewProject(
                 request.Code, request.Name, request.Description, request.ClientId, request.ManagerId, request.TechLeadId,
-                request.TechLeadDirectoryId),
+                request.TechLeadDirectoryId, request.TemplateId, request.ScheduleStart),
             creatorId,
             cancellationToken);
         return result.Outcome switch
@@ -322,6 +325,8 @@ internal static class ProjectEndpoints
                 ProjectField.Description => "description",
                 ProjectField.Client => "clientId",
                 ProjectField.Manager => "managerId",
+                ProjectField.Template => "templateId",
+                ProjectField.ScheduleStart => "scheduleStart",
                 _ => "techLeadId",
             },
             field => new[]
@@ -333,6 +338,8 @@ internal static class ProjectEndpoints
                     ProjectField.Description => "The description has up to 4,000 characters.",
                     ProjectField.Client => "The client is an active client.",
                     ProjectField.Manager => "The manager is an active Project manager or Administrator.",
+                    ProjectField.Template => "The model is an active model of project.",
+                    ProjectField.ScheduleStart => "A project made from a model needs the day its schedule starts, from 2000 to 2099.",
                     _ => "The tech lead is an active person other than the manager.",
                 },
             }));
@@ -360,6 +367,7 @@ public static class ProjectsEndpoints
     {
         api.MapClientEndpoints();
         api.MapProjectEndpoints();
+        api.MapTemplateEndpoints();
         return api;
     }
 }

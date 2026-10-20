@@ -427,6 +427,40 @@ public sealed class Schedule : Entity
         return true;
     }
 
+    /// <summary>
+    /// Makes the schedule of a new project from a model (ADR-0017): its phases in order, and its items in the order of the
+    /// model, each one starting as many business days after the start, on a business day, as it did in the schedule it
+    /// came from, in its task and after the items it depends on, as any inclusion places it (ADR-0018, ADR-0019).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The schedule already has phases.</exception>
+    public void ApplyTemplate(ProjectTemplate template, DateOnly start, IBusinessDays days, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        ArgumentNullException.ThrowIfNull(days);
+        if (_phases.Count > 0)
+        {
+            throw new InvalidOperationException("A model goes only into an empty schedule.");
+        }
+
+        var first = OnABusinessDay(start, days);
+        var phases = template.Phases.OrderBy(phase => phase.Position).ToDictionary(phase => phase.Id, phase => AddPhase(phase.Name).Id);
+        var predecessors = template.Dependencies.ToLookup(dependency => dependency.SuccessorId, dependency => dependency.PredecessorId);
+        var items = new Dictionary<Guid, Guid>();
+        foreach (var item in template.Items.OrderBy(item => item.Position))
+        {
+            var plan = new ScheduleItemPlan(
+                phases[item.PhaseId],
+                item.Name,
+                days.AddBusinessDays(first, item.StartOffset),
+                item.Kind == ScheduleItemKind.Milestone ? 0 : Math.Max(1, item.Duration),
+                OwnerId: null,
+                Progress: 0,
+                [.. predecessors[item.Id].Where(items.ContainsKey).Select(id => items[id])],
+                item.ParentId is { } parent && items.TryGetValue(parent, out var parentId) ? parentId : null);
+            items[item.Id] = AddItem(item.Kind, plan, days, today).Id;
+        }
+    }
+
     /// <summary>The dates, the progress and the delays of the schedule on a day (<see cref="ScheduleFigures"/>).</summary>
     public ScheduleFigures Figures(DateOnly today) => ScheduleFigures.Of(_phases, _items, today);
 
