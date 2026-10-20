@@ -113,7 +113,7 @@ export function TicketTable({
         ? [
             {
               field: 'select',
-              width: 48,
+              width: 40,
               sortable: false,
               renderHeader: () => (
                 <Box onClick={keepRow} sx={{ display: 'flex' }}>
@@ -144,7 +144,7 @@ export function TicketTable({
       {
         field: 'number',
         headerName: t('tickets.columns.number'),
-        width: 76,
+        width: 64,
         renderCell: ({ row }) => (
           <Box
             component="span"
@@ -162,7 +162,7 @@ export function TicketTable({
         field: 'title',
         headerName: t('tickets.columns.title'),
         flex: 2,
-        minWidth: 260,
+        minWidth: 232,
         renderCell: ({ row }) => {
           const team = t(`tickets.teams.${row.team}`);
           return (
@@ -210,7 +210,7 @@ export function TicketTable({
       {
         field: 'status',
         headerName: t('tickets.columns.statusAndDue'),
-        width: 212,
+        width: 184,
         // The status with the deadline of the resolution under it, while it is open (canvas Chamados, ADR-0025).
         renderCell: ({ row }) => (
           <Box
@@ -233,7 +233,7 @@ export function TicketTable({
       {
         field: 'assignee',
         headerName: t('tickets.columns.assignee'),
-        width: 184,
+        width: 168,
         renderCell: ({ row }) =>
           row.assignee === null && row.canChangeAssignee ? (
             <Box
@@ -264,13 +264,13 @@ export function TicketTable({
       {
         field: 'priority',
         headerName: t('tickets.columns.priority'),
-        width: 112,
+        width: 92,
         renderCell: ({ row }) => <PriorityTag priority={row.priority} />,
       },
       {
         field: 'interactions',
         headerName: t('tickets.columns.interactions'),
-        width: 60,
+        width: 52,
         align: 'right',
         headerAlign: 'right',
         renderHeader: () => (
