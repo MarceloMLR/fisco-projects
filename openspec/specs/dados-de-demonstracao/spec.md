@@ -29,3 +29,11 @@ As datas dos cronogramas MUST ser relativas ao dia em que o comando roda: o proj
 #### Scenario: Datas relativas a hoje
 - **WHEN** o comando roda na segunda-feira 19/10/2026
 - **THEN** a primeira tarefa do projeto principal começa em 05/10/2026, e a de um dia rodado uma semana depois começa uma semana depois
+
+### Requirement: Linha de base na demonstração
+
+O projeto principal MUST ter a linha de base salva pela gerente antes de uma tarefa ser adiada, para a diferença da linha de base e o caminho crítico aparecerem na demonstração (ADR-0021, ADR-0089).
+
+#### Scenario: Linha de base na demonstração
+- **WHEN** o comando carrega os dados de demonstração
+- **THEN** a gerente salva a linha de base do ERP-FIN e depois adia "Parametrizar regras de ICMS", que empurra as seguintes e deixa o fim do projeto depois da linha de base
