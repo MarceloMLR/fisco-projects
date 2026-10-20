@@ -2,10 +2,22 @@ using System.Text.RegularExpressions;
 
 namespace FiscoProjects.Pipeline.Tests;
 
-// Spec: integracao-continua. The workflow keeps a simple, fixed layout so these checks can read it as text.
+// Spec: integracao-continua. The workflow keeps a simple, fixed layout so these checks can read it as text: each job
+// starts with "  <name>:" under "jobs:", and the scripts are called by "run: bash scripts/ci/<script>.sh".
 public sealed partial class PullRequestWorkflowTests
 {
-    private static readonly string[] Checks = ["build", "test", "format", "frontend", "specs"];
+    /// <summary>The jobs, in order, and the scripts each one calls (ADR-0090).</summary>
+    private static readonly (string Job, string[] Scripts)[] Jobs =
+    [
+        ("changes", ["changes"]),
+        ("backend", ["build", "test"]),
+        ("format", ["format"]),
+        ("frontend", ["frontend"]),
+        ("specs", ["specs"]),
+        ("verify", ["verdict"]),
+    ];
+
+    private const string OnlyWithCode = "    if: ${{ needs.changes.outputs.code == 'true' }}";
 
     [Fact(DisplayName = "Pull request para a main")]
     public void Workflow_RunsOnPullRequestsToMain()
@@ -17,12 +29,28 @@ public sealed partial class PullRequestWorkflowTests
     }
 
     [Fact(DisplayName = "Todas as verificações no pull request")]
-    public void Workflow_RunsEveryCheckAsItsOwnStep_InOrder()
+    public void Workflow_RunsTheChecksInParallelJobs_AndVerifyWaitsForThemAll()
     {
-        var lines = Repository.WorkflowLines();
+        var jobs = JobsOf(Repository.WorkflowLines());
 
-        lines.Should().Contain("  verify:").And.Contain("    name: verify", "the \"Protect main\" rule requires this check name");
-        ScriptSteps(lines).Should().Equal(Checks);
+        jobs.Keys.Should().Equal(Jobs.Select(job => job.Job));
+        foreach (var (job, scripts) in Jobs)
+        {
+            ScriptSteps(jobs[job]).Should().Equal(scripts, $"the job {job} calls these scripts");
+        }
+
+        // The code parts wait only for changes; the specs wait for nothing; verify waits for everything.
+        foreach (var job in new[] { "backend", "format", "frontend" })
+        {
+            jobs[job].Should().Contain("    needs: changes").And.Contain(OnlyWithCode);
+        }
+
+        jobs["specs"].Should().NotContain(line => line.StartsWith("    needs:", StringComparison.Ordinal) || line.StartsWith("    if:", StringComparison.Ordinal));
+        jobs["verify"].Should().Contain("    name: verify", "the \"Protect main\" rule requires this check name")
+            .And.Contain("    needs: [changes, backend, format, frontend, specs]")
+            .And.Contain("    if: ${{ !cancelled() }}");
+        // The tests run only after a successful build.
+        jobs["backend"].Should().Contain("        if: ${{ !cancelled() && steps.build.outcome == 'success' }}");
     }
 
     [Fact(DisplayName = "Etapas do workflow")]
@@ -39,14 +67,19 @@ public sealed partial class PullRequestWorkflowTests
     }
 
     [Fact(DisplayName = "Sem segredos")]
-    public void Workflow_UsesNoSecrets_AndOnlyReadsContents()
+    public void Workflow_UsesNoSecrets_AndOnlyReads()
     {
-        var workflow = string.Join('\n', Repository.WorkflowLines());
+        var lines = Repository.WorkflowLines();
+        var workflow = string.Join('\n', lines);
 
         workflow.Should().NotContain("secrets.").And.NotContain("secrets:");
-        workflow.Should().Contain("\npermissions:\n  contents: read\n\n");
+        workflow.Should().Contain("\npermissions:\n  contents: read\n  checks: read\n  pull-requests: read\n\n");
         Regex.Count(workflow, @"permissions:").Should().Be(1, "no job may ask for more permissions");
-        workflow.Should().Contain("persist-credentials: false");
+        lines.Count(line => line.Contains("- uses: actions/checkout@", StringComparison.Ordinal))
+            .Should().Be(lines.Count(line => line.Trim() == "persist-credentials: false"), "no checkout keeps the token");
+        // The token of the job reaches only changes.sh, to read the checks of the pull request.
+        Regex.Count(workflow, @"github\.token").Should().Be(1);
+        JobsOf(lines)["changes"].Should().Contain("          GH_TOKEN: ${{ github.token }}");
     }
 
     [Fact(DisplayName = "Versões fixadas")]
@@ -57,13 +90,62 @@ public sealed partial class PullRequestWorkflowTests
 
         actions.Should().NotBeEmpty();
         actions.Should().AllSatisfy(line => PinnedAction().IsMatch(line).Should().BeTrue($"\"{line.Trim()}\" must be pinned to a commit"));
-        lines.Should().Contain("    runs-on: ubuntu-24.04");
+        lines.Where(line => line.TrimStart().StartsWith("runs-on:", StringComparison.Ordinal))
+            .Should().HaveCount(Jobs.Length).And.AllBe("    runs-on: ubuntu-24.04");
         lines.Should().Contain("          global-json-file: global.json").And.Contain("          node-version-file: .nvmrc");
         Repository.Read(".nvmrc").Trim().Should().MatchRegex(@"^\d+$");
     }
 
+    [Fact(DisplayName = "Pacotes em cache")]
+    public void Workflow_KeepsThePackagesInCache()
+    {
+        var jobs = JobsOf(Repository.WorkflowLines());
+
+        foreach (var job in new[] { "backend", "format" })
+        {
+            jobs[job].Should().Contain(line => line.StartsWith("      - uses: actions/cache@", StringComparison.Ordinal))
+                .And.Contain("          path: ~/.nuget/packages")
+                .And.Contain("          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.*.props', 'global.json') }}");
+        }
+
+        jobs["frontend"].Should().Contain("          cache: npm").And.Contain("          cache-dependency-path: web/package-lock.json");
+        jobs["specs"].Should().Contain("          cache: npm").And.Contain("          cache-dependency-path: scripts/ci/package-lock.json");
+    }
+
+    /// <summary>The lines of each job, by name, in the order of the workflow.</summary>
+    private static Dictionary<string, List<string>> JobsOf(IEnumerable<string> lines)
+    {
+        var jobs = new Dictionary<string, List<string>>();
+        List<string>? current = null;
+        var inJobs = false;
+        foreach (var line in lines)
+        {
+            if (line == "jobs:")
+            {
+                inJobs = true;
+                continue;
+            }
+
+            var start = JobStart().Match(line);
+            if (inJobs && start.Success)
+            {
+                current = [];
+                jobs.Add(start.Groups["job"].Value, current);
+            }
+            else
+            {
+                current?.Add(line);
+            }
+        }
+
+        return jobs;
+    }
+
     private static IEnumerable<string> ScriptSteps(IEnumerable<string> lines) =>
         lines.Select(line => ScriptStep().Match(line)).Where(match => match.Success).Select(match => match.Groups["script"].Value);
+
+    [GeneratedRegex(@"^  (?<job>[a-z-]+):$")]
+    private static partial Regex JobStart();
 
     [GeneratedRegex(@"^\s+run: bash scripts/ci/(?<script>[a-z-]+)\.sh$")]
     private static partial Regex ScriptStep();

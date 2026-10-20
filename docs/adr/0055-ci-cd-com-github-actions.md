@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (linha "Em todo pull request" substituída pelo ADR-0090)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
@@ -31,7 +31,7 @@ Fluxo:
 
 | Quando | O que roda |
 | --- | --- |
-| Em todo pull request | Build do backend e do frontend; testes unitários, de arquitetura e de integração (SQL Server em contêiner); lint, formatação e checagem de tipos; dependências vulneráveis; validação das specs do OpenSpec; `terraform fmt`, `validate` e `plan`, com o plano comentado no PR |
+| Em todo pull request | Build do backend e do frontend; testes unitários, de arquitetura e de integração (SQL Server em contêiner); lint, formatação e checagem de tipos; dependências vulneráveis; validação das specs do OpenSpec; `terraform fmt`, `validate` e `plan`, com o plano comentado no PR. *Substituído pelo ADR-0090: as partes rodam em paralelo, e o commit que só muda documentação roda só as specs.* |
 | Regra da `main` | Só recebe código por PR, com todas as verificações aprovadas |
 | Merge na `main` | Deploy automático no ambiente de desenvolvimento e demonstração: `terraform apply`, migrações do banco e publicação da aplicação |
 | Produção | Workflow acionado manualmente, por versão: revisão do plano, `terraform apply`, migrações do banco e publicação |

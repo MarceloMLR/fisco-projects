@@ -102,7 +102,7 @@ Regras:
 | [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
 | [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
-| [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita | 2026-10-15 |
+| [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita (linha "Em todo pull request" substituída pelo ADR-0090) | 2026-10-15 |
 | [0056](0056-estrategia-de-testes.md) | Pirâmide de testes ligada às specs, com matrizes de permissão 100% cobertas | aceita | 2026-10-15 |
 | [0057](0057-monitoramento-com-application-insights.md) | Monitoramento com Application Insights e instrumentação OpenTelemetry | aceita | 2026-10-15 |
 | [0058](0058-dados-pessoais-anonimizacao-e-retencao.md) | Dados pessoais com anonimização a pedido e prazos de retenção configuráveis (LGPD) | aceita | 2026-10-15 |
@@ -152,3 +152,4 @@ Regras:
 | [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
 | [0088](0088-subtarefas-na-v1.md) | Subtarefas na v1, em um nível, com a tarefa-resumo calculada e dependências só entre quem faz o trabalho | aceita | 2026-10-19 |
 | [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
+| [0090](0090-verificacao-do-pr-em-paralelo.md) | Verificação do PR em partes paralelas, com só as specs quando o commit muda apenas a documentação | aceita | 2026-10-19 |
