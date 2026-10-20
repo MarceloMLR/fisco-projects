@@ -487,7 +487,9 @@ describe('Abas do projeto', () => {
       'true',
     );
     fireEvent.click(screen.getByRole('tab', { name: ptBR.pages.project.title }));
-    expect(await screen.findByRole('region', { name: ptBR.projects.overview.team })).toBeVisible();
+    expect(
+      await screen.findByRole('region', { name: ptBR.projects.overview.summary }),
+    ).toBeVisible();
   });
 });
 

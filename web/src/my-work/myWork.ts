@@ -53,7 +53,7 @@ const looks: Record<MyWorkGroup, DueState> = {
  * A day of the window of the queue in a word: "hoje", "amanhã", the day of the week up to 6 days ahead ("quarta") or
  * the day and the month (21/10).
  */
-function dayWord(day: DayValue, today: DayValue, t: TFunction): string {
+export function dayWord(day: DayValue, today: DayValue, t: TFunction): string {
   const days = daysBetween(today, day);
   if (days === 0) {
     return t('myWork.days.today');

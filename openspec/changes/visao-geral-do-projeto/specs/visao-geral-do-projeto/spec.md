@@ -18,7 +18,7 @@ A visão geral MUST mostrar o andamento do projeto contra o previsto para hoje: 
 
 ### Requirement: Prazo final contra a linha de base
 
-A visão geral MUST mostrar o fim do cronograma e, com a linha de base, o fim dela e o desvio em dias úteis, com ícone, cor e texto: depois da linha de base, atrasado; antes ou na data, no prazo (ADR-0021, ADR-0065, ADR-0073).
+A visão geral MUST mostrar o fim do cronograma e, com a linha de base, o fim dela e o desvio em dias úteis, com ícone, cor e texto: depois da linha de base, em alerta; antes ou na data, no prazo (ADR-0021, ADR-0065, ADR-0073).
 
 #### Scenario: Desvio do prazo final
 - **WHEN** a linha de base termina em 11/11/2026 e o cronograma agora termina em 13/11/2026

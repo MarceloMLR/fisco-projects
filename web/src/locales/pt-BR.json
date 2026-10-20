@@ -985,8 +985,6 @@
       "Cancelled": "Projeto cancelado: somente leitura. Reabra o projeto para alterar."
     },
     "overview": {
-      "description": "Descrição",
-      "noDescription": "Sem descrição.",
       "team": "Equipe",
       "teams": {
         "management": "Gestão",
@@ -996,7 +994,74 @@
       "managementMeta": "Gerente e líder técnico",
       "people_zero": "Ninguém ainda",
       "people_one": "{{count}} pessoa",
-      "people_other": "{{count}} pessoas"
+      "people_other": "{{count}} pessoas",
+      "summary": "Resumo do projeto",
+      "noSchedule": "Sem cronograma",
+      "progress": {
+        "label": "Andamento",
+        "planned": "previsto {{planned}}%",
+        "bar": "{{actual}}% concluído; previsto para hoje {{planned}}%",
+        "barNoPlan": "{{actual}}% concluído"
+      },
+      "deadline": {
+        "label": "Prazo final",
+        "late_one": "+{{count}} dia útil",
+        "late_other": "+{{count}} dias úteis",
+        "early_one": "{{count}} dia útil antes",
+        "early_other": "{{count}} dias úteis antes",
+        "onTime": "Na data da linha de base",
+        "baseline": "linha de base {{day}}",
+        "noBaseline": "Sem linha de base"
+      },
+      "tickets": {
+        "label": "Chamados abertos",
+        "of": "de {{total}}",
+        "overdue_one": "{{count}} vencido",
+        "overdue_other": "{{count}} vencidos",
+        "noneOverdue": "Nenhum vencido",
+        "waiting_one": "{{count}} aguardando solicitante",
+        "waiting_other": "{{count}} aguardando solicitante"
+      },
+      "milestone": {
+        "label": "Próximo marco",
+        "left_one": "{{day}} · em {{count}} dia útil",
+        "left_other": "{{day}} · em {{count}} dias úteis",
+        "today": "{{day}} · hoje",
+        "late_one": "{{day}} · {{count}} dia útil de atraso",
+        "late_other": "{{day}} · {{count}} dias úteis de atraso",
+        "lateNoDays": "{{day}} · atrasado",
+        "none": "Nenhum marco pela frente"
+      },
+      "timeline": {
+        "title": "Fases e marcos",
+        "open": "Abrir cronograma",
+        "label": "Fases e marcos do projeto, de {{start}} a {{end}}",
+        "name": "Fase",
+        "empty": "O projeto ainda não tem cronograma."
+      },
+      "attention": {
+        "title": "Precisa de atenção",
+        "empty": "Nada precisa de atenção agora.",
+        "task": "Tarefa de {{name}} · {{progress}}%",
+        "taskNoOwner": "Tarefa sem responsável · {{progress}}%",
+        "blocks": "bloqueia {{name}}",
+        "blocksMore_one": "bloqueia {{name}} e mais {{count}}",
+        "blocksMore_other": "bloqueia {{name}} e mais {{count}}",
+        "ticket_one": "{{team}} · {{name}} · {{count}} interação",
+        "ticket_other": "{{team}} · {{name}} · {{count}} interações",
+        "ticketNoAssignee": "{{team}} · sem responsável",
+        "acceptance": "Termo pedido a {{name}} em {{day}}",
+        "milestone": "Marco em {{day}}",
+        "noMilestone": "Pedido em {{day}}",
+        "vendor": "Chamado no fornecedor ligado ao #{{number}}",
+        "stale_one": "Sem retorno há {{count}} dia útil",
+        "stale_other": "Sem retorno há {{count}} dias úteis"
+      },
+      "members": "Membros",
+      "teamMeta": "{{people}} · {{tickets}}",
+      "openTickets_zero": "nenhum chamado aberto",
+      "openTickets_one": "{{count}} chamado aberto",
+      "openTickets_other": "{{count}} chamados abertos"
     },
     "messages": {
       "changed": "Projeto {{name}} alterado.",

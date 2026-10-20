@@ -3782,6 +3782,58 @@
         }
       }
     },
+    "/api/projects/{id}/overview": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The numbers, the timeline, what needs attention and the team of the project (ADR-0073).",
+        "operationId": "GetProjectOverview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOverviewResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/project-templates": {
       "get": {
         "tags": [
@@ -11092,6 +11144,507 @@
         ],
         "description": "Where an e-mail of the queue stands (ADR-0036)."
       },
+      "OverviewAcceptanceResponse": {
+        "required": [
+          "id",
+          "title",
+          "recipient",
+          "requestedAt",
+          "milestone",
+          "milestoneDay"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/OverviewPersonResponse"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "milestone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "milestoneDay": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "A pending request of acceptance the person sees."
+      },
+      "OverviewAttentionResponse": {
+        "required": [
+          "tasks",
+          "tickets",
+          "acceptances",
+          "vendors"
+        ],
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewLateTaskResponse"
+            }
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewTicketResponse"
+            }
+          },
+          "acceptances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewAcceptanceResponse"
+            }
+          },
+          "vendors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewVendorTicketResponse"
+            }
+          }
+        },
+        "description": "What needs attention (ADR-0073), in the order of the list."
+      },
+      "OverviewDeadlineResponse": {
+        "required": [
+          "end",
+          "baselineEnd",
+          "deviation"
+        ],
+        "type": "object",
+        "properties": {
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "baselineEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "deviation": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "The end of the schedule and, with a baseline, its end and the business days of deviation."
+      },
+      "OverviewLateTaskResponse": {
+        "required": [
+          "id",
+          "name",
+          "owner",
+          "progress",
+          "end",
+          "daysLate",
+          "blocks"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewPersonResponse"
+              }
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "daysLate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "A late task: its owner, progress, end, business days of delay and what depends on it."
+      },
+      "OverviewMilestoneResponse": {
+        "required": [
+          "id",
+          "name",
+          "day",
+          "businessDaysLeft",
+          "daysLate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "businessDaysLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "The next milestone not reached: its day, the business days left, or the business days it is late."
+      },
+      "OverviewPersonResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "A person of the overview, by the current name."
+      },
+      "OverviewProgressResponse": {
+        "required": [
+          "actual",
+          "planned",
+          "byBaseline"
+        ],
+        "type": "object",
+        "properties": {
+          "actual": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "planned": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "byBaseline": {
+            "type": "boolean"
+          }
+        },
+        "description": "The progress of the project and how much should be done by today (null with no task to plan), and by what."
+      },
+      "OverviewRowKind": {
+        "enum": [
+          "Phase",
+          "Milestone"
+        ],
+        "description": "What a line of the timeline of the overview is."
+      },
+      "OverviewRowResponse": {
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "start",
+          "end",
+          "progress",
+          "late",
+          "critical",
+          "reached",
+          "baselineStart",
+          "baselineEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/OverviewRowKind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "critical": {
+            "type": "boolean"
+          },
+          "reached": {
+            "type": "boolean"
+          },
+          "baselineStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "baselineEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "A phase or a milestone of the smaller timeline (ADR-0071)."
+      },
+      "OverviewTeam": {
+        "enum": [
+          "Management",
+          "Functional",
+          "Development"
+        ],
+        "description": "The teams of a project (ADR-0040, ADR-0068)."
+      },
+      "OverviewTeamResponse": {
+        "required": [
+          "team",
+          "people",
+          "openTickets"
+        ],
+        "type": "object",
+        "properties": {
+          "team": {
+            "$ref": "#/components/schemas/OverviewTeam"
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectPersonResponse"
+            }
+          },
+          "openTickets": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A team of the project with its people and, for the teams that serve tickets, the open tickets."
+      },
+      "OverviewTicketResponse": {
+        "required": [
+          "number",
+          "title",
+          "team",
+          "assignee",
+          "interactions",
+          "deadline",
+          "dueState",
+          "dueOn",
+          "daysLate"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/ProjectTicketTeam"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewPersonResponse"
+              }
+            ]
+          },
+          "interactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDeadline"
+              }
+            ]
+          },
+          "dueState": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDueState"
+              }
+            ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A ticket that needs attention: late, due up to the next business day or without an assignee."
+      },
+      "OverviewTicketsResponse": {
+        "required": [
+          "open",
+          "total",
+          "overdue",
+          "waitingForRequester"
+        ],
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overdue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitingForRequester": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The tickets of the project: the open ones of all, the late ones and the ones waiting for the requester."
+      },
+      "OverviewTimelineResponse": {
+        "required": [
+          "start",
+          "end",
+          "nonWorkingDays",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "nonWorkingDays": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewRowResponse"
+            }
+          }
+        },
+        "description": "The period of the schedule, its non-business days and its phases and milestones in order."
+      },
+      "OverviewVendorTicketResponse": {
+        "required": [
+          "ticketNumber",
+          "vendor",
+          "code",
+          "staleDays"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "staleDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A ticket at a vendor without an update for the business days of the setting (ADR-0028)."
+      },
       "PersonResponse": {
         "required": [
           "id",
@@ -11387,6 +11940,78 @@
           }
         }
       },
+      "ProjectOverviewResponse": {
+        "required": [
+          "today",
+          "progress",
+          "deadline",
+          "tickets",
+          "nextMilestone",
+          "timeline",
+          "attention",
+          "teams"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewProgressResponse"
+              }
+            ]
+          },
+          "deadline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewDeadlineResponse"
+              }
+            ]
+          },
+          "tickets": {
+            "$ref": "#/components/schemas/OverviewTicketsResponse"
+          },
+          "nextMilestone": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewMilestoneResponse"
+              }
+            ]
+          },
+          "timeline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewTimelineResponse"
+              }
+            ]
+          },
+          "attention": {
+            "$ref": "#/components/schemas/OverviewAttentionResponse"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewTeamResponse"
+            }
+          }
+        },
+        "description": "The overview of a project (ADR-0073): today, the progress, the final deadline and the next milestone (null without a\nschedule), the tickets, the timeline, what needs attention and the team."
+      },
       "ProjectPageResponse": {
         "required": [
           "items",
@@ -11674,6 +12299,28 @@
             "$ref": "#/components/schemas/ProjectStatus"
           }
         }
+      },
+      "ProjectTicketDeadline": {
+        "enum": [
+          "FirstResponse",
+          "Resolution",
+          null
+        ]
+      },
+      "ProjectTicketDueState": {
+        "enum": [
+          "OnTrack",
+          "Soon",
+          "Overdue",
+          null
+        ]
+      },
+      "ProjectTicketTeam": {
+        "enum": [
+          "Functional",
+          "Development"
+        ],
+        "description": "The team of a ticket (ADR-0068), as the overview of a project shows it."
       },
       "ScheduleAction": {
         "enum": [

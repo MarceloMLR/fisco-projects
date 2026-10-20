@@ -11,6 +11,7 @@ import {
 import { demoLinkCategories, demoLinks, linksList } from './demoLinks';
 import { credentialsList, demoCredentials } from './demoCredentials';
 import { emptyMyWork } from './demoMyWork';
+import { emptyOverview } from './demoOverview';
 import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
@@ -1458,6 +1459,7 @@ export const handlers = [
   http.get('/api/people', () => HttpResponse.json([])),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
+  http.get('/api/projects/:id/overview', () => HttpResponse.json(emptyOverview)),
   http.get('/api/projects/:id/closing', () =>
     HttpResponse.json({ openTickets: 0, incompleteTasks: 0, pendingAcceptances: 0 }),
   ),

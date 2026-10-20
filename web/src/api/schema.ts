@@ -855,6 +855,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The numbers, the timeline, what needs attention and the team of the project (ADR-0073). */
+        get: operations["GetProjectOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/project-templates": {
         parameters: {
             query?: never;
@@ -2556,6 +2573,156 @@ export interface components {
          * @enum {unknown}
          */
         OutboxEmailStatus: "Pending" | "Sent" | "Failed";
+        /** @description A pending request of acceptance the person sees. */
+        OverviewAcceptanceResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            recipient: components["schemas"]["OverviewPersonResponse"];
+            /** Format: date-time */
+            requestedAt: string;
+            milestone: null | string;
+            /** Format: date */
+            milestoneDay: null | string;
+        };
+        /** @description What needs attention (ADR-0073), in the order of the list. */
+        OverviewAttentionResponse: {
+            tasks: components["schemas"]["OverviewLateTaskResponse"][];
+            tickets: components["schemas"]["OverviewTicketResponse"][];
+            acceptances: components["schemas"]["OverviewAcceptanceResponse"][];
+            vendors: components["schemas"]["OverviewVendorTicketResponse"][];
+        };
+        /** @description The end of the schedule and, with a baseline, its end and the business days of deviation. */
+        OverviewDeadlineResponse: {
+            /** Format: date */
+            end: string;
+            /** Format: date */
+            baselineEnd: null | string;
+            /** Format: int32 */
+            deviation: null | number;
+        };
+        /** @description A late task: its owner, progress, end, business days of delay and what depends on it. */
+        OverviewLateTaskResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            owner: null | components["schemas"]["OverviewPersonResponse"];
+            /** Format: int32 */
+            progress: number;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            daysLate: number;
+            blocks: string[];
+        };
+        /** @description The next milestone not reached: its day, the business days left, or the business days it is late. */
+        OverviewMilestoneResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            businessDaysLeft: number;
+            /** Format: int32 */
+            daysLate: null | number;
+        };
+        /** @description A person of the overview, by the current name. */
+        OverviewPersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description The progress of the project and how much should be done by today (null with no task to plan), and by what. */
+        OverviewProgressResponse: {
+            /** Format: int32 */
+            actual: number;
+            /** Format: int32 */
+            planned: null | number;
+            byBaseline: boolean;
+        };
+        /**
+         * @description What a line of the timeline of the overview is.
+         * @enum {unknown}
+         */
+        OverviewRowKind: "Phase" | "Milestone";
+        /** @description A phase or a milestone of the smaller timeline (ADR-0071). */
+        OverviewRowResponse: {
+            kind: components["schemas"]["OverviewRowKind"];
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            progress: number;
+            late: boolean;
+            critical: boolean;
+            reached: boolean;
+            /** Format: date */
+            baselineStart: null | string;
+            /** Format: date */
+            baselineEnd: null | string;
+        };
+        /**
+         * @description The teams of a project (ADR-0040, ADR-0068).
+         * @enum {unknown}
+         */
+        OverviewTeam: "Management" | "Functional" | "Development";
+        /** @description A team of the project with its people and, for the teams that serve tickets, the open tickets. */
+        OverviewTeamResponse: {
+            team: components["schemas"]["OverviewTeam"];
+            people: components["schemas"]["ProjectPersonResponse"][];
+            /** Format: int32 */
+            openTickets: null | number;
+        };
+        /** @description A ticket that needs attention: late, due up to the next business day or without an assignee. */
+        OverviewTicketResponse: {
+            /** Format: int32 */
+            number: number;
+            title: string;
+            team: components["schemas"]["ProjectTicketTeam"];
+            assignee: null | components["schemas"]["OverviewPersonResponse"];
+            /** Format: int32 */
+            interactions: number;
+            deadline: null | components["schemas"]["ProjectTicketDeadline"];
+            dueState: null | components["schemas"]["ProjectTicketDueState"];
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: int32 */
+            daysLate: null | number;
+        };
+        /** @description The tickets of the project: the open ones of all, the late ones and the ones waiting for the requester. */
+        OverviewTicketsResponse: {
+            /** Format: int32 */
+            open: number;
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            overdue: number;
+            /** Format: int32 */
+            waitingForRequester: number;
+        };
+        /** @description The period of the schedule, its non-business days and its phases and milestones in order. */
+        OverviewTimelineResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            nonWorkingDays: string[];
+            rows: components["schemas"]["OverviewRowResponse"][];
+        };
+        /** @description A ticket at a vendor without an update for the business days of the setting (ADR-0028). */
+        OverviewVendorTicketResponse: {
+            /** Format: int32 */
+            ticketNumber: number;
+            vendor: string;
+            code: string;
+            /** Format: int32 */
+            staleDays: number;
+        };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
@@ -2651,6 +2818,21 @@ export interface components {
         };
         ProjectMemberRoleRequest: {
             role: components["schemas"]["ProjectRole"];
+        };
+        /**
+         * @description The overview of a project (ADR-0073): today, the progress, the final deadline and the next milestone (null without a
+         *     schedule), the tickets, the timeline, what needs attention and the team.
+         */
+        ProjectOverviewResponse: {
+            /** Format: date */
+            today: string;
+            progress: null | components["schemas"]["OverviewProgressResponse"];
+            deadline: null | components["schemas"]["OverviewDeadlineResponse"];
+            tickets: components["schemas"]["OverviewTicketsResponse"];
+            nextMilestone: null | components["schemas"]["OverviewMilestoneResponse"];
+            timeline: null | components["schemas"]["OverviewTimelineResponse"];
+            attention: components["schemas"]["OverviewAttentionResponse"];
+            teams: components["schemas"]["OverviewTeamResponse"][];
         };
         /** @description A page of the list, with today in the time zone of the installation, the day the schedules are seen on. */
         ProjectPageResponse: {
@@ -2749,6 +2931,15 @@ export interface components {
         ProjectStatusRequest: {
             status: components["schemas"]["ProjectStatus"];
         };
+        /** @enum {unknown} */
+        ProjectTicketDeadline: "FirstResponse" | "Resolution" | null;
+        /** @enum {unknown} */
+        ProjectTicketDueState: "OnTrack" | "Soon" | "Overdue" | null;
+        /**
+         * @description The team of a ticket (ADR-0068), as the overview of a project shows it.
+         * @enum {unknown}
+         */
+        ProjectTicketTeam: "Functional" | "Development";
         /**
          * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
          * @enum {unknown}
@@ -6715,6 +6906,46 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetProjectOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOverviewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

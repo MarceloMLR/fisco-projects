@@ -107,6 +107,15 @@ export function projectsQuery(params: ProjectsParams) {
   });
 }
 
+/** The overview of a project, which answers "está no prazo?" (ADR-0073). */
+export function projectOverviewQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'overview'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/overview', { params: { path: { id } }, signal })),
+  });
+}
+
 /** The open projects the person is in, as the side bar and Meu trabalho list them (ADR-0066, ADR-0070). */
 export function myProjectsQuery() {
   return projectsQuery({ mine: true, situation: 'Active', pageSize: 30 });

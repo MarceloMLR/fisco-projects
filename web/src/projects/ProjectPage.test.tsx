@@ -150,36 +150,22 @@ describe('Cabeçalho do projeto', () => {
     expect(meta).not.toHaveTextContent(text.noSchedule);
   });
 
-  it('Visão geral com a descrição e a equipe', async () => {
+  it('Visão geral com o resumo do projeto', async () => {
     await openProject();
 
-    const description = screen.getByRole('region', { name: text.overview.description });
-    expect(description).toHaveTextContent(
-      'Implantação do ERP na matriz, com o financeiro e a contabilidade.',
-    );
-    const team = screen.getByRole('region', { name: text.overview.team });
+    expect(await screen.findByRole('region', { name: text.overview.summary })).toBeVisible();
+    expect(screen.getByRole('region', { name: text.overview.team })).toBeVisible();
     expect(
-      within(team)
-        .getAllByRole('listitem')
-        .map((item) => item.textContent),
-    ).toEqual([
-      expect.stringContaining(`${text.overview.teams.management}Marina Costa, Rafael Souza`),
-      expect.stringContaining(`${text.overview.teams.functional}${text.overview.people_zero}`),
-      expect.stringContaining(
-        `${text.overview.teams.development}${text.overview.people_one.replace('{{count}}', '1')}`,
-      ),
-    ]);
+      screen.queryByText('Implantação do ERP na matriz, com o financeiro e a contabilidade.'),
+    ).not.toBeInTheDocument();
   });
 
-  it('Projeto interno sem descrição', async () => {
+  it('Projeto interno sem cliente', async () => {
     await openProject('0199f5a2-7c1e-7d40-9a1b-400000000003');
 
     expect(screen.getByTestId('project-meta')).toHaveTextContent(text.internal);
     expect(screen.getByTestId('project-meta')).toHaveTextContent(text.noSchedule);
     expect(screen.getByTestId('project-logo')).toHaveTextContent('PF');
-    expect(screen.getByRole('region', { name: text.overview.description })).toHaveTextContent(
-      text.overview.noDescription,
-    );
   });
 
   it('Projeto fora do alcance', async () => {
@@ -192,7 +178,7 @@ describe('Cabeçalho do projeto', () => {
     await openProject(erpFin, phoneWidth);
 
     expect(screen.getByRole('button', { name: text.actions.button })).toBeVisible();
-    expect(screen.getByRole('region', { name: text.overview.team })).toBeVisible();
+    expect(await screen.findByRole('region', { name: text.overview.summary })).toBeVisible();
   });
 });
 
