@@ -2325,6 +2325,76 @@
       "failed": "Não foi possível salvar o acesso. Tente de novo.",
       "passwordFailed": "Não foi possível buscar a senha. Tente de novo.",
       "copyFailed": "Não foi possível copiar."
+    },
+    "import": {
+      "open": "Importar planilha",
+      "title": "Importar planilha de acessos",
+      "subtitle": "Um arquivo .xlsx ou .csv, com uma linha de cabeçalho.",
+      "pick": "Escolha ou arraste até aqui a planilha .xlsx ou .csv. Ela é lida sem ficar guardada.",
+      "choose": "Escolher planilha",
+      "reading": "Lendo a planilha…",
+      "change": "Trocar planilha",
+      "sheet": "Aba",
+      "mapping": "De onde vem cada campo",
+      "fields": {
+        "portal": "Portal",
+        "environment": "Ambiente",
+        "url": "Endereço",
+        "username": "Usuário",
+        "password": "Senha",
+        "notes": "Observação"
+      },
+      "chooseColumn": "Escolha a coluna",
+      "noColumn": "Não importar",
+      "sameForAll": "Mesmo para todas",
+      "environmentForAll": "Ambiente de todas as linhas",
+      "filter": "Filtrar linhas, por exemplo pelo cliente",
+      "marked": "{{count}} de {{total}} marcadas",
+      "markAll": "Marcar as linhas filtradas",
+      "markLine": "Marcar a linha {{number}}",
+      "table": "Linhas da planilha",
+      "columns": {
+        "line": "Linha",
+        "problem": "Problema"
+      },
+      "lines_zero": "Nenhuma linha",
+      "lines_one": "{{count}} linha",
+      "lines_other": "{{count}} linhas",
+      "empty": "Nenhuma linha com esse texto.",
+      "problems": {
+        "missing": {
+          "portal": "Sem portal",
+          "environment": "Sem ambiente",
+          "url": "Sem endereço",
+          "username": "Sem usuário",
+          "password": "Sem senha",
+          "notes": "Sem observação"
+        },
+        "tooLong": {
+          "portal": "Portal muito longo",
+          "environment": "Ambiente muito longo",
+          "url": "Endereço muito longo",
+          "username": "Usuário muito longo",
+          "password": "Senha muito longa",
+          "notes": "Observação muito longa"
+        },
+        "urlInvalid": "Endereço inválido"
+      },
+      "confirm_zero": "Importar",
+      "confirm_one": "Importar {{count}} acesso",
+      "confirm_other": "Importar {{count}} acessos",
+      "cancel": "Cancelar",
+      "done_one": "{{count}} acesso importado.",
+      "done_other": "{{count}} acessos importados.",
+      "invalid": "Nada foi importado: confira as linhas {{rows}}.",
+      "failed": "Não foi possível ler ou importar a planilha. Tente de novo.",
+      "refused": {
+        "Type": "Escolha um arquivo .xlsx ou .csv.",
+        "Unreadable": "Não foi possível ler a planilha. Salve como .xlsx sem senha ou como .csv e tente de novo.",
+        "Empty": "A planilha não tem linhas abaixo do cabeçalho.",
+        "TooLarge": "A planilha passa de 5 MB.",
+        "TooManyRows": "A planilha passa de 2.000 linhas ou de 50 colunas."
+      }
     }
   }
 }

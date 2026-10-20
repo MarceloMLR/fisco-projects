@@ -4,6 +4,7 @@ import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
+import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
@@ -29,6 +30,7 @@ import { problemType } from '../projects/projectForm';
 import { useProjectOutlet } from '../projects/projectOutlet';
 import { theme } from '../theme/theme';
 import { CredentialDialog } from './CredentialDialog';
+import { CredentialImportDialog } from './CredentialImportDialog';
 import { credentialRows, type CredentialRow, isGroupRow } from './credentials';
 
 /** A project has a few dozen credentials: they all fit in one page of the free Data Grid (ADR-0050). */
@@ -84,6 +86,7 @@ export function ProjectCredentialsPage() {
   // A credential to change, or null for a new one.
   const [editing, setEditing] = useState<Credential | null>();
   const [removing, setRemoving] = useState<Credential>();
+  const [importing, setImporting] = useState(false);
   const searched = useDebounced(search, searchDelay).trim();
   const { data, isFetching, error } = useQuery({
     ...credentialsQuery(project.id, {
@@ -391,6 +394,22 @@ export function ProjectCredentialsPage() {
     ...environments.map((item) => ({ value: item.name, label: item.name, count: item.count })),
   ];
 
+  // Who removes credentials imports a spreadsheet (ADR-0045).
+  const importSheet = (block: boolean) =>
+    permissions?.canDelete === true && (
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<UploadOutlined />}
+        onClick={() => {
+          setImporting(true);
+        }}
+        sx={block ? { width: '100%', flex: 'none' } : { flex: 'none' }}
+      >
+        {t('credentials.import.open')}
+      </Button>
+    );
+
   const newCredential = (block: boolean) =>
     permissions?.canEdit === true && (
       <Button
@@ -476,10 +495,12 @@ export function ProjectCredentialsPage() {
               </Box>
             )}
             {desktop && <Box sx={{ flex: 1 }} />}
+            {desktop && importSheet(false)}
             {desktop && newCredential(false)}
           </>
         }
       />
+      {!desktop && importSheet(true)}
       {!desktop && newCredential(true)}
       <Menu
         anchorEl={menu?.anchor}
@@ -532,6 +553,18 @@ export function ProjectCredentialsPage() {
           }}
           onSaved={(message) => {
             setEditing(undefined);
+            changed(message);
+          }}
+        />
+      )}
+      {importing && (
+        <CredentialImportDialog
+          projectId={project.id}
+          onClose={() => {
+            setImporting(false);
+          }}
+          onImported={(message) => {
+            setImporting(false);
             changed(message);
           }}
         />

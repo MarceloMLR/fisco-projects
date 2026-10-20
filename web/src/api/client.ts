@@ -68,6 +68,7 @@ export type ProjectLink = components['schemas']['LinkResponse'];
 export type LinkCategoryCount = components['schemas']['LinkCategoryCountResponse'];
 export type Credential = components['schemas']['CredentialResponse'];
 export type CredentialList = components['schemas']['CredentialListResponse'];
+export type Spreadsheet = components['schemas']['SpreadsheetResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
