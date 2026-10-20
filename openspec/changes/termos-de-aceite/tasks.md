@@ -15,7 +15,7 @@
 
 - [ ] 3.1 Aba Termos de aceite: lista, situação, filtro, "Pedir aceite" e "Anexar termo assinado"
 - [ ] 3.2 Gaveta do termo: dados, histórico, ações da gestão e resposta da pessoa, também no celular
-- [ ] 3.3 Avisos dos termos no sino e o aviso no diálogo "Concluir projeto"
+- [ ] 3.3 Avisos dos termos no sino, o aviso no diálogo "Concluir projeto" e o termo assinado sem ações na aba Documentos
 - [ ] 3.4 Testes das telas
 
 ## 4. Demonstração e documentação

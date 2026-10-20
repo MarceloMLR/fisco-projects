@@ -195,8 +195,18 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Importar planilha | PreviewCredentialImport, ImportCredentials | Lê o `.xlsx` ou `.csv` sem guardar e inclui as linhas marcadas, todas ou nenhuma (ADR-0094) |
 | Leitor de planilhas | SpreadsheetReader, CsvText | Open XML SDK para o `.xlsx`; leitor próprio para o `.csv` |
 | Mapeamento das colunas | ImportMapping | De que coluna vem cada campo; o ambiente também "Mesmo para todas" |
-| Termo de aceite | AcceptanceRequest | Pedido de aceite de um marco, respondido com PDF assinado (ADR-0035) |
-| Termo assinado | SignedAcceptance | |
+| Termo de aceite | AcceptanceTerm (`documents.acceptance_terms`) | Pedido de aceite de um marco, respondido com PDF assinado, ou termo assinado anexado pela gestão (ADR-0035, ADR-0095) |
+| Situação do termo: pendente, assinado, recusado | AcceptanceStatus: Pending, Signed, Refused | |
+| Pedir aceite | RequestAcceptance | O administrador e o gerente, de um marco, para uma pessoa do projeto, com o termo em PDF |
+| Termo para assinar | `FileId`, `FileName` | O PDF do pedido, em `{código} - {nome}/Pedidos de aceite` |
+| Enviar o termo assinado | SignAcceptance | A pessoa do pedido, em qualquer papel; vira documento Aprovado na pasta de termos e o marco fica atingido |
+| Anexar termo assinado | SignAcceptance (em nome), AttachAcceptance (sem pedido) | Termo assinado recebido por fora, em nome de uma pessoa do projeto |
+| Recusar o termo, motivo da recusa | RefuseAcceptance, `RefusalReason` | Encerra o pedido; o marco continua em aberto |
+| Lembrar | RemindAcceptance | Manda de novo o e-mail do pedido e entra no histórico |
+| Cancelar pedido | CancelAcceptance | O pedido pendente sai da lista e fica só na auditoria |
+| Histórico do termo | AcceptanceEvent (`documents.acceptance_events`) | Pedido, lembrete, assinado, anexado e recusado, fora da auditoria |
+| Marco atingido por outro módulo (contrato) | IScheduleMilestones | O `Projects` marca o marco no dia da instalação, fora do desfazer |
+| Aceites pendentes (contratos) | IProjectAcceptances, IPendingAcceptances | No resumo do encerramento e no resumo diário |
 
 ## Avisos e auditoria
 

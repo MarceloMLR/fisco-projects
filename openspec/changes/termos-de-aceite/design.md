@@ -86,6 +86,8 @@
 - **Gaveta (`DetailsDrawer`):** o marco, para quem, o pedido, a mensagem, o termo enviado (abrir), o termo assinado (abrir), o motivo da recusa e o histórico; as ações conforme o termo e a pessoa: "Lembrar {nome}", "Anexar termo assinado" e "Cancelar pedido" para a gestão; para a pessoa do pedido, "Escolher PDF", "Enviar termo" e "Recusar" (com o motivo num diálogo).
 - **Celular:** a gaveta ocupa a tela, como o canvas CelularTermo; o link do e-mail abre a aba com a gaveta do termo.
 - **Diálogos:** "Pedir aceite" (marco, pessoa, título, mensagem, PDF), "Anexar termo assinado" (marco, pessoa responsável, título, PDF) e "Recusar" (motivo).
+- **Aba Documentos:** o termo assinado da pasta de termos abre na gaveta sem as ações de status, vínculo e exclusão, que a API recusaria (ADR-0093).
+- **Encerramento:** o diálogo "Concluir projeto" avisa os pedidos pendentes, com "Ver termos".
 
 ### 8. Demonstração
 
