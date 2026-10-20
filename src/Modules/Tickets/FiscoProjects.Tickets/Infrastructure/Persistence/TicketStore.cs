@@ -42,6 +42,7 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
             TicketView.UnassignedInMyTeams => UnassignedInTeamsOf(tickets, scope),
             TicketView.Unassigned => tickets.Where(ticket => ticket.AssigneeId == null),
             TicketView.OpenedByMe => tickets.Where(ticket => ticket.RequesterId == scope.UserId),
+            TicketView.Following => Followed(tickets, scope.UserId),
             _ => tickets,
         };
 
@@ -100,7 +101,61 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
             await open.CountAsync(ticket => ticket.AssigneeId == null, cancellationToken),
             await UnassignedInTeamsOf(open, scope).CountAsync(cancellationToken),
             await open.CountAsync(ticket => ticket.AssigneeId == scope.UserId, cancellationToken),
-            await open.CountAsync(ticket => ticket.RequesterId == scope.UserId, cancellationToken));
+            await open.CountAsync(ticket => ticket.RequesterId == scope.UserId, cancellationToken),
+            await Followed(open, scope.UserId).CountAsync(cancellationToken));
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(
+        IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken) =>
+        await db.TicketMessages.AsNoTracking()
+            .Where(message => ticketIds.Contains(message.TicketId))
+            .GroupBy(message => message.TicketId)
+            .Select(group => new { group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+
+    public async Task<IReadOnlyList<TicketMessage>> MessagesAsync(Guid ticketId, CancellationToken cancellationToken) =>
+        await db.TicketMessages.AsNoTracking()
+            .Where(message => message.TicketId == ticketId)
+            .OrderBy(message => message.SentAt).ThenBy(message => message.Id)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TicketAttachment>> AttachmentsAsync(Guid ticketId, CancellationToken cancellationToken) =>
+        await db.TicketAttachments.AsNoTracking()
+            .Where(attachment => attachment.TicketId == ticketId)
+            .OrderBy(attachment => attachment.UploadedAt).ThenBy(attachment => attachment.Name)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Guid>> FollowersAsync(Guid ticketId, CancellationToken cancellationToken) =>
+        await db.TicketFollowers.AsNoTracking()
+            .Where(follower => follower.TicketId == ticketId)
+            .OrderBy(follower => follower.Since)
+            .Select(follower => follower.UserId)
+            .ToListAsync(cancellationToken);
+
+    public Task<bool> HasMessagesAsync(Guid ticketId, CancellationToken cancellationToken) =>
+        db.TicketMessages.AnyAsync(message => message.TicketId == ticketId, cancellationToken);
+
+    public void AddMessage(TicketMessage message) => db.TicketMessages.Add(message);
+
+    public void AddAttachment(TicketAttachment attachment) => db.TicketAttachments.Add(attachment);
+
+    public async Task FollowAsync(Guid ticketId, Guid userId, DateTime since, CancellationToken cancellationToken)
+    {
+        var pending = db.TicketFollowers.Local.Any(follower => follower.TicketId == ticketId && follower.UserId == userId);
+        if (!pending && !await db.TicketFollowers.AnyAsync(
+                follower => follower.TicketId == ticketId && follower.UserId == userId, cancellationToken))
+        {
+            db.TicketFollowers.Add(new TicketFollower(ticketId, userId, since));
+        }
+    }
+
+    public async Task UnfollowAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken)
+    {
+        if (await db.TicketFollowers.SingleOrDefaultAsync(
+                follower => follower.TicketId == ticketId && follower.UserId == userId, cancellationToken) is { } follower)
+        {
+            db.TicketFollowers.Remove(follower);
+        }
     }
 
     public Task<Ticket?> FindAsync(int number, CancellationToken cancellationToken) =>
@@ -111,6 +166,9 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
         var projectIds = scope.ProjectIds;
         return db.Tickets.AsNoTracking().Where(ticket => projectIds.Contains(ticket.ProjectId));
     }
+
+    private IQueryable<Ticket> Followed(IQueryable<Ticket> tickets, Guid userId) =>
+        tickets.Where(ticket => db.TicketFollowers.Any(follower => follower.TicketId == ticket.Id && follower.UserId == userId));
 
     private static IQueryable<Ticket> Open(IQueryable<Ticket> tickets) =>
         tickets.Where(ticket => ticket.Status != TicketStatus.Resolved && ticket.Status != TicketStatus.Closed);

@@ -3,6 +3,7 @@ using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
@@ -27,7 +28,8 @@ public sealed record TicketListItemResponse(
     TicketPersonResponse Requester,
     TicketPersonResponse? Assignee,
     DateTime OpenedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    [property: Description("How many messages the ticket has.")] int Interactions);
 
 public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> Items, int Total);
 
@@ -35,7 +37,8 @@ public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> It
 /// How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
 /// without an assignee in the teams of the person, in charge of the person and opened by the person.
 /// </summary>
-public sealed record TicketCountsResponse(int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe);
+public sealed record TicketCountsResponse(
+    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following);
 
 /// <summary>
 /// A project the person sees, for the filters and the opening: whether it is closed, whether the person may open
@@ -44,17 +47,38 @@ public sealed record TicketCountsResponse(int All, int Open, int Unassigned, int
 public sealed record TicketProjectChoiceResponse(
     Guid Id, string Code, string Name, bool IsClosed, bool CanOpen, IReadOnlyList<TicketTeam> Teams);
 
-/// <summary>A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068).</summary>
-public sealed record NewTicketRequest(Guid? ProjectId, TicketTeam? Team, TicketPriority? Priority, string? Title, string? Description);
+/// <summary>
+/// A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). The
+/// description comes with its formatting in <c>descriptionBody</c> (the JSON of the editor) or as plain text.
+/// </summary>
+public sealed record NewTicketRequest(
+    Guid? ProjectId, TicketTeam? Team, TicketPriority? Priority, string? Title, string? Description, string? DescriptionBody = null);
 
 public sealed record TicketCreatedResponse(Guid Id, int Number);
 
-/// <summary>A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the project.</summary>
+/// <summary>An attachment of a ticket: of a message, or of the description when the message is null.</summary>
+public sealed record TicketAttachmentResponse(Guid Id, Guid? MessageId, string Name, long Size, string ContentType, DateTime UploadedAt);
+
+/// <summary>A message of the conversation, with its text as the JSON of the editor.</summary>
+public sealed record TicketMessageResponse(Guid Id, Guid AuthorId, string Body, DateTime SentAt);
+
+/// <summary>A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069).</summary>
+public sealed record TicketParticipantResponse(Guid Id, string Name, TicketParticipantRole Role);
+
+/// <summary>What the person may do in the conversation.</summary>
+public sealed record TicketConversationPermissionsResponse(bool CanSend, bool CanAttachToDescription);
+
+/// <summary>
+/// A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the
+/// project; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be
+/// mentioned, the parts of the people who appear in it and what the person may do.
+/// </summary>
 public sealed record TicketResponse(
     Guid Id,
     int Number,
     string Title,
     string Description,
+    [property: Description("The description with its formatting, as the JSON of the editor; null for one written as plain text.")] string? DescriptionBody,
     TicketProjectResponse Project,
     TicketTeam Team,
     TicketPriority Priority,
@@ -64,13 +88,29 @@ public sealed record TicketResponse(
     IReadOnlyList<TicketPersonResponse> Managers,
     IReadOnlyList<TicketPersonResponse> TechLeads,
     DateTime OpenedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<TicketMessageResponse> Messages,
+    IReadOnlyList<TicketAttachmentResponse> Attachments,
+    IReadOnlyList<Guid> Followers,
+    IReadOnlyList<Guid> Mentionable,
+    IReadOnlyList<TicketParticipantResponse> Participants,
+    TicketConversationPermissionsResponse Permissions,
+    bool Following);
 
 /// <summary>Problem types of the tickets, so the screen can tell the reason.</summary>
 public static class TicketProblems
 {
     /// <summary>The project is completed or cancelled and takes no tickets until it is reopened (ADR-0022); status 409.</summary>
     public const string ProjectClosed = "urn:fiscoprojects:problem:project-closed";
+
+    /// <summary>The message mentions someone who may not be mentioned in the ticket (ADR-0026); status 400.</summary>
+    public const string MentionRefused = "urn:fiscoprojects:problem:ticket-mention-refused";
+
+    /// <summary>
+    /// A file is too large, empty or a program or script (ADR-0026); status 400, with the extensions fileName and reason
+    /// (TooLarge, Empty or Dangerous).
+    /// </summary>
+    public const string AttachmentRefused = "urn:fiscoprojects:problem:ticket-attachment-refused";
 }
 
 /// <summary>
@@ -79,6 +119,9 @@ public static class TicketProblems
 /// </summary>
 public static class TicketEndpoints
 {
+    // Five files of 15 MB and the text; a larger setting of the installation takes fewer files at a time.
+    private const long UploadLimit = 80L * 1024 * 1024;
+
     public static RouteGroupBuilder MapTicketsEndpoints(this RouteGroupBuilder api)
     {
         var tickets = api.MapGroup("/tickets")
@@ -92,6 +135,26 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/{number:int}", GetAsync).WithName("GetTicket");
+        // The protection against other sites is the X-CSRF header of the application (ADR-0054), not the antiforgery
+        // token of ASP.NET Core forms.
+        tickets.MapPost("/{number:int}/messages", SendAsync).WithName("SendTicketMessage")
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(UploadLimit))
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        tickets.MapPost("/{number:int}/attachments", AttachAsync).WithName("AttachToTicketDescription")
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(UploadLimit))
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        tickets.MapGet("/{number:int}/attachments/{id:guid}", OpenAttachmentAsync).WithName("OpenTicketAttachment")
+            .Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
+        tickets.MapPut("/{number:int}/following", (int number, HttpContext http, IUserAccess access, FollowTicket follow, CancellationToken cancellationToken) =>
+                FollowAsync(number, true, http, access, follow, cancellationToken))
+            .WithName("FollowTicket");
+        tickets.MapDelete("/{number:int}/following", (int number, HttpContext http, IUserAccess access, FollowTicket follow, CancellationToken cancellationToken) =>
+                FollowAsync(number, false, http, access, follow, cancellationToken))
+            .WithName("UnfollowTicket");
         return api;
     }
 
@@ -100,7 +163,7 @@ public static class TicketEndpoints
         IUserAccess access,
         ListTickets listTickets,
         CancellationToken cancellationToken,
-        [Description("All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned or OpenedByMe.")] TicketView view = TicketView.All,
+        [Description("All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following.")] TicketView view = TicketView.All,
         [Description("Only the tickets of this project.")] Guid? projectId = null,
         [Description("Only the tickets of this team.")] TicketTeam? team = null,
         [Description("Open (the default: not resolved nor closed), Finished (resolved and closed) or All.")] TicketSituation situation = TicketSituation.Open,
@@ -142,7 +205,7 @@ public static class TicketEndpoints
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         return await countTickets.ExecuteAsync(projectId, viewer, cancellationToken) is { } counts
             ? TypedResults.Ok(new TicketCountsResponse(
-                counts.All, counts.Open, counts.Unassigned, counts.UnassignedInMyTeams, counts.AssignedToMe, counts.OpenedByMe))
+                counts.All, counts.Open, counts.Unassigned, counts.UnassignedInMyTeams, counts.AssignedToMe, counts.OpenedByMe, counts.Following))
             : TypedResults.NotFound();
     }
 
@@ -160,7 +223,9 @@ public static class TicketEndpoints
     {
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         var result = await openTicket.ExecuteAsync(
-            new NewTicket(request.ProjectId, request.Team, request.Priority, request.Title, request.Description), viewer, cancellationToken);
+            new NewTicket(request.ProjectId, request.Team, request.Priority, request.Title, request.Description, request.DescriptionBody),
+            viewer,
+            cancellationToken);
         return result.Outcome switch
         {
             OpenTicketOutcome.Opened => TypedResults.Created(
@@ -191,6 +256,7 @@ public static class TicketEndpoints
             ticket.Number,
             ticket.Title,
             ticket.Description,
+            ticket.DescriptionBody,
             ProjectOf(details.Project),
             ticket.Team,
             ticket.Priority,
@@ -200,8 +266,125 @@ public static class TicketEndpoints
             [.. details.Managers.Select(PersonOf)],
             [.. details.TechLeads.Select(PersonOf)],
             ticket.OpenedAt,
-            ticket.UpdatedAt));
+            ticket.UpdatedAt,
+            [.. details.Messages.Select(message => new TicketMessageResponse(message.Id, message.AuthorId, message.Body, message.SentAt))],
+            [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
+                attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
+            details.Followers,
+            details.Mentionable,
+            [.. details.Participants.Select(person => new TicketParticipantResponse(person.Id, person.Name, person.Role))],
+            new TicketConversationPermissionsResponse(details.Permissions.CanSend, details.Permissions.CanAttachToDescription),
+            details.Following));
     }
+
+    private static async Task<Results<Created, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> SendAsync(
+        int number,
+        HttpContext http,
+        [FromForm] string? body,
+        IFormFileCollection files,
+        IUserAccess access,
+        SendTicketMessage send,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var attachments = AttachmentsOf(files);
+        try
+        {
+            return ResultOf(await send.ExecuteAsync(number, body, attachments, viewer, cancellationToken));
+        }
+        finally
+        {
+            foreach (var attachment in attachments)
+            {
+                await attachment.Content.DisposeAsync();
+            }
+        }
+    }
+
+    private static async Task<Results<Created, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> AttachAsync(
+        int number,
+        HttpContext http,
+        IFormFileCollection files,
+        IUserAccess access,
+        AttachToDescription attach,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var attachments = AttachmentsOf(files);
+        try
+        {
+            return ResultOf(await attach.ExecuteAsync(number, attachments, viewer, cancellationToken));
+        }
+        finally
+        {
+            foreach (var attachment in attachments)
+            {
+                await attachment.Content.DisposeAsync();
+            }
+        }
+    }
+
+    private static async Task<Results<FileStreamHttpResult, NotFound>> OpenAttachmentAsync(
+        int number, Guid id, HttpContext http, IUserAccess access, OpenTicketAttachment open, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        if (await open.ExecuteAsync(number, id, viewer, cancellationToken) is not { } opened)
+        {
+            return TypedResults.NotFound();
+        }
+
+        var contentType = opened.Attachment.ContentType;
+        var inline = TicketAttachments.OpensInBrowser(contentType);
+        var headers = http.Response.Headers;
+        // The browser neither guesses another type nor runs anything of the file (ADR-0026).
+        headers.XContentTypeOptions = "nosniff";
+        headers.ContentSecurityPolicy = "sandbox";
+        headers.CacheControl = "private, no-store";
+        return TypedResults.Stream(
+            opened.File.Content,
+            contentType,
+            fileDownloadName: inline ? null : opened.Attachment.Name,
+            enableRangeProcessing: false);
+    }
+
+    private static async Task<Results<NoContent, NotFound>> FollowAsync(
+        int number, bool follow, HttpContext http, IUserAccess access, FollowTicket followTicket, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await followTicket.ExecuteAsync(number, follow, viewer, cancellationToken)
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
+    }
+
+    private static List<NewAttachment> AttachmentsOf(IFormFileCollection files) =>
+        [.. files.Select(file => new NewAttachment(Path.GetFileName(file.FileName), file.Length, file.OpenReadStream()))];
+
+    private static Results<Created, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult> ResultOf(ConversationResult result) =>
+        result.Outcome switch
+        {
+            ConversationOutcome.Done => TypedResults.Created(),
+            ConversationOutcome.NotFound => TypedResults.NotFound(),
+            ConversationOutcome.Forbidden => TypedResults.Forbid(),
+            ConversationOutcome.InvalidBody => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["body"] = ["The text is the JSON of the editor, not empty, with only paragraphs, lists, bold, links and mentions."],
+            }),
+            ConversationOutcome.MentionRefused => TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Mention refused",
+                detail: "Only the managers of the project and the people involved in the ticket may be mentioned.",
+                type: TicketProblems.MentionRefused),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Attachment refused",
+                detail: "A file is empty, larger than the installation takes, or a program or script.",
+                type: TicketProblems.AttachmentRefused,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["fileName"] = result.FileName,
+                    ["reason"] = result.Refusal.ToString(),
+                }),
+        };
 
     /// <summary>The person of the session, and whether the person is the Administrator, read from the database now.</summary>
     private static async Task<TicketViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
@@ -224,7 +407,8 @@ public static class TicketEndpoints
             PersonOf(item.Requester),
             item.Assignee is { } assignee ? PersonOf(assignee) : null,
             item.Ticket.OpenedAt,
-            item.Ticket.UpdatedAt);
+            item.Ticket.UpdatedAt,
+            item.Interactions);
 
     private static TicketProjectResponse ProjectOf(TicketProject project) => new(project.Id, project.Code, project.Name);
 

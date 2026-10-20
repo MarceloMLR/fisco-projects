@@ -6,6 +6,23 @@ namespace FiscoProjects.Tickets.Domain;
 public sealed record TicketViewer(Guid UserId, bool IsAdministrator);
 
 /// <summary>
+/// The part a person plays in a ticket, which gives the color and the tag of the messages (ADR-0069): the requester,
+/// the assignee (even being of a team), the manager, the tech lead, the teams, the Administrator outside the project,
+/// or anyone else.
+/// </summary>
+public enum TicketParticipantRole
+{
+    Requester = 1,
+    Owner = 2,
+    Manager = 3,
+    TechLead = 4,
+    Development = 5,
+    Functional = 6,
+    Administrator = 7,
+    Other = 8,
+}
+
+/// <summary>
 /// What a person may do with the tickets of a project, from the system role and the role in the project (ADR-0044,
 /// ADR-0068). This is the only place with the rule.
 /// </summary>
@@ -55,4 +72,59 @@ public static class TicketAccess
         ProjectMemberRole.Developer => [TicketTeam.Development],
         _ => [],
     };
+
+    /// <summary>
+    /// Sends messages and attachments in the ticket (ADR-0044): the Administrator, the managers, who serves the team
+    /// of the ticket and the requester; the other people of the project only follow it.
+    /// </summary>
+    public static bool MaySend(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        ArgumentNullException.ThrowIfNull(ticket);
+        return viewer.IsAdministrator
+            || role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead
+            || (role is { } member && Serves(ticket.Team, member))
+            || ticket.RequesterId == viewer.UserId;
+    }
+
+    /// <summary>
+    /// Who may be mentioned in the ticket (ADR-0026): the managers of the project, in any ticket, and the people
+    /// involved in it: the requester, who serves its team and the assignee; only people of the project.
+    /// </summary>
+    public static IReadOnlyList<Guid> Mentionable(Ticket ticket, IEnumerable<ProjectMemberInfo> members)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        return [.. members
+            .Where(member => member.Role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead
+                || Serves(ticket.Team, member.Role)
+                || member.UserId == ticket.RequesterId
+                || member.UserId == ticket.AssigneeId)
+            .Select(member => member.UserId)
+            .Distinct()];
+    }
+
+    /// <summary>The part of a person in the ticket, from the role in the project (ADR-0069).</summary>
+    public static TicketParticipantRole RoleIn(Ticket ticket, Guid userId, ProjectMemberRole? role, bool isAdministrator)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        if (userId == ticket.RequesterId)
+        {
+            return TicketParticipantRole.Requester;
+        }
+
+        if (userId == ticket.AssigneeId)
+        {
+            return TicketParticipantRole.Owner;
+        }
+
+        return role switch
+        {
+            ProjectMemberRole.Manager => TicketParticipantRole.Manager,
+            ProjectMemberRole.TechLead => TicketParticipantRole.TechLead,
+            ProjectMemberRole.Developer => TicketParticipantRole.Development,
+            ProjectMemberRole.Contributor => TicketParticipantRole.Functional,
+            null when isAdministrator => TicketParticipantRole.Administrator,
+            _ => TicketParticipantRole.Other,
+        };
+    }
 }

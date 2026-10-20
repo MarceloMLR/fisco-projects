@@ -21,6 +21,9 @@ public enum TicketView
 
     /// <summary>The tickets the person opened.</summary>
     OpenedByMe = 5,
+
+    /// <summary>The tickets the person follows (ADR-0026).</summary>
+    Following = 6,
 }
 
 /// <summary>The order of a list: by the priority, the highest first and the oldest first in each, or by the number.</summary>
@@ -80,7 +83,8 @@ public sealed record TicketRows(IReadOnlyList<Ticket> Items, int Total);
 /// open ones without an assignee, without an assignee in the teams of the person, in charge of the person and opened by
 /// the person.
 /// </summary>
-public sealed record TicketCounts(int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe);
+public sealed record TicketCounts(
+    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following);
 
 /// <summary>Where the tickets are kept.</summary>
 public interface ITicketStore
@@ -98,6 +102,27 @@ public interface ITicketStore
     Task<TicketCounts> CountAsync(TicketScope scope, Guid? projectId, CancellationToken cancellationToken);
 
     Task<Ticket?> FindAsync(int number, CancellationToken cancellationToken);
+
+    /// <summary>How many messages each ticket has: its interactions in the lists.</summary>
+    Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<TicketMessage>> MessagesAsync(Guid ticketId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<TicketAttachment>> AttachmentsAsync(Guid ticketId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Guid>> FollowersAsync(Guid ticketId, CancellationToken cancellationToken);
+
+    Task<bool> HasMessagesAsync(Guid ticketId, CancellationToken cancellationToken);
+
+    void AddMessage(TicketMessage message);
+
+    void AddAttachment(TicketAttachment attachment);
+
+    /// <summary>The person starts to follow the ticket, unless already following it.</summary>
+    Task FollowAsync(Guid ticketId, Guid userId, DateTime since, CancellationToken cancellationToken);
+
+    /// <summary>The person stops following the ticket; nothing when not following it.</summary>
+    Task UnfollowAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken);
 }
 
 /// <summary>A person as a ticket shows it.</summary>
@@ -106,8 +131,9 @@ public sealed record TicketPerson(Guid Id, string Name);
 /// <summary>The project of a ticket.</summary>
 public sealed record TicketProject(Guid Id, string Code, string Name);
 
-/// <summary>A ticket of a list, with its project and the names of the requester and the assignee.</summary>
-public sealed record TicketListItem(Ticket Ticket, TicketProject Project, TicketPerson Requester, TicketPerson? Assignee);
+/// <summary>A ticket of a list, with its project, the names of the requester and the assignee and its messages.</summary>
+public sealed record TicketListItem(
+    Ticket Ticket, TicketProject Project, TicketPerson Requester, TicketPerson? Assignee, int Interactions);
 
 public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
 
@@ -120,7 +146,9 @@ public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUs
         ArgumentNullException.ThrowIfNull(viewer);
         var visible = await projects.VisibleAsync(viewer.UserId, viewer.IsAdministrator, cancellationToken);
         var rows = await store.ListAsync(query, TicketScope.Of(viewer, visible), cancellationToken);
-        return new TicketPage(await TicketNames.ItemsOfAsync(rows.Items, visible, users, cancellationToken), rows.Total);
+        var interactions = await store.MessageCountsAsync([.. rows.Items.Select(ticket => ticket.Id)], cancellationToken);
+        return new TicketPage(
+            await TicketNames.ItemsOfAsync(rows.Items, visible, interactions, users, cancellationToken), rows.Total);
     }
 }
 
@@ -171,8 +199,12 @@ public sealed class ListTicketChoices(IProjectAccess projects)
     }
 }
 
-/// <summary>A new ticket as the person fills it in.</summary>
-public sealed record NewTicket(Guid? ProjectId, TicketTeam? Team, TicketPriority? Priority, string? Title, string? Description);
+/// <summary>
+/// A new ticket as the person fills it in: the description with its formatting (<c>DescriptionBody</c>, the JSON of the
+/// editor) or as plain text.
+/// </summary>
+public sealed record NewTicket(
+    Guid? ProjectId, TicketTeam? Team, TicketPriority? Priority, string? Title, string? Description, string? DescriptionBody = null);
 
 public enum OpenTicketOutcome
 {
@@ -202,7 +234,7 @@ public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, Time
     {
         ArgumentNullException.ThrowIfNull(ticket);
         ArgumentNullException.ThrowIfNull(viewer);
-        var form = TicketForm.Of(ticket.Team, ticket.Priority, ticket.Title, ticket.Description);
+        var form = TicketForm.Of(ticket.Team, ticket.Priority, ticket.Title, ticket.Description, ticket.DescriptionBody);
         if (ticket.ProjectId is not { } projectId)
         {
             return OpenTicketResult.InvalidFields([TicketField.Project, .. form.Invalid]);
@@ -240,22 +272,41 @@ public sealed class OpenTicket(IProjectAccess projects, ITicketStore store, Time
             return OpenTicketResult.InvalidFields(invalid);
         }
 
-        var opened = Ticket.Open(
-            await store.NextNumberAsync(cancellationToken), projectId, form, viewer.UserId, clock.GetUtcNow().UtcDateTime);
+        var now = clock.GetUtcNow().UtcDateTime;
+        var opened = Ticket.Open(await store.NextNumberAsync(cancellationToken), projectId, form, viewer.UserId, now);
         store.Add(opened);
+        // The requester follows the ticket from the start (ADR-0026).
+        await store.FollowAsync(opened.Id, viewer.UserId, now, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
         return new OpenTicketResult(OpenTicketOutcome.Opened, opened.Id, opened.Number, []);
     }
 }
 
-/// <summary>A ticket with its project, the requester, the assignee and the managers and tech leads of the project.</summary>
+/// <summary>A person of the conversation and the part the person plays in the ticket (ADR-0069).</summary>
+public sealed record TicketParticipant(Guid Id, string Name, TicketParticipantRole Role);
+
+/// <summary>What the person may do in the conversation: send messages, and attach files to the description.</summary>
+public sealed record TicketConversationPermissions(bool CanSend, bool CanAttachToDescription);
+
+/// <summary>
+/// A ticket with its project, the requester, the assignee and the managers and tech leads of the project, and its
+/// conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be mentioned, the people
+/// who appear in it with their parts, and what the person may do.
+/// </summary>
 public sealed record TicketDetails(
     Ticket Ticket,
     TicketProject Project,
     TicketPerson Requester,
     TicketPerson? Assignee,
     IReadOnlyList<TicketPerson> Managers,
-    IReadOnlyList<TicketPerson> TechLeads);
+    IReadOnlyList<TicketPerson> TechLeads,
+    IReadOnlyList<TicketMessage> Messages,
+    IReadOnlyList<TicketAttachment> Attachments,
+    IReadOnlyList<Guid> Followers,
+    IReadOnlyList<Guid> Mentionable,
+    IReadOnlyList<TicketParticipant> Participants,
+    TicketConversationPermissions Permissions,
+    bool Following);
 
 /// <summary>A ticket by its number, for everyone in its project and the Administrator (ADR-0044); null for anyone else.</summary>
 public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUserDirectory users)
@@ -273,18 +324,53 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
         }
 
         var members = await projects.MembersAsync([project.Id], cancellationToken);
+        var roles = members.ToDictionary(member => member.UserId, member => member.Role);
         var managers = members.Where(member => member.Role == ProjectMemberRole.Manager).Select(member => member.UserId).ToList();
         var techLeads = members.Where(member => member.Role == ProjectMemberRole.TechLead).Select(member => member.UserId).ToList();
-        var names = await users.NamesAsync(
-            [ticket.RequesterId, .. ticket.AssigneeId is { } assignee ? [assignee] : Array.Empty<Guid>(), .. managers, .. techLeads],
-            cancellationToken);
+        var messages = await store.MessagesAsync(ticket.Id, cancellationToken);
+        var attachments = await store.AttachmentsAsync(ticket.Id, cancellationToken);
+        var followers = await store.FollowersAsync(ticket.Id, cancellationToken);
+        var mentionable = TicketAccess.Mentionable(ticket, members);
+        List<Guid> people =
+        [
+            ticket.RequesterId,
+            .. ticket.AssigneeId is { } assignee ? [assignee] : Array.Empty<Guid>(),
+            .. managers,
+            .. techLeads,
+            .. messages.Select(message => message.AuthorId),
+            .. followers,
+            .. mentionable,
+            viewer.UserId,
+        ];
+        var names = await users.NamesAsync([.. people.Distinct()], cancellationToken);
+        var everyone = people.Distinct().Where(names.ContainsKey).ToList();
+        // The Administrator is told apart only for whom the session says it is; the others are known by the project.
+        var participants = everyone.Select(id => new TicketParticipant(
+                id,
+                names[id],
+                TicketAccess.RoleIn(
+                    ticket,
+                    id,
+                    roles.TryGetValue(id, out var role) ? role : null,
+                    id == viewer.UserId && viewer.IsAdministrator)))
+            .ToList();
+        var canSend = TicketAccess.MaySend(viewer, project.Role, ticket);
         return new TicketDetails(
             ticket,
             new TicketProject(project.Id, project.Code, project.Name),
             TicketNames.PersonOf(ticket.RequesterId, names),
             ticket.AssigneeId is { } assigneeId ? TicketNames.PersonOf(assigneeId, names) : null,
             [.. managers.Select(id => TicketNames.PersonOf(id, names)).OrderBy(person => person.Name, StringComparer.CurrentCulture)],
-            [.. techLeads.Select(id => TicketNames.PersonOf(id, names)).OrderBy(person => person.Name, StringComparer.CurrentCulture)]);
+            [.. techLeads.Select(id => TicketNames.PersonOf(id, names)).OrderBy(person => person.Name, StringComparer.CurrentCulture)],
+            messages,
+            attachments,
+            followers,
+            mentionable,
+            participants,
+            new TicketConversationPermissions(
+                canSend,
+                ticket.RequesterId == viewer.UserId && messages.Count == 0),
+            followers.Contains(viewer.UserId));
     }
 }
 
@@ -297,6 +383,7 @@ internal static class TicketNames
     public static async Task<IReadOnlyList<TicketListItem>> ItemsOfAsync(
         IReadOnlyList<Ticket> tickets,
         IReadOnlyList<ProjectAccess> projects,
+        IReadOnlyDictionary<Guid, int> interactions,
         IUserDirectory users,
         CancellationToken cancellationToken)
     {
@@ -311,7 +398,8 @@ internal static class TicketNames
                 ticket,
                 new TicketProject(project.Id, project.Code, project.Name),
                 PersonOf(ticket.RequesterId, names),
-                ticket.AssigneeId is { } assignee ? PersonOf(assignee, names) : null);
+                ticket.AssigneeId is { } assignee ? PersonOf(assignee, names) : null,
+                interactions.TryGetValue(ticket.Id, out var count) ? count : 0);
         })];
     }
 }

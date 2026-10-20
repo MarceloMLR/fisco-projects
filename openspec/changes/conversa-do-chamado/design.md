@@ -56,7 +56,7 @@
 
 - **Envio:** os anexos vão no mesmo pedido da mensagem, em `multipart/form-data`, com o texto no campo `body` e os arquivos em `files`.
 - **Anexos da descrição:** vão em `POST /api/tickets/{number}/attachments`, logo depois da abertura. Só o solicitante os envia, e só enquanto o chamado não tem mensagens. Se o envio falha, o chamado existe sem os anexos, e a tela avisa.
-- **Limite:** `Tickets:Attachments:MaxMegabytes` (15). O pedido inteiro aceita até dez vezes isso.
+- **Limite:** `Tickets:Attachments:MaxMegabytes` (15). Cada mensagem leva até 10 arquivos, e o pedido inteiro aceita até 80 MB.
 - **Tipos recusados:**
   - por extensão: `.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.com`, `.scr`, `.ps1`, `.vbs`, `.js`, `.jar`, `.sh`, `.app` e outros;
   - pelo começo do arquivo: `MZ` (executável do Windows) e `\x7fELF`.
