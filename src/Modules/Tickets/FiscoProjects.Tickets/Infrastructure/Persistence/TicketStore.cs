@@ -211,6 +211,15 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
     public async Task<IReadOnlyList<Ticket>> FindManyAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken) =>
         await db.Tickets.Where(ticket => numbers.Contains(ticket.Number)).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Ticket>> NotClosedAsync(Guid projectId, CancellationToken cancellationToken) =>
+        await db.Tickets
+            .Where(ticket => ticket.ProjectId == projectId && ticket.Status != TicketStatus.Closed)
+            .OrderBy(ticket => ticket.Number)
+            .ToListAsync(cancellationToken);
+
+    public Task<int> CountNotClosedAsync(Guid projectId, CancellationToken cancellationToken) =>
+        db.Tickets.CountAsync(ticket => ticket.ProjectId == projectId && ticket.Status != TicketStatus.Closed, cancellationToken);
+
     public async Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken) =>
         await Open(db.Tickets.Where(ticket => ticket.ProjectId == projectId && ticket.AssigneeId == userId)).ToListAsync(cancellationToken);
 

@@ -94,6 +94,12 @@ public sealed record ProjectRequest(string? Code, string? Name, string? Descript
 
 public sealed record ProjectStatusRequest(ProjectStatus Status);
 
+/// <summary>
+/// What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from
+/// being completed and are closed by the cancellation, and the tasks below 100%, a warning.
+/// </summary>
+public sealed record ProjectClosingResponse(int OpenTickets, int IncompleteTasks);
+
 public sealed record ProjectCreatedResponse(Guid Id);
 
 /// <summary>Problem types of the projects, so the screen can tell the reason.</summary>
@@ -104,6 +110,15 @@ public static class ProjectProblems
 
     /// <summary>The project is completed or cancelled: reopen it to change it (ADR-0016).</summary>
     public const string Closed = "urn:fiscoprojects:problem:project-closed";
+
+    /// <summary>
+    /// The project has tickets not closed and is not completed (ADR-0043); status 409, with how many in the extension
+    /// openTickets.
+    /// </summary>
+    public const string HasOpenTickets = "urn:fiscoprojects:problem:project-has-open-tickets";
+
+    /// <summary>Someone changed a ticket while the cancellation closed them, and nothing changed (ADR-0043); status 409.</summary>
+    public const string TicketsChanged = "urn:fiscoprojects:problem:project-tickets-changed";
 
     /// <summary>The person is already in the project: change the role instead (ADR-0042).</summary>
     public const string MemberExists = "urn:fiscoprojects:problem:project-member-exists";
@@ -143,6 +158,10 @@ internal static class ProjectEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapPut("/{id:guid}/status", ChangeStatusAsync).WithName("ChangeProjectStatus")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapGet("/{id:guid}/closing", ClosingAsync).WithName("GetProjectClosing")
+            .WithDescription("What completing or cancelling the project would leave behind (ADR-0043), for who changes its status.")
             .ProducesProblem(StatusCodes.Status403Forbidden);
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
@@ -268,7 +287,7 @@ internal static class ProjectEndpoints
         };
     }
 
-    private static async Task<Results<NoContent, NotFound, ForbidHttpResult>> ChangeStatusAsync(
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangeStatusAsync(
         Guid id,
         HttpContext http,
         ProjectStatusRequest request,
@@ -277,9 +296,34 @@ internal static class ProjectEndpoints
         CancellationToken cancellationToken)
     {
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
-        return await changeStatus.ExecuteAsync(id, request.Status, viewer, cancellationToken) switch
+        var result = await changeStatus.ExecuteAsync(id, request.Status, viewer, cancellationToken);
+        return result.Outcome switch
         {
             ProjectStatusOutcome.Saved => TypedResults.NoContent(),
+            ProjectStatusOutcome.NotFound => TypedResults.NotFound(),
+            ProjectStatusOutcome.HasOpenTickets => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Open tickets",
+                detail: "The project is completed only with all its tickets closed.",
+                type: ProjectProblems.HasOpenTickets,
+                extensions: new Dictionary<string, object?> { ["openTickets"] = result.OpenTickets }),
+            ProjectStatusOutcome.TicketsChanged => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Tickets changed",
+                detail: "Someone changed a ticket of the project at the same time; nothing changed.",
+                type: ProjectProblems.TicketsChanged),
+            _ => TypedResults.Forbid(),
+        };
+    }
+
+    private static async Task<Results<Ok<ProjectClosingResponse>, NotFound, ForbidHttpResult>> ClosingAsync(
+        Guid id, HttpContext http, IUserAccess access, GetProjectClosing getClosing, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var (outcome, closing) = await getClosing.ExecuteAsync(id, viewer, cancellationToken);
+        return outcome switch
+        {
+            ProjectStatusOutcome.Saved => TypedResults.Ok(new ProjectClosingResponse(closing!.OpenTickets, closing.IncompleteTasks)),
             ProjectStatusOutcome.NotFound => TypedResults.NotFound(),
             _ => TypedResults.Forbid(),
         };

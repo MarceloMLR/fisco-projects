@@ -164,6 +164,9 @@ public enum TicketEventKind
 
     /// <summary>The status of a ticket at a vendor was updated, with a note (ADR-0028).</summary>
     VendorStatusChanged = 8,
+
+    /// <summary>The project was cancelled and closed the ticket, from the status it was in (ADR-0043).</summary>
+    ClosedWithProject = 9,
 }
 
 /// <summary>An event of the conversation: who did it (none for the system), what and when.</summary>
@@ -231,6 +234,9 @@ public sealed class TicketEvent : Entity
             Action = transition.Action,
         };
     }
+
+    public static TicketEvent ClosedWithProject(Guid ticketId, Guid actorId, TicketStatus from, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.ClosedWithProject, at) { FromStatus = from, ToStatus = TicketStatus.Closed };
 
     public static TicketEvent PriorityChanged(Guid ticketId, Guid actorId, TicketPriority from, TicketPriority to, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.PriorityChanged, at) { FromPriority = from, ToPriority = to };
