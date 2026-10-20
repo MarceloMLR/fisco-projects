@@ -293,6 +293,10 @@ export function OverviewTimeline({
   const showsToday =
     today >= dayOfNumber(scale.first) && today <= dayOfNumber(scale.first + scale.days - 1);
   const columns = `${String(listWidth)}px minmax(0, 1fr)`;
+  // In a narrow list, as on the phone, the names keep the room: the phases show only the percent and the milestones
+  // only the mark of late.
+  const compact = listWidth < 220;
+  const cellSx = compact ? { ...progressSx, width: 'auto' } : progressSx;
 
   return (
     <Box
@@ -321,9 +325,11 @@ export function OverviewTimeline({
           <Box component="span" sx={nameSx}>
             {t('projects.overview.timeline.name')}
           </Box>
-          <Box component="span" sx={progressSx}>
-            {t('projects.timeline.columns.progress')}
-          </Box>
+          {!compact && (
+            <Box component="span" sx={progressSx}>
+              {t('projects.timeline.columns.progress')}
+            </Box>
+          )}
         </Box>
         <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
           <Scale scale={scale} today={today} />
@@ -378,7 +384,7 @@ export function OverviewTimeline({
                 <Box
                   component="span"
                   sx={{
-                    ...progressSx,
+                    ...cellSx,
                     color: row.late ? 'var(--status-danger-text)' : 'var(--text-secondary)',
                     fontWeight: row.late ? 500 : 400,
                   }}
@@ -394,9 +400,11 @@ export function OverviewTimeline({
                     />
                   )}
                   {milestone
-                    ? row.reached
-                      ? t('projects.timeline.milestone.reached')
-                      : t('projects.timeline.milestone.pending')
+                    ? compact
+                      ? null
+                      : row.reached
+                        ? t('projects.timeline.milestone.reached')
+                        : t('projects.timeline.milestone.pending')
                     : `${String(row.progress)}%`}
                 </Box>
               </Box>

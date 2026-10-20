@@ -147,7 +147,19 @@ describe('Visão geral pela tela', () => {
         before.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
     }
-    expect(within(timeline()).getAllByRole('listitem')).toHaveLength(6);
+    // A narrower list: the phases with the percent, the milestones without their state.
+    expect(
+      within(timeline())
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual([
+      `Levantamento${ptBR.projects.schedule.late}96%`,
+      'Configuração38%',
+      'Homologação0%',
+      'Aceite da homologação',
+      'Entrada em produção0%',
+      'Virada para produção',
+    ]);
   });
 });
 

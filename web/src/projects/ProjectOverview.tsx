@@ -496,7 +496,7 @@ export function ProjectOverview() {
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', flex: 'none' }}>
         <Numbers overview={overview} />
         <AttentionCard overview={overview} fill={false} />
-        <TimelineCard overview={overview} listWidth={148} />
+        <TimelineCard overview={overview} listWidth={180} />
         <TeamCard teams={overview.teams} fill={false} />
       </Box>
     );
