@@ -28,6 +28,7 @@ export function TextField({
   width,
   id,
   ref,
+  readOnly,
   ...input
 }: TextFieldProps) {
   const { inputId, helpId } = useFieldIds(id);
@@ -43,6 +44,7 @@ export function TextField({
       helper={helper}
       width={width}
       size={size}
+      readOnly={readOnly}
       icon={icon}
     >
       <Box
@@ -51,6 +53,7 @@ export function TextField({
         ref={ref}
         aria-invalid={error === undefined ? undefined : true}
         aria-describedby={help === undefined ? undefined : helpId}
+        readOnly={readOnly}
         {...input}
         sx={fieldInputSx}
       />

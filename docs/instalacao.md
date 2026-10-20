@@ -61,7 +61,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
 - Local dos arquivos no SharePoint (ADR-0030), com o armazenamento escolhido em `FileStorage:Provider`. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
-- Endereço da caixa de envio (ADR-0036).
+- Endereço da caixa de envio, em `Email:Mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036). O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
 - Horário do resumo diário de e-mails (ADR-0037).
 - Prazo de guarda das notificações do sino, padrão 90 dias (ADR-0038).
 - Prazo de retenção da auditoria, padrão 5 anos, a validar com a assessoria jurídica da empresa (ADR-0058).
@@ -70,6 +70,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 - Usar um tenant Microsoft próprio, nunca o da empresa; sem tenant licenciado, usar as implementações locais de e-mail e arquivos (ADR-0002, ADR-0004).
 - Dados de demonstração: com a API rodando, `npm run demo:data` em `web/` (ou `npm run demo:data -- <endereço da API>`) carrega pessoas, clientes, projetos e cronogramas fictícios pela própria API. Só funciona com a entrada local ligada, portanto nunca em produção (ADR-0078, ADR-0089).
+- E-mails locais: `Email:Provider` = `Local` e a pasta em `Email:Local:Folder` (no `appsettings.Development.json`, `App_Data/emails`, dentro da pasta da API e fora do Git); cada e-mail vira um `.eml`, que abre no programa de e-mail (ADR-0036).
 - Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).

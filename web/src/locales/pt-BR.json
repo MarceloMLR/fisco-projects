@@ -499,6 +499,21 @@
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
+    "m365": "Microsoft 365",
+    "mailbox": "Caixa de envio",
+    "mailboxHint": "Os e-mails do sistema saem por ela.",
+    "noMailbox": "Não configurada",
+    "emailTest": {
+      "Sent": "Envio testado",
+      "Pending": "Na fila",
+      "Failed": "Falhou",
+      "none": "Não testado",
+      "detail": "Último teste em {{when}}, para {{to}}",
+      "send": "Enviar teste",
+      "queued": "E-mail de teste na fila para {{to}}. O resultado aparece aqui depois do envio.",
+      "noAddress": "Sua conta não tem e-mail para receber o teste.",
+      "failed": "Não foi possível pedir o teste. Tente de novo."
+    },
     "errors": {
       "nameRequired": "Informe o nome exibido.",
       "nameTooLong": "Use até 60 caracteres.",

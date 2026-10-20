@@ -17,6 +17,7 @@ import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
 import { brandVariables, defaultMainColor, hasContrast, normalizeHex } from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
+import { EmailSettings } from './EmailSettings';
 import { MainColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
 
@@ -120,8 +121,9 @@ function logoErrorOf(type: unknown): LogoError {
 }
 
 /**
- * General settings of the Administration, as in the canvas (AdminConfiguracoes): the Brand (name shown and logo) and
- * the Preview, with Discard and Save changes at the bottom (fp-actionbar). Only the Administrator reaches it.
+ * General settings of the Administration, as in the canvas (AdminConfiguracoes): the Brand (name shown and logo), the
+ * General rules and the Preview, with Discard and Save changes at the bottom (fp-actionbar), and Microsoft 365, with the
+ * test of the e-mails, which does not wait for Save. Only the Administrator reaches it.
  */
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -463,6 +465,12 @@ export function SettingsPage() {
                       )}
                     />
                   </Box>
+                </Box>
+                <Box component="section" aria-labelledby="settings-m365" sx={sectionSx}>
+                  <Box component="h2" id="settings-m365" sx={sectionTitleSx}>
+                    {t('settings.m365')}
+                  </Box>
+                  <EmailSettings onMessage={setMessage} />
                 </Box>
               </Box>
               <BrandPreview

@@ -52,6 +52,8 @@ export type Vendor = components['schemas']['VendorResponse'];
 export type VendorTicket = components['schemas']['VendorTicketResponse'];
 export type TicketVendor = components['schemas']['TicketVendorResponse'];
 export type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
+export type EmailStatus = components['schemas']['EmailStatusResponse'];
+export type EmailTest = components['schemas']['EmailTestResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 

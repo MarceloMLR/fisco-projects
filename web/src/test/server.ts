@@ -1405,6 +1405,10 @@ export const handlers = [
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
   http.get('/api/installation/rules', () => HttpResponse.json({ timeZone: 'America/Sao_Paulo' })),
+  // The mailbox of the demonstration, never tested.
+  http.get('/api/admin/email', () =>
+    HttpResponse.json({ mailbox: 'projetos@empresa.example', lastTest: null }),
+  ),
   // No Syncfusion license in the tests (ADR-0087).
   http.get('/api/client-settings', () => HttpResponse.json({ timelineLicense: null })),
   http.get('/api/calendar/:year', ({ params }) =>
