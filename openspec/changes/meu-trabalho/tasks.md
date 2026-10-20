@@ -12,12 +12,12 @@
 
 ## 3. Frontend
 
-- [ ] 3.1 Página Meu trabalho: a data, as visões, a fila com os grupos, as linhas e os textos
-- [ ] 3.2 Ações pela fila: Concluir, Iniciar e Atualizar, Atribuir, e os links; o `?item=` do cronograma
-- [ ] 3.3 Meus projetos e Próximos marcos, as mensagens das seções vazias e o celular
-- [ ] 3.4 Testes das telas
+- [x] 3.1 Página Meu trabalho: a data, as visões, a fila com os grupos, as linhas e os textos
+- [x] 3.2 Ações pela fila: Concluir, Iniciar e Atualizar, Atribuir, e os links; o `?item=` do cronograma
+- [x] 3.3 Meus projetos e Próximos marcos, as mensagens das seções vazias e o celular
+- [x] 3.4 Testes das telas
 
 ## 4. Demonstração e documentação
 
-- [ ] 4.1 Itens da fila nos dados de demonstração, com o teste
-- [ ] 4.2 `CLAUDE.md`, glossário e roadmap
+- [x] 4.1 Itens da fila nos dados de demonstração, com o teste
+- [x] 4.2 `CLAUDE.md`, glossário e roadmap
