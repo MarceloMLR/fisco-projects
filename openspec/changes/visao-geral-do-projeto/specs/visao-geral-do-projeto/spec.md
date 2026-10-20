@@ -82,7 +82,7 @@ A visão geral MUST mostrar a equipe por time: Gestão (o gerente e o líder té
 
 ### Requirement: Visão geral pela tela
 
-A aba Visão geral MUST mostrar, como o canvas ProjetoVisaoGeral: os quatro números (andamento com a barra do concluído e a marca do previsto, prazo final, chamados abertos e próximo marco); as fases e os marcos numa linha do tempo menor, que se ajusta ao espaço, com hoje, os fins de semana e feriados e "Abrir cronograma"; a equipe; e "Precisa de atenção", com a contagem. Projeto sem cronograma MUST mostrar "Sem cronograma" nos números de prazo (ADR-0016, ADR-0071, ADR-0073).
+A aba Visão geral MUST mostrar, como o canvas ProjetoVisaoGeral, os quatro números, com a barra do andamento e a marca do previsto; as fases e os marcos numa linha do tempo menor que se ajusta ao espaço, com hoje, fins de semana, feriados e "Abrir cronograma"; a equipe; e "Precisa de atenção", com a contagem. Sem cronograma, os números de prazo MUST mostrar "Sem cronograma" (ADR-0016, ADR-0071, ADR-0073).
 
 #### Scenario: Visão geral na tela
 - **WHEN** a gerente abre a aba Visão geral do ERP-FIN
