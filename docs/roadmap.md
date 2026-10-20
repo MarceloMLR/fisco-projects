@@ -117,7 +117,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Síntese-1 | `meu-trabalho` | Fila por urgência, meus projetos e próximos marcos | 0070, 0096 | Em andamento |
+| Síntese-1 | `meu-trabalho` | Fila por urgência, meus projetos e próximos marcos | 0070, 0096 | PR aberto ([#53](https://github.com/MarceloMLR/fisco-projects/pull/53)) |
 | Síntese-2 | `visao-geral-do-projeto` | "Está no prazo?" | 0073 | Planejada |
 
 ## 9. Microsoft 365 real
