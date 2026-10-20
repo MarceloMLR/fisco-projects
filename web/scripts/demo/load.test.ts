@@ -16,6 +16,7 @@ const bodies = new Map<string, unknown[]>();
 let localSignIn = true;
 let existing: string[] = [];
 let ids = 0;
+let numbers = 0;
 
 const personOfEmail = (email: string) =>
   Object.entries(demoPeople).find(([, value]) => value === email)?.[0];
@@ -32,7 +33,14 @@ async function keep(request: Request): Promise<void> {
   calls.push(`${whoCalls(request)} ${request.method} ${path}`);
   if (request.method !== 'GET') {
     const text = await request.clone().text();
-    bodies.set(path, [...(bodies.get(path) ?? []), text === '' ? null : JSON.parse(text)]);
+    let body: unknown;
+    try {
+      body = text === '' ? null : JSON.parse(text);
+    } catch {
+      // A form, as a message with its files: kept as it came.
+      body = text;
+    }
+    bodies.set(path, [...(bodies.get(path) ?? []), body]);
   }
 }
 
@@ -42,6 +50,7 @@ beforeEach(() => {
   localSignIn = true;
   existing = [];
   ids = 0;
+  numbers = 0;
   server.use(
     http.all(`${base}/api/*`, async ({ request }) => {
       await keep(request);
@@ -77,6 +86,9 @@ beforeEach(() => {
         total: existing.length,
         today: '2026-10-19',
       }),
+    ),
+    http.post(`${base}/api/tickets`, () =>
+      HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
     ),
     http.post(`${base}/api/*`, () => HttpResponse.json({ id: nextId() }, { status: 201 })),
     http.put(`${base}/api/*`, () => new HttpResponse(null, { status: 204 })),
@@ -224,5 +236,21 @@ describe('Chamados na demonstração', () => {
         .map(([person]) => person);
       expect((project.tickets ?? []).filter((ticket) => viewers.includes(ticket.by))).toEqual([]);
     }
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Conversa na demonstração".
+describe('Conversa na demonstração', () => {
+  it('Conversa na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each message by its person, in the first ticket: the developer, the tech lead, the requester and the manager.
+    const first = callsBy(/ POST \/api\/tickets\/1\/messages$/).map((call) => call.split(' ')[0]);
+    expect(first).toEqual(['diego', 'rafael', 'carla', 'marina']);
+    const forms = (bodies.get('/api/tickets/1/messages') ?? []) as string[];
+    // The requester mentions the developer and sends the XML.
+    expect(forms[2]).toContain(`"id":"${idOf('diego')}"`);
+    expect(forms[2]).toContain('filename="nota-3401.xml"');
+    expect(callsBy(/ POST \/api\/tickets\/3\/messages$/)).toHaveLength(1);
   });
 });

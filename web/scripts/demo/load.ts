@@ -4,6 +4,8 @@ import {
   administrator,
   dayFrom,
   demoClients,
+  type DemoMessage,
+  demoNames,
   type DemoPerson,
   demoPeople,
   type DemoProject,
@@ -177,6 +179,24 @@ export async function loadDemo(
   return { loaded: true, firstDay, projects: demoProjects.length, items };
 }
 
+/** The text of a message as the editor keeps it: a paragraph, with the mention at the start (ADR-0026). */
+function documentOf(message: DemoMessage, personOf: (person: DemoPerson) => { id: string }) {
+  const mention =
+    message.mention === undefined
+      ? []
+      : [
+          {
+            type: 'mention',
+            attrs: { id: personOf(message.mention).id, label: demoNames[message.mention] },
+          },
+          { type: 'text', text: ', ' },
+        ];
+  return {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [...mention, { type: 'text', text: message.text }] }],
+  };
+}
+
 /** Creates a project with its people, builds its schedule and puts it in its status; gives how many items it has. */
 async function loadProject(
   project: DemoProject,
@@ -298,7 +318,7 @@ async function loadProject(
 
   // Each ticket opened by its person, while the project is open (ADR-0022).
   for (const ticket of project.tickets ?? []) {
-    done(
+    const opened = must(
       await personOf(ticket.by).api.POST('/api/tickets', {
         body: {
           projectId: id,
@@ -310,6 +330,26 @@ async function loadProject(
       }),
       `Chamado ${ticket.title}`,
     );
+    // The conversation, each message by its person, with the mention and the file (ADR-0026).
+    for (const message of ticket.messages ?? []) {
+      const form = new FormData();
+      form.append('body', JSON.stringify(documentOf(message, personOf)));
+      if (message.file !== undefined) {
+        form.append(
+          'files',
+          new Blob([message.file.content], { type: 'application/xml' }),
+          message.file.name,
+        );
+      }
+      done(
+        await personOf(message.by).api.POST('/api/tickets/{number}/messages', {
+          params: { path: { number: opened.number } },
+          body: { files: [] },
+          bodySerializer: () => form,
+        }),
+        `Mensagem no chamado ${ticket.title}`,
+      );
+    }
   }
 
   if (project.status !== undefined) {
