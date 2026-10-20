@@ -94,6 +94,7 @@ export const auditItemTypes = [
   'SchedulePhase',
   'ScheduleItem',
   'ScheduleDependency',
+  'ScheduleBaseline',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 

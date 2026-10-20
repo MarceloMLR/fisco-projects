@@ -132,6 +132,16 @@ const scheduleDependencyFields: readonly string[] = [
 const isScheduleDependencyField = (field: string): field is ScheduleDependencyField =>
   scheduleDependencyFields.includes(field);
 
+type ScheduleBaselineField = 'SavedOn' | 'Start' | 'End';
+const scheduleBaselineFields: readonly string[] = [
+  'SavedOn',
+  'Start',
+  'End',
+] satisfies ScheduleBaselineField[];
+
+const isScheduleBaselineField = (field: string): field is ScheduleBaselineField =>
+  scheduleBaselineFields.includes(field);
+
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
 /** A record of a phase, a task or milestone, or a dependency of a schedule. */
@@ -205,6 +215,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'ScheduleItem' && scheduleDays.includes(field)) {
     return formatDayText(value);
   }
+  if (entry.itemType === 'ScheduleBaseline' && isScheduleBaselineField(field)) {
+    return formatDayText(value);
+  }
   return value;
 }
 
@@ -254,6 +267,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'ScheduleDependency' && isScheduleDependencyField(field)) {
     return t(`audit.fields.ScheduleDependency.${field}`);
   }
+  if (entry.itemType === 'ScheduleBaseline' && isScheduleBaselineField(field)) {
+    return t(`audit.fields.ScheduleBaseline.${field}`);
+  }
   return field;
 }
 
@@ -297,6 +313,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
+  }
+  // The baseline of a project, saved and saved again (ADR-0021).
+  if (entry.itemType === 'ScheduleBaseline') {
+    return t(
+      `audit.actions.ScheduleBaseline.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
   }
   if (entry.itemType !== 'User') {
     return t(`audit.actions.Other.${entry.action}`);
@@ -466,6 +488,9 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'Project') {
     return [{ label: t('audit.details.item.Project'), value: label }];
   }
+  if (entry.itemType === 'ScheduleBaseline') {
+    return [{ label: t('audit.details.item.ScheduleBaseline'), value: label }];
+  }
   if (entry.itemType === 'ProjectMember') {
     return [
       { label: t('audit.details.item.ProjectMember'), value: label },
@@ -487,16 +512,22 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
 }
 
 /**
- * The fields of a task or milestone in the order of its form, not in the alphabetical order the API keeps them: the
- * start before the end.
+ * The fields of a task or milestone in the order of its form, and those of a baseline in the order of the day it was
+ * saved, the start and the end, not in the alphabetical order the API keeps them: the start before the end.
  */
 function inFormOrder(entry: AuditEntry): AuditEntry {
-  if (entry.itemType !== 'ScheduleItem') {
+  const order =
+    entry.itemType === 'ScheduleItem'
+      ? scheduleItemFields
+      : entry.itemType === 'ScheduleBaseline'
+        ? scheduleBaselineFields
+        : undefined;
+  if (order === undefined) {
     return entry;
   }
   const place = (field: string) => {
-    const index = scheduleItemFields.indexOf(field);
-    return index === -1 ? scheduleItemFields.length : index;
+    const index = order.indexOf(field);
+    return index === -1 ? order.length : index;
   };
   return {
     ...entry,
