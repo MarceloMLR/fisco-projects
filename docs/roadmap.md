@@ -111,7 +111,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Documentos-2 | `links`* | Links do projeto por categoria | 0032 | PR aberto ([#49](https://github.com/MarceloMLR/fisco-projects/pull/49)) |
 | Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | PR aberto ([#50](https://github.com/MarceloMLR/fisco-projects/pull/50)) |
 | Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034, 0094 | PR aberto ([#51](https://github.com/MarceloMLR/fisco-projects/pull/51)) |
-| Documentos-5 | `termos-de-aceite` | Pedido, resposta com PDF assinado, recusa | 0035, 0045 | Planejada |
+| Documentos-5 | `termos-de-aceite` | Pedido, resposta com PDF assinado, recusa | 0035, 0045, 0095 | Em andamento |
 
 ## 8. Telas de síntese
 
