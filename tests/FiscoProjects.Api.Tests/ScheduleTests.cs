@@ -67,6 +67,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             HttpStatusCode.NoContent),
         new("Remove a phase", (client, scene) => SendAsync(client, HttpMethod.Delete, $"{scene.Path}/phases/{scene.EmptyPhase}"),
             HttpStatusCode.NoContent),
+        new("Undo the last change", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/undo"), HttpStatusCode.OK),
+        new("Redo the change", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/redo"), HttpStatusCode.OK),
     ];
 
     [Fact(DisplayName = "Gerente edita o cronograma")]
@@ -662,6 +664,145 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         all.EnumerateArray().Select(entry => entry.GetProperty("itemType").GetString()).Should().NotContain("ScheduleBaselineItem");
     }
 
+    [Fact(DisplayName = "Desfazer volta a cadeia")]
+    public async Task Undo_PutsTheTaskAndThePushedMilestoneBack()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var before = await ScheduleOfAsync(scene);
+        (await DatesAsync(marina, scene, scene.Task, "2026-10-15")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await StepsAsync(marina, scene)).Should().Be(("DatesChanged:Parametrizar regras de ICMS", null));
+
+        var undone = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo");
+
+        undone.StatusCode.Should().Be(HttpStatusCode.OK);
+        var step = await undone.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+        (step.GetProperty("action").GetString(), step.GetProperty("name").GetString())
+            .Should().Be(("DatesChanged", "Parametrizar regras de ICMS"));
+        (await ItemAsync(scene, scene.Task)).GetProperty("start").GetString().Should().Be("2026-10-13");
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("start").GetString().Should().Be("2026-10-15");
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+        // The Administrator built the schedule: Marina has nothing else to undo, and may redo the move.
+        (await StepsAsync(marina, scene)).Should().Be((null, "DatesChanged:Parametrizar regras de ICMS"));
+    }
+
+    [Fact(DisplayName = "Desfazer uma exclusão")]
+    public async Task UndoingARemoval_BringsTheTaskBackWithItsDependency()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Delete, $"{scene.Path}/items/{scene.Task}");
+
+        (await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var task = await ItemAsync(scene, scene.Task);
+        (task.GetProperty("name").GetString(), task.GetProperty("start").GetString(), task.GetProperty("end").GetString())
+            .Should().Be(("Parametrizar regras de ICMS", "2026-10-13", "2026-10-15"));
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("predecessorIds").EnumerateArray()
+            .Select(id => id.GetGuid()).Should().Equal(scene.Task);
+    }
+
+    [Fact(DisplayName = "Desfazer bloqueado")]
+    public async Task SomeoneChangingTheSameTaskAfter_BlocksTheUndo_AndTheNextUndoGoesToTheChangeBefore()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/phases/{scene.Phase}", new { name = "Parametrização" });
+        await DatesAsync(marina, scene, scene.Task, "2026-10-15");
+        // The Administrator changes the same task after it.
+        await ProgressAsync(scene.Admin, scene, scene.Task, 40);
+        var before = await ScheduleOfAsync(scene);
+
+        var blocked = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo");
+
+        blocked.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProblemTypeAsync(blocked)).Should().Be("urn:fiscoprojects:problem:schedule-undo-blocked");
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+        (await StepsAsync(marina, scene)).Should().Be(("PhaseRenamed:Parametrização", null));
+        (await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode.Should().Be(HttpStatusCode.OK);
+        var schedule = await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        schedule.GetProperty("phases").EnumerateArray().Select(phase => phase.GetProperty("name").GetString())
+            .Should().Contain("Configuração");
+    }
+
+    [Fact(DisplayName = "Só as próprias mudanças")]
+    public async Task ThePersonUndoesOnlyTheirOwnChanges()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var added = await AddTaskAsync(scene, "Configurar plano de contas", scene.Rafael);
+
+        var response = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:schedule-nothing-to-undo");
+        (await ItemAsync(scene, added)).GetProperty("name").GetString().Should().Be("Configurar plano de contas");
+        (await StepsAsync(marina, scene)).Should().Be((null, null));
+    }
+
+    [Fact(DisplayName = "Últimas 20 mudanças")]
+    public async Task ThePersonKeepsTheLast20Changes()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        for (var number = 1; number <= 21; number++)
+        {
+            await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/phases/{scene.EmptyPhase}", new { name = $"Fase {number}" });
+        }
+
+        var statuses = new List<HttpStatusCode>();
+        for (var undo = 1; undo <= 21; undo++)
+        {
+            statuses.Add((await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode);
+        }
+
+        statuses.Should().Equal([.. Enumerable.Repeat(HttpStatusCode.OK, 20), HttpStatusCode.Conflict]);
+        // Back to the name of the first change: the one before it left the history.
+        var schedule = await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        schedule.GetProperty("phases").EnumerateArray().Select(phase => phase.GetProperty("name").GetString())
+            .Should().Contain("Fase 1");
+    }
+
+    [Fact(DisplayName = "Refazer depois de desfazer")]
+    public async Task Redo_AppliesTheUndoneChangeAgain()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/phases/{scene.Phase}", new { name = "Parametrização" });
+        await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo");
+
+        var redone = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/redo");
+
+        redone.StatusCode.Should().Be(HttpStatusCode.OK);
+        var schedule = await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        schedule.GetProperty("phases").EnumerateArray().Select(phase => phase.GetProperty("name").GetString())
+            .Should().Contain("Parametrização");
+        (await StepsAsync(marina, scene)).Should().Be(("PhaseRenamed:Parametrização", null));
+    }
+
+    [Fact(DisplayName = "Mudança nova apaga o refazer")]
+    public async Task ANewChange_TakesAwayTheRedo()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/phases/{scene.Phase}", new { name = "Parametrização" });
+        await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo");
+        await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/phases", new { name = "Treinamento" });
+
+        var response = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/redo");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProblemTypeAsync(response)).Should().Be("urn:fiscoprojects:problem:schedule-nothing-to-undo");
+        (await StepsAsync(marina, scene)).Should().Be(("PhaseAdded:Treinamento", null));
+    }
+
     [Fact(DisplayName = "Remover o responsável de tarefas")]
     public async Task RemovedPerson_LeavesTheTasksWithoutOwner_AndItIsAudited()
     {
@@ -765,6 +906,15 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             .GetProperty("phases").EnumerateArray()
             .SelectMany(phase => phase.GetProperty("items").EnumerateArray())
             .Single(item => item.GetProperty("id").GetGuid() == itemId);
+
+    /// <summary>What the person would undo and redo, as "Action:name", as the schedule tells the person.</summary>
+    private static async Task<(string? Undo, string? Redo)> StepsAsync(HttpClient client, Scene scene)
+    {
+        var schedule = await client.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        static string? StepOf(JsonElement step) =>
+            step.ValueKind == JsonValueKind.Null ? null : $"{step.GetProperty("action").GetString()}:{step.GetProperty("name").GetString()}";
+        return (StepOf(schedule.GetProperty("undo")), StepOf(schedule.GetProperty("redo")));
+    }
 
     private static async Task<string> ScheduleOfAsync(Scene scene) =>
         (await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation)).GetRawText();

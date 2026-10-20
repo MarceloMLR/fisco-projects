@@ -223,6 +223,47 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Diff")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Undone")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "ActorId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("schedule_changes", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -390,6 +431,15 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("FiscoProjects.Projects.Domain.ScheduleBaseline", null)
                         .WithMany("Items")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleChange", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

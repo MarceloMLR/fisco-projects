@@ -107,7 +107,7 @@ public sealed record ScheduleChangeLabel(ScheduleAction Action, string Name);
 
 /// <summary>
 /// A change of the schedule a person made, kept for the person to undo and redo it (ADR-0021, ADR-0091): its kind, the
-/// name of the phase or item and what changed. The changes of a person come in the order of their ids.
+/// name of the phase or item and what changed. The changes of a person in a project come in the order of their numbers.
 /// </summary>
 public sealed class ScheduleChange : Entity
 {
@@ -120,12 +120,13 @@ public sealed class ScheduleChange : Entity
         Diff = new ScheduleDiff([], [], []);
     }
 
-    public ScheduleChange(Guid projectId, Guid actorId, ScheduleChangeLabel label, ScheduleDiff diff)
+    public ScheduleChange(Guid projectId, Guid actorId, int number, ScheduleChangeLabel label, ScheduleDiff diff)
     {
         ArgumentNullException.ThrowIfNull(label);
         ArgumentNullException.ThrowIfNull(diff);
         ProjectId = projectId;
         ActorId = actorId;
+        Number = number;
         Action = label.Action;
         Name = label.Name;
         Diff = diff;
@@ -135,6 +136,9 @@ public sealed class ScheduleChange : Entity
 
     /// <summary>The person who made it, the only one who undoes it.</summary>
     public Guid ActorId { get; private init; }
+
+    /// <summary>The order of the changes of the person in the project: a later change has a greater number.</summary>
+    public int Number { get; private init; }
 
     public ScheduleAction Action { get; private init; }
 

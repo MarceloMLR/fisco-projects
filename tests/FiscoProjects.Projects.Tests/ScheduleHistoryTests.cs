@@ -37,7 +37,7 @@ public sealed class ScheduleHistoryTests
     {
         var before = schedule.Snapshot();
         change();
-        return new ScheduleChange(schedule.Id, Marina, new ScheduleChangeLabel(action, name), ScheduleDiff.Between(before, schedule.Snapshot()));
+        return new ScheduleChange(schedule.Id, Marina, 1, new ScheduleChangeLabel(action, name), ScheduleDiff.Between(before, schedule.Snapshot()));
     }
 
     [Fact(DisplayName = "Desfazer volta a cadeia")]

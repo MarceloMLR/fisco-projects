@@ -35,6 +35,13 @@ public interface IScheduleStore
 
     /// <summary>The name of each task or milestone found.</summary>
     Task<IReadOnlyDictionary<Guid, string>> ItemNamesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
+    /// <summary>The changes a person keeps in the schedule of a project, tracked, in order (ADR-0091).</summary>
+    Task<IReadOnlyList<ScheduleChange>> ChangesOfAsync(Guid projectId, Guid actorId, CancellationToken cancellationToken);
+
+    void AddChange(ScheduleChange change);
+
+    void RemoveChange(ScheduleChange change);
 }
 
 /// <summary>Today in the time zone of the installation (ADR-0013), for the delays and the completion of the tasks.</summary>
@@ -53,7 +60,8 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043), the
 /// non-business days around its period, for the timeline to shade (ADR-0051), the business days of delay of each
 /// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
-/// the schedule now, none until the manager saves one (ADR-0021).
+/// the schedule now, none until the manager saves one (ADR-0021), and, for who edits it, what undoing and redoing would
+/// do (ADR-0091).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -63,7 +71,9 @@ public sealed record ScheduleView(
     IReadOnlyList<DateOnly> NonWorkingDays,
     IReadOnlyDictionary<Guid, int> LateDays,
     IReadOnlySet<Guid> Critical,
-    BaselineComparison? Baseline);
+    BaselineComparison? Baseline,
+    ScheduleChangeLabel? Undo = null,
+    ScheduleChangeLabel? Redo = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -84,6 +94,10 @@ public sealed class GetSchedule(
         var names = await PeopleNames.OfAsync(
             users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
         var figures = schedule.Figures(today);
+        // What the person who edits the schedule would undo and redo now (ADR-0091).
+        var changes = permissions.CanEditSchedule && !project.IsClosed
+            ? await schedules.ChangesOfAsync(projectId, viewer.UserId, cancellationToken)
+            : [];
         // Without items nor a baseline, there is nothing to shade, to be late, on the path or to compare.
         var days = figures.Start is null && schedule.Baseline is null ? null : await calendar.GetAsync(cancellationToken);
         var nonWorkingDays = days is not null && figures is { Start: { } start, End: { } end }
@@ -105,7 +119,9 @@ public sealed class GetSchedule(
             nonWorkingDays,
             days is null ? new Dictionary<Guid, int>() : ScheduleFigures.LateDaysOf(schedule.Items, today, days),
             days is null ? new HashSet<Guid>() : ScheduleCriticalPath.Of(schedule.Items, schedule.Dependencies, days),
-            schedule.Baseline is { } baseline && days is not null ? baseline.CompareWith(schedule.Items, figures.End, days) : null);
+            schedule.Baseline is { } baseline && days is not null ? baseline.CompareWith(schedule.Items, figures.End, days) : null,
+            changes.LastOrDefault(change => !change.Undone)?.Label,
+            changes.FirstOrDefault(change => change.Undone)?.Label);
     }
 }
 
@@ -123,6 +139,12 @@ public enum ScheduleOutcome
 
     /// <summary>An item it would depend on already depends on it (ADR-0019).</summary>
     Cycle = 6,
+
+    /// <summary>The person has no change of the schedule to undo, or to redo (ADR-0091).</summary>
+    NothingToUndo = 7,
+
+    /// <summary>Someone changed the records of the change after it: it is not undone, nor redone (ADR-0091).</summary>
+    UndoBlocked = 8,
 }
 
 /// <summary>A field of the forms of the schedule.</summary>
@@ -152,6 +174,11 @@ public enum ScheduleField
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
 public sealed record ScheduleResult(ScheduleOutcome Outcome, Guid? Id, int Pushed, IReadOnlyList<ScheduleField> Invalid)
 {
+    /// <summary>What the change was, for the person to undo it (ADR-0091); none for what is not undone.</summary>
+    public ScheduleChangeLabel? Label { get; init; }
+
+    public ScheduleResult Labeled(ScheduleAction action, string name) => this with { Label = new ScheduleChangeLabel(action, name) };
+
     public static ScheduleResult Of(ScheduleOutcome outcome) => new(outcome, null, 0, []);
 
     public static ScheduleResult Done(Guid? id = null, int pushed = 0) => new(ScheduleOutcome.Done, id, pushed, []);
@@ -208,15 +235,94 @@ internal static class ScheduleEditing
                 return late;
             }
 
-            var result = change(project!, schedule!);
+            var before = schedule!.Snapshot();
+            var result = change(project!, schedule);
             if (result.Outcome == ScheduleOutcome.Done)
             {
+                if (result.Label is { } label && PermissionsOf(project!, viewer).CanEditSchedule)
+                {
+                    await RecordAsync(schedules, schedule, viewer, label, ScheduleDiff.Between(before, schedule.Snapshot()), token);
+                }
+
                 await projects.SaveChangesAsync(token);
             }
 
             return result;
         }, cancellationToken);
     }
+
+    /// <summary>
+    /// Keeps a change of who edits the schedule, to undo it (ADR-0091): a new change takes away what the person could
+    /// redo, and the person keeps the last <see cref="ScheduleChange.Kept"/> changes in the project.
+    /// </summary>
+    private static async Task RecordAsync(
+        IScheduleStore schedules, Schedule schedule, ProjectViewer viewer, ScheduleChangeLabel label, ScheduleDiff diff, CancellationToken token)
+    {
+        if (diff.IsEmpty)
+        {
+            return;
+        }
+
+        var kept = (await schedules.ChangesOfAsync(schedule.Id, viewer.UserId, token)).ToList();
+        foreach (var undone in kept.Where(change => change.Undone).ToList())
+        {
+            schedules.RemoveChange(undone);
+            kept.Remove(undone);
+        }
+
+        foreach (var oldest in kept.Take(Math.Max(0, kept.Count - (ScheduleChange.Kept - 1))))
+        {
+            schedules.RemoveChange(oldest);
+        }
+
+        var number = kept.Count == 0 ? 1 : kept.Max(change => change.Number) + 1;
+        schedules.AddChange(new ScheduleChange(schedule.Id, viewer.UserId, number, label, diff));
+    }
+
+    /// <summary>
+    /// Undoes the last change of the person not undone yet, or redoes the last one undone (ADR-0091), with the refusals of
+    /// every change: 404, 403 for who does not edit the schedule and 409 for a closed project. A change whose records
+    /// someone changed after it is blocked and leaves the history of the person.
+    /// </summary>
+    public static async Task<ScheduleResult> StepAsync(
+        IProjectStore projects, IScheduleStore schedules, Guid projectId, ProjectViewer viewer, bool undo, CancellationToken cancellationToken)
+    {
+        if (Refusal(await projects.FindAsync(projectId, cancellationToken), viewer, permissions => permissions.CanEditSchedule) is { } refusal)
+        {
+            return refusal;
+        }
+
+        return await projects.InSerializableTransactionAsync(async token =>
+        {
+            var project = await projects.FindAsync(projectId, token);
+            if (Refusal(project, viewer, permissions => permissions.CanEditSchedule) is { } late)
+            {
+                return late;
+            }
+
+            var schedule = await schedules.GetOrAddAsync(projectId, token);
+            var changes = await schedules.ChangesOfAsync(projectId, viewer.UserId, token);
+            var next = undo ? changes.LastOrDefault(change => !change.Undone) : changes.FirstOrDefault(change => change.Undone);
+            if (next is null)
+            {
+                return ScheduleResult.Of(ScheduleOutcome.NothingToUndo);
+            }
+
+            var done = undo ? next.UndoIn(schedule) : next.RedoIn(schedule);
+            if (!done)
+            {
+                schedules.RemoveChange(next);
+            }
+
+            await projects.SaveChangesAsync(token);
+            return done
+                ? ScheduleResult.Done() with { Label = next.Label }
+                : ScheduleResult.Of(ScheduleOutcome.UndoBlocked) with { Label = next.Label };
+        }, cancellationToken);
+    }
+
+    private static ProjectPermissions PermissionsOf(Project project, ProjectViewer viewer) =>
+        ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
 
     /// <summary>A task is in charge of a person of the project who is not a viewer (ADR-0043).</summary>
     public static bool MayOwn(Project project, Guid? ownerId) =>
@@ -252,7 +358,7 @@ public sealed class AddSchedulePhase(IProjectStore projects, IScheduleStore sche
     public Task<ScheduleResult> ExecuteAsync(Guid projectId, string? name, ProjectViewer viewer, CancellationToken cancellationToken) =>
         ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
             Schedule.ValidPhaseName(name) is { } valid
-                ? ScheduleResult.Done(schedule.AddPhase(valid).Id)
+                ? ScheduleResult.Done(schedule.AddPhase(valid).Id).Labeled(ScheduleAction.PhaseAdded, valid)
                 : ScheduleResult.InvalidFields([ScheduleField.Name]),
             cancellationToken);
 }
@@ -270,7 +376,7 @@ public sealed class RenameSchedulePhase(IProjectStore projects, IScheduleStore s
             }
 
             return Schedule.ValidPhaseName(name) is { } valid && schedule.RenamePhase(phaseId, valid)
-                ? ScheduleResult.Done()
+                ? ScheduleResult.Done().Labeled(ScheduleAction.PhaseRenamed, valid)
                 : ScheduleResult.InvalidFields([ScheduleField.Name]);
         }, cancellationToken);
 }
@@ -280,7 +386,9 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 {
     public Task<ScheduleResult> ExecuteAsync(Guid projectId, Guid phaseId, ProjectViewer viewer, CancellationToken cancellationToken) =>
         ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
-            schedule.RemovePhase(phaseId) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
+            schedule.PhaseOf(phaseId) is { } phase && schedule.RemovePhase(phaseId)
+                ? ScheduleResult.Done().Labeled(ScheduleAction.PhaseRemoved, phase.Name)
+                : ScheduleResult.Of(ScheduleOutcome.NotFound),
             cancellationToken);
 }
 
@@ -385,7 +493,9 @@ public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore sched
 
             try
             {
-                return ScheduleResult.Done(schedule.AddItem(kind, plan, days, today).Id);
+                var item = schedule.AddItem(kind, plan, days, today);
+                return ScheduleResult.Done(item.Id)
+                    .Labeled(kind == ScheduleItemKind.Task ? ScheduleAction.TaskAdded : ScheduleAction.MilestoneAdded, item.Name);
             }
             catch (ScheduleCycleException)
             {
@@ -422,7 +532,8 @@ public sealed class ChangeScheduleItem(IProjectStore projects, IScheduleStore sc
 
             try
             {
-                return ScheduleResult.Done(pushed: schedule.ChangeItem(itemId, plan, days, today) ?? 0);
+                return ScheduleResult.Done(pushed: schedule.ChangeItem(itemId, plan, days, today) ?? 0)
+                    .Labeled(item.Kind == ScheduleItemKind.Task ? ScheduleAction.TaskChanged : ScheduleAction.MilestoneChanged, item.Name);
             }
             catch (ScheduleCycleException)
             {
@@ -465,7 +576,7 @@ public sealed class UpdateScheduleItemProgress(IProjectStore projects, ISchedule
                 }
 
                 schedule.UpdateProgress(itemId, progress, today);
-                return ScheduleResult.Done();
+                return ScheduleResult.Done().Labeled(ScheduleAction.ProgressUpdated, item.Name);
             },
             cancellationToken);
     }
@@ -494,7 +605,8 @@ public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore s
             }
 
             schedule.SetReached(itemId, reached, today);
-            return ScheduleResult.Done();
+            return ScheduleResult.Done()
+                .Labeled(reached ? ScheduleAction.MilestoneReached : ScheduleAction.MilestoneUnmarked, item.Name);
         }, cancellationToken);
     }
 }
@@ -552,7 +664,8 @@ public sealed class RescheduleScheduleItem(
 
             return invalid.Count > 0
                 ? ScheduleResult.InvalidFields(invalid)
-                : ScheduleResult.Done(pushed: schedule.Reschedule(itemId, dates.Start, dates.End, days, today) ?? 0);
+                : ScheduleResult.Done(pushed: schedule.Reschedule(itemId, dates.Start, dates.End, days, today) ?? 0)
+                    .Labeled(ScheduleAction.DatesChanged, item.Name);
         }, cancellationToken);
     }
 }
@@ -567,7 +680,24 @@ public sealed class RemoveScheduleItem(IProjectStore projects, IScheduleStore sc
     {
         var days = await calendar.GetAsync(cancellationToken);
         return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
-            schedule.RemoveItem(itemId, days) ? ScheduleResult.Done() : ScheduleResult.Of(ScheduleOutcome.NotFound),
+            schedule.ItemOf(itemId) is { } item && schedule.RemoveItem(itemId, days)
+                ? ScheduleResult.Done().Labeled(
+                    item.Kind == ScheduleItemKind.Task ? ScheduleAction.TaskRemoved : ScheduleAction.MilestoneRemoved, item.Name)
+                : ScheduleResult.Of(ScheduleOutcome.NotFound),
             cancellationToken);
     }
+}
+
+/// <summary>Undoes the last change of the schedule the person made and has not undone (ADR-0021, ADR-0091).</summary>
+public sealed class UndoScheduleChange(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.StepAsync(projects, schedules, projectId, viewer, undo: true, cancellationToken);
+}
+
+/// <summary>Redoes the last change of the schedule the person undid (ADR-0071, ADR-0091).</summary>
+public sealed class RedoScheduleChange(IProjectStore projects, IScheduleStore schedules)
+{
+    public Task<ScheduleResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ScheduleEditing.StepAsync(projects, schedules, projectId, viewer, undo: false, cancellationToken);
 }

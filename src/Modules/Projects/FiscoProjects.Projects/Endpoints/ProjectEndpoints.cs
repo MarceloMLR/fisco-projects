@@ -110,6 +110,12 @@ public static class ProjectProblems
 
     /// <summary>An item of the schedule would depend on an item that already depends on it (ADR-0019); status 400.</summary>
     public const string ScheduleCycle = "urn:fiscoprojects:problem:schedule-cycle";
+
+    /// <summary>The person has no change of the schedule to undo, or to redo (ADR-0091); status 409.</summary>
+    public const string ScheduleNothingToUndo = "urn:fiscoprojects:problem:schedule-nothing-to-undo";
+
+    /// <summary>Someone changed the items of the change after it, so it is not undone nor redone (ADR-0091); status 409.</summary>
+    public const string ScheduleUndoBlocked = "urn:fiscoprojects:problem:schedule-undo-blocked";
 }
 
 /// <summary>

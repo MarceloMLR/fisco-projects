@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FiscoProjects.Persistence.Auditing;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Domain;
@@ -116,4 +118,33 @@ internal sealed class ScheduleDependencyConfiguration : IEntityTypeConfiguration
         dependency.Property(d => d.PredecessorId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
         dependency.Property(d => d.SuccessorId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
     }
+}
+
+/// <summary>
+/// The changes of the schedule each person keeps to undo and redo (ADR-0091): what changed goes as JSON, read and
+/// written whole. They stay out of the audit: undoing and redoing are audited by the records that change.
+/// </summary>
+internal sealed class ScheduleChangeConfiguration : IEntityTypeConfiguration<ScheduleChange>
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
+
+    public void Configure(EntityTypeBuilder<ScheduleChange> change)
+    {
+        change.ToTable("schedule_changes");
+        change.HasOne<Schedule>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
+        change.HasIndex(c => new { c.ProjectId, c.ActorId, c.Number }).IsUnique();
+        change.Property(c => c.Action).HasConversion<string>().HasMaxLength(32);
+        change.Property(c => c.Name).HasMaxLength(Math.Max(Schedule.ItemNameMaxLength, Schedule.PhaseNameMaxLength));
+        change.Property(c => c.Diff).HasConversion(diff => Write(diff), json => Read(json));
+        change.Ignore(c => c.Label);
+        change.ExcludeFromAudit();
+    }
+
+    private static string Write(ScheduleDiff diff) => JsonSerializer.Serialize(diff, Json);
+
+    private static ScheduleDiff Read(string json) =>
+        JsonSerializer.Deserialize<ScheduleDiff>(json, Json) ?? new ScheduleDiff([], [], []);
 }

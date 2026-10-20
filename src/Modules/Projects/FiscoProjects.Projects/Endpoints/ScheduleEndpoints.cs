@@ -67,8 +67,8 @@ public sealed record SchedulePhaseResponse(
 /// <summary>
 /// The schedule of a project on the day <c>today</c> of the installation: its dates (none without items), its progress,
 /// how many tasks and milestones are late, the phases in order, the non-business days of the calendar from the month
-/// before the start to the month after the end, for the timeline to shade (none without items), and the baseline, none
-/// until the manager saves one.
+/// before the start to the month after the end, for the timeline to shade (none without items), the baseline, none
+/// until the manager saves one, and, for who edits the schedule, what undoing and redoing would do, none when nothing.
 /// </summary>
 public sealed record ScheduleResponse(
     DateOnly Today,
@@ -79,7 +79,15 @@ public sealed record ScheduleResponse(
     int LateMilestones,
     IReadOnlyList<SchedulePhaseResponse> Phases,
     IReadOnlyList<DateOnly> NonWorkingDays,
-    ScheduleBaselineResponse? Baseline);
+    ScheduleBaselineResponse? Baseline,
+    ScheduleStepResponse? Undo,
+    ScheduleStepResponse? Redo);
+
+/// <summary>
+/// A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or
+/// redoing does, or did.
+/// </summary>
+public sealed record ScheduleStepResponse(ScheduleAction Action, string Name);
 
 public sealed record SchedulePhaseRequest(string? Name);
 
@@ -173,6 +181,12 @@ internal static class ScheduleEndpoints
         projects.MapPut("/{id:guid}/schedule/baseline", SaveBaselineAsync).WithName("SaveScheduleBaseline")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapPost("/{id:guid}/schedule/undo", UndoAsync).WithName("UndoScheduleChange")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapPost("/{id:guid}/schedule/redo", RedoAsync).WithName("RedoScheduleChange")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static async Task<Results<Ok<ScheduleResponse>, NotFound>> GetAsync(
@@ -204,8 +218,48 @@ internal static class ScheduleEndpoints
             view.NonWorkingDays,
             view.Baseline is { } baseline
                 ? new ScheduleBaselineResponse(baseline.SavedOn, baseline.Start, baseline.End, baseline.Deviation)
-                : null));
+                : null,
+            StepOf(view.Undo),
+            StepOf(view.Redo)));
     }
+
+    private static ScheduleStepResponse? StepOf(ScheduleChangeLabel? label) =>
+        label is null ? null : new ScheduleStepResponse(label.Action, label.Name);
+
+    /// <summary>Undoes the last change of the schedule the person made (ADR-0091), saying what it was.</summary>
+    private static async Task<Results<Ok<ScheduleStepResponse>, NotFound, ForbidHttpResult, ProblemHttpResult>> UndoAsync(
+        Guid id, HttpContext http, IUserAccess access, UndoScheduleChange undo, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        return Step(await undo.ExecuteAsync(id, viewer, cancellationToken));
+    }
+
+    /// <summary>Redoes the last change of the schedule the person undid (ADR-0091), saying what it was.</summary>
+    private static async Task<Results<Ok<ScheduleStepResponse>, NotFound, ForbidHttpResult, ProblemHttpResult>> RedoAsync(
+        Guid id, HttpContext http, IUserAccess access, RedoScheduleChange redo, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        return Step(await redo.ExecuteAsync(id, viewer, cancellationToken));
+    }
+
+    private static Results<Ok<ScheduleStepResponse>, NotFound, ForbidHttpResult, ProblemHttpResult> Step(ScheduleResult result) =>
+        result.Outcome switch
+        {
+            ScheduleOutcome.Done => TypedResults.Ok(StepOf(result.Label)!),
+            ScheduleOutcome.NotFound => TypedResults.NotFound(),
+            ScheduleOutcome.Forbidden => TypedResults.Forbid(),
+            ScheduleOutcome.NothingToUndo => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Nothing to undo",
+                detail: "The person has no change of the schedule to undo or redo.",
+                type: ProjectProblems.ScheduleNothingToUndo),
+            ScheduleOutcome.UndoBlocked => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Changed since",
+                detail: "Someone changed these items after the change; it left the history of the person.",
+                type: ProjectProblems.ScheduleUndoBlocked),
+            _ => Problem(result.Outcome),
+        };
 
     private static async Task<Results<Created<ScheduleCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddPhaseAsync(
         Guid id,
