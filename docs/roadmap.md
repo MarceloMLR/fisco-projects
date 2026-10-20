@@ -87,7 +87,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Chamados-1 | `abertura-e-lista-de-chamados` | Número único, os dois times, filtros, quem vê o quê | 0022, 0029, 0044, 0068 | Planejada |
+| Chamados-1 | `abertura-e-lista-de-chamados` | Número único, os dois times, filtros, quem vê o quê | 0022, 0029, 0044, 0068 | Em andamento |
 | Chamados-2 | `conversa-do-chamado` | Mensagens, anexos, menções, cores por papel | 0026, 0069 | Planejada |
 | Chamados-3 | `fluxo-de-status` | Fluxo em tabela, responsável pela primeira resposta, fechamento automático | 0024, 0068 | Planejada |
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Planejada |
