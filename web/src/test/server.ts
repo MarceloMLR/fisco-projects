@@ -8,6 +8,7 @@ import {
   demoDocuments,
   documentsPage,
 } from './demoDocuments';
+import { demoLinkCategories, demoLinks, linksList } from './demoLinks';
 import { cleanCnpj } from '../format/cnpj';
 import type {
   CalendarDay,
@@ -1465,6 +1466,14 @@ export const handlers = [
       ? new HttpResponse(null, { status: 404 })
       : HttpResponse.json(demoDocumentDetails(row));
   }),
+  // The links of a project and the categories (ADR-0032).
+  http.get('/api/projects/:id/links', ({ request }) =>
+    HttpResponse.json(linksList(demoLinks(), new URL(request.url))),
+  ),
+  http.get('/api/link-categories', () =>
+    HttpResponse.json(demoLinkCategories().filter((category) => category.isActive)),
+  ),
+  http.get('/api/admin/link-categories', () => HttpResponse.json(demoLinkCategories())),
   http.get('/api/tickets', ({ request }) =>
     HttpResponse.json(ticketsPage(demoTickets(), new URL(request.url))),
   ),

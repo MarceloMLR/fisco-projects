@@ -10,6 +10,8 @@ import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
+import { ProjectLinksPage } from './links/ProjectLinksPage';
+import { LinkCategoriesPage } from './admin/LinkCategoriesPage';
 import { InstallationRoot } from './installation/InstallationRoot';
 import { HomePage } from './pages/HomePage';
 import { NewProjectPage } from './projects/NewProjectPage';
@@ -129,6 +131,18 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'projects',
                   titleKey: 'pages.projectDocuments.title',
+                  trail: [
+                    { titleKey: 'pages.projects.title', path: '/projects' },
+                    { project: true },
+                  ],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'links',
+                element: <ProjectLinksPage />,
+                handle: {
+                  navigation: 'projects',
+                  titleKey: 'pages.projectLinks.title',
                   trail: [
                     { titleKey: 'pages.projects.title', path: '/projects' },
                     { project: true },
@@ -275,6 +289,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.defaultFolders.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'link-categories',
+                element: <LinkCategoriesPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.linkCategories.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },

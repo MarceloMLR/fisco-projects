@@ -87,6 +87,12 @@
     },
     "defaultFolders": {
       "title": "Pastas padrão"
+    },
+    "projectLinks": {
+      "title": "Links"
+    },
+    "linkCategories": {
+      "title": "Categorias de links"
     }
   },
   "signIn": {
@@ -244,7 +250,9 @@
       "Vendor": "Fornecedores",
       "VendorTicket": "Chamados em fornecedores",
       "DefaultFolder": "Pastas padrão",
-      "Document": "Documentos"
+      "Document": "Documentos",
+      "LinkCategory": "Categorias de links",
+      "ProjectLink": "Links"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -367,6 +375,18 @@
         "NewVersion": "Enviou uma nova versão",
         "StatusChanged": "Mudou o status de um documento",
         "Linked": "Vinculou um documento ao cronograma"
+      },
+      "LinkCategory": {
+        "Created": "Incluiu uma categoria de links",
+        "Updated": "Alterou uma categoria de links",
+        "Deleted": "Excluiu uma categoria de links",
+        "Deactivated": "Inativou uma categoria de links",
+        "Reactivated": "Reativou uma categoria de links"
+      },
+      "ProjectLink": {
+        "Created": "Incluiu um link",
+        "Updated": "Alterou um link",
+        "Deleted": "Excluiu um link"
       }
     },
     "providers": {
@@ -405,7 +425,9 @@
         "Vendor": "Fornecedor",
         "VendorTicket": "Chamado no fornecedor",
         "DefaultFolder": "Pasta",
-        "Document": "Documento"
+        "Document": "Documento",
+        "LinkCategory": "Categoria",
+        "ProjectLink": "Link"
       },
       "secret": "Alterado",
       "none": "—",
@@ -530,6 +552,17 @@
         "Version": "Versão",
         "SchedulePhaseId": "Fase",
         "ScheduleItemId": "Tarefa ou marco"
+      },
+      "LinkCategory": {
+        "Name": "Nome",
+        "IsActive": "Situação"
+      },
+      "ProjectLink": {
+        "ProjectId": "Projeto",
+        "CategoryId": "Categoria",
+        "Title": "Título",
+        "Url": "Endereço",
+        "Description": "Para que serve"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -2089,6 +2122,113 @@
       "reactivated": "Pasta {{name}} reativada.",
       "acceptanceAlwaysActive": "A pasta de termos de aceite fica sempre ativa.",
       "failed": "Não foi possível salvar a pasta. Tente de novo."
+    }
+  },
+  "links": {
+    "table": "Links",
+    "search": "Buscar por título ou endereço",
+    "category": "Categoria",
+    "all": "Todos",
+    "newLink": "Novo link",
+    "columns": {
+      "link": "Link",
+      "url": "Endereço",
+      "description": "Para que serve",
+      "created": "Incluído por",
+      "actions": "Ações"
+    },
+    "total_zero": "Nenhum link",
+    "total_one": "{{count}} link",
+    "total_other": "{{count}} links",
+    "empty": "Nenhum link no projeto. Inclua os sistemas, ambientes e painéis que o time usa.",
+    "emptyReadOnly": "Nenhum link no projeto.",
+    "emptySearch": "Nenhum link com esse título ou endereço.",
+    "loadFailed": "Não foi possível carregar os links. Tente de novo.",
+    "copy": "Copiar endereço de {{title}}",
+    "open": "Abrir {{title}} em nova aba",
+    "copied": "Endereço copiado.",
+    "copyFailed": "Não foi possível copiar o endereço.",
+    "menu": {
+      "button": "Editar ou excluir {{title}}",
+      "edit": "Editar",
+      "remove": "Excluir"
+    },
+    "dialog": {
+      "newTitle": "Novo link",
+      "editTitle": "Editar link",
+      "title": "Título",
+      "titleHelp": "Como o time chama o link, por exemplo ERP · Homologação.",
+      "url": "Endereço",
+      "urlHelp": "Comece com https:// ou http://.",
+      "category": "Categoria",
+      "description": "Para que serve",
+      "descriptionHelp": "Opcional, até 500 caracteres.",
+      "add": "Incluir",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "inactive": "{{name}} (inativa)"
+    },
+    "remove": {
+      "title": "Excluir link",
+      "text": "O link {{title}} sai da aba Links do projeto.",
+      "confirm": "Excluir",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "titleRequired": "Informe o título, com até 120 caracteres.",
+      "urlInvalid": "Informe um endereço que comece com https:// ou http://, com até 2.000 caracteres.",
+      "categoryRequired": "Escolha uma categoria ativa.",
+      "descriptionTooLong": "Use até 500 caracteres."
+    },
+    "messages": {
+      "added": "Link {{title}} incluído.",
+      "saved": "Link {{title}} salvo.",
+      "removed": "Link {{title}} excluído.",
+      "closed": "O projeto está encerrado e não aceita mudanças.",
+      "failed": "Não foi possível salvar o link. Tente de novo."
+    }
+  },
+  "linkCategories": {
+    "table": "Categorias de links",
+    "note": "As categorias ativas aparecem para os links novos. Os links que já usam uma categoria inativa continuam nela.",
+    "empty": "Nenhuma categoria de links.",
+    "columns": {
+      "name": "Categoria",
+      "status": "Situação",
+      "actions": "Ações"
+    },
+    "total_zero": "Nenhuma categoria",
+    "total_one": "{{count}} categoria",
+    "total_other": "{{count}} categorias",
+    "statuses": {
+      "Active": "Ativa",
+      "Inactive": "Inativa"
+    },
+    "newCategory": "Nova categoria",
+    "menu": {
+      "button": "Ações da categoria {{name}}",
+      "edit": "Renomear",
+      "deactivate": "Inativar",
+      "reactivate": "Reativar"
+    },
+    "dialog": {
+      "newTitle": "Nova categoria de links",
+      "editTitle": "Renomear categoria de links",
+      "name": "Nome",
+      "add": "Incluir",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "nameRequired": "Informe o nome, com até 80 caracteres.",
+      "nameInUse": "Já existe uma categoria com esse nome."
+    },
+    "messages": {
+      "added": "Categoria {{name}} incluída.",
+      "saved": "Categoria {{name}} salva.",
+      "deactivated": "Categoria {{name}} inativada.",
+      "reactivated": "Categoria {{name}} reativada.",
+      "failed": "Não foi possível salvar a categoria. Tente de novo."
     }
   }
 }

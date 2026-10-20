@@ -62,6 +62,10 @@ export type DocumentDetails = components['schemas']['DocumentDetailsResponse'];
 export type DocumentStatus = components['schemas']['DocumentStatus'];
 export type DocumentStatusFilter = NonNullable<components['schemas']['DocumentStatusFilter']>;
 export type ScheduleItemType = components['schemas']['ScheduleItemType'];
+export type LinkCategory = components['schemas']['LinkCategoryResponse'];
+export type LinkList = components['schemas']['LinkListResponse'];
+export type ProjectLink = components['schemas']['LinkResponse'];
+export type LinkCategoryCount = components['schemas']['LinkCategoryCountResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 
@@ -137,6 +141,8 @@ export const auditItemTypes = [
   'VendorTicket',
   'DefaultFolder',
   'Document',
+  'LinkCategory',
+  'ProjectLink',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -229,6 +235,11 @@ export const documentProblems = {
   acceptanceFolderReadOnly: 'urn:fiscoprojects:problem:acceptance-folder-read-only',
   documentChanged: 'urn:fiscoprojects:problem:document-changed',
   folderNameInUse: 'urn:fiscoprojects:problem:document-folder-name-in-use',
+} as const;
+
+/** Problem types of the links (LinkProblems in the Documents module). */
+export const linkProblems = {
+  categoryNameInUse: 'urn:fiscoprojects:problem:link-category-name-in-use',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */

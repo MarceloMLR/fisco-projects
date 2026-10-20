@@ -12,6 +12,9 @@ export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['q
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
 /** Filters of the list of tickets, as the contract has them. */
 export type TicketsParams = NonNullable<operations['ListTickets']['parameters']['query']>;
+/** Filters of the list of links, as the contract has them. */
+export type LinksParams = NonNullable<operations['ListLinks']['parameters']['query']>;
+
 /** Filters of the list of documents, as the contract has them. */
 export type DocumentsParams = NonNullable<operations['ListDocuments']['parameters']['query']>;
 /** Filters of the audit, as the contract has them. */
@@ -58,6 +61,8 @@ export const queryKeys = {
   notifications: ['notifications'],
   documents: ['documents'],
   defaultFolders: ['default-folders'],
+  links: ['links'],
+  linkCategories: ['link-categories'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -396,5 +401,35 @@ export function defaultFoldersQuery() {
   return queryOptions({
     queryKey: [...queryKeys.defaultFolders] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/document-folders', { signal })),
+  });
+}
+
+/** The links of a project, with the search and the category; the categories used and the total come without them. */
+export function linksQuery(projectId: string, params: LinksParams = {}) {
+  return queryOptions({
+    queryKey: [...queryKeys.links, projectId, params] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/links', {
+          params: { path: { projectId }, query: params },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** The active categories of links, offered for new links. */
+export function activeLinkCategoriesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.linkCategories, 'active'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/link-categories', { signal })),
+  });
+}
+
+/** Every category of links, for the Administration. */
+export function linkCategoriesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.linkCategories, 'all'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/link-categories', { signal })),
   });
 }

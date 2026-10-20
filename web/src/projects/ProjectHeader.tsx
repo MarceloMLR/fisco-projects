@@ -7,11 +7,12 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { Project } from '../api/client';
-import { documentFoldersQuery, ticketCountsQuery } from '../api/queries';
+import { documentFoldersQuery, linksQuery, ticketCountsQuery } from '../api/queries';
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
+import type { ProjectTab } from './projectTabs';
 
 /** The names of the people of the project with a role, joined. */
 const namesWith = (project: Project, role: Project['members'][number]['role']) =>
@@ -19,9 +20,6 @@ const namesWith = (project: Project, role: Project['members'][number]['role']) =
     .filter((member) => member.role === role)
     .map((member) => member.name)
     .join(', ');
-
-/** The tabs of a project, each at its own address under the project. */
-export type ProjectTab = 'overview' | 'schedule' | 'tickets' | 'documents' | 'members';
 
 const tabSx = {
   position: 'relative',
@@ -92,6 +90,8 @@ export function ProjectHeader({
   const tickets = useQuery(ticketCountsQuery(project.id)).data?.all;
   // The count of the tab Documentos: the documents not obsolete in the folders the person sees.
   const documents = useQuery(documentFoldersQuery(project.id)).data?.total;
+  // The count of the tab Links: all the links of the project.
+  const links = useQuery(linksQuery(project.id)).data?.total;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -305,6 +305,22 @@ export function ProjectHeader({
           {documents !== undefined && (
             <Box component="span" sx={countSx}>
               {documents}
+            </Box>
+          )}
+        </Box>
+        <Box
+          component={Link}
+          to={`/projects/${project.id}/links`}
+          role="tab"
+          id="project-tab-links"
+          aria-selected={tab === 'links'}
+          aria-controls={tab === 'links' ? 'project-panel' : undefined}
+          sx={tabSx}
+        >
+          {t('pages.projectLinks.title')}
+          {links !== undefined && (
+            <Box component="span" sx={countSx}>
+              {links}
             </Box>
           )}
         </Box>
