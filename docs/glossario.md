@@ -192,6 +192,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Senha cifrada | `ProtectedPassword`, IPasswordProtector | Data Protection só dos acessos, com as chaves no banco (ADR-0033) |
 | Mostrar e copiar a senha | RevealPassword | Só quando pedida, sem guardar no navegador e sem registro de quem pediu |
 | Certificado das chaves | `Credentials:KeyCertificate` | Opcional; cifra o conjunto de chaves |
+| Importar planilha | PreviewCredentialImport, ImportCredentials | Lê o `.xlsx` ou `.csv` sem guardar e inclui as linhas marcadas, todas ou nenhuma (ADR-0094) |
+| Leitor de planilhas | SpreadsheetReader, CsvText | Open XML SDK para o `.xlsx`; leitor próprio para o `.csv` |
+| Mapeamento das colunas | ImportMapping | De que coluna vem cada campo; o ambiente também "Mesmo para todas" |
 | Termo de aceite | AcceptanceRequest | Pedido de aceite de um marco, respondido com PDF assinado (ADR-0035) |
 | Termo assinado | SignedAcceptance | |
 

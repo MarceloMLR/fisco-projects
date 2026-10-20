@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
 import { api, type Credential, credentialProblems } from '../api/client';
 import { Alert } from '../components/Alert';
 import { Checkbox } from '../components/Checkbox';
@@ -12,49 +11,12 @@ import { Dialog } from '../components/Dialog';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { problemType } from '../projects/projectForm';
-
-const errors = {
-  portalRequired: 'credentials.errors.portalRequired',
-  environmentRequired: 'credentials.errors.environmentRequired',
-  urlInvalid: 'credentials.errors.urlInvalid',
-  usernameRequired: 'credentials.errors.usernameRequired',
-  passwordRequired: 'credentials.errors.passwordRequired',
-  passwordTooLong: 'credentials.errors.passwordTooLong',
-  notesTooLong: 'credentials.errors.notesTooLong',
-} as const;
-
-type CredentialError = (typeof errors)[keyof typeof errors];
-const isCredentialError = (message: string | undefined): message is CredentialError =>
-  Object.values(errors).some((error) => error === message);
-
-// An address of the web, as the API takes it (ADR-0034): empty, or http or https up to 2,000 characters.
-const webAddress = /^https?:\/\/\S+$/i;
-
-/** The fields of a credential; the password is needed only in a new one, and is never trimmed. */
-const schemaOf = (passwordNeeded: boolean) =>
-  z.object({
-    portal: z.string().trim().min(1, errors.portalRequired).max(120, errors.portalRequired),
-    environment: z
-      .string()
-      .trim()
-      .min(1, errors.environmentRequired)
-      .max(60, errors.environmentRequired),
-    url: z
-      .string()
-      .trim()
-      .refine(
-        (url) => url === '' || (url.length <= 2000 && webAddress.test(url)),
-        errors.urlInvalid,
-      ),
-    username: z.string().trim().min(1, errors.usernameRequired).max(200, errors.usernameRequired),
-    password: z
-      .string()
-      .max(500, errors.passwordTooLong)
-      .refine((password) => !passwordNeeded || password !== '', errors.passwordRequired),
-    notes: z.string().trim().max(500, errors.notesTooLong),
-  });
-
-type Values = z.input<ReturnType<typeof schemaOf>>;
+import {
+  credentialErrors as errors,
+  credentialSchema,
+  type CredentialValues as Values,
+  isCredentialError,
+} from './credentialForm';
 
 const fieldErrors = {
   portal: errors.portalRequired,
@@ -106,7 +68,7 @@ export function CredentialDialog({
     setError,
     formState: { errors: invalid, isSubmitting },
   } = useForm<Values>({
-    resolver: zodResolver(schemaOf(isNew)),
+    resolver: zodResolver(credentialSchema(isNew)),
     defaultValues: {
       portal: credential?.portal ?? '',
       environment: credential?.environment ?? '',

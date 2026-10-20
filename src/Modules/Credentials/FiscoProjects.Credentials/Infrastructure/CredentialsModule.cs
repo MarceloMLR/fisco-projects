@@ -27,6 +27,10 @@ public static class CredentialsModule
         services.AddScoped<AddCredential>();
         services.AddScoped<ChangeCredential>();
         services.AddScoped<RemoveCredential>();
+        // The import of a spreadsheet (ADR-0094).
+        services.AddSingleton<ISpreadsheetReader, SpreadsheetReader>();
+        services.AddScoped<PreviewCredentialImport>();
+        services.AddScoped<ImportCredentials>();
         return services;
     }
 }

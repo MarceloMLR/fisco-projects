@@ -1448,6 +1448,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{projectId}/credentials/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PreviewCredentialImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/credentials/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImportCredentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications": {
         parameters: {
             query?: never;
@@ -1702,6 +1734,14 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        /** @description The credentials to include from the spreadsheet: the lines the person marked, already mapped. */
+        CredentialImportRequest: {
+            items: null | components["schemas"]["ImportedCredentialRequest"][];
+        };
+        CredentialImportResponse: {
+            /** Format: int32 */
+            imported: number;
+        };
         /**
          * @description The credentials found, without the passwords; the environments of the project with how many credentials each has;
          *     the total for the tab; and what the person may do.
@@ -1906,6 +1946,17 @@ export interface components {
         /** Format: binary */
         IFormFile: string;
         IFormFileCollection: components["schemas"]["IFormFile"][];
+        /** @description A credential mapped from a line of the spreadsheet, with the number of the line. */
+        ImportedCredentialRequest: {
+            /** Format: int32 */
+            row: number;
+            portal: null | string;
+            environment: null | string;
+            url: null | string;
+            username: null | string;
+            password: null | string;
+            notes: null | string;
+        };
         /**
          * @description The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
          *     #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
@@ -2495,6 +2546,20 @@ export interface components {
         /** @description How the sign-in page may sign people in. */
         SignInOptionsResponse: {
             localSignIn: boolean;
+        };
+        /** @description The spreadsheet read: the names of the sheets, the sheet read, the header and the lines under it. */
+        SpreadsheetResponse: {
+            sheets: string[];
+            /** Format: int32 */
+            sheet: number;
+            columns: string[];
+            rows: components["schemas"]["SpreadsheetRowResponse"][];
+        };
+        /** @description A line of the spreadsheet: its number in the spreadsheet and the text of each column. */
+        SpreadsheetRowResponse: {
+            /** Format: int32 */
+            number: number;
+            cells: string[];
         };
         /**
          * @description Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a
@@ -8873,6 +8938,149 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    PreviewCredentialImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    file: components["schemas"]["IFormFile"];
+                } & {
+                    /** Format: int32 */
+                    sheet?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpreadsheetResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ImportCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialImportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialImportResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */
