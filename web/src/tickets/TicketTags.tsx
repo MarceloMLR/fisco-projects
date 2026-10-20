@@ -11,7 +11,7 @@ import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import type SvgIcon from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
-import type { TicketPriority, TicketStatus } from '../api/client';
+import type { TicketPriority, TicketStatus, VendorTicketStatus } from '../api/client';
 import { Avatar } from '../components/Avatar';
 import { StatusBadge, type StatusTone } from '../components/StatusBadge';
 
@@ -31,6 +31,25 @@ export function TicketStatusBadge({ status }: { status: TicketStatus }) {
   return (
     <StatusBadge tone={tone} icon={icon}>
       {t(`tickets.statuses.${status}`)}
+    </StatusBadge>
+  );
+}
+
+const vendorStatuses: Record<VendorTicketStatus, { tone: StatusTone; icon: typeof SvgIcon }> = {
+  Open: { tone: 'neutral', icon: InboxOutlined },
+  InAnalysis: { tone: 'info', icon: AutorenewOutlined },
+  WaitingForUs: { tone: 'warning', icon: ScheduleOutlined },
+  Resolved: { tone: 'success', icon: CheckCircleOutlined },
+  Closed: { tone: 'neutral', icon: LockOutlined },
+};
+
+/** The status of a ticket at a vendor (StatusBadge kind vendor, ADR-0028): icon, color and text (ADR-0065). */
+export function VendorStatusBadge({ status }: { status: VendorTicketStatus }) {
+  const { t } = useTranslation();
+  const { tone, icon } = vendorStatuses[status];
+  return (
+    <StatusBadge tone={tone} icon={icon}>
+      {t(`tickets.vendors.statuses.${status}`)}
     </StatusBadge>
   );
 }

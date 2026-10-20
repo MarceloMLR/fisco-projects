@@ -26,6 +26,7 @@ import type {
   TicketCounts,
   TicketFlow,
   TicketRow,
+  Vendor,
 } from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
@@ -1016,6 +1017,33 @@ export function calendarYearOf(calendar: DemoCalendar, year: number): CalendarYe
 }
 
 /**
+ * The vendors of the simulated installation (ADR-0028): two active, one with the support portal, and one inactive.
+ */
+export function demoVendors(): Vendor[] {
+  // In the order of the API: by name.
+  return [
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-900000000003',
+      name: 'Arquivo Fiscal Exemplo',
+      portalUrl: 'https://arquivo.example',
+      isActive: false,
+    },
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-900000000001',
+      name: 'Emissor Exemplo',
+      portalUrl: 'https://suporte.emissor.example',
+      isActive: true,
+    },
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-900000000002',
+      name: 'Nuvem Fiscal Exemplo',
+      portalUrl: null,
+      isActive: true,
+    },
+  ];
+}
+
+/**
  * The models of project of the demonstration (ADR-0017): "Implantação de ERP", active, made from ERP-FIN, and "Revisão
  * tributária de filial", inactive.
  */
@@ -1102,6 +1130,7 @@ function demoTicketRow(
     resolution: { state: 'OnTrack', dueOn: '2026-10-26', daysLate: null },
     canChangeAssignee: false,
     canChangeRequester: false,
+    vendor: null,
   };
 }
 
@@ -1175,6 +1204,7 @@ export const demoTicketCounts: TicketCounts = {
   assignedToMe: 0,
   openedByMe: 1,
   following: 1,
+  withVendor: 0,
 };
 
 /** A ticket of the list as its page shows it. */
@@ -1226,6 +1256,7 @@ export function demoTicket(row: TicketRow): Ticket {
       canChangeAssignee: false,
       canChangeRequester: false,
       canTransfer: false,
+      canRegisterVendorTicket: false,
     },
     following: row.requester.id === marina.id,
     deadlines: {
@@ -1236,6 +1267,7 @@ export function demoTicket(row: TicketRow): Ticket {
       totalDays: 5,
       pausedDays: 0,
     },
+    vendorTickets: [],
   };
 }
 
@@ -1391,12 +1423,16 @@ export const handlers = [
     HttpResponse.json(demoTemplates().filter((template) => template.isActive)),
   ),
   http.get('/api/admin/project-templates', () => HttpResponse.json(demoTemplates())),
+  http.get('/api/admin/vendors', () => HttpResponse.json(demoVendors())),
   http.get('/api/tickets', ({ request }) =>
     HttpResponse.json(ticketsPage(demoTickets(), new URL(request.url))),
   ),
   http.get('/api/tickets/counts', () => HttpResponse.json(demoTicketCounts)),
   http.get('/api/tickets/choices', () => HttpResponse.json(demoTicketChoices())),
   http.get('/api/tickets/flow', () => HttpResponse.json(demoTicketFlow())),
+  http.get('/api/tickets/vendor-choices', () =>
+    HttpResponse.json(demoVendors().filter((vendor) => vendor.isActive)),
+  ),
   http.get('/api/tickets/:number', ({ params }) => {
     const row = demoTickets().find((ticket) => String(ticket.number) === params.number);
     return row === undefined

@@ -64,6 +64,9 @@
     "templates": {
       "title": "Modelos de projeto"
     },
+    "vendors": {
+      "title": "Fornecedores"
+    },
     "projectTickets": {
       "title": "Chamados"
     },
@@ -218,7 +221,9 @@
       "ScheduleBaseline": "Linhas de base",
       "ProjectTemplate": "Modelos de projeto",
       "Ticket": "Chamados",
-      "TicketDeadlineSetting": "Prazos dos chamados"
+      "TicketDeadlineSetting": "Prazos dos chamados",
+      "Vendor": "Fornecedores",
+      "VendorTicket": "Chamados em fornecedores"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -314,6 +319,18 @@
       },
       "TicketDeadlineSetting": {
         "Updated": "Mudou os prazos dos chamados"
+      },
+      "Vendor": {
+        "Created": "Incluiu um fornecedor",
+        "Updated": "Alterou um fornecedor",
+        "Deleted": "Excluiu um fornecedor",
+        "Deactivated": "Inativou um fornecedor",
+        "Reactivated": "Reativou um fornecedor"
+      },
+      "VendorTicket": {
+        "Created": "Registrou um chamado no fornecedor",
+        "Updated": "Atualizou um chamado no fornecedor",
+        "Deleted": "Excluiu um chamado no fornecedor"
       }
     },
     "providers": {
@@ -348,7 +365,9 @@
         "ScheduleBaseline": "Projeto",
         "ProjectTemplate": "Modelo",
         "Ticket": "Chamado",
-        "TicketDeadlineSetting": "Prioridade"
+        "TicketDeadlineSetting": "Prioridade",
+        "Vendor": "Fornecedor",
+        "VendorTicket": "Chamado no fornecedor"
       },
       "secret": "Alterado",
       "none": "—",
@@ -442,9 +461,25 @@
       "TicketDeadlineSetting": {
         "FirstResponseDays": "1ª resposta (dias úteis)",
         "ResolutionDays": "Resolução (dias úteis)"
+      },
+      "Vendor": {
+        "Name": "Nome",
+        "PortalUrl": "Portal de suporte",
+        "IsActive": "Situação"
+      },
+      "VendorTicket": {
+        "TicketId": "Chamado",
+        "VendorId": "Fornecedor",
+        "Code": "Número no fornecedor",
+        "OpenedOn": "Aberto em",
+        "Status": "Status no fornecedor",
+        "Link": "Link",
+        "Note": "Observação",
+        "RegisteredById": "Registrado por"
       }
     },
-    "dependsOn": "depende de {{name}}"
+    "dependsOn": "depende de {{name}}",
+    "vendorTicket": "{{code}} no {{vendor}}"
   },
   "settings": {
     "brand": "Marca",
@@ -1291,6 +1326,53 @@
       "failed": "Não foi possível salvar o modelo. Tente de novo."
     }
   },
+  "vendors": {
+    "table": "Fornecedores",
+    "empty": "Nenhum fornecedor. Inclua os fornecedores em que a equipe abre chamados.",
+    "columns": {
+      "name": "Fornecedor",
+      "portal": "Portal de suporte",
+      "status": "Situação",
+      "actions": "Ações"
+    },
+    "noPortal": "Sem portal",
+    "total_one": "{{count}} fornecedor",
+    "total_other": "{{count}} fornecedores",
+    "statuses": {
+      "Active": "Ativo",
+      "Inactive": "Inativo"
+    },
+    "newVendor": "Novo fornecedor",
+    "menu": {
+      "button": "Ações do fornecedor {{name}}",
+      "edit": "Editar",
+      "deactivate": "Inativar",
+      "reactivate": "Reativar"
+    },
+    "dialog": {
+      "newTitle": "Novo fornecedor",
+      "editTitle": "Editar fornecedor",
+      "name": "Nome",
+      "portal": "Portal de suporte",
+      "optional": "(opcional)",
+      "portalHelp": "Endereço onde a equipe abre os chamados no fornecedor.",
+      "add": "Incluir",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "nameRequired": "Informe o nome, com até 150 caracteres.",
+      "nameInUse": "Já existe um fornecedor com esse nome.",
+      "portalInvalid": "Informe um endereço que comece com http:// ou https://."
+    },
+    "messages": {
+      "added": "Fornecedor {{name}} incluído.",
+      "saved": "Fornecedor {{name}} salvo.",
+      "deactivated": "Fornecedor {{name}} inativado.",
+      "reactivated": "Fornecedor {{name}} reativado.",
+      "failed": "Não foi possível salvar o fornecedor. Tente de novo."
+    }
+  },
   "tickets": {
     "views": {
       "label": "Visões",
@@ -1298,6 +1380,7 @@
       "UnassignedInMyTeams": "Sem responsável nos meus times",
       "OpenedByMe": "Abertos por mim",
       "Following": "Que acompanho",
+      "WithVendor": "Com fornecedor",
       "All": "Todos os abertos"
     },
     "viewLabel": "Visão",
@@ -1331,6 +1414,7 @@
     },
     "row": "{{team}} · aberto por {{name}}",
     "projectRow": "{{team}} · aberto por {{name}} em {{day}}",
+    "atVendor": "no {{vendor}}",
     "number": "#{{number}}",
     "noAssignee": "Sem responsável",
     "teams": {
@@ -1532,7 +1616,10 @@
       "resumedNote": "{{text}} · prazo retomado",
       "assigneeCleared": "deixou sem responsável · {{name}} saiu do projeto ou do time",
       "requesterChanged": "trocou o solicitante · {{from}} → {{to}}",
-      "teamChanged": "transferiu · {{from}} → {{to}}"
+      "teamChanged": "transferiu · {{from}} → {{to}}",
+      "vendorRegistered": "registrou o chamado {{code}} no fornecedor {{vendor}}",
+      "vendorUpdated": "atualizou o chamado {{code}} no {{vendor}} · {{from}} → {{to}}",
+      "vendorUpdatedSame": "atualizou o chamado {{code}} no {{vendor}} · {{status}}"
     },
     "flow": {
       "link": "Fluxo de chamados",
@@ -1635,6 +1722,63 @@
     "changeMenu": {
       "assignee": "Trocar responsável",
       "requester": "Trocar solicitante"
+    },
+    "vendors": {
+      "title": "No fornecedor",
+      "none": "Nenhum chamado em fornecedor.",
+      "record": "Chamado {{code}} no fornecedor {{vendor}}",
+      "stale_one": "Sem retorno do fornecedor há {{count}} dia útil",
+      "stale_other": "Sem retorno do fornecedor há {{count}} dias úteis",
+      "openedOn": "Aberto no fornecedor em {{day}}",
+      "optional": "(opcional)",
+      "cancel": "Cancelar",
+      "statuses": {
+        "Open": "Aberto no fornecedor",
+        "InAnalysis": "Em análise",
+        "WaitingForUs": "Aguardando nosso retorno",
+        "Resolved": "Resolvido",
+        "Closed": "Fechado"
+      },
+      "fields": {
+        "vendor": "Fornecedor",
+        "code": "Número no fornecedor",
+        "openedOn": "Aberto em",
+        "status": "Status no fornecedor",
+        "link": "Link do chamado",
+        "note": "Observação",
+        "annotation": "Anotação"
+      },
+      "register": {
+        "button": "Registrar",
+        "title": "Registrar no fornecedor",
+        "subtitle": "Chamado #{{number}}",
+        "confirm": "Registrar",
+        "choose": "Escolha o fornecedor",
+        "none": "Nenhum fornecedor ativo. O administrador inclui os fornecedores em Administração, Fornecedores."
+      },
+      "update": {
+        "label": "Atualizar",
+        "button": "Atualizar o chamado {{code}}",
+        "title": "Atualizar no fornecedor",
+        "subtitle": "{{code}} · {{vendor}}",
+        "confirm": "Atualizar"
+      },
+      "errors": {
+        "vendorRequired": "Escolha um fornecedor ativo.",
+        "codeRequired": "Informe o número no fornecedor, com até 60 caracteres.",
+        "openedOnInvalid": "Informe uma data até hoje.",
+        "linkInvalid": "Informe um endereço que comece com http:// ou https://.",
+        "noteTooLong": "Use até 1.000 caracteres."
+      },
+      "messages": {
+        "registered": "Chamado {{code}} registrado no fornecedor {{vendor}}.",
+        "updated": "Chamado {{code}} atualizado no {{vendor}}.",
+        "closed": "O chamado está fechado e não recebe registros no fornecedor.",
+        "changed": "Alguém mudou o chamado ao mesmo tempo. Confira e tente de novo.",
+        "forbidden": "Só quem atende o chamado registra no fornecedor.",
+        "failed": "Não foi possível salvar. Tente de novo.",
+        "loadFailed": "Não foi possível carregar os fornecedores. Tente de novo."
+      }
     }
   },
   "editor": {

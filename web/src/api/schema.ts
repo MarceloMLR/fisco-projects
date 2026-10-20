@@ -868,6 +868,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/vendor-choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The active vendors, for new registrations of tickets at vendors (ADR-0028). */
+        get: operations["ListVendorChoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/vendor-tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RegisterVendorTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/vendor-tickets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["UpdateVendorTicket"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/assignee": {
         parameters: {
             query?: never;
@@ -1071,6 +1120,38 @@ export interface paths {
         };
         get: operations["GetTicketDeadlines"];
         put: operations["ChangeTicketDeadlines"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/vendors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListVendors"];
+        put?: never;
+        post: operations["AddVendor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/vendors/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeVendor"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1339,6 +1420,11 @@ export interface components {
             title: null | string;
             description: null | string;
             descriptionBody?: null | string;
+        };
+        /** @description A new vendor, active. */
+        NewVendorRequest: {
+            name: null | string;
+            portalUrl?: null | string;
         };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
@@ -1805,10 +1891,12 @@ export interface components {
             canChangeAssignee: boolean;
             canChangeRequester: boolean;
             canTransfer: boolean;
+            canRegisterVendorTicket: boolean;
         };
         /**
          * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
-         *     without an assignee in the teams of the person, in charge of the person and opened by the person.
+         *     without an assignee in the teams of the person, in charge of the person, opened by the person, followed by the person
+         *     and with a ticket at a vendor.
          */
         TicketCountsResponse: {
             /** Format: int32 */
@@ -1825,6 +1913,8 @@ export interface components {
             openedByMe: number;
             /** Format: int32 */
             following: number;
+            /** Format: int32 */
+            withVendor: number;
         };
         TicketCreatedResponse: {
             /** Format: uuid */
@@ -1885,7 +1975,7 @@ export interface components {
          * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
          * @enum {unknown}
          */
-        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged";
+        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged" | "VendorTicketRegistered" | "VendorStatusChanged";
         /**
          * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
          *     null when the system did it.
@@ -1915,6 +2005,15 @@ export interface components {
              * @description The new requester.
              */
             toPersonId: null | string;
+            /**
+             * Format: uuid
+             * @description The ticket at a vendor registered or updated, among the vendorTickets of the ticket.
+             */
+            vendorTicketId: null | string;
+            fromVendorStatus: null | components["schemas"]["VendorTicketStatus"];
+            toVendorStatus: null | components["schemas"]["VendorTicketStatus"];
+            /** @description The note of the update at the vendor. */
+            note: null | string;
             /** Format: date-time */
             at: string;
         };
@@ -1955,6 +2054,7 @@ export interface components {
             canChangeAssignee: boolean;
             /** @description The person may change the requester with others at once (ADR-0027). */
             canChangeRequester: boolean;
+            vendor: null | components["schemas"]["TicketVendorResponse"];
         };
         /** @description A message of the conversation, with its text as the JSON of the editor. */
         TicketMessageResponse: {
@@ -2061,6 +2161,7 @@ export interface components {
             permissions: components["schemas"]["TicketConversationPermissionsResponse"];
             following: boolean;
             deadlines: null | components["schemas"]["TicketDeadlinesResponse"];
+            vendorTickets: components["schemas"]["VendorTicketResponse"][];
         };
         /**
          * @description Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all.
@@ -2103,11 +2204,21 @@ export interface components {
             /** @description Taken by the system on its own, never offered as a button. */
             automatic: boolean;
         };
+        /** @description A ticket at a vendor as a list shows it, with the business days without an update once it is stale. */
+        TicketVendorResponse: {
+            /** Format: uuid */
+            id: string;
+            vendor: string;
+            code: string;
+            status: components["schemas"]["VendorTicketStatus"];
+            /** Format: int32 */
+            staleDays: null | number;
+        };
         /**
          * @description The lists of tickets (ADR-0029, ADR-0068).
          * @enum {unknown}
          */
-        TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe" | "Following";
+        TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe" | "Following" | "WithVendor";
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
          *     null for the color of the design system).
@@ -2135,6 +2246,78 @@ export interface components {
         };
         /** @enum {unknown} */
         UserStatus: "Active" | "Inactive";
+        VendorCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description The name, the portal and the situation of a vendor. */
+        VendorRequest: {
+            name: null | string;
+            portalUrl: null | string;
+            isActive: boolean;
+        };
+        /** @description A vendor of the installation (ADR-0028): its name, the address of its support portal and its situation. */
+        VendorResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            portalUrl: null | string;
+            isActive: boolean;
+        };
+        VendorTicketCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description A ticket opened at an active vendor to register in our ticket. */
+        VendorTicketRequest: {
+            /** Format: uuid */
+            vendorId: null | string;
+            code: null | string;
+            /** Format: date */
+            openedOn: null | string;
+            status: null | components["schemas"]["VendorTicketStatus"];
+            link?: null | string;
+            note?: null | string;
+        };
+        /**
+         * @description A ticket opened at a vendor and registered in our ticket (ADR-0028): the vendor, its number and the day it was opened
+         *     there, the status there, the link, the note, who registered it and when it was last updated, with the business days
+         *     without an update once it is stale.
+         */
+        VendorTicketResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            vendorId: string;
+            vendor: string;
+            code: string;
+            /** Format: date */
+            openedOn: string;
+            status: components["schemas"]["VendorTicketStatus"];
+            link: null | string;
+            note: null | string;
+            /** Format: uuid */
+            registeredById: string;
+            /** Format: date-time */
+            registeredAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /**
+             * Format: int32
+             * @description The business days without an update, once it reaches the setting of the installation; null otherwise.
+             */
+            staleDays: null | number;
+        };
+        /**
+         * @description Where a ticket stands at the vendor (ADR-0028); the vendor decides its own cycle, so any status follows any other.
+         * @enum {unknown}
+         */
+        VendorTicketStatus: "Open" | "InAnalysis" | "WaitingForUs" | "Resolved" | "Closed";
+        /** @description The new status of a ticket at a vendor, with a note. */
+        VendorTicketUpdateRequest: {
+            status: null | components["schemas"]["VendorTicketStatus"];
+            note?: null | string;
+        };
         /** @description The days of the week the installation works; at least one. */
         WorkingDaysRequest: {
             workingDays: null | components["schemas"]["DayOfWeek"][];
@@ -5290,7 +5473,7 @@ export interface operations {
     ListTickets: {
         parameters: {
             query?: {
-                /** @description All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following. */
+                /** @description All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe, Following or WithVendor. */
                 view?: components["schemas"]["TicketView"];
                 /** @description Only the tickets of this project. */
                 projectId?: string;
@@ -5499,6 +5682,172 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListVendorChoices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RegisterVendorTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorTicketRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorTicketCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateVendorTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorTicketUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6280,6 +6629,171 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListVendors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    AddVendor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewVendorRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VendorCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeVendor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VendorRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -47,6 +47,10 @@ const tookIt: Ticket['events'] = [
     toTeam: null,
     fromPersonId: null,
     toPersonId: null,
+    vendorTicketId: null,
+    fromVendorStatus: null,
+    toVendorStatus: null,
+    note: null,
     at: '2026-10-15T10:00:00Z',
   },
   {
@@ -63,6 +67,10 @@ const tookIt: Ticket['events'] = [
     toTeam: null,
     fromPersonId: null,
     toPersonId: null,
+    vendorTicketId: null,
+    fromVendorStatus: null,
+    toVendorStatus: null,
+    note: null,
     at: '2026-10-15T10:00:00Z',
   },
 ];
@@ -90,6 +98,7 @@ beforeEach(() => {
       canChangeAssignee: false,
       canChangeRequester: false,
       canTransfer: false,
+      canRegisterVendorTicket: false,
     },
   };
   taken.length = 0;
@@ -132,6 +141,10 @@ beforeEach(() => {
             toTeam: null,
             fromPersonId: null,
             toPersonId: null,
+            vendorTicketId: null,
+            fromVendorStatus: null,
+            toVendorStatus: null,
+            note: null,
             at,
           },
         ],
@@ -142,6 +155,7 @@ beforeEach(() => {
           canChangeAssignee: false,
           canChangeRequester: false,
           canTransfer: false,
+          canRegisterVendorTicket: false,
         },
       };
       return new HttpResponse(null, { status: 204 });
@@ -241,6 +255,10 @@ describe('Histórico na conversa', () => {
           toTeam: null,
           fromPersonId: null,
           toPersonId: null,
+          vendorTicketId: null,
+          fromVendorStatus: null,
+          toVendorStatus: null,
+          note: null,
           at: '2026-10-22T12:00:00Z',
         },
       ],
@@ -252,6 +270,7 @@ describe('Histórico na conversa', () => {
         canChangeAssignee: false,
         canChangeRequester: false,
         canTransfer: false,
+        canRegisterVendorTicket: false,
       },
     };
     await openTicket();

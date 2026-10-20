@@ -121,6 +121,7 @@ describe('Trocas pela tela', () => {
         canChangeAssignee: true,
         canChangeRequester: true,
         canTransfer: true,
+        canRegisterVendorTicket: false,
       },
     };
     const moved: unknown[] = [];

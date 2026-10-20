@@ -15,6 +15,8 @@ import {
   type TicketStatus,
   type TicketTeam,
   ticketTeams,
+  type VendorTicketStatus,
+  vendorTicketStatuses,
   weekdays,
 } from '../api/client';
 import { formatCnpj } from '../format/cnpj';
@@ -187,6 +189,27 @@ const ticketStatuses: readonly string[] = [
 ] satisfies TicketStatus[];
 const isTicketStatus = (value: string): value is TicketStatus => ticketStatuses.includes(value);
 
+type VendorField = 'Name' | 'PortalUrl' | 'IsActive';
+const vendorFields: readonly string[] = ['Name', 'PortalUrl', 'IsActive'] satisfies VendorField[];
+const isVendorField = (field: string): field is VendorField => vendorFields.includes(field);
+
+type VendorTicketField =
+  'TicketId' | 'VendorId' | 'Code' | 'OpenedOn' | 'Status' | 'Link' | 'Note' | 'RegisteredById';
+const vendorTicketFields: readonly string[] = [
+  'TicketId',
+  'VendorId',
+  'Code',
+  'OpenedOn',
+  'Status',
+  'Link',
+  'Note',
+  'RegisteredById',
+] satisfies VendorTicketField[];
+const isVendorTicketField = (field: string): field is VendorTicketField =>
+  vendorTicketFields.includes(field);
+const isVendorTicketStatus = (value: string): value is VendorTicketStatus =>
+  vendorTicketStatuses.some((status) => status === value);
+
 type ScheduleBaselineField = 'SavedOn' | 'Start' | 'End';
 const scheduleBaselineFields: readonly string[] = [
   'SavedOn',
@@ -285,6 +308,15 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'Ticket' && field === 'Status' && isTicketStatus(value)) {
     return t(`tickets.statuses.${value}`);
   }
+  if (entry.itemType === 'Vendor' && field === 'IsActive') {
+    return t(value === 'true' ? 'vendors.statuses.Active' : 'vendors.statuses.Inactive');
+  }
+  if (entry.itemType === 'VendorTicket' && field === 'Status' && isVendorTicketStatus(value)) {
+    return t(`tickets.vendors.statuses.${value}`);
+  }
+  if (entry.itemType === 'VendorTicket' && field === 'OpenedOn') {
+    return formatDayText(value);
+  }
   return value;
 }
 
@@ -356,6 +388,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'TicketDeadlineSetting' && isTicketDeadlineField(field)) {
     return t(`audit.fields.TicketDeadlineSetting.${field}`);
   }
+  if (entry.itemType === 'Vendor' && isVendorField(field)) {
+    return t(`audit.fields.Vendor.${field}`);
+  }
+  if (entry.itemType === 'VendorTicket' && isVendorTicketField(field)) {
+    return t(`audit.fields.VendorTicket.${field}`);
+  }
   return field;
 }
 
@@ -393,6 +431,26 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.itemType === 'Project') {
     return projectTitleOf(entry, t);
+  }
+  // A vendor of the installation, included, changed, deactivated and reactivated (ADR-0028).
+  if (entry.itemType === 'Vendor') {
+    const situation = entry.action === 'Updated' ? changeOf(entry, 'IsActive') : undefined;
+    if (situation !== undefined) {
+      return t(
+        situation.after === 'false'
+          ? 'audit.actions.Vendor.Deactivated'
+          : 'audit.actions.Vendor.Reactivated',
+      );
+    }
+    return t(
+      `audit.actions.Vendor.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // A ticket at a vendor, registered in a ticket and updated (ADR-0028).
+  if (entry.itemType === 'VendorTicket') {
+    return t(
+      `audit.actions.VendorTicket.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
   }
   if (entry.itemType === 'ProjectMember') {
     return t(`audit.actions.ProjectMember.${entry.action}`);
@@ -484,6 +542,18 @@ function projectOfMember(entry: AuditEntry): string {
   return project?.after ?? project?.before ?? '';
 }
 
+/** The ticket of a registration at a vendor, by number and title (IsAuditContext in the API). */
+function ticketOf(entry: AuditEntry): string {
+  const ticket = changeOf(entry, 'TicketId');
+  return ticket?.after ?? ticket?.before ?? '';
+}
+
+/** The vendor of a registration at a vendor, by name. */
+function vendorOf(entry: AuditEntry): string {
+  const vendor = changeOf(entry, 'VendorId');
+  return vendor?.after ?? vendor?.before ?? '';
+}
+
 function providerOf(entry: AuditEntry, t: TFunction): string {
   return entry.detail === 'local' || entry.detail === 'entra'
     ? t(`audit.providers.${entry.detail}`)
@@ -523,6 +593,13 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   }
   if (isSchedule(entry) && entry.action !== 'Updated') {
     return join(label, projectOfMember(entry));
+  }
+  // A registration at a vendor says the ticket, the number and the vendor: the ticket · "FX-20931 no Emissor Exemplo".
+  if (entry.itemType === 'VendorTicket' && entry.action !== 'Updated') {
+    return join(ticketOf(entry), t('audit.vendorTicket', { code: label, vendor: vendorOf(entry) }));
+  }
+  if (entry.itemType === 'Vendor' && changeOf(entry, 'IsActive') !== undefined) {
+    return label;
   }
   if (entry.action !== 'Updated') {
     return label;
@@ -604,6 +681,16 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   }
   if (entry.itemType === 'TicketDeadlineSetting') {
     return [{ label: t('audit.details.item.TicketDeadlineSetting'), value: label }];
+  }
+  if (entry.itemType === 'Vendor') {
+    return [{ label: t('audit.details.item.Vendor'), value: label }];
+  }
+  if (entry.itemType === 'VendorTicket') {
+    return [
+      { label: t('audit.details.item.VendorTicket'), value: label },
+      { label: t('audit.fields.VendorTicket.VendorId'), value: vendorOf(entry) },
+      { label: t('audit.fields.VendorTicket.TicketId'), value: ticketOf(entry) },
+    ];
   }
   if (entry.itemType === 'Ticket') {
     return [

@@ -928,4 +928,78 @@ describe('Mudanças do cronograma na auditoria', () => {
       ]),
     );
   });
+  // Spec: chamados, requirements "Fornecedores" and "Chamado no fornecedor".
+  it('Fornecedores na auditoria', () => {
+    const field = (name: string, before: string | null, after: string | null) => ({
+      field: name,
+      before,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const deactivated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Vendor',
+        itemLabel: 'Emissor Exemplo',
+        changes: [field('IsActive', 'true', 'false')],
+      }),
+      t,
+    );
+    const registered = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'VendorTicket',
+        itemLabel: 'FX-20931',
+        changes: [
+          field('TicketId', null, '#1 Rejeição 539 ao emitir nota de devolução'),
+          field('VendorId', null, 'Emissor Exemplo'),
+          field('Code', null, 'FX-20931'),
+          field('OpenedOn', null, '2026-10-19'),
+          field('Status', null, 'InAnalysis'),
+        ],
+      }),
+      t,
+    );
+    const updated = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'VendorTicket',
+        itemLabel: 'FX-20931',
+        changes: [
+          field('Status', 'InAnalysis', 'WaitingForUs'),
+          field(
+            'TicketId',
+            '#1 Rejeição 539 ao emitir nota de devolução',
+            '#1 Rejeição 539 ao emitir nota de devolução',
+          ),
+          field('VendorId', 'Emissor Exemplo', 'Emissor Exemplo'),
+        ],
+      }),
+      t,
+    );
+
+    expect(deactivated.title).toBe('Inativou um fornecedor');
+    expect(deactivated.summary).toBe('Emissor Exemplo');
+    expect(deactivated.properties).toEqual([{ label: 'Fornecedor', value: 'Emissor Exemplo' }]);
+    expect(registered.title).toBe('Registrou um chamado no fornecedor');
+    expect(registered.summary).toBe(
+      '#1 Rejeição 539 ao emitir nota de devolução · FX-20931 no Emissor Exemplo',
+    );
+    expect(registered.changes).toEqual(
+      expect.arrayContaining([
+        { field: 'Aberto em', before: '—', after: '19/10/2026' },
+        { field: 'Status no fornecedor', before: '—', after: 'Em análise' },
+      ]),
+    );
+    expect(updated.title).toBe('Atualizou um chamado no fornecedor');
+    expect(updated.summary).toBe(
+      'FX-20931 · status no fornecedor Em análise → Aguardando nosso retorno',
+    );
+    expect(updated.properties).toEqual([
+      { label: 'Chamado no fornecedor', value: 'FX-20931' },
+      { label: 'Fornecedor', value: 'Emissor Exemplo' },
+      { label: 'Chamado', value: '#1 Rejeição 539 ao emitir nota de devolução' },
+    ]);
+  });
 });

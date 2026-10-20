@@ -107,6 +107,13 @@ export function TicketTable({
     [rows],
   );
 
+  // The vendor of the ticket at the end of the second line of the title (ADR-0028).
+  const atVendor = useCallback(
+    (row: TicketRow) =>
+      row.vendor === null ? '' : ` · ${t('tickets.atVendor', { vendor: row.vendor.vendor })}`,
+    [t],
+  );
+
   const columns = useMemo<DataTableColumn<TicketRow>[]>(
     () => [
       ...(rows.some(isSelectable)
@@ -190,7 +197,7 @@ export function TicketTable({
                     team,
                     name: row.requester.name,
                     day: formatDayMonth(row.openedAt),
-                  })
+                  }) + atVendor(row)
                 ) : (
                   <>
                     <Box
@@ -199,7 +206,7 @@ export function TicketTable({
                     >
                       {row.project.code}
                     </Box>
-                    {` · ${t('tickets.row', { team, name: row.requester.name })}`}
+                    {` · ${t('tickets.row', { team, name: row.requester.name })}${atVendor(row)}`}
                   </>
                 )}
               </Box>
@@ -290,7 +297,7 @@ export function TicketTable({
         ),
       },
     ],
-    [t, inProject, formatDayMonth, rows, allMarked, marked, mark, markPage],
+    [t, inProject, formatDayMonth, rows, allMarked, marked, mark, markPage, atVendor],
   );
 
   const chosen = [...marked.values()];

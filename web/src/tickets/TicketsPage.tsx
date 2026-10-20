@@ -1,5 +1,6 @@
 import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
 import AddOutlined from '@mui/icons-material/AddOutlined';
+import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import PersonOutlineOutlined from '@mui/icons-material/PersonOutlineOutlined';
@@ -41,6 +42,7 @@ const views: readonly {
   { view: 'UnassignedInMyTeams', icon: InboxOutlined, count: 'unassignedInMyTeams', alert: true },
   { view: 'OpenedByMe', icon: ReplyOutlined, count: 'openedByMe' },
   { view: 'Following', icon: VisibilityOutlined, count: 'following' },
+  { view: 'WithVendor', icon: BusinessOutlined, count: 'withVendor' },
   { view: 'All', icon: ConfirmationNumberOutlined, count: 'open' },
 ];
 

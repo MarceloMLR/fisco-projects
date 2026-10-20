@@ -22,6 +22,7 @@ import { TicketReply } from './TicketReply';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { ticketNumberOf } from './tickets';
 import { TicketDue } from './TicketDue';
+import { VendorSection } from './TicketVendors';
 
 const tagSx = {
   display: 'inline-flex',
@@ -280,6 +281,7 @@ function SidePanel({
         </Button>
       </Box>
       <DeadlinesSection ticket={ticket} />
+      <VendorSection ticket={ticket} onMessage={onMessage} />
       <Box
         component="section"
         aria-labelledby="ticket-attachments"
