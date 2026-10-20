@@ -2,7 +2,7 @@
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '../../src/test/server';
-import { loadDemo } from './load.ts';
+import { loadDemo, screensAddress } from './load.ts';
 import { demoPeople, demoProjects } from './plan.ts';
 
 /**
@@ -129,7 +129,10 @@ describe('Carga dos dados de demonstração', () => {
       start: '2026-10-05',
       ownerId: idOf('marina'),
     });
-    expect(lines.at(-1)).toContain('2026-10-05');
+    expect(lines.at(-2)).toContain('2026-10-05');
+    // And where to open the screens, with the code as it is now.
+    expect(screensAddress).toBe('http://localhost:5173');
+    expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');
   });
 
   it('Dados já carregados', async () => {
@@ -142,7 +145,10 @@ describe('Carga dos dados de demonstração', () => {
     expect(calls.filter((call) => !call.includes(' GET '))).toEqual([
       'anonymous POST /api/session/local',
     ]);
-    expect(lines).toEqual([expect.stringContaining('já estão carregados')]);
+    expect(lines).toEqual([
+      expect.stringContaining('já estão carregados'),
+      'Abra as telas em http://localhost:5173 (npm run dev).',
+    ]);
   });
 
   it('Sem entrada local', async () => {
