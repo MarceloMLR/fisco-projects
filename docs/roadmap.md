@@ -100,7 +100,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | PR aberto |
-| Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Planejada |
+| Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Em andamento |
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Planejada |
 
 ## 7. Documentos, links, acessos e termos
