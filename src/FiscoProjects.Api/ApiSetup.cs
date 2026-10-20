@@ -6,6 +6,8 @@ using FiscoProjects.Audit.Endpoints;
 using FiscoProjects.Audit.Infrastructure;
 using FiscoProjects.Calendar.Endpoints;
 using FiscoProjects.Calendar.Infrastructure;
+using FiscoProjects.Credentials.Endpoints;
+using FiscoProjects.Credentials.Infrastructure;
 using FiscoProjects.Documents.Endpoints;
 using FiscoProjects.Documents.Infrastructure;
 using FiscoProjects.Files.Infrastructure;
@@ -66,6 +68,7 @@ public static class ApiSetup
         builder.Services.AddProjectsModule(builder.Configuration);
         builder.Services.AddTicketsModule(builder.Configuration);
         builder.Services.AddDocumentsModule(builder.Configuration);
+        builder.Services.AddCredentialsModule(builder.Configuration);
         builder.Services.AddNotificationsModule(builder.Configuration);
 
         return builder;
@@ -97,6 +100,7 @@ public static class ApiSetup
             .MapProjectsEndpoints()
             .MapTicketsEndpoints()
             .MapDocumentsEndpoints()
+            .MapCredentialsEndpoints()
             .MapNotificationsEndpoints()
             .MapClientSettingsEndpoints();
 
