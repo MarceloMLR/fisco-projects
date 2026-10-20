@@ -32,16 +32,60 @@ public sealed record TicketListItemResponse(
     [property: Description("How many messages and events the ticket has.")] int Interactions,
     [property: Description("The deadline of the resolution today (ADR-0025); null for a ticket opened before the deadlines.")] TicketDueResponse? Resolution,
     [property: Description("The person may change the assignee, also with others at once (ADR-0068).")] bool CanChangeAssignee,
-    [property: Description("The person may change the requester with others at once (ADR-0027).")] bool CanChangeRequester);
+    [property: Description("The person may change the requester with others at once (ADR-0027).")] bool CanChangeRequester,
+    [property: Description("The ticket at a vendor: the open one registered last, or the last one (ADR-0028); null without one.")] TicketVendorResponse? Vendor);
+
+/// <summary>A ticket at a vendor as a list shows it, with the business days without an update once it is stale.</summary>
+public sealed record TicketVendorResponse(Guid Id, string Vendor, string Code, VendorTicketStatus Status, int? StaleDays);
+
+/// <summary>
+/// A ticket opened at a vendor and registered in our ticket (ADR-0028): the vendor, its number and the day it was opened
+/// there, the status there, the link, the note, who registered it and when it was last updated, with the business days
+/// without an update once it is stale.
+/// </summary>
+public sealed record VendorTicketResponse(
+    Guid Id,
+    Guid VendorId,
+    string Vendor,
+    string Code,
+    DateOnly OpenedOn,
+    VendorTicketStatus Status,
+    string? Link,
+    string? Note,
+    Guid RegisteredById,
+    DateTime RegisteredAt,
+    DateTime UpdatedAt,
+    [property: Description("The business days without an update, once it reaches the setting of the installation; null otherwise.")] int? StaleDays);
+
+/// <summary>A ticket opened at an active vendor to register in our ticket.</summary>
+public sealed record VendorTicketRequest(
+    Guid? VendorId, string? Code, DateOnly? OpenedOn, VendorTicketStatus? Status, string? Link = null, string? Note = null);
+
+/// <summary>The new status of a ticket at a vendor, with a note.</summary>
+public sealed record VendorTicketUpdateRequest(VendorTicketStatus? Status, string? Note = null);
+
+public sealed record VendorTicketCreatedResponse(Guid Id);
+
+/// <summary>A vendor of the installation (ADR-0028): its name, the address of its support portal and its situation.</summary>
+public sealed record VendorResponse(Guid Id, string Name, string? PortalUrl, bool IsActive);
+
+/// <summary>A new vendor, active.</summary>
+public sealed record NewVendorRequest(string? Name, string? PortalUrl = null);
+
+/// <summary>The name, the portal and the situation of a vendor.</summary>
+public sealed record VendorRequest(string? Name, string? PortalUrl, bool IsActive);
+
+public sealed record VendorCreatedResponse(Guid Id);
 
 public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> Items, int Total);
 
 /// <summary>
 /// How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
-/// without an assignee in the teams of the person, in charge of the person and opened by the person.
+/// without an assignee in the teams of the person, in charge of the person, opened by the person, followed by the person
+/// and with a ticket at a vendor.
 /// </summary>
 public sealed record TicketCountsResponse(
-    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following);
+    int All, int Open, int Unassigned, int UnassignedInMyTeams, int AssignedToMe, int OpenedByMe, int Following, int WithVendor);
 
 /// <summary>
 /// A project the person sees, for the filters and the opening: whether it is closed, whether the person may open
@@ -106,7 +150,8 @@ public sealed record TicketConversationPermissionsResponse(
     bool CanChangePriority,
     bool CanChangeAssignee,
     bool CanChangeRequester,
-    bool CanTransfer);
+    bool CanTransfer,
+    bool CanRegisterVendorTicket);
 
 /// <summary>A new assignee for the tickets, one or many (ADR-0027, ADR-0068).</summary>
 public sealed record TicketAssigneeRequest(IReadOnlyList<int>? Numbers, Guid? AssigneeId);
@@ -135,6 +180,10 @@ public sealed record TicketEventResponse(
     TicketTeam? ToTeam,
     [property: Description("The requester before, or the assignee who left.")] Guid? FromPersonId,
     [property: Description("The new requester.")] Guid? ToPersonId,
+    [property: Description("The ticket at a vendor registered or updated, among the vendorTickets of the ticket.")] Guid? VendorTicketId,
+    VendorTicketStatus? FromVendorStatus,
+    VendorTicketStatus? ToVendorStatus,
+    [property: Description("The note of the update at the vendor.")] string? Note,
     DateTime At);
 
 /// <summary>An action of the flow taken in a ticket, with the message when the action needs one.</summary>
@@ -187,7 +236,8 @@ public sealed record TicketResponse(
     IReadOnlyList<TicketParticipantResponse> Participants,
     TicketConversationPermissionsResponse Permissions,
     bool Following,
-    TicketDeadlinesResponse? Deadlines);
+    TicketDeadlinesResponse? Deadlines,
+    IReadOnlyList<VendorTicketResponse> VendorTickets);
 
 /// <summary>Problem types of the tickets, so the screen can tell the reason.</summary>
 public static class TicketProblems
@@ -221,6 +271,9 @@ public static class TicketProblems
 
     /// <summary>The action does not leave the status the ticket is in now (ADR-0024); status 409.</summary>
     public const string ActionNotAllowedNow = "urn:fiscoprojects:problem:ticket-action-not-allowed-now";
+
+    /// <summary>Another vendor has the name (ADR-0028); status 409.</summary>
+    public const string VendorNameInUse = "urn:fiscoprojects:problem:vendor-name-in-use";
 }
 
 /// <summary>
@@ -245,6 +298,16 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/flow", FlowAsync).WithName("GetTicketFlow");
+        tickets.MapGet("/vendor-choices", VendorChoicesAsync).WithName("ListVendorChoices")
+            .WithDescription("The active vendors, for new registrations of tickets at vendors (ADR-0028).");
+        tickets.MapPost("/{number:int}/vendor-tickets", RegisterVendorTicketAsync).WithName("RegisterVendorTicket")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPut("/{number:int}/vendor-tickets/{id:guid}", UpdateVendorTicketAsync).WithName("UpdateVendorTicket")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPut("/assignee", AssignAsync).WithName("ChangeTicketAssignees")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -316,6 +379,20 @@ public static class TicketEndpoints
         deadlines.MapGet("/", DeadlinesAsync).WithName("GetTicketDeadlines");
         deadlines.MapPut("/", ChangeDeadlinesAsync).WithName("ChangeTicketDeadlines")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        // The vendors, only for the Administrator (ADR-0028, ADR-0046).
+        var vendors = api.MapGroup("/admin/vendors")
+            .WithTags("Tickets")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        vendors.MapGet("/", AllVendorsAsync).WithName("ListVendors");
+        vendors.MapPost("/", AddVendorAsync).WithName("AddVendor")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        vendors.MapPut("/{id:guid}", ChangeVendorAsync).WithName("ChangeVendor")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         return api;
     }
 
@@ -324,7 +401,7 @@ public static class TicketEndpoints
         IUserAccess access,
         ListTickets listTickets,
         CancellationToken cancellationToken,
-        [Description("All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following.")] TicketView view = TicketView.All,
+        [Description("All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe, Following or WithVendor.")] TicketView view = TicketView.All,
         [Description("Only the tickets of this project.")] Guid? projectId = null,
         [Description("Only the tickets of this team.")] TicketTeam? team = null,
         [Description("Open (the default: not resolved nor closed), Finished (resolved and closed) or All.")] TicketSituation situation = TicketSituation.Open,
@@ -367,7 +444,14 @@ public static class TicketEndpoints
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         return await countTickets.ExecuteAsync(projectId, viewer, cancellationToken) is { } counts
             ? TypedResults.Ok(new TicketCountsResponse(
-                counts.All, counts.Open, counts.Unassigned, counts.UnassignedInMyTeams, counts.AssignedToMe, counts.OpenedByMe, counts.Following))
+                counts.All,
+                counts.Open,
+                counts.Unassigned,
+                counts.UnassignedInMyTeams,
+                counts.AssignedToMe,
+                counts.OpenedByMe,
+                counts.Following,
+                counts.WithVendor))
             : TypedResults.NotFound();
     }
 
@@ -444,6 +528,10 @@ public static class TicketEndpoints
                 item.ToTeam,
                 item.FromPersonId,
                 item.ToPersonId,
+                item.VendorTicketId,
+                item.FromVendorStatus,
+                item.ToVendorStatus,
+                item.Note,
                 item.At))],
             [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
@@ -457,9 +545,11 @@ public static class TicketEndpoints
                 details.Permissions.CanChangePriority,
                 details.Permissions.CanChangeAssignee,
                 details.Permissions.CanChangeRequester,
-                details.Permissions.CanTransfer),
+                details.Permissions.CanTransfer,
+                details.Permissions.CanRegisterVendorTicket),
             details.Following,
-            details.Deadlines is { } figures ? DeadlinesOf(figures) : null));
+            details.Deadlines is { } figures ? DeadlinesOf(figures) : null,
+            [.. details.VendorTickets.Select(VendorTicketOf)]));
     }
 
     private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> AssignAsync(
@@ -576,6 +666,139 @@ public static class TicketEndpoints
                 type: TicketProblems.ActionNotAllowedNow),
         };
     }
+
+    private static async Task<Ok<IReadOnlyList<VendorResponse>>> VendorChoicesAsync(ListVendors list, CancellationToken cancellationToken) =>
+        TypedResults.Ok(VendorsOf(await list.ExecuteAsync(activeOnly: true, cancellationToken)));
+
+    private static async Task<Ok<IReadOnlyList<VendorResponse>>> AllVendorsAsync(ListVendors list, CancellationToken cancellationToken) =>
+        TypedResults.Ok(VendorsOf(await list.ExecuteAsync(activeOnly: false, cancellationToken)));
+
+    private static async Task<Results<Created<VendorCreatedResponse>, ValidationProblem, ProblemHttpResult>> AddVendorAsync(
+        NewVendorRequest request, AddVendor add, CancellationToken cancellationToken)
+    {
+        var result = await add.ExecuteAsync(request.Name, request.PortalUrl, cancellationToken);
+        return result.Outcome switch
+        {
+            VendorOutcome.Done => TypedResults.Created((string?)null, new VendorCreatedResponse(result.Id!.Value)),
+            VendorOutcome.Invalid => InvalidVendor(result.Invalid),
+            _ => VendorNameInUse(),
+        };
+    }
+
+    private static async Task<Results<NoContent, NotFound, ValidationProblem, ProblemHttpResult>> ChangeVendorAsync(
+        Guid id, VendorRequest request, ChangeVendor change, CancellationToken cancellationToken)
+    {
+        var result = await change.ExecuteAsync(id, request.Name, request.PortalUrl, request.IsActive, cancellationToken);
+        return result.Outcome switch
+        {
+            VendorOutcome.Done => TypedResults.NoContent(),
+            VendorOutcome.NotFound => TypedResults.NotFound(),
+            VendorOutcome.Invalid => InvalidVendor(result.Invalid),
+            _ => VendorNameInUse(),
+        };
+    }
+
+    private static async Task<Results<Created<VendorTicketCreatedResponse>, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> RegisterVendorTicketAsync(
+        int number,
+        VendorTicketRequest request,
+        HttpContext http,
+        IUserAccess access,
+        RegisterVendorTicket register,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var result = await register.ExecuteAsync(
+            number,
+            new NewVendorTicket(request.VendorId, request.Code, request.OpenedOn, request.Status, request.Link, request.Note),
+            viewer,
+            cancellationToken);
+        return result.Outcome switch
+        {
+            VendorTicketOutcome.Done => TypedResults.Created((string?)null, new VendorTicketCreatedResponse(result.Id!.Value)),
+            VendorTicketOutcome.NotFound => TypedResults.NotFound(),
+            VendorTicketOutcome.Forbidden => TypedResults.Forbid(),
+            VendorTicketOutcome.Invalid => InvalidVendorTicket(result.Invalid),
+            _ => VendorTicketConflict(result.Outcome),
+        };
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> UpdateVendorTicketAsync(
+        int number,
+        Guid id,
+        VendorTicketUpdateRequest request,
+        HttpContext http,
+        IUserAccess access,
+        UpdateVendorTicket update,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var result = await update.ExecuteAsync(number, id, request.Status, request.Note, viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            VendorTicketOutcome.Done => TypedResults.NoContent(),
+            VendorTicketOutcome.NotFound => TypedResults.NotFound(),
+            VendorTicketOutcome.Forbidden => TypedResults.Forbid(),
+            VendorTicketOutcome.Invalid => InvalidVendorTicket(result.Invalid),
+            _ => VendorTicketConflict(result.Outcome),
+        };
+    }
+
+    private static ProblemHttpResult VendorTicketConflict(VendorTicketOutcome outcome) =>
+        outcome == VendorTicketOutcome.Closed
+            ? TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket closed",
+                detail: "A closed ticket takes no more registrations at vendors.",
+                type: TicketProblems.TicketClosed)
+            : TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket changed",
+                detail: "Someone changed the ticket at the same time; nothing was saved.",
+                type: TicketProblems.TicketChanged);
+
+    private static IReadOnlyList<VendorResponse> VendorsOf(IReadOnlyList<Vendor> vendors) =>
+        [.. vendors.Select(vendor => new VendorResponse(vendor.Id, vendor.Name, vendor.PortalUrl, vendor.IsActive))];
+
+    private static ProblemHttpResult VendorNameInUse() =>
+        TypedResults.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Name in use",
+            detail: "Another vendor has the name.",
+            type: TicketProblems.VendorNameInUse);
+
+    private static ValidationProblem InvalidVendor(IReadOnlyList<VendorField> fields) =>
+        TypedResults.ValidationProblem(fields.ToDictionary(
+            field => field == VendorField.Name ? "name" : "portalUrl",
+            field => new[]
+            {
+                field == VendorField.Name
+                    ? $"The name is needed and has up to {Vendor.NameMaxLength} characters."
+                    : $"The portal is an address http or https of up to {Vendor.UrlMaxLength} characters.",
+            }));
+
+    private static ValidationProblem InvalidVendorTicket(IReadOnlyList<VendorTicketField> fields) =>
+        TypedResults.ValidationProblem(fields.ToDictionary(
+            field => field switch
+            {
+                VendorTicketField.Vendor => "vendorId",
+                VendorTicketField.Code => "code",
+                VendorTicketField.OpenedOn => "openedOn",
+                VendorTicketField.Status => "status",
+                VendorTicketField.Link => "link",
+                _ => "note",
+            },
+            field => new[]
+            {
+                field switch
+                {
+                    VendorTicketField.Vendor => "The vendor is one of the active vendors.",
+                    VendorTicketField.Code => $"The number at the vendor is needed and has up to {VendorTicket.CodeMaxLength} characters.",
+                    VendorTicketField.OpenedOn => "The day it was opened is needed and is not after today.",
+                    VendorTicketField.Status => "The status is Open, InAnalysis, WaitingForUs, Resolved or Closed.",
+                    VendorTicketField.Link => $"The link is an address http or https of up to {Vendor.UrlMaxLength} characters.",
+                    _ => $"The note has up to {VendorTicket.NoteMaxLength} characters.",
+                },
+            }));
 
     private static async Task<Ok<TicketFlowResponse>> FlowAsync(
         GetTicketFlow getFlow, TicketAutoCloseSettings autoClose, CancellationToken cancellationToken)
@@ -771,7 +994,25 @@ public static class TicketEndpoints
             item.Interactions,
             item.Deadlines?.Resolution is { } resolution ? DueOf(resolution) : null,
             item.CanChangeAssignee,
-            item.CanChangeRequester);
+            item.CanChangeRequester,
+            item.Vendor is { } vendor
+                ? new TicketVendorResponse(vendor.Record.Id, vendor.VendorName, vendor.Record.Code, vendor.Record.Status, vendor.StaleDays)
+                : null);
+
+    private static VendorTicketResponse VendorTicketOf(TicketVendorTicket item) =>
+        new(
+            item.Record.Id,
+            item.Record.VendorId,
+            item.VendorName,
+            item.Record.Code,
+            item.Record.OpenedOn,
+            item.Record.Status,
+            item.Record.Link,
+            item.Record.Note,
+            item.Record.RegisteredById,
+            item.Record.RegisteredAt,
+            item.Record.UpdatedAt,
+            item.StaleDays);
 
     private static TicketDueResponse DueOf(TicketDue due) => new(due.State, due.DueOn, due.DaysLate);
 

@@ -26,6 +26,10 @@ internal sealed class TicketsDbContext(DbContextOptions<TicketsDbContext> option
 
     public DbSet<TicketDeadlineSetting> TicketDeadlines => Set<TicketDeadlineSetting>();
 
+    public DbSet<Vendor> Vendors => Set<Vendor>();
+
+    public DbSet<VendorTicket> VendorTickets => Set<VendorTicket>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
         modelBuilder.HasSequence<int>(NumberSequence).StartsAt(1).IncrementsBy(1);

@@ -53,6 +53,7 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
             TicketView.Unassigned => tickets.Where(ticket => ticket.AssigneeId == null),
             TicketView.OpenedByMe => tickets.Where(ticket => ticket.RequesterId == scope.UserId),
             TicketView.Following => Followed(tickets, scope.UserId),
+            TicketView.WithVendor => AtVendors(tickets),
             _ => tickets,
         };
 
@@ -117,7 +118,8 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
             await UnassignedInTeamsOf(open, scope).CountAsync(cancellationToken),
             await open.CountAsync(ticket => ticket.AssigneeId == scope.UserId, cancellationToken),
             await open.CountAsync(ticket => ticket.RequesterId == scope.UserId, cancellationToken),
-            await Followed(open, scope.UserId).CountAsync(cancellationToken));
+            await Followed(open, scope.UserId).CountAsync(cancellationToken),
+            await AtVendors(open).CountAsync(cancellationToken));
     }
 
     public async Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(
@@ -220,6 +222,9 @@ internal sealed class TicketStore(TicketsDbContext db) : ITicketStore
 
     private IQueryable<Ticket> Followed(IQueryable<Ticket> tickets, Guid userId) =>
         tickets.Where(ticket => db.TicketFollowers.Any(follower => follower.TicketId == ticket.Id && follower.UserId == userId));
+
+    private IQueryable<Ticket> AtVendors(IQueryable<Ticket> tickets) =>
+        tickets.Where(ticket => db.VendorTickets.Any(vendorTicket => vendorTicket.TicketId == ticket.Id));
 
     private static IQueryable<Ticket> Open(IQueryable<Ticket> tickets) =>
         tickets.Where(ticket => ticket.Status != TicketStatus.Resolved && ticket.Status != TicketStatus.Closed);

@@ -284,10 +284,18 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
+                    b.Property<string>("FromVendorStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("TicketId")
                         .HasColumnType("uniqueidentifier");
@@ -306,6 +314,13 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<string>("ToTeam")
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ToVendorStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid?>("VendorTicketId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -525,6 +540,92 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.Vendor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("PortalUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_vendors_Name");
+
+                    b.ToTable("vendors", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.VendorTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateOnly>("OpenedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("RegisteredAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("RegisteredById")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Ticket");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("VendorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Vendor");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VendorId");
+
+                    b.HasIndex("TicketId", "RegisteredAt");
+
+                    b.ToTable("vendor_tickets", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Code");
+                });
+
             modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketAttachment", b =>
                 {
                     b.HasOne("FiscoProjects.Tickets.Domain.TicketMessage", null)
@@ -563,6 +664,21 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.VendorTicket", b =>
+                {
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FiscoProjects.Tickets.Domain.Vendor", null)
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

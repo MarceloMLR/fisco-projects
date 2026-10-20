@@ -1,5 +1,6 @@
 using FiscoProjects.Persistence.Auditing;
 using FiscoProjects.Projects.Contracts;
+using FiscoProjects.Tickets.Contracts;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,46 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         ticket.Property(t => t.PausedBusinessDays).ExcludeFromAudit();
         // Two changes at once never overwrite each other: the second finds the ticket changed (TicketChangedException).
         ticket.Property<byte[]>("Version").IsRowVersion().ExcludeFromAudit();
+    }
+}
+
+// The vendors of the installation (ADR-0028): changed by the Administrator, with the change in the audit; never removed.
+internal sealed class VendorConfiguration : IEntityTypeConfiguration<Vendor>
+{
+    /// <summary>The unique index of the names, told apart from other errors when saving.</summary>
+    public const string NameIndex = "IX_vendors_Name";
+
+    public void Configure(EntityTypeBuilder<Vendor> vendor)
+    {
+        vendor.ToTable("vendors");
+        vendor.Property(v => v.Name).HasMaxLength(Vendor.NameMaxLength);
+        vendor.Property(v => v.PortalUrl).HasMaxLength(Vendor.UrlMaxLength);
+        vendor.HasIndex(v => v.Name).IsUnique().HasDatabaseName(NameIndex);
+        vendor.HasAuditLabel(v => v.Name);
+    }
+}
+
+// The tickets at vendors, registered in our tickets (ADR-0028); each registration and update is also an event.
+internal sealed class VendorTicketConfiguration : IEntityTypeConfiguration<VendorTicket>
+{
+    public void Configure(EntityTypeBuilder<VendorTicket> vendorTicket)
+    {
+        vendorTicket.ToTable("vendor_tickets");
+        vendorTicket.Property(v => v.Code).HasMaxLength(VendorTicket.CodeMaxLength);
+        vendorTicket.Property(v => v.Status).HasConversion<string>().HasMaxLength(16);
+        vendorTicket.Property(v => v.Link).HasMaxLength(Vendor.UrlMaxLength);
+        vendorTicket.Property(v => v.Note).HasMaxLength(VendorTicket.NoteMaxLength);
+        vendorTicket.Ignore(v => v.IsOpen);
+        vendorTicket.HasOne<Ticket>().WithMany().HasForeignKey(v => v.TicketId).OnDelete(DeleteBehavior.Cascade);
+        vendorTicket.HasOne<Vendor>().WithMany().HasForeignKey(v => v.VendorId).OnDelete(DeleteBehavior.Restrict);
+        vendorTicket.HasIndex(v => new { v.TicketId, v.RegisteredAt });
+        // Audit (ADR-0039, ADR-0084): named by its number at the vendor, with the ticket it is in every record.
+        vendorTicket.HasAuditLabel(v => v.Code);
+        vendorTicket.Property(v => v.TicketId).IsAuditReference(TicketsAudit.TicketReference).IsAuditContext();
+        vendorTicket.Property(v => v.VendorId).IsAuditReference(TicketsAudit.VendorReference);
+        vendorTicket.Property(v => v.RegisteredById).IsAuditReference(UserAudit.Reference);
+        vendorTicket.Property(v => v.RegisteredAt).ExcludeFromAudit();
+        vendorTicket.Property(v => v.UpdatedAt).ExcludeFromAudit();
     }
 }
 
@@ -113,6 +154,9 @@ internal sealed class TicketEventConfiguration : IEntityTypeConfiguration<Ticket
         ticketEvent.Property(e => e.ToPriority).HasConversion<string>().HasMaxLength(16);
         ticketEvent.Property(e => e.FromTeam).HasConversion<string>().HasMaxLength(16);
         ticketEvent.Property(e => e.ToTeam).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.FromVendorStatus).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.ToVendorStatus).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.Note).HasMaxLength(VendorTicket.NoteMaxLength);
         ticketEvent.HasOne<Ticket>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Cascade);
         ticketEvent.HasIndex(e => new { e.TicketId, e.At });
         ticketEvent.ExcludeFromAudit();

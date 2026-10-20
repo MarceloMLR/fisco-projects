@@ -1,5 +1,6 @@
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Contracts;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Tickets.Infrastructure.Persistence;
@@ -48,6 +49,18 @@ public static class TicketsModule
         services.AddSingleton(new TicketAutoCloseSettings(
             Math.Max(1, configuration.GetValue("Tickets:AutoCloseBusinessDays", TicketAutoCloseSettings.Default))));
         services.AddScoped<CloseResolvedTickets>();
+        // The vendors and the tickets at them (ADR-0028): stale after 5 business days without an update, as each
+        // installation sets.
+        services.AddScoped<IVendorStore, VendorStore>();
+        services.AddSingleton(new VendorStaleSettings(
+            Math.Max(1, configuration.GetValue("Tickets:VendorStaleBusinessDays", VendorStaleSettings.Default))));
+        services.AddScoped<ListVendors>();
+        services.AddScoped<AddVendor>();
+        services.AddScoped<ChangeVendor>();
+        services.AddScoped<RegisterVendorTicket>();
+        services.AddScoped<UpdateVendorTicket>();
+        services.AddScoped<IAuditReferenceNames, TicketReferenceNames>();
+        services.AddScoped<IAuditReferenceNames, VendorReferenceNames>();
         services.AddHostedService<TicketAutoClose>();
         return services;
     }
