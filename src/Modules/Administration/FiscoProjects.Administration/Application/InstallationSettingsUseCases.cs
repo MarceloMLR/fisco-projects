@@ -50,14 +50,14 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
 /// The rules of the installation every person in a session needs: the time zone of the screens and the time of the
 /// daily summary, which the profile shows.
 /// </summary>
-public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt);
+public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays);
 
 public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
     public async Task<GeneralRules> ExecuteAsync(CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new GeneralRules(settings.TimeZone, settings.DailySummaryAt);
+        return new GeneralRules(settings.TimeZone, settings.DailySummaryAt, settings.NotificationRetentionDays);
     }
 }
 
@@ -68,13 +68,15 @@ public enum InstallationField
     TimeZone = 2,
     MainColor = 3,
     DailySummaryAt = 4,
+    NotificationRetentionDays = 5,
 }
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the time zone, the main color and the time of the daily
-/// summary.
+/// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
+/// summary and how many days the notifications are kept.
 /// </summary>
-public sealed record InstallationChanges(string? Name, string? TimeZone, string? MainColor, TimeOnly? DailySummaryAt);
+public sealed record InstallationChanges(
+    string? Name, string? TimeZone, string? MainColor, TimeOnly? DailySummaryAt, int? NotificationRetentionDays);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -109,6 +111,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.DailySummaryAt);
         }
 
+        if (changes.NotificationRetentionDays is not { } retention || !InstallationSettings.IsValidNotificationRetention(retention))
+        {
+            invalid.Add(InstallationField.NotificationRetentionDays);
+        }
+
         if (name is null || invalid.Count > 0)
         {
             return invalid;
@@ -119,6 +126,7 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeMainColor(mainColor);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
+        settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         await store.SaveChangesAsync(cancellationToken);
         return [];
     }

@@ -1,8 +1,9 @@
 import MenuOutlined from '@mui/icons-material/MenuOutlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
+import { NotificationBell } from '../notifications/NotificationBell';
 
-/** Phone top bar (fp-topbar): menu button and page title, with a line below (ADR-0012). */
+/** Phone top bar (fp-topbar): menu button, page title and the bell (ADR-0038), with a line below (ADR-0012). */
 export function MobileTopBar({
   title,
   menuOpen,
@@ -69,6 +70,7 @@ export function MobileTopBar({
       >
         {title}
       </Box>
+      <NotificationBell size={44} />
     </Box>
   );
 }

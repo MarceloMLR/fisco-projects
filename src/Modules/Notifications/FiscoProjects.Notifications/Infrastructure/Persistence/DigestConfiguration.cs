@@ -31,3 +31,19 @@ internal sealed class DailySummaryRunConfiguration : IEntityTypeConfiguration<Da
         run.ExcludeFromAudit();
     }
 }
+
+// The notifications of the bell (ADR-0038): of the person, out of the audit, removed after the days the installation keeps them.
+internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notification>
+{
+    public void Configure(EntityTypeBuilder<Notification> notification)
+    {
+        notification.ToTable("notifications");
+        notification.Property(n => n.Kind).HasConversion<string>().HasMaxLength(40);
+        notification.Property(n => n.Path).HasMaxLength(Notification.PathMaxLength);
+        notification.Ignore(n => n.IsRead);
+        notification.HasIndex(n => new { n.UserId, n.CreatedAt });
+        notification.HasIndex(n => new { n.UserId, n.ReadAt });
+        notification.HasIndex(n => n.CreatedAt);
+        notification.ExcludeFromAudit();
+    }
+}

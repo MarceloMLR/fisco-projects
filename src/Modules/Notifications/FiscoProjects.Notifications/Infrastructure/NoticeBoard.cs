@@ -80,3 +80,56 @@ internal sealed partial class DailySummaryScheduler(IServiceScopeFactory scopes,
     [LoggerMessage(Level = LogLevel.Warning, Message = "A round of the daily summary failed.")]
     private static partial void LogFailed(ILogger logger, Exception exception);
 }
+
+/// <summary>
+/// Removes, in the background (ADR-0047), the notifications older than the days the installation keeps them
+/// (ADR-0038): when it starts and every hour.
+/// </summary>
+internal sealed partial class NotificationCleanup(IServiceScopeFactory scopes, TimeProvider clock, ILogger<NotificationCleanup> logger)
+    : Microsoft.Extensions.Hosting.BackgroundService
+{
+    private static readonly TimeSpan Every = TimeSpan.FromHours(1);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        using var timer = new PeriodicTimer(Every, clock);
+        try
+        {
+            do
+            {
+                await RunAsync(stoppingToken);
+            }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // The application is stopping, or its host is disposed without stopping, as in the tests.
+        }
+    }
+
+    private async Task RunAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = scopes.CreateAsyncScope();
+            var removed = await scope.ServiceProvider.GetRequiredService<ForgetOldNotifications>().ExecuteAsync(cancellationToken);
+            if (removed > 0)
+            {
+                LogRemoved(logger, removed);
+            }
+        }
+        catch (Exception exception) when (cancellationToken.IsCancellationRequested || exception is not OperationCanceledException)
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                LogFailed(logger, exception);
+            }
+        }
+    }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Removed {Count} notifications older than the days the installation keeps them.")]
+    private static partial void LogRemoved(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The removal of the old notifications failed.")]
+    private static partial void LogFailed(ILogger logger, Exception exception);
+}

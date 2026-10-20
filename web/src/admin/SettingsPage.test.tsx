@@ -13,23 +13,28 @@ const logoUrl = '/api/installation/logo?v=1';
 let installation: Installation;
 let timeZone: string;
 let dailySummaryAt: string;
+let notificationRetentionDays: number;
 const requests: string[] = [];
 
 beforeEach(() => {
   installation = { name: 'FiscoProjects', logoUrl: null, mainColor: null };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
+  notificationRetentionDays = 90;
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
     http.get('/api/installation', () => HttpResponse.json(installation)),
-    http.get('/api/installation/rules', () => HttpResponse.json({ timeZone, dailySummaryAt })),
+    http.get('/api/installation/rules', () =>
+      HttpResponse.json({ timeZone, dailySummaryAt, notificationRetentionDays }),
+    ),
     http.put('/api/installation', async ({ request }) => {
       const body = (await request.json()) as {
         name: string;
         timeZone: string;
         mainColor: string | null;
         dailySummaryAt: string;
+        notificationRetentionDays: number;
       };
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
@@ -37,6 +42,7 @@ beforeEach(() => {
       installation = { ...installation, name: body.name, mainColor: body.mainColor };
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
+      notificationRetentionDays = body.notificationRetentionDays;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -559,5 +565,48 @@ describe('Horário do resumo diário', () => {
 
     expect(await screen.findByText(text.errors.dailySummaryRequired)).toBeInTheDocument();
     expect(requests).toEqual([]);
+  });
+});
+
+// Spec: configuracao-da-instalacao, requirement "Guarda das notificações na instalação".
+describe('Guarda das notificações na instalação', () => {
+  function retentionField() {
+    return within(screen.getByRole('region', { name: text.rules })).getByRole('spinbutton', {
+      name: text.notificationRetention,
+    });
+  }
+
+  it('Guarda padrão', async () => {
+    await openSettings();
+
+    await waitFor(() => {
+      expect(retentionField()).toHaveValue(90);
+    });
+  });
+
+  it('Guarda inválida', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(retentionField()).toHaveValue(90);
+    });
+
+    fireEvent.change(retentionField(), { target: { value: '0' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.retentionRange)).toBeInTheDocument();
+    expect(requests).toEqual([]);
+  });
+
+  it('Trocar a guarda', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(retentionField()).toHaveValue(90);
+    });
+
+    fireEvent.change(retentionField(), { target: { value: '30' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(notificationRetentionDays).toBe(30);
   });
 });

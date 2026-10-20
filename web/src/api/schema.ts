@@ -1192,6 +1192,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The notifications of the person, the newest first, 30 at a time; with unread, only the ones not read. */
+        get: operations["ListNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CountUnreadNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ReadNotification"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ReadAllNotifications"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/email": {
         parameters: {
             query?: never;
@@ -1397,12 +1462,14 @@ export interface components {
         };
         /**
          * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
-         *     daily summary of e-mails, in that time zone (ADR-0037).
+         *     daily summary of e-mails, in that time zone (ADR-0037), and how many days the notifications are kept (ADR-0038).
          */
         GeneralRulesResponse: {
             timeZone: string;
             /** Format: time */
             dailySummaryAt: string;
+            /** Format: int32 */
+            notificationRetentionDays: number;
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -1516,6 +1583,36 @@ export interface components {
         NewVendorRequest: {
             name: null | string;
             portalUrl?: null | string;
+        };
+        /**
+         * @description What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037.
+         * @enum {unknown}
+         */
+        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged";
+        /** @description A page of the bell, the newest first, with how many are not read and whether there are older ones. */
+        NotificationPageResponse: {
+            items: components["schemas"]["NotificationResponse"][];
+            /** Format: int32 */
+            unread: number;
+            hasMore: boolean;
+        };
+        /**
+         * @description A notification of the bell (ADR-0038): what happened, the current name of who did it (null for the system), the
+         *     address of the item, its data (codes as the names of the enums, days as yyyy-MM-dd), when it arrived and whether it
+         *     was read.
+         */
+        NotificationResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["NoticeKind"];
+            actor: null | string;
+            path: string;
+            values: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            read: boolean;
         };
         /**
          * @description Where an e-mail of the queue stands (ADR-0036).
@@ -2326,9 +2423,15 @@ export interface components {
          * @enum {unknown}
          */
         TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe" | "Following" | "WithVendor";
+        /** @description How many notifications of the person are not read. */
+        UnreadNotificationsResponse: {
+            /** Format: int32 */
+            unread: number;
+        };
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
-         *     for the color of the design system) and the time of the daily summary (HH:mm:ss, in the time zone).
+         *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone) and how many days the
+         *     notifications are kept (1 to 365).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -2336,6 +2439,8 @@ export interface components {
             mainColor: null | string;
             /** Format: time */
             dailySummaryAt: null | string;
+            /** Format: int32 */
+            notificationRetentionDays: null | number;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -6990,6 +7095,132 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListNotifications: {
+        parameters: {
+            query?: {
+                unread?: boolean;
+                skip?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPageResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CountUnreadNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ReadNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ReadAllNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

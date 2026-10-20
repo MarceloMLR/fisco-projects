@@ -10,7 +10,7 @@ const asked: URL[] = [];
 function installationIn(timeZone: string) {
   server.use(
     http.get('/api/installation/rules', () =>
-      HttpResponse.json({ timeZone, dailySummaryAt: '07:30:00' }),
+      HttpResponse.json({ timeZone, dailySummaryAt: '07:30:00', notificationRetentionDays: 90 }),
     ),
   );
 }

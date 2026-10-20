@@ -15,6 +15,8 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<DailySummaryRun> DailySummaries => Set<DailySummaryRun>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationsDbContext).Assembly);
 }

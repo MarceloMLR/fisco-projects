@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { SessionUser } from '../api/client';
+import { NotificationBell } from '../notifications/NotificationBell';
 import { AccountMenu } from './AccountMenu';
 
 const crumb = {
@@ -16,8 +17,8 @@ const crumb = {
 
 /**
  * Invisible header over the content (TopBar, fp-appbar): same color as the content, no line below, with the
- * page trail (the areas above the page lead to their addresses) and, at the right, the account menu. The bell
- * joins it with the notifications.
+ * page trail (the areas above the page lead to their addresses) and, at the right, the bell of the notifications
+ * (ADR-0038, ADR-0066) and the account menu.
  */
 export function TopBar({
   title,
@@ -114,6 +115,7 @@ export function TopBar({
           marginLeft: 'var(--space-3)',
         }}
       >
+        <NotificationBell />
         <AccountMenu user={user} />
       </Box>
     </Box>

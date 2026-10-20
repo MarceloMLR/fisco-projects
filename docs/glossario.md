@@ -184,7 +184,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Aviso, notificação | Notice (`INoticeBoard`, `NoticeKind`) | O que um módulo conta que aconteceu; o `Notifications` decide quem recebe e por qual canal (ADR-0038) |
-| Canal de aviso | INoticeChannel (`EmailChannel`) | E-mail agora; sino na Avisos-3, Teams depois |
+| Canal de aviso | INoticeChannel (`EmailChannel`, `BellChannel`) | E-mail e sino; Teams depois |
+| Sino, notificação do sino | NotificationBell, Notification (`notifications.notifications`) | Os mesmos avisos do e-mail, na hora; lida ou não lida (ADR-0038) |
+| Marcar como lida, marcar todas como lidas | ReadNotification, ReadAllNotifications | |
+| Guardar notificações por | InstallationSettings.NotificationRetentionDays | Padrão 90 dias, de 1 a 365; as mais antigas são apagadas a cada hora |
 | Aviso na hora | `EmailChannel.Immediate` | O que pede ação da pessoa, por e-mail logo (ADR-0037); não se desliga |
 | Resumo diário | DailySummary (`SendDailySummaries`, `DigestItem`) | Um e-mail por dia com o restante e as tarefas que vencem; a pessoa desliga em Meu perfil (`ReceivesDailySummary`) |
 | Horário do resumo diário | InstallationSettings.DailySummaryAt | Padrão 07:30, no fuso da instalação |

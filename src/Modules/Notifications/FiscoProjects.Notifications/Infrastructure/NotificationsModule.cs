@@ -12,8 +12,8 @@ namespace FiscoProjects.Notifications.Infrastructure;
 
 /// <summary>
 /// Services of the Notifications module: the board of the notices of the other modules (ADR-0038), the queue of the
-/// e-mails, sent in the background by the implementation the configuration chooses (ADR-0036), and the daily summary
-/// (ADR-0037).
+/// e-mails, sent in the background by the implementation the configuration chooses (ADR-0036), the daily summary
+/// (ADR-0037) and the bell (ADR-0038).
 /// </summary>
 public static class NotificationsModule
 {
@@ -51,11 +51,19 @@ public static class NotificationsModule
         services.AddScoped<SendTestEmail>();
         services.AddScoped<IDigestStore, DigestStore>();
         services.AddScoped<INoticeChannel, EmailChannel>();
+        services.AddScoped<INotificationStore, NotificationStore>();
+        services.AddScoped<INoticeChannel, BellChannel>();
+        services.AddScoped<ListNotifications>();
+        services.AddScoped<CountUnreadNotifications>();
+        services.AddScoped<ReadNotification>();
+        services.AddScoped<ReadAllNotifications>();
+        services.AddScoped<ForgetOldNotifications>();
         services.AddScoped<DeliverNotices>();
         services.AddScoped<SendDailySummaries>();
         services.AddSingleton<INoticeBoard, NoticeBoard>();
         services.AddHostedService<EmailDispatcher>();
         services.AddHostedService<DailySummaryScheduler>();
+        services.AddHostedService<NotificationCleanup>();
         return services;
     }
 }

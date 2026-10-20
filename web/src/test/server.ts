@@ -1410,9 +1410,16 @@ export const handlers = [
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/installation', () => HttpResponse.json(defaultInstallation)),
   http.get('/api/installation/rules', () =>
-    HttpResponse.json({ timeZone: 'America/Sao_Paulo', dailySummaryAt: '07:30:00' }),
+    HttpResponse.json({
+      timeZone: 'America/Sao_Paulo',
+      dailySummaryAt: '07:30:00',
+      notificationRetentionDays: 90,
+    }),
   ),
   http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),
+  // A bell without notifications.
+  http.get('/api/notifications/unread-count', () => HttpResponse.json({ unread: 0 })),
+  http.get('/api/notifications', () => HttpResponse.json({ items: [], unread: 0, hasMore: false })),
   // The mailbox of the demonstration, never tested.
   http.get('/api/admin/email', () =>
     HttpResponse.json({ mailbox: 'projetos@empresa.example', lastTest: null }),

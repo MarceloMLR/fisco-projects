@@ -389,7 +389,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
     /// <summary>The General settings form, with the default time zone unless another is given.</summary>
     private static object Form(
         string name, string timeZone = "America/Sao_Paulo", string? mainColor = null, string? dailySummaryAt = "07:30:00") =>
-        new { name, timeZone, mainColor, dailySummaryAt };
+        new { name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays = 90 };
 
     private static async Task<string?> MainColorAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation)).GetProperty("mainColor").GetString();
