@@ -1769,7 +1769,7 @@ export interface components {
             firstResponse: null | components["schemas"]["TicketDueResponse"];
             /** Format: date-time */
             firstRespondedAt: null | string;
-            resolution: components["schemas"]["TicketDueResponse"];
+            resolution: null | components["schemas"]["TicketDueResponse"];
             /** Format: int32 */
             usedDays: number;
             /** Format: int32 */

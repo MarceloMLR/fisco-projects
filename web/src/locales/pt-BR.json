@@ -1432,7 +1432,9 @@
         "TooLarge": "O arquivo {{name}} passa do tamanho aceito.",
         "Empty": "O arquivo {{name}} está vazio.",
         "Dangerous": "O arquivo {{name}} não é aceito: programas e scripts são recusados."
-      }
+      },
+      "changed": "O chamado mudou enquanto você escrevia. Confira e envie de novo.",
+      "closed": "O chamado foi fechado e não recebe mais mensagens."
     },
     "panel": {
       "followers": "Acompanham",
@@ -1550,7 +1552,9 @@
       "overdue_other": "Venceu há {{count}} dias úteis",
       "paused": "Prazo pausado",
       "met": "Cumprido",
-      "firstMet": "Cumprida em {{day}}, {{time}}"
+      "firstMet": "Cumprida em {{day}}, {{time}}",
+      "lateResolved_one": "Resolvido com {{count}} dia útil de atraso",
+      "lateResolved_other": "Resolvido com {{count}} dias úteis de atraso"
     },
     "priorityChange": {
       "menu": "Mudar prioridade",

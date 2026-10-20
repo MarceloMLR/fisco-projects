@@ -7039,7 +7039,15 @@
             "format": "date-time"
           },
           "resolution": {
-            "$ref": "#/components/schemas/TicketDueResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Null for a ticket closed without being resolved, as a cancelled one.",
+                "$ref": "#/components/schemas/TicketDueResponse"
+              }
+            ]
           },
           "usedDays": {
             "type": "integer",

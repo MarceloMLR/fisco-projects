@@ -209,3 +209,24 @@ describe('Prazos dos chamados', () => {
     ]);
   });
 });
+
+// Spec: chamados, requirement "Prazos pela tela".
+describe('Prazos de um chamado resolvido', () => {
+  it('Resolução com atraso na tela', async () => {
+    ticket = {
+      ...ticket,
+      status: 'Resolved',
+      permissions: { ...ticket.permissions, canChangePriority: false },
+      deadlines: ticket.deadlines && {
+        ...ticket.deadlines,
+        resolution: { state: 'Overdue', dueOn: '2026-10-20', daysLate: 2 },
+      },
+    };
+    await openTicket();
+
+    const panel = screen.getByRole('region', { name: text.panel.deadlines });
+    expect(within(panel).getByText('Resolvido com 2 dias úteis de atraso')).toBeInTheDocument();
+    // The header says only the status: the deadline is history.
+    expect(screen.queryByText(/Venceu há/)).not.toBeInTheDocument();
+  });
+});

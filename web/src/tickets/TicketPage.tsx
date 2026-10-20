@@ -36,6 +36,9 @@ const tagSx = {
   whiteSpace: 'nowrap',
 } as const;
 
+/** A resolved or closed ticket: its deadline is history, not a warning (ADR-0025). */
+const finishedStatuses: readonly Ticket['status'][] = ['Resolved', 'Closed'];
+
 const labelSx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 
 /** A line of the panel: the label at the left and the value (fp-props). */
@@ -109,9 +112,14 @@ function DeadlinesSection({ ticket }: { ticket: Ticket }) {
             component="dl"
             sx={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}
           >
-            <PanelRow label={t('tickets.panel.resolution')}>
-              <TicketDue due={deadlines.resolution} />
-            </PanelRow>
+            {deadlines.resolution !== null && (
+              <PanelRow label={t('tickets.panel.resolution')}>
+                <TicketDue
+                  due={deadlines.resolution}
+                  finished={finishedStatuses.includes(ticket.status)}
+                />
+              </PanelRow>
+            )}
             {deadlines.firstResponse !== null && (
               <PanelRow label={t('tickets.panel.firstResponse')}>
                 <TicketDue
@@ -435,7 +443,7 @@ export function TicketPage() {
       >
         <TicketStatusBadge status={ticket.status} />
         <PriorityTag priority={ticket.priority} />
-        {ticket.deadlines !== null && ticket.deadlines.resolution.state !== 'Met' && (
+        {ticket.deadlines?.resolution != null && !finishedStatuses.includes(ticket.status) && (
           <TicketDue due={ticket.deadlines.resolution} />
         )}
         <Box component="span" sx={labelSx}>

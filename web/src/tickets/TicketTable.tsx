@@ -128,7 +128,7 @@ export function TicketTable({
             }}
           >
             <TicketStatusBadge status={row.status} />
-            {row.resolution !== null && row.resolution.state !== 'Met' && (
+            {row.resolution !== null && row.status !== 'Resolved' && row.status !== 'Closed' && (
               <TicketDue due={row.resolution} />
             )}
           </Box>
