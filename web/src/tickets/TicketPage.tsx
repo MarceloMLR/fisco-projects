@@ -78,7 +78,7 @@ function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
  */
 function DeadlinesSection({ ticket }: { ticket: Ticket }) {
   const { t } = useTranslation();
-  const { formatDateTime } = useDates();
+  const { formatDayMonth, formatTime } = useDates();
   const deadlines = ticket.deadlines;
   return (
     <Box
@@ -93,28 +93,17 @@ function DeadlinesSection({ ticket }: { ticket: Ticket }) {
         </Box>
       ) : (
         <>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-3)',
-              marginBottom: 'var(--space-2)',
-            }}
-          >
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <ProgressBar
-                value={
-                  deadlines.totalDays === 0 ? 0 : (deadlines.usedDays / deadlines.totalDays) * 100
-                }
-                label={t('tickets.panel.usedLabel')}
-              />
-            </Box>
-            <Box
-              component="span"
-              sx={{ ...labelSx, flex: 'none', fontVariantNumeric: 'tabular-nums' }}
-            >
-              {t('tickets.panel.used', { used: deadlines.usedDays, total: deadlines.totalDays })}
-            </Box>
+          <Box sx={{ marginBottom: 'var(--space-2)' }}>
+            <ProgressBar
+              value={
+                deadlines.totalDays === 0 ? 0 : (deadlines.usedDays / deadlines.totalDays) * 100
+              }
+              label={t('tickets.panel.usedLabel')}
+              valueText={t('tickets.panel.used', {
+                used: deadlines.usedDays,
+                total: deadlines.totalDays,
+              })}
+            />
           </Box>
           <Box
             component="dl"
@@ -131,7 +120,8 @@ function DeadlinesSection({ ticket }: { ticket: Ticket }) {
                     deadlines.firstRespondedAt === null
                       ? undefined
                       : t('tickets.due.firstMet', {
-                          when: formatDateTime(deadlines.firstRespondedAt),
+                          day: formatDayMonth(deadlines.firstRespondedAt),
+                          time: formatTime(deadlines.firstRespondedAt),
                         })
                   }
                 />

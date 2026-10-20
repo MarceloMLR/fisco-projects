@@ -1550,7 +1550,7 @@
       "overdue_other": "Venceu há {{count}} dias úteis",
       "paused": "Prazo pausado",
       "met": "Cumprido",
-      "firstMet": "Cumprida em {{when}}"
+      "firstMet": "Cumprida em {{day}}, {{time}}"
     },
     "priorityChange": {
       "menu": "Mudar prioridade",
