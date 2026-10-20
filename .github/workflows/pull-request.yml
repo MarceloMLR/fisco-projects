@@ -1,5 +1,6 @@
 # Checks every pull request to main. The logic lives in scripts/ci; this file only prepares the tools
 # and calls those scripts, so moving to another CI only means rewriting this file (ADR-0055).
+# The parts run in parallel jobs, and a commit that changes only documentation runs only the specs (ADR-0090).
 # The "verify" job is the check required by the "Protect main" rule: renaming it blocks merges.
 name: pull-request
 
@@ -7,21 +8,48 @@ on:
   pull_request:
     branches: [main]
 
+# Read only: the contents, and the checks and commits of the pull request, for changes.sh to find the last
+# verified commit.
 permissions:
   contents: read
+  checks: read
+  pull-requests: read
 
 concurrency:
   group: pull-request-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
 jobs:
-  verify:
-    name: verify
+  changes:
+    name: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.changes.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: changes
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/ci/changes.sh
+
+  backend:
+    name: backend
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      DOTNET_NOLOGO: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -29,23 +57,90 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version-file: .nvmrc
-
-      # Tests need a successful build; the other checks run anyway, so one run shows every problem.
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.*.props', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+      # Tests need a successful build.
       - name: build
         id: build
         run: bash scripts/ci/build.sh
       - name: test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash scripts/ci/test.sh
+
+  format:
+    name: format
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.*.props', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
       - name: format
-        if: ${{ !cancelled() }}
         run: bash scripts/ci/format.sh
+
+  frontend:
+    name: frontend
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
       - name: frontend
-        if: ${{ !cancelled() }}
         run: bash scripts/ci/frontend.sh
+
+  specs:
+    name: specs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: scripts/ci/package-lock.json
       - name: specs
-        if: ${{ !cancelled() }}
         run: bash scripts/ci/specs.sh
+
+  verify:
+    name: verify
+    needs: [changes, backend, format, frontend, specs]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: verdict
+        env:
+          CODE: ${{ needs.changes.outputs.code }}
+          CHANGES: ${{ needs.changes.result }}
+          BACKEND: ${{ needs.backend.result }}
+          FORMAT: ${{ needs.format.result }}
+          FRONTEND: ${{ needs.frontend.result }}
+          SPECS: ${{ needs.specs.result }}
+        run: bash scripts/ci/verdict.sh
