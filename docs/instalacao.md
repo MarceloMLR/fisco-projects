@@ -51,7 +51,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## Segurança
 
-- Recomendado em produção: cifrar o conjunto de chaves do Data Protection com um certificado (ou Key Vault) (ADR-0033).
+- Recomendado em produção: cifrar o conjunto de chaves do Data Protection dos acessos com um certificado (ADR-0033). As chaves ficam na tabela `credentials.data_protection_keys`, nunca apagadas; o certificado é dado por `Credentials:KeyCertificate:Path` e `Credentials:KeyCertificate:Password` (um `.pfx`, com a senha vinda do Key Vault) ou por `Credentials:KeyCertificate:Thumbprint` (o certificado instalado na máquina). Configurado e não encontrado, a aplicação não sobe. Guarde o certificado com o backup: sem ele, as chaves cifradas não abrem e as senhas dos acessos se perdem. Sem certificado, o sistema funciona e as chaves ficam sem cifra.
 - Certificados e chaves criados direto no Key Vault, nunca pelo Terraform (ADR-0053).
 
 ## Configuração da instalação no FiscoProjects
