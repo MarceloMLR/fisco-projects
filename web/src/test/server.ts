@@ -21,6 +21,10 @@ import type {
   Schedule,
   ScheduleItem,
   SessionUser,
+  Ticket,
+  TicketChoice,
+  TicketCounts,
+  TicketRow,
 } from '../api/client';
 
 type UserResponse = components['schemas']['UserResponse'];
@@ -1061,6 +1065,152 @@ export function demoTemplates(): ProjectTemplate[] {
   ];
 }
 
+const erpFin = {
+  id: '0199f5a2-7c1e-7d40-9a1b-400000000001',
+  code: 'ERP-FIN',
+  name: 'Implantação do ERP financeiro',
+};
+const tribRs = {
+  id: '0199f5a2-7c1e-7d40-9a1b-400000000002',
+  code: 'TRIB-RS',
+  name: 'Revisão tributária da filial RS',
+};
+
+function demoTicketRow(
+  number: number,
+  title: string,
+  project: typeof erpFin,
+  team: TicketRow['team'],
+  priority: TicketRow['priority'],
+  requester: { id: string; name: string },
+  openedAt: string,
+): TicketRow {
+  return {
+    id: `0199f5a2-7c1e-7d40-9a1b-7000000001${String(number).padStart(2, '0')}`,
+    number,
+    title,
+    project,
+    team,
+    priority,
+    status: 'Open',
+    requester,
+    assignee: null,
+    openedAt,
+    updatedAt: openedAt,
+  };
+}
+
+/**
+ * Tickets of the simulated installation, as the Chamados screen of the canvas shows them, in the order of the list:
+ * the highest priority first and, in each, the oldest first. All Open and without an assignee (Chamados-1).
+ */
+export function demoTickets(): TicketRow[] {
+  return [
+    demoTicketRow(
+      3,
+      'Ajustar alíquota de ICMS-ST para SP',
+      tribRs,
+      'Functional',
+      'Critical',
+      demoPeople.carla,
+      '2026-10-13T12:30:00Z',
+    ),
+    demoTicketRow(
+      1,
+      'Rejeição 539 ao emitir nota de devolução',
+      erpFin,
+      'Development',
+      'High',
+      demoPeople.carla,
+      '2026-10-14T12:42:00Z',
+    ),
+    demoTicketRow(
+      4,
+      'Liberar ambiente de homologação ao cliente',
+      erpFin,
+      'Development',
+      'High',
+      demoPeople.marina,
+      '2026-10-15T13:10:00Z',
+    ),
+    demoTicketRow(
+      2,
+      'Dúvida sobre o CFOP de transferência entre filiais',
+      erpFin,
+      'Functional',
+      'Low',
+      demoPeople.diego,
+      '2026-10-15T17:05:00Z',
+    ),
+  ];
+}
+
+/** The projects of the filters and of the opening, as Marina sees them. */
+export function demoTicketChoices(): TicketChoice[] {
+  return [
+    { ...erpFin, isClosed: false, canOpen: true, teams: ['Functional', 'Development'] },
+    { ...tribRs, isClosed: false, canOpen: true, teams: ['Functional'] },
+    {
+      id: '0199f5a2-7c1e-7d40-9a1b-400000000004',
+      code: 'WMS-ALFA',
+      name: 'Implantação do WMS',
+      isClosed: true,
+      canOpen: false,
+      teams: [],
+    },
+  ];
+}
+
+/** The counts of the views of Marina, the manager of both projects. */
+export const demoTicketCounts: TicketCounts = {
+  all: 4,
+  open: 4,
+  unassigned: 4,
+  unassignedInMyTeams: 4,
+  assignedToMe: 0,
+  openedByMe: 1,
+};
+
+/** A ticket of the list as its page shows it. */
+export function demoTicket(row: TicketRow): Ticket {
+  return {
+    id: row.id,
+    number: row.number,
+    title: row.title,
+    description:
+      'A SEFAZ retorna a rejeição 539 na devolução da venda 3381.\nAcontece com todas as devoluções da filial.',
+    project: row.project,
+    team: row.team,
+    priority: row.priority,
+    status: row.status,
+    requester: row.requester,
+    assignee: row.assignee,
+    managers: [demoPeople.marina],
+    techLeads: row.project.id === erpFin.id ? [demoPeople.rafael] : [],
+    openedAt: row.openedAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/** A page of tickets with the filters of the address, as the API answers them (only what the tests use). */
+export function ticketsPage(tickets: TicketRow[], url: URL) {
+  const projectId = url.searchParams.get('projectId');
+  const team = url.searchParams.get('team');
+  const view = url.searchParams.get('view');
+  const search = url.searchParams.get('search')?.toLowerCase();
+  const items = tickets.filter(
+    (ticket) =>
+      (projectId === null || ticket.project.id === projectId) &&
+      (team === null || ticket.team === team) &&
+      (view !== 'OpenedByMe' || ticket.requester.id === marina.id) &&
+      (view !== 'AssignedToMe' || ticket.assignee?.id === marina.id) &&
+      (search === undefined ||
+        ticket.title.toLowerCase().includes(search) ||
+        `#${String(ticket.number)}` === search),
+  );
+  return { items, total: items.length };
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
@@ -1093,6 +1243,17 @@ export const handlers = [
     HttpResponse.json(demoTemplates().filter((template) => template.isActive)),
   ),
   http.get('/api/admin/project-templates', () => HttpResponse.json(demoTemplates())),
+  http.get('/api/tickets', ({ request }) =>
+    HttpResponse.json(ticketsPage(demoTickets(), new URL(request.url))),
+  ),
+  http.get('/api/tickets/counts', () => HttpResponse.json(demoTicketCounts)),
+  http.get('/api/tickets/choices', () => HttpResponse.json(demoTicketChoices())),
+  http.get('/api/tickets/:number', ({ params }) => {
+    const row = demoTickets().find((ticket) => String(ticket.number) === params.number);
+    return row === undefined
+      ? new HttpResponse(null, { status: 404 })
+      : HttpResponse.json(demoTicket(row));
+  }),
 ];
 
 export const server = setupServer(...handlers);

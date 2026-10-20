@@ -30,6 +30,15 @@ export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
 export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
 export type ProjectTemplate = components['schemas']['TemplateResponse'];
 export type ScheduleItemKind = components['schemas']['ScheduleItemKind'];
+export type TicketRow = components['schemas']['TicketListItemResponse'];
+export type Ticket = components['schemas']['TicketResponse'];
+export type TicketCounts = components['schemas']['TicketCountsResponse'];
+export type TicketChoice = components['schemas']['TicketProjectChoiceResponse'];
+export type TicketTeam = components['schemas']['TicketTeam'];
+export type TicketPriority = components['schemas']['TicketPriority'];
+export type TicketStatus = components['schemas']['TicketStatus'];
+export type TicketView = components['schemas']['TicketView'];
+export type TicketSituation = components['schemas']['TicketSituation'];
 
 /** Statuses of a project in the order of its life (ADR-0016); the last two close it. */
 export const projectStatuses = [
@@ -97,8 +106,20 @@ export const auditItemTypes = [
   'ScheduleDependency',
   'ScheduleBaseline',
   'ProjectTemplate',
+  'Ticket',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
+
+/** The teams a ticket goes to, in the order of the screens (ADR-0068). */
+export const ticketTeams = ['Functional', 'Development'] as const satisfies readonly TicketTeam[];
+
+/** The priorities of a ticket, from the lowest to the highest, as the opening offers them. */
+export const ticketPriorities = [
+  'Low',
+  'Medium',
+  'High',
+  'Critical',
+] as const satisfies readonly TicketPriority[];
 
 /** System roles, in the order the screens list them (as in the canvas menu). */
 export const systemRoles = [

@@ -10,6 +10,8 @@ export type ProjectsParams = NonNullable<operations['ListProjects']['parameters'
 export type PeopleParams = NonNullable<operations['ListPeople']['parameters']['query']>;
 /** Filters of the list of clients, as the contract has them. */
 export type ClientsParams = NonNullable<operations['ListClients']['parameters']['query']>;
+/** Filters of the list of tickets, as the contract has them. */
+export type TicketsParams = NonNullable<operations['ListTickets']['parameters']['query']>;
 /** Filters of the audit, as the contract has them. */
 export type AuditParams = NonNullable<operations['ListAuditEntries']['parameters']['query']>;
 
@@ -47,6 +49,7 @@ export const queryKeys = {
   projects: ['projects'],
   people: ['people'],
   templates: ['templates'],
+  tickets: ['tickets'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -186,5 +189,47 @@ export function allTemplatesQuery() {
   return queryOptions({
     queryKey: [...queryKeys.templates, 'all'] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/project-templates', { signal })),
+  });
+}
+
+/** A page of the tickets the person sees, with the view and the filters of the lists (ADR-0029, ADR-0044). */
+export function ticketsQuery(params: TicketsParams) {
+  return queryOptions({
+    queryKey: [...queryKeys.tickets, 'list', params] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/tickets', { params: { query: params }, signal })),
+  });
+}
+
+/** How many tickets each view has, in all the projects the person sees or in one of them. */
+export function ticketCountsQuery(projectId?: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.tickets, 'counts', projectId ?? 'all'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/tickets/counts', {
+          params: { query: projectId === undefined ? {} : { projectId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
+ * The projects the person sees, for the filter of the lists and for opening tickets, with the teams that serve each
+ * one. Asked again with the projects, since a project closed or a person included changes them.
+ */
+export function ticketChoicesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, 'ticket-choices'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/tickets/choices', { signal })),
+  });
+}
+
+/** One ticket by its number, with its people. */
+export function ticketQuery(number: number) {
+  return queryOptions({
+    queryKey: [...queryKeys.tickets, number] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/tickets/{number}', { params: { path: { number } }, signal })),
   });
 }

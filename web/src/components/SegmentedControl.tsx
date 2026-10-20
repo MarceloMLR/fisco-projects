@@ -6,6 +6,8 @@ export interface SegmentedOption<Value extends string> {
   value: Value;
   label: string;
   icon?: typeof SvgIcon;
+  /** How many items the option has, after the label (as "Todos 9" in the tab Chamados). */
+  count?: number;
 }
 
 /**
@@ -107,6 +109,18 @@ export function SegmentedControl<Value extends string>({
           >
             {Icon !== undefined && <Icon aria-hidden />}
             {!iconsOnly && option.label}
+            {!iconsOnly && option.count !== undefined && (
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 400,
+                  color: 'var(--text-secondary)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {option.count}
+              </Box>
+            )}
           </Box>
         );
       })}
