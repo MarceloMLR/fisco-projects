@@ -269,6 +269,9 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("At")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("FromPersonId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("FromPriority")
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
@@ -276,6 +279,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<string>("FromStatus")
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("FromTeam")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.Property<string>("Kind")
                         .IsRequired()
@@ -285,6 +292,9 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("TicketId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ToPersonId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ToPriority")
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
@@ -292,6 +302,10 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<string>("ToStatus")
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
+
+                    b.Property<string>("ToTeam")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.HasKey("Id");
 

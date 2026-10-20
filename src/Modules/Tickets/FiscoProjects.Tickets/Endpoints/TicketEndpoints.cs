@@ -30,7 +30,9 @@ public sealed record TicketListItemResponse(
     DateTime OpenedAt,
     DateTime UpdatedAt,
     [property: Description("How many messages and events the ticket has.")] int Interactions,
-    [property: Description("The deadline of the resolution today (ADR-0025); null for a ticket opened before the deadlines.")] TicketDueResponse? Resolution);
+    [property: Description("The deadline of the resolution today (ADR-0025); null for a ticket opened before the deadlines.")] TicketDueResponse? Resolution,
+    [property: Description("The person may change the assignee, also with others at once (ADR-0068).")] bool CanChangeAssignee,
+    [property: Description("The person may change the requester with others at once (ADR-0027).")] bool CanChangeRequester);
 
 public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> Items, int Total);
 
@@ -98,7 +100,22 @@ public sealed record TicketActionResponse(TicketAction Action, TicketStatus To, 
 
 /// <summary>What the person may do in the conversation, with the actions of the flow open now and the priority.</summary>
 public sealed record TicketConversationPermissionsResponse(
-    bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketActionResponse> Actions, bool CanChangePriority);
+    bool CanSend,
+    bool CanAttachToDescription,
+    IReadOnlyList<TicketActionResponse> Actions,
+    bool CanChangePriority,
+    bool CanChangeAssignee,
+    bool CanChangeRequester,
+    bool CanTransfer);
+
+/// <summary>A new assignee for the tickets, one or many (ADR-0027, ADR-0068).</summary>
+public sealed record TicketAssigneeRequest(IReadOnlyList<int>? Numbers, Guid? AssigneeId);
+
+/// <summary>A new requester for the tickets, one or many (ADR-0027).</summary>
+public sealed record TicketRequesterRequest(IReadOnlyList<int>? Numbers, Guid? RequesterId);
+
+/// <summary>The other team for the ticket (ADR-0068).</summary>
+public sealed record TicketTeamRequest(TicketTeam? Team);
 
 /// <summary>
 /// An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
@@ -114,6 +131,10 @@ public sealed record TicketEventResponse(
     Guid? AssigneeId,
     TicketPriority? FromPriority,
     TicketPriority? ToPriority,
+    TicketTeam? FromTeam,
+    TicketTeam? ToTeam,
+    [property: Description("The requester before, or the assignee who left.")] Guid? FromPersonId,
+    [property: Description("The new requester.")] Guid? ToPersonId,
     DateTime At);
 
 /// <summary>An action of the flow taken in a ticket, with the message when the action needs one.</summary>
@@ -186,6 +207,15 @@ public static class TicketProblems
     /// <summary>The ticket is closed and takes no more messages (ADR-0024); status 409.</summary>
     public const string TicketClosed = "urn:fiscoprojects:problem:ticket-closed";
 
+    /// <summary>
+    /// The person chosen does not serve some of the tickets (ADR-0068), or the team has nobody to serve it; status 400,
+    /// with the numbers of those tickets in the extension numbers.
+    /// </summary>
+    public const string PersonRefused = "urn:fiscoprojects:problem:ticket-person-refused";
+
+    /// <summary>Some of the tickets are resolved or closed; status 409, with their numbers in the extension numbers.</summary>
+    public const string TicketFinished = "urn:fiscoprojects:problem:ticket-finished";
+
     /// <summary>Someone changed the ticket at the same time, and nothing was saved; status 409.</summary>
     public const string TicketChanged = "urn:fiscoprojects:problem:ticket-changed";
 
@@ -215,6 +245,36 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapGet("/flow", FlowAsync).WithName("GetTicketFlow");
+        tickets.MapPut("/assignee", AssignAsync).WithName("ChangeTicketAssignees")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPut("/requester", ChangeRequesterAsync).WithName("ChangeTicketRequesters")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapGet("/assignee-choices", (
+                    [FromQuery(Name = "number")] int[] numbers,
+                    HttpContext http,
+                    IUserAccess access,
+                    ListTicketPeopleChoices choices,
+                    CancellationToken cancellationToken) =>
+                ChoicesOfAsync(numbers, http, access, (viewer, token) => choices.AssigneesAsync(numbers, viewer, token), cancellationToken))
+            .WithName("ListTicketAssigneeChoices")
+            .WithDescription("The people who may be the assignee of all the tickets of the numbers (ADR-0068).");
+        tickets.MapGet("/requester-choices", (
+                    [FromQuery(Name = "number")] int[] numbers,
+                    HttpContext http,
+                    IUserAccess access,
+                    ListTicketPeopleChoices choices,
+                    CancellationToken cancellationToken) =>
+                ChoicesOfAsync(numbers, http, access, (viewer, token) => choices.RequestersAsync(numbers, viewer, token), cancellationToken))
+            .WithName("ListTicketRequesterChoices")
+            .WithDescription("The people who may be the requester of all the tickets of the numbers (ADR-0027).");
+        tickets.MapPut("/{number:int}/team", TransferAsync).WithName("TransferTicket")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPut("/{number:int}/priority", ChangePriorityAsync).WithName("ChangeTicketPriority")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -272,7 +332,8 @@ public static class TicketEndpoints
         [Description("Priority (the default, the oldest first in each) or Number.")] TicketSort sort = TicketSort.Priority,
         [Description("From the highest priority or number to the lowest (the default).")] bool descending = true,
         int page = 1,
-        int pageSize = 25)
+        int pageSize = 25,
+        [Description("Only the tickets of which this person is the assignee or the requester.")] Guid? personId = null)
     {
         var errors = new Dictionary<string, string[]>();
         if (page < 1)
@@ -292,7 +353,7 @@ public static class TicketEndpoints
 
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         var result = await listTickets.ExecuteAsync(
-            new TicketQuery(view, projectId, team, situation, search, sort, descending, page, pageSize), viewer, cancellationToken);
+            new TicketQuery(view, projectId, team, situation, search, sort, descending, page, pageSize, personId), viewer, cancellationToken);
         return TypedResults.Ok(new TicketPageResponse([.. result.Items.Select(ItemOf)], result.Total));
     }
 
@@ -379,6 +440,10 @@ public static class TicketEndpoints
                 item.AssigneeId,
                 item.FromPriority,
                 item.ToPriority,
+                item.FromTeam,
+                item.ToTeam,
+                item.FromPersonId,
+                item.ToPersonId,
                 item.At))],
             [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
@@ -389,10 +454,76 @@ public static class TicketEndpoints
                 details.Permissions.CanSend,
                 details.Permissions.CanAttachToDescription,
                 [.. details.Permissions.Actions.Select(action => new TicketActionResponse(action.Action, action.To, action.RequiresMessage))],
-                details.Permissions.CanChangePriority),
+                details.Permissions.CanChangePriority,
+                details.Permissions.CanChangeAssignee,
+                details.Permissions.CanChangeRequester,
+                details.Permissions.CanTransfer),
             details.Following,
             details.Deadlines is { } figures ? DeadlinesOf(figures) : null));
     }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> AssignAsync(
+        TicketAssigneeRequest request, HttpContext http, IUserAccess access, ChangeTicketAssignees change, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return ChangeResultOf(await change.ExecuteAsync(request.Numbers, request.AssigneeId, viewer, cancellationToken));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangeRequesterAsync(
+        TicketRequesterRequest request, HttpContext http, IUserAccess access, ChangeTicketRequesters change, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return ChangeResultOf(await change.ExecuteAsync(request.Numbers, request.RequesterId, viewer, cancellationToken));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> TransferAsync(
+        int number, TicketTeamRequest request, HttpContext http, IUserAccess access, TransferTicket transfer, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return ChangeResultOf(await transfer.ExecuteAsync(number, request.Team, viewer, cancellationToken));
+    }
+
+    private static async Task<Results<Ok<IReadOnlyList<TicketPersonResponse>>, NotFound>> ChoicesOfAsync(
+        int[] numbers,
+        HttpContext http,
+        IUserAccess access,
+        Func<TicketViewer, CancellationToken, Task<IReadOnlyList<TicketPerson>?>> choose,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return numbers.Length > 0 && await choose(viewer, cancellationToken) is { } people
+            ? TypedResults.Ok<IReadOnlyList<TicketPersonResponse>>([.. people.Select(PersonOf)])
+            : TypedResults.NotFound();
+    }
+
+    private static Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult> ChangeResultOf(TicketChangeResult result) =>
+        result.Outcome switch
+        {
+            TicketChangeOutcome.Done => TypedResults.NoContent(),
+            TicketChangeOutcome.NotFound => TypedResults.NotFound(),
+            TicketChangeOutcome.Forbidden => TypedResults.Forbid(),
+            TicketChangeOutcome.Invalid when result.Numbers.Count == 0 => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["numbers"] = [$"From 1 to {TicketBatch.MaxTickets} different numbers, and the person or the team chosen."],
+            }),
+            TicketChangeOutcome.Invalid => TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Person or team refused",
+                detail: "The person chosen does not serve these tickets, or the team has nobody in the project to serve it.",
+                type: TicketProblems.PersonRefused,
+                extensions: new Dictionary<string, object?> { ["numbers"] = result.Numbers }),
+            TicketChangeOutcome.NotAllowedNow => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket finished",
+                detail: "Resolved or closed tickets keep their people and team.",
+                type: TicketProblems.TicketFinished,
+                extensions: new Dictionary<string, object?> { ["numbers"] = result.Numbers }),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket changed",
+                detail: "Someone changed a ticket at the same time; nothing was saved.",
+                type: TicketProblems.TicketChanged),
+        };
 
     private static async Task<Ok<IReadOnlyList<TicketDeadlineSettingResponse>>> DeadlinesAsync(
         GetTicketDeadlines getDeadlines, CancellationToken cancellationToken)
@@ -638,7 +769,9 @@ public static class TicketEndpoints
             item.Ticket.OpenedAt,
             item.Ticket.UpdatedAt,
             item.Interactions,
-            item.Deadlines?.Resolution is { } resolution ? DueOf(resolution) : null);
+            item.Deadlines?.Resolution is { } resolution ? DueOf(resolution) : null,
+            item.CanChangeAssignee,
+            item.CanChangeRequester);
 
     private static TicketDueResponse DueOf(TicketDue due) => new(due.State, due.DueOn, due.DaysLate);
 

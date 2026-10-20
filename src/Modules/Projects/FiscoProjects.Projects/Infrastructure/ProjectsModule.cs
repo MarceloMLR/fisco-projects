@@ -39,6 +39,7 @@ public static class ProjectsModule
         services.AddScoped<AddProjectMember>();
         services.AddScoped<ChangeProjectMemberRole>();
         services.AddScoped<RemoveProjectMember>();
+        services.AddScoped<IMemberChangeNotices, MemberChangeNotices>();
         services.AddScoped<GetSchedule>();
         services.AddScoped<AddSchedulePhase>();
         services.AddScoped<RenameSchedulePhase>();

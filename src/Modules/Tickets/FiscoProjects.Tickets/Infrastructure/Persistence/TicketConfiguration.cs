@@ -111,6 +111,8 @@ internal sealed class TicketEventConfiguration : IEntityTypeConfiguration<Ticket
         ticketEvent.Property(e => e.Action).HasConversion<string>().HasMaxLength(32);
         ticketEvent.Property(e => e.FromPriority).HasConversion<string>().HasMaxLength(16);
         ticketEvent.Property(e => e.ToPriority).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.FromTeam).HasConversion<string>().HasMaxLength(16);
+        ticketEvent.Property(e => e.ToTeam).HasConversion<string>().HasMaxLength(16);
         ticketEvent.HasOne<Ticket>().WithMany().HasForeignKey(e => e.TicketId).OnDelete(DeleteBehavior.Cascade);
         ticketEvent.HasIndex(e => new { e.TicketId, e.At });
         ticketEvent.ExcludeFromAudit();

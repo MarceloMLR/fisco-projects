@@ -149,6 +149,15 @@ public enum TicketEventKind
 
     /// <summary>Who serves the ticket changed its priority, and its deadlines with it (ADR-0025).</summary>
     PriorityChanged = 3,
+
+    /// <summary>The assignee left the project or the team of the ticket, which is left without one (ADR-0042).</summary>
+    AssigneeCleared = 4,
+
+    /// <summary>Another person of the project answers for the ticket as the requester (ADR-0027).</summary>
+    RequesterChanged = 5,
+
+    /// <summary>The ticket went to the other team, without an assignee (ADR-0068).</summary>
+    TeamChanged = 6,
 }
 
 /// <summary>An event of the conversation: who did it (none for the system), what and when.</summary>
@@ -184,6 +193,16 @@ public sealed class TicketEvent : Entity
 
     public TicketPriority? ToPriority { get; private init; }
 
+    public TicketTeam? FromTeam { get; private init; }
+
+    public TicketTeam? ToTeam { get; private init; }
+
+    /// <summary>The requester before, or the assignee who left.</summary>
+    public Guid? FromPersonId { get; private init; }
+
+    /// <summary>The new requester.</summary>
+    public Guid? ToPersonId { get; private init; }
+
     public DateTime At { get; private init; }
 
     public static TicketEvent StatusChanged(Guid ticketId, Guid? actorId, TicketTransition transition, DateTime at)
@@ -199,6 +218,15 @@ public sealed class TicketEvent : Entity
 
     public static TicketEvent PriorityChanged(Guid ticketId, Guid actorId, TicketPriority from, TicketPriority to, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.PriorityChanged, at) { FromPriority = from, ToPriority = to };
+
+    public static TicketEvent AssigneeCleared(Guid ticketId, Guid actorId, Guid formerAssigneeId, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.AssigneeCleared, at) { FromPersonId = formerAssigneeId };
+
+    public static TicketEvent RequesterChanged(Guid ticketId, Guid actorId, Guid from, Guid to, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.RequesterChanged, at) { FromPersonId = from, ToPersonId = to };
+
+    public static TicketEvent TeamChanged(Guid ticketId, Guid actorId, TicketTeam from, TicketTeam to, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.TeamChanged, at) { FromTeam = from, ToTeam = to };
 
     public static TicketEvent AssigneeSet(Guid ticketId, Guid actorId, Guid assigneeId, DateTime at) =>
         new(ticketId, actorId, TicketEventKind.AssigneeSet, at) { AssigneeId = assigneeId };

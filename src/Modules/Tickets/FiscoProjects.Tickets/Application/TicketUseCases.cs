@@ -43,7 +43,8 @@ public sealed record TicketQuery(
     TicketSort Sort,
     bool Descending,
     int Page,
-    int PageSize)
+    int PageSize,
+    Guid? PersonId = null)
 {
     public const int MaxPageSize = 100;
 }
@@ -104,6 +105,12 @@ public interface ITicketStore
 
     Task<Ticket?> FindAsync(int number, CancellationToken cancellationToken);
 
+    /// <summary>The tickets of the numbers, tracked, in any order; the missing ones are left out.</summary>
+    Task<IReadOnlyList<Ticket>> FindManyAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken);
+
+    /// <summary>The open tickets of a project with the person as the assignee, tracked.</summary>
+    Task<IReadOnlyList<Ticket>> AssignedOpenAsync(Guid projectId, Guid userId, CancellationToken cancellationToken);
+
     /// <summary>How many messages and events each ticket has: its interactions in the lists.</summary>
     Task<IReadOnlyDictionary<Guid, int>> MessageCountsAsync(IReadOnlyCollection<Guid> ticketIds, CancellationToken cancellationToken);
 
@@ -151,6 +158,12 @@ public sealed record TicketListItem(
 {
     /// <summary>The deadlines of the ticket today (ADR-0025).</summary>
     public TicketDeadlineFigures? Deadlines { get; init; }
+
+    /// <summary>The person may change the assignee, also with others at once (ADR-0068).</summary>
+    public bool CanChangeAssignee { get; init; }
+
+    /// <summary>The person may change the requester with others at once (ADR-0027).</summary>
+    public bool CanChangeRequester { get; init; }
 }
 
 public sealed record TicketPage(IReadOnlyList<TicketListItem> Items, int Total);
@@ -173,8 +186,19 @@ public sealed class ListTickets(IProjectAccess projects, ITicketStore store, IUs
         var interactions = await store.MessageCountsAsync([.. rows.Items.Select(ticket => ticket.Id)], cancellationToken);
         var items = await TicketNames.ItemsOfAsync(rows.Items, visible, interactions, users, cancellationToken);
         var day = await deadlines.TodayAsync(cancellationToken);
+        var roles = visible.ToDictionary(project => project.Id, project => project.Role);
         return new TicketPage(
-            [.. items.Select(item => item with { Deadlines = TicketDeadlines.FiguresOf(item.Ticket, day) })], rows.Total);
+            [.. items.Select(item =>
+            {
+                var manages = TicketAccess.MayAssign(viewer, roles[item.Ticket.ProjectId]);
+                return item with
+                {
+                    Deadlines = TicketDeadlines.FiguresOf(item.Ticket, day),
+                    CanChangeAssignee = manages && item.Ticket.IsOpen,
+                    CanChangeRequester = manages && item.Ticket.Status != TicketStatus.Closed,
+                };
+            })],
+            rows.Total);
     }
 }
 
@@ -317,7 +341,17 @@ public sealed record TicketParticipant(Guid Id, string Name, TicketParticipantRo
 /// flow open now (ADR-0024).
 /// </summary>
 public sealed record TicketConversationPermissions(
-    bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketTransition> Actions, bool CanChangePriority);
+    bool CanSend, bool CanAttachToDescription, IReadOnlyList<TicketTransition> Actions, bool CanChangePriority)
+{
+    /// <summary>The assignee, by the Administrator and the managers (ADR-0068).</summary>
+    public bool CanChangeAssignee { get; init; }
+
+    /// <summary>The requester, by the Administrator, the managers and the requester (ADR-0027).</summary>
+    public bool CanChangeRequester { get; init; }
+
+    /// <summary>To the other team, by who serves it (ADR-0044).</summary>
+    public bool CanTransfer { get; init; }
+}
 
 /// <summary>
 /// A ticket with its project, the requester, the assignee and the managers and tech leads of the project, and its
@@ -413,7 +447,13 @@ public sealed class GetTicket(IProjectAccess projects, ITicketStore store, IUser
                 canSend,
                 ticket.RequesterId == viewer.UserId && messages.Count == 0 && ticket.Status != TicketStatus.Closed,
                 flow.AvailableTo(ticket.Status, actors),
-                ticket.IsOpen && (actors & TicketActors.Attendant) != 0),
+                ticket.IsOpen && (actors & TicketActors.Attendant) != 0)
+            {
+                CanChangeAssignee = ticket.IsOpen && TicketAccess.MayAssign(viewer, project.Role),
+                CanChangeRequester = ticket.Status != TicketStatus.Closed
+                    && TicketAccess.MayChangeRequester(viewer, project.Role, ticket, inBulk: false),
+                CanTransfer = ticket.IsOpen && TicketAccess.MayTransfer(viewer, project.Role, ticket),
+            },
             followers.Contains(viewer.UserId))
         {
             Deadlines = TicketDeadlines.FiguresOf(ticket, day),
