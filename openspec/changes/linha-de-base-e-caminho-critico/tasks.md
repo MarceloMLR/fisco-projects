@@ -1,7 +1,7 @@
 ## 1. Domínio
 
-- [ ] 1.1 `ScheduleCriticalPath` e os testes "Cadeia mais longa é crítica", "Folga em dias úteis" e "Subtarefas no caminho crítico"
-- [ ] 1.2 `ScheduleBaseline` e `ScheduleBaselineItem` no agregado, `SaveBaseline` e a diferença; testes "Salvar linha de base", "Atualizar linha de base", "Linha de base sem tarefas", "Tarefa depois da linha de base", "Tarefa antes da linha de base", "Item incluído depois da linha de base" e "Fim do projeto contra a linha de base"
+- [x] 1.1 `ScheduleCriticalPath` e os testes "Cadeia mais longa é crítica", "Folga em dias úteis" e "Subtarefas no caminho crítico"
+- [x] 1.2 `ScheduleBaseline` e `ScheduleBaselineItem` no agregado, `SaveBaseline` e a diferença; testes "Salvar linha de base", "Atualizar linha de base", "Linha de base sem tarefas", "Tarefa depois da linha de base", "Tarefa antes da linha de base", "Item incluído depois da linha de base" e "Fim do projeto contra a linha de base"
 
 ## 2. Banco, API e auditoria
 

@@ -68,6 +68,9 @@ public sealed class Schedule : Entity
 
     public IReadOnlyList<ScheduleDependency> Dependencies => _dependencies;
 
+    /// <summary>The baseline of the project, once the manager saves one (ADR-0021).</summary>
+    public ScheduleBaseline? Baseline { get; private set; }
+
     /// <summary>The name of a phase without the spaces at the ends, when it is not empty and has up to 150 characters.</summary>
     public static string? ValidPhaseName(string? name) => Trimmed(name, PhaseNameMaxLength);
 
@@ -406,6 +409,22 @@ public sealed class Schedule : Entity
         }
 
         return owned.Count;
+    }
+
+    /// <summary>
+    /// Saves the baseline of the project on the day, or updates it: the dates of every task and milestone, the tasks
+    /// with subtasks included, and of the project (ADR-0021). False without tasks nor milestones.
+    /// </summary>
+    public bool SaveBaseline(DateOnly today)
+    {
+        if (_items.Count == 0)
+        {
+            return false;
+        }
+
+        Baseline ??= new ScheduleBaseline(Id);
+        Baseline.Save(_items, today);
+        return true;
     }
 
     /// <summary>The dates, the progress and the delays of the schedule on a day (<see cref="ScheduleFigures"/>).</summary>
