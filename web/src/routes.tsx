@@ -12,6 +12,7 @@ import { NewProjectPage } from './projects/NewProjectPage';
 import { ProjectLayout } from './projects/ProjectLayout';
 import { ProjectMembersPage } from './projects/ProjectMembersPage';
 import { ProjectSchedulePage } from './projects/ProjectSchedulePage';
+import { SchedulePrintPage } from './projects/SchedulePrintPage';
 import { ProjectOverview } from './projects/ProjectOverview';
 import { ProjectsPage } from './projects/ProjectsPage';
 import { RequireProjectCreator } from './projects/RequireProjectCreator';
@@ -30,6 +31,15 @@ export const routes: RouteObject[] = [
     children: [
       // The sign-in page is outside the shell; every other screen needs a session (ADR-0009).
       { path: 'sign-in', element: <SignInPage /> },
+      // The print page of a schedule, for paper, outside the shell (ADR-0021).
+      {
+        path: 'projects/:projectId/schedule/print',
+        element: (
+          <RequireSession>
+            <SchedulePrintPage />
+          </RequireSession>
+        ),
+      },
       {
         element: (
           <RequireSession>

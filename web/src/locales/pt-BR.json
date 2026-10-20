@@ -1101,6 +1101,29 @@
         "redoBlocked": "Não dá para refazer {{what}}: alguém mudou esses itens depois.",
         "nothing": "Não há mais o que desfazer nem refazer."
       }
+    },
+    "export": {
+      "pdf": "Exportar em PDF",
+      "xml": "Exportar para o MS Project (XML)",
+      "dialog": {
+        "title": "Exportar em PDF",
+        "text": "A página de impressão abre numa aba nova. Lá, escolha \"Imprimir\" e salve em PDF.",
+        "from": "De",
+        "to": "Até",
+        "open": "Abrir para imprimir",
+        "cancel": "Cancelar"
+      }
+    },
+    "print": {
+      "documentTitle": "Cronograma de {{code}}",
+      "title": "{{code}} · {{name}}",
+      "manager": "Gerente {{names}}",
+      "period": "Período {{period}} · Escala {{scale}}",
+      "generatedOn": "Gerado em {{day}}",
+      "print": "Imprimir",
+      "table": "Cronograma para impressão",
+      "loading": "Carregando o cronograma…",
+      "failed": "Não foi possível carregar o cronograma. Feche a aba e tente de novo."
     }
   }
 }

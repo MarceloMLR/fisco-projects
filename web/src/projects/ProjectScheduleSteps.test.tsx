@@ -159,6 +159,8 @@ describe('Desfazer pela tela', () => {
     await openSchedule();
 
     expect(screen.queryByRole('button', { name: text.steps.undo })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: text.baseline.more })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: text.baseline.more }));
+    const menu = await screen.findByRole('menu', { name: text.baseline.more });
+    expect(within(menu).queryByRole('menuitem', { name: text.steps.redo })).not.toBeInTheDocument();
   });
 });
