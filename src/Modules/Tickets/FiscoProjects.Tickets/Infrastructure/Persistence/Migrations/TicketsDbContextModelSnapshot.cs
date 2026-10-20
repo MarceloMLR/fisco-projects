@@ -34,10 +34,20 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "User");
 
+                    b.Property<string>("AttachmentFolderId")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(10000)
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DescriptionBody")
+                        .HasMaxLength(200000)
+                        .HasColumnType("nvarchar(max)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.Property<int>("Number")
                         .HasColumnType("int");
@@ -93,6 +103,143 @@ namespace FiscoProjects.Tickets.Infrastructure.Persistence.Migrations
                     b.ToTable("tickets", "tickets");
 
                     b.HasAnnotation("FiscoProjects:Audit:Label", "Title");
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("FileId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid?>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("TicketId");
+
+                    b.ToTable("ticket_attachments", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketFollower", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Since")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TicketId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ticket_followers", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketId", "SentAt");
+
+                    b.ToTable("ticket_messages", "tickets");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketAttachment", b =>
+                {
+                    b.HasOne("FiscoProjects.Tickets.Domain.TicketMessage", null)
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketFollower", b =>
+                {
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Tickets.Domain.TicketMessage", b =>
+                {
+                    b.HasOne("FiscoProjects.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { visuallyHidden } from '@mui/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useEffect, useId } from 'react';
+import { lazy, type ReactNode, Suspense, useEffect, useId, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
@@ -21,13 +21,19 @@ import { queryKeys, ticketChoicesQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
 import { Select } from '../components/Select';
-import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { invalidFields, problemType } from '../projects/projectForm';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
+import { ChooseFiles, ChosenFiles } from './TicketReply';
 import { PriorityTag } from './TicketTags';
+import { ticketProblemText } from './ticketProblems';
 import { teamIcons } from './tickets';
+
+// The editor only loads on the screens of the tickets.
+const RichTextEditor = lazy(async () => ({
+  default: (await import('../components/RichTextEditor')).RichTextEditor,
+}));
 
 const errors = {
   projectRequired: 'tickets.errors.projectRequired',
@@ -50,11 +56,9 @@ const form = z.object({
     .trim()
     .min(1, { error: errors.titleRequired })
     .max(200, { error: errors.titleTooLong }),
-  description: z
-    .string()
-    .trim()
-    .min(1, { error: errors.descriptionRequired })
-    .max(10_000, { error: errors.descriptionTooLong }),
+  // The document of the editor, and whether it has any text (ADR-0026).
+  description: z.string(),
+  descriptionEmpty: z.boolean().refine((empty) => !empty, { error: errors.descriptionRequired }),
 });
 
 type FormValues = z.input<typeof form>;
@@ -171,8 +175,10 @@ export function OpenTicketPage() {
       priority: 'Medium',
       title: '',
       description: '',
+      descriptionEmpty: true,
     },
   });
+  const [files, setFiles] = useState<File[]>([]);
   const projectId = useWatch({ control, name: 'projectId' });
   const project = projects.find((choice) => choice.id === projectId);
   const teams = project?.teams ?? [];
@@ -202,15 +208,35 @@ export function OpenTicketPage() {
           team: values.team as TicketTeam,
           priority: values.priority,
           title: values.title.trim(),
-          description: values.description.trim(),
+          description: null,
+          descriptionBody: values.description,
         },
       });
       if (data !== undefined) {
+        // The files of the description go right after the ticket exists (ADR-0069).
+        let message = t('tickets.opened', { number: data.number });
+        if (files.length > 0) {
+          const form = new FormData();
+          for (const file of files) {
+            form.append('files', file, file.name);
+          }
+          const sent = await api
+            .POST('/api/tickets/{number}/attachments', {
+              params: { path: { number: data.number } },
+              body: { files: [] },
+              bodySerializer: () => form,
+            })
+            .catch(() => undefined);
+          if (sent?.response.ok !== true) {
+            message = t('tickets.errors.attachmentsFailed', {
+              number: data.number,
+              reason: ticketProblemText(sent?.response.status ?? 0, sent?.error, t),
+            });
+          }
+        }
         void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
         void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
-        await navigate(`/tickets/${String(data.number)}`, {
-          state: { message: t('tickets.opened', { number: data.number }) },
-        });
+        await navigate(`/tickets/${String(data.number)}`, { state: { message } });
         return;
       }
       if (response.status === 409 && problemType(error) === projectProblems.closed) {
@@ -231,7 +257,13 @@ export function OpenTicketPage() {
       if (fields.includes('projectId')) {
         setError('projectId', { message: errors.projectRequired });
       }
-      if (fields.length === 0 || fields.some((field) => !['team', 'projectId'].includes(field))) {
+      if (fields.includes('description')) {
+        setError('description', { message: errors.descriptionTooLong });
+      }
+      if (
+        fields.length === 0 ||
+        fields.some((field) => !['team', 'projectId', 'description'].includes(field))
+      ) {
         setError('root', { message: t('tickets.errors.failed') });
       }
     } catch {
@@ -354,12 +386,63 @@ export function OpenTicketPage() {
             maxLength={200}
             {...register('title')}
           />
-          <TextArea
+          <FormField
             label={t('tickets.form.description')}
-            error={errorText(fieldErrors.description?.message)}
-            rows={12}
-            {...register('description')}
-          />
+            error={errorText(
+              fieldErrors.descriptionEmpty?.message ?? fieldErrors.description?.message,
+            )}
+          >
+            <Suspense fallback={<Box sx={{ height: 280 }} />}>
+              <Controller
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <RichTextEditor
+                    label={t('tickets.form.description')}
+                    minHeight={240}
+                    invalid={
+                      fieldErrors.descriptionEmpty !== undefined ||
+                      fieldErrors.description !== undefined
+                    }
+                    onChange={(json, empty) => {
+                      field.onChange(json);
+                      setValue('descriptionEmpty', empty, {
+                        shouldValidate: fieldErrors.descriptionEmpty !== undefined,
+                      });
+                    }}
+                  />
+                )}
+              />
+            </Suspense>
+          </FormField>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}
+          >
+            <Box component="span" sx={{ fontSize: 13, fontWeight: 500 }}>
+              {t('tickets.form.attachments')}
+              <Box
+                component="span"
+                sx={{
+                  marginLeft: 'var(--space-1)',
+                  fontWeight: 400,
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {t('tickets.form.optional')}
+              </Box>
+            </Box>
+            <ChooseFiles
+              onChoose={(chosen) => {
+                setFiles((current) => [...current, ...chosen]);
+              }}
+            />
+            <ChosenFiles
+              files={files}
+              onRemove={(index) => {
+                setFiles((current) => current.filter((_file, place) => place !== index));
+              }}
+            />
+          </Box>
           {fieldErrors.root?.message !== undefined && (
             <Alert tone="danger">{fieldErrors.root.message}</Alert>
           )}

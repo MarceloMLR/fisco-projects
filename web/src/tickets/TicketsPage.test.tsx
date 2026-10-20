@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
+import { typeInEditor } from '../test/editor';
 import { renderApp } from '../test/renderApp';
 import {
   type DemoProject,
@@ -135,9 +136,7 @@ describe('Chamados pela tela', () => {
     fireEvent.change(screen.getByLabelText(text.form.title), {
       target: { value: '  Erro ao importar XML de entrada ' },
     });
-    fireEvent.change(screen.getByLabelText(text.form.description), {
-      target: { value: 'O XML da nota 3381 não entra.' },
-    });
+    await typeInEditor(text.form.description, 'O XML da nota 3381 não entra.');
     fireEvent.click(screen.getByRole('button', { name: text.form.submit }));
 
     expect(await screen.findByText(text.opened.replace('{{number}}', '5'))).toBeInTheDocument();
@@ -150,7 +149,16 @@ describe('Chamados pela tela', () => {
         team: 'Development',
         priority: 'High',
         title: 'Erro ao importar XML de entrada',
-        description: 'O XML da nota 3381 não entra.',
+        description: null,
+        descriptionBody: JSON.stringify({
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'O XML da nota 3381 não entra.' }],
+            },
+          ],
+        }),
       },
     ]);
   });

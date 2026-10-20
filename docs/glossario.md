@@ -139,6 +139,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Visões: Atribuídos a mim, Sem responsável nos meus times, Abertos por mim, Todos os abertos | TicketView: AssignedToMe, UnassignedInMyTeams, OpenedByMe, All | "Sem responsável" da aba do projeto é `Unassigned` (ADR-0068) |
 | Situação na lista: Em aberto, Encerrados, Todos | TicketSituation: Open, Finished, All | Encerrados são os resolvidos e os fechados |
 | Acesso aos projetos (contrato) | IProjectAccess | Os projetos que cada pessoa vê e o papel dela, para os outros módulos |
+| Que acompanho (visão) | TicketView.Following | Os chamados que a pessoa acompanha |
+| Papel na conversa: Solicitante, Responsável, Gerente do projeto, Líder técnico, Desenvolvimento, Funcional | TicketParticipantRole: Requester, Owner, Manager, TechLead, Development, Functional | Dá a cor e o selo de cada mensagem (ADR-0069) |
+| Texto formatado | RichText | O JSON do editor (Tiptap), validado no servidor |
 
 ## Documentos, links, acessos e termos
 

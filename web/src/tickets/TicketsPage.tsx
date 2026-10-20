@@ -4,6 +4,7 @@ import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import PersonOutlineOutlined from '@mui/icons-material/PersonOutlineOutlined';
 import ReplyOutlined from '@mui/icons-material/ReplyOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import type SvgIcon from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -38,6 +39,7 @@ const views: readonly {
   { view: 'AssignedToMe', icon: PersonOutlineOutlined, count: 'assignedToMe' },
   { view: 'UnassignedInMyTeams', icon: InboxOutlined, count: 'unassignedInMyTeams', alert: true },
   { view: 'OpenedByMe', icon: ReplyOutlined, count: 'openedByMe' },
+  { view: 'Following', icon: VisibilityOutlined, count: 'following' },
   { view: 'All', icon: ConfirmationNumberOutlined, count: 'open' },
 ];
 

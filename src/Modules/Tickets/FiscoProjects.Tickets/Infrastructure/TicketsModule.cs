@@ -1,5 +1,6 @@
 using FiscoProjects.Persistence;
 using FiscoProjects.Tickets.Application;
+using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Tickets.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,14 @@ public static class TicketsModule
         services.AddScoped<ListTicketChoices>();
         services.AddScoped<OpenTicket>();
         services.AddScoped<GetTicket>();
+        // Up to 15 MB per file by default, as each installation sets (ADR-0026).
+        var megabytes = configuration.GetValue("Tickets:Attachments:MaxMegabytes", TicketAttachments.DefaultMaxMegabytes);
+        services.AddSingleton(new TicketAttachmentSettings(megabytes * 1024L * 1024L));
+        services.AddScoped<TicketFiles>();
+        services.AddScoped<SendTicketMessage>();
+        services.AddScoped<AttachToDescription>();
+        services.AddScoped<FollowTicket>();
+        services.AddScoped<OpenTicketAttachment>();
         return services;
     }
 }

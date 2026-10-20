@@ -83,8 +83,17 @@ public sealed class Ticket : Entity
 
     public string Title { get; private set; }
 
-    /// <summary>Plain text with its line breaks.</summary>
+    /// <summary>The plain text of the description, with its line breaks, for the search.</summary>
     public string Description { get; private set; }
+
+    /// <summary>
+    /// The description with its formatting (<see cref="RichText"/>), as JSON; null for the ones opened before the editor,
+    /// shown as plain text.
+    /// </summary>
+    public string? DescriptionBody { get; private set; }
+
+    /// <summary>The folder of the attachments of the ticket in the file storage, made with the first one (ADR-0030).</summary>
+    public string? AttachmentFolderId { get; private set; }
 
     public TicketStatus Status { get; private set; }
 
@@ -99,6 +108,12 @@ public sealed class Ticket : Entity
 
     public bool IsOpen => OpenStatuses.Contains(Status);
 
+    /// <summary>Something changed in the ticket now, such as a new message.</summary>
+    public void Touch(DateTime now) => UpdatedAt = now;
+
+    /// <summary>Keeps the folder of the attachments, made with the first one.</summary>
+    public void KeepAttachmentFolder(string folderId) => AttachmentFolderId ??= folderId;
+
     /// <summary>A new ticket, Open and without an assignee, from data already checked by <see cref="TicketForm"/>.</summary>
     public static Ticket Open(int number, Guid projectId, TicketForm form, Guid requesterId, DateTime now)
     {
@@ -109,7 +124,10 @@ public sealed class Ticket : Entity
         }
 
         return new Ticket(
-            number, projectId, form.Team!.Value, form.Priority!.Value, form.Title!, form.Description!, requesterId, now);
+            number, projectId, form.Team!.Value, form.Priority!.Value, form.Title!, form.Description!, requesterId, now)
+        {
+            DescriptionBody = form.Body?.Json,
+        };
     }
 }
 
@@ -129,12 +147,14 @@ public enum TicketField
 /// </summary>
 public sealed class TicketForm
 {
-    private TicketForm(TicketTeam? team, TicketPriority? priority, string? title, string? description, List<TicketField> invalid)
+    private TicketForm(
+        TicketTeam? team, TicketPriority? priority, string? title, string? description, RichText? body, List<TicketField> invalid)
     {
         Team = team;
         Priority = priority;
         Title = title;
         Description = description;
+        Body = body;
         Invalid = invalid;
     }
 
@@ -146,12 +166,20 @@ public sealed class TicketForm
 
     public string? Description { get; }
 
+    /// <summary>The description with its formatting, when it came from the editor.</summary>
+    public RichText? Body { get; }
+
     /// <summary>The fields that are missing or wrong, in the order of the form.</summary>
     public IReadOnlyList<TicketField> Invalid { get; }
 
     public bool IsValid => Invalid.Count == 0;
 
-    public static TicketForm Of(TicketTeam? team, TicketPriority? priority, string? title, string? description)
+    /// <summary>
+    /// The data of a new ticket; the description comes with its formatting (<paramref name="body"/>, the JSON of the
+    /// editor) or as plain text.
+    /// </summary>
+    public static TicketForm Of(
+        TicketTeam? team, TicketPriority? priority, string? title, string? description, string? body = null)
     {
         var invalid = new List<TicketField>();
         if (team is not { } chosenTeam || !Enum.IsDefined(chosenTeam))
@@ -172,12 +200,15 @@ public sealed class TicketForm
             invalid.Add(TicketField.Title);
         }
 
-        var trimmedDescription = description?.Trim();
-        if (string.IsNullOrEmpty(trimmedDescription) || trimmedDescription.Length > Ticket.DescriptionMaxLength)
+        var rich = body is null ? null : RichText.Parse(body);
+        var trimmedDescription = rich?.Text ?? description?.Trim();
+        // Mentions go in the messages, where who is mentioned starts to follow the ticket (ADR-0026).
+        if ((body is not null && (rich is null || rich.Mentions.Count > 0))
+            || string.IsNullOrEmpty(trimmedDescription) || trimmedDescription.Length > Ticket.DescriptionMaxLength)
         {
             invalid.Add(TicketField.Description);
         }
 
-        return new TicketForm(team, priority, trimmedTitle, trimmedDescription, invalid);
+        return new TicketForm(team, priority, trimmedTitle, trimmedDescription, rich, invalid);
     }
 }

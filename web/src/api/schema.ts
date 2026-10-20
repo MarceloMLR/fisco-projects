@@ -868,6 +868,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/{number}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SendTicketMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AttachToTicketDescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OpenTicketAttachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tickets/{number}/following": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["FollowTicket"];
+        post?: never;
+        delete: operations["UnfollowTicket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1035,6 +1099,7 @@ export interface components {
         };
         /** Format: binary */
         IFormFile: string;
+        IFormFileCollection: components["schemas"]["IFormFile"][];
         /**
          * @description The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
          *     #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
@@ -1116,7 +1181,10 @@ export interface components {
             name: null | string;
             description: null | string;
         };
-        /** @description A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). */
+        /**
+         * @description A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). The
+         *     description comes with its formatting in `descriptionBody` (the JSON of the editor) or as plain text.
+         */
         NewTicketRequest: {
             /** Format: uuid */
             projectId: null | string;
@@ -1124,6 +1192,7 @@ export interface components {
             priority: null | components["schemas"]["TicketPriority"];
             title: null | string;
             description: null | string;
+            descriptionBody?: null | string;
         };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
@@ -1549,6 +1618,24 @@ export interface components {
          * @enum {unknown}
          */
         ThemePreference: "Automatic" | "Light" | "Dark";
+        /** @description An attachment of a ticket: of a message, or of the description when the message is null. */
+        TicketAttachmentResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            messageId: null | string;
+            name: string;
+            /** Format: int64 */
+            size: number;
+            contentType: string;
+            /** Format: date-time */
+            uploadedAt: string;
+        };
+        /** @description What the person may do in the conversation. */
+        TicketConversationPermissionsResponse: {
+            canSend: boolean;
+            canAttachToDescription: boolean;
+        };
         /**
          * @description How many tickets each list has: all of them, any status, and the open ones, the open ones without an assignee,
          *     without an assignee in the teams of the person, in charge of the person and opened by the person.
@@ -1566,6 +1653,8 @@ export interface components {
             assignedToMe: number;
             /** Format: int32 */
             openedByMe: number;
+            /** Format: int32 */
+            following: number;
         };
         TicketCreatedResponse: {
             /** Format: uuid */
@@ -1590,12 +1679,41 @@ export interface components {
             openedAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /**
+             * Format: int32
+             * @description How many messages the ticket has.
+             */
+            interactions: number;
+        };
+        /** @description A message of the conversation, with its text as the JSON of the editor. */
+        TicketMessageResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            authorId: string;
+            body: string;
+            /** Format: date-time */
+            sentAt: string;
         };
         TicketPageResponse: {
             items: components["schemas"]["TicketListItemResponse"][];
             /** Format: int32 */
             total: number;
         };
+        /** @description A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069). */
+        TicketParticipantResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: components["schemas"]["TicketParticipantRole"];
+        };
+        /**
+         * @description The part a person plays in a ticket, which gives the color and the tag of the messages (ADR-0069): the requester,
+         *     the assignee (even being of a team), the manager, the tech lead, the teams, the Administrator outside the project,
+         *     or anyone else.
+         * @enum {unknown}
+         */
+        TicketParticipantRole: "Requester" | "Owner" | "Manager" | "TechLead" | "Development" | "Functional" | "Administrator" | "Other";
         /** @description A person of a ticket. */
         TicketPersonResponse: {
             /** Format: uuid */
@@ -1627,7 +1745,11 @@ export interface components {
             code: string;
             name: string;
         };
-        /** @description A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the project. */
+        /**
+         * @description A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the
+         *     project; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be
+         *     mentioned, the parts of the people who appear in it and what the person may do.
+         */
         TicketResponse: {
             /** Format: uuid */
             id: string;
@@ -1635,6 +1757,8 @@ export interface components {
             number: number;
             title: string;
             description: string;
+            /** @description The description with its formatting, as the JSON of the editor; null for one written as plain text. */
+            descriptionBody: null | string;
             project: components["schemas"]["TicketProjectResponse"];
             team: components["schemas"]["TicketTeam"];
             priority: components["schemas"]["TicketPriority"];
@@ -1647,6 +1771,13 @@ export interface components {
             openedAt: string;
             /** Format: date-time */
             updatedAt: string;
+            messages: components["schemas"]["TicketMessageResponse"][];
+            attachments: components["schemas"]["TicketAttachmentResponse"][];
+            followers: string[];
+            mentionable: string[];
+            participants: components["schemas"]["TicketParticipantResponse"][];
+            permissions: components["schemas"]["TicketConversationPermissionsResponse"];
+            following: boolean;
         };
         /**
          * @description Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all.
@@ -1672,7 +1803,7 @@ export interface components {
          * @description The lists of tickets (ADR-0029, ADR-0068).
          * @enum {unknown}
          */
-        TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe";
+        TicketView: "All" | "AssignedToMe" | "UnassignedInMyTeams" | "Unassigned" | "OpenedByMe" | "Following";
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone and the main color (#RRGGBB, or
          *     null for the color of the design system).
@@ -4855,7 +4986,7 @@ export interface operations {
     ListTickets: {
         parameters: {
             query?: {
-                /** @description All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned or OpenedByMe. */
+                /** @description All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following. */
                 view?: components["schemas"]["TicketView"];
                 /** @description Only the tickets of this project. */
                 projectId?: string;
@@ -5061,6 +5192,237 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TicketResponse"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SendTicketMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    body?: string;
+                } & {
+                    files: components["schemas"]["IFormFileCollection"];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachToTicketDescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    files: components["schemas"]["IFormFileCollection"];
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OpenTicketAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FollowTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UnfollowTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

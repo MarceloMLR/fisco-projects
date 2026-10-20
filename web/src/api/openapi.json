@@ -3734,7 +3734,7 @@
           {
             "name": "view",
             "in": "query",
-            "description": "All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned or OpenedByMe.",
+            "description": "All (the default), AssignedToMe, UnassignedInMyTeams, Unassigned, OpenedByMe or Following.",
             "schema": {
               "default": "All",
               "$ref": "#/components/schemas/TicketView"
@@ -4030,6 +4030,287 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/messages": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "SendTicketMessage",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "files"
+                ],
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "files": {
+                        "$ref": "#/components/schemas/IFormFileCollection"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/attachments": {
+      "post": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "AttachToTicketDescription",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "files"
+                ],
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "$ref": "#/components/schemas/IFormFileCollection"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/attachments/{id}": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "OpenTicketAttachment",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/tickets/{number}/following": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "FollowTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tickets"
+        ],
+        "operationId": "UnfollowTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
           },
           "404": {
             "description": "Not Found"
@@ -4623,6 +4904,12 @@
         "type": "string",
         "format": "binary"
       },
+      "IFormFileCollection": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IFormFile"
+        }
+      },
       "InstallationResponse": {
         "required": [
           "name",
@@ -4919,9 +5206,15 @@
               "null",
               "string"
             ]
+          },
+          "descriptionBody": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068)."
+        "description": "A new ticket: the project, the team, the priority, the title and the description, without an assignee (ADR-0068). The\ndescription comes with its formatting in `descriptionBody` (the JSON of the editor) or as plain text."
       },
       "PersonResponse": {
         "required": [
@@ -6185,6 +6478,61 @@
         ],
         "description": "The theme a person chose in the profile (ADR-0014); Automatic follows the operating system."
       },
+      "TicketAttachmentResponse": {
+        "required": [
+          "id",
+          "messageId",
+          "name",
+          "size",
+          "contentType",
+          "uploadedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "messageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An attachment of a ticket: of a message, or of the description when the message is null."
+      },
+      "TicketConversationPermissionsResponse": {
+        "required": [
+          "canSend",
+          "canAttachToDescription"
+        ],
+        "type": "object",
+        "properties": {
+          "canSend": {
+            "type": "boolean"
+          },
+          "canAttachToDescription": {
+            "type": "boolean"
+          }
+        },
+        "description": "What the person may do in the conversation."
+      },
       "TicketCountsResponse": {
         "required": [
           "all",
@@ -6192,7 +6540,8 @@
           "unassigned",
           "unassignedInMyTeams",
           "assignedToMe",
-          "openedByMe"
+          "openedByMe",
+          "following"
         ],
         "type": "object",
         "properties": {
@@ -6217,6 +6566,10 @@
             "format": "int32"
           },
           "openedByMe": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "following": {
             "type": "integer",
             "format": "int32"
           }
@@ -6252,7 +6605,8 @@
           "requester",
           "assignee",
           "openedAt",
-          "updatedAt"
+          "updatedAt",
+          "interactions"
         ],
         "type": "object",
         "properties": {
@@ -6299,9 +6653,41 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "interactions": {
+            "type": "integer",
+            "description": "How many messages the ticket has.",
+            "format": "int32"
           }
         },
         "description": "A ticket of a list; without an assignee until someone of the team answers it (ADR-0068)."
+      },
+      "TicketMessageResponse": {
+        "required": [
+          "id",
+          "authorId",
+          "body",
+          "sentAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A message of the conversation, with its text as the JSON of the editor."
       },
       "TicketPageResponse": {
         "required": [
@@ -6321,6 +6707,40 @@
             "format": "int32"
           }
         }
+      },
+      "TicketParticipantResponse": {
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TicketParticipantRole"
+          }
+        },
+        "description": "A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069)."
+      },
+      "TicketParticipantRole": {
+        "enum": [
+          "Requester",
+          "Owner",
+          "Manager",
+          "TechLead",
+          "Development",
+          "Functional",
+          "Administrator",
+          "Other"
+        ],
+        "description": "The part a person plays in a ticket, which gives the color and the tag of the messages (ADR-0069): the requester,\nthe assignee (even being of a team), the manager, the tech lead, the teams, the Administrator outside the project,\nor anyone else."
       },
       "TicketPersonResponse": {
         "required": [
@@ -6411,6 +6831,7 @@
           "number",
           "title",
           "description",
+          "descriptionBody",
           "project",
           "team",
           "priority",
@@ -6420,7 +6841,14 @@
           "managers",
           "techLeads",
           "openedAt",
-          "updatedAt"
+          "updatedAt",
+          "messages",
+          "attachments",
+          "followers",
+          "mentionable",
+          "participants",
+          "permissions",
+          "following"
         ],
         "type": "object",
         "properties": {
@@ -6437,6 +6865,13 @@
           },
           "description": {
             "type": "string"
+          },
+          "descriptionBody": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The description with its formatting, as the JSON of the editor; null for one written as plain text."
           },
           "project": {
             "$ref": "#/components/schemas/TicketProjectResponse"
@@ -6482,9 +6917,47 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMessageResponse"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketAttachmentResponse"
+            }
+          },
+          "followers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "mentionable": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketParticipantResponse"
+            }
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/TicketConversationPermissionsResponse"
+          },
+          "following": {
+            "type": "boolean"
           }
         },
-        "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the project."
+        "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the\nproject; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be\nmentioned, the parts of the people who appear in it and what the person may do."
       },
       "TicketSituation": {
         "enum": [
@@ -6525,7 +6998,8 @@
           "AssignedToMe",
           "UnassignedInMyTeams",
           "Unassigned",
-          "OpenedByMe"
+          "OpenedByMe",
+          "Following"
         ],
         "description": "The lists of tickets (ADR-0029, ADR-0068)."
       },

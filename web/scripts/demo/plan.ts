@@ -24,6 +24,16 @@ export const demoPeople = {
 
 export type DemoPerson = keyof typeof demoPeople;
 
+/** The names of the people, as the demo directory has them, for the mentions. */
+export const demoNames: Record<DemoPerson, string> = {
+  paulo: 'Paulo Nogueira',
+  marina: 'Marina Costa',
+  rafael: 'Rafael Souza',
+  beatriz: 'Beatriz Lima',
+  carla: 'Carla Mendes',
+  diego: 'Diego Torres',
+};
+
 /** The first Administrator (`Users:FirstAdministrator` of the development settings). */
 export const administrator: DemoPerson = 'paulo';
 
@@ -63,6 +73,16 @@ export interface DemoPhase {
   items: readonly DemoItem[];
 }
 
+/** A message of a ticket, by a person who sends messages in it (ADR-0026, ADR-0044). */
+export interface DemoMessage {
+  by: DemoPerson;
+  text: string;
+  /** Mentioned at the start of the message, who then follows the ticket. */
+  mention?: DemoPerson;
+  /** A file sent with the message. */
+  file?: { name: string; content: string };
+}
+
 /** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
 export interface DemoTicket {
   title: string;
@@ -71,6 +91,8 @@ export interface DemoTicket {
   /** Who opens it: anyone in the project but a viewer, or the Administrator (ADR-0044). */
   by: DemoPerson;
   description: string;
+  /** The conversation, in order (ADR-0069). */
+  messages?: readonly DemoMessage[];
 }
 
 export interface DemoProject {
@@ -213,6 +235,29 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'carla',
         description:
           'Ao emitir a nota de devolução da venda 3381, a SEFAZ retorna a rejeição 539.\n\nAcontece com todas as devoluções da filial desde ontem. Esperava a autorização normal, como no mês passado.',
+        messages: [
+          {
+            by: 'diego',
+            text: 'Consegui reproduzir na homologação com a nota 3381. A rejeição vem da falta da chave da nota original no grupo de referência.',
+          },
+          {
+            by: 'rafael',
+            text: 'Vou registrar no fornecedor do emissor. Diego, segue com um contorno enquanto eles não corrigem.',
+          },
+          {
+            by: 'carla',
+            mention: 'diego',
+            text: 'segue a nota emitida com a natureza "Devolução de venda". Funcionou.',
+            file: {
+              name: 'nota-3401.xml',
+              content: '<nfeProc versao="4.00"><NFe><infNFe Id="NFe-3401"/></NFe></nfeProc>',
+            },
+          },
+          {
+            by: 'marina',
+            text: 'Subi a prioridade para Alta: o fechamento da filial é na segunda.',
+          },
+        ],
       },
       {
         title: 'Dúvida sobre o CFOP de transferência entre filiais',
@@ -229,6 +274,12 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'carla',
         description:
           'O relatório de ICMS-ST de outubro não traz as notas de devolução, e o total fica diferente da apuração.',
+        messages: [
+          {
+            by: 'rafael',
+            text: 'Já vi o filtro do relatório. Corrijo junto com a próxima versão.',
+          },
+        ],
       },
       {
         title: 'Liberar ambiente de homologação ao cliente',
