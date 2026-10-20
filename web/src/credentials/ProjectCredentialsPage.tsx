@@ -192,7 +192,7 @@ export function ProjectCredentialsPage() {
     const password: DataTableColumn<CredentialRow> = {
       field: 'password',
       headerName: t('credentials.columns.password'),
-      width: desktop ? 200 : 168,
+      width: desktop ? 200 : 188,
       renderCell: ({ row }) => {
         if (row.kind !== 'credential') {
           return null;
@@ -201,7 +201,7 @@ export function ProjectCredentialsPage() {
         const Eye = visible === undefined ? VisibilityOutlined : VisibilityOffOutlined;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px', minWidth: 0 }}>
-            <Box component="span" sx={passwordSx} data-testid="credential-password">
+            <Box component="span" sx={passwordSx} title={visible} data-testid="credential-password">
               {visible ?? t('credentials.mask')}
             </Box>
             <IconButton
