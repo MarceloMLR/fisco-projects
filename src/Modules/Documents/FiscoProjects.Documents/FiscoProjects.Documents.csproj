@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../FiscoProjects.Persistence/FiscoProjects.Persistence.csproj" />
+    <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
+    <ProjectReference Include="../../Files/FiscoProjects.Files.Contracts/FiscoProjects.Files.Contracts.csproj" />
+    <ProjectReference Include="../../Projects/FiscoProjects.Projects.Contracts/FiscoProjects.Projects.Contracts.csproj" />
+    <ProjectReference Include="../../Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />
+    <ProjectReference Include="../FiscoProjects.Documents.Contracts/FiscoProjects.Documents.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FiscoProjects.Documents.Tests" />
+  </ItemGroup>
+
+</Project>

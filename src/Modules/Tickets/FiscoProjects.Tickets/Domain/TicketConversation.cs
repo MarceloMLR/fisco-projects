@@ -1,3 +1,4 @@
+using FiscoProjects.Files.Contracts;
 using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Tickets.Domain;
@@ -98,18 +99,9 @@ public sealed class TicketFollower : Entity
     public DateTime Since { get; private init; }
 }
 
-/// <summary>Why a file is not taken as an attachment.</summary>
-public enum AttachmentRefusal
-{
-    None = 0,
-    Empty = 1,
-    TooLarge = 2,
-    Dangerous = 3,
-}
-
 /// <summary>
-/// The files a ticket takes (ADR-0026): up to the size of the installation, never a program or a script, told by the
-/// extension and by the start of the file. Images and PDF open in the browser; the rest is downloaded.
+/// The files a ticket takes (ADR-0026): up to the size of the installation, never a program or a script, by the rules
+/// every use of files shares (<see cref="FileTypes"/>). Images and PDF open in the browser; the rest is downloaded.
 /// </summary>
 public static class TicketAttachments
 {
@@ -118,51 +110,4 @@ public static class TicketAttachments
 
     /// <summary>The most files in one message.</summary>
     public const int MaxFilesPerMessage = 10;
-
-    private static readonly HashSet<string> Blocked = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".exe", ".dll", ".msi", ".msp", ".bat", ".cmd", ".com", ".scr", ".pif", ".cpl", ".ps1", ".psm1", ".vbs", ".vbe",
-        ".js", ".jse", ".wsf", ".wsh", ".hta", ".jar", ".sh", ".bash", ".app", ".lnk", ".reg", ".msc", ".gadget", ".apk",
-    };
-
-    private static readonly Dictionary<string, string> Types = new(StringComparer.OrdinalIgnoreCase)
-    {
-        [".png"] = "image/png",
-        [".jpg"] = "image/jpeg",
-        [".jpeg"] = "image/jpeg",
-        [".gif"] = "image/gif",
-        [".webp"] = "image/webp",
-        [".pdf"] = "application/pdf",
-        [".xml"] = "application/xml",
-        [".txt"] = "text/plain",
-        [".csv"] = "text/csv",
-        [".zip"] = "application/zip",
-        [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        [".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    };
-
-    /// <summary>Why the file is refused, from its name, size and first bytes; None when it is taken.</summary>
-    public static AttachmentRefusal Check(string name, long size, ReadOnlySpan<byte> start, long maxBytes)
-    {
-        if (size <= 0)
-        {
-            return AttachmentRefusal.Empty;
-        }
-
-        if (size > maxBytes)
-        {
-            return AttachmentRefusal.TooLarge;
-        }
-
-        var executable = start.StartsWith("MZ"u8) || start.StartsWith("\u007fELF"u8) || start.StartsWith("#!"u8);
-        return Blocked.Contains(Path.GetExtension(name)) || executable ? AttachmentRefusal.Dangerous : AttachmentRefusal.None;
-    }
-
-    /// <summary>The type of the file by its extension, for the browser; a download of bytes when unknown.</summary>
-    public static string ContentTypeOf(string name) =>
-        Types.TryGetValue(Path.GetExtension(name), out var type) ? type : "application/octet-stream";
-
-    /// <summary>Whether the browser shows the file in a tab: images and PDF.</summary>
-    public static bool OpensInBrowser(string contentType) =>
-        contentType.StartsWith("image/", StringComparison.Ordinal) || contentType == "application/pdf";
 }

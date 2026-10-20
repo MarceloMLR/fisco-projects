@@ -23,6 +23,7 @@
     <ProjectReference Include="../Modules/Administration/FiscoProjects.Administration/FiscoProjects.Administration.csproj" />
     <ProjectReference Include="../Modules/Audit/FiscoProjects.Audit/FiscoProjects.Audit.csproj" />
     <ProjectReference Include="../Modules/Calendar/FiscoProjects.Calendar/FiscoProjects.Calendar.csproj" />
+    <ProjectReference Include="../Modules/Documents/FiscoProjects.Documents/FiscoProjects.Documents.csproj" />
     <ProjectReference Include="../Modules/Files/FiscoProjects.Files/FiscoProjects.Files.csproj" />
     <ProjectReference Include="../Modules/Notifications/FiscoProjects.Notifications/FiscoProjects.Notifications.csproj" />
     <ProjectReference Include="../Modules/Projects/FiscoProjects.Projects/FiscoProjects.Projects.csproj" />

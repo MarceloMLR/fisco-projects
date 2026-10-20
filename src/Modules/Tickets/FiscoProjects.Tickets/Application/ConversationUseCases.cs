@@ -27,7 +27,7 @@ public enum ConversationOutcome
 }
 
 /// <summary>What happened: done, or why not; with a refused file, its name and the reason.</summary>
-public sealed record ConversationResult(ConversationOutcome Outcome, string? FileName = null, AttachmentRefusal Refusal = AttachmentRefusal.None)
+public sealed record ConversationResult(ConversationOutcome Outcome, string? FileName = null, FileRefusal Refusal = FileRefusal.None)
 {
     public static readonly ConversationResult Done = new(ConversationOutcome.Done);
 }
@@ -40,7 +40,7 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
     {
         if (attachments.Count > TicketAttachments.MaxFilesPerMessage)
         {
-            return new ConversationResult(ConversationOutcome.AttachmentRefused, null, AttachmentRefusal.TooLarge);
+            return new ConversationResult(ConversationOutcome.AttachmentRefused, null, FileRefusal.TooLarge);
         }
 
         foreach (var attachment in attachments)
@@ -48,8 +48,8 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
             var start = new byte[8];
             var read = await attachment.Content.ReadAtLeastAsync(start, start.Length, throwOnEndOfStream: false, cancellationToken);
             attachment.Content.Position = 0;
-            var refusal = TicketAttachments.Check(attachment.Name, attachment.Size, start.AsSpan(0, read), settings.MaxBytes);
-            if (refusal != AttachmentRefusal.None)
+            var refusal = FileTypes.Check(attachment.Name, attachment.Size, start.AsSpan(0, read), settings.MaxBytes);
+            if (refusal != FileRefusal.None)
             {
                 return new ConversationResult(ConversationOutcome.AttachmentRefused, attachment.Name, refusal);
             }
@@ -87,7 +87,7 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
             {
                 var file = await files.UploadAsync(folder, attachment.Name, attachment.Content, SameNameAction.KeepBoth, cancellationToken);
                 stored.Add(new TicketAttachment(
-                    ticket.Id, messageId, file.Id, file.Name, file.Size, TicketAttachments.ContentTypeOf(file.Name), uploadedById, now));
+                    ticket.Id, messageId, file.Id, file.Name, file.Size, FileTypes.ContentTypeOf(file.Name), uploadedById, now));
             }
         }
         catch
@@ -293,7 +293,7 @@ public sealed class AttachToDescription(IProjectAccess projects, ITicketStore st
 
         if (attachments.Count == 0)
         {
-            return new ConversationResult(ConversationOutcome.AttachmentRefused, null, AttachmentRefusal.Empty);
+            return new ConversationResult(ConversationOutcome.AttachmentRefused, null, FileRefusal.Empty);
         }
 
         if (await files.RefusalOfAsync(attachments, cancellationToken) is { } refused)
