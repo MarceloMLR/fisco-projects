@@ -136,8 +136,8 @@ describe('Fornecedores pela tela', () => {
       link: null,
       note: null,
     });
-    const item = await within(section).findByRole('listitem', {
-      name: 'Chamado FX-20931 no fornecedor Emissor Exemplo',
+    const item = await within(section).findByRole('button', {
+      name: 'Ver o chamado FX-20931 no Emissor Exemplo, Em análise',
     });
     expect(within(item).getByText('Em análise')).toBeInTheDocument();
     expect(
@@ -160,11 +160,17 @@ describe('Fornecedores pela tela', () => {
     expect(registrations).toHaveLength(0);
   });
 
-  it('Atualizar o status no fornecedor', async () => {
+  it('Atualizar pelo registro', async () => {
     ticket = { ...ticket, vendorTickets: [record], events: [event({})] };
     const section = await openTicket();
 
-    fireEvent.click(within(section).getByRole('button', { name: 'Atualizar o chamado FX-20931' }));
+    fireEvent.click(
+      within(section).getByRole('button', {
+        name: 'Ver o chamado FX-20931 no Emissor Exemplo, Em análise',
+      }),
+    );
+    const details = await screen.findByRole('dialog', { name: 'Emissor Exemplo' });
+    fireEvent.click(within(details).getByRole('button', { name: text.update.label }));
     const dialog = await screen.findByRole('dialog', { name: text.update.title });
     fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.fields.status }));
     fireEvent.click(await screen.findByRole('option', { name: text.statuses.WaitingForUs }));
@@ -194,10 +200,77 @@ describe('Fornecedores pela tela', () => {
 
     const stale = within(section).getByText('Sem retorno do fornecedor há 6 dias úteis');
     expect(stale.closest('[data-state]')).toHaveAttribute('data-state', 'soon');
-    expect(within(section).getByRole('link', { name: 'FX-20931' })).toHaveAttribute(
+  });
+
+  it('Registro pela tela', async () => {
+    serving(false);
+    ticket = {
+      ...ticket,
+      vendorTickets: [
+        {
+          ...record,
+          status: 'InAnalysis',
+          note: 'Aberto com o XML da nota 3381.',
+          updatedAt: '2026-10-20T14:10:00Z',
+        },
+      ],
+      events: [
+        event({ toVendorStatus: 'Open' }),
+        event({
+          id: '0199f5a2-7c1e-7d40-9a1b-920000000003',
+          kind: 'VendorStatusChanged',
+          actorId: demoPeople.rafael.id,
+          fromVendorStatus: 'Open',
+          toVendorStatus: 'WaitingForUs',
+          note: 'Pediram o log da transmissão.',
+          at: '2026-10-20T13:00:00Z',
+        }),
+        event({
+          id: '0199f5a2-7c1e-7d40-9a1b-920000000002',
+          kind: 'VendorStatusChanged',
+          fromVendorStatus: 'WaitingForUs',
+          toVendorStatus: 'InAnalysis',
+          note: 'Log enviado.',
+          at: '2026-10-20T14:10:00Z',
+        }),
+      ],
+    };
+    const section = await openTicket();
+    // The line shows only the vendor, the number and the status.
+    expect(within(section).queryByText('Aberto com o XML da nota 3381.')).toBeNull();
+    expect(within(section).queryByRole('link')).toBeNull();
+
+    fireEvent.click(
+      within(section).getByRole('button', {
+        name: 'Ver o chamado FX-20931 no Emissor Exemplo, Em análise',
+      }),
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: 'Emissor Exemplo' });
+    expect(within(dialog).getByRole('link', { name: text.details.openLink })).toHaveAttribute(
       'href',
       record.link,
     );
+    expect(within(dialog).getByText('19/10/2026')).toBeInTheDocument();
+    expect(within(dialog).getByText(text.details.registered).nextElementSibling).toHaveTextContent(
+      /^Diego Torres em 19\/10\/2026/,
+    );
+    expect(within(dialog).getByText('Aberto com o XML da nota 3381.')).toBeInTheDocument();
+    const history = within(dialog).getByRole('list');
+    expect(
+      within(history)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      expect.stringMatching(/^Registrado como Aberto no fornecedorDiego Torres em 19\/10\/2026/),
+      expect.stringMatching(
+        /^Aberto no fornecedor → Aguardando nosso retornoRafael Souza em 20\/10\/2026.*Pediram o log da transmissão\.$/,
+      ),
+      expect.stringMatching(
+        /^Aguardando nosso retorno → Em análiseDiego Torres em .*Log enviado\.$/,
+      ),
+    ]);
+    expect(within(dialog).queryByRole('button', { name: text.update.label })).toBeNull();
   });
 
   it('Solicitante não registra no fornecedor', async () => {
@@ -207,7 +280,7 @@ describe('Fornecedores pela tela', () => {
     const section = await openTicket();
 
     expect(within(section).getByText('Emissor Exemplo')).toBeInTheDocument();
-    expect(within(section).queryByRole('button')).toBeNull();
+    expect(within(section).queryByRole('button', { name: text.register.button })).toBeNull();
   });
 
   it('Chamado fechado no meio do registro', async () => {
