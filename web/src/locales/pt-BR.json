@@ -1960,10 +1960,9 @@
     "vendors": {
       "title": "No fornecedor",
       "none": "Nenhum chamado em fornecedor.",
-      "record": "Chamado {{code}} no fornecedor {{vendor}}",
+      "open": "Ver o chamado {{code}} no {{vendor}}, {{status}}",
       "stale_one": "Sem retorno do fornecedor há {{count}} dia útil",
       "stale_other": "Sem retorno do fornecedor há {{count}} dias úteis",
-      "openedOn": "Aberto no fornecedor em {{day}}",
       "optional": "(opcional)",
       "cancel": "Cancelar",
       "statuses": {
@@ -1992,10 +1991,23 @@
       },
       "update": {
         "label": "Atualizar",
-        "button": "Atualizar o chamado {{code}}",
         "title": "Atualizar no fornecedor",
         "subtitle": "{{code}} · {{vendor}}",
         "confirm": "Atualizar"
+      },
+      "details": {
+        "subtitle": "Chamado {{code}} no fornecedor",
+        "openLink": "Abrir no fornecedor",
+        "openedOn": "Aberto no fornecedor em",
+        "registered": "Registrado por",
+        "by": "{{name}} em {{when}}",
+        "updatedAt": "Última atualização",
+        "history": "Histórico",
+        "registeredAs": "Registrado como {{status}}",
+        "changed": "{{from}} → {{to}}",
+        "same": "Anotação, sem mudar o status ({{status}})",
+        "someone": "Pessoa removida",
+        "close": "Fechar"
       },
       "errors": {
         "vendorRequired": "Escolha um fornecedor ativo.",

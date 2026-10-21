@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { TFunction } from 'i18next';
 import AddOutlined from '@mui/icons-material/AddOutlined';
+import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonBase from '@mui/material/ButtonBase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -368,10 +370,223 @@ function UpdateDialog({
   );
 }
 
+/** The label and the value of a fact of the record, in its list. */
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: '168px minmax(0, 1fr)' },
+        columnGap: 'var(--space-3)',
+        alignItems: 'baseline',
+      }}
+    >
+      <Box component="dt" sx={labelSx}>
+        {label}
+      </Box>
+      <Box
+        component="dd"
+        sx={{ margin: 0, minWidth: 0, fontSize: 14, lineHeight: '20px', overflowWrap: 'anywhere' }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+/** The registration and the updates of a ticket at a vendor, in the order they happened. */
+const historyOf = (events: Ticket['events'], vendorTicketId: string) =>
+  events
+    .filter(
+      (event) =>
+        event.vendorTicketId === vendorTicketId &&
+        (event.kind === 'VendorTicketRegistered' || event.kind === 'VendorStatusChanged'),
+    )
+    .sort((one, other) => one.at.localeCompare(other.at));
+
 /**
- * "No fornecedor" (canvas Chamado, ADR-0028): each ticket registered at a vendor, with the vendor, its number there
- * (a link, when it has one), the status there and, when it is stale, how many business days it has gone without an
- * update. Who serves the ticket registers ("Registrar") and updates them ("Atualizar"); our deadlines keep running.
+ * A ticket at a vendor (Chamados-6.1, ADR-0028): its status, the link to it at the vendor, the day it was opened there,
+ * who registered it, the last update, the note and the history of its statuses, from the events of the ticket, each
+ * with who and when and the annotation. Who serves the ticket updates it from here.
+ */
+function VendorTicketDialog({
+  ticket,
+  record,
+  onUpdate,
+  onClose,
+}: {
+  ticket: Ticket;
+  record: VendorTicket;
+  onUpdate?: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const { formatDateTime } = useDates();
+  const people = new Map(ticket.participants.map((person) => [person.id, person.name]));
+  const nameOf = (id: string | null) =>
+    id === null
+      ? t('tickets.events.system')
+      : (people.get(id) ?? t('tickets.vendors.details.someone'));
+  const statusText = (status: VendorTicketStatus | null) =>
+    status === null ? '' : t(`tickets.vendors.statuses.${status}`);
+  const history = historyOf(ticket.events, record.id);
+
+  return (
+    <Dialog
+      open
+      title={record.vendor}
+      subtitle={t('tickets.vendors.details.subtitle', { code: record.code })}
+      onClose={onClose}
+      actions={
+        <>
+          <Button variant={onUpdate === undefined ? 'contained' : 'outlined'} onClick={onClose}>
+            {t('tickets.vendors.details.close')}
+          </Button>
+          {onUpdate !== undefined && (
+            <Button variant="contained" onClick={onUpdate}>
+              {t('tickets.vendors.update.label')}
+            </Button>
+          )}
+        </>
+      }
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+        <Box
+          component="dl"
+          sx={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
+        >
+          <Fact label={t('tickets.vendors.fields.status')}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: 'var(--space-1)',
+              }}
+            >
+              <VendorStatusBadge status={record.status} />
+              {record.staleDays !== null && (
+                <DueDate state="soon">
+                  {t('tickets.vendors.stale', { count: record.staleDays })}
+                </DueDate>
+              )}
+            </Box>
+          </Fact>
+          {record.link !== null && (
+            <Fact label={t('tickets.vendors.fields.link')}>
+              <Box
+                component="a"
+                href={record.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-1)',
+                  color: 'var(--action-text)',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                  '& > svg': { fontSize: 16 },
+                }}
+              >
+                {t('tickets.vendors.details.openLink')}
+                <OpenInNewOutlined aria-hidden />
+              </Box>
+            </Fact>
+          )}
+          <Fact label={t('tickets.vendors.details.openedOn')}>
+            {formatDayText(record.openedOn)}
+          </Fact>
+          <Fact label={t('tickets.vendors.details.registered')}>
+            {t('tickets.vendors.details.by', {
+              name: nameOf(record.registeredById),
+              when: formatDateTime(record.registeredAt),
+            })}
+          </Fact>
+          <Fact label={t('tickets.vendors.details.updatedAt')}>
+            {formatDateTime(record.updatedAt)}
+          </Fact>
+          {record.note !== null && (
+            <Fact label={t('tickets.vendors.fields.note')}>
+              <Box component="span" sx={{ whiteSpace: 'pre-wrap' }}>
+                {record.note}
+              </Box>
+            </Fact>
+          )}
+        </Box>
+        <Box component="section" aria-labelledby={`vendor-history-${record.id}`}>
+          <Box
+            component="h3"
+            id={`vendor-history-${record.id}`}
+            sx={{ margin: '0 0 var(--space-2)', fontSize: 13, lineHeight: '18px', fontWeight: 500 }}
+          >
+            {t('tickets.vendors.details.history')}
+          </Box>
+          <Box
+            component="ol"
+            sx={{
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+            }}
+          >
+            {history.map((event) => (
+              <Box
+                component="li"
+                key={event.id}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  paddingLeft: 'var(--space-3)',
+                  borderLeft: '2px solid var(--border)',
+                }}
+              >
+                <Box component="span" sx={{ fontSize: 14, lineHeight: '20px' }}>
+                  {event.kind === 'VendorTicketRegistered'
+                    ? t('tickets.vendors.details.registeredAs', {
+                        status: statusText(event.toVendorStatus),
+                      })
+                    : event.fromVendorStatus === event.toVendorStatus
+                      ? t('tickets.vendors.details.same', {
+                          status: statusText(event.toVendorStatus),
+                        })
+                      : t('tickets.vendors.details.changed', {
+                          from: statusText(event.fromVendorStatus),
+                          to: statusText(event.toVendorStatus),
+                        })}
+                </Box>
+                <Box component="span" sx={{ ...labelSx, fontSize: 12, lineHeight: '16px' }}>
+                  {t('tickets.vendors.details.by', {
+                    name: nameOf(event.actorId),
+                    when: formatDateTime(event.at),
+                  })}
+                </Box>
+                {event.note !== null && (
+                  <Box
+                    component="p"
+                    sx={{ ...labelSx, margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                  >
+                    {event.note}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+    </Dialog>
+  );
+}
+
+/**
+ * "No fornecedor" (canvas Chamado, ADR-0028): each ticket registered at a vendor in a short line, with the vendor, its
+ * number there, the status there and, when it is stale, how many business days it has gone without an update. The line
+ * opens the record, with everything else and its history (Chamados-6.1). Who serves the ticket registers ("Registrar")
+ * and, in the record, updates it ("Atualizar"); our deadlines keep running.
  */
 export function VendorSection({
   ticket,
@@ -382,7 +597,10 @@ export function VendorSection({
 }) {
   const { t } = useTranslation();
   const [registering, setRegistering] = useState(false);
+  const [showing, setShowing] = useState<string>();
   const [updating, setUpdating] = useState<VendorTicket>();
+  // The record shown comes from the ticket, so an update shows at once.
+  const shown = ticket.vendorTickets.find((record) => record.id === showing);
   const canRegister = ticket.permissions.canRegisterVendorTicket;
 
   return (
@@ -431,110 +649,88 @@ export function VendorSection({
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--space-4)',
+            gap: 'var(--space-1)',
             margin: 0,
             padding: 0,
             listStyle: 'none',
           }}
         >
           {ticket.vendorTickets.map((record) => (
-            <Box
-              component="li"
-              key={record.id}
-              aria-label={t('tickets.vendors.record', { code: record.code, vendor: record.vendor })}
-              sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}
-            >
-              <Box
+            <Box component="li" key={record.id}>
+              <ButtonBase
+                aria-haspopup="dialog"
+                aria-label={t('tickets.vendors.open', {
+                  code: record.code,
+                  vendor: record.vendor,
+                  status: t(`tickets.vendors.statuses.${record.status}`),
+                })}
+                onClick={() => {
+                  setShowing(record.id);
+                }}
                 sx={{
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: 'var(--space-2)',
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
+                  gap: 'var(--space-1)',
+                  width: 'calc(100% + 2 * var(--space-2))',
+                  margin: '0 calc(-1 * var(--space-2))',
+                  padding: 'var(--space-2)',
+                  borderRadius: 'var(--radius-md)',
+                  textAlign: 'left',
+                  color: 'var(--text)',
+                  '&:hover': { backgroundColor: 'var(--bg-hover)' },
+                  '&.Mui-focusVisible': { outline: '2px solid var(--focus-ring)' },
                 }}
               >
-                <Box sx={{ minWidth: 0 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 'var(--space-2)',
+                  }}
+                >
                   <Box
                     component="span"
-                    sx={{ display: 'block', fontSize: 14, lineHeight: '20px', fontWeight: 500 }}
+                    sx={{ minWidth: 0, fontSize: 14, lineHeight: '20px', fontWeight: 500 }}
                   >
                     {record.vendor}
                   </Box>
-                  {record.link === null ? (
-                    <Box
-                      component="span"
-                      sx={{ ...labelSx, fontFamily: 'var(--font-mono)', fontWeight: 500 }}
-                    >
-                      {record.code}
-                    </Box>
-                  ) : (
-                    <Box
-                      component="a"
-                      href={record.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        ...labelSx,
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 500,
-                        color: 'var(--action-text)',
-                        textDecoration: 'none',
-                        '&:hover': { textDecoration: 'underline' },
-                      }}
-                    >
-                      {record.code}
-                    </Box>
-                  )}
+                  <VendorStatusBadge status={record.status} />
                 </Box>
-                <VendorStatusBadge status={record.status} />
-              </Box>
-              {record.staleDays !== null && (
-                <DueDate state="soon">
-                  {t('tickets.vendors.stale', { count: record.staleDays })}
-                </DueDate>
-              )}
-              {record.note !== null && (
                 <Box
-                  component="p"
-                  sx={{
-                    ...labelSx,
-                    margin: 0,
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3,
-                    overflow: 'hidden',
-                    overflowWrap: 'anywhere',
-                  }}
+                  component="span"
+                  sx={{ ...labelSx, fontFamily: 'var(--font-mono)', fontWeight: 500 }}
                 >
-                  {record.note}
+                  {record.code}
                 </Box>
-              )}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 'var(--space-2)',
-                }}
-              >
-                <Box component="span" sx={{ ...labelSx, fontSize: 12, lineHeight: '16px' }}>
-                  {t('tickets.vendors.openedOn', { day: formatDayText(record.openedOn) })}
-                </Box>
-                {canRegister && (
-                  <Button
-                    variant="text"
-                    size="small"
-                    aria-label={t('tickets.vendors.update.button', { code: record.code })}
-                    onClick={() => {
-                      setUpdating(record);
-                    }}
-                  >
-                    {t('tickets.vendors.update.label')}
-                  </Button>
+                {record.staleDays !== null && (
+                  <DueDate state="soon">
+                    {t('tickets.vendors.stale', { count: record.staleDays })}
+                  </DueDate>
                 )}
-              </Box>
+              </ButtonBase>
             </Box>
           ))}
         </Box>
+      )}
+      {shown !== undefined && (
+        <VendorTicketDialog
+          ticket={ticket}
+          record={shown}
+          onUpdate={
+            canRegister
+              ? () => {
+                  setShowing(undefined);
+                  setUpdating(shown);
+                }
+              : undefined
+          }
+          onClose={() => {
+            setShowing(undefined);
+          }}
+        />
       )}
       {registering && (
         <RegisterDialog
