@@ -80,7 +80,7 @@ O código MUST ter de 2 a 15 caracteres, só letras, algarismos e hífens, come�
 
 ### Requirement: Gerente e líder técnico na criação
 
-A criação MUST definir o gerente do projeto: quem cria, por padrão, ou outra pessoa ativa com o papel no sistema Gerente de projeto ou Administrador. Com outro gerente, quem cria MUST NOT entrar no projeto. O líder técnico é opcional, MUST ser uma pessoa ativa diferente do gerente e entra com o papel Líder técnico; pode ser um usuário do sistema ou uma pessoa do diretório que ainda não entrou, que vira usuário com o papel Usuário (ADR-0005, ADR-0072).
+A criação MUST definir o gerente do projeto: quem cria, por padrão, ou outra pessoa ativa com o papel no sistema Gerente de projeto ou Administrador. Com outro gerente, quem cria MUST NOT entrar no projeto. O líder técnico é opcional, MUST ser uma pessoa ativa diferente do gerente, com o papel no sistema Líder técnico ou Administrador, e entra com o papel Líder técnico (ADR-0072, ADR-0097).
 
 #### Scenario: Quem cria é o gerente
 - **WHEN** um gerente de projeto cria um projeto sem trocar o gerente
@@ -95,15 +95,19 @@ A criação MUST definir o gerente do projeto: quem cria, por padrão, ou outra 
 - **THEN** a API responde 400 no campo do gerente
 
 #### Scenario: Líder técnico na criação
-- **WHEN** o gerente de projeto cria um projeto com Rafael Souza como líder técnico
+- **WHEN** o gerente de projeto cria um projeto com Rafael Souza, que tem o papel no sistema Líder técnico, como líder técnico
 - **THEN** Rafael entra no projeto como líder técnico e passa a ver o projeto
 
 #### Scenario: Líder técnico do diretório na criação
 - **WHEN** o gerente de projeto cria um projeto com um líder técnico do diretório que nunca entrou
-- **THEN** o sistema cria o usuário dessa pessoa, com o papel Usuário, e ela entra no projeto como líder técnico
+- **THEN** a API responde 400 no campo do líder técnico, porque quem nunca entrou tem o papel Usuário, e nem o projeto nem o usuário são criados
+
+#### Scenario: Líder técnico sem o papel no sistema
+- **WHEN** o gerente de projeto cria um projeto com um líder técnico que tem o papel Usuário
+- **THEN** a API responde 400 no campo do líder técnico e o projeto não é criado
 
 #### Scenario: Líder técnico inválido
-- **WHEN** alguém escolhe como líder técnico o próprio gerente, uma pessoa inativa ou alguém que não está no diretório
+- **WHEN** alguém escolhe como líder técnico o próprio gerente, uma pessoa inativa ou alguém que não existe
 - **THEN** a API responde 400 no campo do líder técnico
 
 ### Requirement: Status do projeto
