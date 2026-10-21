@@ -45,6 +45,8 @@ public static class TicketsModule
         services.AddScoped<IProjectClosing, TicketProjectClosing>();
         // The tickets of the person in Meu trabalho (ADR-0096).
         services.AddScoped<IMyWorkSource, TicketWorkSource>();
+        // The tickets of a project in its overview (ADR-0073).
+        services.AddScoped<IProjectTickets, TicketProjectOverview>();
         services.AddScoped<ChangeTicketPriority>();
         services.AddScoped<GetTicketDeadlines>();
         services.AddScoped<ChangeTicketDeadlines>();

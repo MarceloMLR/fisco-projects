@@ -25,6 +25,21 @@ public sealed record TicketDeadlineFigures(
     TicketDue? FirstResponse, DateTime? FirstRespondedAt, TicketDue? Resolution, int UsedDays, int TotalDays, int PausedDays);
 
 /// <summary>
+/// The deadline of a ticket that counts now, in one place (ADR-0025), for Meu trabalho (ADR-0096) and the overview of
+/// the project (ADR-0073): the first answer while it was not given, then the resolution while it runs; none once both
+/// were met or while the ticket waits for the requester.
+/// </summary>
+public static class TicketDueNow
+{
+    public static (TicketDeadline? Deadline, TicketDue? Due) Of(TicketDeadlineFigures? figures) => figures switch
+    {
+        { FirstResponse: { State: not TicketDueState.Met } first } => (TicketDeadline.FirstResponse, first),
+        { Resolution: { State: not (TicketDueState.Met or TicketDueState.Paused) } resolution } => (TicketDeadline.Resolution, resolution),
+        _ => (null, null),
+    };
+}
+
+/// <summary>
 /// The deadlines of the tickets in one place (ADR-0025): set at the opening and at a new priority, from the day of the
 /// opening, in business days of the calendar of the installation; paused while the ticket waits for the requester and
 /// pushed by the paused days when it stops waiting. Every change of status goes through <see cref="TakeAsync"/>.

@@ -81,6 +81,10 @@ export type MyWorkGroup = components['schemas']['MyWorkGroup'];
 export type MyWorkItem = components['schemas']['MyWorkItemResponse'];
 export type MyWorkAction = components['schemas']['MyWorkAction'];
 export type UpcomingMilestone = components['schemas']['UpcomingMilestoneResponse'];
+export type ProjectOverview = components['schemas']['ProjectOverviewResponse'];
+export type OverviewRow = components['schemas']['OverviewRowResponse'];
+export type OverviewTimeline = components['schemas']['OverviewTimelineResponse'];
+export type OverviewTeam = components['schemas']['OverviewTeamResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 

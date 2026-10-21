@@ -44,7 +44,7 @@ public sealed class TicketWorkSource(IProjectAccess projects, ITicketStore store
             }
 
             var waits = ticket.RequesterId == viewer.UserId && ticket.Status == TicketStatus.WaitingForRequester;
-            var (deadline, due) = DueOf(TicketDeadlines.FiguresOf(ticket, day));
+            var (deadline, due) = TicketDueNow.Of(TicketDeadlines.FiguresOf(ticket, day));
             items.Add(new MyWorkItem(MyWorkKind.Ticket, ticket.Id, project.Id, project.Code, ticket.Title, views)
             {
                 DueOn = due?.DueOn,
@@ -59,7 +59,12 @@ public sealed class TicketWorkSource(IProjectAccess projects, ITicketStore store
                     ticket.AssigneeId,
                     TicketAccess.MayAssign(viewer, project.Role),
                     interactions.TryGetValue(ticket.Id, out var count) ? count : 0,
-                    deadline),
+                    deadline switch
+                    {
+                        TicketDeadline.FirstResponse => MyWorkDeadline.FirstResponse,
+                        TicketDeadline.Resolution => MyWorkDeadline.Resolution,
+                        _ => null,
+                    }),
             });
         }
 
@@ -103,13 +108,5 @@ public sealed class TicketWorkSource(IProjectAccess projects, ITicketStore store
         TicketStatus.InProgress => MyWorkTicketStatus.InProgress,
         TicketStatus.WaitingForRequester => MyWorkTicketStatus.WaitingForRequester,
         _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Only open tickets are in Meu trabalho."),
-    };
-
-    /// <summary>The deadline that counts: the first answer, while not given, then the resolution while it runs.</summary>
-    private static (MyWorkDeadline? Deadline, TicketDue? Due) DueOf(TicketDeadlineFigures? figures) => figures switch
-    {
-        { FirstResponse: { State: not TicketDueState.Met } first } => (MyWorkDeadline.FirstResponse, first),
-        { Resolution: { State: not (TicketDueState.Met or TicketDueState.Paused) } resolution } => (MyWorkDeadline.Resolution, resolution),
-        _ => (null, null),
     };
 }

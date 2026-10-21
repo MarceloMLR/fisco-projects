@@ -120,6 +120,9 @@ public interface ITicketStore
     /// <summary>The tickets of a project that are not closed, tracked.</summary>
     Task<IReadOnlyList<Ticket>> NotClosedAsync(Guid projectId, CancellationToken cancellationToken);
 
+    /// <summary>Every ticket of a project, by the number, for its overview (ADR-0073).</summary>
+    Task<IReadOnlyList<Ticket>> OfProjectAsync(Guid projectId, CancellationToken cancellationToken);
+
     /// <summary>How many tickets of a project are not closed.</summary>
     Task<int> CountNotClosedAsync(Guid projectId, CancellationToken cancellationToken);
 

@@ -143,3 +143,37 @@ export function scaleSpans(
           ),
   };
 }
+
+/**
+ * The colors of the strips drawn without the Syncfusion, from the tokens of the Gantt of the design system (fp-gantt):
+ * the print page and the overview of a project (ADR-0051, ADR-0073).
+ */
+export const ganttStripSx = {
+  '& .g-nonworking': { fill: 'var(--gantt-nonworking)' },
+  '& .g-bar': { fill: 'var(--gantt-bar)', stroke: 'var(--gantt-bar-border)', strokeWidth: 1 },
+  '& .g-bar--critical': {
+    fill: 'var(--gantt-critical-bar)',
+    stroke: 'var(--gantt-critical-border)',
+  },
+  '& .g-progress': { fill: 'var(--gantt-progress)' },
+  '& .g-summary': { fill: 'var(--gantt-summary)' },
+  '& .g-baseline': { fill: 'var(--gantt-baseline)' },
+  '& .g-milestone': { fill: 'var(--gantt-milestone)' },
+  '& .g-milestone--critical': {
+    fill: 'var(--gantt-critical-bar)',
+    stroke: 'var(--gantt-critical-border)',
+  },
+  '& .g-today': { stroke: 'var(--gantt-today)', strokeWidth: 1.5, strokeDasharray: '4 3' },
+  '& .g-scale-line': { stroke: 'var(--border)', strokeWidth: 1 },
+  '& .g-scale-text': {
+    fill: 'var(--text-secondary)',
+    fontSize: 10,
+    fontFamily: 'var(--font-sans)',
+  },
+  '& .g-scale-month': {
+    fill: 'var(--text)',
+    fontSize: 10,
+    fontWeight: 500,
+    fontFamily: 'var(--font-sans)',
+  },
+} as const;

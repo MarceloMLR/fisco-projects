@@ -17,7 +17,7 @@ import {
   formatPeriodText,
 } from '../format/dates';
 import { predecessorNames, type ScheduleDisplay, scheduleRows } from './schedule';
-import { choiceOf, type PrintScale, printScale, scaleSpans } from './schedulePrint';
+import { choiceOf, ganttStripSx, type PrintScale, printScale, scaleSpans } from './schedulePrint';
 import { TimelineLegend } from './ScheduleTimeline';
 
 /** The width of the strip of the timeline in a line, in an A4 page in landscape, beside the columns of the table. */
@@ -25,37 +25,6 @@ const stripWidth = 520;
 const rowHeight = 26;
 const barHeight = 12;
 const noCollapsed: ReadonlySet<string> = new Set();
-
-/** The colors of the strip, from the tokens of the Gantt of the design system (fp-gantt), in the light theme. */
-const stripSx = {
-  '& .g-nonworking': { fill: 'var(--gantt-nonworking)' },
-  '& .g-bar': { fill: 'var(--gantt-bar)', stroke: 'var(--gantt-bar-border)', strokeWidth: 1 },
-  '& .g-bar--critical': {
-    fill: 'var(--gantt-critical-bar)',
-    stroke: 'var(--gantt-critical-border)',
-  },
-  '& .g-progress': { fill: 'var(--gantt-progress)' },
-  '& .g-summary': { fill: 'var(--gantt-summary)' },
-  '& .g-baseline': { fill: 'var(--gantt-baseline)' },
-  '& .g-milestone': { fill: 'var(--gantt-milestone)' },
-  '& .g-milestone--critical': {
-    fill: 'var(--gantt-critical-bar)',
-    stroke: 'var(--gantt-critical-border)',
-  },
-  '& .g-today': { stroke: 'var(--gantt-today)', strokeWidth: 1.5, strokeDasharray: '4 3' },
-  '& .g-scale-line': { stroke: 'var(--border)', strokeWidth: 1 },
-  '& .g-scale-text': {
-    fill: 'var(--text-secondary)',
-    fontSize: 10,
-    fontFamily: 'var(--font-sans)',
-  },
-  '& .g-scale-month': {
-    fill: 'var(--text)',
-    fontSize: 10,
-    fontWeight: 500,
-    fontFamily: 'var(--font-sans)',
-  },
-} as const;
 
 /**
  * The print page of a schedule (ADR-0021): the header of the project, a line for each phase, task and milestone with its
@@ -181,7 +150,7 @@ export function SchedulePrintPage() {
           },
           '& tr': { breakInside: 'avoid' },
           '& td.strip, & th.strip': { padding: 0, width: stripWidth },
-          ...stripSx,
+          ...ganttStripSx,
         }}
       >
         <colgroup>

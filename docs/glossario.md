@@ -120,7 +120,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Itens de cada módulo para o Meu trabalho | IMyWorkSource | Contrato do `MyWork.Contracts`, que o `Tickets`, o `Projects` e o `Documents` implementam |
 | Próximos marcos | UpcomingMilestones | Os 10 próximos marcos não atingidos dos projetos abertos da pessoa (`GET /api/projects/upcoming-milestones`) |
 | Atraso do cronograma | LateDays | Os dias úteis de atraso do item mais atrasado do projeto (ADR-0096) |
-| Visão geral do projeto | ProjectOverview | |
+| Visão geral do projeto | ProjectOverview | A aba Visão geral, que responde "está no prazo?", montada no servidor (`GET /api/projects/{id}/overview`, ADR-0073) |
+| Andamento previsto | SchedulePlan.PlannedProgress | O que já deveria estar feito até o fim de hoje, em dias úteis, pela linha de base quando existe |
+| Desvio do prazo final | Deviation | Os dias úteis entre o fim do cronograma e o da linha de base, com sinal |
+| Precisa de atenção | Attention | As tarefas atrasadas, os chamados vencidos, por vencer ou sem responsável, os aceites pendentes e os chamados parados nos fornecedores do projeto |
+| Chamados do projeto na visão geral | IProjectTickets | Contrato do `Projects.Contracts`, que o `Tickets` implementa (`TicketProjectOverview`) |
+| Prazo que conta agora | TicketDueNow | O prazo de um chamado que vale hoje (primeira resposta ou resolução) e o estado dele, num lugar só |
 
 ## Chamados
 

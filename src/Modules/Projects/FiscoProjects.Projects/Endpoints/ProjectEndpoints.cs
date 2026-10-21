@@ -183,6 +183,7 @@ internal static class ProjectEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden);
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
+        projects.MapOverviewEndpoints();
     }
 
     private static async Task<Results<Ok<ProjectPageResponse>, ValidationProblem>> ListAsync(
