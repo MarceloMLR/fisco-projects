@@ -376,10 +376,12 @@ export function TicketConversation({
         <Box
           component="section"
           aria-label={t('tickets.details.description')}
+          data-tone="requester"
           sx={{
             padding: 'var(--space-4) var(--space-5)',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
+            // The first message of the requester, in the color of the requester (ADR-0104).
+            backgroundColor: 'var(--msg-requester-bg)',
+            border: '1px solid var(--msg-requester-border)',
             borderRadius: 'var(--radius-lg)',
           }}
         >
