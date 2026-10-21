@@ -13,7 +13,10 @@ export function SessionPending() {
   );
 }
 
-/** Screens that need a session: without one, the sign-in page, which brings the person back here. */
+/**
+ * Screens that need a session: without one, the sign-in page, which brings the person back here, unless the person
+ * chose "Sair" or someone else signs in after the session expired.
+ */
 export function RequireSession({ children }: { children: ReactNode }) {
   const { session } = useSession();
   const { pathname, search, hash } = useLocation();
@@ -22,7 +25,14 @@ export function RequireSession({ children }: { children: ReactNode }) {
     return <SessionPending />;
   }
   if (session.status === 'signed-out') {
-    const state: SignInState = { from: { pathname, search, hash } };
+    // After "Sair", the next sign-in goes to Início, whoever signs in (Acesso-1.1).
+    if (session.ended?.by === 'signOut') {
+      return <Navigate to="/sign-in" replace />;
+    }
+    const state: SignInState = {
+      from: { pathname, search, hash },
+      ...(session.ended?.by === 'expired' ? { userId: session.ended.userId } : {}),
+    };
     return <Navigate to="/sign-in" replace state={state} />;
   }
   return children;

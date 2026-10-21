@@ -171,4 +171,42 @@ describe('Conta no cabeçalho', () => {
     expect(router.state.location.pathname).toBe('/sign-in');
     expect(signedOutCalls).toBe(1);
   });
+
+  it('Entrar depois de Sair', async () => {
+    server.use(
+      http.post('/api/session/sign-out', () => {
+        server.use(http.get('/api/session', () => problem(401)));
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { router } = await renderApp('/projects');
+    fireEvent.click(
+      screen.getByRole('button', { name: ptBR.shell.account.replace('{{name}}', marina.name) }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: ptBR.shell.signOut }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: ptBR.signIn.title }),
+    ).toBeInTheDocument();
+
+    // Diego signs in on the same browser: he goes to Início, not to the projects Marina had open.
+    server.use(
+      http.post('/api/session/local', () => new HttpResponse(null, { status: 204 })),
+      http.get('/api/session', () =>
+        HttpResponse.json({
+          ...marina,
+          id: '0199f5a2-7c1e-7d40-9a1b-000000000006',
+          name: 'Diego Torres',
+          email: 'diego.torres@empresa.example',
+        }),
+      ),
+    );
+    fireEvent.change(screen.getByLabelText(ptBR.signIn.email), {
+      target: { value: 'diego.torres@empresa.example' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: ptBR.signIn.submit }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+  });
 });

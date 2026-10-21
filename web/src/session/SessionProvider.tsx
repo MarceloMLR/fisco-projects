@@ -65,7 +65,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       onUnauthorized(() => {
-        setSession({ status: 'signed-out' });
+        setSession((current) =>
+          current.status === 'signed-in'
+            ? { status: 'signed-out', ended: { by: 'expired', userId: current.user.id } }
+            : current.status === 'signed-out'
+              ? current
+              : { status: 'signed-out' },
+        );
       }),
     [],
   );
@@ -78,7 +84,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       await api.POST('/api/session/sign-out');
     } finally {
-      setSession({ status: 'signed-out' });
+      setSession({ status: 'signed-out', ended: { by: 'signOut' } });
     }
   }, []);
 
