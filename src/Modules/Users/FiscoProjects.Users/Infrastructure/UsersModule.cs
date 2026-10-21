@@ -58,6 +58,8 @@ public static class UsersModule
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<LocalSignInOptions>, LocalSignInValidation>();
         services.AddScoped<SignInLocally>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, UsersWarmUp>();
         return services;
     }
 }

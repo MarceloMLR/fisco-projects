@@ -15,6 +15,8 @@ internal static class TestApp
 
     public const string ConnectionStringKey = "ConnectionStrings:FiscoProjects";
 
+    public const string WarmUpKey = "WarmUp:Enabled";
+
     public static WebApplicationFactory<Program> RealHost(
         string environment, string? connectionString = null, string? webRoot = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(host =>
@@ -27,6 +29,8 @@ internal static class TestApp
 
             // Always set, so a developer's user secrets never point a test at their local database.
             host.UseSetting(ConnectionStringKey, connectionString ?? string.Empty);
+            // The warm-up reads in the background (ADR-0106); a test runs it only when it is about it.
+            host.UseSetting(WarmUpKey, "false");
         });
 
     public static async Task<WebApplication> ComposedAsync(
@@ -34,6 +38,7 @@ internal static class TestApp
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
+        builder.Configuration[WarmUpKey] = "false";
         configure?.Invoke(builder);
         builder.AddFiscoProjectsApi();
 

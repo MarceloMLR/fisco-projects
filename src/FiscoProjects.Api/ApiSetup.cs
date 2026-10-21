@@ -74,6 +74,9 @@ public static class ApiSetup
         builder.Services.AddNotificationsModule(builder.Configuration);
         builder.Services.AddMyWorkModule(builder.Configuration);
 
+        // The main reads of every module, once after the API starts, in the background (ADR-0106).
+        builder.Services.AddHostedService<StartupWarmUp>();
+
         return builder;
     }
 

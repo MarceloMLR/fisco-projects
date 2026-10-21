@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import '../i18n';
 import { installMatchMedia, resetDevice } from './media';
 import { server } from './server';
@@ -39,3 +39,6 @@ afterEach(() => {
 afterAll(() => {
   server.close();
 });
+
+// The code of the Linha do tempo is the Syncfusion: the screen tests do not load it ahead (timelinePreload.test.ts does).
+vi.mock('../projects/timelinePreload', () => ({ preloadTimeline: () => undefined }));

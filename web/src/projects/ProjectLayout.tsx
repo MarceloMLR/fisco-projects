@@ -9,7 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useMatch, useParams } from 'react-router';
 import {
@@ -19,6 +19,7 @@ import {
   projectProblems,
   type ProjectStatus,
 } from '../api/client';
+import { prefetchProject } from '../api/prefetch';
 import { ApiError, projectClosingQuery, projectQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
@@ -28,6 +29,7 @@ import { ProjectHeader } from './ProjectHeader';
 import type { ProjectOutlet } from './projectOutlet';
 import { projectTabs } from './projectTabs';
 import { projectStatusLook } from './projectStatus';
+import { preloadTimeline } from './timelinePreload';
 import { theme } from '../theme/theme';
 
 const openStatuses = [
@@ -62,6 +64,20 @@ export function ProjectLayout() {
   const flush = desktop && tab === 'documents';
   const queryClient = useQueryClient();
   const { data: project, error, isPending } = useQuery(projectQuery(projectId));
+  // The tab and the counts of the header are asked together with the project, not after it (ADR-0106).
+  useEffect(() => {
+    prefetchProject(
+      queryClient,
+      projectId,
+      tab === 'overview' || tab === 'schedule' || tab === 'members' ? tab : 'other',
+    );
+  }, [queryClient, projectId, tab]);
+  // The code of the Linha do tempo, while the person looks at the project (on a computer, where it shows).
+  useEffect(() => {
+    if (desktop) {
+      preloadTimeline();
+    }
+  }, [desktop]);
   const [menu, setMenu] = useState<HTMLElement>();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();

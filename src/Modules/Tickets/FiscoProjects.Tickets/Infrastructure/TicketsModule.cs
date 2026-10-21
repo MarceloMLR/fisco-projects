@@ -73,6 +73,8 @@ public static class TicketsModule
         services.AddScoped<IAuditReferenceNames, VendorReferenceNames>();
         services.AddHostedService<TicketAutoClose>();
         services.AddHostedService<TicketDeadlineAlerts>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, TicketsWarmUp>();
         return services;
     }
 }

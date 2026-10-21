@@ -74,6 +74,8 @@ public static class DocumentsModule
         services.AddScoped<RefuseAcceptance>();
         services.AddScoped<RemindAcceptance>();
         services.AddScoped<CancelAcceptance>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, DocumentsWarmUp>();
         return services;
     }
 }
