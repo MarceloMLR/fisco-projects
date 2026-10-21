@@ -3,11 +3,12 @@ import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import type { ProjectRow, ProjectSituation } from '../api/client';
+import { prefetchProject } from '../api/prefetch';
 import { clientChoicesQuery, projectsQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
@@ -221,6 +222,14 @@ export function ProjectsPage() {
     },
     [navigate],
   );
+  // The project starts loading when the mouse comes over its row (ADR-0106).
+  const queryClient = useQueryClient();
+  const hover = useCallback(
+    (row: ProjectRow) => {
+      prefetchProject(queryClient, row.id);
+    },
+    [queryClient],
+  );
 
   // "8 projetos"; with more than a page, the projects shown come first: "1–25 de 30 projetos".
   const footer = useCallback(
@@ -269,6 +278,7 @@ export function ProjectsPage() {
         emptyLabel={t('projects.empty')}
         displayedRowsLabel={footer}
         onRowChoose={choose}
+        onRowHover={hover}
         tools={
           <>
             <Box sx={desktop ? { flex: 'none' } : { flex: '1 1 100%', minWidth: 0 }}>

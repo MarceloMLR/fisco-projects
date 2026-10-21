@@ -81,6 +81,8 @@ public static class ProjectsModule
         services.AddScoped<GetClientLogo>();
         services.AddScoped<ReplaceClientLogo>();
         services.AddScoped<RemoveClientLogo>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, ProjectsWarmUp>();
         return services;
     }
 }

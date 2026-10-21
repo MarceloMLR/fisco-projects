@@ -299,3 +299,25 @@ describe('Meus projetos', () => {
     );
   });
 });
+
+// Spec: estrutura-das-telas, requirement "Primeira abertura mais rápida" (ADR-0106).
+describe('Primeira abertura mais rápida', () => {
+  it('Projeto pedido ao apontar a linha', async () => {
+    const asked: string[] = [];
+    server.events.on('request:start', ({ request }) => {
+      const path = new URL(request.url).pathname;
+      if (path.startsWith('/api/projects/0199f5a2-7c1e-7d40-9a1b-400000000002')) {
+        asked.push(path.replace('/api/projects/0199f5a2-7c1e-7d40-9a1b-400000000002', 'TRIB'));
+      }
+    });
+    await openProjects();
+
+    fireEvent.mouseEnter(rowOf('Revisão tributária'));
+
+    // The project and its overview, as the page reads them.
+    await waitFor(() => {
+      expect(asked).toEqual(['TRIB', 'TRIB/overview']);
+    });
+    server.events.removeAllListeners();
+  });
+});

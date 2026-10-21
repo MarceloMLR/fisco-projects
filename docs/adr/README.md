@@ -168,3 +168,4 @@ Regras:
 | [0103](0103-so-a-cor-principal-na-marca.md) | Só a cor principal na marca da instalação, sem cor secundária nem cores das mensagens | aceita | 2026-10-21 |
 | [0104](0104-solicitante-em-rosa-na-conversa.md) | Solicitante em rosa na conversa do chamado | aceita | 2026-10-21 |
 | [0105](0105-voltar-do-navegador.md) | O que entra no histórico do navegador | aceita | 2026-10-21 |
+| [0106](0106-primeira-carga-mais-rapida.md) | Primeira abertura das telas mais rápida: aquecimento da API, leituras antes e o código da Linha do tempo carregado antes | aceita | 2026-10-21 |

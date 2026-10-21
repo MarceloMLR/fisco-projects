@@ -71,6 +71,11 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   selectedRowId?: GridRowId;
   /** Choosing a row, by click or by Enter on one of its cells. */
   onRowChoose?: (row: Row) => void;
+  /**
+   * The mouse comes over a row that can be chosen, so the screen may start reading what the row opens before the click
+   * (ADR-0106). It must be stable, as every function given to the table.
+   */
+  onRowHover?: (row: Row) => void;
   /** Text of the footer, such as "1–25 de 312 no período"; by default the Data Grid's own. */
   displayedRowsLabel?: (range: { from: number; to: number; count: number }) => string;
   /** The id of a row whose field id is not unique or empty. Keep it the same function between renders. */
@@ -231,6 +236,7 @@ export function DataTable<Row extends GridValidRowModel>({
   emptyLabel,
   selectedRowId,
   onRowChoose,
+  onRowHover,
   displayedRowsLabel,
   getRowId,
 }: DataTableProps<Row>) {
@@ -296,6 +302,25 @@ export function DataTable<Row extends GridValidRowModel>({
           },
     [onRowChoose, isChoosable],
   );
+  const slotProps = useMemo(
+    () =>
+      onRowHover === undefined
+        ? undefined
+        : {
+            row: {
+              onMouseEnter: (event: MouseEvent<HTMLDivElement>) => {
+                const id = event.currentTarget.dataset.id;
+                const row = rows.find(
+                  (item) => String(getRowId === undefined ? item.id : getRowId(item)) === id,
+                );
+                if (row !== undefined && isChoosable(row)) {
+                  onRowHover(row);
+                }
+              },
+            },
+          },
+    [onRowHover, rows, getRowId, isChoosable],
+  );
   const onCellKeyDown = useMemo(
     () =>
       onRowChoose === undefined
@@ -325,6 +350,7 @@ export function DataTable<Row extends GridValidRowModel>({
           rowCount={rowCount}
           loading={loading}
           slots={slots}
+          slotProps={slotProps}
           localeText={text}
           rowSelectionModel={selection}
           onRowClick={onRowClick}

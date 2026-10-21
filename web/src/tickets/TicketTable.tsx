@@ -4,9 +4,11 @@ import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import { useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
+import { prefetchTicket } from '../api/prefetch';
 import type { TicketRow } from '../api/client';
 import { Checkbox } from '../components/Checkbox';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
@@ -354,6 +356,14 @@ export function TicketTable({
     },
     [navigate],
   );
+  // The ticket starts loading when the mouse comes over its row (ADR-0106).
+  const queryClient = useQueryClient();
+  const hover = useCallback(
+    (row: TicketRow) => {
+      prefetchTicket(queryClient, row.number);
+    },
+    [queryClient],
+  );
 
   // "9 chamados"; with more than a page, the tickets shown come first: "1–25 de 30 chamados".
   const footer = useCallback(
@@ -379,6 +389,7 @@ export function TicketTable({
         emptyLabel={emptyLabel}
         displayedRowsLabel={footer}
         onRowChoose={choose}
+        onRowHover={hover}
         tools={tools}
         selectionActions={selectionActions}
       />

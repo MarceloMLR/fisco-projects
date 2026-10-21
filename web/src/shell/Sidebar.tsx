@@ -2,9 +2,10 @@ import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useColorScheme } from '@mui/material/styles';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
+import { prefetchProject } from '../api/prefetch';
 import { myProjectsQuery } from '../api/queries';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
@@ -41,6 +42,7 @@ export function Sidebar({
   const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
   // The active projects the person is in, even the Administrator (ADR-0066).
   const myProjects = useQuery(myProjectsQuery()).data?.items ?? [];
+  const queryClient = useQueryClient();
   const { colorScheme } = useColorScheme();
   // Over a dark sidebar, the logo for the dark theme, when the installation has one (ADR-0100).
   const logoUrl =
@@ -231,6 +233,13 @@ export function Sidebar({
                   to={`/projects/${project.id}`}
                   title={`${project.code} · ${project.name}`}
                   onClick={onNavigate}
+                  // The project starts loading when the mouse or the focus comes to it (ADR-0106).
+                  onMouseEnter={() => {
+                    prefetchProject(queryClient, project.id);
+                  }}
+                  onFocus={() => {
+                    prefetchProject(queryClient, project.id);
+                  }}
                   sx={{
                     position: 'relative',
                     display: 'flex',

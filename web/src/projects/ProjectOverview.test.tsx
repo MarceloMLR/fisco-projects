@@ -229,3 +229,30 @@ describe('Chamados, próximo marco e equipe na visão geral', () => {
     ]);
   });
 });
+
+// Spec: estrutura-das-telas, requirement "Primeira abertura mais rápida" (ADR-0106).
+describe('Primeira abertura mais rápida', () => {
+  it('Aba pedida junto com o projeto', async () => {
+    // The project answers only after the overview was asked: a page that waited for the project to ask the tab would
+    // never open.
+    let overviewAsked: () => void = () => undefined;
+    const asked = new Promise<void>((resolve) => {
+      overviewAsked = resolve;
+    });
+    const [erp] = demoProjects();
+    server.use(
+      http.get('/api/projects/:id', async () => {
+        await asked;
+        return HttpResponse.json(erp);
+      }),
+      http.get('/api/projects/:id/overview', () => {
+        overviewAsked();
+        return HttpResponse.json(overview);
+      }),
+    );
+
+    await openOverview();
+
+    expect(summary()).toHaveTextContent('Andamento62%previsto 70%');
+  });
+});

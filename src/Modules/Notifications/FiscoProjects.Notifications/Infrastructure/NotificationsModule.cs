@@ -2,6 +2,7 @@ using FiscoProjects.Notifications.Application;
 using FiscoProjects.Notifications.Contracts;
 using FiscoProjects.Notifications.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
+using FiscoProjects.SharedKernel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -64,6 +65,8 @@ public static class NotificationsModule
         services.AddHostedService<EmailDispatcher>();
         services.AddHostedService<DailySummaryScheduler>();
         services.AddHostedService<NotificationCleanup>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, NotificationsWarmUp>();
         return services;
     }
 }
