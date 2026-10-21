@@ -14,13 +14,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 19/10/2026, Marcelo pediu a Fundação-3.2 (`verificacao-mais-rapida`), para a verificação do PR ficar mais rápida sem deixar de existir (ADR-0090).
 - Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
 - Em 20/10/2026, depois da Síntese, Marcelo pediu dez ajustes, feitos em sequência antes do grupo 10: mais dados de demonstração, Sair voltando ao Início, Líder técnico como papel no sistema, "Iniciar atendimento" assumindo o chamado, baixar anexos, chamado no fornecedor num diálogo, relatório da auditoria em Excel, personalização da marca, cores das mensagens e o cliente como responsável de tarefas.
+- Em 21/10/2026, Marcelo pediu mais ajustes, feitos em sequência: só a cor principal na marca, o solicitante em rosa na conversa, o espaço do ícone nos botões, o Voltar do navegador e a primeira carga mais rápida.
 
 ## Marcos
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 9 | 7 |
-| 2. Acesso e administração | 15 | 15 |
+| 2. Acesso e administração | 16 | 15 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
 | 5. Chamados | 10 | 10 |
@@ -29,7 +30,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **58** |
+| **Total** | **71** | **58** |
 
 ## 1. Fundação
 
@@ -64,6 +65,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-8 | `cor-da-instalacao` | Cor principal nas Configurações gerais, com os tokens da marca derivados nos dois temas e a checagem de contraste | 0003, 0050, 0063, 0067, 0082 | Concluída em 19/10/2026 ([#20](https://github.com/MarceloMLR/fisco-projects/pull/20)) |
 | Acesso-8.1 | `personalizacao-da-marca` | Seletor de cor, logo do tema escuro e cor secundária na barra lateral, nos destaques e no painel da entrada, a pedido de Marcelo | 0063, 0082 | Concluída em 21/10/2026 ([#62](https://github.com/MarceloMLR/fisco-projects/pull/62)) |
 | Acesso-8.2 | `cores-das-mensagens` | Cor de cada papel na conversa dos chamados configurável, a pedido de Marcelo | 0069, 0082 | Concluída em 21/10/2026 ([#63](https://github.com/MarceloMLR/fisco-projects/pull/63)) |
+| Acesso-8.3 | `so-cor-principal` | Só a cor principal na marca, sem cor secundária nem cores das mensagens, mantendo o logo escuro e o seletor de cores, a pedido de Marcelo | 0100, 0101, 0103 | Em andamento |
 
 ## 3. Projetos
 

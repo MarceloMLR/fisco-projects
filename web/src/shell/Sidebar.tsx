@@ -44,8 +44,7 @@ export function Sidebar({
   const { colorScheme } = useColorScheme();
   // Over a dark sidebar, the logo for the dark theme, when the installation has one (ADR-0100).
   const logoUrl =
-    installation.darkLogoUrl !== null &&
-    sidebarIsDark(installation.secondaryColor, colorScheme ?? 'light')
+    installation.darkLogoUrl !== null && sidebarIsDark(colorScheme ?? 'light')
       ? installation.darkLogoUrl
       : installation.logoUrl;
 
@@ -81,8 +80,7 @@ export function Sidebar({
             height: 'var(--topbar-height)',
             margin: '0 0 calc(var(--space-2) * -1)',
             padding: '0 var(--space-2)',
-            // The name takes the color of the secondary sidebar, when there is one (ADR-0100).
-            color: 'var(--sidebar-title, var(--text))',
+            color: 'var(--text)',
             textDecoration: 'none',
           }}
         >

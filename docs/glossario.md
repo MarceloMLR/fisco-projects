@@ -11,9 +11,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
 | Cor principal | MainColor | Cor da marca da instalação em `#RRGGBB`, vazia para a do design system; os tokens da marca são derivados dela (ADR-0082) |
-| Cor secundária | SecondaryColor | Cor opcional da instalação em `#RRGGBB` para a barra lateral, os destaques de apoio e o painel da entrada (ADR-0100) |
 | Logo para o tema escuro | DarkLogo | Logo opcional mostrado na barra lateral escura; sem ele, vale o logo (ADR-0100) |
-| Cores das mensagens | MessageColors | Uma cor opcional por papel da conversa dos chamados, da qual saem os tons do cartão, do selo e do avatar (ADR-0101) |
 | Marca da instalação | Installation | Nome e logo, lidos sem sessão (`GET /api/installation`) |
 | Regras gerais | GeneralRules | Configurações da instalação que as telas usam com sessão (`GET /api/installation/rules`); hoje, o fuso |
 | Fuso horário | TimeZone | Identificador IANA da instalação, padrão America/Sao_Paulo; as datas das telas aparecem nele (ADR-0013) |

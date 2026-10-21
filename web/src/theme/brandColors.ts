@@ -230,212 +230,9 @@ function darkerUntil(background: string, text: string, minimum: number): string 
   return candidate;
 }
 
-/**
- * The tokens that follow the secondary color, when the installation has one (ADR-0100): the sidebar, the support
- * highlights (the selected line, the unread notification and the mention) and the panel of the sign-in page.
- */
-export const secondaryTokenNames = [
-  'sidebar-bg',
-  'sidebar-hover-bg',
-  'sidebar-active-bg',
-  'sidebar-text',
-  'sidebar-text-active',
-  'sidebar-muted',
-  'sidebar-indicator',
-  'sidebar-divider',
-  'bg-selected',
-  'brand-panel-bg',
-  'brand-panel-bg-2',
-  'brand-panel-muted',
-  'brand-panel-accent',
-] as const;
-
-export type SecondaryTokenName = (typeof secondaryTokenNames)[number];
-
-/**
- * The tokens of a secondary color, with the color of the name of the installation at the top of the sidebar
- * (sidebar-title), which is the text color of the design system without a secondary color.
- */
-export type SecondaryTokens = Record<SecondaryTokenName | 'sidebar-title', string>;
-
-/** Whether a background is dark, so the texts over it are light. */
-const isDark = (hex: string) => luminance(hex) < 0.18;
-
-/** The background of the sidebar for a secondary color: the color itself in the light theme, a dark shade of it in the dark one. */
-function sidebarBackground(secondary: string, scheme: ColorScheme): string {
-  if (scheme === 'light') {
-    return secondary.toLowerCase();
-  }
-  const chosen = oklchOf(secondary);
-  return hexOfOklch({
-    l: oklchOf(color('sidebar-bg', 'dark')).l,
-    c: Math.min(chosen.c, 0.04),
-    h: chosen.h,
-  });
-}
-
-function deriveSecondary(
-  secondary: string,
-  mainColor: string | null,
-  scheme: ColorScheme,
-): SecondaryTokens {
-  const background = sidebarBackground(secondary, scheme);
-  const dark = isDark(background);
-  // Over a dark sidebar the steps are lighter, over a light one darker, as the design system does in each theme.
-  const step = (hex: string, amount: number) => {
-    const value = oklchOf(hex);
-    return hexOfOklch({ ...value, l: value.l + (dark ? amount : -amount) });
-  };
-  const polarity: ColorScheme = dark ? 'dark' : 'light';
-  const hover = step(background, 0.05);
-  const active = step(background, 0.1);
-  // The texts of the design system of the theme that matches the sidebar, pushed to their contrast over it.
-  const strong = dark ? color('on-action', 'light') : color('text', 'light');
-  const textActive = withContrast(strong, [active], 4.5);
-  const mainIndicator = brandTokens(mainColor)[scheme]['sidebar-indicator'];
-  const panel = brandTokens(secondary)[scheme];
-  // The text of the panel is light over its whole gradient, whatever the secondary color.
-  const panelText = color('brand-panel-text', scheme);
-  const panelBackground = darkerUntil(panel['brand-panel-bg'], panelText, 4.5);
-  const chosen = oklchOf(secondary);
-  const base = oklchOf(defaultMainColor());
-  const selected = oklchOf(color('bg-selected', scheme));
-  return {
-    'sidebar-bg': background,
-    'sidebar-hover-bg': hover,
-    'sidebar-active-bg': active,
-    'sidebar-text': withContrast(color('sidebar-text', polarity), [background, hover], 4.5),
-    'sidebar-text-active': textActive,
-    'sidebar-muted': withContrast(color('sidebar-muted', polarity), [background], 4.5),
-    // The main color marks the current page while it shows over the sidebar; otherwise, its text.
-    'sidebar-indicator':
-      contrast(mainIndicator, active) >= 3 && contrast(mainIndicator, background) >= 3
-        ? mainIndicator
-        : textActive,
-    'sidebar-divider': step(background, 0.08),
-    'sidebar-title': withContrast(strong, [background], 4.5),
-    // The highlight keeps its lightness and takes the hue of the secondary color.
-    'bg-selected': hexOfOklch({
-      l: selected.l,
-      c: base.c > 0 ? (selected.c * chosen.c) / base.c : 0,
-      h: selected.h + (chosen.h - base.h),
-    }),
-    'brand-panel-bg': panelBackground,
-    'brand-panel-bg-2': darkerUntil(panel['brand-panel-bg-2'], panelText, 4.5),
-    'brand-panel-muted': withContrast(panel['brand-panel-muted'], [panelBackground], 4.5),
-    'brand-panel-accent': panel['brand-panel-accent'],
-  };
-}
-
-/** The tokens of a secondary color in each theme; null without one (ADR-0100). */
-export function secondaryTokens(
-  secondaryColor: string | null,
-  mainColor: string | null = null,
-): Record<ColorScheme, SecondaryTokens> | null {
-  const hex = secondaryColor === null ? undefined : normalizeHex(secondaryColor);
-  if (hex === undefined) {
-    return null;
-  }
-  return {
-    light: deriveSecondary(hex, mainColor, 'light'),
-    dark: deriveSecondary(hex, mainColor, 'dark'),
-  };
-}
-
-/** The parts of the conversation of a ticket whose messages have a color (ADR-0069, ADR-0101), as the API names them. */
-export const messageParts = [
-  'requester',
-  'owner',
-  'manager',
-  'techLead',
-  'development',
-  'functional',
-] as const;
-
-export type MessagePart = (typeof messageParts)[number];
-
-/** The colors of the messages the installation chose, each #RRGGBB or null for the design system's. */
-export type MessageColors = Partial<Record<MessagePart, string | null>>;
-
-/** The tone of the tokens msg-*, role-* and avatar-* of each part. */
-const toneOfPart: Record<MessagePart, string> = {
-  requester: 'requester',
-  owner: 'owner',
-  manager: 'manager',
-  techLead: 'techlead',
-  development: 'dev',
-  functional: 'functional',
-};
-
-/**
- * The color of a part while the installation keeps the design system's (ADR-0101): the avatar of the part, the strong
- * color of its messages, or, for the requester, whose messages are neutral, the secondary text.
- */
-export function defaultMessageColor(part: MessagePart): string {
-  const name = part === 'requester' ? 'text-secondary' : `avatar-${toneOfPart[part]}`;
-  return normalizeHex(color(name, 'light')) ?? color(name, 'light');
-}
-
-/**
- * The tokens of the messages of a part for a color (ADR-0101): each keeps the lightness of the design system and takes
- * the hue and the strength of the color, measured against the avatar of the part (of the assignee, for the neutral
- * requester); the text of the tag and of the name keeps 4.5:1, and the avatar has its white initials.
- */
-function deriveMessage(
-  part: MessagePart,
-  chosenColor: string,
-  scheme: ColorScheme,
-): Record<string, string> {
-  const tone = toneOfPart[part];
-  const profile = part === 'requester' ? 'owner' : tone;
-  const reference = oklchOf(color(`avatar-${profile}`, 'light'));
-  const chosen = oklchOf(chosenColor);
-  // A very strong color is held a little, so the cards stay sober (ADR-0065).
-  const ratio = reference.c > 0 ? Math.min(chosen.c / reference.c, 1.4) : 0;
-  const make = (name: string, shapeName: string) => {
-    const own = oklchOf(color(name, scheme));
-    const shape = oklchOf(color(shapeName, scheme));
-    return hexOfOklch({ l: own.l, c: shape.c * ratio, h: shape.h + (chosen.h - reference.h) });
-  };
-  const messageBackground = make(`msg-${tone}-bg`, `msg-${profile}-bg`);
-  const tokens: Record<string, string> = {
-    [`msg-${tone}-bg`]: messageBackground,
-    [`msg-${tone}-border`]: make(`msg-${tone}-border`, `msg-${profile}-border`),
-  };
-  if (part !== 'requester') {
-    const tagBackground = make(`role-${tone}-bg`, `role-${tone}-bg`);
-    tokens[`role-${tone}-bg`] = tagBackground;
-    tokens[`role-${tone}-text`] = withContrast(
-      make(`role-${tone}-text`, `role-${tone}-text`),
-      [tagBackground, messageBackground, color('bg-surface', scheme)],
-      4.5,
-    );
-    const avatar =
-      scheme === 'light' ? chosenColor.toLowerCase() : make(`avatar-${tone}`, `avatar-${tone}`);
-    tokens[`avatar-${tone}`] = darkerUntil(avatar, color('on-avatar-role', scheme), 4.5);
-  }
-  return tokens;
-}
-
-/** The tokens of the messages of every part with a color of its own, in a theme; empty without colors (ADR-0101). */
-export function messageTokens(
-  colors: MessageColors | null | undefined,
-  scheme: ColorScheme,
-): Record<string, string> {
-  const tokens: Record<string, string> = {};
-  for (const part of messageParts) {
-    const hex = normalizeHex(colors?.[part] ?? '');
-    if (hex !== undefined) {
-      Object.assign(tokens, deriveMessage(part, hex, scheme));
-    }
-  }
-  return tokens;
-}
-
-/** Whether the sidebar is dark in a theme, so it shows the logo for the dark theme (ADR-0100). */
-export function sidebarIsDark(secondaryColor: string | null, scheme: ColorScheme): boolean {
-  const tokens = secondaryTokens(secondaryColor);
-  return isDark(tokens === null ? color('sidebar-bg', scheme) : tokens[scheme]['sidebar-bg']);
+/** Whether the sidebar of the design system is dark in a theme, so it shows the logo for the dark theme (ADR-0100). */
+export function sidebarIsDark(scheme: ColorScheme): boolean {
+  return luminance(color('sidebar-bg', scheme)) < 0.18;
 }
 
 /**
@@ -463,34 +260,18 @@ function channels(hex: string): string {
     .join(' ');
 }
 
-/**
- * The CSS custom properties of a theme for a main color, also those of the primary color of MUI, and, with a secondary
- * color, the ones that follow it, which take the place of the main color in the sidebar and in the panel (ADR-0100).
- */
+/** The CSS custom properties of a theme for a main color, also those of the primary color of MUI. */
 export function brandVariables(
   mainColor: string | null,
   scheme: ColorScheme,
-  secondaryColor: string | null = null,
-  messageColors: MessageColors | null = null,
 ): Record<string, string> {
   const tokens = brandTokens(mainColor)[scheme];
-  const secondary = secondaryTokens(secondaryColor, mainColor)?.[scheme];
   return {
     ...Object.fromEntries(brandTokenNames.map((name) => [`--${name}`, tokens[name]])),
     '--mui-palette-primary-main': tokens.action,
     '--mui-palette-primary-dark': tokens['action-hover'],
     '--mui-palette-primary-mainChannel': channels(tokens.action),
     '--mui-palette-primary-darkChannel': channels(tokens['action-hover']),
-    ...(secondary === undefined
-      ? {}
-      : Object.fromEntries(Object.entries(secondary).map(([name, value]) => [`--${name}`, value]))),
-    // The colors of the messages win over the main color in the avatar of the assignee (ADR-0101).
-    ...Object.fromEntries(
-      Object.entries(messageTokens(messageColors, scheme)).map(([name, value]) => [
-        `--${name}`,
-        value,
-      ]),
-    ),
   };
 }
 
@@ -498,15 +279,9 @@ export function brandVariables(
  * The style sheet of a main color for both themes. Its selectors weigh more than the ones of the design system
  * (0,2,0), so it wins whatever the order, also on elements that set their own theme with data-theme.
  */
-export function brandStyleSheet(
-  mainColor: string | null,
-  secondaryColor: string | null = null,
-  messageColors: MessageColors | null = null,
-): string {
+export function brandStyleSheet(mainColor: string): string {
   const block = (selector: string, scheme: ColorScheme) =>
-    `${selector} {\n${Object.entries(
-      brandVariables(mainColor, scheme, secondaryColor, messageColors),
-    )
+    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme))
       .map(([name, value]) => `  ${name}: ${value};`)
       .join('\n')}\n}`;
   return [

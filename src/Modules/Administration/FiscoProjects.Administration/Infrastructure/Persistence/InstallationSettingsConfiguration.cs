@@ -21,18 +21,10 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
         settings.Property(s => s.LogoFileName).HasMaxLength(200);
         settings.Property(s => s.LogoContentType).HasMaxLength(64);
         settings.Ignore(s => s.HasLogo);
-        settings.Property(s => s.SecondaryColor).HasMaxLength(7);
         settings.Property(s => s.DarkLogoFileId).HasMaxLength(400);
         settings.Property(s => s.DarkLogoFileName).HasMaxLength(200);
         settings.Property(s => s.DarkLogoContentType).HasMaxLength(64);
         settings.Ignore(s => s.HasDarkLogo);
-        settings.Property(s => s.RequesterMessageColor).HasMaxLength(7);
-        settings.Property(s => s.OwnerMessageColor).HasMaxLength(7);
-        settings.Property(s => s.ManagerMessageColor).HasMaxLength(7);
-        settings.Property(s => s.TechLeadMessageColor).HasMaxLength(7);
-        settings.Property(s => s.DevelopmentMessageColor).HasMaxLength(7);
-        settings.Property(s => s.FunctionalMessageColor).HasMaxLength(7);
-        settings.Ignore(s => s.MessageColors);
 
         // The one row, created with the database, so reading never has to create it.
         settings.HasData(new

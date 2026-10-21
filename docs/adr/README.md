@@ -162,6 +162,7 @@ Regras:
 | [0097](0097-lider-tecnico-como-papel-no-sistema.md) | Líder técnico também como papel no sistema, exigido para liderar tecnicamente um projeto | aceita | 2026-10-20 |
 | [0098](0098-iniciar-atendimento-assume-o-chamado.md) | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável | aceita | 2026-10-20 |
 | [0099](0099-relatorio-da-auditoria-em-excel.md) | Relatório da auditoria em Excel, montado na tela e registrado na auditoria | aceita | 2026-10-21 |
-| [0100](0100-cor-secundaria-e-logo-para-o-tema-escuro.md) | Cor secundária da instalação na barra lateral, nos destaques de apoio e no painel da entrada, com logo para o tema escuro | aceita | 2026-10-21 |
-| [0101](0101-cores-das-mensagens-dos-chamados.md) | Cores das mensagens dos chamados configuráveis por papel, com os tons calculados | aceita | 2026-10-21 |
+| [0100](0100-cor-secundaria-e-logo-para-o-tema-escuro.md) | Cor secundária da instalação na barra lateral, nos destaques de apoio e no painel da entrada, com logo para o tema escuro | aceita (cor secundária substituída pelo ADR-0103) | 2026-10-21 |
+| [0101](0101-cores-das-mensagens-dos-chamados.md) | Cores das mensagens dos chamados configuráveis por papel, com os tons calculados | substituída pelo ADR-0103 | 2026-10-21 |
 | [0102](0102-cliente-como-responsavel-de-tarefas.md) | O cliente do projeto como responsável de tarefas do cronograma | aceita | 2026-10-21 |
+| [0103](0103-so-a-cor-principal-na-marca.md) | Só a cor principal na marca da instalação, sem cor secundária nem cores das mensagens | aceita | 2026-10-21 |

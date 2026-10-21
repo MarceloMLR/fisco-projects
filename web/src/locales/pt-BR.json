@@ -476,14 +476,7 @@
         "MainColor": "Cor principal",
         "DailySummaryAt": "Horário do resumo diário",
         "NotificationRetentionDays": "Guardar notificações por",
-        "SecondaryColor": "Cor secundária",
-        "DarkLogoFileName": "Logo para o tema escuro",
-        "RequesterMessageColor": "Cor das mensagens do solicitante",
-        "OwnerMessageColor": "Cor das mensagens do responsável",
-        "ManagerMessageColor": "Cor das mensagens do gerente do projeto",
-        "TechLeadMessageColor": "Cor das mensagens do líder técnico",
-        "DevelopmentMessageColor": "Cor das mensagens do desenvolvimento",
-        "FunctionalMessageColor": "Cor das mensagens do funcional"
+        "DarkLogoFileName": "Logo para o tema escuro"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -685,17 +678,7 @@
     "defaultColor": "Voltar ao padrão",
     "contrastApproved": "Contraste aprovado",
     "contrastLow": "Contraste insuficiente",
-    "secondaryColor": "Cor secundária",
-    "secondaryColorHex": "Cor secundária em hexadecimal",
-    "secondaryHint": "Barra lateral, destaques de apoio e painel da entrada. Os textos sobre ela ganham o contraste que precisam.",
-    "noSecondaryColor": "Sem cor secundária",
     "pickColor": "Escolher {{color}} no seletor de cores",
-    "messages": "Mensagens dos chamados",
-    "messagesHint": "A cor de cada papel na conversa dos chamados. Os fundos ficam claros e os textos ganham o contraste que precisam.",
-    "messageColorHex": "Cor das mensagens: {{role}}, em hexadecimal",
-    "restoreDefault": "Restaurar padrão",
-    "messagePreview": "Prévia das mensagens",
-    "messageSample": "Mensagem de exemplo",
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
