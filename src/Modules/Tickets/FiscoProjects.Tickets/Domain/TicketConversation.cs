@@ -3,7 +3,10 @@ using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Tickets.Domain;
 
-/// <summary>A message of the conversation of a ticket (ADR-0026): seen by everyone who sees the ticket, never changed.</summary>
+/// <summary>
+/// A message of the conversation of a ticket (ADR-0026): seen by everyone who sees the ticket, never changed, but for
+/// the name of an anonymized person in its mentions (ADR-0110).
+/// </summary>
 public sealed class TicketMessage : Entity
 {
     private TicketMessage()
@@ -27,12 +30,22 @@ public sealed class TicketMessage : Entity
     public Guid AuthorId { get; private init; }
 
     /// <summary>The text with its formatting, as the JSON of the editor (<see cref="RichText"/>).</summary>
-    public string Body { get; private init; }
+    public string Body { get; private set; }
 
     /// <summary>The plain text, for the search and the e-mails.</summary>
-    public string Text { get; private init; }
+    public string Text { get; private set; }
 
     public DateTime SentAt { get; private init; }
+
+    /// <summary>The mentions of an anonymized person name the identifier, in the text with its formatting and the plain one.</summary>
+    public void RenameMention(Guid person, string label)
+    {
+        if (RichText.Parse(Body)?.RenameMention(person, label) is { } renamed)
+        {
+            Body = renamed.Json;
+            Text = renamed.Text;
+        }
+    }
 }
 
 /// <summary>

@@ -3,6 +3,7 @@ using FiscoProjects.Audit.Contracts;
 using FiscoProjects.Audit.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
 using FiscoProjects.Persistence.Auditing;
+using FiscoProjects.Persistence.PersonalData;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,7 +12,7 @@ namespace FiscoProjects.Audit.Infrastructure;
 
 /// <summary>
 /// Services of the Audit module: the writer every module save calls, the security events, the listing for the Audit
-/// screen and its export (ADR-0039, ADR-0099).
+/// screen and its export (ADR-0039, ADR-0099), the erasure of an anonymized person and the monthly cleanup (ADR-0110).
 /// </summary>
 public static class AuditModule
 {
@@ -25,6 +26,10 @@ public static class AuditModule
         services.AddScoped<ISecurityEvents, SecurityEventLog>();
         services.AddScoped<ListAuditEntries>();
         services.AddScoped<ExportAuditEntries>();
+        // LGPD (ADR-0058, ADR-0110): the erasure of an anonymized person and the monthly cleanup.
+        services.AddScoped<IPersonalDataEraser, AuditPersonalData>();
+        services.AddScoped<CleanUpAudit>();
+        services.AddHostedService<AuditCleanup>();
         return services;
     }
 }

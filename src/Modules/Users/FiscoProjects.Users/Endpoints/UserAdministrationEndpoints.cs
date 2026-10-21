@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Routing;
 
 namespace FiscoProjects.Users.Endpoints;
 
+/// <summary>Where a person stands: with access, deactivated (ADR-0008) or anonymized, for good (ADR-0110).</summary>
 public enum UserStatus
 {
     Active,
     Inactive,
+    Anonymized,
 }
 
 /// <summary>One person on the Users screen.</summary>
@@ -26,6 +28,12 @@ public sealed record ChangeRoleRequest(SystemRole Role);
 public static class UserProblems
 {
     public const string LastAdministrator = "urn:fiscoprojects:problem:last-administrator";
+
+    /// <summary>The person was anonymized: no reactivation, role or second anonymization (ADR-0110).</summary>
+    public const string Anonymized = "urn:fiscoprojects:problem:user-anonymized";
+
+    /// <summary>The person is active: the Administrator deactivates before anonymizing (ADR-0110).</summary>
+    public const string Active = "urn:fiscoprojects:problem:user-active";
 }
 
 /// <summary>Users screen of the Administration: only the Administrator (ADR-0008, ADR-0046).</summary>
@@ -44,7 +52,10 @@ internal static class UserAdministrationEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict);
         users.MapPost("/{id:guid}/deactivate", DeactivateAsync).WithName("DeactivateUser")
             .ProducesProblem(StatusCodes.Status409Conflict);
-        users.MapPost("/{id:guid}/reactivate", ReactivateAsync).WithName("ReactivateUser");
+        users.MapPost("/{id:guid}/reactivate", ReactivateAsync).WithName("ReactivateUser")
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        users.MapPost("/{id:guid}/anonymization", AnonymizeAsync).WithName("AnonymizeUser")
+            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 
     private static async Task<Results<Ok<UserPageResponse>, ValidationProblem>> ListAsync(
@@ -72,17 +83,17 @@ internal static class UserAdministrationEndpoints
             return TypedResults.ValidationProblem(errors);
         }
 
-        var isActive = status switch
+        var state = status switch
         {
-            UserStatus.Active => true,
-            UserStatus.Inactive => false,
-            _ => (bool?)null,
+            UserStatus.Active => UserState.Active,
+            UserStatus.Inactive => UserState.Inactive,
+            UserStatus.Anonymized => UserState.Anonymized,
+            _ => (UserState?)null,
         };
-        var result = await listUsers.ExecuteAsync(new UserListQuery(search, role, isActive, page, pageSize), cancellationToken);
+        var result = await listUsers.ExecuteAsync(new UserListQuery(search, role, state, page, pageSize), cancellationToken);
         return TypedResults.Ok(new UserPageResponse(
             [.. result.Items.Select(user => new UserResponse(
-                user.Id, user.Name, user.Email, user.Role,
-                user.IsActive ? UserStatus.Active : UserStatus.Inactive, user.LastSignInAt))],
+                user.Id, user.Name, user.Email, user.Role, StatusOf(user.State), user.LastSignInAt))],
             result.Total));
     }
 
@@ -94,16 +105,42 @@ internal static class UserAdministrationEndpoints
         Guid id, DeactivateUser deactivateUser, CancellationToken cancellationToken) =>
         ToResult(await deactivateUser.ExecuteAsync(id, cancellationToken));
 
-    private static async Task<Results<NoContent, NotFound>> ReactivateAsync(
+    private static async Task<Results<NoContent, NotFound, ProblemHttpResult>> ReactivateAsync(
         Guid id, ReactivateUser reactivateUser, CancellationToken cancellationToken) =>
-        await reactivateUser.ExecuteAsync(id, cancellationToken) == UserChangeResult.Done
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound();
+        ToResult(await reactivateUser.ExecuteAsync(id, cancellationToken));
+
+    private static async Task<Results<NoContent, NotFound, ProblemHttpResult>> AnonymizeAsync(
+        Guid id, AnonymizeUser anonymizeUser, CancellationToken cancellationToken) =>
+        await anonymizeUser.ExecuteAsync(id, cancellationToken) switch
+        {
+            AnonymizeResult.Done => TypedResults.NoContent(),
+            AnonymizeResult.NotFound => TypedResults.NotFound(),
+            AnonymizeResult.Active => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Active person",
+                detail: "Deactivate the person before anonymizing.",
+                type: UserProblems.Active),
+            _ => AnonymizedProblem(),
+        };
+
+    private static UserStatus StatusOf(UserState state) => state switch
+    {
+        UserState.Active => UserStatus.Active,
+        UserState.Inactive => UserStatus.Inactive,
+        _ => UserStatus.Anonymized,
+    };
+
+    private static ProblemHttpResult AnonymizedProblem() => TypedResults.Problem(
+        statusCode: StatusCodes.Status409Conflict,
+        title: "Anonymized person",
+        detail: "The person was anonymized, for good.",
+        type: UserProblems.Anonymized);
 
     private static Results<NoContent, NotFound, ProblemHttpResult> ToResult(UserChangeResult result) => result switch
     {
         UserChangeResult.Done => TypedResults.NoContent(),
         UserChangeResult.NotFound => TypedResults.NotFound(),
+        UserChangeResult.Anonymized => AnonymizedProblem(),
         _ => TypedResults.Problem(
             statusCode: StatusCodes.Status409Conflict,
             title: "Last active administrator",

@@ -61,6 +61,49 @@ public sealed class RichText
         return new RichText(new JsonObject { ["type"] = "doc", ["content"] = content }.ToJsonString(Writing), text.Trim(), []);
     }
 
+    /// <summary>
+    /// The same document with another label in the mentions of a person, such as the identifier of an anonymized one
+    /// (ADR-0110); itself when it does not mention the person.
+    /// </summary>
+    public RichText RenameMention(Guid person, string label)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(label);
+        if (!Mentions.Contains(person) || JsonNode.Parse(Json) is not JsonObject document)
+        {
+            return this;
+        }
+
+        Rename(document, person.ToString(), label);
+        return Parse(document.ToJsonString(Writing)) ?? this;
+    }
+
+    private static void Rename(JsonNode? node, string person, string label)
+    {
+        if (node is JsonArray items)
+        {
+            foreach (var item in items)
+            {
+                Rename(item, person, label);
+            }
+
+            return;
+        }
+
+        if (node is not JsonObject element)
+        {
+            return;
+        }
+
+        if (TypeOf(element) == "mention" && element["attrs"] is JsonObject attrs
+            && attrs["id"] is JsonValue id && id.TryGetValue<string>(out var value)
+            && string.Equals(value, person, StringComparison.OrdinalIgnoreCase))
+        {
+            attrs["label"] = label;
+        }
+
+        Rename(element["content"], person, label);
+    }
+
     /// <summary>The document checked and written again; null when it is not valid JSON, has anything not allowed or is empty.</summary>
     public static RichText? Parse(string? json)
     {

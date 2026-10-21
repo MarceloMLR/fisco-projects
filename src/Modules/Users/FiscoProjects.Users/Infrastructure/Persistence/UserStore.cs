@@ -1,4 +1,5 @@
 using System.Data;
+using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Domain;
@@ -7,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Users.Infrastructure.Persistence;
 
-internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IUserDirectory
+internal sealed class UserStore(UsersDbContext db, IEnumerable<IPersonalDataEraser> erasers)
+    : IUserStore, IUserAccess, IUserDirectory
 {
     private const string AccentInsensitive = "Latin1_General_100_CI_AI";
 
@@ -35,6 +37,23 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
     {
         db.Users.Add(user);
         db.IdentityLinks.Add(link);
+    }
+
+    public async Task<int> NextAnonymousNumberAsync(CancellationToken cancellationToken) =>
+        (await db.Users.MaxAsync(user => user.AnonymousNumber, cancellationToken) ?? 0) + 1;
+
+    public Task RemoveIdentityLinksAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.IdentityLinks.Where(link => link.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+
+    public async Task ErasePersonalDataAsync(
+        Guid userId, string name, string email, string identifier, CancellationToken cancellationToken)
+    {
+        var erasure = new PersonErasure(
+            userId, name, email, identifier, nameof(User), [nameof(User.Name), nameof(User.Email)]);
+        foreach (var eraser in erasers)
+        {
+            await eraser.EraseAsync(db, erasure, cancellationToken);
+        }
     }
 
     public bool IsDuplicateIdentity(Exception exception) =>
@@ -73,17 +92,21 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
             users = users.Where(user => user.Role == role);
         }
 
-        if (query.IsActive is { } isActive)
+        users = query.State switch
         {
-            users = users.Where(user => user.IsActive == isActive);
-        }
+            UserState.Active => users.Where(user => user.IsActive),
+            UserState.Inactive => users.Where(user => !user.IsActive && user.AnonymizedAt == null),
+            UserState.Anonymized => users.Where(user => user.AnonymizedAt != null),
+            _ => users,
+        };
 
         var total = await users.CountAsync(cancellationToken);
         var items = await users
             .OrderBy(user => user.Name).ThenBy(user => user.Email)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(user => new UserListItem(user.Id, user.Name, user.Email, user.Role, user.IsActive, user.LastSignInAt))
+            .Select(user => new UserListItem(
+                user.Id, user.Name, user.Email, user.Role, user.IsActive, user.AnonymizedAt != null, user.LastSignInAt))
             .ToListAsync(cancellationToken);
         return new UserListPage(items, total);
     }

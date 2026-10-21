@@ -1,3 +1,4 @@
+using System.Globalization;
 using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Audit.Domain;
@@ -13,6 +14,9 @@ public enum AuditAction
 
     /// <summary>The Administrator exported the audit to a spreadsheet (ADR-0099).</summary>
     Exported = 6,
+
+    /// <summary>The system removed the records older than the retention of the installation (ADR-0058, ADR-0110).</summary>
+    Cleaned = 7,
 }
 
 /// <summary>
@@ -28,11 +32,24 @@ public static class AuditItemTypes
 
     /// <summary>An export of the audit to a spreadsheet, with its filters and how many records left (ADR-0099).</summary>
     public const string AuditExport = "AuditExport";
+
+    /// <summary>A monthly cleanup of the audit: the day it kept from and how many records it removed (ADR-0110).</summary>
+    public const string AuditCleanup = "AuditCleanup";
+}
+
+/// <summary>The fields of a cleanup record of the audit (ADR-0110).</summary>
+public static class AuditCleanupFields
+{
+    /// <summary>The first day kept, in the time zone of the installation; the records before it were removed.</summary>
+    public const string KeptFrom = "KeptFrom";
+
+    public const string Removed = "Removed";
 }
 
 /// <summary>
-/// One audit record (ADR-0039): who did what to which item and when. Records are only added, never changed or
-/// removed; the author is empty when the system did it.
+/// One audit record (ADR-0039): who did what to which item and when; the author is empty when the system did it.
+/// Records are only added; the anonymization of a person erases the person's name and e-mail from them, and the
+/// retention of the installation removes the old ones (ADR-0058, ADR-0110).
 /// </summary>
 public sealed class AuditEntry : Entity
 {
@@ -56,7 +73,7 @@ public sealed class AuditEntry : Entity
 
     public Guid? ItemId { get; private init; }
 
-    public string? ItemLabel { get; private init; }
+    public string? ItemLabel { get; private set; }
 
     /// <summary>The type of item the label points to, such as <c>User</c>; the label is then its id (ADR-0084).</summary>
     public string? ItemLabelReference { get; private init; }
@@ -124,6 +141,51 @@ public sealed class AuditEntry : Entity
         ItemType = AuditItemTypes.AuditExport,
         _changes = [.. filters],
     };
+
+    /// <summary>
+    /// A monthly cleanup, by the system (ADR-0110): the first day kept, as an ISO date, and how many records were removed.
+    /// </summary>
+    public static AuditEntry Cleaned(DateTime occurredAt, DateOnly keptFrom, int removed) => new()
+    {
+        OccurredAt = occurredAt,
+        Action = AuditAction.Cleaned,
+        ItemType = AuditItemTypes.AuditCleanup,
+        _changes =
+        [
+            new AuditField(AuditCleanupFields.KeptFrom, null, keptFrom.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), false),
+            new AuditField(AuditCleanupFields.Removed, null, removed.ToString(CultureInfo.InvariantCulture), false),
+        ],
+    };
+
+    /// <summary>
+    /// Takes an anonymized person out of a record of the person's own item (ADR-0058, ADR-0110): the label becomes the
+    /// identifier, and the fields with personal data keep only that they changed, as a secret (ADR-0033).
+    /// </summary>
+    public void EraseOwner(string identifier, IReadOnlyCollection<string> personalFields)
+    {
+        if (ItemLabel is not null)
+        {
+            ItemLabel = Shorten(identifier, ItemLabelMaxLength);
+        }
+
+        if (_changes.Any(change => personalFields.Contains(change.Field) && !IsErased(change)))
+        {
+            _changes = [.. _changes.Select(change => personalFields.Contains(change.Field)
+                ? change with { Before = null, After = null, Secret = true }
+                : change)];
+        }
+    }
+
+    /// <summary>A refused sign-in with the e-mail of an anonymized person names the identifier instead (ADR-0110).</summary>
+    public void EraseIdentity(string identifier)
+    {
+        if (Action == AuditAction.SignInRefused)
+        {
+            ItemLabel = Shorten(identifier, ItemLabelMaxLength);
+        }
+    }
+
+    private static bool IsErased(AuditField change) => change.Secret && change.Before is null && change.After is null;
 
     /// <summary>A refused sign-in, by the system: the identity used, trimmed and shortened, and the reason.</summary>
     public static AuditEntry SignInRefused(DateTime occurredAt, string identity, string reason) => new()

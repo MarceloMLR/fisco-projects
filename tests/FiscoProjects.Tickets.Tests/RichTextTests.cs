@@ -47,6 +47,33 @@ public sealed class RichTextTests
     public void OfPlain_MakesAParagraphPerLine() =>
         RichText.Parse(RichText.OfPlain("Linha 1\n\nLinha 3").Json)!.Text.Should().Be("Linha 1\n\nLinha 3");
 
+    [Fact(DisplayName = "Menção de pessoa anonimizada")]
+    public void RenameMention_PutsTheIdentifierInTheMentionsOfThePerson()
+    {
+        var other = Guid.CreateVersion7();
+        var json = $$$"""
+            {"type":"doc","content":[
+              {"type":"paragraph","content":[
+                {"type":"mention","attrs":{"id":"{{{Person}}}","label":"Carla Mendes"}},
+                {"type":"text","text":" e "},
+                {"type":"mention","attrs":{"id":"{{{other}}}","label":"Diego Torres"}},
+                {"type":"text","text":", Carla Mendes pediu."}
+              ]},
+              {"type":"bulletList","content":[{"type":"listItem","content":[{"type":"paragraph","content":[
+                {"type":"mention","attrs":{"id":"{{{Person.ToUpperInvariant()}}}","label":"Carla Mendes"}}
+              ]}]}]}
+            ]}
+            """;
+
+        var renamed = RichText.Parse(json)!.RenameMention(Guid.Parse(Person), "Pessoa removida nº 1");
+
+        // What was typed stays as typed (ADR-0058): only the mentions of the person change.
+        renamed.Text.Should().Be("@Pessoa removida nº 1 e @Diego Torres, Carla Mendes pediu.\n@Pessoa removida nº 1");
+        renamed.Mentions.Should().BeEquivalentTo([Guid.Parse(Person), other]);
+        RichText.Parse(json)!.RenameMention(Guid.CreateVersion7(), "Pessoa removida nº 1").Text
+            .Should().Be("@Carla Mendes e @Diego Torres, Carla Mendes pediu.\n@Carla Mendes");
+    }
+
     [Theory(DisplayName = "Anexos recusados")]
     [InlineData("nota.xml", 10, "<nfe/>", FileRefusal.None)]
     [InlineData("nota.xml", 0, "", FileRefusal.Empty)]

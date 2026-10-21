@@ -87,6 +87,13 @@ public sealed class ExportAuditEntriesTests
             Added.Add(entry);
             return Task.CompletedTask;
         }
+
+        public Task<bool> HasCleanupAsync(DateOnly month, CancellationToken cancellationToken) => Task.FromResult(true);
+
+        public Task<int> RemoveBeforeAsync(DateTime before, CancellationToken cancellationToken) => Task.FromResult(0);
+
+        public Task<bool> RecordCleanupAsync(AuditCleanupRun cleanup, AuditEntry? entry, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
     }
 
     private sealed class Settings : IInstallationSettings

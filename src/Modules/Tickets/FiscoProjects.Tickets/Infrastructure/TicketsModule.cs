@@ -1,5 +1,6 @@
 using FiscoProjects.MyWork.Contracts;
 using FiscoProjects.Persistence;
+using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
 using FiscoProjects.Tickets.Application;
@@ -71,6 +72,8 @@ public static class TicketsModule
         services.AddScoped<UpdateVendorTicket>();
         services.AddScoped<IAuditReferenceNames, TicketReferenceNames>();
         services.AddScoped<IAuditReferenceNames, VendorReferenceNames>();
+        // LGPD (ADR-0110): the mentions of an anonymized person.
+        services.AddScoped<IPersonalDataEraser, TicketsPersonalData>();
         services.AddHostedService<TicketAutoClose>();
         services.AddHostedService<TicketDeadlineAlerts>();
         // The main reads, once after the API starts (ADR-0106).

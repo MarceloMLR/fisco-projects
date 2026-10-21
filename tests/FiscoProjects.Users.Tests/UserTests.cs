@@ -88,4 +88,54 @@ public sealed class UserTests
         (beforeDeactivating, afterDeactivating, user.IsActiveAdministrator).Should().Be((true, false, true));
         user.Role.Should().Be(SystemRole.Administrator);
     }
+    [Fact(DisplayName = "Anonimizar pessoa desativada")]
+    public void Anonymize_TakesTheNameAndTheEmailAway()
+    {
+        var user = User.Create("Carla Mendes", "carla.mendes@empresa.example", Now);
+        user.ChangeRole(SystemRole.ProjectManager);
+        user.Deactivate();
+
+        user.Anonymize("Pessoa removida nº 3", 3, Now.AddDays(1));
+
+        (user.Name, user.Email, user.Role).Should().Be(("Pessoa removida nº 3", string.Empty, SystemRole.User));
+        (user.AnonymousNumber, user.AnonymizedAt, user.IsAnonymized).Should().Be((3, Now.AddDays(1), true));
+        user.ReceivesDailySummary.Should().BeFalse();
+        user.IsActive.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Pessoa ativa não é anonimizada")]
+    public void Anonymize_RefusesAnActivePerson()
+    {
+        var user = User.Create("Carla Mendes", "carla.mendes@empresa.example", Now);
+
+        user.Invoking(u => u.Anonymize("Pessoa removida nº 1", 1, Now)).Should().Throw<InvalidOperationException>();
+        user.Name.Should().Be("Carla Mendes");
+    }
+
+    [Fact(DisplayName = "Anonimização definitiva")]
+    public void AnAnonymizedPerson_IsNotReactivatedNorAnonymizedAgain()
+    {
+        var user = User.Create("Carla Mendes", "carla.mendes@empresa.example", Now);
+        user.Deactivate();
+        user.Anonymize("Pessoa removida nº 1", 1, Now);
+
+        user.Invoking(u => u.Reactivate()).Should().Throw<InvalidOperationException>();
+        user.Invoking(u => u.Anonymize("Pessoa removida nº 2", 2, Now)).Should().Throw<InvalidOperationException>();
+        user.IsActive.Should().BeFalse();
+    }
+    [Theory(DisplayName = "Identificador da anonimização")]
+    [InlineData("Pessoa removida nº {0}", true)]
+    [InlineData("Pessoa removida", false)]
+    [InlineData("Pessoa {1} removida nº {0}", false)]
+    [InlineData(" ", false)]
+    public void TheIdentifier_HasTheNumber(string anonymousName, bool valid)
+    {
+        var options = new FiscoProjects.Users.Application.AnonymizationOptions { AnonymousName = anonymousName };
+
+        options.IsValid.Should().Be(valid);
+        if (valid)
+        {
+            options.IdentifierFor(12).Should().Be("Pessoa removida nº 12");
+        }
+    }
 }

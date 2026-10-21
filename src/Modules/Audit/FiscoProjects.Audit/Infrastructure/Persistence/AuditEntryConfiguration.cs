@@ -26,3 +26,13 @@ internal sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEn
         entry.HasIndex(e => new { e.ItemType, e.OccurredAt });
     }
 }
+
+internal sealed class AuditCleanupRunConfiguration : IEntityTypeConfiguration<AuditCleanupRun>
+{
+    public void Configure(EntityTypeBuilder<AuditCleanupRun> cleanup)
+    {
+        cleanup.ToTable("cleanups");
+        cleanup.HasKey(c => c.Month);
+        cleanup.Property(c => c.Month).ValueGeneratedNever();
+    }
+}

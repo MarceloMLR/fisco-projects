@@ -28,6 +28,7 @@ public static class UsersModule
         services.AddScoped<ChangeSystemRole>();
         services.AddScoped<DeactivateUser>();
         services.AddScoped<ReactivateUser>();
+        services.AddScoped<AnonymizeUser>();
         services.AddScoped<ListUsers>();
         services.AddScoped<ListPeople>();
         services.AddScoped<IPeopleDirectory, LocalPeopleDirectory>();
@@ -51,6 +52,11 @@ public static class UsersModule
                 options => options.IsConfigured
                     || (string.IsNullOrWhiteSpace(options.Provider) && string.IsNullOrWhiteSpace(options.ExternalId)),
                 "Users:FirstAdministrator needs both Provider and ExternalId, or neither.")
+            .ValidateOnStart();
+
+        services.AddOptions<AnonymizationOptions>()
+            .Bind(configuration.GetSection(AnonymizationOptions.Section))
+            .Validate(options => options.IsValid, "Users:AnonymousName needs the identifier of an anonymized person, with {0} for its number.")
             .ValidateOnStart();
 
         services.AddOptions<LocalSignInOptions>()

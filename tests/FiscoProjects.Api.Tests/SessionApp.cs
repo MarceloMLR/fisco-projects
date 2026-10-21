@@ -41,6 +41,9 @@ internal sealed class SessionApp : IAsyncDisposable
 
     public IServiceProvider Services => _app.Services;
 
+    /// <summary>The connection string of the database of the test, to look at it straight.</summary>
+    public string ConnectionString => _connectionString;
+
     public int Changes { get; private set; }
 
     public static async Task<SessionApp> StartAsync(SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null)
@@ -162,7 +165,8 @@ internal sealed class SessionApp : IAsyncDisposable
         return Convert.ToInt32(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    private async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
+    /// <summary>Runs a command straight in the database, to set up a scene.</summary>
+    public async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(TestContext.Current.CancellationToken);
