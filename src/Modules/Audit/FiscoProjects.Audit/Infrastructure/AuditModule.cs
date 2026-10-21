@@ -10,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace FiscoProjects.Audit.Infrastructure;
 
 /// <summary>
-/// Services of the Audit module: the writer every module save calls, the security events and the listing for the
-/// Audit screen (ADR-0039).
+/// Services of the Audit module: the writer every module save calls, the security events, the listing for the Audit
+/// screen and its export (ADR-0039, ADR-0099).
 /// </summary>
 public static class AuditModule
 {
@@ -24,6 +24,7 @@ public static class AuditModule
         services.AddScoped<IChangeAuditor, ChangeAuditor>();
         services.AddScoped<ISecurityEvents, SecurityEventLog>();
         services.AddScoped<ListAuditEntries>();
+        services.AddScoped<ExportAuditEntries>();
         return services;
     }
 }

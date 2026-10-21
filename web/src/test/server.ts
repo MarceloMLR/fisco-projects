@@ -1532,9 +1532,9 @@ export const handlers = [
 
 export const server = setupServer(...handlers);
 
-export function problem(status: number, type?: string) {
+export function problem(status: number, type?: string, extensions: Record<string, unknown> = {}) {
   return HttpResponse.json(
-    { status, title: 'Problem', ...(type === undefined ? {} : { type }) },
+    { status, title: 'Problem', ...(type === undefined ? {} : { type }), ...extensions },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }

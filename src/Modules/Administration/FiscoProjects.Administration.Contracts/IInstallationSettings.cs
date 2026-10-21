@@ -13,6 +13,22 @@ public sealed record InstallationInfo(string Name, string TimeZone, TimeOnly Dai
     /// <summary>The day of a moment in the time zone of the installation (ADR-0013), such as today.</summary>
     public DateOnly DayOf(DateTime utc) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zone));
+
+    /// <summary>
+    /// The moment, in UTC, a day starts in the time zone of the installation (ADR-0013), such as the start of a period
+    /// chosen in days; when the clock jumps over midnight, the first moment of the day that exists.
+    /// </summary>
+    public DateTime StartOf(DateOnly day)
+    {
+        var zone = Zone;
+        var local = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+        while (zone.IsInvalidTime(local))
+        {
+            local = local.AddMinutes(15);
+        }
+
+        return TimeZoneInfo.ConvertTimeToUtc(local, zone);
+    }
 }
 
 /// <summary>The settings of the installation, kept by the Administration module (ADR-0003).</summary>

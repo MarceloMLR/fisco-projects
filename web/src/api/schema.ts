@@ -293,6 +293,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/audit/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Every record of the filter, newest first, for the spreadsheet of the audit; the export becomes a record of the audit (ADR-0099). */
+        post: operations["ExportAuditEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/installation": {
         parameters: {
             query?: never;
@@ -1916,7 +1933,7 @@ export interface components {
          * @description What an audit record says happened.
          * @enum {unknown}
          */
-        AuditAction: "Created" | "Updated" | "Deleted" | "SignedIn" | "SignInRefused";
+        AuditAction: "Created" | "Updated" | "Deleted" | "SignedIn" | "SignInRefused" | "Exported";
         /** @description Who did it; null on the record means the system. */
         AuditActorResponse: {
             /** Format: uuid */
@@ -1938,6 +1955,26 @@ export interface components {
             /** @description The identity provider of a sign-in, or why a sign-in was refused. */
             detail: null | string;
             changes: components["schemas"]["AuditFieldResponse"][];
+        };
+        /** @description What to export of the audit (ADR-0099): the days of the period in the time zone of the installation, both included. */
+        AuditExportRequest: {
+            /**
+             * Format: date
+             * @description First day of the period, included.
+             */
+            from: null | string;
+            /**
+             * Format: date
+             * @description Last day of the period, included; up to 366 days after the first.
+             */
+            to: null | string;
+            /** @description Only the records of this item type, such as User or SignIn. */
+            itemType?: null | string;
+            /**
+             * Format: uuid
+             * @description Only the records made by this user.
+             */
+            actorId?: null | string;
         };
         /**
          * @description A changed field: the value before and after as invariant text, or none for a secret. A field that points to another
@@ -4411,6 +4448,57 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportAuditEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuditExportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */

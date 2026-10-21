@@ -242,7 +242,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Teste de envio | SendTestEmail (`POST /api/admin/email/test`) | E-mail para o próprio administrador, na seção Microsoft 365 |
 | Auditoria | Audit | Módulo `Audit`, dono das tabelas da auditoria (schema `audit`) |
 | Registro de auditoria | AuditEntry | Só acrescentado, nunca alterado nem apagado (ADR-0039) |
-| Ação: criou, alterou, excluiu, entrou, recusou uma entrada | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused | |
+| Ação: criou, alterou, excluiu, entrou, recusou uma entrada, exportou | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused, Exported | |
+| Exportação da auditoria (relatório em Excel) | AuditExport | Só do administrador, registrada na própria auditoria com o período, o tipo, a pessoa e os registros (ADR-0099) |
 | Campo alterado, antes e depois | AuditField: Field, Before, After | Valores em texto invariável; a tela traduz |
 | Autor; Sistema quando não há sessão | ActorId (vazio para Sistema) | |
 | Tipo de item | ItemType | Nome da entidade (`User`) ou `SignIn` para as entradas |

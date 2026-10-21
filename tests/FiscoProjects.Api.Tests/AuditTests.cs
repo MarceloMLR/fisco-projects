@@ -7,7 +7,8 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Api.Tests;
 
 // Spec: auditoria, requirements "Registro automático das alterações", "Eventos de segurança",
-// "Auditoria somente leitura", "Auditoria só do administrador" and "Tela de Auditoria" (API side).
+// "Auditoria somente leitura", "Auditoria só do administrador", "Tela de Auditoria" and "Relatório da auditoria" (API
+// side).
 public sealed class AuditTests(SqlServerFixture sqlServer)
 {
     private const string MarinaEmail = "marina.costa@empresa.example";
@@ -194,6 +195,82 @@ public sealed class AuditTests(SqlServerFixture sqlServer)
             .Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact(DisplayName = "Exportar a auditoria")]
+    public async Task Administrator_ExportsTheFilter_AndTheExportIsRecorded()
+    {
+        await using var app = await SessionApp.StartAsync(sqlServer);
+        var adminId = await app.CreateUserAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var admin = await app.SignInAsync(adminId);
+        var marinaId = await app.CreateUserAsync("Marina Costa", SystemRole.User);
+        using var marina = await app.SignInAsync(marinaId);
+
+        var (from, to) = LastDays(app, 30);
+        var response = await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { from, to, itemType = "SignIn" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.CacheControl?.NoStore.Should().BeTrue();
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+        var items = page.GetProperty("items").EnumerateArray().ToList();
+        page.GetProperty("total").GetInt32().Should().Be(2);
+        items.Select(entry => entry.GetProperty("actor").GetProperty("name").GetString())
+            .Should().BeEquivalentTo(["Marina Costa", "Paulo Nogueira"]);
+        items.Select(entry => entry.GetProperty("occurredAt").GetDateTime()).Should().BeInDescendingOrder();
+        items.Should().OnlyContain(entry => entry.GetProperty("itemType").GetString() == "SignIn");
+
+        var export = (await EntriesAsync(admin, "itemType=AuditExport")).Should().ContainSingle().Subject;
+        Action(export).Should().Be("Exported");
+        export.GetProperty("actor").GetProperty("id").GetGuid().Should().Be(adminId);
+        Fields(export).Should().Equal(
+            ("From", (string?)null, (string?)from),
+            ("To", null, to),
+            ("ItemType", null, "SignIn"),
+            ("Rows", null, "2"));
+
+        // The person comes with the current name, as the other references.
+        var byPerson = await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { from, to, actorId = marinaId });
+        byPerson.StatusCode.Should().Be(HttpStatusCode.OK);
+        // Both exports may have the same moment on the clock of the tests: the one of the person has the field Person.
+        var person = (await EntriesAsync(admin, "itemType=AuditExport"))
+            .SelectMany(entry => entry.GetProperty("changes").EnumerateArray())
+            .Single(field => field.GetProperty("field").GetString() == "Person");
+        person.GetProperty("after").GetString().Should().Be("Marina Costa");
+        person.GetProperty("reference").GetString().Should().Be("User");
+    }
+
+    [Fact(DisplayName = "Gerente de projeto não exporta")]
+    public async Task ProjectManager_DoesNotExport()
+    {
+        await using var app = await SessionApp.StartAsync(sqlServer);
+        var adminId = await app.CreateUserAsync("Paulo Nogueira", SystemRole.Administrator);
+        var (manager, _) = await app.SignedInClientAsync("Marina Costa", SystemRole.ProjectManager);
+        using var _manager = manager;
+        var (from, to) = LastDays(app, 30);
+
+        (await SendAsync(manager, HttpMethod.Post, "/api/audit/exports", new { from, to })).StatusCode
+            .Should().Be(HttpStatusCode.Forbidden);
+
+        using var admin = await app.SignInAsync(adminId);
+        (await EntriesAsync(admin, "itemType=AuditExport")).Should().BeEmpty();
+    }
+
+    [Fact(DisplayName = "Período inválido para exportar")]
+    public async Task InvalidPeriod_IsRefused_AndNothingIsRecorded()
+    {
+        await using var app = await SessionApp.StartAsync(sqlServer);
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        var (_, to) = LastDays(app, 1);
+
+        (await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { from = "2025-10-01", to })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+        (await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { to })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+        (await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { from = to, to = "2025-10-01" })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+
+        (await EntriesAsync(admin, "itemType=AuditExport")).Should().BeEmpty();
+    }
+
     private async Task AssertMatrixAsync(SystemRole role)
     {
         await using var app = await SessionApp.StartAsync(sqlServer);
@@ -214,6 +291,14 @@ public sealed class AuditTests(SqlServerFixture sqlServer)
         $"from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
 
     private static string? Action(JsonElement entry) => entry.GetProperty("action").GetString();
+
+    /// <summary>The first and the last of the last days, up to today, in the time zone of the installation.</summary>
+    private static (string From, string To) LastDays(SessionApp app, int days)
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(app.Clock.GetUtcNow(), zone).DateTime);
+        return (today.AddDays(1 - days).ToString("yyyy-MM-dd", null), today.ToString("yyyy-MM-dd", null));
+    }
 
     private static List<(string Field, string? Before, string? After)> Fields(JsonElement entry) =>
         [.. entry.GetProperty("changes").EnumerateArray().Select(field => (

@@ -1,9 +1,20 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AuditEntry } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
-import { auditPage, demoAuditEntries, server, signedInAs } from '../test/server';
+import { auditPage, demoAuditEntries, problem, server, signedInAs } from '../test/server';
+import { unzip } from '../test/unzip';
+
+const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
+
+// The browser saves the spreadsheet; the tests keep it to open.
+vi.mock('../format/saveFile', () => ({
+  saveFile: (content: Blob, name: string) => {
+    saved.files.push({ content, name });
+  },
+}));
 
 const text = ptBR.audit;
 const requests: URL[] = [];
@@ -12,6 +23,7 @@ beforeEach(() => {
   // 12:00:30 of October 19th in the time zone of the tests; only the date is simulated, timers stay real.
   vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-19T15:00:30Z') });
   requests.length = 0;
+  saved.files.length = 0;
   signedInAs('Administrator');
   server.use(
     http.get('/api/audit', ({ request }) => {
@@ -315,5 +327,136 @@ describe('Detalhes em gaveta sobreposta', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
     });
+  });
+});
+
+/** The bytes of a file the screen made. */
+function bytesOf(content: Blob): Promise<Uint8Array<ArrayBuffer>> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(new Uint8Array(reader.result as ArrayBuffer));
+    };
+    reader.onerror = () => {
+      reject(new Error('The file could not be read.'));
+    };
+    reader.readAsArrayBuffer(content);
+  });
+}
+
+const exportEntry: AuditEntry = {
+  id: '0199f5a2-7c1e-7d40-9a1b-100000000099',
+  occurredAt: '2026-10-19T14:30:00Z',
+  actor: { id: '0199f5a2-7c1e-7d40-9a1b-000000000001', name: 'Paulo Nogueira' },
+  action: 'Exported',
+  itemType: 'AuditExport',
+  itemId: null,
+  itemLabel: null,
+  detail: null,
+  changes: [
+    { field: 'From', before: null, after: '2026-09-20', secret: false, reference: null },
+    { field: 'To', before: null, after: '2026-10-19', secret: false, reference: null },
+    { field: 'ItemType', before: null, after: 'User', secret: false, reference: null },
+    { field: 'Rows', before: null, after: '1234', secret: false, reference: null },
+  ],
+};
+
+// Spec: auditoria, requirement "Relatório pela tela" (ADR-0099).
+describe('Relatório pela tela', () => {
+  it('Baixar a planilha', async () => {
+    const exports: unknown[] = [];
+    const byPaulo = demoAuditEntries.filter(
+      (entry) => entry.actor?.id === '0199f5a2-7c1e-7d40-9a1b-000000000001',
+    );
+    server.use(
+      http.post('/api/audit/exports', async ({ request }) => {
+        exports.push(await request.json());
+        return HttpResponse.json({ items: byPaulo, total: byPaulo.length });
+      }),
+    );
+    await openAudit();
+    fireEvent.change(screen.getByRole('combobox', { name: text.filters.person }), {
+      target: { value: 'Pau' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'Paulo Nogueira' }));
+    await waitFor(() => {
+      expect(lastRequest().get('actorId')).toBe('0199f5a2-7c1e-7d40-9a1b-000000000001');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: text.export.button }));
+
+    await waitFor(() => {
+      expect(saved.files).toHaveLength(1);
+    });
+    expect(exports).toEqual([
+      {
+        from: '2026-09-20',
+        to: '2026-10-19',
+        itemType: null,
+        actorId: '0199f5a2-7c1e-7d40-9a1b-000000000001',
+      },
+    ]);
+    const [file] = saved.files;
+    expect(file?.name).toBe('auditoria-2026-09-20-a-2026-10-19.xlsx');
+    expect(file?.content.type).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    const parts = await unzip(await bytesOf(file?.content ?? new Blob()));
+    const audit = parts.get('xl/worksheets/sheet1.xml') ?? '';
+    // The same texts of the list, a line per record.
+    expect(audit.match(/<row /g)).toHaveLength(byPaulo.length + 1);
+    expect(audit).toContain('Trocou um papel');
+    expect(audit).toContain('Beatriz Lima · Usuário → Gerente de projeto');
+    expect(audit).toContain('Papel no sistema: Usuário → Gerente de projeto');
+    expect(audit).toContain('<c r="A2" s="3"><v>46314.42638888889</v></c>');
+    const filters = parts.get('xl/worksheets/sheet2.xml') ?? '';
+    expect(filters).toContain('20/09/2026 a 19/10/2026');
+    expect(filters).toContain('Paulo Nogueira');
+    expect(filters).toContain(text.filters.allTypes);
+    expect(screen.getByRole('button', { name: text.export.button })).toBeEnabled();
+  });
+
+  it('Muitos registros para a planilha', async () => {
+    server.use(
+      http.post('/api/audit/exports', () =>
+        problem(400, 'urn:fiscoprojects:problem:audit-export-too-large', {
+          total: 12345,
+          limit: 10000,
+        }),
+      ),
+    );
+    await openAudit();
+
+    fireEvent.click(screen.getByRole('button', { name: text.export.button }));
+
+    expect(
+      await screen.findByText(
+        'O período tem 12.345 registros, mais que os 10.000 de uma planilha. Escolha um período menor.',
+      ),
+    ).toBeVisible();
+    expect(saved.files).toHaveLength(0);
+  });
+
+  it('Exportação na lista', async () => {
+    server.use(
+      http.get('/api/audit', ({ request }) =>
+        HttpResponse.json(
+          auditPage([exportEntry, ...demoAuditEntries.slice(0, 4)], new URL(request.url)),
+        ),
+      ),
+    );
+    await openAudit();
+
+    expect(rowTexts()[0]).toEqual([
+      '19/1011:30',
+      'Paulo Nogueira',
+      'Exportou a auditoria1.234 registros · 20/09/2026 a 19/10/2026',
+    ]);
+    fireEvent.click(rowOf('Exportou a auditoria'));
+    const details = await screen.findByRole('dialog', { name: text.details.label });
+    expect(within(details).getByText('Paulo Nogueira exportou a auditoria')).toBeVisible();
+    expect(within(details).getByText(text.itemTypes.User)).toBeVisible();
+    expect(within(details).getByText(text.filters.allPeople)).toBeVisible();
+    expect(within(details).queryByRole('table')).toBeNull();
   });
 });

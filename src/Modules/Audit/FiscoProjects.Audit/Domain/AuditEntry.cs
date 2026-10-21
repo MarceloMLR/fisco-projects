@@ -10,6 +10,9 @@ public enum AuditAction
     Deleted = 3,
     SignedIn = 4,
     SignInRefused = 5,
+
+    /// <summary>The Administrator exported the audit to a spreadsheet (ADR-0099).</summary>
+    Exported = 6,
 }
 
 /// <summary>
@@ -22,6 +25,9 @@ public sealed record AuditField(string Field, string? Before, string? After, boo
 public static class AuditItemTypes
 {
     public const string SignIn = "SignIn";
+
+    /// <summary>An export of the audit to a spreadsheet, with its filters and how many records left (ADR-0099).</summary>
+    public const string AuditExport = "AuditExport";
 }
 
 /// <summary>
@@ -104,6 +110,19 @@ public sealed class AuditEntry : Entity
         ItemType = AuditItemTypes.SignIn,
         ItemId = userId,
         Detail = Shorten(provider, DetailMaxLength),
+    };
+
+    /// <summary>
+    /// An export of the audit by the Administrator (ADR-0099): the filters and how many records left, as the fields of
+    /// the record, with only the value after.
+    /// </summary>
+    public static AuditEntry Exported(DateTime occurredAt, Guid actorId, IEnumerable<AuditField> filters) => new()
+    {
+        OccurredAt = occurredAt,
+        ActorId = actorId,
+        Action = AuditAction.Exported,
+        ItemType = AuditItemTypes.AuditExport,
+        _changes = [.. filters],
     };
 
     /// <summary>A refused sign-in, by the system: the identity used, trimmed and shortened, and the reason.</summary>

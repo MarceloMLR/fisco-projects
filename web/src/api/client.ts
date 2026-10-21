@@ -164,6 +164,7 @@ export const auditItemTypes = [
   'ProjectLink',
   'PortalCredential',
   'AcceptanceTerm',
+  'AuditExport',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -239,6 +240,11 @@ export const projectProblems = {
 } as const;
 
 /** Problem types of the tickets (TicketProblems in the Tickets module). */
+/** The problem of an export of the audit with more records than a spreadsheet takes (ADR-0099), with the total. */
+export const auditProblems = {
+  exportTooLarge: 'urn:fiscoprojects:problem:audit-export-too-large',
+} as const;
+
 export const ticketProblems = {
   mentionRefused: 'urn:fiscoprojects:problem:ticket-mention-refused',
   attachmentRefused: 'urn:fiscoprojects:problem:ticket-attachment-refused',

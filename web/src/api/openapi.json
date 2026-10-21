@@ -850,6 +850,67 @@
         }
       }
     },
+    "/api/audit/exports": {
+      "post": {
+        "tags": [
+          "Audit"
+        ],
+        "description": "Every record of the filter, newest first, for the spreadsheet of the audit; the export becomes a record of the audit (ADR-0099).",
+        "operationId": "ExportAuditEntries",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/installation": {
       "get": {
         "tags": [
@@ -8935,7 +8996,8 @@
           "Updated",
           "Deleted",
           "SignedIn",
-          "SignInRefused"
+          "SignInRefused",
+          "Exported"
         ],
         "description": "What an audit record says happened."
       },
@@ -9025,6 +9087,47 @@
           }
         },
         "description": "One record of the Audit screen."
+      },
+      "AuditExportRequest": {
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "First day of the period, included.",
+            "format": "date"
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last day of the period, included; up to 366 days after the first.",
+            "format": "date"
+          },
+          "itemType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Only the records of this item type, such as User or SignIn."
+          },
+          "actorId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Only the records made by this user.",
+            "format": "uuid"
+          }
+        },
+        "description": "What to export of the audit (ADR-0099): the days of the period in the time zone of the installation, both included."
       },
       "AuditFieldResponse": {
         "required": [

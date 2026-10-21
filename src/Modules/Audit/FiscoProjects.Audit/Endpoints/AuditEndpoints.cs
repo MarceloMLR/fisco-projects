@@ -33,9 +33,23 @@ public sealed record AuditEntryResponse(
 
 public sealed record AuditPageResponse(IReadOnlyList<AuditEntryResponse> Items, int Total);
 
+/// <summary>What to export of the audit (ADR-0099): the days of the period in the time zone of the installation, both included.</summary>
+public sealed record AuditExportRequest(
+    [property: Description("First day of the period, included.")] DateOnly? From,
+    [property: Description("Last day of the period, included; up to 366 days after the first.")] DateOnly? To,
+    [property: Description("Only the records of this item type, such as User or SignIn.")] string? ItemType = null,
+    [property: Description("Only the records made by this user.")] Guid? ActorId = null);
+
+/// <summary>Problem types of the audit, so the screen can tell the reason.</summary>
+public static class AuditProblems
+{
+    /// <summary>The filter has more records than an export takes (ADR-0099); status 400, with the total and the limit.</summary>
+    public const string ExportTooLarge = "urn:fiscoprojects:problem:audit-export-too-large";
+}
+
 /// <summary>
-/// Routes of the Audit module: only reading, and only by the Administrator (ADR-0039, ADR-0046). There is no
-/// route to change or remove a record.
+/// Routes of the Audit module: only reading and exporting, and only by the Administrator (ADR-0039, ADR-0046,
+/// ADR-0099). There is no route to change or remove a record.
 /// </summary>
 public static class AuditEndpoints
 {
@@ -48,6 +62,9 @@ public static class AuditEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
         audit.MapGet("/", ListAsync).WithName("ListAuditEntries");
+        audit.MapPost("/exports", ExportAsync).WithName("ExportAuditEntries")
+            .WithDescription("Every record of the filter, newest first, for the spreadsheet of the audit; the export becomes a record of the audit (ADR-0099).")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
     }
 
@@ -71,6 +88,35 @@ public static class AuditEndpoints
         }
 
         var result = await listAuditEntries.ExecuteAsync(query, cancellationToken);
+        return TypedResults.Ok(new AuditPageResponse([.. result.Items.Select(ToResponse)], result.Total));
+    }
+
+    private static async Task<Results<Ok<AuditPageResponse>, ValidationProblem, ProblemHttpResult>> ExportAsync(
+        AuditExportRequest request, HttpContext http, ExportAuditEntries export, CancellationToken cancellationToken)
+    {
+        var query = new AuditExportQuery(request.From, request.To, request.ItemType, request.ActorId);
+        var errors = ExportAuditEntries.Validate(query);
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors
+                .GroupBy(error => error.Field)
+                .ToDictionary(group => group.Key, group => group.Select(error => error.Message).ToArray()));
+        }
+
+        var administratorId = UserSession.UserIdOf(http.User)
+            ?? throw new InvalidOperationException("The audit is exported only with a session.");
+        var result = await export.ExecuteAsync(query, administratorId, cancellationToken);
+        if (result.Items is null)
+        {
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Too many records",
+                detail: $"An export takes up to {ExportAuditEntries.MaxRows} records; choose a shorter period.",
+                type: AuditProblems.ExportTooLarge,
+                extensions: new Dictionary<string, object?> { ["total"] = result.Total, ["limit"] = ExportAuditEntries.MaxRows });
+        }
+
+        http.Response.Headers.CacheControl = "no-store";
         return TypedResults.Ok(new AuditPageResponse([.. result.Items.Select(ToResponse)], result.Total));
     }
 

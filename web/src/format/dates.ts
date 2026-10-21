@@ -11,6 +11,9 @@ export type DayValue = string;
 
 const dayLength = 86_400_000;
 
+// The day 0 of the dates of a spreadsheet (Excel and the others), with the leap day of 1900 they count.
+const spreadsheetEpoch = Date.UTC(1899, 11, 30);
+
 // A day of the calendar has no time zone: its day of the week is the one of its midnight in UTC.
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' });
 const longDay = new Intl.DateTimeFormat('pt-BR', {
@@ -77,6 +80,11 @@ export interface Dates {
   formatDayValue: (day: DayValue) => string;
   /** The day of the week of a day of the calendar, in full (segunda-feira). */
   formatWeekday: (day: DayValue) => string;
+  /**
+   * A moment as a date and time of a spreadsheet (ADR-0099): the days since 30/12/1899, with the time as the fraction
+   * of the day, on the clock of the time zone, as Excel keeps dates.
+   */
+  toSpreadsheetDateTime: (isoUtc: string) => number;
 }
 
 function create(timeZone: string): Dates {
@@ -190,6 +198,18 @@ function create(timeZone: string): Dates {
       `${formatDayValue(from).slice(0, 5)} – ${formatDayValue(to).slice(0, 5)}`,
     formatDayValue,
     formatWeekday,
+    toSpreadsheetDateTime: (isoUtc) => {
+      const local = fieldsOf(new Date(isoUtc));
+      const asUtc = Date.UTC(
+        local.year,
+        local.month - 1,
+        local.day,
+        local.hour,
+        local.minute,
+        local.second,
+      );
+      return (asUtc - spreadsheetEpoch) / dayLength;
+    },
   };
 }
 

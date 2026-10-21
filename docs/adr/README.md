@@ -161,3 +161,4 @@ Regras:
 | [0096](0096-meu-trabalho-montado-no-servidor.md) | Meu trabalho montado no servidor por um módulo próprio, com a janela de 7 dias e o atraso do item mais atrasado | aceita | 2026-10-20 |
 | [0097](0097-lider-tecnico-como-papel-no-sistema.md) | Líder técnico também como papel no sistema, exigido para liderar tecnicamente um projeto | aceita | 2026-10-20 |
 | [0098](0098-iniciar-atendimento-assume-o-chamado.md) | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável | aceita | 2026-10-20 |
+| [0099](0099-relatorio-da-auditoria-em-excel.md) | Relatório da auditoria em Excel, montado na tela e registrado na auditoria | aceita | 2026-10-21 |
