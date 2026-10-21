@@ -2,9 +2,10 @@ namespace FiscoProjects.Users.Application;
 
 /// <summary>
 /// Which people to choose: part of the name or of the e-mail, only the Administrators and the Project managers (who may
-/// manage a project, ADR-0072), and how many at most.
+/// manage a project, ADR-0072), only the Administrators and the Tech leads (who may lead a project technically,
+/// ADR-0097), and how many at most.
 /// </summary>
-public sealed record PeopleQuery(string? Search, bool ManagersOnly, int Limit)
+public sealed record PeopleQuery(string? Search, bool ManagersOnly, int Limit, bool TechLeadsOnly = false)
 {
     public const int MaxLimit = 100;
 }
@@ -12,15 +13,16 @@ public sealed record PeopleQuery(string? Search, bool ManagersOnly, int Limit)
 /// <summary>
 /// A person to choose: a user (<see cref="Id"/>) or a person of the directory who never signed in
 /// (<see cref="DirectoryId"/>), who becomes a user when included in a project. Only an active Administrator or Project
-/// manager can be a manager (ADR-0085).
+/// manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a tech lead (ADR-0097).
 /// </summary>
-public sealed record PersonItem(Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager);
+public sealed record PersonItem(
+    Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager, bool CanBeTechLead = false);
 
 /// <summary>
 /// The people of the company to choose, such as the manager or the tech lead of a project or a person to include in it
 /// (ADR-0005, ADR-0072): the active users and the people of the directory who never signed in, each once, by name.
-/// A person of the directory whose user is inactive is left out. Only users may be managers, so asking for managers
-/// leaves the directory out.
+/// A person of the directory whose user is inactive is left out. Only users may be managers and tech leads, so asking
+/// for either leaves the directory out.
 /// </summary>
 public sealed class ListPeople(IUserStore store, IPeopleDirectory directory)
 {
@@ -29,7 +31,7 @@ public sealed class ListPeople(IUserStore store, IPeopleDirectory directory)
         ArgumentNullException.ThrowIfNull(query);
         query = query with { Search = string.IsNullOrWhiteSpace(query.Search) ? null : query.Search.Trim() };
         var users = await store.ListPeopleAsync(query, cancellationToken);
-        if (query.ManagersOnly)
+        if (query.ManagersOnly || query.TechLeadsOnly)
         {
             return users;
         }

@@ -23,7 +23,7 @@ public sealed class TemplateTests(SqlServerFixture sqlServer)
         var app = await SessionApp.StartAsync(sqlServer);
         var (admin, adminId) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
-        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
+        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.TechLead);
         var projectId = await IdOfAsync(await SendAsync(admin, HttpMethod.Post, "/api/projects", new
         {
             code = "ERP-FIN",

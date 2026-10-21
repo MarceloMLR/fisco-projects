@@ -217,6 +217,13 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
             .Select(person => person.GetProperty("name").GetString())
             .Should().Equal("Beatriz Lima", "Marina Costa", "Paulo Nogueira");
         Names(managers).Should().Equal("Beatriz Lima", "Marina Costa", "Paulo Nogueira");
+
+        // Only users may be tech leads, and only the Administrators and the Tech leads (ADR-0097).
+        var techLeads = await rafael.GetFromJsonAsync<JsonElement>("/api/people?techLeads=true", Cancellation);
+        Names(techLeads).Should().Equal("Paulo Nogueira", "Rafael Souza");
+        everyone.EnumerateArray().Where(person => person.GetProperty("canBeTechLead").GetBoolean())
+            .Select(person => person.GetProperty("name").GetString())
+            .Should().Equal("Paulo Nogueira", "Rafael Souza");
     }
 
     [Fact(DisplayName = "Projeto criado na auditoria")]
@@ -298,7 +305,7 @@ public sealed class ProjectTests(SqlServerFixture sqlServer)
         var app = await SessionApp.StartAsync(sqlServer);
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
-        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
+        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.TechLead);
         var carla = await app.CreateUserAsync("Carla Mendes", SystemRole.User);
         var beatriz = await app.CreateUserAsync("Beatriz Lima", SystemRole.ProjectManager);
 

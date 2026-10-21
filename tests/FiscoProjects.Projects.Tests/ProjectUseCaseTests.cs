@@ -29,7 +29,7 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         _paulo = _database.People.Add("Paulo Nogueira", SystemRole.Administrator);
         _marina = _database.People.Add("Marina Costa", SystemRole.ProjectManager);
         _beatriz = _database.People.Add("Beatriz Lima", SystemRole.ProjectManager);
-        _rafael = _database.People.Add("Rafael Souza", SystemRole.User);
+        _rafael = _database.People.Add("Rafael Souza", SystemRole.TechLead);
         _diego = _database.People.Add("Diego Torres", SystemRole.User, isActive: false);
     }
 
@@ -103,6 +103,22 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
             new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager),
             new ProjectPerson(_rafael, "Rafael Souza", ProjectRole.TechLead));
         details.Permissions.Should().Be(new ProjectPermissions(true, true, false, true, false, false, true));
+    }
+
+    [Fact(DisplayName = "Líder técnico sem o papel no sistema")]
+    public async Task TechLeadWithoutTheSystemRole_IsRefused()
+    {
+        var lucas = _database.People.Add("Lucas Prado", SystemRole.User);
+
+        foreach (var techLead in new[] { lucas, _beatriz })
+        {
+            var created = await CreateAsync(_marina, new NewProject("ERP-FIN", "ERP", null, null, null, techLead));
+
+            created.Invalid.Should().Equal(ProjectField.TechLead);
+        }
+
+        var byTheAdministrator = await CreateAsync(_marina, new NewProject("ERP-FIN", "ERP", null, null, null, _paulo));
+        byTheAdministrator.Outcome.Should().Be(ProjectSaveOutcome.Saved);
     }
 
     [Fact(DisplayName = "Líder técnico inválido")]

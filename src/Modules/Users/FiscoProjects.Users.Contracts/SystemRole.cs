@@ -14,6 +14,9 @@ public enum SystemRole
 
     /// <summary>Everything, including the Administration.</summary>
     Administrator = 3,
+
+    /// <summary>May be the tech lead of a project (ADR-0097); nothing else beyond the project roles.</summary>
+    TechLead = 4,
 }
 
 /// <summary>What each system role allows beyond the project roles.</summary>
@@ -24,4 +27,9 @@ public static class SystemRoles
     /// (ADR-0072, ADR-0085).
     /// </summary>
     public static bool ManagesProjects(SystemRole role) => role is SystemRole.Administrator or SystemRole.ProjectManager;
+
+    /// <summary>
+    /// Whether a person with the role may be the tech lead of a project: the Administrator and the Tech lead (ADR-0097).
+    /// </summary>
+    public static bool LeadsTechnically(SystemRole role) => role is SystemRole.Administrator or SystemRole.TechLead;
 }

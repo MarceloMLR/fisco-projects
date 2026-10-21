@@ -286,7 +286,8 @@ internal static class ProjectSaving
 
 /// <summary>
 /// The project form of the creation: the manager is the person who creates it when none is chosen. The tech lead is a
-/// user (<see cref="TechLeadId"/>) or a person of the directory who never signed in (<see cref="TechLeadDirectoryId"/>).
+/// user with the system role to be one (<see cref="TechLeadId"/>, ADR-0097); a person of the directory who never signed
+/// in (<see cref="TechLeadDirectoryId"/>) has the role User, so is refused.
 /// </summary>
 public sealed record NewProject(
     string? Code,
@@ -302,13 +303,13 @@ public sealed record NewProject(
 /// <summary>
 /// Creates a project in Planning (ADR-0016) with its manager and, optionally, its tech lead (ADR-0072). The manager is
 /// the person who creates it, or another active person with the system role Project manager or Administrator; then
-/// the person who creates it does not join the project. The tech lead is another active person.
+/// the person who creates it does not join the project. The tech lead is another active person with the system role
+/// Tech lead or Administrator (ADR-0097).
 /// </summary>
 public sealed class CreateProject(
     IProjectStore store,
     IClientStore clients,
     IUserAccess access,
-    IUserProvisioning provisioning,
     TimeProvider clock,
     ITemplateStore templates,
     IScheduleStore schedules,
@@ -334,10 +335,10 @@ public sealed class CreateProject(
             invalid.Add(ProjectField.Manager);
         }
 
-        var fromDirectory = !string.IsNullOrWhiteSpace(form.TechLeadDirectoryId);
-        if ((form.TechLeadId is not null && fromDirectory)
+        // Who never signed in has the role User, so is never a tech lead (ADR-0097).
+        if (!string.IsNullOrWhiteSpace(form.TechLeadDirectoryId)
             || (form.TechLeadId is { } techLeadId
-                && (techLeadId == managerId || await access.FindAsync(techLeadId, cancellationToken) is not { IsActive: true })))
+                && (techLeadId == managerId || !await MemberChecks.MayBeTechLeadAsync(access, techLeadId, cancellationToken))))
         {
             invalid.Add(ProjectField.TechLead);
         }
@@ -364,17 +365,7 @@ public sealed class CreateProject(
             return ProjectSaveResult.CodeInUse(owner);
         }
 
-        // A tech lead of the directory becomes a user only when everything else is right (ADR-0005).
         var techLead = form.TechLeadId;
-        if (fromDirectory)
-        {
-            techLead = await provisioning.UserFromDirectoryAsync(form.TechLeadDirectoryId!, cancellationToken);
-            if (techLead is null || techLead == managerId)
-            {
-                return ProjectSaveResult.InvalidFields([ProjectField.TechLead]);
-            }
-        }
-
         var project = Project.Create(
             data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, clock.GetUtcNow().UtcDateTime);
         store.Add(project);

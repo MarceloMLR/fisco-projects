@@ -145,7 +145,7 @@ public sealed class ProjectMemberTests(SqlServerFixture sqlServer)
         using var marina = await SignInAsync(scene, scene.Marina);
 
         var remove = await RemoveAsync(scene.Admin, scene, scene.Marina);
-        var demote = await ChangeRoleAsync(marina, scene, scene.Marina, "TechLead");
+        var demote = await ChangeRoleAsync(marina, scene, scene.Marina, "Developer");
 
         foreach (var response in new[] { remove, demote })
         {
@@ -299,12 +299,60 @@ public sealed class ProjectMemberTests(SqlServerFixture sqlServer)
             techLeadDirectoryId = "local:diego.torres@empresa.example",
         });
 
-        created.StatusCode.Should().Be(HttpStatusCode.Created);
-        var id = (await created.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("id").GetGuid();
-        var project = await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{id}", Cancellation);
-        project.GetProperty("members").EnumerateArray()
-            .Select(member => (member.GetProperty("name").GetString(), member.GetProperty("role").GetString()))
-            .Should().Equal(("Marina Costa", "Manager"), ("Diego Torres", "TechLead"));
+        // Who never signed in has the role User, so is never a tech lead (ADR-0097); nobody is created.
+        created.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(created)).Should().Equal("techLeadId");
+        var people = await scene.Admin.GetFromJsonAsync<JsonElement>("/api/users?search=diego", Cancellation);
+        people.GetProperty("total").GetInt32().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Líder técnico sem o papel no sistema")]
+    public async Task User_IsNoTechLead()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await SignInAsync(scene, scene.Marina);
+
+        var include = await AddAsync(marina, scene, new { userId = scene.Diego, directoryId = (string?)null, role = "TechLead" });
+        var fromDirectory = await AddAsync(
+            marina, scene, new { userId = (Guid?)null, directoryId = "local:sofia.martins@empresa.example", role = "TechLead" });
+        var promote = await ChangeRoleAsync(marina, scene, scene.Lucas, "TechLead");
+
+        foreach (var response in new[] { include, fromDirectory, promote })
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await ErrorFieldsAsync(response)).Should().Equal("role");
+        }
+
+        (await RolesAsync(scene))[scene.Lucas].Should().Be("Developer");
+    }
+
+    [Fact(DisplayName = "Promover a líder técnico")]
+    public async Task TechLeadOfTheSystem_BecomesATechLead()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await SignInAsync(scene, scene.Marina);
+        (await SendAsync(scene.Admin, HttpMethod.Put, $"/api/users/{scene.Lucas}/role", new { role = "TechLead" }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var members = await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{scene.ProjectId}/members", Cancellation);
+        members.EnumerateArray().Single(member => member.GetProperty("id").GetGuid() == scene.Lucas)
+            .GetProperty("canBeTechLead").GetBoolean().Should().BeTrue();
+        (await ChangeRoleAsync(marina, scene, scene.Lucas, "TechLead")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await RolesAsync(scene))[scene.Lucas].Should().Be("TechLead");
+    }
+
+    [Fact(DisplayName = "Líder técnico que perde o papel no sistema")]
+    public async Task TechLead_WhoLosesTheSystemRole_StaysTheTechLead()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        (await SendAsync(scene.Admin, HttpMethod.Put, $"/api/users/{scene.Rafael}/role", new { role = "User" }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await RolesAsync(scene))[scene.Rafael].Should().Be("TechLead");
     }
 
     private async Task AssertRowAsync(
@@ -350,7 +398,7 @@ public sealed class ProjectMemberTests(SqlServerFixture sqlServer)
         var app = await SessionApp.StartAsync(sqlServer);
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
-        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
+        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.TechLead);
         var lucas = await app.CreateUserAsync("Lucas Prado", SystemRole.User);
         var carla = await app.CreateUserAsync("Carla Mendes", SystemRole.User);
         var diego = withDiego ? await app.CreateUserAsync("Diego Torres", SystemRole.User) : Guid.Empty;

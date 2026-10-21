@@ -10,9 +10,11 @@ namespace FiscoProjects.Users.Endpoints;
 /// <summary>
 /// A person to choose, such as the manager of a project or a person to include in it: a user (<c>id</c>) or a person of
 /// the company directory who never signed in (<c>directoryId</c>), who becomes a user when included (ADR-0005). Only an
-/// active Administrator or Project manager can be a manager (ADR-0085).
+/// active Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a
+/// tech lead (ADR-0097).
 /// </summary>
-public sealed record PersonResponse(Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager);
+public sealed record PersonResponse(
+    Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager, bool CanBeTechLead);
 
 /// <summary>
 /// The people of the company to choose (ADR-0005, ADR-0072). Anyone with a session asks: the tech lead of a project also
@@ -29,6 +31,7 @@ internal static class PeopleEndpoints
         CancellationToken cancellationToken,
         [Description("Part of the name or of the e-mail, without telling case or accents apart.")] string? search = null,
         [Description("Only the Administrators and the Project managers, who may manage a project.")] bool managers = false,
+        [Description("Only the Administrators and the Tech leads, who may lead a project technically.")] bool techLeads = false,
         [Description("How many people at most, from 1 to 100.")] int limit = 20)
     {
         if (limit is < 1 or > PeopleQuery.MaxLimit)
@@ -39,9 +42,9 @@ internal static class PeopleEndpoints
             });
         }
 
-        var people = await listPeople.ExecuteAsync(new PeopleQuery(search, managers, limit), cancellationToken);
+        var people = await listPeople.ExecuteAsync(new PeopleQuery(search, managers, limit, techLeads), cancellationToken);
         return TypedResults.Ok<IReadOnlyList<PersonResponse>>(
             [.. people.Select(person => new PersonResponse(
-                person.Id, person.DirectoryId, person.Name, person.Email, person.CanBeManager))]);
+                person.Id, person.DirectoryId, person.Name, person.Email, person.CanBeManager, person.CanBeTechLead))]);
     }
 }

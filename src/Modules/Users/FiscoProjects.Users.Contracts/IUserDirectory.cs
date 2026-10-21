@@ -9,6 +9,12 @@ public sealed record PersonInfo(Guid Id, string Name, string Email, DateTime? La
 {
     /// <summary>Whether the person receives the daily summary of e-mails (ADR-0037); on until the person turns it off.</summary>
     public bool ReceivesDailySummary { get; init; } = true;
+
+    /// <summary>
+    /// Whether the person may be the tech lead of a project: active, with a system role that leads technically
+    /// (<see cref="SystemRoles.LeadsTechnically"/>, ADR-0097).
+    /// </summary>
+    public bool CanBeTechLead { get; init; }
 }
 
 /// <summary>Names and data of the people of the installation, for modules that show who did something.</summary>

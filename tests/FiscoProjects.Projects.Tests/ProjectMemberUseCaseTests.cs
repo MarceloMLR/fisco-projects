@@ -34,7 +34,7 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
         _paulo = _database.People.Add("Paulo Nogueira", SystemRole.Administrator);
         _marina = _database.People.Add("Marina Costa", SystemRole.ProjectManager);
         _beatriz = _database.People.Add("Beatriz Lima", SystemRole.ProjectManager);
-        _rafael = _database.People.Add("Rafael Souza", SystemRole.User);
+        _rafael = _database.People.Add("Rafael Souza", SystemRole.TechLead);
         _diego = _database.People.Add("Diego Torres", SystemRole.User);
         _lucas = _database.People.Add("Lucas Prado", SystemRole.User);
         _livia = _database.People.Add("Lívia Prado", SystemRole.User, isActive: false);
@@ -81,9 +81,11 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
     [Fact(DisplayName = "Líder técnico inclui um desenvolvedor")]
     public async Task TechLead_ManagesWhoIsNotAManager()
     {
-        (await AddAsync(Rafael, _diego, ProjectRole.Developer)).Outcome.Should().Be(MemberOutcome.Done);
-        (await ChangeRoleAsync(Rafael, _diego, ProjectRole.TechLead)).Should().Be(MemberOutcome.Done);
-        (await RemoveAsync(Rafael, _diego)).Should().Be(MemberOutcome.Done);
+        var sofia = _database.People.Add("Sofia Martins", SystemRole.TechLead);
+
+        (await AddAsync(Rafael, sofia, ProjectRole.Developer)).Outcome.Should().Be(MemberOutcome.Done);
+        (await ChangeRoleAsync(Rafael, sofia, ProjectRole.TechLead)).Should().Be(MemberOutcome.Done);
+        (await RemoveAsync(Rafael, sofia)).Should().Be(MemberOutcome.Done);
     }
 
     [Fact(DisplayName = "Líder técnico e os gerentes")]
@@ -151,7 +153,7 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
     public async Task LastManager_StaysAManager()
     {
         (await RemoveAsync(Paulo, _marina)).Should().Be(MemberOutcome.LastManager);
-        (await ChangeRoleAsync(Marina, _marina, ProjectRole.TechLead)).Should().Be(MemberOutcome.LastManager);
+        (await ChangeRoleAsync(Marina, _marina, ProjectRole.Developer)).Should().Be(MemberOutcome.LastManager);
 
         (await RolesAsync())[_marina].Should().Be(ProjectRole.Manager);
     }
@@ -209,6 +211,47 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
         (await AddAsync(Marina, _diego, ProjectRole.Developer)).Outcome.Should().Be(MemberOutcome.Done);
     }
 
+    // Spec: membros-do-projeto, requirement "Líder técnico com o papel no sistema" (ADR-0097).
+    [Fact(DisplayName = "Promover a líder técnico")]
+    public async Task TechLeadOfTheSystem_BecomesATechLead()
+    {
+        var sofia = _database.People.Add("Sofia Martins", SystemRole.TechLead);
+        await AddAsync(Marina, sofia, ProjectRole.Developer);
+
+        (await ChangeRoleAsync(Marina, sofia, ProjectRole.TechLead)).Should().Be(MemberOutcome.Done);
+        (await AddAsync(Marina, _paulo, ProjectRole.TechLead)).Outcome.Should().Be(MemberOutcome.Done);
+
+        (await RolesAsync()).Values.Count(role => role == ProjectRole.TechLead).Should().Be(3);
+        (await ListAsync(Marina))!.Single(person => person.Id == sofia).CanBeTechLead.Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Líder técnico sem o papel no sistema")]
+    public async Task User_OrPersonOfTheDirectory_IsNoTechLead()
+    {
+        var carla = _database.People.AddToDirectory("Carla Mendes");
+        await AddAsync(Marina, _lucas, ProjectRole.Developer);
+
+        (await AddAsync(Marina, _diego, ProjectRole.TechLead)).Outcome.Should().Be(MemberOutcome.InvalidRole);
+        (await AddAsync(Marina, _beatriz, ProjectRole.TechLead)).Outcome.Should().Be(MemberOutcome.InvalidRole);
+        (await AddDirectoryAsync(Marina, carla, ProjectRole.TechLead)).Outcome.Should().Be(MemberOutcome.InvalidRole);
+        (await ChangeRoleAsync(Marina, _lucas, ProjectRole.TechLead)).Should().Be(MemberOutcome.InvalidRole);
+
+        _database.People.UserOf(carla).Should().BeNull();
+        (await RolesAsync())[_lucas].Should().Be(ProjectRole.Developer);
+        (await ListAsync(Marina))!.Single(person => person.Id == _lucas).CanBeTechLead.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Líder técnico que perde o papel no sistema")]
+    public async Task TechLead_WhoLosesTheSystemRole_StaysTheTechLead()
+    {
+        _database.People.ChangeRole(_rafael, SystemRole.User);
+
+        (await RolesAsync())[_rafael].Should().Be(ProjectRole.TechLead);
+        (await ChangeRoleAsync(Marina, _rafael, ProjectRole.TechLead)).Should().Be(MemberOutcome.Done);
+        (await ChangeRoleAsync(Marina, _rafael, ProjectRole.Developer)).Should().Be(MemberOutcome.Done);
+        (await ChangeRoleAsync(Marina, _rafael, ProjectRole.TechLead)).Should().Be(MemberOutcome.InvalidRole);
+    }
+
     [Fact(DisplayName = "Incluir quem nunca entrou")]
     public async Task PersonOfTheDirectory_BecomesAUser_AndJoins()
     {
@@ -263,17 +306,14 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
     }
 
     [Fact(DisplayName = "Líder técnico do diretório na criação")]
-    public async Task TechLeadOfTheDirectory_BecomesAUser_OnCreation()
+    public async Task TechLeadOfTheDirectory_IsRefused_OnCreation()
     {
         var carla = _database.People.AddToDirectory("Carla Mendes");
 
         var created = await CreateAsync(new NewProject("TRIB-RS", "Revisão", null, null, null, null, carla));
 
-        var user = _database.People.UserOf(carla);
-        user.Should().NotBeNull();
-        var details = await _database.RunAsync<GetProject, ProjectDetails?>(get =>
-            get.ExecuteAsync(created.Id!.Value, Marina, Cancellation));
-        details!.Members.Should().ContainSingle(person => person.Id == user && person.Role == ProjectRole.TechLead);
+        created.Invalid.Should().Equal(ProjectField.TechLead);
+        _database.People.UserOf(carla).Should().BeNull();
     }
 
     [Fact(DisplayName = "Líder técnico inválido do diretório")]
@@ -287,7 +327,7 @@ public sealed class ProjectMemberUseCaseTests(SqlServerFixture sqlServer) : IAsy
 
         both.Invalid.Should().Equal(ProjectField.TechLead);
         unknown.Invalid.Should().Equal(ProjectField.TechLead);
-        codeInUse.Outcome.Should().Be(ProjectSaveOutcome.CodeInUse);
+        codeInUse.Invalid.Should().Equal(ProjectField.TechLead);
         _database.People.UserOf(carla).Should().BeNull();
     }
 

@@ -54,7 +54,10 @@ internal sealed class PeopleOfTheTest : IUserAccess, IUserDirectory, IUserProvis
                 EmailOf(person.Value.Name),
                 person.Value.LastSignInAt,
                 person.Value.IsActive,
-                person.Value.IsActive && SystemRoles.ManagesProjects(person.Value.Role)))]);
+                person.Value.IsActive && SystemRoles.ManagesProjects(person.Value.Role))
+            {
+                CanBeTechLead = person.Value.IsActive && SystemRoles.LeadsTechnically(person.Value.Role),
+            })]);
 
     public Task<Guid?> UserFromDirectoryAsync(string directoryId, CancellationToken cancellationToken)
     {
