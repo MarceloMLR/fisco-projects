@@ -184,7 +184,6 @@ export function ProfilePage() {
         open={(message ?? notice) !== undefined}
         message={message ?? notice}
         autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         onClose={() => {
           dismiss();
           setNotice(undefined);
