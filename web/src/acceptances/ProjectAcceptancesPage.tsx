@@ -63,23 +63,31 @@ export function ProjectAcceptancesPage() {
   });
   const chosen = params.get('term') ?? undefined;
 
+  // The drawer of a term is in the address, for the links of the notices, but not in the browser history: opening and
+  // closing it replace the address, so Back leaves the tab at once (ADR-0105).
   const choose = useCallback(
     (row: Acceptance) => {
-      setParams((current) => {
-        const next = new URLSearchParams(current);
-        next.set('term', row.id);
-        return next;
-      });
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set('term', row.id);
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setParams],
   );
 
   const close = useCallback(() => {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      next.delete('term');
-      return next;
-    });
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete('term');
+        return next;
+      },
+      { replace: true },
+    );
   }, [setParams]);
 
   const changed = useCallback(

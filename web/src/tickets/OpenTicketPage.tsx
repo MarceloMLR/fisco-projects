@@ -236,7 +236,8 @@ export function OpenTicketPage() {
         }
         void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
         void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
-        await navigate(`/tickets/${String(data.number)}`, { state: { message } });
+        // The form is done: Back from the new ticket goes to where the form was opened from (ADR-0105).
+        await navigate(`/tickets/${String(data.number)}`, { replace: true, state: { message } });
         return;
       }
       if (response.status === 409 && problemType(error) === projectProblems.closed) {
@@ -463,7 +464,7 @@ export function OpenTicketPage() {
         <Button
           variant="outlined"
           onClick={() => {
-            void navigate(back);
+            void navigate(back, { replace: true });
           }}
         >
           {t('tickets.form.cancel')}

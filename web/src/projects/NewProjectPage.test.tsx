@@ -155,6 +155,8 @@ describe('Tela Novo projeto', () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/projects/${newId}`);
     });
+    // The project takes the place of the form, so Back does not return to it (ADR-0105).
+    expect(router.state.historyAction).toBe('REPLACE');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Revisão tributária da filial MG' }),
     ).toBeVisible();
@@ -232,6 +234,7 @@ describe('Tela Novo projeto', () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/projects');
     });
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it('Novo projeto no celular', async () => {

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Acceptance, AcceptanceDetails } from '../api/client';
@@ -278,6 +278,30 @@ describe('Gaveta do termo', () => {
     ).toHaveAttribute('href', `/api/projects/${project.id}/acceptances/${pendingId}/file`);
     expect(within(drawer).getByText('Pedido enviado a Carla Mendes')).toBeVisible();
     expect(within(drawer).getByRole('button', { name: 'Lembrar Carla' })).toBeVisible();
+  });
+
+  // Spec: estrutura-das-telas, requirement "Voltar do navegador".
+  it('Gaveta fora do histórico', async () => {
+    const { router } = await renderApp('/');
+    await act(() => router.navigate(path));
+    await waitFor(() => {
+      expect(titles()).toHaveLength(4);
+    });
+
+    const grid = screen.getByRole('grid', { name: text.table });
+    fireEvent.click(
+      within(grid).getAllByRole('row')[1]?.querySelector('[role="gridcell"]') ?? grid,
+    );
+    const drawer = await screen.findByRole('dialog', { name: text.details.label });
+    expect(router.state.location.search).toContain('term=');
+    fireEvent.click(within(drawer).getByRole('button', { name: ptBR.details.close }));
+    await waitFor(() => {
+      expect(router.state.location.search).toBe('');
+    });
+
+    // One Back leaves the tab: opening and closing the term added nothing to the history.
+    await act(() => router.navigate(-1));
+    expect(router.state.location.pathname).toBe('/');
   });
 
   it('Responder pela tela', async () => {

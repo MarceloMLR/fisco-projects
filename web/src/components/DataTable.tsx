@@ -11,10 +11,22 @@ import {
   type GridValidRowModel,
 } from '@mui/x-data-grid';
 import { ptBR } from '@mui/x-data-grid/locales';
-import { type KeyboardEvent, type ReactNode, useCallback, useMemo } from 'react';
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useMemo } from 'react';
 import { DelayedLoadingOverlay } from './DelayedLoadingOverlay';
 
 export type DataTableColumn<Row extends GridValidRowModel> = GridColDef<Row>;
+
+/** What a person acts on inside a cell: a link, a button, a field or a menu. */
+const controls =
+  'a, button, input, select, textarea, [role="button"], [role="checkbox"], [role="menuitem"]';
+
+/**
+ * Whether a click or an Enter came from a control inside a row, which does its own thing: choosing the row too would
+ * open the same page twice, and the browser's Back would stay on it (ADR-0105).
+ */
+function fromControl(event: { target: EventTarget | null }): boolean {
+  return event.target instanceof Element && event.target.closest(controls) !== null;
+}
 
 export interface DataTableProps<Row extends GridValidRowModel> {
   /** Accessible name of the table. */
@@ -277,8 +289,8 @@ export function DataTable<Row extends GridValidRowModel>({
     () =>
       onRowChoose === undefined
         ? undefined
-        : (params: GridRowParams<Row>) => {
-            if (isChoosable(params.row)) {
+        : (params: GridRowParams<Row>, event: MouseEvent) => {
+            if (isChoosable(params.row) && !fromControl(event)) {
               onRowChoose(params.row);
             }
           },
@@ -289,7 +301,7 @@ export function DataTable<Row extends GridValidRowModel>({
       onRowChoose === undefined
         ? undefined
         : (params: GridCellParams<Row>, event: KeyboardEvent) => {
-            if (event.key === 'Enter' && isChoosable(params.row)) {
+            if (event.key === 'Enter' && isChoosable(params.row) && !fromControl(event)) {
               onRowChoose(params.row);
             }
           },

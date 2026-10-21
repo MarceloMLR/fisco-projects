@@ -312,6 +312,56 @@ describe('Situação', () => {
     ]);
   });
 
+  // Spec: estrutura-das-telas, requirement "Voltar do navegador".
+  it('Link dentro da linha', () => {
+    const onRowChoose = vi.fn();
+    render(
+      <AppThemeProvider>
+        <div style={{ height: 600, display: 'flex' }}>
+          <DataTable
+            label="People"
+            rows={people}
+            columns={[
+              {
+                field: 'name',
+                headerName: 'Person',
+                flex: 1,
+                renderCell: ({ row }) => (
+                  <a
+                    href={`#${row.id}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                    }}
+                  >
+                    {row.name}
+                  </a>
+                ),
+              },
+            ]}
+            rowCount={people.length}
+            page={1}
+            pageSize={3}
+            onPageChange={vi.fn()}
+            onRowChoose={onRowChoose}
+          />
+        </div>
+      </AppThemeProvider>,
+    );
+
+    // The link opens the page itself; choosing the row too would put the page twice in the history.
+    fireEvent.click(screen.getByRole('link', { name: 'Marina Costa' }));
+    fireEvent.keyDown(screen.getByRole('link', { name: 'Beatriz Lima' }), { key: 'Enter' });
+    expect(onRowChoose).not.toHaveBeenCalled();
+
+    const rows = within(screen.getByRole('grid', { name: 'People' }))
+      .getAllByRole('row')
+      .slice(1);
+    fireEvent.click(within(rows[1] ?? document.body).getByRole('gridcell'));
+    expect(onRowChoose.mock.calls.map(([person]) => (person as Person).name)).toEqual([
+      'Lívia Prado',
+    ]);
+  });
+
   it('Linhas de grupo que se escolhem', () => {
     const onRowChoose = vi.fn();
     const isGroup = (person: Person) => person.id === '1';
