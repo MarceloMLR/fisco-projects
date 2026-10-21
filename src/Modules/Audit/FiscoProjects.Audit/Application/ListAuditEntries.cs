@@ -55,19 +55,24 @@ public sealed class ListAuditEntries(
         }
 
         var page = await store.ListAsync(query, cancellationToken);
-        var actorIds = page.Items.Where(entry => entry.ActorId is not null).Select(entry => entry.ActorId!.Value).Distinct().ToList();
-        var names = actorIds.Count == 0 ? new Dictionary<Guid, string>() : await users.NamesAsync(actorIds, cancellationToken);
-        var references = await ReferenceNamesAsync(page.Items, cancellationToken);
+        return new AuditEntriesPage(await ViewsAsync(page.Items, cancellationToken), page.Total);
+    }
 
-        return new AuditEntriesPage(
-            [.. page.Items.Select(entry => new AuditEntryView(
+    /// <summary>The records as the screens show them, with the current names of the authors and of the items they point to.</summary>
+    public async Task<IReadOnlyList<AuditEntryView>> ViewsAsync(IReadOnlyList<AuditEntry> entries, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        var actorIds = entries.Where(entry => entry.ActorId is not null).Select(entry => entry.ActorId!.Value).Distinct().ToList();
+        var names = actorIds.Count == 0 ? new Dictionary<Guid, string>() : await users.NamesAsync(actorIds, cancellationToken);
+        var references = await ReferenceNamesAsync(entries, cancellationToken);
+
+        return [.. entries.Select(entry => new AuditEntryView(
                 entry,
                 entry.ActorId is { } actorId && names.TryGetValue(actorId, out var name) ? name : null,
                 entry.ItemLabelReference is { } kind ? NameOf(references, kind, entry.ItemLabel) : entry.ItemLabel,
                 [.. entry.Changes.Select(field => field.Reference is { } fieldKind
                     ? new AuditFieldView(field.Field, NameOf(references, fieldKind, field.Before), NameOf(references, fieldKind, field.After), field.Secret, fieldKind)
-                    : new AuditFieldView(field.Field, field.Before, field.After, field.Secret, null))]))],
-            page.Total);
+                    : new AuditFieldView(field.Field, field.Before, field.After, field.Secret, null))]))];
     }
 
     /// <summary>The names of every item the page points to, asked once per type to the module that owns it.</summary>
