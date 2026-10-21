@@ -6,33 +6,19 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TextField } from '../components/TextField';
 import { defaultMainColor, hasContrast, normalizeHex } from '../theme/brandColors';
-import { color } from '../theme/tokens';
 
 /**
- * A color of General settings, as in the canvas: the swatch (fp-swatch), which opens the color picker of the browser
- * when clicked (ADR-0100), the color in hexadecimal and the button that empties it. Empty is the color of the design
- * system (shown in the swatch). With the contrast check, the result shows by icon, color and text (ADR-0065).
+ * Main color of General settings, as in the canvas (ADR-0082): the swatch (fp-swatch), which opens the color picker of
+ * the browser when clicked (ADR-0100), the color in hexadecimal and the button that goes back to the default color. Empty
+ * is the default color (shown in the swatch). The color needs its contrast with white, and the result shows by icon,
+ * color and text (ADR-0065).
  */
-export function ColorField({
-  label,
-  hexLabel,
-  emptyColor,
-  emptyLabel,
-  checkContrast,
-  hint,
+export function MainColorField({
   value,
   onChange,
   onBlur,
   error,
 }: {
-  label: string;
-  hexLabel: string;
-  /** The color while the field is empty, as #RRGGBB. */
-  emptyColor: string;
-  /** The button that empties the field. */
-  emptyLabel: string;
-  checkContrast: boolean;
-  hint?: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -41,17 +27,13 @@ export function ColorField({
   const { t } = useTranslation();
   const labelId = useId();
   const statusId = useId();
-  const hintId = useId();
+  const label = t('settings.mainColor');
+  const emptyColor = defaultMainColor();
   const typed = value.trim();
   const hex = typed === '' ? emptyColor : normalizeHex(typed);
   const approved = hex !== undefined && hasContrast(hex);
   // The result of the contrast describes the field; an error, when there is one, describes it instead.
-  const describedBy = [
-    hint === undefined ? undefined : hintId,
-    error === undefined && hex !== undefined && checkContrast ? statusId : undefined,
-  ]
-    .filter((id) => id !== undefined)
-    .join(' ');
+  const describedBy = error === undefined && hex !== undefined ? statusId : undefined;
 
   return (
     <Box
@@ -117,7 +99,7 @@ export function ColorField({
           />
         </Box>
         <TextField
-          label={hexLabel}
+          label={t('settings.mainColorHex')}
           hideLabel
           size="sm"
           width={130}
@@ -126,7 +108,7 @@ export function ColorField({
           placeholder={emptyColor}
           value={value}
           error={error}
-          {...(describedBy === '' ? {} : { 'aria-describedby': describedBy })}
+          {...(describedBy === undefined ? {} : { 'aria-describedby': describedBy })}
           onChange={(event) => {
             onChange(event.target.value);
           }}
@@ -140,19 +122,10 @@ export function ColorField({
             onChange('');
           }}
         >
-          {emptyLabel}
+          {t('settings.defaultColor')}
         </Button>
       </Box>
-      {hint !== undefined && (
-        <Box
-          component="span"
-          id={hintId}
-          sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
-        >
-          {hint}
-        </Box>
-      )}
-      {checkContrast && hex !== undefined && (
+      {hex !== undefined && (
         <Box
           component="span"
           id={statusId}
@@ -174,51 +147,5 @@ export function ColorField({
         </Box>
       )}
     </Box>
-  );
-}
-
-/**
- * Main color of General settings (ADR-0082): empty is the default color, and the color needs its contrast with white.
- */
-export function MainColorField(props: {
-  value: string;
-  onChange: (value: string) => void;
-  onBlur?: () => void;
-  error?: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <ColorField
-      {...props}
-      label={t('settings.mainColor')}
-      hexLabel={t('settings.mainColorHex')}
-      emptyColor={defaultMainColor()}
-      emptyLabel={t('settings.defaultColor')}
-      checkContrast
-    />
-  );
-}
-
-/**
- * Secondary color of General settings (ADR-0100): empty is no secondary color, and the swatch shows the sidebar of the
- * design system; any color, since the texts over it take their contrast.
- */
-export function SecondaryColorField(props: {
-  value: string;
-  onChange: (value: string) => void;
-  onBlur?: () => void;
-  error?: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <ColorField
-      {...props}
-      label={t('settings.secondaryColor')}
-      hexLabel={t('settings.secondaryColorHex')}
-      emptyColor={normalizeHex(color('sidebar-bg', 'light')) ?? color('sidebar-bg', 'light')}
-      emptyLabel={t('settings.noSecondaryColor')}
-      checkContrast={false}
-      hint={t('settings.secondaryHint')}
-    />
   );
 }

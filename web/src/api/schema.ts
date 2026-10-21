@@ -2335,17 +2335,14 @@ export interface components {
         };
         /**
          * @description The brand of the installation: the name shown, the address of the logo (null without one), the main color as
-         *     #RRGGBB (null for the color of the design system), the secondary color (null for none) and the address of the logo
-         *     for the dark theme (null without one, and the logo shows, ADR-0100). The address of a logo changes whenever the logo
-         *     changes, so the browser may keep it.
+         *     #RRGGBB (null for the color of the design system) and the address of the logo for the dark theme (null without one,
+         *     and the logo shows, ADR-0100). The address of a logo changes whenever the logo changes, so the browser may keep it.
          */
         InstallationResponse: {
             name: string;
             logoUrl: null | string;
             mainColor: null | string;
-            secondaryColor: null | string;
             darkLogoUrl: null | string;
-            messageColors: components["schemas"]["MessageColorsDto"];
         };
         /** @description A category the links of the project use, with how many links have it. */
         LinkCategoryCountResponse: {
@@ -2411,18 +2408,6 @@ export interface components {
         };
         LocalSignInRequest: {
             email: string;
-        };
-        /**
-         * @description The colors of the messages of the tickets, one per part of the conversation, each #RRGGBB or null for the color of
-         *     the design system (ADR-0101).
-         */
-        MessageColorsDto: {
-            requester?: null | string;
-            owner?: null | string;
-            manager?: null | string;
-            techLead?: null | string;
-            development?: null | string;
-            functional?: null | string;
         };
         /** @description Whether a milestone was reached. */
         MilestoneReachedRequest: {
@@ -3712,7 +3697,7 @@ export interface components {
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
          *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-         *     notifications are kept (1 to 365) and the secondary color (#RRGGBB, or null for none, ADR-0100).
+         *     notifications are kept (1 to 365).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -3722,8 +3707,6 @@ export interface components {
             dailySummaryAt: null | string;
             /** Format: int32 */
             notificationRetentionDays: null | number;
-            secondaryColor?: null | string;
-            messageColors?: null | components["schemas"]["MessageColorsDto"];
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];

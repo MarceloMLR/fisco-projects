@@ -19,7 +19,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
-        installation.Should().Be(new Installation("FiscoProjects", null, null, MessageColors: MessageColors.None));
+        installation.Should().Be(new Installation("FiscoProjects", null, null));
         info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
     }
 
@@ -266,17 +266,6 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         settings.HasDarkLogo.Should().BeFalse();
         settings.HasLogo.Should().BeTrue();
         database.Files.Files.Values.Select(file => file.Name).Should().Equal("installation-logo.png");
-    }
-
-    [Theory(DisplayName = "Cor secundária sem exigência de contraste")]
-    [InlineData("#ffd400", "#FFD400")]
-    [InlineData(" #0b2545 ", "#0B2545")]
-    [InlineData("", null)]
-    public void SecondaryColor_IsAnyHexColor(string typed, string? kept)
-    {
-        InstallationSettings.TryNormalizeSecondaryColor(typed, out var color).Should().BeTrue();
-        color.Should().Be(kept);
-        InstallationSettings.TryNormalizeSecondaryColor("azul", out _).Should().BeFalse();
     }
 
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(

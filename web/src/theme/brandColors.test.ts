@@ -8,11 +8,6 @@ import {
   defaultMainColor,
   hasContrast,
   normalizeHex,
-  defaultMessageColor,
-  messageParts,
-  messageTokens,
-  secondaryTokenNames,
-  secondaryTokens,
   sidebarIsDark,
 } from './brandColors';
 import { color, colorSchemes } from './tokens';
@@ -151,140 +146,10 @@ describe('Cores da marca', () => {
   });
 });
 
-/** Secondary colors of every kind: navy, a light yellow, white, black, a red and a light gray. */
-const secondaries = ['0B2545', 'FFD400', 'FFFFFF', '000000', 'B4232A', 'E5E7EB'];
-
-// Spec: configuracao-da-instalacao, requirement "Cor secundária" (ADR-0100).
-describe('Cor secundária', () => {
-  it('Sem cor secundária', () => {
-    expect(secondaryTokens(null)).toBeNull();
-    expect(secondaryTokens('azul')).toBeNull();
-    const variables = brandVariables(null, 'light');
-    expect(Object.keys(variables)).not.toContain('--sidebar-bg');
-    expect(Object.keys(variables)).not.toContain('--sidebar-title');
-  });
-
-  it('Trocar a cor secundária', () => {
-    const tokens = secondaryTokens(typed('0B2545'));
-    if (tokens === null) {
-      throw new Error('No tokens.');
-    }
-    // The sidebar is the color itself in the light theme, and a dark shade of its hue in the dark one.
-    expect(tokens.light['sidebar-bg']).toBe(typed('0B2545'));
-    expect(contrast(tokens.dark['sidebar-bg'], color('sidebar-bg', 'dark'))).toBeLessThan(1.3);
-    // The highlight keeps the lightness of the design system.
-    expect(contrast(tokens.light['bg-selected'], color('bg-selected', 'light'))).toBeLessThan(1.1);
-    const variables = brandVariables(null, 'light', typed('0B2545'));
-    for (const name of [...secondaryTokenNames, 'sidebar-title']) {
-      expect(variables[`--${name}`], name).toMatch(/^#[0-9a-f]{6}$/);
-    }
-    expect(brandStyleSheet(null, typed('0B2545'))).toContain(`--sidebar-bg: ${typed('0B2545')};`);
-  });
-
-  it('Contraste na barra lateral', () => {
-    for (const secondary of secondaries) {
-      const tokens = secondaryTokens(typed(secondary), typed('0F766E'));
-      if (tokens === null) {
-        throw new Error('No tokens.');
-      }
-      for (const scheme of colorSchemes) {
-        const value = tokens[scheme];
-        const label = `${secondary} ${scheme}`;
-        expect(contrast(value['sidebar-text'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
-          4.5,
-        );
-        expect(
-          contrast(value['sidebar-text'], value['sidebar-hover-bg']),
-          label,
-        ).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(value['sidebar-muted'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
-          4.5,
-        );
-        expect(contrast(value['sidebar-title'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
-          4.5,
-        );
-        expect(
-          contrast(value['sidebar-text-active'], value['sidebar-active-bg']),
-          label,
-        ).toBeGreaterThanOrEqual(4.5);
-        expect(
-          contrast(value['sidebar-indicator'], value['sidebar-active-bg']),
-          label,
-        ).toBeGreaterThanOrEqual(3);
-        const panelText = color('brand-panel-text', scheme);
-        expect(contrast(panelText, value['brand-panel-bg']), label).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(panelText, value['brand-panel-bg-2']), label).toBeGreaterThanOrEqual(4.5);
-        expect(
-          contrast(value['brand-panel-muted'], value['brand-panel-bg']),
-          label,
-        ).toBeGreaterThanOrEqual(4.5);
-      }
-    }
-  });
-
+// Spec: configuracao-da-instalacao, requirement "Logo para o tema escuro" (ADR-0100).
+describe('Logo para o tema escuro', () => {
   it('Logo escuro na barra lateral escura', () => {
-    expect(sidebarIsDark(null, 'light')).toBe(false);
-    expect(sidebarIsDark(null, 'dark')).toBe(true);
-    expect(sidebarIsDark(typed('0B2545'), 'light')).toBe(true);
-    expect(sidebarIsDark(typed('FFD400'), 'light')).toBe(false);
-    expect(sidebarIsDark(typed('FFD400'), 'dark')).toBe(true);
-  });
-});
-
-/** The tone of the tokens of each part of the conversation. */
-const tones = {
-  requester: 'requester',
-  owner: 'owner',
-  manager: 'manager',
-  techLead: 'techlead',
-  development: 'dev',
-  functional: 'functional',
-} as const;
-
-// Spec: configuracao-da-instalacao, requirement "Cores das mensagens" (ADR-0101).
-describe('Cores das mensagens', () => {
-  it('Cores padrão das mensagens', () => {
-    for (const scheme of colorSchemes) {
-      expect(messageTokens({}, scheme)).toEqual({});
-      expect(messageTokens(null, scheme)).toEqual({});
-    }
-    expect(Object.keys(brandVariables(null, 'light'))).not.toContain('--msg-owner-bg');
-    expect(defaultMessageColor('owner')).toBe(normalizeHex(color('avatar-owner', 'light')));
-  });
-
-  it('Contraste das mensagens', () => {
-    for (const chosen of [...secondaries, '7A1F3D', '0F766E']) {
-      const colors = Object.fromEntries(messageParts.map((part) => [part, typed(chosen)]));
-      for (const scheme of colorSchemes) {
-        const tokens = messageTokens(colors, scheme);
-        for (const part of messageParts) {
-          const tone = tones[part];
-          const label = `${chosen} ${scheme} ${part}`;
-          expect(tokens[`msg-${tone}-bg`], label).toMatch(/^#[0-9a-f]{6}$/);
-          // The cards stay light in the light theme and dark in the dark one, as in the design system.
-          expect(
-            contrast(tokens[`msg-${tone}-bg`] ?? '', color(`msg-${tone}-bg`, scheme)),
-            label,
-          ).toBeLessThan(1.15);
-          if (part === 'requester') {
-            expect(tokens['role-requester-text'], label).toBeUndefined();
-            continue;
-          }
-          const text = tokens[`role-${tone}-text`] ?? '';
-          expect(contrast(text, tokens[`role-${tone}-bg`] ?? ''), label).toBeGreaterThanOrEqual(
-            4.5,
-          );
-          expect(contrast(text, tokens[`msg-${tone}-bg`] ?? ''), label).toBeGreaterThanOrEqual(4.5);
-          expect(
-            contrast(tokens[`avatar-${tone}`] ?? '', color('on-avatar-role', scheme)),
-            label,
-          ).toBeGreaterThanOrEqual(4.5);
-        }
-      }
-    }
-    // A color with contrast with white is the avatar itself in the light theme.
-    expect(messageTokens({ owner: typed('7A1F3D') }, 'light')['avatar-owner']).toBe(
-      typed('7A1F3D'),
-    );
+    expect(sidebarIsDark('light')).toBe(false);
+    expect(sidebarIsDark('dark')).toBe(true);
   });
 });

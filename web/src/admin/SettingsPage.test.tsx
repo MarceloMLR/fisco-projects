@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AuditEntry, type Installation, installationProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
-import { auditPage, problem, server, signedInAs } from '../test/server';
+import { auditPage, marina, problem, server, signedInAs } from '../test/server';
 
 const text = ptBR.settings;
 const logoUrl = '/api/installation/logo?v=1';
@@ -22,9 +22,7 @@ beforeEach(() => {
     name: 'FiscoProjects',
     logoUrl: null,
     mainColor: null,
-    secondaryColor: null,
     darkLogoUrl: null,
-    messageColors: {},
   };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
@@ -41,26 +39,16 @@ beforeEach(() => {
         name: string;
         timeZone: string;
         mainColor: string | null;
-        secondaryColor: string | null;
-        messageColors: Installation['messageColors'];
         dailySummaryAt: string;
         notificationRetentionDays: number;
       };
-      const messageColors = Object.entries(body.messageColors)
-        .filter(([, value]) => value !== null)
-        .map(([part, value]) => ` ${part} ${String(value)}`)
-        .join('');
       requests.push(
-        `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}${
-          body.secondaryColor === null ? '' : ` secondary ${body.secondaryColor}`
-        }${messageColors}`,
+        `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
       );
       installation = {
         ...installation,
         name: body.name,
         mainColor: body.mainColor,
-        secondaryColor: body.secondaryColor,
-        messageColors: body.messageColors,
       };
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
@@ -86,7 +74,7 @@ beforeEach(() => {
     }),
     http.delete('/api/installation/logo/dark', () => {
       requests.push('DELETE dark logo');
-      installation = { ...installation, darkLogoUrl: null, messageColors: {} };
+      installation = { ...installation, darkLogoUrl: null };
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -274,9 +262,7 @@ describe('Nome e logo nas Configurações gerais', () => {
       name: 'FiscoProjects',
       logoUrl,
       mainColor: null,
-      secondaryColor: null,
       darkLogoUrl: null,
-      messageColors: {},
     };
     await openSettings();
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
@@ -544,9 +530,7 @@ describe('Cor principal nas Configurações gerais', () => {
       name: 'FiscoProjects',
       logoUrl: null,
       mainColor: hash('7A1F3D'),
-      secondaryColor: null,
       darkLogoUrl: null,
-      messageColors: {},
     };
     await openSettings();
     await waitFor(() => {
@@ -659,51 +643,26 @@ describe('Guarda das notificações na instalação', () => {
   });
 });
 
-function secondaryField() {
-  return screen.getByRole('textbox', { name: text.secondaryColorHex });
+/** Marina, the Administrator, has chosen the dark theme in her profile (ADR-0014). */
+function inTheDarkTheme() {
+  server.use(
+    http.get('/api/session', () =>
+      HttpResponse.json({ ...marina, role: 'Administrator', theme: 'Dark' }),
+    ),
+  );
 }
 
-// Spec: configuracao-da-instalacao, requirements "Cor secundária", "Logo para o tema escuro" and "Seletor de cores"
-// (General settings, ADR-0100).
-describe('Cor secundária e logo escuro nas Configurações gerais', () => {
-  it('Cor secundária pela tela', async () => {
-    await openSettings();
-    // Without a secondary color, the sidebar of the design system.
-    expect(
-      screen
-        .getByRole('complementary', { name: text.previewLabel })
-        .style.getPropertyValue('--sidebar-bg'),
-    ).toBe('');
-
-    fireEvent.change(secondaryField(), { target: { value: '0b2545' } });
-
-    const previewStyle = screen.getByRole('complementary', { name: text.previewLabel }).style;
-    expect(previewStyle.getPropertyValue('--sidebar-bg')).toBe(hash('0b2545'));
-    expect(previewStyle.getPropertyValue('--sidebar-title')).not.toBe('');
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual([`PUT FiscoProjects America/Sao_Paulo secondary ${hash('0B2545')}`]);
-    await waitFor(() => {
-      expect(appliedBrandColors()).toMatch(new RegExp(`--sidebar-bg:\\s*${hash('0b2545')}`));
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: text.noSecondaryColor }));
-    expect(secondaryField()).toHaveValue('');
-  });
-
+// Spec: configuracao-da-instalacao, requirements "Logo para o tema escuro" and "Seletor de cores" (General settings,
+// ADR-0100).
+describe('Logo escuro e seletor de cores nas Configurações gerais', () => {
   it('Escolher a cor pelo seletor', async () => {
     await openSettings();
 
     fireEvent.change(screen.getByLabelText('Escolher cor principal no seletor de cores'), {
       target: { value: hash('0f766e') },
     });
-    fireEvent.change(screen.getByLabelText('Escolher cor secundária no seletor de cores'), {
-      target: { value: hash('0b2545') },
-    });
 
     expect(colorField()).toHaveValue(hash('0F766E'));
-    expect(secondaryField()).toHaveValue(hash('0B2545'));
     expect(saveButton()).toBeEnabled();
   });
 
@@ -731,10 +690,13 @@ describe('Cor secundária e logo escuro nas Configurações gerais', () => {
   });
 
   it('Logo escuro na barra lateral escura', async () => {
-    installation = { ...installation, logoUrl, darkLogoUrl, secondaryColor: hash('0B2545') };
+    installation = { ...installation, logoUrl, darkLogoUrl };
+    inTheDarkTheme();
     await openSettings();
 
-    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', darkLogoUrl);
+    await waitFor(() => {
+      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', darkLogoUrl);
+    });
     // The sign-in page shows the logo on its light badge.
     expect(screen.getByTestId('preview-sign-in').querySelector('img')).toHaveAttribute(
       'src',
@@ -746,65 +708,24 @@ describe('Cor secundária e logo escuro nas Configurações gerais', () => {
     );
   });
 
-  it('Sem logo escuro', async () => {
-    installation = { ...installation, logoUrl, secondaryColor: hash('0B2545') };
+  it('Logo claro na barra lateral clara', async () => {
+    installation = { ...installation, logoUrl, darkLogoUrl };
     await openSettings();
 
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
-  });
-});
-
-// Spec: configuracao-da-instalacao, requirement "Cores das mensagens" (General settings, ADR-0101).
-describe('Cores das mensagens nas Configurações gerais', () => {
-  it('Cores das mensagens pela tela', async () => {
-    await openSettings();
-    const owner = screen.getByRole('textbox', {
-      name: text.messageColorHex.replace('{{role}}', ptBR.tickets.roles.Owner),
-    });
-    expect(owner).toHaveValue('');
-    // Without colors, the Preview shows the messages of the design system.
-    expect(
-      screen
-        .getByRole('list', { name: text.messagePreview })
-        .style.getPropertyValue('--msg-owner-bg'),
-    ).toBe('');
-
-    fireEvent.change(owner, { target: { value: '7a1f3d' } });
-
-    expect(
-      screen
-        .getByRole('list', { name: text.messagePreview })
-        .style.getPropertyValue('--avatar-owner'),
-    ).toBe(hash('7a1f3d'));
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual([`PUT FiscoProjects America/Sao_Paulo owner ${hash('7A1F3D')}`]);
-    await waitFor(() => {
-      expect(appliedBrandColors()).toMatch(/--msg-owner-bg:/);
-    });
-
-    const group = screen.getByRole('group', { name: ptBR.tickets.roles.Owner });
-    fireEvent.click(within(group).getByRole('button', { name: text.restoreDefault }));
-    expect(owner).toHaveValue('');
-  });
-
-  it('Cor de mensagem fora do formato', async () => {
-    await openSettings();
-
-    fireEvent.change(
-      screen.getByRole('textbox', {
-        name: text.messageColorHex.replace('{{role}}', ptBR.tickets.roles.Manager),
-      }),
-      { target: { value: 'violeta' } },
+    expect(screen.getByTestId('preview-sidebar').querySelector('img')).toHaveAttribute(
+      'src',
+      logoUrl,
     );
-    fireEvent.click(saveButton());
+  });
 
-    expect(
-      await within(screen.getByRole('group', { name: ptBR.tickets.roles.Manager })).findByText(
-        text.errors.colorFormat.replace('{{example}}', hash('1F5FBF')),
-      ),
-    ).toBeInTheDocument();
-    expect(requests).toEqual([]);
+  it('Sem logo escuro', async () => {
+    installation = { ...installation, logoUrl };
+    inTheDarkTheme();
+    await openSettings();
+
+    await waitFor(() => {
+      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
+    });
   });
 });

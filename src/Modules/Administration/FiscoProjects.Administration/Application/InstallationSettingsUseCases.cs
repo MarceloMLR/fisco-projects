@@ -13,16 +13,11 @@ public interface IInstallationSettingsStore
 }
 
 /// <summary>
-/// The brand of the installation: its name, when each logo last changed (with a logo), the main color (null for the
-/// default one) and the secondary color (null for none, ADR-0100).
+/// The brand of the installation: its name, when each logo last changed (with a logo, ADR-0100) and the main color (null
+/// for the default one).
 /// </summary>
 public sealed record Installation(
-    string Name,
-    DateTime? LogoChangedAt,
-    string? MainColor,
-    string? SecondaryColor = null,
-    DateTime? DarkLogoChangedAt = null,
-    MessageColors? MessageColors = null);
+    string Name, DateTime? LogoChangedAt, string? MainColor, DateTime? DarkLogoChangedAt = null);
 
 /// <summary>The logo to serve: the file, its type and when it changed.</summary>
 public sealed record InstallationLogo(FileDownload File, string ContentType, DateTime ChangedAt);
@@ -36,9 +31,7 @@ public sealed class GetInstallation(IInstallationSettingsStore store)
             settings.Name,
             settings.HasLogo ? settings.LogoChangedAt : null,
             settings.MainColor,
-            settings.SecondaryColor,
-            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null,
-            settings.MessageColors);
+            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null);
     }
 }
 
@@ -86,22 +79,18 @@ public enum InstallationField
     MainColor = 3,
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
-    SecondaryColor = 6,
-    MessageColors = 7,
 }
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the time zone, the main and the secondary colors, the
-/// time of the daily summary and how many days the notifications are kept.
+/// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
+/// summary and how many days the notifications are kept.
 /// </summary>
 public sealed record InstallationChanges(
     string? Name,
     string? TimeZone,
     string? MainColor,
     TimeOnly? DailySummaryAt,
-    int? NotificationRetentionDays,
-    string? SecondaryColor = null,
-    MessageColors? MessageColors = null);
+    int? NotificationRetentionDays);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -131,16 +120,6 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.MainColor);
         }
 
-        if (!InstallationSettings.TryNormalizeSecondaryColor(changes.SecondaryColor, out var secondaryColor))
-        {
-            invalid.Add(InstallationField.SecondaryColor);
-        }
-
-        if (!InstallationSettings.TryNormalizeMessageColors(changes.MessageColors, out var messageColors))
-        {
-            invalid.Add(InstallationField.MessageColors);
-        }
-
         if (changes.DailySummaryAt is null)
         {
             invalid.Add(InstallationField.DailySummaryAt);
@@ -160,8 +139,6 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeMainColor(mainColor);
-        settings.ChangeSecondaryColor(secondaryColor);
-        settings.ChangeMessageColors(messageColors);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         await store.SaveChangesAsync(cancellationToken);
