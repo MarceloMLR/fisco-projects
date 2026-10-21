@@ -20,7 +20,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 11 | 8 |
+| 1. Fundação | 11 | 9 |
 | 2. Acesso e administração | 16 | 16 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
@@ -30,7 +30,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **74** | **61** |
+| **Total** | **74** | **62** |
 
 ## 1. Fundação
 
@@ -44,7 +44,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-4 | `estrutura-do-frontend` | React com TypeScript estrito, lint, testes, tipos gerados da API, textos em arquivos de tradução, servido pelo host | 0013, 0049, 0061, 0076 | Concluída em 18/10/2026 ([#7](https://github.com/MarceloMLR/fisco-projects/pull/7)) |
 | Fundação-5 | `tema-e-estrutura-das-telas` | Tokens do design system no tema do MUI, IBM Plex, barra lateral, cabeçalho invisível, celular | 0012, 0050, 0062 a 0067, 0077 | Concluída em 18/10/2026 ([#8](https://github.com/MarceloMLR/fisco-projects/pull/8)) |
 | Fundação-5.1 | `espaco-do-icone-nos-botoes` | Ícone dos botões a 8px do texto, como no design system, a pedido de Marcelo | 0062, 0065 | Concluída em 21/10/2026 ([#67](https://github.com/MarceloMLR/fisco-projects/pull/67)) |
-| Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Em andamento |
+| Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Concluída em 21/10/2026 ([#68](https://github.com/MarceloMLR/fisco-projects/pull/68)) |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Adiada: aguarda a assinatura do Azure |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Adiada: aguarda a assinatura do Azure |
 
