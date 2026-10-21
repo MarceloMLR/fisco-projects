@@ -159,19 +159,32 @@
     },
     "status": {
       "Active": "Ativo",
-      "Inactive": "Inativo"
+      "Inactive": "Inativo",
+      "Anonymized": "Anonimizado"
     },
+    "anonymizedData": "Nome e e-mail removidos",
     "empty": "Nenhuma pessoa encontrada com esses filtros.",
     "menu": {
       "button": "Papel e acesso de {{name}}",
       "role": "Papel no sistema",
       "deactivate": "Desativar acesso",
-      "reactivate": "Reativar acesso"
+      "reactivate": "Reativar acesso",
+      "anonymize": "Anonimizar"
+    },
+    "anonymize": {
+      "title": "Anonimizar {{name}}?",
+      "text": "O nome e o e-mail ({{email}}) saem do sistema, inclusive da auditoria, das menções e dos e-mails guardados, e no lugar do nome aparece um identificador numerado. Projetos, chamados e mensagens continuam como estão.",
+      "forGood": "Não dá para desfazer: a pessoa não pode mais ser reativada nem ganhar outro papel.",
+      "cancel": "Cancelar",
+      "confirm": "Anonimizar"
     },
     "messages": {
       "roleChanged": "Papel de {{name}} alterado para {{role}}.",
       "deactivated": "Acesso de {{name}} desativado.",
       "reactivated": "Acesso de {{name}} reativado.",
+      "anonymized": "Dados de {{name}} anonimizados.",
+      "anonymizedAlready": "Essa pessoa já foi anonimizada.",
+      "activeNotAnonymized": "Desative o acesso antes de anonimizar.",
       "lastAdministrator": "A instalação precisa de pelo menos um administrador ativo.",
       "failed": "Não foi possível salvar. Tente de novo."
     }
@@ -262,7 +275,8 @@
       "ProjectLink": "Links",
       "PortalCredential": "Acessos",
       "AcceptanceTerm": "Termos de aceite",
-      "AuditExport": "Exportação da auditoria"
+      "AuditExport": "Exportação da auditoria",
+      "AuditCleanup": "Limpeza da auditoria"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -274,7 +288,8 @@
         "Deleted": "Excluiu um usuário",
         "RoleChanged": "Trocou um papel",
         "Deactivated": "Desativou um usuário",
-        "Reactivated": "Reativou um usuário"
+        "Reactivated": "Reativou um usuário",
+        "Anonymized": "Anonimizou um usuário"
       },
       "SignIn": {
         "SignedIn": "Entrou no sistema",
@@ -413,6 +428,9 @@
       },
       "AuditExport": {
         "Exported": "Exportou a auditoria"
+      },
+      "AuditCleanup": {
+        "Cleaned": "Limpou a auditoria"
       }
     },
     "providers": {
@@ -467,7 +485,8 @@
         "Name": "Nome",
         "Email": "E-mail",
         "Role": "Papel no sistema",
-        "IsActive": "Situação"
+        "IsActive": "Situação",
+        "AnonymousNumber": "Número da anonimização"
       },
       "InstallationSettings": {
         "Name": "Nome exibido",
@@ -476,7 +495,8 @@
         "MainColor": "Cor principal",
         "DailySummaryAt": "Horário do resumo diário",
         "NotificationRetentionDays": "Guardar notificações por",
-        "DarkLogoFileName": "Logo para o tema escuro"
+        "DarkLogoFileName": "Logo para o tema escuro",
+        "AuditRetentionYears": "Guardar auditoria por"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -617,6 +637,15 @@
     "dependsOn": "depende de {{name}}",
     "vendorTicket": "{{code}} no {{vendor}}",
     "passwordChanged": "senha alterada",
+    "cleanup": {
+      "removed_one": "{{rows}} registro apagado",
+      "removed_other": "{{rows}} registros apagados",
+      "before": "anteriores a {{day}}",
+      "details": {
+        "keptFrom": "Guardados a partir de",
+        "removed": "Registros apagados"
+      }
+    },
     "export": {
       "button": "Baixar planilha",
       "preparing": "Preparando…",
@@ -686,6 +715,8 @@
     "dailySummaryHint": "No fuso da instalação. O resumo sai uma vez por dia, só para quem tem novidades.",
     "notificationRetention": "Guardar notificações por (dias)",
     "notificationRetentionHint": "De 1 a 365 dias. As mais antigas saem do sino, lidas ou não.",
+    "auditRetention": "Guardar auditoria por (anos)",
+    "auditRetentionHint": "De 1 a 10 anos. Uma vez por mês, os registros mais antigos são apagados.",
     "m365": "Microsoft 365",
     "mailbox": "Caixa de envio",
     "mailboxHint": "Os e-mails do sistema saem por ela.",
@@ -712,7 +743,8 @@
       "colorFormat": "Use uma cor em hexadecimal, como {{example}}.",
       "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro.",
       "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
-      "retentionRange": "Use de 1 a 365 dias."
+      "retentionRange": "Use de 1 a 365 dias.",
+      "auditRetentionRange": "Use de 1 a 10 anos."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",

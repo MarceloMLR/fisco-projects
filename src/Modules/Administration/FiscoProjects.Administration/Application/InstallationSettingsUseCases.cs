@@ -60,14 +60,15 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
 /// The rules of the installation every person in a session needs: the time zone of the screens and the time of the
 /// daily summary, which the profile shows.
 /// </summary>
-public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays);
+public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears);
 
 public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
     public async Task<GeneralRules> ExecuteAsync(CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new GeneralRules(settings.TimeZone, settings.DailySummaryAt, settings.NotificationRetentionDays);
+        return new GeneralRules(
+            settings.TimeZone, settings.DailySummaryAt, settings.NotificationRetentionDays, settings.AuditRetentionYears);
     }
 }
 
@@ -79,18 +80,21 @@ public enum InstallationField
     MainColor = 3,
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
+    AuditRetentionYears = 6,
 }
 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
-/// summary and how many days the notifications are kept.
+/// summary, how many days the notifications are kept and how many years the audit is kept (none keeps the years it
+/// had, ADR-0110).
 /// </summary>
 public sealed record InstallationChanges(
     string? Name,
     string? TimeZone,
     string? MainColor,
     TimeOnly? DailySummaryAt,
-    int? NotificationRetentionDays);
+    int? NotificationRetentionDays,
+    int? AuditRetentionYears = null);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -130,6 +134,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.NotificationRetentionDays);
         }
 
+        if (changes.AuditRetentionYears is { } years && !InstallationSettings.IsValidAuditRetention(years))
+        {
+            invalid.Add(InstallationField.AuditRetentionYears);
+        }
+
         if (name is null || invalid.Count > 0)
         {
             return invalid;
@@ -141,6 +150,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.ChangeMainColor(mainColor);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
+        if (changes.AuditRetentionYears is { } auditYears)
+        {
+            settings.ChangeAuditRetention(auditYears);
+        }
+
         await store.SaveChangesAsync(cancellationToken);
         return [];
     }

@@ -3,7 +3,15 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '../../src/test/server';
 import { loadDemo, screensAddress } from './load.ts';
-import { demoClients, type DemoTicket, demoPeople, demoProjects, demoVendors } from './plan.ts';
+import {
+  demoClients,
+  type DemoTicket,
+  demoPeople,
+  demoProjects,
+  demoVendors,
+  formerColleague,
+  mainProject,
+} from './plan.ts';
 
 /**
  * The API of a development installation, simulated: the local sign-in sets a session cookie with the person, and every
@@ -23,9 +31,15 @@ let missingFolders: string[] = [];
 let missingTemplates: string[] = [];
 let ids = 0;
 let numbers = 0;
+/** People anonymized before the load (ADR-0110). */
+let anonymized = 0;
+/** The projects the load created, with their ids. */
+let created: { code: string; id: string }[] = [];
 
 const personOfEmail = (email: string) =>
-  Object.entries(demoPeople).find(([, value]) => value === email)?.[0];
+  email === formerColleague.email
+    ? 'sofia'
+    : Object.entries(demoPeople).find(([, value]) => value === email)?.[0];
 const idOf = (person: string) => `0199f5a2-0000-7000-8000-${person.padStart(12, '0').slice(-12)}`;
 const nextId = () => `0199f5a2-1111-7000-8000-${String(++ids).padStart(12, '0')}`;
 const listedId = (kind: string, index: number) =>
@@ -66,6 +80,8 @@ beforeEach(() => {
   missingTemplates = [];
   ids = 0;
   numbers = 0;
+  anonymized = 0;
+  created = [];
   server.use(
     http.all(`${base}/api/*`, async ({ request }) => {
       await keep(request);
@@ -95,13 +111,20 @@ beforeEach(() => {
         theme: 'System',
       });
     }),
-    http.get(`${base}/api/projects`, () =>
-      HttpResponse.json({
-        items: existing.map((code) => ({ code })),
-        total: existing.length,
-        today: '2026-10-19',
-      }),
-    ),
+    http.get(`${base}/api/projects`, () => {
+      const items = [
+        ...existing.map((code, index) => ({ code, id: listedId('7777', index) })),
+        ...created,
+      ];
+      return HttpResponse.json({ items, total: items.length, today: '2026-10-19' });
+    }),
+    http.post(`${base}/api/projects`, async ({ request }) => {
+      const { code } = (await request.json()) as { code: string };
+      const id = nextId();
+      created.push({ code, id });
+      return HttpResponse.json({ id }, { status: 201 });
+    }),
+    http.get(`${base}/api/users`, () => HttpResponse.json({ items: [], total: anonymized })),
     http.get(`${base}/api/clients`, () =>
       HttpResponse.json({
         items: existingClients.map((name, index) => ({
@@ -188,6 +211,64 @@ const people = (pattern: RegExp) =>
 
 // Spec: dados-de-demonstracao, requirement "Carga dos dados de demonstração".
 describe('Carga dos dados de demonstração', () => {
+  // Spec: dados-pessoais, requirement "Pessoa anonimizada em todo o sistema" (ADR-0110).
+  it('Pessoa que saiu da empresa', async () => {
+    const lines: string[] = [];
+
+    await loadDemo(base, (line) => lines.push(line));
+
+    const sofia = idOf('sofia');
+    const main = created.find((project) => project.code === mainProject)?.id ?? '';
+    expect(bodies.get(`/api/projects/${main}/members`)).toContainEqual({
+      userId: sofia,
+      directoryId: null,
+      role: 'Developer',
+    });
+    expect(callsBy(/^sofia POST /)).toEqual(['sofia POST /api/tickets']);
+    expect((bodies.get('/api/tickets') ?? []).at(-1)).toEqual({
+      projectId: main,
+      ...formerColleague.ticket,
+    });
+    const number = String(numbers);
+    // The tech lead answers mentioning her; then the Administrator deactivates and anonymizes her.
+    const answer = (bodies.get(`/api/tickets/${number}/messages`) ?? []).at(-1) as string;
+    expect(answer).toContain(`"id":"${sofia}"`);
+    expect(calls.filter((call) => /sofia|messages$/.test(call)).slice(-3)).toEqual([
+      `rafael POST /api/tickets/${number}/messages`,
+      `paulo POST /api/users/${sofia}/deactivate`,
+      `paulo POST /api/users/${sofia}/anonymization`,
+    ]);
+    expect(lines).toContain(
+      `sofia saiu da empresa: abriu o chamado #${number} no ${mainProject} e foi desativada e anonimizada.`,
+    );
+  });
+
+  it('Só a pessoa que saiu da empresa', async () => {
+    existing = demoProjects.map((project) => project.code);
+    const lines: string[] = [];
+
+    const outcome = await loadDemo(base, (line) => lines.push(line));
+
+    expect(outcome).toMatchObject({ loaded: true, projects: 0, items: 0 });
+    expect(callsBy(/ POST \/api\/projects$/)).toEqual([]);
+    expect(callsBy(/^paulo POST \/api\/users\/.+\/anonymization$/)).toHaveLength(1);
+    expect(bodies.get(`/api/projects/${listedId('7777', 0)}/members`)).toEqual([
+      { userId: idOf('sofia'), directoryId: null, role: 'Developer' },
+    ]);
+    expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');
+  });
+
+  it('Ninguém mais sai da empresa', async () => {
+    anonymized = 1;
+
+    await loadDemo(base);
+
+    expect(
+      (bodies.get('/api/session/local') ?? []).map((body) => (body as { email: string }).email),
+    ).not.toContain(formerColleague.email);
+    expect(callsBy(/anonymization$/)).toEqual([]);
+  });
+
   it('Carregar dados de demonstração', async () => {
     const lines: string[] = [];
 
@@ -202,11 +283,12 @@ describe('Carga dos dados de demonstração', () => {
     });
     // Everyone of the demo directory signs in, but the people who never signed in (ADR-0078).
     expect(people(/POST \/api\/session\/local$/)).toEqual(['anonymous']);
+    // And the colleague who left the company, once (ADR-0110).
     expect(
       (bodies.get('/api/session/local') ?? [])
         .map((body) => (body as { email: string }).email)
         .sort(),
-    ).toEqual(Object.values(demoPeople).sort());
+    ).toEqual([...Object.values(demoPeople), formerColleague.email].sort());
     // The Administrator gives the roles and creates the clients, the projects and their members.
     expect(callsBy(/^paulo PUT \/api\/users\/.+\/role$/)).toEqual([
       `paulo PUT /api/users/${idOf('marina')}/role`,
@@ -313,6 +395,7 @@ describe('Carga dos dados de demonstração', () => {
 
   it('Dados já carregados', async () => {
     existing = demoProjects.map((project) => project.code);
+    anonymized = 1;
     const lines: string[] = [];
 
     const outcome = await loadDemo(base, (line) => lines.push(line));
@@ -450,6 +533,8 @@ function expectedCalls(ticket: DemoTicket, number: number): string[] {
 // Spec: dados-de-demonstracao, requirement "Chamados na demonstração".
 describe('Chamados na demonstração', () => {
   it('Chamados na demonstração', async () => {
+    // Only the tickets of the projects: the colleague who left the company has her own test.
+    anonymized = 1;
     await loadDemo(base, () => undefined);
 
     // Each ticket opened by its person, before the projects get their status.

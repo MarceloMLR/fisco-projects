@@ -108,4 +108,45 @@ public sealed class OutboxEmailTests
             TextBody = (string?)null,
         });
     }
+    [Fact(DisplayName = "E-mail esperando envio para pessoa anonimizada")]
+    public void Withdraw_LeavesAPendingEmailFailed_AndForgotten()
+    {
+        var email = NewEmail();
+
+        email.Withdraw(Now.AddHours(1));
+
+        email.Status.Should().Be(OutboxEmailStatus.Failed);
+        email.FailedAt.Should().Be(Now.AddHours(1));
+        email.ForgottenAt.Should().Be(Now.AddHours(1));
+        (email.ToAddress, email.ToName, email.Subject, email.HtmlBody, email.TextBody).Should().Be((null, null, null, null, null));
+    }
+
+    [Fact(DisplayName = "E-mail enviado para pessoa anonimizada")]
+    public void Withdraw_KeepsTheStatusOfASentEmail()
+    {
+        var email = NewEmail();
+        email.Reserve(Now);
+        email.MarkSent(Now);
+
+        email.Withdraw(Now.AddHours(1));
+
+        email.Status.Should().Be(OutboxEmailStatus.Sent);
+        email.ToAddress.Should().BeNull();
+        email.ForgottenAt.Should().Be(Now.AddHours(1));
+    }
+
+    [Fact(DisplayName = "Nome de pessoa anonimizada no e-mail de outra")]
+    public void Rename_PutsTheIdentifierInTheContent()
+    {
+        var email = new OutboxEmail(
+            "Test", "marina.costa@empresa.example", "Marina Costa", "Carla Mendes mencionou você",
+            "<p>Carla Mendes &amp; D&#39;Ávila</p>", "Carla Mendes", Now);
+
+        email.Rename("Carla Mendes", "Pessoa removida nº 1", "Carla Mendes", "Pessoa removida nº 1");
+
+        email.Subject.Should().Be("Pessoa removida nº 1 mencionou você");
+        email.HtmlBody.Should().Be("<p>Pessoa removida nº 1 &amp; D&#39;Ávila</p>");
+        email.TextBody.Should().Be("Pessoa removida nº 1");
+        email.ToAddress.Should().Be("marina.costa@empresa.example");
+    }
 }

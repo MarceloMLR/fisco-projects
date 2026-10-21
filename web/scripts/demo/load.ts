@@ -17,6 +17,7 @@ import {
   demoVendors,
   fallbackCategory,
   firstDayFor,
+  formerColleague,
   mainProject,
   manager,
   projectManagers,
@@ -27,8 +28,9 @@ import {
  * Loads the demonstration data through the API (ADR-0089), each action by the person who would do it on the screens:
  * the Administrator creates the clients and the projects, the manager of each project builds its schedule and each
  * person in charge of a task updates its progress. Only the projects of the plan that are not there yet are loaded,
- * with the clients and vendors still missing, so a demonstration already loaded gets what the plan added since; it
- * stops where the local sign-in is off, as in production (ADR-0078). It ends saying where the screens open.
+ * with the clients and vendors still missing, so a demonstration already loaded gets what the plan added since; the
+ * colleague who left the company is anonymized while nobody is (ADR-0110). It stops where the local sign-in is off, as
+ * in production (ADR-0078). It ends saying where the screens open.
  */
 
 type Api = ReturnType<typeof createClient<paths>>;
@@ -93,16 +95,24 @@ function apiFor(baseUrl: string): Api {
 }
 
 /** Signs a person in by the local sign-in and gives the id of the user (ADR-0078). */
-async function signIn(baseUrl: string, person: DemoPerson): Promise<{ api: Api; id: string }> {
+function signIn(baseUrl: string, person: DemoPerson): Promise<{ api: Api; id: string }> {
+  return signInWith(baseUrl, demoPeople[person]);
+}
+
+/** Signs in the person of the demo directory with the e-mail, with the id and the name of the user (ADR-0078). */
+async function signInWith(
+  baseUrl: string,
+  email: string,
+): Promise<{ api: Api; id: string; name: string }> {
   const api = apiFor(baseUrl);
-  const signedIn = await api.POST('/api/session/local', { body: { email: demoPeople[person] } });
+  const signedIn = await api.POST('/api/session/local', { body: { email } });
   if (!signedIn.response.ok) {
     throw new Error(
-      `A entrada local recusou ${demoPeople[person]} (${String(signedIn.response.status)}): confira o diretório de demonstração (LocalSignIn:People).`,
+      `A entrada local recusou ${email} (${String(signedIn.response.status)}): confira o diretório de demonstração (LocalSignIn:People).`,
     );
   }
-  const session = must(await api.GET('/api/session'), `Sessão de ${demoPeople[person]}`);
-  return { api, id: session.id };
+  const session = must(await api.GET('/api/session'), `Sessão de ${email}`);
+  return { api, id: session.id, name: session.name };
 }
 
 export async function loadDemo(
@@ -126,7 +136,15 @@ export async function loadDemo(
   }
   const { codes, today } = await existingProjects(admin.api);
   const missing = demoProjects.filter((project) => !codes.has(project.code));
-  if (missing.length === 0) {
+  // The colleague who left the company, while nobody is anonymized (ADR-0110).
+  const colleagueLeaves =
+    must(
+      await admin.api.GET('/api/users', {
+        params: { query: { status: 'Anonymized', pageSize: 1 } },
+      }),
+      'Pessoas anonimizadas',
+    ).total === 0;
+  if (missing.length === 0 && !colleagueLeaves) {
     log(
       `Os dados de demonstração já estão carregados (${mainProject} e os demais projetos do plano existem). Nada mudou.`,
     );
@@ -220,18 +238,28 @@ export async function loadDemo(
       log,
     );
   }
+  if (colleagueLeaves) {
+    await leaveTheCompany(baseUrl, admin.api, personOf, log);
+  }
   const count = (of: (project: DemoProject) => readonly unknown[] | undefined) =>
     missing.reduce((total, project) => total + (of(project)?.length ?? 0), 0);
-  log(
-    `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos e ${String(count((project) => project.acceptances))} termos de aceite.`,
-  );
+  if (missing.length > 0) {
+    log(
+      `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos e ${String(count((project) => project.acceptances))} termos de aceite.`,
+    );
+  }
   log(screensLine);
   return { loaded: true, firstDay, projects: missing.length, items };
 }
 
-/** The codes of the projects already there, of every situation, and today in the time zone of the installation. */
-async function existingProjects(admin: Api): Promise<{ codes: Set<string>; today: string }> {
-  const codes = new Set<string>();
+/**
+ * The projects already there, of every situation, by code, with the id, and today in the time zone of the
+ * installation.
+ */
+async function existingProjects(
+  admin: Api,
+): Promise<{ codes: Map<string, string>; today: string }> {
+  const codes = new Map<string, string>();
   const pageSize = 100;
   for (let page = 1; ; page += 1) {
     const found = must(
@@ -239,12 +267,77 @@ async function existingProjects(admin: Api): Promise<{ codes: Set<string>; today
       'Lista de projetos',
     );
     for (const project of found.items) {
-      codes.add(project.code);
+      codes.set(project.code, project.id);
     }
     if (page * pageSize >= found.total) {
       return { codes, today: found.today };
     }
   }
+}
+
+/**
+ * The colleague who left the company (ADR-0058, ADR-0110): she signs in, the Administrator puts her in the main
+ * project, she opens a ticket and the tech lead answers mentioning her; then the Administrator deactivates and
+ * anonymizes her. Without the main project, which the Administrator may have removed, nothing happens.
+ */
+async function leaveTheCompany(
+  baseUrl: string,
+  admin: Api,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+  log: (line: string) => void,
+): Promise<void> {
+  const projectId = (await existingProjects(admin)).codes.get(mainProject);
+  if (projectId === undefined) {
+    log(`Ninguém saiu da empresa: ${mainProject} não existe.`);
+    return;
+  }
+  const colleague = await signInWith(baseUrl, formerColleague.email);
+  // Already in the project, from a load that stopped in the middle, is fine.
+  const joined = await admin.POST('/api/projects/{id}/members', {
+    params: { path: { id: projectId } },
+    body: { userId: colleague.id, directoryId: null, role: formerColleague.role },
+  });
+  if (!joined.response.ok && joined.response.status !== 409) {
+    done(joined, `Membro ${formerColleague.email} de ${mainProject}`);
+  }
+  const { ticket, answer } = formerColleague;
+  const opened = must(
+    await colleague.api.POST('/api/tickets', { body: { projectId, ...ticket } }),
+    `Chamado ${ticket.title}`,
+  );
+  const form = new FormData();
+  form.append(
+    'body',
+    JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'mention', attrs: { id: colleague.id, label: colleague.name } },
+            { type: 'text', text: `, ${answer.text}` },
+          ],
+        },
+      ],
+    }),
+  );
+  done(
+    await personOf(answer.by).api.POST('/api/tickets/{number}/messages', {
+      params: { path: { number: opened.number } },
+      body: { files: [] },
+      bodySerializer: () => form,
+    }),
+    `Mensagem no chamado ${ticket.title}`,
+  );
+  const user = { params: { path: { id: colleague.id } } };
+  done(await admin.POST('/api/users/{id}/deactivate', user), `Desativar ${formerColleague.email}`);
+  done(
+    await admin.POST('/api/users/{id}/anonymization', user),
+    `Anonimizar ${formerColleague.email}`,
+  );
+  log(
+    `${colleague.name} saiu da empresa: abriu o chamado #${String(opened.number)} no ${mainProject} e foi desativada e anonimizada.`,
+  );
 }
 
 /**

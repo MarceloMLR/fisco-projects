@@ -2,6 +2,7 @@ using FiscoProjects.Notifications.Application;
 using FiscoProjects.Notifications.Contracts;
 using FiscoProjects.Notifications.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
+using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.SharedKernel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,6 +66,8 @@ public static class NotificationsModule
         services.AddHostedService<EmailDispatcher>();
         services.AddHostedService<DailySummaryScheduler>();
         services.AddHostedService<NotificationCleanup>();
+        // LGPD (ADR-0110): the e-mails, the bell and the daily summary of an anonymized person.
+        services.AddScoped<IPersonalDataEraser, NotificationsPersonalData>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, NotificationsWarmUp>();
         return services;

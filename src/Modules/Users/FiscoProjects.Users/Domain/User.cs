@@ -40,6 +40,14 @@ public sealed class User : Entity
     /// <summary>Whether the person receives the daily summary of e-mails (ADR-0037); the e-mails sent now are never off.</summary>
     public bool ReceivesDailySummary { get; private set; } = true;
 
+    /// <summary>The number of the anonymization, in sequence in the installation (ADR-0110); null for everyone else.</summary>
+    public int? AnonymousNumber { get; private set; }
+
+    /// <summary>When the person was anonymized (ADR-0058); null for everyone else.</summary>
+    public DateTime? AnonymizedAt { get; private set; }
+
+    public bool IsAnonymized => AnonymizedAt is not null;
+
     public static User Create(string name, string email, DateTime now) =>
         new(name.Trim(), email.Trim(), SystemRole.User, isActive: true, createdAt: now, lastSignInAt: now);
 
@@ -89,5 +97,34 @@ public sealed class User : Entity
     /// <summary>Blocks the access from the next request on; name, e-mail, role and history stay (ADR-0008).</summary>
     public void Deactivate() => IsActive = false;
 
-    public void Reactivate() => IsActive = true;
+    /// <summary>Gives the access back; an anonymized person never comes back (ADR-0110).</summary>
+    public void Reactivate()
+    {
+        if (IsAnonymized)
+        {
+            throw new InvalidOperationException("An anonymized person is not reactivated.");
+        }
+
+        IsActive = true;
+    }
+
+    /// <summary>
+    /// Takes the name and the e-mail away for good (ADR-0058, ADR-0110): the name becomes the identifier of the
+    /// anonymization, the e-mail is left empty and the role goes back to User. Only a deactivated person is anonymized.
+    /// </summary>
+    public void Anonymize(string identifier, int number, DateTime now)
+    {
+        if (IsActive || IsAnonymized)
+        {
+            throw new InvalidOperationException("Only a deactivated person, not anonymized yet, is anonymized.");
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+        Name = identifier;
+        Email = string.Empty;
+        Role = SystemRole.User;
+        ReceivesDailySummary = false;
+        AnonymousNumber = number;
+        AnonymizedAt = now;
+    }
 }

@@ -1445,6 +1445,7 @@ export const handlers = [
       timeZone: 'America/Sao_Paulo',
       dailySummaryAt: '07:30:00',
       notificationRetentionDays: 90,
+      auditRetentionYears: 5,
     }),
   ),
   http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),

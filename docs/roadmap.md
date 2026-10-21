@@ -29,8 +29,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
-| 10. Governança e operação | 6 | 0 |
-| **Total** | **80** | **68** |
+| 10. Governança e operação | 6 | 1 |
+| **Total** | **80** | **69** |
 
 ## 1. Fundação
 
@@ -157,7 +157,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Operação-1 | `lgpd-anonimizacao-e-retencao` | Anonimização a pedido e limpezas por prazo | 0058 | Planejada |
+| Operação-1 | `lgpd-anonimizacao-e-retencao` | Anonimização a pedido e limpezas por prazo | 0058, 0110 | Concluída em 21/10/2026 ([#75](https://github.com/MarceloMLR/fisco-projects/pull/75)) |
 | Operação-2 | `exclusao-de-projeto` | Exclusão definitiva pelo administrador (no fim, porque apaga dados de todos os módulos) | 0041 | Planejada |
 | Operação-3 | `monitoramento-e-alertas` | OpenTelemetry, Application Insights, saúde e alertas | 0057 | Planejada |
 | Operação-4 | `backup-e-restauracao` | Backups ajustados e roteiro de restauração | 0059 | Planejada |

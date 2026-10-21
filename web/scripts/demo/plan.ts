@@ -15,7 +15,10 @@ type TicketAction = components['schemas']['TicketAction'];
 type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 type DocumentStatus = components['schemas']['DocumentStatus'];
 
-/** The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). */
+/**
+ * The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). Sofia
+ * Martins signs in once, as the colleague who left the company (`formerColleague`).
+ */
 export const demoPeople = {
   paulo: 'paulo.nogueira@empresa.example',
   marina: 'marina.costa@empresa.example',
@@ -67,6 +70,33 @@ export const demoVendors = [
 ] as const;
 
 export type DemoVendor = (typeof demoVendors)[number]['name'];
+
+/**
+ * A colleague who left the company (ADR-0058, ADR-0110): she signs in, joins the main project, opens a ticket and is
+ * mentioned in the answer; then the Administrator deactivates and anonymizes her, and the screens show her by the
+ * identifier of the installation ("Pessoa removida nº 1"). Only while the installation has nobody anonymized, so a new
+ * load does not repeat it; the demo directory keeps her, as someone who never signed in.
+ */
+export const formerColleague = {
+  email: 'sofia.martins@empresa.example',
+  role: 'Developer',
+  ticket: {
+    title: 'Conciliação sem as filiais novas',
+    team: 'Development',
+    priority: 'Medium',
+    description:
+      'O relatório de conciliação bancária não traz as duas filiais incluídas em setembro. As outras aparecem normalmente.',
+  },
+  answer: {
+    by: 'rafael',
+    text: 'obrigado pelo aviso. O filtro das filiais estava fixo; ajustei e o relatório já traz as novas.',
+  },
+} as const satisfies {
+  email: string;
+  role: ProjectRole;
+  ticket: { title: string; team: TicketTeam; priority: TicketPriority; description: string };
+  answer: { by: DemoPerson; text: string };
+};
 
 /** The category of links that takes the links of a category the Administrator deactivated (ADR-0032). */
 export const fallbackCategory = 'Outros';

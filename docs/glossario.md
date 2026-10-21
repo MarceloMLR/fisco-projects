@@ -242,8 +242,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Envio local | LocalEmailSender (`Email:Provider` = `Local`) | Grava `.eml` numa pasta, sem enviar; recusado em produção |
 | Teste de envio | SendTestEmail (`POST /api/admin/email/test`) | E-mail para o próprio administrador, na seção Microsoft 365 |
 | Auditoria | Audit | Módulo `Audit`, dono das tabelas da auditoria (schema `audit`) |
-| Registro de auditoria | AuditEntry | Só acrescentado, nunca alterado nem apagado (ADR-0039) |
-| Ação: criou, alterou, excluiu, entrou, recusou uma entrada, exportou | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused, Exported | |
+| Registro de auditoria | AuditEntry | Só acrescentado; a anonimização apaga dele o nome e o e-mail da pessoa, e a limpeza mensal apaga os mais antigos que o prazo (ADR-0039, ADR-0110) |
+| Ação: criou, alterou, excluiu, entrou, recusou uma entrada, exportou, limpou | AuditAction: Created, Updated, Deleted, SignedIn, SignInRefused, Exported, Cleaned | |
 | Exportação da auditoria (relatório em Excel) | AuditExport | Só do administrador, registrada na própria auditoria com o período, o tipo, a pessoa e os registros (ADR-0099) |
 | Campo alterado, antes e depois | AuditField: Field, Before, After | Valores em texto invariável; a tela traduz |
 | Autor; Sistema quando não há sessão | ActorId (vazio para Sistema) | |
@@ -255,7 +255,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Contexto do item | `IsAuditContext` | Campo gravado em toda mudança, mesmo sem mudar, para dizer onde o item está, como o projeto de uma pessoa; a tela o usa no texto, fora da tabela de mudanças |
 | Evento de segurança | ISecurityEvents | Entrada e entrada recusada; troca de papel e situação entram como alteração do usuário |
 | Motivo da recusa: fora do diretório, conta desativada | SignInRefusal: NotInDirectory, Inactive | |
-| Anonimização | Anonymization | |
+| Anonimização | Anonymization, AnonymizeUser (`POST /api/users/{id}/anonymization`) | Só de pessoa desativada, definitiva; o nome vira o identificador e o e-mail fica vazio (ADR-0058, ADR-0110) |
+| Pessoa anonimizada | UserStatus.Anonymized, `User.AnonymizedAt` | Situação "Anonimizado" em Usuários, sem reativar nem trocar o papel |
+| Identificador da anonimização | `Users:AnonymousName`, `User.AnonymousNumber` | "Pessoa removida nº {0}", com o número em sequência na instalação |
+| Apagador de dados pessoais | IPersonalDataEraser, PersonErasure | Cada módulo apaga as cópias do nome e do e-mail, na transação da anonimização |
+| Prazo da auditoria | AuditRetentionYears | "Guardar auditoria por", de 1 a 10 anos (padrão 5), nas Configurações gerais |
+| Limpeza mensal da auditoria | CleanUpAudit, AuditCleanup, AuditCleanupRun (`audit.cleanups`) | Uma vez por mês da instalação; registrada na auditoria, por Sistema, quando apaga algum |
 
 ## Telas
 

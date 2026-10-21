@@ -129,6 +129,35 @@ public sealed class OutboxEmail : Entity
         NextAttemptAt = now + Retries[Math.Clamp(Attempts - 1, 0, Retries.Count - 1)];
     }
 
+    /// <summary>
+    /// The e-mail to an anonymized person (ADR-0110): one still waiting is not sent anymore, and stays failed; the
+    /// recipient and the content are forgotten.
+    /// </summary>
+    public void Withdraw(DateTime now)
+    {
+        if (Status == OutboxEmailStatus.Pending)
+        {
+            Status = OutboxEmailStatus.Failed;
+            FailedAt = now;
+        }
+
+        Forget(now);
+    }
+
+    /// <summary>
+    /// Puts the identifier of an anonymized person in the place of the name, in the content still kept (ADR-0110); the
+    /// HTML has the name written as HTML.
+    /// </summary>
+    public void Rename(string name, string replacement, string htmlName, string htmlReplacement)
+    {
+        ToName = ToName?.Replace(name, replacement, StringComparison.Ordinal);
+        Subject = Subject?.Replace(name, replacement, StringComparison.Ordinal);
+        TextBody = TextBody?.Replace(name, replacement, StringComparison.Ordinal);
+        HtmlBody = HtmlBody?
+            .Replace(htmlName, htmlReplacement, StringComparison.Ordinal)
+            .Replace(name, replacement, StringComparison.Ordinal);
+    }
+
     /// <summary>Forgets the recipient and the content, keeping the day, the kind and the status (ADR-0058).</summary>
     public void Forget(DateTime now)
     {

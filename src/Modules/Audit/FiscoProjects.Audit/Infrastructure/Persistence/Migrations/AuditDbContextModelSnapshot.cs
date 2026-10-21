@@ -24,6 +24,25 @@ namespace FiscoProjects.Audit.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FiscoProjects.Audit.Domain.AuditCleanupRun", b =>
+                {
+                    b.Property<DateOnly>("Month")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("KeptFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("RanAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Removed")
+                        .HasColumnType("int");
+
+                    b.HasKey("Month");
+
+                    b.ToTable("cleanups", "audit");
+                });
+
             modelBuilder.Entity("FiscoProjects.Audit.Domain.AuditEntry", b =>
                 {
                     b.Property<Guid>("Id")

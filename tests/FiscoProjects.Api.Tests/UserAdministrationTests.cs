@@ -26,6 +26,13 @@ public sealed class UserAdministrationTests(SqlServerFixture sqlServer)
             HttpStatusCode.NoContent, [SystemRole.Administrator]),
         new("Reactivate a user", (client, target) => SendAsync(client, HttpMethod.Post, $"/api/users/{target}/reactivate"),
             HttpStatusCode.NoContent, [SystemRole.Administrator]),
+        // Last: only a deactivated person is anonymized, and for good (ADR-0110).
+        new("Anonymize a user", async (client, target) =>
+            {
+                await SendAsync(client, HttpMethod.Post, $"/api/users/{target}/deactivate");
+                return await SendAsync(client, HttpMethod.Post, $"/api/users/{target}/anonymization");
+            },
+            HttpStatusCode.NoContent, [SystemRole.Administrator]),
     ];
 
     [Fact(DisplayName = "Administrador na administração de usuários")]

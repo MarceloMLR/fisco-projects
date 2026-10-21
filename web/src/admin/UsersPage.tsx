@@ -2,8 +2,10 @@ import BlockOutlined from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
+import PersonOffOutlined from '@mui/icons-material/PersonOffOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import ListSubheader from '@mui/material/ListSubheader';
@@ -17,6 +19,7 @@ import { api, systemRoles, type SystemRole, type UserRow, userProblems } from '.
 import { queryKeys, usersQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
+import { Dialog } from '../components/Dialog';
 import { Select } from '../components/Select';
 import { StatusBadge } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
@@ -30,15 +33,23 @@ const pageSize = 25;
 const searchDelay = 300;
 
 type RoleFilter = 'all' | SystemRole;
-/** An inactive person shows dimmed in the list. */
-const isInactive = (user: UserRow) => user.status === 'Inactive';
+type UserAction = 'role' | 'deactivate' | 'reactivate' | 'anonymize';
+/** A person without access, deactivated or anonymized, shows dimmed in the list. */
+const isInactive = (user: UserRow) => user.status !== 'Active';
 const noUsers = { items: [], total: 0 };
+/** The confirmation of each action on the access of a person. */
+const doneMessages = {
+  deactivate: 'deactivated',
+  reactivate: 'reactivated',
+  anonymize: 'anonymized',
+} as const;
 type StatusFilter = 'all' | UserRow['status'];
 
 /**
  * Users of the Administration, as in the canvas (ADR-0008): people in alphabetical order, with search, filters by
  * role and status, and a menu per person to change the role and to deactivate or reactivate the access. Name and
- * e-mail come from the identity provider and are never edited here.
+ * e-mail come from the identity provider and are never edited here. A deactivated person can be anonymized, for
+ * good, after a confirmation (ADR-0058, ADR-0110); an anonymized one has no menu.
  */
 export function UsersPage() {
   const { t } = useTranslation();
@@ -51,6 +62,7 @@ export function UsersPage() {
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string>();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; user: UserRow }>();
+  const [anonymizing, setAnonymizing] = useState<UserRow>();
   const debouncedSearch = useDebounced(search, searchDelay).trim();
   const queryClient = useQueryClient();
 
@@ -68,8 +80,9 @@ export function UsersPage() {
   const users = data ?? noUsers;
 
   const act = useCallback(
-    async (user: UserRow, action: 'role' | 'deactivate' | 'reactivate', newRole?: SystemRole) => {
+    async (user: UserRow, action: UserAction, newRole?: SystemRole) => {
       setMenu(undefined);
+      setAnonymizing(undefined);
       const path = { params: { path: { id: user.id } } };
       try {
         const { response, error } =
@@ -80,7 +93,9 @@ export function UsersPage() {
               })
             : action === 'deactivate'
               ? await api.POST('/api/users/{id}/deactivate', path)
-              : await api.POST('/api/users/{id}/reactivate', path);
+              : action === 'reactivate'
+                ? await api.POST('/api/users/{id}/reactivate', path)
+                : await api.POST('/api/users/{id}/anonymization', path);
         if (response.ok) {
           setMessage(
             action === 'role'
@@ -88,9 +103,7 @@ export function UsersPage() {
                   name: user.name,
                   role: t(`users.roles.${newRole ?? user.role}`),
                 })
-              : t(`users.messages.${action === 'deactivate' ? 'deactivated' : 'reactivated'}`, {
-                  name: user.name,
-                }),
+              : t(`users.messages.${doneMessages[action]}`, { name: user.name }),
           );
           // The lists that show the person, here and in the Audit, are asked again.
           void queryClient.invalidateQueries({ queryKey: queryKeys.users });
@@ -105,8 +118,14 @@ export function UsersPage() {
         setMessage(
           problemType === userProblems.lastAdministrator
             ? t('users.messages.lastAdministrator')
-            : t('users.messages.failed'),
+            : problemType === userProblems.anonymized
+              ? t('users.messages.anonymizedAlready')
+              : problemType === userProblems.active
+                ? t('users.messages.activeNotAnonymized')
+                : t('users.messages.failed'),
         );
+        // Someone else may have changed the person meanwhile.
+        void queryClient.invalidateQueries({ queryKey: queryKeys.users });
       } catch {
         setMessage(t('users.messages.failed'));
       }
@@ -151,7 +170,7 @@ export function UsersPage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {row.email}
+                {row.status === 'Anonymized' ? t('users.anonymizedData') : row.email}
               </Box>
             </Box>
           </Box>
@@ -172,6 +191,10 @@ export function UsersPage() {
             <StatusBadge tone="success" icon={CheckCircleOutlined}>
               {t('users.status.Active')}
             </StatusBadge>
+          ) : row.status === 'Anonymized' ? (
+            <StatusBadge tone="neutral" icon={PersonOffOutlined}>
+              {t('users.status.Anonymized')}
+            </StatusBadge>
           ) : (
             <StatusBadge tone="neutral" icon={BlockOutlined}>
               {t('users.status.Inactive')}
@@ -190,25 +213,27 @@ export function UsersPage() {
         renderHeader: () => null,
         width: 52,
         align: 'right',
-        renderCell: ({ row }) => (
-          <IconButton
-            size="small"
-            aria-label={t('users.menu.button', { name: row.name })}
-            aria-haspopup="menu"
-            onClick={(event) => {
-              setMenu({ anchor: event.currentTarget, user: row });
-            }}
-            sx={{
-              width: 'var(--control-sm)',
-              height: 'var(--control-sm)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-secondary)',
-              '&:hover': { backgroundColor: 'var(--bg-subtle)', color: 'var(--text)' },
-            }}
-          >
-            <MoreVertOutlined sx={{ fontSize: 'var(--icon-md)' }} />
-          </IconButton>
-        ),
+        // An anonymized person stays as is, for good (ADR-0110).
+        renderCell: ({ row }) =>
+          row.status === 'Anonymized' ? null : (
+            <IconButton
+              size="small"
+              aria-label={t('users.menu.button', { name: row.name })}
+              aria-haspopup="menu"
+              onClick={(event) => {
+                setMenu({ anchor: event.currentTarget, user: row });
+              }}
+              sx={{
+                width: 'var(--control-sm)',
+                height: 'var(--control-sm)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--text-secondary)',
+                '&:hover': { backgroundColor: 'var(--bg-subtle)', color: 'var(--text)' },
+              }}
+            >
+              <MoreVertOutlined sx={{ fontSize: 'var(--icon-md)' }} />
+            </IconButton>
+          ),
       },
     ],
     [t, formatLastAccess],
@@ -267,6 +292,7 @@ export function UsersPage() {
                 { value: 'all', label: t('users.filters.allStatuses') },
                 { value: 'Active', label: t('users.status.Active') },
                 { value: 'Inactive', label: t('users.status.Inactive') },
+                { value: 'Anonymized', label: t('users.status.Anonymized') },
               ]}
               onChange={(value) => {
                 setStatus(value);
@@ -320,14 +346,31 @@ export function UsersPage() {
         })}
         <Divider sx={{ margin: 'var(--space-1) 0' }} />
         {menu?.user.status === 'Inactive' ? (
-          <MenuItem
-            onClick={() => {
-              void act(menu.user, 'reactivate');
-            }}
-          >
-            <CheckCircleOutlined aria-hidden />
-            {t('users.menu.reactivate')}
-          </MenuItem>
+          [
+            <MenuItem
+              key="reactivate"
+              onClick={() => {
+                void act(menu.user, 'reactivate');
+              }}
+            >
+              <CheckCircleOutlined aria-hidden />
+              {t('users.menu.reactivate')}
+            </MenuItem>,
+            <MenuItem
+              key="anonymize"
+              onClick={() => {
+                setAnonymizing(menu.user);
+                setMenu(undefined);
+              }}
+              sx={{
+                color: 'var(--status-danger-text)',
+                '& > .MuiSvgIcon-root': { color: 'var(--status-danger-text)' },
+              }}
+            >
+              <PersonOffOutlined aria-hidden />
+              {t('users.menu.anonymize')}
+            </MenuItem>,
+          ]
         ) : (
           <MenuItem
             onClick={() => {
@@ -345,6 +388,47 @@ export function UsersPage() {
           </MenuItem>
         )}
       </Menu>
+      <Dialog
+        open={anonymizing !== undefined}
+        alert
+        title={t('users.anonymize.title', { name: anonymizing?.name ?? '' })}
+        onClose={() => {
+          setAnonymizing(undefined);
+        }}
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setAnonymizing(undefined);
+              }}
+            >
+              {t('users.anonymize.cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => {
+                if (anonymizing !== undefined) {
+                  void act(anonymizing, 'anonymize');
+                }
+              }}
+            >
+              {t('users.anonymize.confirm')}
+            </Button>
+          </>
+        }
+      >
+        <Box component="p" sx={{ margin: '0 0 var(--space-3)' }}>
+          {t('users.anonymize.text', {
+            name: anonymizing?.name ?? '',
+            email: anonymizing?.email ?? '',
+          })}
+        </Box>
+        <Box component="p" sx={{ margin: 0 }}>
+          {t('users.anonymize.forGood')}
+        </Box>
+      </Dialog>
       <Snackbar
         open={message !== undefined}
         message={message}

@@ -28,6 +28,11 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("AuditRetentionYears")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(5);
+
                     b.Property<TimeOnly>("DailySummaryAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("time")
@@ -98,6 +103,7 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("0199f2a0-6b5c-7d1e-9a42-3c8e5f7a1b20"),
+                            AuditRetentionYears = 5,
                             DailySummaryAt = new TimeOnly(7, 30, 0),
                             Name = "FiscoProjects",
                             NotificationRetentionDays = 90,

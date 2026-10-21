@@ -165,6 +165,7 @@ export const auditItemTypes = [
   'PortalCredential',
   'AcceptanceTerm',
   'AuditExport',
+  'AuditCleanup',
 ] as const;
 export type AuditItemType = (typeof auditItemTypes)[number];
 
@@ -285,6 +286,8 @@ export const linkProblems = {
 /** Problem types of the user administration (UserProblems in the Users module). */
 export const userProblems = {
   lastAdministrator: 'urn:fiscoprojects:problem:last-administrator',
+  anonymized: 'urn:fiscoprojects:problem:user-anonymized',
+  active: 'urn:fiscoprojects:problem:user-active',
 } as const;
 
 type Listener = () => void;

@@ -32,6 +32,11 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         // Personal preferences, not data of the business: changing them is no audit record.
         user.Property(u => u.Theme).ExcludeFromAudit();
         user.Property(u => u.ReceivesDailySummary).ExcludeFromAudit();
+
+        // Anonymization (ADR-0110): the number is unique and goes in the record, which says when it happened.
+        user.HasIndex(u => u.AnonymousNumber).IsUnique().HasFilter("[AnonymousNumber] IS NOT NULL");
+        user.Property(u => u.AnonymizedAt).ExcludeFromAudit();
+        user.Ignore(u => u.IsAnonymized);
     }
 }
 

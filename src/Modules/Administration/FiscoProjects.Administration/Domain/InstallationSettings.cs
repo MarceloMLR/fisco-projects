@@ -38,6 +38,13 @@ public sealed partial class InstallationSettings : Entity
 
     public const int MaxNotificationRetentionDays = 365;
 
+    /// <summary>How many years the audit is kept while nobody changes it (ADR-0058, ADR-0110).</summary>
+    public const int DefaultAuditRetentionYears = 5;
+
+    public const int MinAuditRetentionYears = 1;
+
+    public const int MaxAuditRetentionYears = 10;
+
     /// <summary>
     /// Contrast a main color needs with white (ADR-0082): it is the background of the white label of the main button
     /// and the color of the links over white surfaces (WCAG AA).
@@ -61,6 +68,9 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>How many days the notifications of the bell are kept, read or not (ADR-0038).</summary>
     public int NotificationRetentionDays { get; private set; } = DefaultNotificationRetentionDays;
+
+    /// <summary>How many years the audit is kept; the monthly cleanup removes what is older (ADR-0058, ADR-0110).</summary>
+    public int AuditRetentionYears { get; private set; } = DefaultAuditRetentionYears;
 
     /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082).</summary>
     public string? MainColor { get; private set; }
@@ -160,6 +170,15 @@ public sealed partial class InstallationSettings : Entity
             ? days
             : throw new ArgumentOutOfRangeException(
                 nameof(days), days, $"The notifications are kept from {MinNotificationRetentionDays} to {MaxNotificationRetentionDays} days.");
+
+    public static bool IsValidAuditRetention(int years) =>
+        years is >= MinAuditRetentionYears and <= MaxAuditRetentionYears;
+
+    public void ChangeAuditRetention(int years) =>
+        AuditRetentionYears = IsValidAuditRetention(years)
+            ? years
+            : throw new ArgumentOutOfRangeException(
+                nameof(years), years, $"The audit is kept from {MinAuditRetentionYears} to {MaxAuditRetentionYears} years.");
 
     public void Rename(string name) =>
         Name = ValidName(name) ?? throw new ArgumentException(

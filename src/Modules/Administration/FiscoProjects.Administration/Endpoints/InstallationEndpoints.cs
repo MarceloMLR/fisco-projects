@@ -20,16 +20,23 @@ public sealed record InstallationResponse(string Name, string? LogoUrl, string? 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
 /// for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-/// notifications are kept (1 to 365).
+/// notifications are kept (1 to 365) and how many years the audit is kept (1 to 10; none keeps the years it had).
 /// </summary>
 public sealed record UpdateInstallationRequest(
-    string Name, string TimeZone, string? MainColor, TimeOnly? DailySummaryAt, int? NotificationRetentionDays);
+    string Name,
+    string TimeZone,
+    string? MainColor,
+    TimeOnly? DailySummaryAt,
+    int? NotificationRetentionDays,
+    int? AuditRetentionYears = null);
 
 /// <summary>
 /// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
-/// daily summary of e-mails, in that time zone (ADR-0037), and how many days the notifications are kept (ADR-0038).
+/// daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038) and how
+/// many years the audit is kept (ADR-0110).
 /// </summary>
-public sealed record GeneralRulesResponse(string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays);
+public sealed record GeneralRulesResponse(
+    string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears);
 
 /// <summary>Problem types of the logo, so the screen can tell the reason.</summary>
 public static class InstallationProblems
@@ -140,7 +147,8 @@ internal static class InstallationEndpoints
         GetGeneralRules getRules, CancellationToken cancellationToken)
     {
         var rules = await getRules.ExecuteAsync(cancellationToken);
-        return TypedResults.Ok(new GeneralRulesResponse(rules.TimeZone, rules.DailySummaryAt, rules.NotificationRetentionDays));
+        return TypedResults.Ok(new GeneralRulesResponse(
+            rules.TimeZone, rules.DailySummaryAt, rules.NotificationRetentionDays, rules.AuditRetentionYears));
     }
 
     private static async Task<Results<NoContent, ValidationProblem>> UpdateAsync(
@@ -152,7 +160,8 @@ internal static class InstallationEndpoints
                 request.TimeZone,
                 request.MainColor,
                 request.DailySummaryAt,
-                request.NotificationRetentionDays),
+                request.NotificationRetentionDays,
+                request.AuditRetentionYears),
             cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
@@ -209,6 +218,7 @@ internal static class InstallationEndpoints
         InstallationField.TimeZone => "timeZone",
         InstallationField.DailySummaryAt => "dailySummaryAt",
         InstallationField.NotificationRetentionDays => "notificationRetentionDays",
+        InstallationField.AuditRetentionYears => "auditRetentionYears",
         _ => "mainColor",
     };
 
@@ -218,6 +228,7 @@ internal static class InstallationEndpoints
         InstallationField.TimeZone => "Choose an IANA time zone, such as America/Sao_Paulo.",
         InstallationField.DailySummaryAt => "Choose the time of the daily summary, such as 07:30:00.",
         InstallationField.NotificationRetentionDays => "Keep the notifications from 1 to 365 days.",
+        InstallationField.AuditRetentionYears => "Keep the audit from 1 to 10 years.",
         _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
     };
 

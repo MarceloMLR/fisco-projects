@@ -58,6 +58,13 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("AnonymizedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<int?>("AnonymousNumber")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
@@ -101,6 +108,10 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AnonymousNumber")
+                        .IsUnique()
+                        .HasFilter("[AnonymousNumber] IS NOT NULL");
 
                     b.HasIndex("Email");
 
