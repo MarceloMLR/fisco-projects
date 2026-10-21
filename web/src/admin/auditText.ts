@@ -3,6 +3,8 @@ import {
   type AcceptanceStatus,
   type AuditEntry,
   type AuditField,
+  type AuditItemType,
+  auditItemTypes,
   documentStatuses,
   type DocumentStatus,
   isClosedStatus,
@@ -548,6 +550,9 @@ function acceptanceActionOf(
 }
 
 function titleOf(entry: AuditEntry, t: TFunction): string {
+  if (entry.action === 'Exported') {
+    return t('audit.actions.AuditExport.Exported');
+  }
   if (entry.action === 'SignedIn' || entry.action === 'SignInRefused') {
     return t(`audit.actions.SignIn.${entry.action}`);
   }
@@ -792,9 +797,30 @@ function reasonOf(entry: AuditEntry, t: TFunction): string {
     : (entry.detail ?? '');
 }
 
+/** The period of an export of the audit (ADR-0099): 21/09/2026 a 20/10/2026. */
+function exportPeriodOf(entry: AuditEntry, t: TFunction): string {
+  const from = changeOf(entry, 'From')?.after ?? null;
+  const to = changeOf(entry, 'To')?.after ?? null;
+  return from === null || to === null
+    ? ''
+    : t('audit.export.period', { from: formatDayText(from), to: formatDayText(to) });
+}
+
+const isAuditItemType = (value: string): value is AuditItemType =>
+  (auditItemTypes as readonly string[]).includes(value);
+
+const count = new Intl.NumberFormat('pt-BR');
+
 function summaryOf(entry: AuditEntry, t: TFunction): string {
   const label = labelOf(entry, t) ?? '';
   const join = (...parts: string[]) => parts.filter((part) => part !== '').join(' · ');
+  if (entry.action === 'Exported') {
+    const rows = Number(changeOf(entry, 'Rows')?.after ?? 0);
+    return join(
+      t('audit.export.rows', { count: rows, rows: count.format(rows) }),
+      exportPeriodOf(entry, t),
+    );
+  }
   if (entry.action === 'SignedIn') {
     return providerOf(entry, t);
   }
@@ -885,6 +911,33 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
 }
 
 function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['properties'] {
+  if (entry.action === 'Exported') {
+    const itemType = changeOf(entry, 'ItemType')?.after ?? null;
+    const person = changeOf(entry, 'Person');
+    return [
+      { label: t('audit.export.details.period'), value: exportPeriodOf(entry, t) },
+      {
+        label: t('audit.export.details.type'),
+        value:
+          itemType === null
+            ? t('audit.filters.allTypes')
+            : isAuditItemType(itemType)
+              ? t(`audit.itemTypes.${itemType}`)
+              : itemType,
+      },
+      {
+        label: t('audit.export.details.person'),
+        value:
+          person === undefined
+            ? t('audit.filters.allPeople')
+            : (person.after ?? t('audit.details.none')),
+      },
+      {
+        label: t('audit.export.details.rows'),
+        value: count.format(Number(changeOf(entry, 'Rows')?.after ?? 0)),
+      },
+    ];
+  }
   if (entry.action === 'SignedIn') {
     return [{ label: t('audit.details.provider'), value: providerOf(entry, t) }];
   }
@@ -1030,8 +1083,9 @@ export function describeAuditEntry(record: AuditEntry, t: TFunction): AuditDescr
     properties: propertiesOf(entry, t),
     // A field that says where the item is comes unchanged in a change, such as the project of a person whose role
     // changed: it goes in the text of the record, not in the table of the changes.
+    // The filters of an export are its details, not changes.
     changes: entry.changes
-      .filter((change) => !isContext(entry, change))
+      .filter((change) => entry.action !== 'Exported' && !isContext(entry, change))
       .map((change) => ({
         field: fieldLabel(entry, change.field, t),
         before: change.secret

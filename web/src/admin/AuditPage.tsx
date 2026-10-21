@@ -1,16 +1,30 @@
+import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AuditEntry, type AuditItemType, auditItemTypes } from '../api/client';
-import { auditQuery } from '../api/queries';
+import {
+  api,
+  type AuditEntry,
+  type AuditItemType,
+  auditItemTypes,
+  auditProblems,
+} from '../api/client';
+import { auditQuery, queryKeys } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Select } from '../components/Select';
+import { saveFile } from '../format/saveFile';
 import { useDates } from '../format/useDates';
+import { xlsxType } from '../format/xlsx';
+import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
+import { problemField } from '../tickets/ticketChanges';
 import { AuditDetails } from './AuditDetails';
+import { auditReport, type AuditReportFilters, auditReportName } from './auditReport';
 import { describeAuditEntry } from './auditText';
 import { type Period, PeriodFilter } from './PeriodFilter';
 import { type PersonOption, PersonFilter } from './PersonFilter';
@@ -38,7 +52,8 @@ const ellipsis = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'no
 /**
  * Audit of the Administration, as in the canvas (ADR-0039): the records newest first, with filters by person, item
  * type and period (the last 30 days to start) and the total in the period. Choosing a record opens its details in
- * the drawer over the screen (ADR-0081), so the list keeps its whole width.
+ * the drawer over the screen (ADR-0081), so the list keeps its whole width. "Baixar planilha" saves the records of the
+ * filters in a spreadsheet, and the export becomes a record of the audit (ADR-0099).
  */
 export function AuditPage() {
   const { t } = useTranslation();
@@ -52,6 +67,10 @@ export function AuditPage() {
   // The record whose details are open; kept even if the list behind it is brought up to date.
   const [chosen, setChosen] = useState<AuditEntry>();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [message, setMessage] = useState<string>();
+  const { session } = useSession();
+  const queryClient = useQueryClient();
 
   // A filter already seen in the session shows at once; another keeps the rows on screen until it arrives.
   const { data, isFetching, isError } = useQuery({
@@ -149,6 +168,54 @@ export function AuditPage() {
     [t, dates],
   );
 
+  // The records of the filters of the screen, in a spreadsheet made here, with the texts of the list (ADR-0099).
+  const download = async () => {
+    setExporting(true);
+    try {
+      const filters: AuditReportFilters = {
+        from: period.from,
+        to: period.to,
+        itemType: itemType === 'all' ? undefined : itemType,
+        person: person?.name,
+      };
+      const { data: exported, error } = await api.POST('/api/audit/exports', {
+        body: {
+          from: period.from,
+          to: period.to,
+          itemType: filters.itemType ?? null,
+          actorId: person?.id ?? null,
+        },
+      });
+      if (exported === undefined) {
+        const total = problemField(error, 'total');
+        const limit = problemField(error, 'limit');
+        setMessage(
+          problemField(error, 'type') === auditProblems.exportTooLarge &&
+            typeof total === 'number' &&
+            typeof limit === 'number'
+            ? t('audit.export.tooMany', { total: count.format(total), limit: count.format(limit) })
+            : t('audit.export.failed'),
+        );
+        return;
+      }
+      const bytes = await auditReport({
+        entries: exported.items,
+        filters,
+        generatedAt: new Date().toISOString(),
+        generatedBy: session.status === 'signed-in' ? session.user.name : '',
+        dates,
+        t,
+      });
+      saveFile(new Blob([bytes], { type: xlsxType }), auditReportName(filters, t));
+      // The export is a record of the audit now.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+    } catch {
+      setMessage(t('audit.export.failed'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const displayedRows = useCallback(
     ({ from, to, count: total }: { from: number; to: number; count: number }) =>
       t('audit.displayedRows', { from, to, total: count.format(total) }),
@@ -190,6 +257,17 @@ export function AuditPage() {
                 onChange={filtered(setItemType)}
               />
               <PeriodFilter value={period} onChange={filtered(setPeriod)} width={172} />
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<DownloadOutlined />}
+                disabled={exporting}
+                onClick={() => {
+                  void download();
+                }}
+              >
+                {t(exporting ? 'audit.export.preparing' : 'audit.export.button')}
+              </Button>
             </>
           }
         />
@@ -197,6 +275,15 @@ export function AuditPage() {
       <DetailsDrawer open={detailsOpen} onClose={closeDetails} label={t('audit.details.label')}>
         {chosen !== undefined && <AuditDetails entry={chosen} />}
       </DetailsDrawer>
+      <Snackbar
+        open={message !== undefined}
+        message={message}
+        autoHideDuration={8000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => {
+          setMessage(undefined);
+        }}
+      />
     </>
   );
 }

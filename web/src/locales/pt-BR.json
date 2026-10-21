@@ -261,7 +261,8 @@
       "LinkCategory": "Categorias de links",
       "ProjectLink": "Links",
       "PortalCredential": "Acessos",
-      "AcceptanceTerm": "Termos de aceite"
+      "AcceptanceTerm": "Termos de aceite",
+      "AuditExport": "Exportação da auditoria"
     },
     "displayedRows": "{{from}}–{{to}} de {{total}} no período",
     "empty": "Nenhum registro no período com esses filtros.",
@@ -409,6 +410,9 @@
         "Refused": "Recusou um termo de aceite",
         "Updated": "Alterou um termo de aceite",
         "Deleted": "Cancelou um pedido de aceite"
+      },
+      "AuditExport": {
+        "Exported": "Exportou a auditoria"
       }
     },
     "providers": {
@@ -610,7 +614,47 @@
     },
     "dependsOn": "depende de {{name}}",
     "vendorTicket": "{{code}} no {{vendor}}",
-    "passwordChanged": "senha alterada"
+    "passwordChanged": "senha alterada",
+    "export": {
+      "button": "Baixar planilha",
+      "preparing": "Preparando…",
+      "tooMany": "O período tem {{total}} registros, mais que os {{limit}} de uma planilha. Escolha um período menor.",
+      "failed": "Não foi possível baixar a planilha. Tente de novo.",
+      "rows_one": "{{rows}} registro",
+      "rows_other": "{{rows}} registros",
+      "period": "{{from}} a {{to}}",
+      "details": {
+        "period": "Período",
+        "type": "Tipo de item",
+        "person": "Pessoa",
+        "rows": "Registros"
+      }
+    },
+    "report": {
+      "fileName": "auditoria-{{from}}-a-{{to}}.xlsx",
+      "sheet": "Auditoria",
+      "filtersSheet": "Filtros",
+      "columns": {
+        "when": "Data e hora",
+        "who": "Quem",
+        "type": "Tipo de item",
+        "what": "O quê",
+        "summary": "Resumo",
+        "details": "Detalhes",
+        "changes": "Alterações"
+      },
+      "filters": {
+        "period": "Período",
+        "type": "Tipo de item",
+        "person": "Pessoa",
+        "rows": "Registros",
+        "generatedAt": "Gerada em",
+        "generatedBy": "Gerada por",
+        "timeZone": "Fuso horário"
+      },
+      "property": "{{label}}: {{value}}",
+      "change": "{{field}}: {{before}} → {{after}}"
+    }
   },
   "settings": {
     "brand": "Marca",
