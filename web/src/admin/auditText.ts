@@ -55,7 +55,13 @@ type SettingsField =
   | 'DailySummaryAt'
   | 'NotificationRetentionDays'
   | 'SecondaryColor'
-  | 'DarkLogoFileName';
+  | 'DarkLogoFileName'
+  | 'RequesterMessageColor'
+  | 'OwnerMessageColor'
+  | 'ManagerMessageColor'
+  | 'TechLeadMessageColor'
+  | 'DevelopmentMessageColor'
+  | 'FunctionalMessageColor';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
@@ -65,6 +71,12 @@ const settingsFields: readonly string[] = [
   'NotificationRetentionDays',
   'SecondaryColor',
   'DarkLogoFileName',
+  'RequesterMessageColor',
+  'OwnerMessageColor',
+  'ManagerMessageColor',
+  'TechLeadMessageColor',
+  'DevelopmentMessageColor',
+  'FunctionalMessageColor',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);

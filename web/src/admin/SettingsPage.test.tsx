@@ -24,6 +24,7 @@ beforeEach(() => {
     mainColor: null,
     secondaryColor: null,
     darkLogoUrl: null,
+    messageColors: {},
   };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
@@ -41,19 +42,25 @@ beforeEach(() => {
         timeZone: string;
         mainColor: string | null;
         secondaryColor: string | null;
+        messageColors: Installation['messageColors'];
         dailySummaryAt: string;
         notificationRetentionDays: number;
       };
+      const messageColors = Object.entries(body.messageColors)
+        .filter(([, value]) => value !== null)
+        .map(([part, value]) => ` ${part} ${String(value)}`)
+        .join('');
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}${
           body.secondaryColor === null ? '' : ` secondary ${body.secondaryColor}`
-        }`,
+        }${messageColors}`,
       );
       installation = {
         ...installation,
         name: body.name,
         mainColor: body.mainColor,
         secondaryColor: body.secondaryColor,
+        messageColors: body.messageColors,
       };
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
@@ -79,7 +86,7 @@ beforeEach(() => {
     }),
     http.delete('/api/installation/logo/dark', () => {
       requests.push('DELETE dark logo');
-      installation = { ...installation, darkLogoUrl: null };
+      installation = { ...installation, darkLogoUrl: null, messageColors: {} };
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -269,6 +276,7 @@ describe('Nome e logo nas Configurações gerais', () => {
       mainColor: null,
       secondaryColor: null,
       darkLogoUrl: null,
+      messageColors: {},
     };
     await openSettings();
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
@@ -538,6 +546,7 @@ describe('Cor principal nas Configurações gerais', () => {
       mainColor: hash('7A1F3D'),
       secondaryColor: null,
       darkLogoUrl: null,
+      messageColors: {},
     };
     await openSettings();
     await waitFor(() => {
@@ -742,5 +751,60 @@ describe('Cor secundária e logo escuro nas Configurações gerais', () => {
     await openSettings();
 
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
+  });
+});
+
+// Spec: configuracao-da-instalacao, requirement "Cores das mensagens" (General settings, ADR-0101).
+describe('Cores das mensagens nas Configurações gerais', () => {
+  it('Cores das mensagens pela tela', async () => {
+    await openSettings();
+    const owner = screen.getByRole('textbox', {
+      name: text.messageColorHex.replace('{{role}}', ptBR.tickets.roles.Owner),
+    });
+    expect(owner).toHaveValue('');
+    // Without colors, the Preview shows the messages of the design system.
+    expect(
+      screen
+        .getByRole('list', { name: text.messagePreview })
+        .style.getPropertyValue('--msg-owner-bg'),
+    ).toBe('');
+
+    fireEvent.change(owner, { target: { value: '7a1f3d' } });
+
+    expect(
+      screen
+        .getByRole('list', { name: text.messagePreview })
+        .style.getPropertyValue('--avatar-owner'),
+    ).toBe(hash('7a1f3d'));
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(requests).toEqual([`PUT FiscoProjects America/Sao_Paulo owner ${hash('7A1F3D')}`]);
+    await waitFor(() => {
+      expect(appliedBrandColors()).toMatch(/--msg-owner-bg:/);
+    });
+
+    const group = screen.getByRole('group', { name: ptBR.tickets.roles.Owner });
+    fireEvent.click(within(group).getByRole('button', { name: text.restoreDefault }));
+    expect(owner).toHaveValue('');
+  });
+
+  it('Cor de mensagem fora do formato', async () => {
+    await openSettings();
+
+    fireEvent.change(
+      screen.getByRole('textbox', {
+        name: text.messageColorHex.replace('{{role}}', ptBR.tickets.roles.Manager),
+      }),
+      { target: { value: 'violeta' } },
+    );
+    fireEvent.click(saveButton());
+
+    expect(
+      await within(screen.getByRole('group', { name: ptBR.tickets.roles.Manager })).findByText(
+        text.errors.colorFormat.replace('{{example}}', hash('1F5FBF')),
+      ),
+    ).toBeInTheDocument();
+    expect(requests).toEqual([]);
   });
 });

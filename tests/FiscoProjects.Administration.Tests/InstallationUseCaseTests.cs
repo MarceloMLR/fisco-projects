@@ -19,7 +19,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
-        installation.Should().Be(new Installation("FiscoProjects", null, null));
+        installation.Should().Be(new Installation("FiscoProjects", null, null, MessageColors: MessageColors.None));
         info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
     }
 

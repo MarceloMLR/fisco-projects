@@ -342,6 +342,96 @@ export function secondaryTokens(
   };
 }
 
+/** The parts of the conversation of a ticket whose messages have a color (ADR-0069, ADR-0101), as the API names them. */
+export const messageParts = [
+  'requester',
+  'owner',
+  'manager',
+  'techLead',
+  'development',
+  'functional',
+] as const;
+
+export type MessagePart = (typeof messageParts)[number];
+
+/** The colors of the messages the installation chose, each #RRGGBB or null for the design system's. */
+export type MessageColors = Partial<Record<MessagePart, string | null>>;
+
+/** The tone of the tokens msg-*, role-* and avatar-* of each part. */
+const toneOfPart: Record<MessagePart, string> = {
+  requester: 'requester',
+  owner: 'owner',
+  manager: 'manager',
+  techLead: 'techlead',
+  development: 'dev',
+  functional: 'functional',
+};
+
+/**
+ * The color of a part while the installation keeps the design system's (ADR-0101): the avatar of the part, the strong
+ * color of its messages, or, for the requester, whose messages are neutral, the secondary text.
+ */
+export function defaultMessageColor(part: MessagePart): string {
+  const name = part === 'requester' ? 'text-secondary' : `avatar-${toneOfPart[part]}`;
+  return normalizeHex(color(name, 'light')) ?? color(name, 'light');
+}
+
+/**
+ * The tokens of the messages of a part for a color (ADR-0101): each keeps the lightness of the design system and takes
+ * the hue and the strength of the color, measured against the avatar of the part (of the assignee, for the neutral
+ * requester); the text of the tag and of the name keeps 4.5:1, and the avatar has its white initials.
+ */
+function deriveMessage(
+  part: MessagePart,
+  chosenColor: string,
+  scheme: ColorScheme,
+): Record<string, string> {
+  const tone = toneOfPart[part];
+  const profile = part === 'requester' ? 'owner' : tone;
+  const reference = oklchOf(color(`avatar-${profile}`, 'light'));
+  const chosen = oklchOf(chosenColor);
+  // A very strong color is held a little, so the cards stay sober (ADR-0065).
+  const ratio = reference.c > 0 ? Math.min(chosen.c / reference.c, 1.4) : 0;
+  const make = (name: string, shapeName: string) => {
+    const own = oklchOf(color(name, scheme));
+    const shape = oklchOf(color(shapeName, scheme));
+    return hexOfOklch({ l: own.l, c: shape.c * ratio, h: shape.h + (chosen.h - reference.h) });
+  };
+  const messageBackground = make(`msg-${tone}-bg`, `msg-${profile}-bg`);
+  const tokens: Record<string, string> = {
+    [`msg-${tone}-bg`]: messageBackground,
+    [`msg-${tone}-border`]: make(`msg-${tone}-border`, `msg-${profile}-border`),
+  };
+  if (part !== 'requester') {
+    const tagBackground = make(`role-${tone}-bg`, `role-${tone}-bg`);
+    tokens[`role-${tone}-bg`] = tagBackground;
+    tokens[`role-${tone}-text`] = withContrast(
+      make(`role-${tone}-text`, `role-${tone}-text`),
+      [tagBackground, messageBackground, color('bg-surface', scheme)],
+      4.5,
+    );
+    const avatar =
+      scheme === 'light' ? chosenColor.toLowerCase() : make(`avatar-${tone}`, `avatar-${tone}`);
+    tokens[`avatar-${tone}`] = darkerUntil(avatar, color('on-avatar-role', scheme), 4.5);
+  }
+  return tokens;
+}
+
+/** The tokens of the messages of every part with a color of its own, in a theme; empty without colors (ADR-0101). */
+export function messageTokens(
+  colors: MessageColors | null | undefined,
+  scheme: ColorScheme,
+): Record<string, string> {
+  const tokens: Record<string, string> = {};
+  for (const part of messageParts) {
+    const hex = normalizeHex(colors?.[part] ?? '');
+    if (hex !== undefined) {
+      Object.assign(tokens, deriveMessage(part, hex, scheme));
+    }
+  }
+  return tokens;
+}
+
 /** Whether the sidebar is dark in a theme, so it shows the logo for the dark theme (ADR-0100). */
 export function sidebarIsDark(secondaryColor: string | null, scheme: ColorScheme): boolean {
   const tokens = secondaryTokens(secondaryColor);
@@ -381,6 +471,7 @@ export function brandVariables(
   mainColor: string | null,
   scheme: ColorScheme,
   secondaryColor: string | null = null,
+  messageColors: MessageColors | null = null,
 ): Record<string, string> {
   const tokens = brandTokens(mainColor)[scheme];
   const secondary = secondaryTokens(secondaryColor, mainColor)?.[scheme];
@@ -393,6 +484,13 @@ export function brandVariables(
     ...(secondary === undefined
       ? {}
       : Object.fromEntries(Object.entries(secondary).map(([name, value]) => [`--${name}`, value]))),
+    // The colors of the messages win over the main color in the avatar of the assignee (ADR-0101).
+    ...Object.fromEntries(
+      Object.entries(messageTokens(messageColors, scheme)).map(([name, value]) => [
+        `--${name}`,
+        value,
+      ]),
+    ),
   };
 }
 
@@ -403,9 +501,12 @@ export function brandVariables(
 export function brandStyleSheet(
   mainColor: string | null,
   secondaryColor: string | null = null,
+  messageColors: MessageColors | null = null,
 ): string {
   const block = (selector: string, scheme: ColorScheme) =>
-    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme, secondaryColor))
+    `${selector} {\n${Object.entries(
+      brandVariables(mainColor, scheme, secondaryColor, messageColors),
+    )
       .map(([name, value]) => `  ${name}: ${value};`)
       .join('\n')}\n}`;
   return [

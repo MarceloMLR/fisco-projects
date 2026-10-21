@@ -18,13 +18,18 @@ import { Page } from '../shell/Page';
 import {
   brandVariables,
   defaultMainColor,
+  defaultMessageColor,
   hasContrast,
+  type MessageColors,
+  messageParts,
   normalizeHex,
   sidebarIsDark,
 } from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
 import { EmailSettings } from './EmailSettings';
-import { MainColorField, SecondaryColorField } from './MainColorField';
+import { ColorField, MainColorField, SecondaryColorField } from './MainColorField';
+import { MessagePreview } from './MessageColors';
+import { roleOfPart } from './messageParts';
 import { TimeZoneField } from './TimeZoneField';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
@@ -43,6 +48,15 @@ const fieldErrors = {
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
+
+/** A color typed in the form: empty for the design system's, or any color, kept as #RRGGBB (ADR-0100, ADR-0101). */
+const anyColor = z
+  .string()
+  .trim()
+  .refine((value) => value === '' || normalizeHex(value) !== undefined, {
+    error: 'settings.errors.colorFormat',
+  })
+  .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null)));
 
 const form = z.object({
   name: z
@@ -69,13 +83,26 @@ const form = z.object({
     .refine((value) => value === '' || hasContrast(value), { error: fieldErrors.colorContrast })
     .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
   // Empty is no secondary color; any color, since the texts over it take their contrast (ADR-0100).
-  secondaryColor: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || normalizeHex(value) !== undefined, {
-      error: fieldErrors.colorFormat,
-    })
-    .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
+  secondaryColor: anyColor,
+  // The color of the messages of each part of the conversation of the tickets (ADR-0101).
+  messageColors: z.object({
+    requester: anyColor,
+    owner: anyColor,
+    manager: anyColor,
+    techLead: anyColor,
+    development: anyColor,
+    functional: anyColor,
+  }),
+});
+
+/** The colors of the messages as the form keeps them: empty for the design system's. */
+const typedMessageColors = (colors: MessageColors | undefined) => ({
+  requester: colors?.requester ?? '',
+  owner: colors?.owner ?? '',
+  manager: colors?.manager ?? '',
+  techLead: colors?.techLead ?? '',
+  development: colors?.development ?? '',
+  functional: colors?.functional ?? '',
 });
 
 type LogoError = 'logoFormat' | 'logoTooLarge' | 'logoUnsafe';
@@ -316,6 +343,7 @@ export function SettingsPage() {
       timeZone: '',
       mainColor: '',
       secondaryColor: '',
+      messageColors: typedMessageColors(undefined),
       dailySummaryAt: '',
       notificationRetentionDays: '',
     },
@@ -327,6 +355,7 @@ export function SettingsPage() {
             timeZone: rules.timeZone,
             mainColor: installation.mainColor ?? '',
             secondaryColor: installation.secondaryColor ?? '',
+            messageColors: typedMessageColors(installation.messageColors),
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
           },
@@ -353,6 +382,11 @@ export function SettingsPage() {
     typedSecondary === ''
       ? null
       : (normalizeHex(typedSecondary) ?? installation?.secondaryColor ?? null);
+  const typedMessages = useWatch({ control, name: 'messageColors' });
+  // The Preview of the messages shows each color once it is a color.
+  const previewMessages: MessageColors = Object.fromEntries(
+    messageParts.map((part) => [part, normalizeHex(typedMessages[part].trim()) ?? null]),
+  );
   const { colorScheme } = useColorScheme();
   const scheme = colorScheme ?? 'light';
   // The sidebar of the Preview shows the logo for the dark theme when it is dark, as the real one (ADR-0100).
@@ -396,6 +430,7 @@ export function SettingsPage() {
       timeZone,
       mainColor,
       secondaryColor,
+      messageColors,
       dailySummaryAt,
       notificationRetentionDays,
     }) => {
@@ -423,6 +458,7 @@ export function SettingsPage() {
               timeZone,
               mainColor,
               secondaryColor,
+              messageColors,
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
             },
@@ -438,6 +474,9 @@ export function SettingsPage() {
             }
             if (invalid.includes('secondaryColor')) {
               setError('secondaryColor', { message: fieldErrors.colorFormat });
+            }
+            if (invalid.includes('messageColors')) {
+              setError('messageColors.owner', { message: fieldErrors.colorFormat });
             }
             if (invalid.includes('dailySummaryAt')) {
               setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
@@ -597,6 +636,60 @@ export function SettingsPage() {
                       />
                     )}
                   />
+                </Box>
+                <Box component="section" aria-labelledby="settings-messages" sx={sectionSx}>
+                  <Box component="h2" id="settings-messages" sx={sectionTitleSx}>
+                    {t('settings.messages')}
+                  </Box>
+                  <Box
+                    component="p"
+                    sx={{
+                      margin: '-8px 0 0',
+                      fontSize: 13,
+                      lineHeight: '18px',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {t('settings.messagesHint')}
+                  </Box>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gap: 'var(--space-4)',
+                      [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
+                    }}
+                  >
+                    {messageParts.map((part) => {
+                      const role = t(`tickets.roles.${roleOfPart[part]}`);
+                      const partError = errors.messageColors?.[part]?.message;
+                      return (
+                        <Controller
+                          key={part}
+                          control={control}
+                          name={`messageColors.${part}`}
+                          render={({ field }) => (
+                            <ColorField
+                              label={role}
+                              hexLabel={t('settings.messageColorHex', { role })}
+                              emptyColor={defaultMessageColor(part)}
+                              emptyLabel={t('settings.restoreDefault')}
+                              checkContrast={false}
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              error={
+                                partError === undefined
+                                  ? undefined
+                                  : t(fieldErrors.colorFormat, { example: defaultMainColor() })
+                              }
+                            />
+                          )}
+                        />
+                      );
+                    })}
+                  </Box>
+                  <MessagePreview colors={previewMessages} scheme={scheme} />
                 </Box>
                 <Box component="section" aria-labelledby="settings-rules" sx={sectionSx}>
                   <Box component="h2" id="settings-rules" sx={sectionTitleSx}>

@@ -8,6 +8,9 @@ import {
   defaultMainColor,
   hasContrast,
   normalizeHex,
+  defaultMessageColor,
+  messageParts,
+  messageTokens,
   secondaryTokenNames,
   secondaryTokens,
   sidebarIsDark,
@@ -225,5 +228,63 @@ describe('Cor secundária', () => {
     expect(sidebarIsDark(typed('0B2545'), 'light')).toBe(true);
     expect(sidebarIsDark(typed('FFD400'), 'light')).toBe(false);
     expect(sidebarIsDark(typed('FFD400'), 'dark')).toBe(true);
+  });
+});
+
+/** The tone of the tokens of each part of the conversation. */
+const tones = {
+  requester: 'requester',
+  owner: 'owner',
+  manager: 'manager',
+  techLead: 'techlead',
+  development: 'dev',
+  functional: 'functional',
+} as const;
+
+// Spec: configuracao-da-instalacao, requirement "Cores das mensagens" (ADR-0101).
+describe('Cores das mensagens', () => {
+  it('Cores padrão das mensagens', () => {
+    for (const scheme of colorSchemes) {
+      expect(messageTokens({}, scheme)).toEqual({});
+      expect(messageTokens(null, scheme)).toEqual({});
+    }
+    expect(Object.keys(brandVariables(null, 'light'))).not.toContain('--msg-owner-bg');
+    expect(defaultMessageColor('owner')).toBe(normalizeHex(color('avatar-owner', 'light')));
+  });
+
+  it('Contraste das mensagens', () => {
+    for (const chosen of [...secondaries, '7A1F3D', '0F766E']) {
+      const colors = Object.fromEntries(messageParts.map((part) => [part, typed(chosen)]));
+      for (const scheme of colorSchemes) {
+        const tokens = messageTokens(colors, scheme);
+        for (const part of messageParts) {
+          const tone = tones[part];
+          const label = `${chosen} ${scheme} ${part}`;
+          expect(tokens[`msg-${tone}-bg`], label).toMatch(/^#[0-9a-f]{6}$/);
+          // The cards stay light in the light theme and dark in the dark one, as in the design system.
+          expect(
+            contrast(tokens[`msg-${tone}-bg`] ?? '', color(`msg-${tone}-bg`, scheme)),
+            label,
+          ).toBeLessThan(1.15);
+          if (part === 'requester') {
+            expect(tokens['role-requester-text'], label).toBeUndefined();
+            continue;
+          }
+          const text = tokens[`role-${tone}-text`] ?? '';
+          expect(contrast(text, tokens[`role-${tone}-bg`] ?? ''), label).toBeGreaterThanOrEqual(
+            4.5,
+          );
+          expect(contrast(text, tokens[`msg-${tone}-bg`] ?? ''), label).toBeGreaterThanOrEqual(4.5);
+          expect(
+            contrast(tokens[`avatar-${tone}`] ?? '', color('on-avatar-role', scheme)),
+            label,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+    // A color with contrast with white is the avatar itself in the light theme.
+    expect(messageTokens({ owner: typed('7A1F3D') }, 'light')['avatar-owner']).toBe(
+      typed('7A1F3D'),
+    );
   });
 });

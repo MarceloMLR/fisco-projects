@@ -2345,6 +2345,7 @@ export interface components {
             mainColor: null | string;
             secondaryColor: null | string;
             darkLogoUrl: null | string;
+            messageColors: components["schemas"]["MessageColorsDto"];
         };
         /** @description A category the links of the project use, with how many links have it. */
         LinkCategoryCountResponse: {
@@ -2410,6 +2411,18 @@ export interface components {
         };
         LocalSignInRequest: {
             email: string;
+        };
+        /**
+         * @description The colors of the messages of the tickets, one per part of the conversation, each #RRGGBB or null for the color of
+         *     the design system (ADR-0101).
+         */
+        MessageColorsDto: {
+            requester?: null | string;
+            owner?: null | string;
+            manager?: null | string;
+            techLead?: null | string;
+            development?: null | string;
+            functional?: null | string;
         };
         /** @description Whether a milestone was reached. */
         MilestoneReachedRequest: {
@@ -3698,6 +3711,7 @@ export interface components {
             /** Format: int32 */
             notificationRetentionDays: null | number;
             secondaryColor?: null | string;
+            messageColors?: null | components["schemas"]["MessageColorsDto"];
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
