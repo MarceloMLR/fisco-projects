@@ -229,7 +229,9 @@ public sealed class AuditTests(SqlServerFixture sqlServer)
         // The person comes with the current name, as the other references.
         var byPerson = await SendAsync(admin, HttpMethod.Post, "/api/audit/exports", new { from, to, actorId = marinaId });
         byPerson.StatusCode.Should().Be(HttpStatusCode.OK);
-        var person = (await EntriesAsync(admin, "itemType=AuditExport"))[0].GetProperty("changes").EnumerateArray()
+        // Both exports may have the same moment on the clock of the tests: the one of the person has the field Person.
+        var person = (await EntriesAsync(admin, "itemType=AuditExport"))
+            .SelectMany(entry => entry.GetProperty("changes").EnumerateArray())
             .Single(field => field.GetProperty("field").GetString() == "Person");
         person.GetProperty("after").GetString().Should().Be("Marina Costa");
         person.GetProperty("reference").GetString().Should().Be("User");
