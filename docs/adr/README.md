@@ -174,3 +174,4 @@ Regras:
 | [0109](0109-confirmacoes-no-alto-da-tela.md) | Confirmações no alto da tela, no meio | aceita | 2026-10-21 |
 | [0110](0110-anonimizacao-na-pratica.md) | Como a anonimização e o prazo da auditoria funcionam | aceita | 2026-10-21 |
 | [0111](0111-exclusao-de-projeto-na-pratica.md) | Como a exclusão de um projeto funciona | aceita | 2026-10-21 |
+| [0112](0112-monitoramento-na-pratica.md) | Como a aplicação envia o monitoramento | aceita | 2026-10-21 |
