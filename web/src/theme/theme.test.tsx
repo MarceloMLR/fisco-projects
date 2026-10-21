@@ -1,6 +1,12 @@
+import AddOutlined from '@mui/icons-material/AddOutlined';
+import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
+import Button from '@mui/material/Button';
+import { ThemeProvider } from '@mui/material/styles';
+import { render, screen } from '@testing-library/react';
 import indexHtml from '../../index.html?raw';
 import mainSource from '../main.tsx?raw';
 import { describe, expect, it } from 'vitest';
+import ptBR from '../locales/pt-BR.json';
 import { theme } from './theme';
 import { color, colorSchemes, colorTokenNames, cssVariables, fontFamilies } from './tokens';
 
@@ -57,6 +63,38 @@ describe('Cores e fontes do design system', () => {
     for (const source of [indexHtml, mainSource]) {
       expect(source).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
     }
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões com ícone".
+describe('Botões com ícone', () => {
+  it('Ícone perto do texto', () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <Button variant="contained" startIcon={<AddOutlined />}>
+          {ptBR.settings.save}
+        </Button>
+        <Button variant="outlined" size="small" endIcon={<ExpandMoreOutlined />}>
+          {ptBR.settings.discard}
+        </Button>
+      </ThemeProvider>,
+    );
+
+    // Only the gap of the button (8px) separates the icon from the label, as in the design system (fp-btn).
+    const start = screen.getByRole('button', { name: ptBR.settings.save });
+    expect(getComputedStyle(start).gap).toBe('var(--space-2)');
+    const startIcon = start.querySelector('.MuiButton-startIcon');
+    if (startIcon === null) {
+      throw new Error('No start icon.');
+    }
+    expect(Number.parseFloat(getComputedStyle(startIcon).marginRight)).toBe(0);
+    const endIcon = screen
+      .getByRole('button', { name: ptBR.settings.discard })
+      .querySelector('.MuiButton-endIcon');
+    if (endIcon === null) {
+      throw new Error('No end icon.');
+    }
+    expect(Number.parseFloat(getComputedStyle(endIcon).marginLeft)).toBe(0);
   });
 });
 

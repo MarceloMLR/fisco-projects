@@ -162,6 +162,10 @@ export const theme = createTheme({
             },
           ],
         },
+        // The icon is 8px from the label, by the gap of the button alone (fp-btn), without the margins of MUI; the one at
+        // the start goes 4px into the padding, as in the design system.
+        startIcon: { marginRight: 0, marginLeft: 'calc(var(--space-1) * -1)' },
+        endIcon: { marginLeft: 0, marginRight: 0 },
       },
     },
     MuiPaper: {
