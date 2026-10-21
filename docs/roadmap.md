@@ -24,13 +24,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 2. Acesso e administração | 16 | 16 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
-| 5. Chamados | 12 | 11 |
+| 5. Chamados | 12 | 12 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **76** | **63** |
+| **Total** | **76** | **64** |
 
 ## 1. Fundação
 
@@ -104,7 +104,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Chamados-2 | `conversa-do-chamado` | Mensagens, anexos, menções, cores por papel | 0026, 0069 | Concluída em 20/10/2026 ([#37](https://github.com/MarceloMLR/fisco-projects/pull/37)) |
 | Chamados-2.1 | `baixar-anexos` | Baixar cada anexo e todos de uma vez, a pedido de Marcelo | 0026 | Concluída em 20/10/2026 ([#59](https://github.com/MarceloMLR/fisco-projects/pull/59)) |
 | Chamados-2.2 | `solicitante-em-rosa` | Solicitante em rosa na conversa do chamado, e quem não tem papel no cinza neutro, a pedido de Marcelo | 0069, 0104 | Concluída em 21/10/2026 ([#66](https://github.com/MarceloMLR/fisco-projects/pull/66)) |
-| Chamados-2.3 | `mencionar-ao-digitar` | Mencionar ao digitar "@" e parte do nome no editor dos chamados, a pedido de Marcelo | 0026, 0107 | Em andamento |
+| Chamados-2.3 | `mencionar-ao-digitar` | Mencionar ao digitar "@" e parte do nome no editor dos chamados, a pedido de Marcelo | 0026, 0107 | Concluída em 21/10/2026 ([#70](https://github.com/MarceloMLR/fisco-projects/pull/70)) |
 | Chamados-3 | `fluxo-de-status` | Fluxo em tabela, responsável pela primeira resposta, fechamento automático | 0024, 0068 | Concluída em 20/10/2026 ([#38](https://github.com/MarceloMLR/fisco-projects/pull/38)) |
 | Chamados-3.1 | `iniciar-atendimento-assume` | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável, a pedido de Marcelo | 0024, 0068 | Concluída em 20/10/2026 ([#58](https://github.com/MarceloMLR/fisco-projects/pull/58)) |
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Concluída em 20/10/2026 ([#39](https://github.com/MarceloMLR/fisco-projects/pull/39)) |
