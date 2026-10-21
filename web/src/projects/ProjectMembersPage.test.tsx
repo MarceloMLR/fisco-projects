@@ -295,9 +295,57 @@ describe('Incluir pessoa pela tela', () => {
 
     expect(
       within(dialog).getByRole('combobox', { name: text.dialog.role }),
-    ).toHaveAccessibleDescription(text.dialog.notManager);
+    ).toHaveAccessibleDescription(text.dialog.notManagerNorTechLead);
     fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.dialog.role }));
     expect(await screen.findByRole('option', { name: roles.Manager })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+
+  // Spec: membros-do-projeto, requirement "Incluir pessoa pela tela" (ADR-0097).
+  it('Papel sugerido ao incluir', async () => {
+    server.use(
+      http.get('/api/people', () =>
+        HttpResponse.json([
+          {
+            id: null,
+            directoryId: 'local:lucas.prado@empresa.example',
+            name: 'Lucas Prado',
+            email: 'lucas.prado@empresa.example',
+            canBeManager: false,
+            canBeTechLead: false,
+          },
+          {
+            id: '0199f5a2-7c1e-7d40-9a1b-000000000009',
+            directoryId: null,
+            name: 'Sofia Martins',
+            email: 'sofia.martins@empresa.example',
+            canBeManager: false,
+            canBeTechLead: true,
+          },
+        ]),
+      ),
+    );
+    await openMembers();
+    fireEvent.click(screen.getByRole('button', { name: text.include }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.title });
+    const person = within(dialog).getByRole('combobox', { name: text.dialog.person });
+    const role = () => within(dialog).getByRole('combobox', { name: text.dialog.role });
+
+    // A tech lead of the system comes as tech lead.
+    fireEvent.change(person, { target: { value: 'sofia' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Sofia Martins/ }));
+    expect(role()).toHaveTextContent(roles.TechLead);
+    expect(role()).not.toHaveAccessibleDescription(text.dialog.notTechLead);
+
+    // Who may not lead a project technically does not get the role.
+    fireEvent.change(person, { target: { value: 'lucas' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Lucas Prado/ }));
+    expect(role()).toHaveTextContent(roles.Viewer);
+    expect(role()).toHaveAccessibleDescription(text.dialog.notManagerNorTechLead);
+    fireEvent.mouseDown(role());
+    expect(await screen.findByRole('option', { name: roles.TechLead })).toHaveAttribute(
       'aria-disabled',
       'true',
     );
@@ -394,7 +442,7 @@ describe('Detalhe da pessoa pela tela', () => {
     await openMembers();
 
     const drawer = await choose('Marina Costa');
-    await chooseRole(drawer, roles.TechLead);
+    await chooseRole(drawer, roles.Developer);
 
     const role = within(drawer).getByRole('combobox', { name: text.details.role });
     await waitFor(() => {

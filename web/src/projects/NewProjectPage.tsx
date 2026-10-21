@@ -121,7 +121,13 @@ export function NewProjectPage() {
       manager:
         me === undefined
           ? null
-          : { id: me.id, directoryId: null, name: me.name, canBeManager: true },
+          : {
+              id: me.id,
+              directoryId: null,
+              name: me.name,
+              canBeManager: true,
+              canBeTechLead: me.role === 'Administrator',
+            },
       techLead: null,
       origin: 'blank',
       templateId: '',
@@ -158,7 +164,6 @@ export function NewProjectPage() {
           managerId: values.manager?.id ?? null,
           // The tech lead may be a person of the directory who never signed in (ADR-0005).
           techLeadId: values.techLead?.id ?? null,
-          techLeadDirectoryId: values.techLead?.directoryId ?? null,
           templateId: values.origin === 'template' ? values.templateId : null,
           scheduleStart: values.origin === 'template' ? values.scheduleStart : null,
         },
@@ -323,6 +328,7 @@ export function NewProjectPage() {
                       value={field.value}
                       onChange={field.onChange}
                       placeholder={t('projects.form.noTechLead')}
+                      techLeadsOnly
                       youId={me?.id}
                       exclude={manager?.id == null ? undefined : [manager.id]}
                       error={errorText(errors.techLead?.message)}

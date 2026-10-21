@@ -83,6 +83,19 @@ public sealed class PeopleDirectoryTests(SqlServerFixture sqlServer)
         people.Select(person => (person.Name, person.CanBeManager)).Should().Equal(("Marina Costa", true));
     }
 
+    [Fact(DisplayName = "Só líderes técnicos")]
+    public async Task TechLeadsOnly_LeaveTheDirectoryOut()
+    {
+        await using var database = await UsersDatabase.CreateAsync(sqlServer, directory: Directory);
+        await SignInAsync(database, "Marina Costa", "marina.costa@empresa.example", SystemRole.ProjectManager);
+        await SignInAsync(database, "Rafael Souza", "rafael.souza@empresa.example", SystemRole.TechLead);
+
+        var people = await ListAsync(database, new PeopleQuery(null, ManagersOnly: false, Limit: 20, TechLeadsOnly: true));
+
+        people.Select(person => (person.Name, person.CanBeManager, person.CanBeTechLead))
+            .Should().Equal(("Rafael Souza", false, true));
+    }
+
     [Fact(DisplayName = "Diretório vazio sem a entrada local")]
     public async Task WithoutTheLocalSignIn_TheDirectoryHasNobody()
     {

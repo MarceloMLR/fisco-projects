@@ -41,7 +41,7 @@ public sealed class NoticeTests(SqlServerFixture sqlServer)
         var app = await SessionApp.StartAsync(sqlServer);
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
-        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
+        var rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.TechLead);
         var carla = await app.CreateUserAsync("Carla Mendes", SystemRole.User);
         var beatriz = await app.CreateUserAsync("Beatriz Lima", SystemRole.User);
         var diego = await app.CreateUserAsync("Diego Torres", SystemRole.User);

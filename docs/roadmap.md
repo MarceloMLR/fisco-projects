@@ -20,7 +20,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 9 | 7 |
-| 2. Acesso e administração | 15 | 11 |
+| 2. Acesso e administração | 15 | 12 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 11 |
 | 5. Chamados | 10 | 7 |
@@ -29,7 +29,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **50** |
+| **Total** | **70** | **51** |
 
 ## 1. Fundação
 
@@ -53,7 +53,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-1.1 | `sair-volta-ao-inicio` | Depois de Sair, a próxima entrada vai para o Início; a sessão expirada volta à página só para a mesma pessoa, a pedido de Marcelo | 0054, 0078 | Concluída em 20/10/2026 ([#56](https://github.com/MarceloMLR/fisco-projects/pull/56)) |
 | Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Concluída em 18/10/2026 ([#11](https://github.com/MarceloMLR/fisco-projects/pull/11)) |
 | Acesso-2.1 | `listas-mais-rapidas` | Listas sem espera aparente: leituras guardadas na sessão (TanStack Query), indicador só depois de 300 ms, menus que fecham na hora e tabela sem redesenho inútil, a pedido de Marcelo | 0049, 0050, 0080 | Concluída em 18/10/2026 ([#15](https://github.com/MarceloMLR/fisco-projects/pull/15)) |
-| Acesso-2.2 | `lider-tecnico-no-sistema` | Líder técnico como papel no sistema: só quem o tem lidera tecnicamente um projeto, e é o sugerido nas telas, a pedido de Marcelo | 0040, 0072 | Planejada |
+| Acesso-2.2 | `lider-tecnico-no-sistema` | Líder técnico como papel no sistema: só quem o tem lidera tecnicamente um projeto, e é o sugerido nas telas, a pedido de Marcelo | 0040, 0072 | Concluída em 20/10/2026 ([#57](https://github.com/MarceloMLR/fisco-projects/pull/57)) |
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Concluída em 18/10/2026 ([#13](https://github.com/MarceloMLR/fisco-projects/pull/13)) |
 | Acesso-3.1 | `detalhes-em-gaveta` | Detalhes da Auditoria numa gaveta sobreposta com o fundo escurecido, padrão de todas as telas de lista com detalhe, e filtro de pessoa sem cortar o nome, a pedido de Marcelo | 0066, 0081 | Concluída em 18/10/2026 ([#16](https://github.com/MarceloMLR/fisco-projects/pull/16)) |
 | Acesso-3.2 | `relatorio-da-auditoria` | Relatório da auditoria em Excel com os filtros da tela, só do administrador e registrado na própria auditoria, a pedido de Marcelo | 0039, 0046, 0058 | Planejada |

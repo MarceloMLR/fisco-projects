@@ -38,7 +38,7 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
         _database = await ProjectsDatabase.CreateAsync(sqlServer);
         _paulo = _database.People.Add("Paulo Nogueira", SystemRole.Administrator);
         _marina = _database.People.Add("Marina Costa", SystemRole.ProjectManager);
-        _rafael = _database.People.Add("Rafael Souza", SystemRole.User);
+        _rafael = _database.People.Add("Rafael Souza", SystemRole.TechLead);
         _diego = _database.People.Add("Diego Torres", SystemRole.User);
         _carla = _database.People.Add("Carla Mendes", SystemRole.User);
         _lucas = _database.People.Add("Lucas Prado", SystemRole.User);

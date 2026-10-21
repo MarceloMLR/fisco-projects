@@ -26,10 +26,11 @@ public enum MemberOutcome
 
 /// <summary>
 /// A person of a project as the Members tab shows it: the name, the e-mail, the role, when the person joined, the last
-/// sign-in (null for who never signed in) and whether the person may be a manager (ADR-0085).
+/// sign-in (null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097).
 /// </summary>
 public sealed record ProjectMemberItem(
-    Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager);
+    Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager,
+    bool CanBeTechLead = false);
 
 /// <summary>The people of a project, by name, for whoever sees the project (ADR-0043).</summary>
 public sealed class ListProjectMembers(IProjectStore store, IUserDirectory users)
@@ -49,7 +50,8 @@ public sealed class ListProjectMembers(IProjectStore store, IUserDirectory users
         return [.. project.Members
             .Select(member => people.TryGetValue(member.UserId, out var person)
                 ? new ProjectMemberItem(
-                    member.UserId, person.Name, person.Email, member.Role, member.AddedAt, person.LastSignInAt, person.CanBeManager)
+                    member.UserId, person.Name, person.Email, member.Role, member.AddedAt, person.LastSignInAt, person.CanBeManager,
+                    person.CanBeTechLead)
                 : new ProjectMemberItem(member.UserId, string.Empty, string.Empty, member.Role, member.AddedAt, null, false))
             .OrderBy(person => person.Name, StringComparer.CurrentCultureIgnoreCase)];
     }
@@ -101,11 +103,28 @@ internal static class MemberChecks
     /// <summary>Only an active Administrator or Project manager is a manager of a project (ADR-0085).</summary>
     public static async Task<bool> MayBeManagerAsync(IUserAccess access, Guid userId, CancellationToken cancellationToken) =>
         await access.FindAsync(userId, cancellationToken) is { IsActive: true } person && SystemRoles.ManagesProjects(person.Role);
+
+    /// <summary>Only an active Administrator or Tech lead is a tech lead of a project (ADR-0097).</summary>
+    public static async Task<bool> MayBeTechLeadAsync(IUserAccess access, Guid userId, CancellationToken cancellationToken) =>
+        await access.FindAsync(userId, cancellationToken) is { IsActive: true } person && SystemRoles.LeadsTechnically(person.Role);
+
+    /// <summary>
+    /// Whether the person may get the role in a project: a manager and a tech lead need the system role (ADR-0085,
+    /// ADR-0097); the other roles, anyone.
+    /// </summary>
+    public static async Task<bool> MayHaveRoleAsync(
+        IUserAccess access, Guid userId, ProjectRole role, CancellationToken cancellationToken) => role switch
+        {
+            ProjectRole.Manager => await MayBeManagerAsync(access, userId, cancellationToken),
+            ProjectRole.TechLead => await MayBeTechLeadAsync(access, userId, cancellationToken),
+            _ => true,
+        };
 }
 
 /// <summary>
 /// Includes a person in a project with a role (ADR-0042): the Administrator and the manager include anyone, the tech
-/// lead anyone but managers (ADR-0043). A manager has the system role to be one (ADR-0085). A person of the directory
+/// lead anyone but managers (ADR-0043). A manager and a tech lead have the system role to be one (ADR-0085, ADR-0097).
+/// A person of the directory
 /// who never signed in becomes a user first (ADR-0005), only after the permission and the role are checked, so a
 /// refused request creates nobody.
 /// </summary>
@@ -140,7 +159,7 @@ public sealed class AddProjectMember(
                 return new(MemberOutcome.InvalidPerson);
             }
 
-            if (form.Role == ProjectRole.Manager && !await MemberChecks.MayBeManagerAsync(access, id, cancellationToken))
+            if (!await MemberChecks.MayHaveRoleAsync(access, id, form.Role, cancellationToken))
             {
                 return new(MemberOutcome.InvalidRole);
             }
@@ -154,8 +173,8 @@ public sealed class AddProjectMember(
         }
         else
         {
-            // Who never signed in has the role User, so is never a manager.
-            if (form.Role == ProjectRole.Manager)
+            // Who never signed in has the role User, so is never a manager nor a tech lead.
+            if (form.Role is ProjectRole.Manager or ProjectRole.TechLead)
             {
                 return new(MemberOutcome.InvalidRole);
             }
@@ -231,8 +250,7 @@ public sealed class ChangeProjectMemberRole(
         }
 
         if (!Enum.IsDefined(role)
-            || (role == ProjectRole.Manager && currentRole != ProjectRole.Manager
-                && !await MemberChecks.MayBeManagerAsync(access, userId, cancellationToken)))
+            || (role != currentRole && !await MemberChecks.MayHaveRoleAsync(access, userId, role, cancellationToken)))
         {
             return MemberOutcome.InvalidRole;
         }

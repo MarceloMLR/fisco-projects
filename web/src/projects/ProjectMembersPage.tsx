@@ -319,7 +319,9 @@ function MemberDetails({
     .map((role) => ({
       value: role,
       label: t(`projects.roles.${role}`),
-      disabled: role === 'Manager' && member.role !== 'Manager' && !member.canBeManager,
+      disabled:
+        (role === 'Manager' && member.role !== 'Manager' && !member.canBeManager) ||
+        (role === 'TechLead' && member.role !== 'TechLead' && !member.canBeTechLead),
     }));
 
   const refusal = (error: unknown) =>

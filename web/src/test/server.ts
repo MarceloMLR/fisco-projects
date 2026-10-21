@@ -214,12 +214,16 @@ const managers = new Set<string>([
   demoPeople.beatriz.id,
 ]);
 
+/** Who may lead a project technically: the Administrator and the Tech lead of the system (ADR-0097). */
+const techLeads = new Set<string>([demoPeople.paulo.id, demoPeople.rafael.id]);
+
 /** A user to choose. */
 const user = (person: { id: string; name: string }): Person => ({
   ...person,
   directoryId: null,
   email: emailOf(person.name),
   canBeManager: managers.has(person.id),
+  canBeTechLead: techLeads.has(person.id),
 });
 
 /**
@@ -236,6 +240,7 @@ export const demoPeopleChoices: Person[] = [
     name: 'Lucas Prado',
     email: 'lucas.prado@empresa.example',
     canBeManager: false,
+    canBeTechLead: false,
   },
   user(demoPeople.marina),
   user(demoPeople.paulo),
@@ -246,16 +251,22 @@ export const demoPeopleChoices: Person[] = [
     name: 'Sofia Martins',
     email: 'sofia.martins@empresa.example',
     canBeManager: false,
+    canBeTechLead: false,
   },
 ];
 
-/** The people to choose as the API answers them: by name without accents, only the managers when asked. */
+/**
+ * The people to choose as the API answers them: by name without accents, only the managers or the tech leads when
+ * asked.
+ */
 export function peopleOf(url: URL): Person[] {
   const search = withoutAccents(url.searchParams.get('search') ?? '');
   const onlyManagers = url.searchParams.get('managers') === 'true';
+  const onlyTechLeads = url.searchParams.get('techLeads') === 'true';
   const limit = Number(url.searchParams.get('limit') ?? '20');
   return demoPeopleChoices
     .filter((person) => !onlyManagers || person.canBeManager)
+    .filter((person) => !onlyTechLeads || person.canBeTechLead)
     .filter(
       (person) => withoutAccents(person.name).includes(search) || person.email.includes(search),
     )
@@ -274,6 +285,7 @@ export function membersOf(project: Project): ProjectMember[] {
       addedAt: '2026-10-05T12:00:00Z',
       lastSignInAt: lastSignIns[member.id] ?? null,
       canBeManager: managers.has(member.id),
+      canBeTechLead: techLeads.has(member.id),
     }))
     .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }

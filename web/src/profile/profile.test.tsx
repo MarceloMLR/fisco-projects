@@ -168,6 +168,15 @@ describe('Tela Meu perfil', () => {
     expect(within(account).getByRole('button', { name: ptBR.shell.signOut })).toBeInTheDocument();
   });
 
+  // Spec: usuarios-e-papeis, requirement "Papel no sistema", scenario "Papel Líder técnico" (ADR-0097).
+  it('Papel Líder técnico em Meu perfil', async () => {
+    server.use(http.get('/api/session', () => HttpResponse.json({ ...marina, role: 'TechLead' })));
+    await renderApp('/profile');
+
+    const account = screen.getByRole('complementary', { name: text.account });
+    expect(within(account).getByText(ptBR.users.roles.TechLead)).toBeInTheDocument();
+  });
+
   it('Tema na tela Meu perfil', async () => {
     simulateDevice({ systemTheme: 'light' });
     await renderApp('/profile');

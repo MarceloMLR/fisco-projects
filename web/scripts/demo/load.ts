@@ -19,6 +19,7 @@ import {
   mainProject,
   manager,
   projectManagers,
+  techLeads,
 } from './plan.ts';
 
 /**
@@ -151,11 +152,14 @@ export async function loadDemo(
   };
   log(`Pessoas: ${String(people.size)}.`);
 
-  for (const person of projectManagers) {
+  for (const [person, role] of [
+    ...projectManagers.map((person) => [person, 'ProjectManager'] as const),
+    ...techLeads.map((person) => [person, 'TechLead'] as const),
+  ]) {
     done(
       await admin.api.PUT('/api/users/{id}/role', {
         params: { path: { id: personOf(person).id } },
-        body: { role: 'ProjectManager' },
+        body: { role },
       }),
       `Papel de ${demoPeople[person]}`,
     );

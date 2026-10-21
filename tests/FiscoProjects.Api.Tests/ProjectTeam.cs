@@ -61,7 +61,7 @@ internal sealed class ProjectTeam : IAsyncDisposable
         var (admin, paulo) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         var team = new ProjectTeam(app, admin, files) { Paulo = paulo };
         team.Marina = await app.CreateUserAsync("Marina Costa", SystemRole.ProjectManager);
-        team.Rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.User);
+        team.Rafael = await app.CreateUserAsync("Rafael Souza", SystemRole.TechLead);
         team.Carla = await app.CreateUserAsync("Carla Mendes", SystemRole.User);
         team.Diego = await app.CreateUserAsync("Diego Torres", SystemRole.User);
         team.Lucas = await app.CreateUserAsync("Lucas Prado", SystemRole.User);

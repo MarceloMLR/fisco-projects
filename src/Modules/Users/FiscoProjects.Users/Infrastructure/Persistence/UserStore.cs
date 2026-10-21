@@ -103,12 +103,18 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
             people = people.Where(user => user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager);
         }
 
+        if (query.TechLeadsOnly)
+        {
+            people = people.Where(user => user.Role == SystemRole.Administrator || user.Role == SystemRole.TechLead);
+        }
+
         return await people
             .OrderBy(user => user.Name).ThenBy(user => user.Email)
             .Take(query.Limit)
             .Select(user => new PersonItem(
                 user.Id, null, user.Name, user.Email,
-                user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager))
+                user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager,
+                user.Role == SystemRole.Administrator || user.Role == SystemRole.TechLead))
             .ToListAsync(cancellationToken);
     }
 
@@ -167,6 +173,7 @@ internal sealed class UserStore(UsersDbContext db) : IUserStore, IUserAccess, IU
                 user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.ProjectManager))
             {
                 ReceivesDailySummary = user.ReceivesDailySummary,
+                CanBeTechLead = user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.TechLead),
             })
             .ToListAsync(cancellationToken);
 }

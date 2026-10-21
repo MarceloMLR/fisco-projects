@@ -199,6 +199,7 @@ export const documentStatuses = [
 export const systemRoles = [
   'Administrator',
   'ProjectManager',
+  'TechLead',
   'User',
 ] as const satisfies readonly SystemRole[];
 

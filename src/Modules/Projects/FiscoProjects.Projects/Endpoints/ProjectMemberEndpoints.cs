@@ -10,10 +10,11 @@ namespace FiscoProjects.Projects.Endpoints;
 
 /// <summary>
 /// A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in
-/// (null for who never signed in) and whether the person may be a manager of a project (ADR-0085).
+/// (null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) of a project.
 /// </summary>
 public sealed record ProjectMemberResponse(
-    Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager);
+    Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager,
+    bool CanBeTechLead);
 
 /// <summary>
 /// The person to include, by <c>userId</c> or, for a person of the company directory who never signed in, by the
@@ -54,7 +55,8 @@ internal static class ProjectMemberEndpoints
         return members is null
             ? TypedResults.NotFound()
             : TypedResults.Ok<IReadOnlyList<ProjectMemberResponse>>([.. members.Select(member => new ProjectMemberResponse(
-                member.Id, member.Name, member.Email, member.Role, member.AddedAt, member.LastSignInAt, member.CanBeManager))]);
+                member.Id, member.Name, member.Email, member.Role, member.AddedAt, member.LastSignInAt, member.CanBeManager,
+                member.CanBeTechLead))]);
     }
 
     private static async Task<Results<Created<ProjectMemberCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddAsync(

@@ -159,3 +159,4 @@ Regras:
 | [0094](0094-leitura-de-planilhas-com-open-xml-sdk.md) | Leitura das planilhas de acessos com o Open XML SDK e o CSV por um leitor próprio | aceita | 2026-10-20 |
 | [0095](0095-pedidos-de-aceite.md) | Pedido de aceite cancelado sai da lista, recusa encerra o pedido e termo anexado sempre de uma pessoa do projeto | aceita | 2026-10-20 |
 | [0096](0096-meu-trabalho-montado-no-servidor.md) | Meu trabalho montado no servidor por um módulo próprio, com a janela de 7 dias e o atraso do item mais atrasado | aceita | 2026-10-20 |
+| [0097](0097-lider-tecnico-como-papel-no-sistema.md) | Líder técnico também como papel no sistema, exigido para liderar tecnicamente um projeto | aceita | 2026-10-20 |

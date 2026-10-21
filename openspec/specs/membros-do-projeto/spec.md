@@ -15,7 +15,7 @@ O administrador e o gerente do projeto MUST poder incluir, trocar o papel e remo
 - **THEN** a API aceita as três mudanças, e Diego sai do projeto
 
 #### Scenario: Líder técnico inclui um desenvolvedor
-- **WHEN** o líder técnico inclui uma pessoa como desenvolvedor e depois troca o papel dela para líder técnico
+- **WHEN** o líder técnico inclui como desenvolvedor uma pessoa com o papel no sistema Líder técnico e depois troca o papel dela para líder técnico
 - **THEN** a API aceita as duas mudanças
 
 #### Scenario: Líder técnico e os gerentes
@@ -63,7 +63,7 @@ O projeto MUST ter sempre ao menos um gerente. Remover o último gerente ou troc
 - **THEN** a API responde 409 e o gerente continua no projeto
 
 #### Scenario: Rebaixar o último gerente
-- **WHEN** o único gerente tenta trocar o próprio papel para líder técnico
+- **WHEN** o único gerente tenta trocar o próprio papel para desenvolvedor
 - **THEN** a API responde 409 e ele continua gerente
 
 #### Scenario: Outro gerente no projeto
@@ -124,11 +124,15 @@ A página do projeto MUST ter a aba Membros, com o número de pessoas, como no c
 
 ### Requirement: Incluir pessoa pela tela
 
-"Incluir pessoa" MUST aparecer só para quem gerencia as pessoas, com o projeto aberto, e pedir a pessoa, buscada no sistema e no diretório, e o papel. Para o líder técnico, o papel Gerente de projeto MUST NOT aparecer (ADR-0042, ADR-0085).
+"Incluir pessoa" MUST aparecer só para quem gerencia as pessoas, com o projeto aberto, e pedir a pessoa, buscada no sistema e no diretório, e o papel. Para o líder técnico, o papel Gerente de projeto MUST NOT aparecer. Quem tem o papel no sistema Líder técnico MUST já vir com o papel Líder técnico, e o papel Líder técnico MUST ficar indisponível para quem não pode tê-lo (ADR-0042, ADR-0085, ADR-0097).
 
 #### Scenario: Incluir pessoa pela tela
 - **WHEN** o gerente escolhe "Incluir pessoa", busca uma pessoa que nunca entrou, escolhe o papel Colaborador e confirma
 - **THEN** a pessoa aparece no time Funcional e uma mensagem confirma a inclusão
+
+#### Scenario: Papel sugerido ao incluir
+- **WHEN** o gerente escolhe em "Incluir pessoa" uma pessoa com o papel no sistema Líder técnico, e depois uma com o papel Usuário
+- **THEN** o papel vem como Líder técnico para a primeira, e para a segunda o papel Líder técnico fica indisponível, com a explicação
 
 #### Scenario: Membros sem gerenciar
 - **WHEN** um desenvolvedor abre a aba Membros
@@ -189,3 +193,19 @@ O detalhe da pessoa MUST mostrar os chamados em aberto do projeto em que ela é 
 #### Scenario: Passar pendências
 - **WHEN** o gerente escolhe "Passar pendências", escolhe outro desenvolvedor e confirma
 - **THEN** os chamados passam ao outro desenvolvedor, e o detalhe fica sem chamados
+
+### Requirement: Líder técnico com o papel no sistema
+
+Incluir uma pessoa como líder técnico ou trocar o papel de alguém para líder técnico MUST aceitar só quem está ativo e tem, naquele momento, o papel no sistema Líder técnico ou Administrador; os outros MUST receber 400 no papel. Trocar depois o papel no sistema não muda o papel nos projetos (ADR-0097).
+
+#### Scenario: Promover a líder técnico
+- **WHEN** o gerente troca para líder técnico o papel de um desenvolvedor com o papel no sistema Líder técnico
+- **THEN** a API aceita, e a pessoa passa ao papel Líder técnico
+
+#### Scenario: Líder técnico sem o papel no sistema
+- **WHEN** o gerente inclui como líder técnico uma pessoa com o papel no sistema Usuário ou uma pessoa que ainda não entrou, ou troca para líder técnico o papel de um desenvolvedor com o papel Usuário
+- **THEN** a API responde 400 no papel e nada muda no projeto
+
+#### Scenario: Líder técnico que perde o papel no sistema
+- **WHEN** o administrador troca para Usuário o papel no sistema de quem é líder técnico num projeto
+- **THEN** a pessoa continua líder técnico nesse projeto

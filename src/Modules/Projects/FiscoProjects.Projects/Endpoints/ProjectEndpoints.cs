@@ -421,7 +421,7 @@ internal static class ProjectEndpoints
                     ProjectField.Manager => "The manager is an active Project manager or Administrator.",
                     ProjectField.Template => "The model is an active model of project.",
                     ProjectField.ScheduleStart => "A project made from a model needs the day its schedule starts, from 2000 to 2099.",
-                    _ => "The tech lead is an active person other than the manager.",
+                    _ => "The tech lead is an active Tech lead or Administrator other than the manager.",
                 },
             }));
 
