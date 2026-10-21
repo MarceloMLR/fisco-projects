@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
@@ -109,7 +109,7 @@ describe('Chamados pela tela', () => {
         );
       }),
     );
-    await renderApp(`/projects/${erp.id}/tickets`);
+    const { router } = await renderApp(`/projects/${erp.id}/tickets`);
     // The tab lists the tickets of the project only, with the day each was opened.
     await waitFor(() => {
       expect(asked.at(-1)?.searchParams.get('projectId')).toBe(erp.id);
@@ -143,6 +143,9 @@ describe('Chamados pela tela', () => {
     expect(
       await screen.findByRole('heading', { name: 'Erro ao importar XML de entrada' }),
     ).toBeVisible();
+    // The ticket takes the place of the form: one Back returns to the tab (ADR-0105).
+    await act(() => router.navigate(-1));
+    expect(router.state.location.pathname).toBe(`/projects/${erp.id}/tickets`);
     expect(opened).toEqual([
       {
         projectId: erp.id,

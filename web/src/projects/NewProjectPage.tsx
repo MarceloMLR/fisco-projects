@@ -171,7 +171,8 @@ export function NewProjectPage() {
       if (data !== undefined) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
         void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
-        await navigate(`/projects/${data.id}`);
+        // The form is done: Back from the new project goes to where the form was opened from (ADR-0105).
+        await navigate(`/projects/${data.id}`, { replace: true });
         return;
       }
       if (response.status === 409 && problemType(error) === projectProblems.codeInUse) {
@@ -448,7 +449,7 @@ export function NewProjectPage() {
         <Button
           variant="outlined"
           onClick={() => {
-            void navigate('/projects');
+            void navigate('/projects', { replace: true });
           }}
         >
           {t('projects.form.cancel')}

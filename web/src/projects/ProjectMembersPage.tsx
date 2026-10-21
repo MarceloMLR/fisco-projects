@@ -376,7 +376,8 @@ function MemberDetails({
         // Without the project: the list of projects, and the sidebar without it.
         queryClient.removeQueries({ queryKey: [...queryKeys.projects, project.id] });
         void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
-        await navigate('/projects');
+        // The project is no longer reachable: Back must not return to it.
+        await navigate('/projects', { replace: true });
         return;
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
