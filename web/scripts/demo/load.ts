@@ -1,11 +1,13 @@
 import createClient from 'openapi-fetch';
 import type { paths } from '../../src/api/schema';
 import { pdfOf } from './pdf.ts';
+import { pngOf } from './png.ts';
 import {
   administrator,
   dayFrom,
   demoClients,
   type DemoDocument,
+  type DemoFile,
   type DemoMessage,
   demoNames,
   type DemoPerson,
@@ -127,6 +129,9 @@ export async function loadDemo(
   );
   if (found.items.some((project) => project.code === mainProject)) {
     log(`Os dados de demonstração já estão carregados (${mainProject} existe). Nada mudou.`);
+    log(
+      'Para carregar de novo, apague o banco local (docker compose down -v e docker compose up -d --wait) e os arquivos de src/FiscoProjects.Api/App_Data, suba a API e rode npm run demo:data.',
+    );
     log(screensLine);
     return { loaded: false, reason: 'already-loaded' };
   }
@@ -354,7 +359,7 @@ async function loadProject(
     );
   }
 
-  // Each ticket opened by its person, while the project is open (ADR-0022).
+  // Each ticket opened by its person, while the project is open (ADR-0022), then what happens to it, in order.
   for (const ticket of project.tickets ?? []) {
     const opened = must(
       await personOf(ticket.by).api.POST('/api/tickets', {
@@ -368,85 +373,118 @@ async function loadProject(
       }),
       `Chamado ${ticket.title}`,
     );
-    // The conversation, each message by its person, with the mention and the file (ADR-0026).
-    for (const message of ticket.messages ?? []) {
+    const path = { params: { path: { number: opened.number } } };
+    // The files of the description, by who opened it, before any message (ADR-0026).
+    if ((ticket.files ?? []).length > 0) {
       const form = new FormData();
-      form.append('body', JSON.stringify(documentOf(message, personOf)));
-      if (message.file !== undefined) {
-        form.append(
-          'files',
-          new Blob([message.file.content], { type: 'application/xml' }),
-          message.file.name,
-        );
+      for (const file of ticket.files ?? []) {
+        form.append('files', ticketFileOf(file), file.name);
       }
       done(
-        await personOf(message.by).api.POST('/api/tickets/{number}/messages', {
-          params: { path: { number: opened.number } },
+        await personOf(ticket.by).api.POST('/api/tickets/{number}/attachments', {
+          ...path,
           body: { files: [] },
           bodySerializer: () => form,
         }),
-        `Mensagem no chamado ${ticket.title}`,
+        `Anexos do chamado ${ticket.title}`,
       );
     }
-    // Then the status, each action by who may take it (ADR-0024).
-    for (const change of ticket.changes ?? []) {
-      done(
-        await personOf(change.by).api.POST('/api/tickets/{number}/transitions', {
-          params: { path: { number: opened.number } },
-          body: {
-            action: change.action,
-            body:
-              change.text === undefined
-                ? null
-                : JSON.stringify(documentOf({ by: change.by, text: change.text }, personOf)),
-          },
-        }),
-        `Status do chamado ${ticket.title}`,
-      );
-    }
-    // Then the tickets at vendors, registered on the day of the load and updated (ADR-0028).
-    for (const atVendor of ticket.atVendors ?? []) {
-      const registered = must(
-        await personOf(atVendor.by).api.POST('/api/tickets/{number}/vendor-tickets', {
-          params: { path: { number: opened.number } },
-          body: {
-            vendorId: vendors.get(atVendor.vendor) ?? null,
-            code: atVendor.code,
-            openedOn: today,
-            status: atVendor.status,
-            link: null,
-            note: atVendor.note ?? null,
-          },
-        }),
-        `Chamado ${atVendor.code} no fornecedor`,
-      );
-      if (atVendor.update !== undefined) {
-        done(
-          await personOf(atVendor.update.by).api.PUT('/api/tickets/{number}/vendor-tickets/{id}', {
-            params: { path: { number: opened.number, id: registered.id } },
-            body: { status: atVendor.update.status, note: atVendor.update.note },
-          }),
-          `Atualização do chamado ${atVendor.code} no fornecedor`,
-        );
+    const atVendors = new Map<string, string>();
+    for (const step of ticket.steps ?? []) {
+      const api = personOf(step.by).api;
+      switch (step.kind) {
+        case 'message': {
+          // Each message by its person, with the mention and the file (ADR-0026).
+          const form = new FormData();
+          form.append('body', JSON.stringify(documentOf(step, personOf)));
+          if (step.file !== undefined) {
+            form.append('files', ticketFileOf(step.file), step.file.name);
+          }
+          done(
+            await api.POST('/api/tickets/{number}/messages', {
+              ...path,
+              body: { files: [] },
+              bodySerializer: () => form,
+            }),
+            `Mensagem no chamado ${ticket.title}`,
+          );
+          break;
+        }
+        case 'action':
+          // An action of the flow by who may take it (ADR-0024).
+          done(
+            await api.POST('/api/tickets/{number}/transitions', {
+              ...path,
+              body: {
+                action: step.action,
+                body:
+                  step.text === undefined
+                    ? null
+                    : JSON.stringify(documentOf({ by: step.by, text: step.text }, personOf)),
+              },
+            }),
+            `Status do chamado ${ticket.title}`,
+          );
+          break;
+        case 'priority':
+          done(
+            await api.PUT('/api/tickets/{number}/priority', {
+              ...path,
+              body: { priority: step.to },
+            }),
+            `Prioridade do chamado ${ticket.title}`,
+          );
+          break;
+        case 'follow':
+          done(
+            await api.PUT('/api/tickets/{number}/following', path),
+            `Acompanhar o chamado ${ticket.title}`,
+          );
+          break;
+        case 'assign':
+          // The people and the team, each by who may change them (ADR-0068).
+          done(
+            await api.PUT('/api/tickets/assignee', {
+              body: { numbers: [opened.number], assigneeId: personOf(step.to).id },
+            }),
+            `Responsável do chamado ${ticket.title}`,
+          );
+          break;
+        case 'transfer':
+          done(
+            await api.PUT('/api/tickets/{number}/team', { ...path, body: { team: step.to } }),
+            `Time do chamado ${ticket.title}`,
+          );
+          break;
+        case 'vendor': {
+          // A ticket at a vendor, registered on the day of the load (ADR-0028).
+          const registered = must(
+            await api.POST('/api/tickets/{number}/vendor-tickets', {
+              ...path,
+              body: {
+                vendorId: vendors.get(step.vendor) ?? null,
+                code: step.code,
+                openedOn: today,
+                status: step.status,
+                link: step.link ?? null,
+                note: step.note ?? null,
+              },
+            }),
+            `Chamado ${step.code} no fornecedor`,
+          );
+          atVendors.set(step.code, registered.id);
+          break;
+        }
+        case 'vendorUpdate':
+          done(
+            await api.PUT('/api/tickets/{number}/vendor-tickets/{id}', {
+              params: { path: { number: opened.number, id: atVendors.get(step.code) ?? '' } },
+              body: { status: step.status, note: step.note },
+            }),
+            `Atualização do chamado ${step.code} no fornecedor`,
+          );
+          break;
       }
-    }
-    // Then the people and the team, each by who may change them (ADR-0068).
-    if (ticket.assignee !== undefined) {
-      done(
-        await personOf(ticket.assignee.by).api.PUT('/api/tickets/assignee', {
-          body: { numbers: [opened.number], assigneeId: personOf(ticket.assignee.to).id },
-        }),
-        `Responsável do chamado ${ticket.title}`,
-      );
-    }
-    if (ticket.transfer !== undefined) {
-      done(
-        await personOf(ticket.transfer.by).api.PUT('/api/tickets/{number}/team', {
-          params: { path: { number: opened.number } },
-          body: { team: ticket.transfer.to },
-        }),
-        `Time do chamado ${ticket.title}`,
-      );
     }
   }
 
@@ -483,6 +521,23 @@ function fileOf(document: { name: string }, lines: readonly string[]): Blob {
   return document.name.toLowerCase().endsWith('.pdf')
     ? new Blob([pdfOf(lines)], { type: 'application/pdf' })
     : new Blob([lines.join('\n')], { type: 'text/plain' });
+}
+
+/** A file of a ticket, made from its lines by its extension (ADR-0089): PDF, PNG, or the lines as text. */
+function ticketFileOf(file: DemoFile): Blob {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) {
+    return new Blob([pdfOf(file.lines)], { type: 'application/pdf' });
+  }
+  if (name.endsWith('.png')) {
+    return new Blob([pngOf(file.lines.length)], { type: 'image/png' });
+  }
+  const type = name.endsWith('.xml')
+    ? 'application/xml'
+    : name.endsWith('.csv')
+      ? 'text/csv'
+      : 'text/plain';
+  return new Blob([file.lines.join('\n')], { type });
 }
 
 /** Sends a file to a folder, as the person who sends it (ADR-0031); gives the id of the document. */

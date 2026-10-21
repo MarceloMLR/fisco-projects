@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '../../src/test/server';
 import { loadDemo, screensAddress } from './load.ts';
-import { demoPeople, demoProjects } from './plan.ts';
+import { type DemoTicket, demoPeople, demoProjects } from './plan.ts';
 
 /**
  * The API of a development installation, simulated: the local sign-in sets a session cookie with the person, and every
@@ -190,6 +190,7 @@ describe('Carga dos dados de demonstração', () => {
     ]);
     expect(lines).toEqual([
       expect.stringContaining('já estão carregados'),
+      expect.stringContaining('docker compose down -v'),
       'Abra as telas em http://localhost:5173 (npm run dev).',
     ]);
   });
@@ -239,6 +240,68 @@ describe('Modelos na demonstração', () => {
   });
 });
 
+const plannedTickets = () => demoProjects.flatMap((project) => project.tickets ?? []);
+
+/** The status a ticket of the plan ends in, by the flow of the MVP (ADR-0024): a cancelled ticket apart. */
+function finalStatus(ticket: DemoTicket): string {
+  let status = 'Open';
+  const moves: Record<string, Record<string, string>> = {
+    StartTriage: { Open: 'Triage' },
+    StartWork: { Triage: 'InProgress' },
+    AskForInformation: { InProgress: 'WaitingForRequester' },
+    Reply: { WaitingForRequester: 'InProgress' },
+    Resolve: { InProgress: 'Resolved' },
+    ConfirmAndClose: { Resolved: 'Closed' },
+    Reopen: { Resolved: 'InProgress' },
+    Cancel: { Open: 'Cancelled', Triage: 'Cancelled' },
+  };
+  for (const step of ticket.steps ?? []) {
+    if (step.kind === 'message') {
+      // The first answer of who serves takes an open ticket to Em andamento; the answer of the requester takes back
+      // one waiting for it.
+      if (status === 'Open' && step.by !== ticket.by) {
+        status = 'InProgress';
+      } else if (status === 'WaitingForRequester' && step.by === ticket.by) {
+        status = 'InProgress';
+      }
+    } else if (step.kind === 'action') {
+      const next = moves[step.action]?.[status];
+      expect(next, `${ticket.title}: ${step.action} em ${status}`).toBeDefined();
+      status = next ?? status;
+    }
+  }
+  return status;
+}
+
+/** The calls a ticket of the plan makes, in order, as "person METHOD path" (the assignee goes by the list). */
+function expectedCalls(ticket: DemoTicket, number: number): string[] {
+  const base = `/api/tickets/${String(number)}`;
+  const files = (ticket.files ?? []).length > 0 ? [`${ticket.by} POST ${base}/attachments`] : [];
+  return [
+    ...files,
+    ...(ticket.steps ?? []).flatMap((step) => {
+      switch (step.kind) {
+        case 'message':
+          return [`${step.by} POST ${base}/messages`];
+        case 'action':
+          return [`${step.by} POST ${base}/transitions`];
+        case 'priority':
+          return [`${step.by} PUT ${base}/priority`];
+        case 'follow':
+          return [`${step.by} PUT ${base}/following`];
+        case 'assign':
+          return [`${step.by} PUT /api/tickets/assignee`];
+        case 'transfer':
+          return [`${step.by} PUT ${base}/team`];
+        case 'vendor':
+          return [`${step.by} POST ${base}/vendor-tickets`];
+        case 'vendorUpdate':
+          return [`${step.by} PUT ${base}/vendor-tickets/id`];
+      }
+    }),
+  ];
+}
+
 // Spec: dados-de-demonstracao, requirement "Chamados na demonstração".
 describe('Chamados na demonstração', () => {
   it('Chamados na demonstração', async () => {
@@ -253,13 +316,21 @@ describe('Chamados na demonstração', () => {
       'rafael',
     ]);
     const opened = (bodies.get('/api/tickets') ?? []) as { title: string; team: string }[];
-    const planned = demoProjects.flatMap((project) => project.tickets ?? []);
-    expect(opened.map((ticket) => ticket.title)).toEqual(planned.map((ticket) => ticket.title));
+    expect(opened.map((ticket) => ticket.title)).toEqual(
+      plannedTickets().map((ticket) => ticket.title),
+    );
     expect(new Set(opened.map((ticket) => ticket.team))).toEqual(
       new Set(['Functional', 'Development']),
     );
     const firstStatus = calls.findIndex((call) => / PUT .*\/status$/.test(call));
     expect(calls.findIndex((call) => call.endsWith('POST /api/tickets'))).toBeLessThan(firstStatus);
+    // Every project has tickets, the completed one with them all closed (ADR-0043).
+    expect(demoProjects.filter((project) => (project.tickets ?? []).length === 0)).toEqual([]);
+    for (const project of demoProjects.filter((item) => item.status === 'Completed')) {
+      for (const status of (project.tickets ?? []).map(finalStatus)) {
+        expect(['Closed', 'Cancelled']).toContain(status);
+      }
+    }
     // Nobody opens a ticket as a viewer (ADR-0044).
     for (const project of demoProjects) {
       const viewers = (project.members ?? [])
@@ -275,14 +346,28 @@ describe('Conversa na demonstração', () => {
   it('Conversa na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // Each message by its person, in the first ticket: the developer, the tech lead, the requester and the manager.
+    // A long conversation in the first ticket: the developer, the tech lead, the requester and the manager.
     const first = callsBy(/ POST \/api\/tickets\/1\/messages$/).map((call) => call.split(' ')[0]);
-    expect(first).toEqual(['diego', 'rafael', 'carla', 'marina']);
+    expect(first).toEqual(['diego', 'rafael', 'carla', 'marina', 'diego', 'rafael', 'diego']);
     const forms = (bodies.get('/api/tickets/1/messages') ?? []) as string[];
-    // The requester mentions the developer and sends the XML.
+    // The requester mentions the developer and sends the XML; then a capture and a PDF.
     expect(forms[2]).toContain(`"id":"${idOf('diego')}"`);
     expect(forms[2]).toContain('filename="nota-3401.xml"');
-    expect(callsBy(/ POST \/api\/tickets\/3\/messages$/)).toHaveLength(1);
+    expect(forms[4]).toContain('filename="contorno-homologacao.png"');
+    expect(forms[4]).toContain('PNG');
+    expect(forms[6]).toContain('filename="log-transmissao-3381.pdf"');
+    expect(forms[6]).toContain('%PDF-1.4');
+    // Other tickets with conversations too, and files in the description, before any message.
+    const conversations = plannedTickets().filter(
+      (ticket) => (ticket.steps ?? []).filter((step) => step.kind === 'message').length >= 2,
+    );
+    expect(conversations.length).toBeGreaterThanOrEqual(5);
+    expect(callsBy(/ POST \/api\/tickets\/7\/attachments$/)).toEqual([
+      'carla POST /api/tickets/7/attachments',
+    ]);
+    expect((bodies.get('/api/tickets/7/attachments') ?? [])[0]).toContain(
+      'filename="extrato-15-10.csv"',
+    );
   });
 });
 
@@ -291,26 +376,44 @@ describe('Status na demonstração', () => {
   it('Status na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // The tech lead resolves the third ticket he answered; the contributor asks for information in the fifth and in
-    // the eighth, which the manager opened.
-    expect(callsBy(/ POST \/api\/tickets\/\d+\/transitions$/)).toEqual([
-      'rafael POST /api/tickets/3/transitions',
-      'carla POST /api/tickets/5/transitions',
-      'carla POST /api/tickets/8/transitions',
-    ]);
-    expect(bodies.get('/api/tickets/3/transitions')).toEqual([{ action: 'Resolve', body: null }]);
+    // What happens to each ticket, in the order of the plan, each by its person.
+    plannedTickets().forEach((ticket, index) => {
+      const number = index + 1;
+      const made = calls
+        .filter(
+          (call) =>
+            call.includes(`/api/tickets/${String(number)}/`) ||
+            (call.endsWith('PUT /api/tickets/assignee') &&
+              (bodies.get('/api/tickets/assignee') ?? []).some((body) =>
+                (body as { numbers: number[] }).numbers.includes(number),
+              )),
+        )
+        .map((call) => call.replace(/vendor-tickets\/[0-9a-f-]+$/, 'vendor-tickets/id'));
+      expect(made, ticket.title).toEqual(expectedCalls(ticket, number));
+    });
+    // Every status of the flow, a cancelled ticket and a reopened one (ADR-0024).
+    expect(new Set(plannedTickets().map(finalStatus))).toEqual(
+      new Set([
+        'Open',
+        'Triage',
+        'InProgress',
+        'WaitingForRequester',
+        'Resolved',
+        'Closed',
+        'Cancelled',
+      ]),
+    );
+    expect(
+      plannedTickets().some((ticket) =>
+        ticket.steps?.some((step) => step.kind === 'action' && step.action === 'Reopen'),
+      ),
+    ).toBe(true);
     const [ask] = (bodies.get('/api/tickets/5/transitions') ?? []) as {
       action: string;
       body: string;
     }[];
     expect(ask?.action).toBe('AskForInformation');
     expect(ask?.body).toContain('data de vigência');
-    // Each change after the conversation of its ticket.
-    const fifth = callsBy(/ POST \/api\/tickets\/5\//);
-    expect(fifth).toEqual([
-      'carla POST /api/tickets/5/messages',
-      'carla POST /api/tickets/5/transitions',
-    ]);
   });
 });
 
@@ -325,10 +428,9 @@ describe('Prazos na demonstração', () => {
       expect.arrayContaining(['Critical', 'High', 'Medium', 'Low']),
     );
     // And two wait for the requester, with their deadlines paused.
-    const asked = demoProjects
-      .flatMap((project) => project.tickets ?? [])
-      .filter((ticket) => ticket.changes?.some((change) => change.action === 'AskForInformation'));
-    expect(asked).toHaveLength(2);
+    expect(
+      plannedTickets().filter((ticket) => finalStatus(ticket) === 'WaitingForRequester'),
+    ).toHaveLength(2);
   });
 });
 
@@ -347,12 +449,25 @@ describe('Trocas na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Prioridade e acompanhamento na demonstração".
+describe('Prioridade e acompanhamento na demonstração', () => {
+  it('Prioridade e acompanhamento na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The manager raises the priority of the first ticket, opened as Média; the Administrator follows the tenth.
+    expect((bodies.get('/api/tickets') ?? [])[0]).toMatchObject({ priority: 'Medium' });
+    expect(callsBy(/\/priority$/)).toEqual(['marina PUT /api/tickets/1/priority']);
+    expect(bodies.get('/api/tickets/1/priority')).toEqual([{ priority: 'High' }]);
+    expect(callsBy(/\/following$/)).toEqual(['paulo PUT /api/tickets/10/following']);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Fornecedores na demonstração".
 describe('Fornecedores na demonstração', () => {
   it('Fornecedores na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // Two fictitious vendors, by the Administrator; the tech lead registers the first ticket at one and updates it.
+    // Two fictitious vendors, by the Administrator; the tech lead registers two tickets at them and updates them.
     expect(callsBy(/ POST \/api\/admin\/vendors$/)).toEqual([
       'paulo POST /api/admin/vendors',
       'paulo POST /api/admin/vendors',
@@ -362,12 +477,27 @@ describe('Fornecedores na demonstração', () => {
       'Emissor Exemplo',
       'Nuvem Fiscal Exemplo',
     ]);
-    expect(callsBy(/\/vendor-tickets/)).toEqual([
+    const update = (number: number) =>
+      `rafael PUT /api/tickets/${String(number)}/vendor-tickets/id`;
+    expect(
+      callsBy(/\/vendor-tickets/).map((call) =>
+        call.replace(/vendor-tickets\/[0-9a-f-]+$/, 'vendor-tickets/id'),
+      ),
+    ).toEqual([
       'rafael POST /api/tickets/1/vendor-tickets',
-      expect.stringMatching(/^rafael PUT \/api\/tickets\/1\/vendor-tickets\/[0-9a-f-]+$/),
+      update(1),
+      update(1),
+      update(1),
+      'rafael POST /api/tickets/10/vendor-tickets',
+      update(10),
     ]);
     expect(bodies.get('/api/tickets/1/vendor-tickets')).toEqual([
-      expect.objectContaining({ code: 'FX-20931', openedOn: '2026-10-19', status: 'Open' }),
+      expect.objectContaining({
+        code: 'FX-20931',
+        openedOn: '2026-10-19',
+        status: 'Open',
+        link: 'https://suporte.emissor.example/chamados/FX-20931',
+      }),
     ]);
   });
 });

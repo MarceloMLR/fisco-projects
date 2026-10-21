@@ -47,10 +47,12 @@ describe('Meu trabalho na demonstração', () => {
     // A ticket of the manager waits for her answer, and a request of acceptance waits for its answer.
     const tickets = demoProjects.flatMap((project) => project.tickets ?? []);
     expect(
-      tickets.some(
-        (ticket) =>
-          ticket.by === 'marina' && ticket.changes?.at(-1)?.action === 'AskForInformation',
-      ),
+      tickets.some((ticket) => {
+        const last = ticket.steps?.at(-1);
+        return (
+          ticket.by === 'marina' && last?.kind === 'action' && last.action === 'AskForInformation'
+        );
+      }),
     ).toBe(true);
     const acceptances = demoProjects.flatMap((project) => project.acceptances ?? []);
     expect(acceptances.some((term) => term.answer === undefined && term.attached !== true)).toBe(

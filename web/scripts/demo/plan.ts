@@ -84,6 +84,15 @@ export interface DemoPhase {
   items: readonly DemoItem[];
 }
 
+/**
+ * A file of the demonstration, made by the command from its lines when it runs (ADR-0089): a PDF with the lines, a PNG
+ * that stands for a screen capture, or the lines as text (XML, CSV, TXT). Nothing real is kept.
+ */
+export interface DemoFile {
+  name: string;
+  lines: readonly string[];
+}
+
 /** A message of a ticket, by a person who sends messages in it (ADR-0026, ADR-0044). */
 export interface DemoMessage {
   by: DemoPerson;
@@ -91,28 +100,42 @@ export interface DemoMessage {
   /** Mentioned at the start of the message, who then follows the ticket. */
   mention?: DemoPerson;
   /** A file sent with the message. */
-  file?: { name: string; content: string };
-}
-
-/** An action of the flow taken by a person who may take it, with the message when it asks for one (ADR-0024). */
-export interface DemoStatusChange {
-  by: DemoPerson;
-  action: TicketAction;
-  text?: string;
+  file?: DemoFile;
 }
 
 /**
- * A ticket opened at a vendor and registered by who serves our ticket on the day the data is loaded, with an update of
- * its status there (ADR-0028).
+ * What happens to a ticket after it is opened, in order, each by the person who may do it:
+ * - a message (ADR-0026, ADR-0069): the first of who serves the team makes the person the assignee and the ticket Em
+ *   andamento, and the answer of the requester in Aguardando solicitante takes it back;
+ * - an action of the flow, with the message when it asks for one (ADR-0024);
+ * - a new priority, by who serves the ticket (ADR-0025);
+ * - a person who starts following it (ADR-0026);
+ * - the assignee chosen by the manager or the tech lead, or the ticket sent to the other team (ADR-0068);
+ * - a ticket opened at a vendor, registered on the day the data is loaded, and its updates there (ADR-0028).
  */
-export interface DemoVendorTicket {
-  by: DemoPerson;
-  vendor: DemoVendor;
-  code: string;
-  status: VendorTicketStatus;
-  note?: string;
-  update?: { by: DemoPerson; status: VendorTicketStatus; note: string };
-}
+export type DemoTicketStep =
+  | ({ kind: 'message' } & DemoMessage)
+  | { kind: 'action'; by: DemoPerson; action: TicketAction; text?: string }
+  | { kind: 'priority'; by: DemoPerson; to: TicketPriority }
+  | { kind: 'follow'; by: DemoPerson }
+  | { kind: 'assign'; by: DemoPerson; to: DemoPerson }
+  | { kind: 'transfer'; by: DemoPerson; to: TicketTeam }
+  | {
+      kind: 'vendor';
+      by: DemoPerson;
+      vendor: DemoVendor;
+      code: string;
+      status: VendorTicketStatus;
+      link?: string;
+      note?: string;
+    }
+  | {
+      kind: 'vendorUpdate';
+      by: DemoPerson;
+      code: string;
+      status: VendorTicketStatus;
+      note: string;
+    };
 
 /** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
 export interface DemoTicket {
@@ -122,20 +145,26 @@ export interface DemoTicket {
   /** Who opens it: anyone in the project but a viewer, or the Administrator (ADR-0044). */
   by: DemoPerson;
   description: string;
-  /**
-   * The conversation, in order (ADR-0069): the first message of who serves the team makes the person the assignee and
-   * the ticket Em andamento.
-   */
-  messages?: readonly DemoMessage[];
-  /** The actions of the flow taken after the conversation, in order. */
-  changes?: readonly DemoStatusChange[];
-  /** Assigned by the manager or the tech lead to someone who serves the team (ADR-0068). */
-  assignee?: { by: DemoPerson; to: DemoPerson };
-  /** Transferred to the other team by who serves it, left without an assignee (ADR-0068). */
-  transfer?: { by: DemoPerson; to: TicketTeam };
-  /** The tickets opened at vendors, registered after the conversation and the status (ADR-0028). */
-  atVendors?: readonly DemoVendorTicket[];
+  /** Files attached to the description by who opens it, before any message (ADR-0026). */
+  files?: readonly DemoFile[];
+  steps?: readonly DemoTicketStep[];
 }
+
+/** A message in the steps of a ticket. */
+export const say = (
+  by: DemoPerson,
+  text: string,
+  more: Partial<DemoMessage> = {},
+): DemoTicketStep => ({
+  kind: 'message',
+  by,
+  text,
+  ...more,
+});
+
+/** An action of the flow in the steps of a ticket. */
+export const act = (by: DemoPerson, action: TicketAction, text?: string): DemoTicketStep =>
+  text === undefined ? { kind: 'action', by, action } : { kind: 'action', by, action, text };
 
 /**
  * A document sent to a folder of the project by a person who sends documents (ADR-0031, ADR-0045): the content is
@@ -350,45 +379,80 @@ export const demoProjects: readonly DemoProject[] = [
       {
         title: 'Rejeição 539 ao emitir nota de devolução',
         team: 'Development',
-        priority: 'High',
+        priority: 'Medium',
         by: 'carla',
         description:
           'Ao emitir a nota de devolução da venda 3381, a SEFAZ retorna a rejeição 539.\n\nAcontece com todas as devoluções da filial desde ontem. Esperava a autorização normal, como no mês passado.',
-        messages: [
+        steps: [
+          say(
+            'diego',
+            'Consegui reproduzir na homologação com a nota 3381. A rejeição vem da falta da chave da nota original no grupo de referência.',
+          ),
+          say(
+            'rafael',
+            'Vou registrar no fornecedor do emissor. Diego, segue com um contorno enquanto eles não corrigem.',
+          ),
           {
-            by: 'diego',
-            text: 'Consegui reproduzir na homologação com a nota 3381. A rejeição vem da falta da chave da nota original no grupo de referência.',
-          },
-          {
-            by: 'rafael',
-            text: 'Vou registrar no fornecedor do emissor. Diego, segue com um contorno enquanto eles não corrigem.',
-          },
-          {
-            by: 'carla',
-            mention: 'diego',
-            text: 'segue a nota emitida com a natureza "Devolução de venda". Funcionou.',
-            file: {
-              name: 'nota-3401.xml',
-              content: '<nfeProc versao="4.00"><NFe><infNFe Id="NFe-3401"/></NFe></nfeProc>',
-            },
-          },
-          {
-            by: 'marina',
-            text: 'Subi a prioridade para Alta: o fechamento da filial é na segunda.',
-          },
-        ],
-        atVendors: [
-          {
+            kind: 'vendor',
             by: 'rafael',
             vendor: 'Emissor Exemplo',
             code: 'FX-20931',
             status: 'Open',
+            link: 'https://suporte.emissor.example/chamados/FX-20931',
             note: 'Aberto com o XML da nota 3381 e o retorno da SEFAZ.',
-            update: {
-              by: 'rafael',
-              status: 'InAnalysis',
-              note: 'O fornecedor confirmou o erro no grupo de referência e está analisando.',
+          },
+          say('carla', 'segue a nota emitida com a natureza "Devolução de venda". Funcionou.', {
+            mention: 'diego',
+            file: {
+              name: 'nota-3401.xml',
+              lines: ['<nfeProc versao="4.00"><NFe><infNFe Id="NFe-3401"/></NFe></nfeProc>'],
             },
+          }),
+          { kind: 'priority', by: 'marina', to: 'High' },
+          say('marina', 'Subi a prioridade para Alta: o fechamento da filial é na segunda.'),
+          {
+            kind: 'vendorUpdate',
+            by: 'rafael',
+            code: 'FX-20931',
+            status: 'InAnalysis',
+            note: 'O fornecedor confirmou o erro no grupo de referência e está analisando.',
+          },
+          say(
+            'diego',
+            'Contorno publicado na homologação: a devolução sai com a referência preenchida à mão. Segue a tela.',
+            {
+              file: {
+                name: 'contorno-homologacao.png',
+                lines: ['Nota de devolução 3401', 'Referência: chave da nota 3381', 'Autorizada'],
+              },
+            },
+          ),
+          {
+            kind: 'vendorUpdate',
+            by: 'rafael',
+            code: 'FX-20931',
+            status: 'WaitingForUs',
+            note: 'Pediram o log completo da transmissão da nota 3381.',
+          },
+          say('rafael', 'o fornecedor pediu o log da transmissão. Consegue gerar hoje?', {
+            mention: 'diego',
+          }),
+          say('diego', 'Gerei e enviei pelo portal do fornecedor. Deixo aqui também.', {
+            file: {
+              name: 'log-transmissao-3381.pdf',
+              lines: [
+                'Log da transmissão da nota 3381',
+                '10:02:11 Envio do lote 552',
+                '10:02:14 Retorno 539: chave da nota referenciada ausente',
+              ],
+            },
+          }),
+          {
+            kind: 'vendorUpdate',
+            by: 'rafael',
+            code: 'FX-20931',
+            status: 'InAnalysis',
+            note: 'Log recebido. Correção prevista para a versão da semana que vem.',
           },
         ],
       },
@@ -407,13 +471,10 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'carla',
         description:
           'O relatório de ICMS-ST de outubro não traz as notas de devolução, e o total fica diferente da apuração.',
-        messages: [
-          {
-            by: 'rafael',
-            text: 'Já vi o filtro do relatório. Corrijo junto com a próxima versão.',
-          },
+        steps: [
+          say('rafael', 'Já vi o filtro do relatório. Corrijo junto com a próxima versão.'),
+          act('rafael', 'Resolve'),
         ],
-        changes: [{ by: 'rafael', action: 'Resolve' }],
       },
       {
         title: 'Liberar ambiente de homologação ao cliente',
@@ -422,7 +483,7 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'marina',
         description:
           'O cliente precisa de acesso ao ambiente de homologação para os testes da próxima semana.',
-        transfer: { by: 'rafael', to: 'Functional' },
+        steps: [{ kind: 'transfer', by: 'rafael', to: 'Functional' }],
       },
       {
         title: 'Importar a tabela de NCM atualizada',
@@ -431,13 +492,13 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'rafael',
         description:
           'A tabela de NCM mudou neste mês. Precisamos importar a versão nova antes dos testes.',
-        messages: [{ by: 'carla', text: 'Importo hoje à tarde.' }],
-        changes: [
-          {
-            by: 'carla',
-            action: 'AskForInformation',
-            text: 'Qual a data de vigência da tabela nova? O arquivo da Receita traz duas.',
-          },
+        steps: [
+          say('carla', 'Importo hoje à tarde.'),
+          act(
+            'carla',
+            'AskForInformation',
+            'Qual a data de vigência da tabela nova? O arquivo da Receita traz duas.',
+          ),
         ],
       },
       {
@@ -447,7 +508,108 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'carla',
         description:
           'Os XML de entrada de um fornecedor são recusados na importação, com a mensagem "Esquema inválido".',
-        assignee: { by: 'marina', to: 'diego' },
+        steps: [{ kind: 'assign', by: 'marina', to: 'diego' }],
+      },
+      {
+        title: 'Lançamentos duplicados na conciliação bancária',
+        team: 'Development',
+        priority: 'High',
+        by: 'carla',
+        description:
+          'Na conciliação de 15/10, os lançamentos do extrato aparecem duas vezes. Anexei o extrato com as linhas repetidas.',
+        files: [
+          {
+            name: 'extrato-15-10.csv',
+            lines: [
+              'data;histórico;valor',
+              '15/10/2026;TED recebida cliente 0412;1.250,00',
+              '15/10/2026;TED recebida cliente 0412;1.250,00',
+              '15/10/2026;Tarifa bancária;-12,90',
+            ],
+          },
+        ],
+        steps: [
+          act('rafael', 'StartTriage'),
+          say('carla', 'Aconteceu de novo hoje cedo, com o extrato de 16/10.'),
+        ],
+      },
+      {
+        title: 'Ajuste no leiaute do boleto',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'rafael',
+        description: 'O boleto precisa do logo novo do cliente e do campo do PIX.',
+        steps: [
+          say('carla', 'Ajustei o leiaute com o logo novo e o campo do PIX. Segue a prévia.', {
+            file: {
+              name: 'previa-boleto.png',
+              lines: ['Logo do cliente', 'Linha digitável', 'QR Code do PIX', 'Instruções'],
+            },
+          }),
+          say('rafael', 'Ficou certo. Pode publicar.'),
+          act('carla', 'Resolve'),
+          act('rafael', 'ConfirmAndClose'),
+        ],
+      },
+      {
+        title: 'Conciliação do cartão corporativo',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'diego',
+        description: 'As faturas do cartão corporativo não entram na conciliação.',
+        steps: [
+          act(
+            'diego',
+            'Cancel',
+            'Abri em duplicidade: o assunto segue no chamado da conciliação bancária.',
+          ),
+        ],
+      },
+      {
+        title: 'Integração com o banco retorna tempo esgotado',
+        team: 'Development',
+        priority: 'Critical',
+        by: 'carla',
+        description:
+          'A remessa de pagamentos para o banco falha com "tempo esgotado" desde a manhã. Os pagamentos do dia estão parados.',
+        steps: [
+          { kind: 'follow', by: 'paulo' },
+          say('diego', 'Reproduzi: o banco demora mais de 30 segundos para responder às 9h.'),
+          say('diego', 'Aumentei o tempo de espera e coloquei uma nova tentativa automática.'),
+          act('diego', 'Resolve'),
+          act('carla', 'Reopen', 'Voltou a acontecer hoje às 9h10, com o mesmo erro.'),
+          say(
+            'diego',
+            'o banco trocou o certificado do canal. Preciso de ajuda para atualizar no servidor.',
+            {
+              mention: 'rafael',
+              file: {
+                name: 'erro-integracao.pdf',
+                lines: [
+                  'Erro da integração bancária',
+                  '09:10:02 Conexão com o canal de pagamentos',
+                  '09:10:32 Tempo esgotado: certificado do servidor não reconhecido',
+                ],
+              },
+            },
+          ),
+          {
+            kind: 'vendor',
+            by: 'rafael',
+            vendor: 'Nuvem Fiscal Exemplo',
+            code: 'NF-88412',
+            status: 'Open',
+            note: 'Pedido o certificado novo do canal bancário.',
+          },
+          {
+            kind: 'vendorUpdate',
+            by: 'rafael',
+            code: 'NF-88412',
+            status: 'Resolved',
+            note: 'Certificado novo enviado pelo fornecedor.',
+          },
+          say('rafael', 'Atualizo o certificado no fim do dia, fora do horário de uso.'),
+        ],
       },
     ],
     documents: [
@@ -685,6 +847,33 @@ export const demoProjects: readonly DemoProject[] = [
     name: 'Adequação do SPED Fiscal 2027',
     client: 'Gama Têxtil',
     status: 'InProgress',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+    ],
+    tickets: [
+      {
+        title: 'Registro K200 com saldo negativo',
+        team: 'Development',
+        priority: 'High',
+        by: 'marina',
+        description: 'O registro K200 de setembro sai com saldo negativo em três itens.',
+        steps: [
+          say('diego', 'O saldo negativo vem das ordens de produção abertas em setembro.'),
+          say('diego', 'Corrigi o fechamento das ordens e gerei o arquivo de novo.'),
+          act('diego', 'Resolve'),
+          act('marina', 'ConfirmAndClose'),
+        ],
+      },
+      {
+        title: 'Validar o arquivo no PVA antes da entrega',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'marina',
+        description: 'Precisamos validar o arquivo de outubro no PVA antes de mandar ao cliente.',
+        steps: [act('carla', 'StartTriage')],
+      },
+    ],
     phases: [
       { name: 'Análise', items: [task('Levantar mudanças do leiaute', -14, 8, { progress: 100 })] },
       {
@@ -729,14 +918,37 @@ export const demoProjects: readonly DemoProject[] = [
         by: 'marina',
         description:
           'A alíquota de ICMS-ST de autopeças mudou no RS. Precisamos ajustar o cadastro.',
-        messages: [{ by: 'carla', text: 'Vou ajustar o cadastro ainda hoje.' }],
         // Waits for the answer of the manager: "Aguardando você" in her Meu trabalho (ADR-0070).
-        changes: [
-          {
-            by: 'carla',
-            action: 'AskForInformation',
-            text: 'A alíquota nova vale para todas as autopeças ou só para algumas NCM?',
-          },
+        steps: [
+          say('carla', 'Vou ajustar o cadastro ainda hoje.'),
+          act(
+            'carla',
+            'AskForInformation',
+            'A alíquota nova vale para todas as autopeças ou só para algumas NCM?',
+          ),
+        ],
+      },
+      {
+        title: 'Créditos de ICMS sem a nota de entrada',
+        team: 'Functional',
+        priority: 'High',
+        by: 'marina',
+        description:
+          'Alguns créditos de ICMS da filial RS não têm a nota de entrada correspondente no sistema.',
+        steps: [
+          say('carla', 'Encontrei 12 notas sem o XML de entrada. Segue a planilha.', {
+            file: {
+              name: 'notas-sem-xml.csv',
+              lines: [
+                'nota;fornecedor;valor do crédito',
+                '10233;Fornecedor A;318,40',
+                '10251;Fornecedor B;97,15',
+                '10302;Fornecedor A;1.204,90',
+              ],
+            },
+          }),
+          say('marina', 'pode pedir os XML ao fiscal da filial?', { mention: 'carla' }),
+          say('carla', 'Pedi. Ele envia até quinta.'),
         ],
       },
     ],
@@ -752,12 +964,57 @@ export const demoProjects: readonly DemoProject[] = [
       },
     ],
   },
-  { code: 'PORTAL-NF', name: 'Portal de notas para fornecedores', client: null, phases: [] },
+  {
+    code: 'PORTAL-NF',
+    name: 'Portal de notas para fornecedores',
+    client: null,
+    phases: [],
+    // Someone serves the Funcional team, which then takes tickets (ADR-0068).
+    members: [['carla', 'Contributor']],
+    tickets: [
+      {
+        title: 'Definir o escopo do portal',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'marina',
+        description: 'Quais notas os fornecedores vão poder consultar no portal?',
+      },
+    ],
+  },
   {
     code: 'WMS-ALFA',
     name: 'Implantação do WMS',
     client: 'Alfa Distribuidora',
     status: 'Completed',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+    ],
+    // Closed before the project is completed, as the conclusion asks (ADR-0043).
+    tickets: [
+      {
+        title: 'Etiquetas de endereçamento saindo cortadas',
+        team: 'Development',
+        priority: 'Medium',
+        by: 'carla',
+        description: 'As etiquetas do armazém 2 saem cortadas na impressora térmica.',
+        steps: [
+          say('diego', 'Ajustei a margem da impressora térmica do armazém 2.'),
+          act('diego', 'Resolve'),
+          act('carla', 'ConfirmAndClose'),
+        ],
+      },
+      {
+        title: 'Treinamento extra para o turno da noite',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'marina',
+        description: 'O turno da noite pediu mais um treinamento do recebimento.',
+        steps: [
+          act('marina', 'Cancel', 'O treinamento entrou no plano do acompanhamento assistido.'),
+        ],
+      },
+    ],
     phases: [
       { name: 'Levantamento', items: [task('Mapear armazéns', -126, 15, { progress: 100 })] },
       {
