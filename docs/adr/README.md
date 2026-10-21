@@ -164,3 +164,4 @@ Regras:
 | [0099](0099-relatorio-da-auditoria-em-excel.md) | Relatório da auditoria em Excel, montado na tela e registrado na auditoria | aceita | 2026-10-21 |
 | [0100](0100-cor-secundaria-e-logo-para-o-tema-escuro.md) | Cor secundária da instalação na barra lateral, nos destaques de apoio e no painel da entrada, com logo para o tema escuro | aceita | 2026-10-21 |
 | [0101](0101-cores-das-mensagens-dos-chamados.md) | Cores das mensagens dos chamados configuráveis por papel, com os tons calculados | aceita | 2026-10-21 |
+| [0102](0102-cliente-como-responsavel-de-tarefas.md) | O cliente do projeto como responsável de tarefas do cronograma | aceita | 2026-10-21 |
