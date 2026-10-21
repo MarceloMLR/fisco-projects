@@ -913,6 +913,7 @@ export const defaultInstallation: Installation = {
   mainColor: null,
   secondaryColor: null,
   darkLogoUrl: null,
+  messageColors: {},
 };
 
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */

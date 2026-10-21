@@ -4,6 +4,21 @@ using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Administration.Domain;
 
+/// <summary>
+/// The colors of the messages of the tickets, one per part of the conversation (ADR-0069, ADR-0101): each #RRGGBB, or
+/// null for the color of the design system.
+/// </summary>
+public sealed record MessageColors(
+    string? Requester = null,
+    string? Owner = null,
+    string? Manager = null,
+    string? TechLead = null,
+    string? Development = null,
+    string? Functional = null)
+{
+    public static readonly MessageColors None = new();
+}
+
 /// <summary>The theme a logo is for (ADR-0100): the light one, the logo of always, or the dark one, optional.</summary>
 public enum LogoTheme
 {
@@ -97,6 +112,32 @@ public sealed partial class InstallationSettings : Entity
 
     public bool HasDarkLogo => DarkLogoFileId is not null;
 
+    /// <summary>The color of the messages of the requester and of the others without a part (ADR-0101); null for the design system.</summary>
+    public string? RequesterMessageColor { get; private set; }
+
+    /// <summary>The color of the messages of the assignee of the ticket (ADR-0101).</summary>
+    public string? OwnerMessageColor { get; private set; }
+
+    /// <summary>The color of the messages of the manager of the project (ADR-0101).</summary>
+    public string? ManagerMessageColor { get; private set; }
+
+    /// <summary>The color of the messages of the tech lead of the project (ADR-0101).</summary>
+    public string? TechLeadMessageColor { get; private set; }
+
+    /// <summary>The color of the messages of the Development team (ADR-0101).</summary>
+    public string? DevelopmentMessageColor { get; private set; }
+
+    /// <summary>The color of the messages of the Functional team (ADR-0101).</summary>
+    public string? FunctionalMessageColor { get; private set; }
+
+    public MessageColors MessageColors => new(
+        RequesterMessageColor,
+        OwnerMessageColor,
+        ManagerMessageColor,
+        TechLeadMessageColor,
+        DevelopmentMessageColor,
+        FunctionalMessageColor);
+
     /// <summary>The name without the spaces at the ends, when it is not empty and has up to 60 characters.</summary>
     public static string? ValidName(string? name)
     {
@@ -150,7 +191,50 @@ public sealed partial class InstallationSettings : Entity
     }
 
     /// <summary>The secondary color as it is kept: null (or empty) for none, or #RRGGBB in capitals; false for anything else.</summary>
-    public static bool TryNormalizeSecondaryColor(string? value, out string? color)
+    public static bool TryNormalizeSecondaryColor(string? value, out string? color) => TryNormalizeAnyColor(value, out color);
+
+    /// <summary>
+    /// The colors of the messages as they are kept, each null (or empty) for the design system or #RRGGBB in capitals,
+    /// any color, since the texts over them take their contrast (ADR-0101); false when one is no color.
+    /// </summary>
+    public static bool TryNormalizeMessageColors(MessageColors? colors, out MessageColors normalized)
+    {
+        normalized = MessageColors.None;
+        if (colors is null)
+        {
+            return true;
+        }
+
+        if (TryNormalizeAnyColor(colors.Requester, out var requester)
+            && TryNormalizeAnyColor(colors.Owner, out var owner)
+            && TryNormalizeAnyColor(colors.Manager, out var manager)
+            && TryNormalizeAnyColor(colors.TechLead, out var techLead)
+            && TryNormalizeAnyColor(colors.Development, out var development)
+            && TryNormalizeAnyColor(colors.Functional, out var functional))
+        {
+            normalized = new MessageColors(requester, owner, manager, techLead, development, functional);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void ChangeMessageColors(MessageColors? colors)
+    {
+        if (!TryNormalizeMessageColors(colors, out var normalized))
+        {
+            throw new ArgumentException("A color of the messages is no #RRGGBB color.", nameof(colors));
+        }
+
+        RequesterMessageColor = normalized.Requester;
+        OwnerMessageColor = normalized.Owner;
+        ManagerMessageColor = normalized.Manager;
+        TechLeadMessageColor = normalized.TechLead;
+        DevelopmentMessageColor = normalized.Development;
+        FunctionalMessageColor = normalized.Functional;
+    }
+
+    private static bool TryNormalizeAnyColor(string? value, out string? color)
     {
         color = null;
         if (string.IsNullOrWhiteSpace(value))

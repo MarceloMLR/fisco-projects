@@ -17,7 +17,12 @@ public interface IInstallationSettingsStore
 /// default one) and the secondary color (null for none, ADR-0100).
 /// </summary>
 public sealed record Installation(
-    string Name, DateTime? LogoChangedAt, string? MainColor, string? SecondaryColor = null, DateTime? DarkLogoChangedAt = null);
+    string Name,
+    DateTime? LogoChangedAt,
+    string? MainColor,
+    string? SecondaryColor = null,
+    DateTime? DarkLogoChangedAt = null,
+    MessageColors? MessageColors = null);
 
 /// <summary>The logo to serve: the file, its type and when it changed.</summary>
 public sealed record InstallationLogo(FileDownload File, string ContentType, DateTime ChangedAt);
@@ -32,7 +37,8 @@ public sealed class GetInstallation(IInstallationSettingsStore store)
             settings.HasLogo ? settings.LogoChangedAt : null,
             settings.MainColor,
             settings.SecondaryColor,
-            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null);
+            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null,
+            settings.MessageColors);
     }
 }
 
@@ -81,6 +87,7 @@ public enum InstallationField
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
     SecondaryColor = 6,
+    MessageColors = 7,
 }
 
 /// <summary>
@@ -93,7 +100,8 @@ public sealed record InstallationChanges(
     string? MainColor,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
-    string? SecondaryColor = null);
+    string? SecondaryColor = null,
+    MessageColors? MessageColors = null);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -128,6 +136,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.SecondaryColor);
         }
 
+        if (!InstallationSettings.TryNormalizeMessageColors(changes.MessageColors, out var messageColors))
+        {
+            invalid.Add(InstallationField.MessageColors);
+        }
+
         if (changes.DailySummaryAt is null)
         {
             invalid.Add(InstallationField.DailySummaryAt);
@@ -148,6 +161,7 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeMainColor(mainColor);
         settings.ChangeSecondaryColor(secondaryColor);
+        settings.ChangeMessageColors(messageColors);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         await store.SaveChangesAsync(cancellationToken);

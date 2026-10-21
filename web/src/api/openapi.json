@@ -10421,7 +10421,8 @@
           "logoUrl",
           "mainColor",
           "secondaryColor",
-          "darkLogoUrl"
+          "darkLogoUrl",
+          "messageColors"
         ],
         "type": "object",
         "properties": {
@@ -10451,6 +10452,9 @@
               "null",
               "string"
             ]
+          },
+          "messageColors": {
+            "$ref": "#/components/schemas/MessageColorsDto"
           }
         },
         "description": "The brand of the installation: the name shown, the address of the logo (null without one), the main color as\n#RRGGBB (null for the color of the design system), the secondary color (null for none) and the address of the logo\nfor the dark theme (null without one, and the logo shows, ADR-0100). The address of a logo changes whenever the logo\nchanges, so the browser may keep it."
@@ -10671,6 +10675,48 @@
             "type": "string"
           }
         }
+      },
+      "MessageColorsDto": {
+        "type": "object",
+        "properties": {
+          "requester": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "owner": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "manager": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "techLead": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "development": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "functional": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The colors of the messages of the tickets, one per part of the conversation, each #RRGGBB or null for the color of\nthe design system (ADR-0101)."
       },
       "MilestoneReachedRequest": {
         "required": [
@@ -14735,6 +14781,17 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "messageColors": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The colors of the messages of the tickets; null keeps none, the design system's.",
+                "$ref": "#/components/schemas/MessageColorsDto"
+              }
             ]
           }
         },

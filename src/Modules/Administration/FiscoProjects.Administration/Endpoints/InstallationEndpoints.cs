@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Globalization;
 using FiscoProjects.Administration.Application;
 using FiscoProjects.Administration.Domain;
@@ -17,7 +18,24 @@ namespace FiscoProjects.Administration.Endpoints;
 /// changes, so the browser may keep it.
 /// </summary>
 public sealed record InstallationResponse(
-    string Name, string? LogoUrl, string? MainColor, string? SecondaryColor, string? DarkLogoUrl);
+    string Name,
+    string? LogoUrl,
+    string? MainColor,
+    string? SecondaryColor,
+    string? DarkLogoUrl,
+    MessageColorsDto MessageColors);
+
+/// <summary>
+/// The colors of the messages of the tickets, one per part of the conversation, each #RRGGBB or null for the color of
+/// the design system (ADR-0101).
+/// </summary>
+public sealed record MessageColorsDto(
+    string? Requester = null,
+    string? Owner = null,
+    string? Manager = null,
+    string? TechLead = null,
+    string? Development = null,
+    string? Functional = null);
 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
@@ -30,7 +48,8 @@ public sealed record UpdateInstallationRequest(
     string? MainColor,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
-    string? SecondaryColor = null);
+    string? SecondaryColor = null,
+    [property: Description("The colors of the messages of the tickets; null keeps none, the design system's.")] MessageColorsDto? MessageColors = null);
 
 /// <summary>
 /// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
@@ -115,8 +134,15 @@ internal static class InstallationEndpoints
         var darkLogoUrl = installation.DarkLogoChangedAt is { } darkChangedAt
             ? links.GetPathByName(http, "GetInstallationDarkLogo", new { v = VersionOf(darkChangedAt) })
             : null;
+        var colors = installation.MessageColors ?? MessageColors.None;
         return TypedResults.Ok(new InstallationResponse(
-            installation.Name, logoUrl, installation.MainColor, installation.SecondaryColor, darkLogoUrl));
+            installation.Name,
+            logoUrl,
+            installation.MainColor,
+            installation.SecondaryColor,
+            darkLogoUrl,
+            new MessageColorsDto(
+                colors.Requester, colors.Owner, colors.Manager, colors.TechLead, colors.Development, colors.Functional)));
     }
 
     private static Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
@@ -161,7 +187,11 @@ internal static class InstallationEndpoints
                 request.MainColor,
                 request.DailySummaryAt,
                 request.NotificationRetentionDays,
-                request.SecondaryColor),
+                request.SecondaryColor,
+                request.MessageColors is { } colors
+                    ? new MessageColors(
+                        colors.Requester, colors.Owner, colors.Manager, colors.TechLead, colors.Development, colors.Functional)
+                    : null),
             cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
@@ -219,6 +249,7 @@ internal static class InstallationEndpoints
         InstallationField.DailySummaryAt => "dailySummaryAt",
         InstallationField.NotificationRetentionDays => "notificationRetentionDays",
         InstallationField.SecondaryColor => "secondaryColor",
+        InstallationField.MessageColors => "messageColors",
         _ => "mainColor",
     };
 
@@ -229,6 +260,7 @@ internal static class InstallationEndpoints
         InstallationField.DailySummaryAt => "Choose the time of the daily summary, such as 07:30:00.",
         InstallationField.NotificationRetentionDays => "Keep the notifications from 1 to 365 days.",
         InstallationField.SecondaryColor => "Choose a #RRGGBB color, or none for the colors of the design system.",
+        InstallationField.MessageColors => "Choose #RRGGBB colors for the messages, or none for the colors of the design system.",
         _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
     };
 
