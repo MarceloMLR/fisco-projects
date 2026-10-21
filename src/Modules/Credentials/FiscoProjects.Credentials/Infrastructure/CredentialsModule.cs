@@ -1,6 +1,7 @@
 using FiscoProjects.Credentials.Application;
 using FiscoProjects.Credentials.Infrastructure.Persistence;
 using FiscoProjects.Persistence;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ public static class CredentialsModule
         services.TryAddSingleton(TimeProvider.System);
         services.AddModuleDbContext<CredentialsDbContext>(configuration);
         services.AddScoped<ICredentialStore, CredentialStore>();
+        services.AddScoped<IProjectDeletion, CredentialProjectDeletion>();
         // Read now: a certificate set and not found stops the application (ADR-0033).
         var certificate = CredentialKeyCertificate.Load(configuration);
         services.AddSingleton<CredentialKeyRepository>();

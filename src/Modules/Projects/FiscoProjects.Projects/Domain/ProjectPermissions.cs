@@ -17,6 +17,7 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// reached; everyone else only sees it.
 /// </param>
 /// <param name="CanUpdateOwnProgress">Updates the progress of the tasks the person is in charge of (ADR-0043).</param>
+/// <param name="CanDelete">Deletes the project for good, with everything in it: only the Administrator (ADR-0041).</param>
 public sealed record ProjectPermissions(
     bool CanView,
     bool CanEditData,
@@ -24,9 +25,10 @@ public sealed record ProjectPermissions(
     bool CanManagePeople,
     bool CanManageManagers,
     bool CanEditSchedule,
-    bool CanUpdateOwnProgress)
+    bool CanUpdateOwnProgress,
+    bool CanDelete = false)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true);
     private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)
@@ -39,7 +41,7 @@ public sealed record ProjectPermissions(
 
         return role switch
         {
-            ProjectRole.Manager => All,
+            ProjectRole.Manager => All with { CanDelete = false },
             ProjectRole.TechLead => None with
             {
                 CanView = true,

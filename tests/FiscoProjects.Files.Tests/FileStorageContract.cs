@@ -8,7 +8,7 @@ namespace FiscoProjects.Files.Tests;
 /// implementation is checked by a test class that inherits these tests and gives its storage.
 /// </summary>
 // Spec: armazenamento-de-arquivos, requirements "Pastas", "Enviar e abrir arquivos", "Mesmo nome na mesma pasta",
-// "Excluir arquivos e pastas" and "Nomes e caminhos seguros".
+// "Excluir arquivos e pastas", "Pastas vazias acima" and "Nomes e caminhos seguros".
 public abstract class FileStorageContract
 {
     protected static CancellationToken Cancellation => TestContext.Current.CancellationToken;
@@ -183,6 +183,60 @@ public abstract class FileStorageContract
 
         (await NamesAsync(project.Id)).Should().Equal("Chamados", "Documentos");
         await using var kept = await Storage.OpenAsync(file.Id, null, Cancellation);
+        kept.Should().NotBeNull();
+    }
+
+    [Fact(DisplayName = "Pasta de um arquivo")]
+    public async Task TheFolderOfAnItem_IsTheOneAboveIt()
+    {
+        var project = await Storage.EnsureFolderAsync(null, "ERP-FIN - Projeto", Cancellation);
+        var ticket = await Storage.EnsureFolderAsync(project.Id, "Chamados/#104", Cancellation);
+        var file = await UploadAsync(ticket.Id, "nota.xml", "<nfe/>", SameNameAction.KeepBoth);
+        var tickets = await Storage.FolderOfAsync(ticket.Id, Cancellation);
+
+        (await Storage.FolderOfAsync(file.Id, Cancellation)).Should().Be(ticket.Id);
+        tickets.Should().NotBeNull();
+        (await Storage.FolderOfAsync(tickets!, Cancellation)).Should().Be(project.Id);
+        (await Storage.FolderOfAsync(project.Id, Cancellation)).Should().BeNull("the project folder is at the root");
+        await Storage.DeleteFileAsync(file.Id, Cancellation);
+        (await Storage.FolderOfAsync(file.Id, Cancellation)).Should().BeNull("the file does not exist");
+    }
+
+    [Fact(DisplayName = "Pastas vazias acima")]
+    public async Task RemovingWhatAModuleStored_TakesTheFoldersLeftEmpty()
+    {
+        var project = await Storage.EnsureFolderAsync(null, "ERP-FIN - Projeto", Cancellation);
+        var first = await Storage.EnsureFolderAsync(project.Id, "Chamados/#104", Cancellation);
+        var second = await Storage.EnsureFolderAsync(project.Id, "Chamados/#105", Cancellation);
+        var files = new[]
+        {
+            await UploadAsync(first.Id, "nota.xml", "<nfe/>", SameNameAction.KeepBoth),
+            await UploadAsync(first.Id, "print.png", "png", SameNameAction.KeepBoth),
+        };
+        var other = await Storage.EnsureFolderAsync(null, "Outro projeto", Cancellation);
+
+        var removed = await Storage.RemoveAsync(files.Select(file => file.Id), [second.Id, "ERP-FIN - Projeto/Chamados/#999"], Cancellation);
+        var again = await Storage.RemoveAsync(files.Select(file => file.Id), [first.Id], Cancellation);
+
+        removed.Should().Be(2);
+        again.Should().Be(0, "what is gone is skipped");
+        (await NamesAsync(null)).Should().Equal("Outro projeto");
+        (await Storage.FolderOfAsync(other.Id, Cancellation)).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Arquivo de fora fica")]
+    public async Task AFileTheModuleDidNotStore_KeepsItsFolders()
+    {
+        var ticket = await Storage.EnsureFolderAsync(null, "ERP-FIN - Projeto/Chamados/#104", Cancellation);
+        var stored = await UploadAsync(ticket.Id, "nota.xml", "<nfe/>", SameNameAction.KeepBoth);
+        var project = await Storage.FolderOfAsync((await Storage.FolderOfAsync(ticket.Id, Cancellation))!, Cancellation);
+        var outside = await UploadAsync(project!, "Planilha antiga.xlsx", "de fora", SameNameAction.KeepBoth);
+
+        await Storage.RemoveAsync([stored.Id], [], Cancellation);
+
+        (await NamesAsync(null)).Should().Equal("ERP-FIN - Projeto");
+        (await NamesAsync(project)).Should().BeEmpty("the folders of the tickets were left empty");
+        await using var kept = await Storage.OpenAsync(outside.Id, null, Cancellation);
         kept.Should().NotBeNull();
     }
 

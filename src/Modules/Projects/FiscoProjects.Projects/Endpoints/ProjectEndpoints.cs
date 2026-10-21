@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using FiscoProjects.Projects.Application;
+using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
@@ -68,7 +69,12 @@ public sealed record ProjectPageResponse(IReadOnlyList<ProjectListItemResponse> 
 /// the managers (ADR-0042), and change the schedule.
 /// </summary>
 public sealed record ProjectPermissionsResponse(
-    bool CanEdit, bool CanChangeStatus, bool CanManagePeople, bool CanManageManagers, bool CanEditSchedule);
+    bool CanEdit,
+    bool CanChangeStatus,
+    bool CanManagePeople,
+    bool CanManageManagers,
+    bool CanEditSchedule,
+    [property: Description("Deletes the project for good, with everything in it: only the Administrator (ADR-0041).")] bool CanDelete);
 
 /// <summary>
 /// A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none
@@ -116,6 +122,22 @@ public sealed record ProjectStatusRequest(ProjectStatus Status);
 public sealed record ProjectClosingResponse(int OpenTickets, int IncompleteTasks, int PendingAcceptances);
 
 public sealed record ProjectCreatedResponse(Guid Id);
+
+/// <summary>What deleting the project would remove (ADR-0041): how many items of each kind it has in every module.</summary>
+public sealed record ProjectDeletionResponse(
+    Guid Id,
+    string Code,
+    string Name,
+    int Tickets,
+    int Documents,
+    int Links,
+    int Credentials,
+    int AcceptanceTerms,
+    int ScheduleItems,
+    int Members);
+
+/// <summary>The code of the project, typed by the Administrator to confirm the deletion (ADR-0041).</summary>
+public sealed record DeleteProjectRequest(string? Code);
 
 /// <summary>Problem types of the projects, so the screen can tell the reason.</summary>
 public static class ProjectProblems
@@ -180,6 +202,13 @@ internal static class ProjectEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapGet("/{id:guid}/closing", ClosingAsync).WithName("GetProjectClosing")
             .WithDescription("What completing or cancelling the project would leave behind (ADR-0043), for who changes its status.")
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        projects.MapGet("/{id:guid}/deletion", DeletionAsync).WithName("GetProjectDeletion")
+            .WithDescription("What deleting the project would remove (ADR-0041), for the Administrator.")
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        projects.MapPost("/{id:guid}/deletion", DeleteAsync).WithName("DeleteProject")
+            .WithDescription(
+                "Deletes the project for good, with everything in it (ADR-0041, ADR-0111): only the Administrator, with the code of the project.")
             .ProducesProblem(StatusCodes.Status403Forbidden);
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
@@ -296,7 +325,8 @@ internal static class ProjectEndpoints
                 CanChangeStatus: details.Permissions.CanChangeStatus,
                 CanManagePeople: details.Permissions.CanManagePeople && !project.IsClosed,
                 CanManageManagers: details.Permissions.CanManageManagers && !project.IsClosed,
-                CanEditSchedule: details.Permissions.CanEditSchedule && !project.IsClosed),
+                CanEditSchedule: details.Permissions.CanEditSchedule && !project.IsClosed,
+                CanDelete: details.Permissions.CanDelete),
             details.Schedule?.Start,
             details.Schedule?.End));
     }
@@ -349,6 +379,50 @@ internal static class ProjectEndpoints
                 detail: "Someone changed a ticket of the project at the same time; nothing changed.",
                 type: ProjectProblems.TicketsChanged),
             _ => TypedResults.Forbid(),
+        };
+    }
+
+    private static async Task<Results<Ok<ProjectDeletionResponse>, NotFound, ForbidHttpResult>> DeletionAsync(
+        Guid id, HttpContext http, IUserAccess access, GetProjectDeletion getDeletion, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var (outcome, summary) = await getDeletion.ExecuteAsync(id, viewer, cancellationToken);
+        return outcome switch
+        {
+            ProjectDeletionOutcome.Deleted => TypedResults.Ok(new ProjectDeletionResponse(
+                summary!.Id,
+                summary.Code,
+                summary.Name,
+                summary.CountOf(ProjectItemKind.Tickets),
+                summary.CountOf(ProjectItemKind.Documents),
+                summary.CountOf(ProjectItemKind.Links),
+                summary.CountOf(ProjectItemKind.Credentials),
+                summary.CountOf(ProjectItemKind.AcceptanceTerms),
+                summary.CountOf(ProjectItemKind.ScheduleItems),
+                summary.CountOf(ProjectItemKind.Members))),
+            ProjectDeletionOutcome.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Forbid(),
+        };
+    }
+
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem>> DeleteAsync(
+        Guid id,
+        HttpContext http,
+        DeleteProjectRequest request,
+        IUserAccess access,
+        DeleteProject deleteProject,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await deleteProject.ExecuteAsync(id, request.Code, viewer, cancellationToken) switch
+        {
+            ProjectDeletionOutcome.Deleted => TypedResults.NoContent(),
+            ProjectDeletionOutcome.NotFound => TypedResults.NotFound(),
+            ProjectDeletionOutcome.Forbidden => TypedResults.Forbid(),
+            _ => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["code"] = ["Type the code of the project to delete it."],
+            }),
         };
     }
 

@@ -104,14 +104,14 @@ public sealed class ProjectTests
     // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status, managing the people,
     // editing the schedule and updating the progress of one's own tasks.
     [Theory(DisplayName = "Permissões no projeto")]
-    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true)]
-    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true)]
-    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true)]
-    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true)]
-    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false)]
-    [InlineData(false, null, false, false, false, false, false, false, false)]
-    [InlineData(true, null, true, true, true, true, true, true, true)]
-    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true, false)]
+    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true, false)]
+    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true, false)]
+    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true, false)]
+    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false, false)]
+    [InlineData(false, null, false, false, false, false, false, false, false, false)]
+    [InlineData(true, null, true, true, true, true, true, true, true, true)]
+    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true, true)]
     public void Permissions_FollowTheMatrix(
         bool administrator,
         ProjectRole? role,
@@ -121,12 +121,14 @@ public sealed class ProjectTests
         bool canManagePeople,
         bool canManageManagers,
         bool canEditSchedule,
-        bool canUpdateOwnProgress)
+        bool canUpdateOwnProgress,
+        bool canDelete)
     {
         var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
 
         permissions.Should().Be(new ProjectPermissions(
-            canView, canEditData, canChangeStatus, canManagePeople, canManageManagers, canEditSchedule, canUpdateOwnProgress));
+            canView, canEditData, canChangeStatus, canManagePeople, canManageManagers, canEditSchedule, canUpdateOwnProgress,
+            canDelete));
     }
 
     // ADR-0043: the Administrator and the manager update the progress of any task; the tech lead, the contributor and

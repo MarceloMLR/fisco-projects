@@ -37,6 +37,9 @@ public static class ProjectsModule
         services.AddScoped<ChangeProject>();
         services.AddScoped<ChangeProjectStatus>();
         services.AddScoped<GetProjectClosing>();
+        services.AddScoped<IProjectDeletionStore, ProjectDeletionStore>();
+        services.AddScoped<GetProjectDeletion>();
+        services.AddScoped<DeleteProject>();
         services.AddScoped<GetProjectOverview>();
         services.AddScoped<ListProjectMembers>();
         services.AddScoped<AddProjectMember>();

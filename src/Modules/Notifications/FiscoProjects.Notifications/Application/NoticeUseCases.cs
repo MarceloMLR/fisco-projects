@@ -160,7 +160,7 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, TimeProv
                 continue;
             }
 
-            digest.Add(new DigestItem(person.UserId, notice.Kind, notice.ActorId, notice.Path, values, notice.Key, now));
+            digest.Add(new DigestItem(person.UserId, notice.Kind, notice.ActorId, notice.ProjectId, notice.Path, values, notice.Key, now));
         }
     }
 }
