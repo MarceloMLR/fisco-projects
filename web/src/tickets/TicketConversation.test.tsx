@@ -127,6 +127,17 @@ describe('Conversa pela tela', () => {
     expect(within(paulo).getByText(text.roles.Administrator)).toBeVisible();
   });
 
+  // Spec: chamados, requirement "Conversa pela tela" (ADR-0104).
+  it('Descrição na cor do solicitante', async () => {
+    await openTicket();
+
+    // The description is the first message of the requester: the card takes the color of the requester.
+    const description = screen.getByRole('region', { name: text.details.description });
+    expect(description).toHaveAttribute('data-tone', 'requester');
+    expect(getComputedStyle(description).backgroundColor).toBe('var(--msg-requester-bg)');
+    expect(within(description).getByText(text.roles.Requester)).toBeVisible();
+  });
+
   it('Interações antigas recolhidas', async () => {
     ticket = {
       ...ticket,
