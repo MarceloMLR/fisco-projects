@@ -36,7 +36,7 @@ Opção 1.
   - Chamados: as menções "@" à pessoa nas mensagens mostram o identificador (por escolha de Marcelo; o texto digitado continua de fora, ADR-0058).
   - Avisos: os e-mails para a pessoa são esquecidos (os que esperavam envio não saem mais); nos e-mails guardados de outras pessoas, o nome dela vira o identificador (por escolha de Marcelo); as notificações do sino e os itens do resumo dela são apagados.
 - **O registro da anonimização** é a própria gravação do cadastro, com quem fez e quando, e os campos de nome e e-mail só como alterados.
-- **Prazo da auditoria**: de 1 a 10 anos (padrão 5), em "Guardar auditoria por" nas Configurações gerais (por escolha de Marcelo). A limpeza roda uma vez por mês, no fuso da instalação, apaga os registros mais antigos que o prazo e deixa na auditoria um registro de quantos apagou e até que dia.
+- **Prazo da auditoria**: de 1 a 10 anos (padrão 5), em "Guardar auditoria por" nas Configurações gerais (por escolha de Marcelo). A limpeza roda uma vez por mês, no fuso da instalação, apaga os registros mais antigos que o prazo e, quando apaga algum, deixa na auditoria um registro de quantos apagou e desde que dia guarda.
 
 ### Consequências
 

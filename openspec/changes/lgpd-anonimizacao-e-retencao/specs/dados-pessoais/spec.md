@@ -6,7 +6,7 @@ O administrador MUST poder anonimizar uma pessoa desativada: o nome MUST virar o
 
 #### Scenario: Anonimizar pessoa desativada
 - **WHEN** o administrador anonimiza uma pessoa desativada
-- **THEN** a pessoa passa a se chamar "Pessoa removida nº 1", sem e-mail nem vínculo, com o status Anonimizada
+- **THEN** a pessoa passa a se chamar "Pessoa removida nº 1", sem e-mail nem vínculo, com a situação Anonimizado
 
 #### Scenario: Pessoa ativa não é anonimizada
 - **WHEN** o administrador tenta anonimizar uma pessoa ativa
@@ -54,7 +54,7 @@ O administrador MUST escolher nas Configurações gerais por quanto tempo a audi
 
 ### Requirement: Limpeza mensal da auditoria
 
-Uma vez por mês, no fuso da instalação, o sistema MUST apagar os registros da auditoria mais antigos que o prazo e MUST deixar um registro da limpeza, do sistema, com o dia de corte e quantos apagou (ADR-0058, ADR-0110).
+Uma vez por mês, no fuso da instalação, o sistema MUST apagar os registros da auditoria mais antigos que o prazo e, quando apagar algum, MUST deixar um registro da limpeza, do sistema, com o primeiro dia guardado e quantos apagou (ADR-0058, ADR-0110).
 
 #### Scenario: Limpeza mensal
 - **WHEN** chega um mês sem limpeza e há registros mais antigos que o prazo
