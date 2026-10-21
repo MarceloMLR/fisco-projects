@@ -23,13 +23,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 2. Acesso e administração | 15 | 12 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 11 |
-| 5. Chamados | 10 | 9 |
+| 5. Chamados | 10 | 10 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **53** |
+| **Total** | **70** | **54** |
 
 ## 1. Fundação
 
@@ -103,7 +103,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Concluída em 20/10/2026 ([#39](https://github.com/MarceloMLR/fisco-projects/pull/39)) |
 | Chamados-5 | `trocas-e-transferencias` | Troca de responsável e solicitante, em lote, transferência entre times, pendências de quem sai | 0027, 0042 | Concluída em 20/10/2026 ([#40](https://github.com/MarceloMLR/fisco-projects/pull/40)) |
 | Chamados-6 | `chamados-em-fornecedores`* | Cadastro de fornecedores e registros no chamado | 0028 | Concluída em 20/10/2026 ([#41](https://github.com/MarceloMLR/fisco-projects/pull/41)) |
-| Chamados-6.1 | `fornecedor-em-dialogo` | Chamado no fornecedor resumido no painel e com os detalhes e o histórico num diálogo, a pedido de Marcelo | 0028 | Planejada |
+| Chamados-6.1 | `fornecedor-em-dialogo` | Chamado no fornecedor resumido no painel e com os detalhes e o histórico num diálogo, a pedido de Marcelo | 0028 | Concluída em 21/10/2026 ([#60](https://github.com/MarceloMLR/fisco-projects/pull/60)) |
 | Chamados-7 | `encerramento-do-projeto` | Concluir só com chamados fechados; cancelar fecha os abertos | 0043 | Concluída em 20/10/2026 ([#43](https://github.com/MarceloMLR/fisco-projects/pull/43)) |
 
 ## 6. Avisos
