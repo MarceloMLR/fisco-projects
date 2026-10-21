@@ -2,7 +2,7 @@
 
 ### Requirement: Conversa pela tela
 
-A página do chamado MUST mostrar a descrição no topo e a conversa em duas colunas, com o solicitante à esquerda e os demais à direita. Cada mensagem MUST ter a cor e o selo do papel de quem escreveu e "(você)" na própria pessoa; o solicitante MUST ter a cor dele (rosa), e quem não tem cor de papel (o administrador fora do projeto, quem não tem papel nele) MUST ficar em cinza neutro. A conversa MUST rolar por dentro, com a resposta fixa embaixo, o separador por dia e as interações recolhidas acima de 10 (ADR-0069, ADR-0104).
+A página do chamado MUST mostrar a descrição no topo e a conversa em duas colunas, o solicitante à esquerda e os demais à direita. Cada mensagem MUST ter a cor e o selo do papel de quem escreveu (o solicitante em rosa; sem cor de papel, cinza) e "(você)" na própria pessoa. A conversa MUST rolar por dentro, com a resposta fixa embaixo, o separador por dia e as interações recolhidas acima de 10 (ADR-0069, ADR-0104).
 
 #### Scenario: Cores e lados por papel
 - **WHEN** a gerente abre um chamado com mensagens do solicitante, do líder técnico e dela
