@@ -24,9 +24,10 @@ import {
 
 /**
  * Loads the demonstration data through the API (ADR-0089), each action by the person who would do it on the screens:
- * the Administrator creates the clients and the projects, the manager builds the schedules and each person in charge
- * of a task updates its progress. It changes nothing when the main project is already there, and stops where the local
- * sign-in is off, as in production (ADR-0078). It ends saying where the screens open.
+ * the Administrator creates the clients and the projects, the manager of each project builds its schedule and each
+ * person in charge of a task updates its progress. Only the projects of the plan that are not there yet are loaded,
+ * with the clients and vendors still missing, so a demonstration already loaded gets what the plan added since; it
+ * stops where the local sign-in is off, as in production (ADR-0078). It ends saying where the screens open.
  */
 
 type Api = ReturnType<typeof createClient<paths>>;
@@ -122,19 +123,23 @@ export async function loadDemo(
       `${demoPeople[administrator]} não é administrador: confira Users:FirstAdministrator no appsettings.Development.json.`,
     );
   }
-  const found = must(
-    await admin.api.GET('/api/projects', {
-      params: { query: { search: mainProject, situation: 'All', pageSize: 25 } },
-    }),
-    'Lista de projetos',
-  );
-  if (found.items.some((project) => project.code === mainProject)) {
-    log(`Os dados de demonstração já estão carregados (${mainProject} existe). Nada mudou.`);
+  const { codes, today } = await existingProjects(admin.api);
+  const missing = demoProjects.filter((project) => !codes.has(project.code));
+  if (missing.length === 0) {
+    log(
+      `Os dados de demonstração já estão carregados (${mainProject} e os demais projetos do plano existem). Nada mudou.`,
+    );
     log(
       'Para carregar de novo, apague o banco local (docker compose down -v e docker compose up -d --wait) e os arquivos de src/FiscoProjects.Api/App_Data, suba a API e rode npm run demo:data.',
     );
     log(screensLine);
     return { loaded: false, reason: 'already-loaded' };
+  }
+  const kept = demoProjects.filter((project) => codes.has(project.code));
+  if (kept.length > 0) {
+    log(
+      `Projetos que já existiam, mantidos como estão: ${kept.map((project) => project.code).join(', ')}.`,
+    );
   }
 
   const people = new Map<DemoPerson, { api: Api; id: string }>([[administrator, admin]]);
@@ -165,61 +170,90 @@ export async function loadDemo(
     );
   }
 
-  const clients = new Map<string, string>();
-  for (const name of demoClients) {
+  // The clients and the vendors of the plan that are not there yet, by name.
+  const clients = new Map<string, string>(
+    must(
+      await admin.api.GET('/api/clients', { params: { query: { pageSize: 100 } } }),
+      'Lista de clientes',
+    ).items.map((client) => [client.name, client.id]),
+  );
+  let newClients = 0;
+  for (const name of demoClients.filter((client) => !clients.has(client))) {
     const created = must(
       await admin.api.POST('/api/clients', { body: { name, cnpj: null, observation: null } }),
       `Cliente ${name}`,
     );
     clients.set(name, created.id);
+    newClients += 1;
   }
-  log(`Clientes: ${String(clients.size)}.`);
+  log(`Clientes: ${String(newClients)} novos.`);
 
-  const vendors = new Map<string, string>();
-  for (const vendor of demoVendors) {
+  const vendors = new Map<string, string>(
+    must(await admin.api.GET('/api/admin/vendors'), 'Lista de fornecedores').map((vendor) => [
+      vendor.name,
+      vendor.id,
+    ]),
+  );
+  let newVendors = 0;
+  for (const vendor of demoVendors.filter((item) => !vendors.has(item.name))) {
     const added = must(
       await admin.api.POST('/api/admin/vendors', { body: vendor }),
       `Fornecedor ${vendor.name}`,
     );
     vendors.set(vendor.name, added.id);
+    newVendors += 1;
   }
-  log(`Fornecedores: ${String(vendors.size)}.`);
+  log(`Fornecedores: ${String(newVendors)} novos.`);
 
-  const firstDay = firstDayFor(found.today);
+  const firstDay = firstDayFor(today);
   let items = 0;
-  for (const project of demoProjects) {
-    items += await loadProject(
-      project,
-      firstDay,
-      found.today,
-      admin.api,
-      clients,
-      vendors,
-      personOf,
-    );
+  for (const project of missing) {
+    items += await loadProject(project, firstDay, today, admin.api, clients, vendors, personOf);
   }
-  const tickets = demoProjects.reduce(
-    (total, project) => total + (project.tickets?.length ?? 0),
-    0,
-  );
-  const documents = demoProjects.reduce(
-    (total, project) => total + (project.documents?.length ?? 0),
-    0,
-  );
-  const links = demoProjects.reduce((total, project) => total + (project.links?.length ?? 0), 0);
-  const credentials = demoProjects.reduce(
-    (total, project) => total + (project.credentials?.length ?? 0),
-    0,
-  );
-  const acceptances = demoProjects.reduce(
-    (total, project) => total + (project.acceptances?.length ?? 0),
-    0,
-  );
+  const count = (of: (project: DemoProject) => readonly unknown[] | undefined) =>
+    missing.reduce((total, project) => total + (of(project)?.length ?? 0), 0);
   log(
-    `Projetos: ${String(demoProjects.length)}, com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(tickets)} chamados, ${String(documents)} documentos, ${String(links)} links, ${String(credentials)} acessos e ${String(acceptances)} termos de aceite.`,
+    `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos e ${String(count((project) => project.acceptances))} termos de aceite.`,
   );
   log(screensLine);
-  return { loaded: true, firstDay, projects: demoProjects.length, items };
+  return { loaded: true, firstDay, projects: missing.length, items };
+}
+
+/** The codes of the projects already there, of every situation, and today in the time zone of the installation. */
+async function existingProjects(admin: Api): Promise<{ codes: Set<string>; today: string }> {
+  const codes = new Set<string>();
+  const pageSize = 100;
+  for (let page = 1; ; page += 1) {
+    const found = must(
+      await admin.GET('/api/projects', { params: { query: { situation: 'All', page, pageSize } } }),
+      'Lista de projetos',
+    );
+    for (const project of found.items) {
+      codes.add(project.code);
+    }
+    if (page * pageSize >= found.total) {
+      return { codes, today: found.today };
+    }
+  }
+}
+
+/** The model and the start of a project created from a model of an earlier project of the plan (ADR-0017). */
+async function fromTemplate(
+  project: DemoProject,
+  firstDay: string,
+  admin: Api,
+): Promise<{ templateId?: string; scheduleStart?: string }> {
+  if (project.fromTemplate === undefined) {
+    return {};
+  }
+  const { name, start } = project.fromTemplate;
+  const template = must(await admin.GET('/api/project-templates'), 'Modelos de projeto').find(
+    (model) => model.name === name,
+  );
+  if (template === undefined) {
+    throw new Error(`${project.code} vem do modelo ${name}, que não existe.`);
+  }
+  return { templateId: template.id, scheduleStart: dayFrom(firstDay, start) };
 }
 
 /** The text of a message as the editor keeps it: a paragraph, with the mention at the start (ADR-0026). */
@@ -240,7 +274,10 @@ function documentOf(message: DemoMessage, personOf: (person: DemoPerson) => { id
   };
 }
 
-/** Creates a project with its people, builds its schedule and puts it in its status; gives how many items it has. */
+/**
+ * Creates a project with its people, builds its schedule (or has the server make it from a model) and puts it in its
+ * status; gives how many items of the plan it has.
+ */
 async function loadProject(
   project: DemoProject,
   firstDay: string,
@@ -250,6 +287,7 @@ async function loadProject(
   vendors: ReadonlyMap<string, string>,
   personOf: (person: DemoPerson) => { api: Api; id: string },
 ): Promise<number> {
+  const leader = project.manager ?? manager;
   const created = must(
     await admin.POST('/api/projects', {
       body: {
@@ -257,8 +295,9 @@ async function loadProject(
         name: project.name,
         description: null,
         clientId: project.client === null ? null : (clients.get(project.client) ?? null),
-        managerId: personOf(manager).id,
+        managerId: personOf(leader).id,
         techLeadId: project.techLead === undefined ? null : personOf(project.techLead).id,
+        ...(await fromTemplate(project, firstDay, admin)),
       },
     }),
     `Projeto ${project.code}`,
@@ -274,7 +313,7 @@ async function loadProject(
     );
   }
 
-  const builder = personOf(manager).api;
+  const builder = personOf(leader).api;
   const ids = new Map<string, string>();
   const phaseIds = new Map<string, string>();
   const idOf = (name: string, by: string) => {
@@ -315,7 +354,7 @@ async function loadProject(
       ids.set(item.name, itemId);
       if (item.progress !== undefined) {
         // The person in charge updates the progress of the task; without one, the manager (ADR-0043).
-        const who = personOf(item.owner ?? manager).api;
+        const who = personOf(item.owner ?? leader).api;
         done(
           await who.PUT('/api/projects/{id}/schedule/items/{itemId}/progress', {
             params: { path: { id, itemId } },
