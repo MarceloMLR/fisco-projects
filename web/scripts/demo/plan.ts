@@ -981,6 +981,8 @@ export const demoProjects: readonly DemoProject[] = [
         priority: 'Low',
         by: 'marina',
         description: 'Quais notas os fornecedores vão poder consultar no portal?',
+        // The contributor starts the triage and then the work by the buttons, and becomes the assignee (ADR-0098).
+        steps: [act('carla', 'StartTriage'), act('carla', 'StartWork')],
       },
     ],
   },

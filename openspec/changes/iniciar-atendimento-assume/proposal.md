@@ -6,7 +6,7 @@ Hoje "Iniciar triagem" e "Iniciar atendimento" só mudam o status: o chamado em 
 
 ## What Changes
 
-- **"Iniciar atendimento"** num chamado sem responsável torna responsável quem fez a ação, se essa pessoa pode ser responsável (quem atende o time ou o gerente do projeto), e a faz acompanhar o chamado, com o evento na conversa e o aviso de atribuição a quem acompanha.
+- **"Iniciar atendimento"** num chamado sem responsável torna responsável quem fez a ação, se essa pessoa pode ser responsável (quem atende o time ou o gerente do projeto), e a faz acompanhar o chamado, com o evento na conversa; quem acompanha recebe o aviso da mudança de status, como hoje.
 - **Com responsável**, nada muda; **o administrador de fora do projeto** não vira responsável.
 - **"Iniciar triagem"** continua sem mexer no responsável.
 - **Demonstração**: um chamado é levado à triagem e depois ao atendimento pelos botões, ficando com responsável.

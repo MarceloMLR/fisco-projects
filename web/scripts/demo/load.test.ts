@@ -422,6 +422,34 @@ describe('Status na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Atendimento iniciado na demonstração" (ADR-0098).
+describe('Atendimento iniciado na demonstração', () => {
+  it('Atendimento iniciado na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // A ticket goes to triage and then to work by the buttons, by who serves its team, with no message before.
+    const started = plannedTickets().filter((ticket) =>
+      (ticket.steps ?? []).some((step) => step.kind === 'action' && step.action === 'StartWork'),
+    );
+    expect(started.map((ticket) => ticket.title)).toEqual(['Definir o escopo do portal']);
+    const [first] = started;
+    if (first === undefined) {
+      throw new Error('No ticket with the work started.');
+    }
+    const number = plannedTickets().indexOf(first) + 1;
+    expect(
+      (
+        (bodies.get(`/api/tickets/${String(number)}/transitions`) ?? []) as { action: string }[]
+      ).map((body) => body.action),
+    ).toEqual(['StartTriage', 'StartWork']);
+    expect(callsBy(new RegExp(`/api/tickets/${String(number)}/transitions$`))).toEqual([
+      `carla POST /api/tickets/${String(number)}/transitions`,
+      `carla POST /api/tickets/${String(number)}/transitions`,
+    ]);
+    expect(finalStatus(first)).toBe('InProgress');
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Prazos na demonstração".
 describe('Prazos na demonstração', () => {
   it('Prazos na demonstração', async () => {
