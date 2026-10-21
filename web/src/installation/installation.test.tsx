@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
 import { server } from '../test/server';
+import { color } from '../theme/tokens';
 
 const navigationName = ptBR.shell.mainNavigation;
 const logoUrl = '/api/installation/logo?v=639000000000000000';
@@ -151,5 +152,40 @@ describe('Cor principal da instalação', () => {
     await waitFor(() => {
       expect(brandRules()).toMatch(new RegExp(`--brand-panel-bg-2:\\s*${hash('7a1f3d')};`));
     });
+  });
+});
+
+/** The icon of the tab of the browser, as the page has it. */
+function favicon() {
+  return document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.getAttribute('href');
+}
+
+// Spec: configuracao-da-instalacao, requirement "Logo na aba do navegador" (ADR-0108).
+describe('Logo na aba do navegador', () => {
+  beforeEach(() => {
+    document.head.querySelector('link[rel="icon"]')?.remove();
+  });
+
+  it('Logo na aba', async () => {
+    installation('Consultoria Fictícia', logoUrl);
+
+    await renderApp('/');
+
+    await waitFor(() => {
+      expect(favicon()).toBe(logoUrl);
+    });
+  });
+
+  it('Selo na aba sem logo', async () => {
+    signedOut();
+    installation('Consultoria Fictícia');
+
+    await renderApp('/sign-in');
+
+    // The badge of the sidebar, drawn on the main color.
+    await waitFor(() => {
+      expect(favicon()).toMatch(/^data:image\/svg\+xml,/);
+    });
+    expect(decodeURIComponent(favicon() ?? '')).toContain(`fill="${color('action', 'light')}"`);
   });
 });

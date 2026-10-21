@@ -21,7 +21,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 12 | 10 |
-| 2. Acesso e administração | 16 | 16 |
+| 2. Acesso e administração | 17 | 16 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
 | 5. Chamados | 13 | 13 |
@@ -30,7 +30,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **77** | **65** |
+| **Total** | **78** | **65** |
 
 ## 1. Fundação
 
@@ -69,6 +69,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-8.1 | `personalizacao-da-marca` | Seletor de cor, logo do tema escuro e cor secundária na barra lateral, nos destaques e no painel da entrada, a pedido de Marcelo | 0063, 0082 | Concluída em 21/10/2026 ([#62](https://github.com/MarceloMLR/fisco-projects/pull/62)) |
 | Acesso-8.2 | `cores-das-mensagens` | Cor de cada papel na conversa dos chamados configurável, a pedido de Marcelo | 0069, 0082 | Concluída em 21/10/2026 ([#63](https://github.com/MarceloMLR/fisco-projects/pull/63)) |
 | Acesso-8.3 | `so-cor-principal` | Só a cor principal na marca, sem cor secundária nem cores das mensagens, mantendo o logo escuro e o seletor de cores, a pedido de Marcelo | 0100, 0101, 0103 | Concluída em 21/10/2026 ([#65](https://github.com/MarceloMLR/fisco-projects/pull/65)) |
+| Acesso-8.4 | `logo-na-aba` | O logo da instalação na aba do navegador, e o selo na cor principal sem logo, a pedido de Marcelo | 0003, 0082, 0108 | Em andamento |
 
 ## 3. Projetos
 
