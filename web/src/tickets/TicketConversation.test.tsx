@@ -193,6 +193,35 @@ describe('Conversa pela tela', () => {
     );
   });
 
+  // Spec: chamados, requirement "Mencionar ao digitar" (ADR-0107).
+  it('Mencionar ao digitar', async () => {
+    await openTicket();
+
+    await typeInEditor(text.reply.label, 'veja @die');
+    const typed = await screen.findByRole('listbox', { name: ptBR.editor.mention });
+    expect(
+      within(typed)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['DTDiego Torres']);
+    // Enter chooses the person marked, as a click would.
+    fireEvent.keyDown(screen.getByRole('textbox', { name: text.reply.label }), { key: 'Enter' });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox', { name: ptBR.editor.mention })).not.toBeInTheDocument();
+    });
+    await typeInEditor(text.reply.label, 'e @R');
+    fireEvent.click(await screen.findByRole('option', { name: /Rafael Souza/ }));
+    fireEvent.click(screen.getByRole('button', { name: text.reply.send }));
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    const form = sent[0] ?? '';
+    expect(form).toContain(demoPeople.diego.id);
+    expect(form).toContain(demoPeople.rafael.id);
+    expect(form).not.toContain('@die');
+  });
+
   it('Sem resposta para quem só vê', async () => {
     signedInAs('User');
     ticket = {

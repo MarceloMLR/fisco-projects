@@ -14,7 +14,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 19/10/2026, Marcelo pediu a Fundação-3.2 (`verificacao-mais-rapida`), para a verificação do PR ficar mais rápida sem deixar de existir (ADR-0090).
 - Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
 - Em 20/10/2026, depois da Síntese, Marcelo pediu dez ajustes, feitos em sequência antes do grupo 10: mais dados de demonstração, Sair voltando ao Início, Líder técnico como papel no sistema, "Iniciar atendimento" assumindo o chamado, baixar anexos, chamado no fornecedor num diálogo, relatório da auditoria em Excel, personalização da marca, cores das mensagens e o cliente como responsável de tarefas.
-- Em 21/10/2026, Marcelo pediu mais ajustes, feitos em sequência: só a cor principal na marca, o solicitante em rosa na conversa, o espaço do ícone nos botões, o Voltar do navegador e a primeira carga mais rápida.
+- Em 21/10/2026, Marcelo pediu mais ajustes, feitos em sequência: só a cor principal na marca, o solicitante em rosa na conversa, o espaço do ícone nos botões, o Voltar do navegador e a primeira carga mais rápida; e depois a menção ao digitar "@", a descrição do chamado em rosa, o logo na aba do navegador e os avisos no topo.
 
 ## Marcos
 
@@ -24,13 +24,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 2. Acesso e administração | 16 | 16 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
-| 5. Chamados | 11 | 11 |
+| 5. Chamados | 12 | 12 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **75** | **63** |
+| **Total** | **76** | **64** |
 
 ## 1. Fundação
 
@@ -104,6 +104,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Chamados-2 | `conversa-do-chamado` | Mensagens, anexos, menções, cores por papel | 0026, 0069 | Concluída em 20/10/2026 ([#37](https://github.com/MarceloMLR/fisco-projects/pull/37)) |
 | Chamados-2.1 | `baixar-anexos` | Baixar cada anexo e todos de uma vez, a pedido de Marcelo | 0026 | Concluída em 20/10/2026 ([#59](https://github.com/MarceloMLR/fisco-projects/pull/59)) |
 | Chamados-2.2 | `solicitante-em-rosa` | Solicitante em rosa na conversa do chamado, e quem não tem papel no cinza neutro, a pedido de Marcelo | 0069, 0104 | Concluída em 21/10/2026 ([#66](https://github.com/MarceloMLR/fisco-projects/pull/66)) |
+| Chamados-2.3 | `mencionar-ao-digitar` | Mencionar ao digitar "@" e parte do nome no editor dos chamados, a pedido de Marcelo | 0026, 0107 | Concluída em 21/10/2026 ([#70](https://github.com/MarceloMLR/fisco-projects/pull/70)) |
 | Chamados-3 | `fluxo-de-status` | Fluxo em tabela, responsável pela primeira resposta, fechamento automático | 0024, 0068 | Concluída em 20/10/2026 ([#38](https://github.com/MarceloMLR/fisco-projects/pull/38)) |
 | Chamados-3.1 | `iniciar-atendimento-assume` | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável, a pedido de Marcelo | 0024, 0068 | Concluída em 20/10/2026 ([#58](https://github.com/MarceloMLR/fisco-projects/pull/58)) |
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Concluída em 20/10/2026 ([#39](https://github.com/MarceloMLR/fisco-projects/pull/39)) |
