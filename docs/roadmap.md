@@ -20,7 +20,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 9 | 7 |
-| 2. Acesso e administração | 15 | 12 |
+| 2. Acesso e administração | 15 | 13 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 11 |
 | 5. Chamados | 10 | 10 |
@@ -29,7 +29,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **54** |
+| **Total** | **70** | **55** |
 
 ## 1. Fundação
 
@@ -56,7 +56,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-2.2 | `lider-tecnico-no-sistema` | Líder técnico como papel no sistema: só quem o tem lidera tecnicamente um projeto, e é o sugerido nas telas, a pedido de Marcelo | 0040, 0072 | Concluída em 20/10/2026 ([#57](https://github.com/MarceloMLR/fisco-projects/pull/57)) |
 | Acesso-3 | `auditoria` | Registro automático das alterações e dos eventos de segurança, tela de Auditoria | 0039 | Concluída em 18/10/2026 ([#13](https://github.com/MarceloMLR/fisco-projects/pull/13)) |
 | Acesso-3.1 | `detalhes-em-gaveta` | Detalhes da Auditoria numa gaveta sobreposta com o fundo escurecido, padrão de todas as telas de lista com detalhe, e filtro de pessoa sem cortar o nome, a pedido de Marcelo | 0066, 0081 | Concluída em 18/10/2026 ([#16](https://github.com/MarceloMLR/fisco-projects/pull/16)) |
-| Acesso-3.2 | `relatorio-da-auditoria` | Relatório da auditoria em Excel com os filtros da tela, só do administrador e registrado na própria auditoria, a pedido de Marcelo | 0039, 0046, 0058 | Planejada |
+| Acesso-3.2 | `relatorio-da-auditoria` | Relatório da auditoria em Excel com os filtros da tela, só do administrador e registrado na própria auditoria, a pedido de Marcelo | 0039, 0046, 0058 | Concluída em 21/10/2026 ([#61](https://github.com/MarceloMLR/fisco-projects/pull/61)) |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Concluída em 18/10/2026 ([#14](https://github.com/MarceloMLR/fisco-projects/pull/14)) |
 | Acesso-5 | `perfil-e-tema` | Tema no perfil e tela Meu perfil (separada da configuração da instalação a pedido de Marcelo) | 0014, 0066 | Concluída em 18/10/2026 ([#17](https://github.com/MarceloMLR/fisco-projects/pull/17)) |
 | Acesso-6 | `configuracao-da-instalacao` | Tela Configurações gerais com o nome e o logo da instalação, exibidos na barra lateral, na entrada e na aba (separada do fuso e da cor a pedido de Marcelo) | 0003, 0009, 0030, 0046, 0066 | Concluída em 19/10/2026 ([#18](https://github.com/MarceloMLR/fisco-projects/pull/18)) |
