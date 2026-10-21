@@ -7,7 +7,8 @@ export type ParticipantRole = Ticket['participants'][number]['role'];
  * system; the requester in rose, and whoever has no color of a part (the Administrator outside the project, someone
  * without a role in it) in the neutral grey.
  */
-export type MessageTone = 'requester' | 'owner' | 'manager' | 'techlead' | 'dev' | 'functional' | 'neutral';
+export type MessageTone =
+  'requester' | 'owner' | 'manager' | 'techlead' | 'dev' | 'functional' | 'neutral';
 
 export const toneOf: Record<ParticipantRole, MessageTone> = {
   Requester: 'requester',
