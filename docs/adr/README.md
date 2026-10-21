@@ -172,3 +172,4 @@ Regras:
 | [0107](0107-mencionar-ao-digitar.md) | Mencionar ao digitar "@" no editor dos chamados | aceita | 2026-10-21 |
 | [0108](0108-logo-na-aba-do-navegador.md) | Logo da instalação na aba do navegador | aceita | 2026-10-21 |
 | [0109](0109-confirmacoes-no-alto-da-tela.md) | Confirmações no alto da tela, no meio | aceita | 2026-10-21 |
+| [0110](0110-anonimizacao-na-pratica.md) | Como a anonimização e o prazo da auditoria funcionam | aceita | 2026-10-21 |
