@@ -1266,3 +1266,83 @@ describe('Mudanças do cronograma na auditoria', () => {
     ]);
   });
 });
+
+// Spec: dados-pessoais, requirements "Registro da anonimização" and "Limpeza mensal da auditoria" (ADR-0110).
+describe('Dados pessoais na auditoria', () => {
+  it('Registro sem o nome', () => {
+    const anonymized = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'User',
+        itemLabel: 'Pessoa removida nº 1',
+        changes: [
+          { field: 'Name', before: null, after: null, secret: true, reference: null },
+          { field: 'Email', before: null, after: null, secret: true, reference: null },
+          {
+            field: 'Role',
+            before: 'ProjectManager',
+            after: 'User',
+            secret: false,
+            reference: null,
+          },
+          { field: 'AnonymousNumber', before: null, after: '1', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(anonymized).toEqual({
+      title: 'Anonimizou um usuário',
+      summary: 'Pessoa removida nº 1',
+      sentence: 'Paulo Nogueira anonimizou um usuário',
+      properties: [{ label: 'Usuário', value: 'Pessoa removida nº 1' }],
+      changes: [
+        { field: 'Nome', before: '—', after: 'Alterado' },
+        { field: 'E-mail', before: '—', after: 'Alterado' },
+        { field: 'Papel no sistema', before: 'Gerente de projeto', after: 'Usuário' },
+        { field: 'Número da anonimização', before: '—', after: '1' },
+      ],
+    });
+  });
+
+  it('Limpeza mensal', () => {
+    const cleaned = describeAuditEntry(
+      entry({
+        action: 'Cleaned',
+        itemType: 'AuditCleanup',
+        actor: null,
+        changes: [
+          { field: 'KeptFrom', before: null, after: '2021-11-01', secret: false, reference: null },
+          { field: 'Removed', before: null, after: '1250', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(cleaned).toEqual({
+      title: 'Limpou a auditoria',
+      summary: '1.250 registros apagados · anteriores a 01/11/2021',
+      sentence: 'Sistema limpou a auditoria',
+      properties: [
+        { label: 'Guardados a partir de', value: '01/11/2021' },
+        { label: 'Registros apagados', value: '1.250' },
+      ],
+      changes: [],
+    });
+  });
+
+  it('Prazo da auditoria nas configurações', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'InstallationSettings',
+        changes: [
+          { field: 'AuditRetentionYears', before: '5', after: '7', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.changes).toEqual([{ field: 'Guardar auditoria por', before: '5', after: '7' }]);
+  });
+});

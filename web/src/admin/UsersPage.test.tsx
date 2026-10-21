@@ -57,6 +57,16 @@ beforeEach(() => {
       find(String(params.id)).status = 'Active';
       return new HttpResponse(null, { status: 204 });
     }),
+    http.post('/api/users/:id/anonymization', async ({ request, params }) => {
+      await record(request);
+      Object.assign(find(String(params.id)), {
+        name: 'Pessoa removida nº 1',
+        email: '',
+        role: 'User',
+        status: 'Anonymized',
+      });
+      return new HttpResponse(null, { status: 204 });
+    }),
   );
 });
 
@@ -289,6 +299,110 @@ describe('Tela Usuários', () => {
     expect(within(rowOf('Paulo Nogueira')).getAllByRole('gridcell')[1]).toHaveTextContent(
       text.roles.Administrator,
     );
+  });
+});
+
+// Spec: dados-pessoais, requirement "Anonimizar uma pessoa" (ADR-0058, ADR-0110).
+describe('Anonimizar uma pessoa', () => {
+  const anonymizeTitle = (name: string) => text.anonymize.title.replace('{{name}}', name);
+
+  it('Anonimizar pessoa desativada', async () => {
+    await openUsers();
+
+    fireEvent.click(
+      within(await openMenuOf('Lívia Prado')).getByRole('menuitem', { name: text.menu.anonymize }),
+    );
+    const dialog = await screen.findByRole('alertdialog', { name: anonymizeTitle('Lívia Prado') });
+    expect(dialog).toHaveTextContent('livia.prado@empresa.example');
+    expect(dialog).toHaveTextContent(text.anonymize.forGood);
+    fireEvent.click(within(dialog).getByRole('button', { name: text.anonymize.confirm }));
+
+    expect(
+      await screen.findByText(text.messages.anonymized.replace('{{name}}', 'Lívia Prado')),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(rowOf('Pessoa removida nº 1')).getAllByRole('gridcell')[2]).toHaveTextContent(
+        text.status.Anonymized,
+      );
+    });
+    const row = rowOf('Pessoa removida nº 1');
+    expect(row).toHaveTextContent(text.anonymizedData);
+    expect(row).toHaveClass('row-muted');
+    // For good: no menu for the person anymore.
+    expect(within(row).queryByRole('button')).not.toBeInTheDocument();
+    expect(requests).toEqual([
+      expect.objectContaining({
+        method: 'POST',
+        path: `/api/users/${demoUsers[4]?.id ?? ''}/anonymization`,
+        csrf: '1',
+      }),
+    ]);
+  });
+
+  it('Pessoa ativa não é anonimizada', async () => {
+    await openUsers();
+
+    const menu = await openMenuOf('Marina Costa');
+
+    expect(
+      within(menu).queryByRole('menuitem', { name: text.menu.anonymize }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Desistir de anonimizar', async () => {
+    await openUsers();
+
+    fireEvent.click(
+      within(await openMenuOf('Lívia Prado')).getByRole('menuitem', { name: text.menu.anonymize }),
+    );
+    const dialog = await screen.findByRole('alertdialog', { name: anonymizeTitle('Lívia Prado') });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.anonymize.cancel }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+    expect(requests).toEqual([]);
+    expect(rowOf('Lívia Prado')).toHaveTextContent('livia.prado@empresa.example');
+  });
+
+  it('Anonimização definitiva', async () => {
+    server.use(
+      http.post('/api/users/:id/anonymization', () =>
+        problem(409, 'urn:fiscoprojects:problem:user-anonymized'),
+      ),
+    );
+    await openUsers();
+
+    fireEvent.click(
+      within(await openMenuOf('Lívia Prado')).getByRole('menuitem', { name: text.menu.anonymize }),
+    );
+    fireEvent.click(
+      within(
+        await screen.findByRole('alertdialog', { name: anonymizeTitle('Lívia Prado') }),
+      ).getByRole('button', { name: text.anonymize.confirm }),
+    );
+
+    expect(await screen.findByText(text.messages.anonymizedAlready)).toBeInTheDocument();
+  });
+
+  it('Filtro pelos anonimizados', async () => {
+    people.push({
+      id: '0199f5a2-7c1e-7d40-9a1b-000000000009',
+      name: 'Pessoa removida nº 1',
+      email: '',
+      role: 'User',
+      status: 'Anonymized',
+      lastSignInAt: '2026-06-01T12:00:00Z',
+    });
+    await renderApp('/admin/users');
+
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: text.filters.status }));
+    fireEvent.click(await screen.findByRole('option', { name: text.status.Anonymized }));
+
+    await waitFor(() => {
+      expect(bodyRows()).toHaveLength(1);
+    });
+    expect(bodyRows()[0]).toHaveTextContent('Pessoa removida nº 1');
   });
 });
 

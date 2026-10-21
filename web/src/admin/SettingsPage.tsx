@@ -40,6 +40,7 @@ const fieldErrors = {
   colorContrast: 'settings.errors.colorContrast',
   dailySummaryRequired: 'settings.errors.dailySummaryRequired',
   retentionRange: 'settings.errors.retentionRange',
+  auditRetentionRange: 'settings.errors.auditRetentionRange',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
@@ -59,6 +60,12 @@ const form = z.object({
     .int({ error: fieldErrors.retentionRange })
     .min(1, { error: fieldErrors.retentionRange })
     .max(365, { error: fieldErrors.retentionRange }),
+  // From 1 to 10 years; the monthly cleanup removes what is older (ADR-0058, ADR-0110).
+  auditRetentionYears: z.coerce
+    .number({ error: fieldErrors.auditRetentionRange })
+    .int({ error: fieldErrors.auditRetentionRange })
+    .min(1, { error: fieldErrors.auditRetentionRange })
+    .max(10, { error: fieldErrors.auditRetentionRange }),
   // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
   mainColor: z
     .string()
@@ -309,6 +316,7 @@ export function SettingsPage() {
       mainColor: '',
       dailySummaryAt: '',
       notificationRetentionDays: '',
+      auditRetentionYears: '',
     },
     values:
       installation === undefined || rules === undefined
@@ -319,6 +327,7 @@ export function SettingsPage() {
             mainColor: installation.mainColor ?? '',
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
+            auditRetentionYears: String(rules.auditRetentionYears),
           },
   });
 
@@ -375,7 +384,14 @@ export function SettingsPage() {
   };
 
   const save = handleSubmit(
-    async ({ name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays }) => {
+    async ({
+      name,
+      timeZone,
+      mainColor,
+      dailySummaryAt,
+      notificationRetentionDays,
+      auditRetentionYears,
+    }) => {
       // The new logos stay on screen until the brand is read again, so the old ones never flash back.
       let logoSaved = false;
       let darkLogoSaved = false;
@@ -401,6 +417,7 @@ export function SettingsPage() {
               mainColor,
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
+              auditRetentionYears,
             },
           });
           if (response.status === 400) {
@@ -417,6 +434,9 @@ export function SettingsPage() {
             }
             if (invalid.includes('notificationRetentionDays')) {
               setError('notificationRetentionDays', { message: fieldErrors.retentionRange });
+            }
+            if (invalid.includes('auditRetentionYears')) {
+              setError('auditRetentionYears', { message: fieldErrors.auditRetentionRange });
             }
             if (invalid.includes('timeZone') || invalid.length === 0) {
               setError('timeZone', { message: fieldErrors.timeZoneInvalid });
@@ -450,6 +470,7 @@ export function SettingsPage() {
   const colorError = errors.mainColor?.message as FieldError | undefined;
   const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
   const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
+  const auditRetentionError = errors.auditRetentionYears?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -599,6 +620,16 @@ export function SettingsPage() {
                       helper={t('settings.notificationRetentionHint')}
                       error={retentionError === undefined ? undefined : t(retentionError)}
                       {...register('notificationRetentionDays')}
+                    />
+                    <TextField
+                      label={t('settings.auditRetention')}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={10}
+                      helper={t('settings.auditRetentionHint')}
+                      error={auditRetentionError === undefined ? undefined : t(auditRetentionError)}
+                      {...register('auditRetentionYears')}
                     />
                   </Box>
                 </Box>

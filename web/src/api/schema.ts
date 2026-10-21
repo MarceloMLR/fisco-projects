@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{id}/anonymization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AnonymizeUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/people": {
         parameters: {
             query?: never;
@@ -1949,7 +1965,7 @@ export interface components {
          * @description What an audit record says happened.
          * @enum {unknown}
          */
-        AuditAction: "Created" | "Updated" | "Deleted" | "SignedIn" | "SignInRefused" | "Exported";
+        AuditAction: "Created" | "Updated" | "Deleted" | "SignedIn" | "SignInRefused" | "Exported" | "Cleaned";
         /** @description Who did it; null on the record means the system. */
         AuditActorResponse: {
             /** Format: uuid */
@@ -2299,7 +2315,8 @@ export interface components {
         };
         /**
          * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
-         *     daily summary of e-mails, in that time zone (ADR-0037), and how many days the notifications are kept (ADR-0038).
+         *     daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038) and how
+         *     many years the audit is kept (ADR-0110).
          */
         GeneralRulesResponse: {
             timeZone: string;
@@ -2307,6 +2324,8 @@ export interface components {
             dailySummaryAt: string;
             /** Format: int32 */
             notificationRetentionDays: number;
+            /** Format: int32 */
+            auditRetentionYears: number;
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -3697,7 +3716,7 @@ export interface components {
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
          *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-         *     notifications are kept (1 to 365).
+         *     notifications are kept (1 to 365) and how many years the audit is kept (1 to 10; none keeps the years it had).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -3707,6 +3726,8 @@ export interface components {
             dailySummaryAt: null | string;
             /** Format: int32 */
             notificationRetentionDays: null | number;
+            /** Format: int32 */
+            auditRetentionYears?: null | number;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -3724,8 +3745,11 @@ export interface components {
             /** Format: date-time */
             lastSignInAt: null | string;
         };
-        /** @enum {unknown} */
-        UserStatus: "Active" | "Inactive";
+        /**
+         * @description Where a person stands: with access, deactivated (ADR-0008) or anonymized, for good (ADR-0110).
+         * @enum {unknown}
+         */
+        UserStatus: "Active" | "Inactive" | "Anonymized";
         VendorCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -4224,6 +4248,69 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    AnonymizeUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };

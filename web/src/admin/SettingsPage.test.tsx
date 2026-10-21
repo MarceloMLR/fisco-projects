@@ -15,6 +15,7 @@ let installation: Installation;
 let timeZone: string;
 let dailySummaryAt: string;
 let notificationRetentionDays: number;
+let auditRetentionYears: number;
 const requests: string[] = [];
 
 beforeEach(() => {
@@ -27,12 +28,18 @@ beforeEach(() => {
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
   notificationRetentionDays = 90;
+  auditRetentionYears = 5;
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
     http.get('/api/installation', () => HttpResponse.json(installation)),
     http.get('/api/installation/rules', () =>
-      HttpResponse.json({ timeZone, dailySummaryAt, notificationRetentionDays }),
+      HttpResponse.json({
+        timeZone,
+        dailySummaryAt,
+        notificationRetentionDays,
+        auditRetentionYears,
+      }),
     ),
     http.put('/api/installation', async ({ request }) => {
       const body = (await request.json()) as {
@@ -41,6 +48,7 @@ beforeEach(() => {
         mainColor: string | null;
         dailySummaryAt: string;
         notificationRetentionDays: number;
+        auditRetentionYears: number;
       };
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
@@ -53,6 +61,7 @@ beforeEach(() => {
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
       notificationRetentionDays = body.notificationRetentionDays;
+      auditRetentionYears = body.auditRetentionYears;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -640,6 +649,58 @@ describe('Guarda das notificações na instalação', () => {
 
     expect(await screen.findByText(text.saved)).toBeInTheDocument();
     expect(notificationRetentionDays).toBe(30);
+  });
+});
+
+// Spec: dados-pessoais, requirement "Prazo da auditoria" (ADR-0058, ADR-0110).
+describe('Prazo da auditoria', () => {
+  function auditRetentionField() {
+    return within(screen.getByRole('region', { name: text.rules })).getByRole('spinbutton', {
+      name: text.auditRetention,
+    });
+  }
+
+  it('Prazo da auditoria', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(auditRetentionField()).toHaveValue(5);
+    });
+
+    fireEvent.change(auditRetentionField(), { target: { value: '11' } });
+    fireEvent.click(saveButton());
+    expect(await screen.findByText(text.errors.auditRetentionRange)).toBeInTheDocument();
+    expect(requests).toEqual([]);
+
+    fireEvent.change(auditRetentionField(), { target: { value: '7' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(auditRetentionYears).toBe(7);
+  });
+
+  it('Prazo recusado pela API', async () => {
+    server.use(
+      http.put('/api/installation', () =>
+        HttpResponse.json(
+          {
+            type: 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
+            title: 'One or more validation errors occurred.',
+            status: 400,
+            errors: { auditRetentionYears: ['Keep the audit from 1 to 10 years.'] },
+          },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    await openSettings();
+    await waitFor(() => {
+      expect(auditRetentionField()).toHaveValue(5);
+    });
+
+    fireEvent.change(auditRetentionField(), { target: { value: '3' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.auditRetentionRange)).toBeInTheDocument();
   });
 });
 

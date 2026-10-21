@@ -42,8 +42,14 @@ export interface AuditDescription {
   changes: { field: string; before: string; after: string }[];
 }
 
-type UserField = 'Name' | 'Email' | 'Role' | 'IsActive';
-const userFields: readonly string[] = ['Name', 'Email', 'Role', 'IsActive'] satisfies UserField[];
+type UserField = 'Name' | 'Email' | 'Role' | 'IsActive' | 'AnonymousNumber';
+const userFields: readonly string[] = [
+  'Name',
+  'Email',
+  'Role',
+  'IsActive',
+  'AnonymousNumber',
+] satisfies UserField[];
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
 
@@ -54,7 +60,8 @@ type SettingsField =
   | 'MainColor'
   | 'DailySummaryAt'
   | 'NotificationRetentionDays'
-  | 'DarkLogoFileName';
+  | 'DarkLogoFileName'
+  | 'AuditRetentionYears';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
@@ -63,6 +70,7 @@ const settingsFields: readonly string[] = [
   'DailySummaryAt',
   'NotificationRetentionDays',
   'DarkLogoFileName',
+  'AuditRetentionYears',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
@@ -560,6 +568,9 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.action === 'Exported') {
     return t('audit.actions.AuditExport.Exported');
   }
+  if (entry.action === 'Cleaned') {
+    return t('audit.actions.AuditCleanup.Cleaned');
+  }
   if (entry.action === 'SignedIn' || entry.action === 'SignInRefused') {
     return t(`audit.actions.SignIn.${entry.action}`);
   }
@@ -695,6 +706,10 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.action !== 'Updated') {
     return t(`audit.actions.User.${entry.action}`);
   }
+  // The anonymization takes the name and the e-mail and may take the role back to User (ADR-0110).
+  if (isAnonymization(entry)) {
+    return t('audit.actions.User.Anonymized');
+  }
   if (changeOf(entry, 'Role') !== undefined) {
     return t('audit.actions.User.RoleChanged');
   }
@@ -804,6 +819,19 @@ function reasonOf(entry: AuditEntry, t: TFunction): string {
     : (entry.detail ?? '');
 }
 
+/** The anonymization of a person: the change that gave the number (ADR-0110). */
+const isAnonymization = (entry: AuditEntry) =>
+  entry.itemType === 'User' && changeOf(entry, 'AnonymousNumber') !== undefined;
+
+/** The records a monthly cleanup removed, and the first day it kept (ADR-0110). */
+function cleanupOf(entry: AuditEntry) {
+  const keptFrom = changeOf(entry, 'KeptFrom')?.after ?? null;
+  return {
+    keptFrom: keptFrom === null ? '' : formatDayText(keptFrom),
+    removed: Number(changeOf(entry, 'Removed')?.after ?? 0),
+  };
+}
+
 /** The period of an export of the audit (ADR-0099): 21/09/2026 a 20/10/2026. */
 function exportPeriodOf(entry: AuditEntry, t: TFunction): string {
   const from = changeOf(entry, 'From')?.after ?? null;
@@ -826,6 +854,13 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
     return join(
       t('audit.export.rows', { count: rows, rows: count.format(rows) }),
       exportPeriodOf(entry, t),
+    );
+  }
+  if (entry.action === 'Cleaned') {
+    const { keptFrom, removed } = cleanupOf(entry);
+    return join(
+      t('audit.cleanup.removed', { count: removed, rows: count.format(removed) }),
+      t('audit.cleanup.before', { day: keptFrom }),
     );
   }
   if (entry.action === 'SignedIn') {
@@ -880,6 +915,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
     return join(label, folderOf(entry), projectOfMember(entry));
   }
   if (entry.action !== 'Updated') {
+    return label;
+  }
+  // The anonymization is said by the title, with the identifier as the label (ADR-0110).
+  if (isAnonymization(entry)) {
     return label;
   }
   // A role change says the role before and after; deactivation and reactivation are said by the title.
@@ -943,6 +982,13 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
         label: t('audit.export.details.rows'),
         value: count.format(Number(changeOf(entry, 'Rows')?.after ?? 0)),
       },
+    ];
+  }
+  if (entry.action === 'Cleaned') {
+    const { keptFrom, removed } = cleanupOf(entry);
+    return [
+      { label: t('audit.cleanup.details.keptFrom'), value: keptFrom },
+      { label: t('audit.cleanup.details.removed'), value: count.format(removed) },
     ];
   }
   if (entry.action === 'SignedIn') {
@@ -1090,9 +1136,12 @@ export function describeAuditEntry(record: AuditEntry, t: TFunction): AuditDescr
     properties: propertiesOf(entry, t),
     // A field that says where the item is comes unchanged in a change, such as the project of a person whose role
     // changed: it goes in the text of the record, not in the table of the changes.
-    // The filters of an export are its details, not changes.
+    // The filters of an export and the numbers of a cleanup are its details, not changes.
     changes: entry.changes
-      .filter((change) => entry.action !== 'Exported' && !isContext(entry, change))
+      .filter(
+        (change) =>
+          entry.action !== 'Exported' && entry.action !== 'Cleaned' && !isContext(entry, change),
+      )
       .map((change) => ({
         field: fieldLabel(entry, change.field, t),
         before: change.secret
