@@ -358,6 +358,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/installation/logo/dark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetInstallationDarkLogo"];
+        put: operations["ReplaceInstallationDarkLogo"];
+        post?: never;
+        delete: operations["RemoveInstallationDarkLogo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calendar/{year}": {
         parameters: {
             query?: never;
@@ -2318,14 +2334,17 @@ export interface components {
             notes: null | string;
         };
         /**
-         * @description The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
-         *     #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
-         *     browser may keep it.
+         * @description The brand of the installation: the name shown, the address of the logo (null without one), the main color as
+         *     #RRGGBB (null for the color of the design system), the secondary color (null for none) and the address of the logo
+         *     for the dark theme (null without one, and the logo shows, ADR-0100). The address of a logo changes whenever the logo
+         *     changes, so the browser may keep it.
          */
         InstallationResponse: {
             name: string;
             logoUrl: null | string;
             mainColor: null | string;
+            secondaryColor: null | string;
+            darkLogoUrl: null | string;
         };
         /** @description A category the links of the project use, with how many links have it. */
         LinkCategoryCountResponse: {
@@ -3667,8 +3686,8 @@ export interface components {
         };
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
-         *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone) and how many days the
-         *     notifications are kept (1 to 365).
+         *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
+         *     notifications are kept (1 to 365) and the secondary color (#RRGGBB, or null for none, ADR-0100).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -3678,6 +3697,7 @@ export interface components {
             dailySummaryAt: null | string;
             /** Format: int32 */
             notificationRetentionDays: null | number;
+            secondaryColor?: null | string;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -4698,6 +4718,120 @@ export interface operations {
         };
     };
     RemoveInstallationLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetInstallationDarkLogo: {
+        parameters: {
+            query?: {
+                v?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReplaceInstallationDarkLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    file?: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveInstallationDarkLogo: {
         parameters: {
             query?: never;
             header?: never;

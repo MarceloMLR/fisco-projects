@@ -231,6 +231,124 @@ function darkerUntil(background: string, text: string, minimum: number): string 
 }
 
 /**
+ * The tokens that follow the secondary color, when the installation has one (ADR-0100): the sidebar, the support
+ * highlights (the selected line, the unread notification and the mention) and the panel of the sign-in page.
+ */
+export const secondaryTokenNames = [
+  'sidebar-bg',
+  'sidebar-hover-bg',
+  'sidebar-active-bg',
+  'sidebar-text',
+  'sidebar-text-active',
+  'sidebar-muted',
+  'sidebar-indicator',
+  'sidebar-divider',
+  'bg-selected',
+  'brand-panel-bg',
+  'brand-panel-bg-2',
+  'brand-panel-muted',
+  'brand-panel-accent',
+] as const;
+
+export type SecondaryTokenName = (typeof secondaryTokenNames)[number];
+
+/**
+ * The tokens of a secondary color, with the color of the name of the installation at the top of the sidebar
+ * (sidebar-title), which is the text color of the design system without a secondary color.
+ */
+export type SecondaryTokens = Record<SecondaryTokenName | 'sidebar-title', string>;
+
+/** Whether a background is dark, so the texts over it are light. */
+const isDark = (hex: string) => luminance(hex) < 0.18;
+
+/** The background of the sidebar for a secondary color: the color itself in the light theme, a dark shade of it in the dark one. */
+function sidebarBackground(secondary: string, scheme: ColorScheme): string {
+  if (scheme === 'light') {
+    return secondary.toLowerCase();
+  }
+  const chosen = oklchOf(secondary);
+  return hexOfOklch({
+    l: oklchOf(color('sidebar-bg', 'dark')).l,
+    c: Math.min(chosen.c, 0.04),
+    h: chosen.h,
+  });
+}
+
+function deriveSecondary(
+  secondary: string,
+  mainColor: string | null,
+  scheme: ColorScheme,
+): SecondaryTokens {
+  const background = sidebarBackground(secondary, scheme);
+  const dark = isDark(background);
+  // Over a dark sidebar the steps are lighter, over a light one darker, as the design system does in each theme.
+  const step = (hex: string, amount: number) => {
+    const value = oklchOf(hex);
+    return hexOfOklch({ ...value, l: value.l + (dark ? amount : -amount) });
+  };
+  const polarity: ColorScheme = dark ? 'dark' : 'light';
+  const hover = step(background, 0.05);
+  const active = step(background, 0.1);
+  // The texts of the design system of the theme that matches the sidebar, pushed to their contrast over it.
+  const strong = dark ? color('on-action', 'light') : color('text', 'light');
+  const textActive = withContrast(strong, [active], 4.5);
+  const mainIndicator = brandTokens(mainColor)[scheme]['sidebar-indicator'];
+  const panel = brandTokens(secondary)[scheme];
+  // The text of the panel is light over its whole gradient, whatever the secondary color.
+  const panelText = color('brand-panel-text', scheme);
+  const panelBackground = darkerUntil(panel['brand-panel-bg'], panelText, 4.5);
+  const chosen = oklchOf(secondary);
+  const base = oklchOf(defaultMainColor());
+  const selected = oklchOf(color('bg-selected', scheme));
+  return {
+    'sidebar-bg': background,
+    'sidebar-hover-bg': hover,
+    'sidebar-active-bg': active,
+    'sidebar-text': withContrast(color('sidebar-text', polarity), [background, hover], 4.5),
+    'sidebar-text-active': textActive,
+    'sidebar-muted': withContrast(color('sidebar-muted', polarity), [background], 4.5),
+    // The main color marks the current page while it shows over the sidebar; otherwise, its text.
+    'sidebar-indicator':
+      contrast(mainIndicator, active) >= 3 && contrast(mainIndicator, background) >= 3
+        ? mainIndicator
+        : textActive,
+    'sidebar-divider': step(background, 0.08),
+    'sidebar-title': withContrast(strong, [background], 4.5),
+    // The highlight keeps its lightness and takes the hue of the secondary color.
+    'bg-selected': hexOfOklch({
+      l: selected.l,
+      c: base.c > 0 ? (selected.c * chosen.c) / base.c : 0,
+      h: selected.h + (chosen.h - base.h),
+    }),
+    'brand-panel-bg': panelBackground,
+    'brand-panel-bg-2': darkerUntil(panel['brand-panel-bg-2'], panelText, 4.5),
+    'brand-panel-muted': withContrast(panel['brand-panel-muted'], [panelBackground], 4.5),
+    'brand-panel-accent': panel['brand-panel-accent'],
+  };
+}
+
+/** The tokens of a secondary color in each theme; null without one (ADR-0100). */
+export function secondaryTokens(
+  secondaryColor: string | null,
+  mainColor: string | null = null,
+): Record<ColorScheme, SecondaryTokens> | null {
+  const hex = secondaryColor === null ? undefined : normalizeHex(secondaryColor);
+  if (hex === undefined) {
+    return null;
+  }
+  return {
+    light: deriveSecondary(hex, mainColor, 'light'),
+    dark: deriveSecondary(hex, mainColor, 'dark'),
+  };
+}
+
+/** Whether the sidebar is dark in a theme, so it shows the logo for the dark theme (ADR-0100). */
+export function sidebarIsDark(secondaryColor: string | null, scheme: ColorScheme): boolean {
+  const tokens = secondaryTokens(secondaryColor);
+  return isDark(tokens === null ? color('sidebar-bg', scheme) : tokens[scheme]['sidebar-bg']);
+}
+
+/**
  * The values of the brand tokens for a main color in each theme; null (or the default color) gives the values of the
  * design system.
  */
@@ -255,18 +373,26 @@ function channels(hex: string): string {
     .join(' ');
 }
 
-/** The CSS custom properties of a theme for a main color, also those of the primary color of MUI. */
+/**
+ * The CSS custom properties of a theme for a main color, also those of the primary color of MUI, and, with a secondary
+ * color, the ones that follow it, which take the place of the main color in the sidebar and in the panel (ADR-0100).
+ */
 export function brandVariables(
   mainColor: string | null,
   scheme: ColorScheme,
+  secondaryColor: string | null = null,
 ): Record<string, string> {
   const tokens = brandTokens(mainColor)[scheme];
+  const secondary = secondaryTokens(secondaryColor, mainColor)?.[scheme];
   return {
     ...Object.fromEntries(brandTokenNames.map((name) => [`--${name}`, tokens[name]])),
     '--mui-palette-primary-main': tokens.action,
     '--mui-palette-primary-dark': tokens['action-hover'],
     '--mui-palette-primary-mainChannel': channels(tokens.action),
     '--mui-palette-primary-darkChannel': channels(tokens['action-hover']),
+    ...(secondary === undefined
+      ? {}
+      : Object.fromEntries(Object.entries(secondary).map(([name, value]) => [`--${name}`, value]))),
   };
 }
 
@@ -274,9 +400,12 @@ export function brandVariables(
  * The style sheet of a main color for both themes. Its selectors weigh more than the ones of the design system
  * (0,2,0), so it wins whatever the order, also on elements that set their own theme with data-theme.
  */
-export function brandStyleSheet(mainColor: string): string {
+export function brandStyleSheet(
+  mainColor: string | null,
+  secondaryColor: string | null = null,
+): string {
   const block = (selector: string, scheme: ColorScheme) =>
-    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme))
+    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme, secondaryColor))
       .map(([name, value]) => `  ${name}: ${value};`)
       .join('\n')}\n}`;
   return [

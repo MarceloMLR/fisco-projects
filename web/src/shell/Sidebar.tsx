@@ -1,12 +1,14 @@
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
+import { useColorScheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
 import { myProjectsQuery } from '../api/queries';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
+import { sidebarIsDark } from '../theme/brandColors';
 import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
@@ -39,6 +41,13 @@ export function Sidebar({
   const navigation = withProfile ? [...mainItems, profileItem] : mainItems;
   // The active projects the person is in, even the Administrator (ADR-0066).
   const myProjects = useQuery(myProjectsQuery()).data?.items ?? [];
+  const { colorScheme } = useColorScheme();
+  // Over a dark sidebar, the logo for the dark theme, when the installation has one (ADR-0100).
+  const logoUrl =
+    installation.darkLogoUrl !== null &&
+    sidebarIsDark(installation.secondaryColor, colorScheme ?? 'light')
+      ? installation.darkLogoUrl
+      : installation.logoUrl;
 
   return (
     <Box
@@ -72,11 +81,12 @@ export function Sidebar({
             height: 'var(--topbar-height)',
             margin: '0 0 calc(var(--space-2) * -1)',
             padding: '0 var(--space-2)',
-            color: 'var(--text)',
+            // The name takes the color of the secondary sidebar, when there is one (ADR-0100).
+            color: 'var(--sidebar-title, var(--text))',
             textDecoration: 'none',
           }}
         >
-          {installation.logoUrl === null ? (
+          {logoUrl === null ? (
             <Box
               component="span"
               aria-hidden="true"
@@ -94,7 +104,7 @@ export function Sidebar({
               <ViewTimelineOutlined sx={{ fontSize: 18 }} />
             </Box>
           ) : (
-            <InstallationLogo src={installation.logoUrl} maxHeight={28} />
+            <InstallationLogo src={logoUrl} maxHeight={28} />
           )}
           <Box
             component="span"

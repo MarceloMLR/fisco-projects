@@ -241,6 +241,44 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         (await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(Cancellation))).Should().BeNull();
     }
 
+    [Fact(DisplayName = "Enviar o logo para o tema escuro")]
+    public async Task DarkLogo_IsAFileOfItsOwn_BesideTheLogo()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        await SendAsync(database, "marca.png", Logos.Png());
+
+        var refusal = await database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>
+            replace.ExecuteAsync("marca-escura.svg", new MemoryStream(Logos.Svg()), LogoTheme.Dark, Cancellation));
+
+        refusal.Should().BeNull();
+        var settings = await SettingsAsync(database);
+        settings.LogoFileName.Should().Be("marca.png");
+        settings.DarkLogoFileName.Should().Be("marca-escura.svg");
+        settings.DarkLogoContentType.Should().Be("image/svg+xml");
+        database.Files.Files[settings.DarkLogoFileId!].Name.Should().Be("installation-logo-dark.svg");
+        var dark = await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(LogoTheme.Dark, Cancellation));
+        await using var darkFile = dark!.File;
+        dark.ContentType.Should().Be("image/svg+xml");
+
+        await database.RunAsync<RemoveInstallationLogo>(remove => remove.ExecuteAsync(LogoTheme.Dark, Cancellation));
+
+        settings = await SettingsAsync(database);
+        settings.HasDarkLogo.Should().BeFalse();
+        settings.HasLogo.Should().BeTrue();
+        database.Files.Files.Values.Select(file => file.Name).Should().Equal("installation-logo.png");
+    }
+
+    [Theory(DisplayName = "Cor secundária sem exigência de contraste")]
+    [InlineData("#ffd400", "#FFD400")]
+    [InlineData(" #0b2545 ", "#0B2545")]
+    [InlineData("", null)]
+    public void SecondaryColor_IsAnyHexColor(string typed, string? kept)
+    {
+        InstallationSettings.TryNormalizeSecondaryColor(typed, out var color).Should().BeTrue();
+        color.Should().Be(kept);
+        InstallationSettings.TryNormalizeSecondaryColor("azul", out _).Should().BeFalse();
+    }
+
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
         AdministrationDatabase database, string? name, string? timeZone, string? mainColor = null, TimeOnly? dailySummaryAt = null) =>
         database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>

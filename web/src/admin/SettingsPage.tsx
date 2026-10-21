@@ -15,10 +15,16 @@ import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
-import { brandVariables, defaultMainColor, hasContrast, normalizeHex } from '../theme/brandColors';
+import {
+  brandVariables,
+  defaultMainColor,
+  hasContrast,
+  normalizeHex,
+  sidebarIsDark,
+} from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
 import { EmailSettings } from './EmailSettings';
-import { MainColorField } from './MainColorField';
+import { MainColorField, SecondaryColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
@@ -61,6 +67,14 @@ const form = z.object({
       error: fieldErrors.colorFormat,
     })
     .refine((value) => value === '' || hasContrast(value), { error: fieldErrors.colorContrast })
+    .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
+  // Empty is no secondary color; any color, since the texts over it take their contrast (ADR-0100).
+  secondaryColor: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || normalizeHex(value) !== undefined, {
+      error: fieldErrors.colorFormat,
+    })
     .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
 });
 
@@ -123,6 +137,147 @@ function invalidFields(problem: unknown): string[] {
     : [];
 }
 
+/** A logo of the brand in the form (ADR-0100): the tile with the logo, send or replace it and remove it. */
+function LogoField({
+  label,
+  hint,
+  shown,
+  error,
+  dark,
+  testId,
+  sendLabel,
+  replaceLabel,
+  removeLabel,
+  onChoose,
+  onRemove,
+}: {
+  label: string;
+  hint: string;
+  shown: string | null;
+  error?: LogoError;
+  /** The tile is dark, as the sidebar that shows the logo for the dark theme. */
+  dark: boolean;
+  testId: string;
+  sendLabel: string;
+  replaceLabel: string;
+  removeLabel: string;
+  onChoose: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation();
+  const labelId = useId();
+  const helpId = useId();
+  const fileInput = useRef<HTMLInputElement>(null);
+  return (
+    <Box
+      role="group"
+      aria-labelledby={labelId}
+      sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', minWidth: 0 }}
+    >
+      <Box
+        component="span"
+        id={labelId}
+        sx={{ fontSize: 13, lineHeight: '18px', fontWeight: 500, color: 'var(--text)' }}
+      >
+        {label}
+        <Box
+          component="span"
+          sx={{ marginLeft: 'var(--space-1)', fontWeight: 400, color: 'var(--text-secondary)' }}
+        >
+          {t('settings.optional')}
+        </Box>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        <Box
+          component="span"
+          data-testid={`${testId}-tile`}
+          data-theme={dark ? 'dark' : undefined}
+          sx={{
+            display: 'inline-grid',
+            placeItems: 'center',
+            flex: 'none',
+            boxSizing: 'border-box',
+            width: 36,
+            height: 36,
+            padding: '3px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: dark ? 'var(--sidebar-bg)' : 'var(--bg-surface)',
+            color: 'var(--text-secondary)',
+            fontSize: 11,
+            fontWeight: 500,
+          }}
+        >
+          {shown === null ? (
+            t('settings.noLogo')
+          ) : (
+            <InstallationLogo src={shown} maxHeight={28} maxWidth={28} />
+          )}
+        </Box>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<UploadOutlined />}
+          aria-describedby={helpId}
+          onClick={() => fileInput.current?.click()}
+        >
+          {shown === null ? sendLabel : replaceLabel}
+        </Button>
+        {shown !== null && (
+          <Button variant="text" size="small" onClick={onRemove}>
+            {removeLabel}
+          </Button>
+        )}
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".png,.svg,image/png,image/svg+xml"
+          hidden
+          data-testid={`${testId}-file`}
+          onChange={onChoose}
+        />
+      </Box>
+      <Box
+        component="span"
+        id={helpId}
+        role={error === undefined ? undefined : 'alert'}
+        sx={{
+          fontSize: 12,
+          lineHeight: '16px',
+          color: error === undefined ? 'var(--text-secondary)' : 'var(--status-danger-text)',
+        }}
+      >
+        {error === undefined ? hint : t(`settings.errors.${error}`)}
+      </Box>
+    </Box>
+  );
+}
+
+/** Sends or removes the logo of a theme, if it changed; the error of a refused file, or nothing. */
+async function saveLogo(choice: LogoChoice, dark: boolean): Promise<LogoError | undefined> {
+  if (choice.kind === 'new') {
+    const body = new FormData();
+    body.append('file', choice.file, choice.file.name);
+    const { error, response } = dark
+      ? await api.PUT('/api/installation/logo/dark', { body: {}, bodySerializer: () => body })
+      : await api.PUT('/api/installation/logo', { body: {}, bodySerializer: () => body });
+    if (response.status === 400 || response.status === 413) {
+      return response.status === 413 ? 'logoTooLarge' : logoErrorOf(error?.type);
+    }
+    if (!response.ok) {
+      throw new Error(`The API answered ${String(response.status)}.`);
+    }
+  } else if (choice.kind === 'removed') {
+    const { response } = dark
+      ? await api.DELETE('/api/installation/logo/dark')
+      : await api.DELETE('/api/installation/logo');
+    if (!response.ok) {
+      throw new Error(`The API answered ${String(response.status)}.`);
+    }
+  }
+  return undefined;
+}
+
 function logoErrorOf(type: unknown): LogoError {
   if (type === installationProblems.logoTooLarge) {
     return 'logoTooLarge';
@@ -143,9 +298,9 @@ export function SettingsPage() {
   const { data: rules } = useQuery(generalRulesQuery());
   const [logo, setLogo] = useState<LogoChoice>({ kind: 'saved' });
   const [logoError, setLogoError] = useState<LogoError>();
+  const [darkLogo, setDarkLogo] = useState<LogoChoice>({ kind: 'saved' });
+  const [darkLogoError, setDarkLogoError] = useState<LogoError>();
   const [message, setMessage] = useState<string>();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const logoHelpId = useId();
 
   const {
     register,
@@ -160,6 +315,7 @@ export function SettingsPage() {
       name: '',
       timeZone: '',
       mainColor: '',
+      secondaryColor: '',
       dailySummaryAt: '',
       notificationRetentionDays: '',
     },
@@ -170,6 +326,7 @@ export function SettingsPage() {
             name: installation.name,
             timeZone: rules.timeZone,
             mainColor: installation.mainColor ?? '',
+            secondaryColor: installation.secondaryColor ?? '',
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
           },
@@ -177,7 +334,10 @@ export function SettingsPage() {
 
   const savedLogo = installation?.logoUrl ?? null;
   const shownLogo = logo.kind === 'new' ? logo.picture : logo.kind === 'removed' ? null : savedLogo;
-  const changed = isDirty || logo.kind !== 'saved';
+  const savedDarkLogo = installation?.darkLogoUrl ?? null;
+  const shownDarkLogo =
+    darkLogo.kind === 'new' ? darkLogo.picture : darkLogo.kind === 'removed' ? null : savedDarkLogo;
+  const changed = isDirty || logo.kind !== 'saved' || darkLogo.kind !== 'saved';
   const typedName = useWatch({ control, name: 'name' });
   const typedColor = useWatch({ control, name: 'mainColor' }).trim();
   // The Preview shows the color as it is typed once it is a color that may be saved; until then, the saved one.
@@ -188,59 +348,73 @@ export function SettingsPage() {
       : typedHex !== undefined && hasContrast(typedHex)
         ? typedHex
         : (installation?.mainColor ?? null);
+  const typedSecondary = useWatch({ control, name: 'secondaryColor' }).trim();
+  const previewSecondary =
+    typedSecondary === ''
+      ? null
+      : (normalizeHex(typedSecondary) ?? installation?.secondaryColor ?? null);
   const { colorScheme } = useColorScheme();
+  const scheme = colorScheme ?? 'light';
+  // The sidebar of the Preview shows the logo for the dark theme when it is dark, as the real one (ADR-0100).
+  const previewLogo =
+    sidebarIsDark(previewSecondary, scheme) && shownDarkLogo !== null ? shownDarkLogo : shownLogo;
 
-  const chooseLogo = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    // The same file can be chosen again after a refusal.
-    event.target.value = '';
-    if (file === undefined) {
-      return;
-    }
-    if (!isLogoFile(file)) {
-      setLogoError('logoFormat');
-      return;
-    }
-    if (file.size > logoMaxBytes) {
-      setLogoError('logoTooLarge');
-      return;
-    }
-    setLogoError(undefined);
-    setLogo({ kind: 'new', file, picture: await readPicture(file) });
-  };
+  const chooser =
+    (choose: (choice: LogoChoice) => void, refuse: (error: LogoError | undefined) => void) =>
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      // The same file can be chosen again after a refusal.
+      event.target.value = '';
+      if (file === undefined) {
+        return;
+      }
+      if (!isLogoFile(file)) {
+        refuse('logoFormat');
+        return;
+      }
+      if (file.size > logoMaxBytes) {
+        refuse('logoTooLarge');
+        return;
+      }
+      refuse(undefined);
+      choose({ kind: 'new', file, picture: await readPicture(file) });
+    };
+  const chooseLogo = chooser(setLogo, setLogoError);
+  const chooseDarkLogo = chooser(setDarkLogo, setDarkLogoError);
 
   const discard = () => {
     reset();
     setLogo({ kind: 'saved' });
     setLogoError(undefined);
+    setDarkLogo({ kind: 'saved' });
+    setDarkLogoError(undefined);
   };
 
   const save = handleSubmit(
-    async ({ name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays }) => {
-      // The new logo stays on screen until the brand is read again, so the old one never flashes back.
+    async ({
+      name,
+      timeZone,
+      mainColor,
+      secondaryColor,
+      dailySummaryAt,
+      notificationRetentionDays,
+    }) => {
+      // The new logos stay on screen until the brand is read again, so the old ones never flash back.
       let logoSaved = false;
+      let darkLogoSaved = false;
       try {
-        if (logo.kind === 'new') {
-          const body = new FormData();
-          body.append('file', logo.file, logo.file.name);
-          const { error, response } = await api.PUT('/api/installation/logo', {
-            body: {},
-            bodySerializer: () => body,
-          });
-          if (response.status === 400 || response.status === 413) {
-            setLogoError(response.status === 413 ? 'logoTooLarge' : logoErrorOf(error?.type));
-            return;
-          }
-          if (!response.ok) {
-            throw new Error(`The API answered ${String(response.status)}.`);
-          }
-        } else if (logo.kind === 'removed') {
-          const { response } = await api.DELETE('/api/installation/logo');
-          if (!response.ok) {
-            throw new Error(`The API answered ${String(response.status)}.`);
-          }
+        const refused = await saveLogo(logo, false);
+        if (refused !== undefined) {
+          setLogoError(refused);
+          return;
         }
         logoSaved = logo.kind !== 'saved';
+        const darkRefused = await saveLogo(darkLogo, true);
+        if (darkRefused !== undefined) {
+          setDarkLogoError(darkRefused);
+          return;
+        }
+        darkLogoSaved = darkLogo.kind !== 'saved';
 
         if (isDirty) {
           const { error, response } = await api.PUT('/api/installation', {
@@ -248,6 +422,7 @@ export function SettingsPage() {
               name,
               timeZone,
               mainColor,
+              secondaryColor,
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
             },
@@ -260,6 +435,9 @@ export function SettingsPage() {
             }
             if (invalid.includes('mainColor')) {
               setError('mainColor', { message: fieldErrors.colorContrast });
+            }
+            if (invalid.includes('secondaryColor')) {
+              setError('secondaryColor', { message: fieldErrors.colorFormat });
             }
             if (invalid.includes('dailySummaryAt')) {
               setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
@@ -287,6 +465,9 @@ export function SettingsPage() {
         if (logoSaved) {
           setLogo({ kind: 'saved' });
         }
+        if (darkLogoSaved) {
+          setDarkLogo({ kind: 'saved' });
+        }
       }
     },
   );
@@ -294,6 +475,7 @@ export function SettingsPage() {
   const nameError = errors.name?.message as FieldError | undefined;
   const timeZoneError = errors.timeZone?.message as FieldError | undefined;
   const colorError = errors.mainColor?.message as FieldError | undefined;
+  const secondaryError = errors.secondaryColor?.message as FieldError | undefined;
   const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
   const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
 
@@ -346,122 +528,43 @@ export function SettingsPage() {
                       error={nameError === undefined ? undefined : t(nameError)}
                       {...register('name')}
                     />
-                    <Box
-                      role="group"
-                      aria-labelledby="settings-logo"
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 'var(--space-1)',
-                        minWidth: 0,
+                    <LogoField
+                      label={t('settings.logo')}
+                      hint={t('settings.logoHint')}
+                      shown={shownLogo}
+                      error={logoError}
+                      dark={false}
+                      testId="logo"
+                      sendLabel={t('settings.sendLogo')}
+                      replaceLabel={t('settings.replaceLogo')}
+                      removeLabel={t('settings.removeLogo')}
+                      onChoose={(event) => {
+                        void chooseLogo(event);
                       }}
-                    >
-                      <Box
-                        component="span"
-                        id="settings-logo"
-                        sx={{
-                          fontSize: 13,
-                          lineHeight: '18px',
-                          fontWeight: 500,
-                          color: 'var(--text)',
-                        }}
-                      >
-                        {t('settings.logo')}
-                        <Box
-                          component="span"
-                          sx={{
-                            marginLeft: 'var(--space-1)',
-                            fontWeight: 400,
-                            color: 'var(--text-secondary)',
-                          }}
-                        >
-                          {t('settings.optional')}
-                        </Box>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 'var(--space-2)',
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Box
-                          component="span"
-                          data-testid="logo-tile"
-                          sx={{
-                            display: 'inline-grid',
-                            placeItems: 'center',
-                            flex: 'none',
-                            boxSizing: 'border-box',
-                            width: 36,
-                            height: 36,
-                            padding: '3px',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-md)',
-                            backgroundColor: 'var(--bg-surface)',
-                            color: 'var(--text-secondary)',
-                            fontSize: 11,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {shownLogo === null ? (
-                            t('settings.noLogo')
-                          ) : (
-                            <InstallationLogo src={shownLogo} maxHeight={28} maxWidth={28} />
-                          )}
-                        </Box>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<UploadOutlined />}
-                          aria-describedby={logoHelpId}
-                          onClick={() => fileInput.current?.click()}
-                        >
-                          {shownLogo === null ? t('settings.sendLogo') : t('settings.replaceLogo')}
-                        </Button>
-                        {shownLogo !== null && (
-                          <Button
-                            variant="text"
-                            size="small"
-                            onClick={() => {
-                              setLogo(savedLogo === null ? { kind: 'saved' } : { kind: 'removed' });
-                              setLogoError(undefined);
-                            }}
-                          >
-                            {t('settings.removeLogo')}
-                          </Button>
-                        )}
-                        <input
-                          ref={fileInput}
-                          type="file"
-                          accept=".png,.svg,image/png,image/svg+xml"
-                          hidden
-                          data-testid="logo-file"
-                          onChange={(event) => {
-                            void chooseLogo(event);
-                          }}
-                        />
-                      </Box>
-                      <Box
-                        component="span"
-                        id={logoHelpId}
-                        role={logoError === undefined ? undefined : 'alert'}
-                        sx={{
-                          fontSize: 12,
-                          lineHeight: '16px',
-                          color:
-                            logoError === undefined
-                              ? 'var(--text-secondary)'
-                              : 'var(--status-danger-text)',
-                        }}
-                      >
-                        {logoError === undefined
-                          ? t('settings.logoHint')
-                          : t(`settings.errors.${logoError}`)}
-                      </Box>
-                    </Box>
+                      onRemove={() => {
+                        setLogo(savedLogo === null ? { kind: 'saved' } : { kind: 'removed' });
+                        setLogoError(undefined);
+                      }}
+                    />
                   </Box>
+                  <LogoField
+                    label={t('settings.darkLogo')}
+                    hint={t('settings.darkLogoHint')}
+                    shown={shownDarkLogo}
+                    error={darkLogoError}
+                    dark
+                    testId="dark-logo"
+                    sendLabel={t('settings.sendDarkLogo')}
+                    replaceLabel={t('settings.replaceDarkLogo')}
+                    removeLabel={t('settings.removeDarkLogo')}
+                    onChoose={(event) => {
+                      void chooseDarkLogo(event);
+                    }}
+                    onRemove={() => {
+                      setDarkLogo(savedDarkLogo === null ? { kind: 'saved' } : { kind: 'removed' });
+                      setDarkLogoError(undefined);
+                    }}
+                  />
                   <Controller
                     control={control}
                     name="mainColor"
@@ -474,6 +577,22 @@ export function SettingsPage() {
                           colorError === undefined
                             ? undefined
                             : t(colorError, { example: defaultMainColor() })
+                        }
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="secondaryColor"
+                    render={({ field }) => (
+                      <SecondaryColorField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={
+                          secondaryError === undefined
+                            ? undefined
+                            : t(secondaryError, { example: defaultMainColor() })
                         }
                       />
                     )}
@@ -537,7 +656,8 @@ export function SettingsPage() {
               <BrandPreview
                 name={typedName.trim() === '' ? (installation?.name ?? '') : typedName.trim()}
                 logo={shownLogo}
-                colors={brandVariables(previewColor, colorScheme ?? 'light')}
+                sidebarLogo={previewLogo}
+                colors={brandVariables(previewColor, scheme, previewSecondary)}
               />
             </Box>
           )}

@@ -9,7 +9,8 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Api.Tests;
 
 // Spec: configuracao-da-instalacao, requirements "Configurações só do administrador", "Nome da instalação",
-// "Logo da instalação", "Marca visível sem sessão" and "Mudança das configurações na auditoria" (API side).
+// "Logo da instalação", "Marca visível sem sessão", "Mudança das configurações na auditoria", "Cor secundária" and
+// "Logo para o tema escuro" (API side).
 public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 {
     private const string NewName = "Consultoria Fictícia";
@@ -36,6 +37,10 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         new("Send the logo", client => SendLogoAsync(client, Png, "marca.png"), HttpStatusCode.NoContent,
             [SystemRole.Administrator]),
         new("Remove the logo", client => SendAsync(client, HttpMethod.Delete, "/api/installation/logo"),
+            HttpStatusCode.NoContent, [SystemRole.Administrator]),
+        new("Send the logo for the dark theme", client => SendLogoAsync(client, Png, "marca-escura.png", "/api/installation/logo/dark"),
+            HttpStatusCode.NoContent, [SystemRole.Administrator]),
+        new("Remove the logo for the dark theme", client => SendAsync(client, HttpMethod.Delete, "/api/installation/logo/dark"),
             HttpStatusCode.NoContent, [SystemRole.Administrator]),
     ];
 
@@ -144,7 +149,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         await SendLogoAsync(admin, Png, "marca.png");
 
         var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
-        brand.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo("name", "logoUrl", "mainColor");
+        brand.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo("name", "logoUrl", "mainColor", "secondaryColor", "darkLogoUrl");
         brand.GetProperty("name").GetString().Should().Be(NewName);
         var logoUrl = brand.GetProperty("logoUrl").GetString();
         logoUrl.Should().StartWith("/api/installation/logo?v=");
@@ -317,6 +322,93 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         (await MainColorAsync(admin)).Should().BeNull();
     }
 
+    [Fact(DisplayName = "Trocar a cor secundária")]
+    public async Task SecondaryColor_IsReadWithoutASession_AndAnyColorWithoutContrast()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        using var anonymous = app.NewClient();
+
+        // A light color too: the texts over it take the contrast they need (ADR-0100).
+        var response = await SendAsync(
+            admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", secondaryColor: "#ffd400"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await SecondaryColorAsync(anonymous)).Should().Be("#FFD400");
+
+        (await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects"))).StatusCode
+            .Should().Be(HttpStatusCode.NoContent);
+        (await SecondaryColorAsync(anonymous)).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Cor secundária inválida")]
+    public async Task InvalidSecondaryColor_IsABadRequest()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        foreach (var secondaryColor in new[] { "0B2545", "azul", "#12345" })
+        {
+            var response = await SendAsync(
+                admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", secondaryColor: secondaryColor));
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+            problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("secondaryColor");
+        }
+
+        (await SecondaryColorAsync(admin)).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Logo para o tema escuro pela API")]
+    public async Task DarkLogo_IsSent_ThenRemoved_WithoutTouchingTheLogo()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        using var anonymous = app.NewClient();
+        (await SendLogoAsync(admin, Png, "marca.png")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var svg = Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"4\" height=\"4\" fill=\"white\"/></svg>");
+
+        (await SendLogoAsync(admin, svg, "marca-escura.svg", "/api/installation/logo/dark")).StatusCode
+            .Should().Be(HttpStatusCode.NoContent);
+
+        var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
+        var darkLogoUrl = brand.GetProperty("darkLogoUrl").GetString();
+        darkLogoUrl.Should().StartWith("/api/installation/logo/dark?v=");
+        (await anonymous.GetByteArrayAsync(darkLogoUrl, Cancellation)).Should().Equal(svg);
+        (await anonymous.GetByteArrayAsync(brand.GetProperty("logoUrl").GetString(), Cancellation)).Should().Equal(Png);
+
+        (await SendAsync(admin, HttpMethod.Delete, "/api/installation/logo/dark")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
+        brand.GetProperty("darkLogoUrl").ValueKind.Should().Be(JsonValueKind.Null);
+        brand.GetProperty("logoUrl").GetString().Should().NotBeNull();
+        (await anonymous.GetAsync("/api/installation/logo/dark", Cancellation)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await SendLogoAsync(admin, [1, 2, 3], "marca.exe", "/api/installation/logo/dark")).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact(DisplayName = "Cor secundária e logo escuro na auditoria")]
+    public async Task SecondaryColorAndDarkLogo_AreAudited()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", secondaryColor: "#0B2545"));
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+        await SendLogoAsync(admin, Png, "marca-escura.png", "/api/installation/logo/dark");
+
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
+        var entries = page.GetProperty("items").EnumerateArray().Select(Fields).ToList();
+        entries.Should().HaveCount(2);
+        entries[0].Should().Equal(("DarkLogoFileName", (string?)null, (string?)"marca-escura.png"));
+        entries[1].Should().Equal(("SecondaryColor", (string?)null, (string?)"#0B2545"));
+    }
+
     [Fact(DisplayName = "Troca da cor na auditoria")]
     public async Task ChangeOfTheMainColor_IsAudited()
     {
@@ -388,8 +480,15 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 
     /// <summary>The General settings form, with the default time zone unless another is given.</summary>
     private static object Form(
-        string name, string timeZone = "America/Sao_Paulo", string? mainColor = null, string? dailySummaryAt = "07:30:00") =>
-        new { name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays = 90 };
+        string name,
+        string timeZone = "America/Sao_Paulo",
+        string? mainColor = null,
+        string? dailySummaryAt = "07:30:00",
+        string? secondaryColor = null) =>
+        new { name, timeZone, mainColor, dailySummaryAt, notificationRetentionDays = 90, secondaryColor };
+
+    private static async Task<string?> SecondaryColorAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation)).GetProperty("secondaryColor").GetString();
 
     private static async Task<string?> MainColorAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation)).GetProperty("mainColor").GetString();
@@ -409,9 +508,10 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             field.GetProperty("before").GetString(),
             field.GetProperty("after").GetString()))];
 
-    private static async Task<HttpResponseMessage> SendLogoAsync(HttpClient client, byte[] content, string fileName)
+    private static async Task<HttpResponseMessage> SendLogoAsync(
+        HttpClient client, byte[] content, string fileName, string path = "/api/installation/logo")
     {
-        using var request = new HttpRequestMessage(HttpMethod.Put, "/api/installation/logo");
+        using var request = new HttpRequestMessage(HttpMethod.Put, path);
         request.Headers.Add("X-CSRF", "1");
         var file = new ByteArrayContent(content);
         file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
