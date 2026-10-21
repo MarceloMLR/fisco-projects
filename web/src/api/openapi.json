@@ -5182,6 +5182,44 @@
         }
       }
     },
+    "/api/tickets/{number}/attachments/archive": {
+      "get": {
+        "tags": [
+          "Tickets"
+        ],
+        "description": "All the attachments of the ticket in a .zip, in the order they were sent (Chamados-2.1).",
+        "operationId": "DownloadTicketAttachments",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/tickets/{number}/attachments/{id}": {
       "get": {
         "tags": [
@@ -5205,6 +5243,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],

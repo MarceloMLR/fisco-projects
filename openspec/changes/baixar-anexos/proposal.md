@@ -7,7 +7,7 @@ Na conversa do chamado, o anexo abre numa aba nova; imagens, PDF e texto abrem n
 ## What Changes
 
 - **Baixar um anexo**: o endereço do anexo aceita `download=true`, que manda o arquivo como download, com o nome original, mesmo para os tipos que abrem no navegador.
-- **Baixar todos**: `GET /api/tickets/{number}/attachments/archive` entrega um `.zip` com todos os anexos do chamado (da descrição e das mensagens), na ordem em que foram enviados, com os nomes repetidos numerados; sem anexos, 404. Só quem vê o chamado baixa (404 para os outros).
+- **Baixar todos**: `GET /api/tickets/{number}/attachments/archive` entrega um `.zip` com todos os anexos do chamado (da descrição e das mensagens), na ordem da lista de anexos, cada um com o nome que tem no chamado; sem anexos, 404. Só quem vê o chamado baixa (404 para os outros).
 - **Na tela**:
   - cada anexo, na conversa e em "Anexos da conversa", ganha o ícone "Baixar", ao lado do nome que continua abrindo o arquivo;
   - "Anexos da conversa" ganha "Baixar todos", quando há anexos.

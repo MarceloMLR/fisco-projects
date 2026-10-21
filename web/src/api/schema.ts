@@ -1179,6 +1179,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/{number}/attachments/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description All the attachments of the ticket in a .zip, in the order they were sent (Chamados-2.1). */
+        get: operations["DownloadTicketAttachments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{number}/attachments/{id}": {
         parameters: {
             query?: never;
@@ -8055,9 +8072,47 @@ export interface operations {
             };
         };
     };
-    OpenTicketAttachment: {
+    DownloadTicketAttachments: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OpenTicketAttachment: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
             header?: never;
             path: {
                 number: number;

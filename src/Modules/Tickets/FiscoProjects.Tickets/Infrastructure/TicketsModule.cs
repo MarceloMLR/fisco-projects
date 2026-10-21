@@ -32,6 +32,7 @@ public static class TicketsModule
         services.AddScoped<AttachToDescription>();
         services.AddScoped<FollowTicket>();
         services.AddScoped<OpenTicketAttachment>();
+        services.AddScoped<ListTicketArchive>();
         services.AddScoped<TicketDeadlines>();
         services.AddScoped<TicketAnswers>();
         services.AddScoped<TicketBatch>();

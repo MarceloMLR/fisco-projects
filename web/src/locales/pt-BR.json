@@ -1727,6 +1727,7 @@
     },
     "conversation": {
       "title": "Conversa",
+      "download": "Baixar {{name}}",
       "interactions_one": "{{count}} interação",
       "interactions_other": "{{count}} interações",
       "opened": "abriu o chamado · {{when}}",
@@ -1775,6 +1776,8 @@
       "following": "Você acompanha este chamado.",
       "attachments": "Anexos da conversa",
       "noAttachments": "Nenhum anexo.",
+      "downloadAll": "Baixar todos",
+      "downloadAllLabel": "Baixar todos os anexos em .zip",
       "followFailed": "Não foi possível mudar o acompanhamento. Tente de novo.",
       "deadlines": "Prazos",
       "used": "{{used}} de {{total}} dias úteis",

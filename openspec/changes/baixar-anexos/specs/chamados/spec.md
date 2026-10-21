@@ -22,7 +22,7 @@ Quem manda mensagem MUST poder anexar vários arquivos a ela, e o solicitante, �
 
 #### Scenario: Baixar todos os anexos
 - **WHEN** quem vê o chamado pede todos os anexos de um chamado com dois arquivos de mesmo nome e um PDF
-- **THEN** a API entrega um `.zip` com os três, na ordem de envio, o segundo de mesmo nome com " (2)"
+- **THEN** a API entrega um `.zip` com os três, na ordem da lista de anexos, cada um com o nome que tem no chamado
 
 #### Scenario: Baixar todos sem anexos ou sem acesso
 - **WHEN** alguém pede todos os anexos de um chamado sem anexos, ou de um chamado que não vê
