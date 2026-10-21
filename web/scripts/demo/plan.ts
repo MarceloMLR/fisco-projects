@@ -40,7 +40,7 @@ export const demoNames: Record<DemoPerson, string> = {
 /** The first Administrator (`Users:FirstAdministrator` of the development settings). */
 export const administrator: DemoPerson = 'paulo';
 
-/** The manager of the projects, who builds their schedules. */
+/** The manager of the projects without one of their own, who builds their schedules. */
 export const manager: DemoPerson = 'marina';
 
 /** The people who get the role Project manager in the system (ADR-0040, ADR-0085). */
@@ -49,7 +49,14 @@ export const projectManagers: readonly DemoPerson[] = ['marina', 'beatriz'];
 /** The people who get the role Tech lead in the system, to lead projects technically (ADR-0097). */
 export const techLeads: readonly DemoPerson[] = ['rafael'];
 
-export const demoClients = ['Alfa Distribuidora', 'Beta Alimentos', 'Gama Têxtil'] as const;
+export const demoClients = [
+  'Alfa Distribuidora',
+  'Beta Alimentos',
+  'Gama Têxtil',
+  'Delta Logística',
+  'Épsilon Farma',
+  'Zeta Agronegócio',
+] as const;
 
 export type DemoClient = (typeof demoClients)[number];
 
@@ -60,6 +67,9 @@ export const demoVendors = [
 ] as const;
 
 export type DemoVendor = (typeof demoVendors)[number]['name'];
+
+/** The category of links that takes the links of a category the Administrator deactivated (ADR-0032). */
+export const fallbackCategory = 'Outros';
 
 export interface DemoItem {
   kind: 'Task' | 'Milestone';
@@ -236,6 +246,13 @@ export interface DemoProject {
   code: string;
   name: string;
   client: DemoClient | null;
+  /** The manager, who builds the schedule and changes the status; Marina Costa when none (ADR-0040). */
+  manager?: DemoPerson;
+  /**
+   * Created from a model of an earlier project of the plan, from this day: the server makes the schedule (ADR-0017);
+   * the project then has no phases of its own in the plan.
+   */
+  fromTemplate?: { name: string; start: number };
   techLead?: DemoPerson;
   members?: readonly (readonly [DemoPerson, ProjectRole])[];
   /** The status it ends in; a new project starts in Planning. */
@@ -1036,6 +1053,721 @@ export const demoProjects: readonly DemoProject[] = [
         items: [
           milestone('Operação no WMS', -38, { after: ['Configurar endereçamento'], reached: true }),
         ],
+      },
+    ],
+  },
+  // The projects below came in Cronograma-3.3: other clients, the other statuses, a second manager and a model.
+  {
+    code: 'TMS-DELTA',
+    name: 'Implantação do TMS',
+    client: 'Delta Logística',
+    manager: 'beatriz',
+    techLead: 'rafael',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+      ['marina', 'Viewer'],
+    ],
+    status: 'InProgress',
+    baseline: true,
+    phases: [
+      {
+        name: 'Levantamento',
+        items: [
+          task('Kickoff com a transportadora', 0, 1, { owner: 'beatriz', progress: 100 }),
+          task('Mapear rotas e tabelas de frete', 1, 5, {
+            owner: 'carla',
+            progress: 100,
+            after: ['Kickoff com a transportadora'],
+          }),
+          milestone('Rotas mapeadas', 6, {
+            after: ['Mapear rotas e tabelas de frete'],
+            reached: true,
+          }),
+        ],
+      },
+      {
+        name: 'Configuração',
+        items: [
+          // Late in the week it is loaded: it should have ended the day before.
+          task('Cadastrar tabelas de frete', 7, 6, {
+            owner: 'carla',
+            progress: 70,
+            after: ['Rotas mapeadas'],
+          }),
+          // One day later than planned, after the baseline.
+          task('Integrar CT-e com o TMS', 8, 10, {
+            owner: 'diego',
+            progress: 40,
+            after: ['Rotas mapeadas'],
+            movedTo: 9,
+          }),
+          // Late in the Meu trabalho of the second manager, and one of her week.
+          task('Validar cálculo de frete com o cliente', 10, 3, {
+            owner: 'beatriz',
+            progress: 30,
+          }),
+          task('Revisar regras de ICMS do frete', 16, 3, { owner: 'beatriz' }),
+          milestone('Fretes configurados', 21, {
+            after: ['Cadastrar tabelas de frete', 'Integrar CT-e com o TMS'],
+          }),
+        ],
+      },
+      {
+        name: 'Homologação',
+        items: [
+          task('Testes de emissão de CT-e', 22, 5, {
+            owner: 'diego',
+            after: ['Fretes configurados'],
+          }),
+          task('Testes da equipe do cliente', 29, 3, {
+            byClient: true,
+            after: ['Testes de emissão de CT-e'],
+          }),
+          milestone('Homologação aprovada', 34, { after: ['Testes da equipe do cliente'] }),
+        ],
+      },
+      {
+        name: 'Entrada em produção',
+        items: [
+          task('Virada do TMS', 35, 2, { owner: 'rafael', after: ['Homologação aprovada'] }),
+          milestone('TMS em produção', 37, { after: ['Virada do TMS'] }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'CT-e rejeitado por divergência no valor do frete',
+        team: 'Development',
+        priority: 'High',
+        by: 'carla',
+        description:
+          'O CT-e 4410 foi rejeitado pela SEFAZ: o valor total do frete não bate com a soma dos componentes.\n\nAs cargas da rota sul de amanhã dependem dele.',
+        steps: [
+          say(
+            'diego',
+            'Reproduzi com o CT-e 4410: o arredondamento do pedágio gera um centavo de diferença.',
+          ),
+          { kind: 'priority', by: 'beatriz', to: 'Critical' },
+          say('beatriz', 'Subi para Crítica: sem o CT-e, as cargas de amanhã não saem.'),
+          {
+            kind: 'vendor',
+            by: 'diego',
+            vendor: 'Emissor Exemplo',
+            code: 'FX-21107',
+            status: 'Open',
+            link: 'https://suporte.emissor.example/chamados/FX-21107',
+            note: 'Aberto com o XML do CT-e 4410.',
+          },
+          say('carla', 'segue o XML do CT-e recusado.', {
+            mention: 'diego',
+            file: {
+              name: 'cte-4410.xml',
+              lines: ['<cteProc versao="4.00"><CTe><infCte Id="CTe-4410"/></CTe></cteProc>'],
+            },
+          }),
+          {
+            kind: 'vendorUpdate',
+            by: 'diego',
+            code: 'FX-21107',
+            status: 'InAnalysis',
+            note: 'O fornecedor confirmou o arredondamento do pedágio e está corrigindo.',
+          },
+          say(
+            'diego',
+            'Enquanto isso, ajustei o arredondamento na homologação. Segue a tela do CT-e autorizado.',
+            {
+              file: {
+                name: 'cte-autorizado.png',
+                lines: ['CT-e 4411', 'Componentes: frete-peso, pedágio, GRIS', 'Autorizado'],
+              },
+            },
+          ),
+        ],
+      },
+      {
+        title: 'Tabela de frete fracionado com faixas erradas',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'beatriz',
+        description:
+          'Na tabela de frete fracionado, as faixas acima de 500 kg estão com o valor por quilo da tabela antiga.',
+        // Waits for the answer of the second manager: "Aguardando você" in her Meu trabalho (ADR-0070).
+        steps: [
+          say('carla', 'Confirmei: as faixas acima de 500 kg ficaram com o valor de 2025.'),
+          act(
+            'carla',
+            'AskForInformation',
+            'Qual valor vale acima de 500 kg: o da proposta nova ou o do contrato atual?',
+          ),
+        ],
+      },
+      {
+        title: 'Liberar usuário do cliente no TMS de homologação',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'diego',
+        description: 'A equipe de expedição do cliente precisa de dois usuários para os testes.',
+        steps: [{ kind: 'assign', by: 'beatriz', to: 'carla' }],
+      },
+      {
+        title: 'Lentidão ao gerar o manifesto (MDF-e)',
+        team: 'Development',
+        priority: 'Critical',
+        by: 'beatriz',
+        description:
+          'Gerar o MDF-e de uma carga com mais de 50 notas leva mais de dois minutos e trava a expedição.',
+        steps: [
+          say('rafael', 'Vou olhar os logs do servidor de manifesto.'),
+          say('diego', 'Medi cada etapa: a assinatura do XML leva quase todo o tempo.', {
+            file: {
+              name: 'tempo-mdfe.csv',
+              lines: ['etapa;segundos', 'montagem do XML;3', 'assinatura;118', 'transmissão;4'],
+            },
+          }),
+          say(
+            'rafael',
+            'Troquei a assinatura para usar o certificado em memória. Caiu para 6 segundos.',
+          ),
+          act('rafael', 'Resolve'),
+        ],
+      },
+      {
+        title: 'Dúvida sobre o DACTE simplificado',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'diego',
+        description: 'Podemos imprimir o DACTE simplificado nas entregas da rota sul?',
+        steps: [
+          say('carla', 'Pode, desde que o CT-e seja de carga fracionada com até 50 entregas.'),
+          act('carla', 'Resolve'),
+          act('diego', 'ConfirmAndClose'),
+        ],
+      },
+    ],
+    documents: [
+      {
+        folder: '02 Contratos e compras',
+        name: 'Proposta comercial TMS.pdf',
+        by: 'beatriz',
+        lines: [
+          'Proposta comercial - Implantação do TMS',
+          'Escopo: fretes, CT-e, MDF-e e rastreamento.',
+          'Valores fictícios de demonstração.',
+        ],
+        status: { by: 'beatriz', to: 'Approved' },
+      },
+      {
+        folder: '01 Gestão do projeto',
+        name: 'Cronograma aprovado TMS.pdf',
+        by: 'beatriz',
+        lines: ['Cronograma aprovado do TMS-DELTA', 'Virada prevista para o fim do próximo mês.'],
+        status: { by: 'beatriz', to: 'Approved' },
+        link: { by: 'beatriz', to: 'Levantamento' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Tabelas de frete 2026.csv',
+        by: 'carla',
+        lines: ['rota;faixa;valor por kg', 'Sul;até 100 kg;1,90', 'Sul;acima de 500 kg;1,10'],
+        versions: [
+          {
+            by: 'carla',
+            lines: [
+              'rota;faixa;valor por kg',
+              'Sul;até 100 kg;1,90',
+              'Sul;de 100 a 500 kg;1,45',
+              'Sul;acima de 500 kg;1,05',
+            ],
+          },
+        ],
+        status: { by: 'carla', to: 'InReview' },
+        link: { by: 'carla', to: 'Cadastrar tabelas de frete' },
+      },
+      {
+        folder: '04 Atas de reunião',
+        name: 'Ata do kickoff TMS.txt',
+        by: 'beatriz',
+        lines: [
+          'Ata do kickoff do TMS',
+          'Presentes: equipe do projeto e operação da transportadora.',
+          'Decidido: começar pela rota sul.',
+        ],
+        link: { by: 'beatriz', to: 'Kickoff com a transportadora' },
+      },
+    ],
+    links: [
+      {
+        title: 'TMS · Homologação',
+        url: 'https://hml-tms.deltalogistica.example',
+        category: 'Ambientes',
+        description: 'Usado nos testes de frete e de CT-e.',
+        by: 'diego',
+      },
+      {
+        title: 'Rastreamento de cargas',
+        url: 'https://rastreio.deltalogistica.example',
+        category: 'Sistemas',
+        description: 'Onde a expedição acompanha as entregas.',
+        by: 'carla',
+      },
+      {
+        title: 'Entregas no prazo',
+        url: 'https://bi.deltalogistica.example/entregas',
+        category: 'Painéis',
+        description: 'Indicador de entregas por rota.',
+        by: 'beatriz',
+      },
+      {
+        title: 'Manual do TMS',
+        url: 'https://docs.tms-exemplo.example/manual',
+        category: 'Outros',
+        by: 'carla',
+      },
+    ],
+    credentials: [
+      {
+        portal: 'TMS',
+        environment: 'Homologação',
+        url: 'https://hml-tms.deltalogistica.example',
+        username: 'consultoria.tms',
+        notes: 'Perfil de configuração de fretes.',
+        by: 'diego',
+      },
+      {
+        portal: 'SEFAZ · CT-e',
+        environment: 'Produção',
+        url: 'https://cte.sefaz.example',
+        username: 'transmissao.cte',
+        notes: 'Certificado A1 da matriz no cofre.',
+        by: 'beatriz',
+      },
+      {
+        portal: 'Portal da transportadora parceira',
+        environment: 'Fornecedores',
+        url: 'https://parceiros.rotaexemplo.example',
+        username: 'delta.logistica',
+        by: 'carla',
+      },
+    ],
+    acceptances: [
+      {
+        milestone: 'Rotas mapeadas',
+        title: 'Aceite do mapeamento de rotas',
+        to: 'carla',
+        by: 'beatriz',
+        message: 'Carla, o mapeamento das rotas está fechado. Assine o termo e envie por aqui.',
+        file: 'termo-rotas.pdf',
+        lines: [
+          'Termo de aceite - Mapeamento de rotas',
+          'Projeto TMS-DELTA - Implantação do TMS',
+          'Assinatura: ____________________',
+        ],
+        answer: {
+          signed: 'termo-rotas-assinado.pdf',
+          lines: [
+            'Termo de aceite - Mapeamento de rotas',
+            'Assinado por Carla Mendes (assinatura fictícia de demonstração).',
+          ],
+        },
+      },
+      {
+        milestone: 'Homologação aprovada',
+        title: 'Aceite da homologação do TMS',
+        to: 'marina',
+        by: 'beatriz',
+        message: 'Marina, quando os testes da homologação terminarem, assine o termo por aqui.',
+        file: 'termo-homologacao-tms.pdf',
+        lines: [
+          'Termo de aceite - Homologação do TMS',
+          'Projeto TMS-DELTA - Implantação do TMS',
+          'Assinatura: ____________________',
+        ],
+      },
+    ],
+  },
+  {
+    code: 'FARMA-REINF',
+    name: 'EFD-Reinf e DCTFWeb',
+    client: 'Épsilon Farma',
+    techLead: 'rafael',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+    ],
+    status: 'InProgress',
+    phases: [
+      {
+        name: 'Diagnóstico',
+        items: [
+          task('Levantar eventos da EFD-Reinf', -7, 5, { owner: 'carla', progress: 100 }),
+          milestone('Diagnóstico entregue', -1, {
+            after: ['Levantar eventos da EFD-Reinf'],
+            reached: true,
+          }),
+        ],
+      },
+      {
+        name: 'Parametrização',
+        items: [
+          task('Parametrizar retenções de serviços', 0, 10, {
+            owner: 'carla',
+            progress: 80,
+            after: ['Diagnóstico entregue'],
+          }),
+          task('Gerar eventos R-4000', 7, 8, { owner: 'diego', progress: 50 }),
+          task('Conferir a DCTFWeb com o cliente', 15, 4, { owner: 'marina' }),
+        ],
+      },
+      {
+        name: 'Entrega',
+        items: [
+          milestone('Primeira transmissão', 25, {
+            after: ['Gerar eventos R-4000', 'Conferir a DCTFWeb com o cliente'],
+          }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'Evento R-4020 rejeitado por CNPJ do beneficiário',
+        team: 'Development',
+        priority: 'High',
+        by: 'carla',
+        description:
+          'Os eventos R-4020 de setembro voltam rejeitados com "CNPJ do beneficiário inválido".',
+        steps: [
+          say('diego', 'O CNPJ do beneficiário sai sem os zeros à esquerda no evento.'),
+          say('diego', 'Segue o retorno do ambiente nacional.', {
+            file: {
+              name: 'retorno-r4020.xml',
+              lines: ['<retornoEvento><cdResposta>2</cdResposta></retornoEvento>'],
+            },
+          }),
+          {
+            kind: 'vendor',
+            by: 'diego',
+            vendor: 'Nuvem Fiscal Exemplo',
+            code: 'NF-90127',
+            status: 'WaitingForUs',
+            note: 'Pediram um exemplo do evento com o CNPJ completo.',
+          },
+          say('rafael', 'manda o exemplo pedido pelo fornecedor ainda hoje.', {
+            mention: 'diego',
+          }),
+        ],
+      },
+      {
+        title: 'Retenção de INSS em nota sem destaque',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'diego',
+        description: 'Notas de serviço sem o destaque do INSS devem gerar a retenção no R-2010?',
+        steps: [act('carla', 'StartTriage')],
+      },
+      {
+        title: 'Prazo da DCTFWeb de novembro',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'marina',
+        description: 'Qual o prazo da DCTFWeb de novembro com o feriado de 20/11?',
+        steps: [
+          say('carla', 'O prazo não muda: é o dia 15 do mês seguinte, junto com o pagamento.'),
+          act('carla', 'Resolve'),
+          act(
+            'marina',
+            'Reopen',
+            'Faltou confirmar se as retenções da filial entram na mesma declaração.',
+          ),
+          say('carla', 'Entram, sim: a declaração é pelo CNPJ raiz.'),
+        ],
+      },
+      {
+        title: 'Acesso ao e-CAC da filial',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'rafael',
+        description: 'Precisamos da procuração eletrônica da filial para consultar a DCTFWeb.',
+        steps: [act('marina', 'Cancel', 'O próprio cliente cadastrou a procuração.')],
+      },
+    ],
+    documents: [
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Diagnóstico da EFD-Reinf.pdf',
+        by: 'carla',
+        lines: [
+          'Diagnóstico da EFD-Reinf',
+          'Eventos da série R-4000 e retenções de serviços tomados.',
+        ],
+        status: { by: 'marina', to: 'Approved' },
+        link: { by: 'marina', to: 'Diagnóstico entregue' },
+      },
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Naturezas de rendimento.csv',
+        by: 'diego',
+        lines: ['código;descrição', '15001;Serviços prestados por pessoa jurídica'],
+      },
+    ],
+    links: [
+      {
+        title: 'Manual da EFD-Reinf',
+        url: 'https://manuais.reinf.example/efd-reinf',
+        category: 'Outros',
+        by: 'carla',
+      },
+      {
+        title: 'Retenções por fornecedor',
+        url: 'https://bi.epsilonfarma.example/retencoes',
+        category: 'Painéis',
+        description: 'Retenções do mês, por fornecedor de serviço.',
+        by: 'marina',
+      },
+    ],
+  },
+  {
+    code: 'AGRO-NFE',
+    name: 'NF-e de produtor rural',
+    client: 'Zeta Agronegócio',
+    manager: 'beatriz',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+    ],
+    // Paused until the harvest ends.
+    status: 'Paused',
+    phases: [
+      {
+        name: 'Levantamento',
+        items: [
+          task('Levantar operações do produtor rural', -21, 5, { owner: 'carla', progress: 100 }),
+          milestone('Operações levantadas', -15, {
+            after: ['Levantar operações do produtor rural'],
+            reached: true,
+          }),
+        ],
+      },
+      {
+        name: 'Desenvolvimento',
+        items: [
+          task('Adaptar a emissão para o produtor rural', -14, 15, {
+            owner: 'diego',
+            progress: 40,
+            after: ['Operações levantadas'],
+          }),
+        ],
+      },
+      {
+        name: 'Implantação',
+        items: [
+          milestone('Emissão liberada', 30, {
+            after: ['Adaptar a emissão para o produtor rural'],
+          }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'Inscrição estadual do produtor não validada',
+        team: 'Development',
+        priority: 'Medium',
+        by: 'carla',
+        description: 'A emissão recusa a inscrição estadual de produtor rural da fazenda 12.',
+        steps: [
+          say(
+            'diego',
+            'A validação usava a regra de empresa; a do produtor rural tem outro formato.',
+          ),
+          act('diego', 'Resolve'),
+        ],
+      },
+      {
+        title: 'Retomar o projeto depois da colheita',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'beatriz',
+        description: 'Combinar com o cliente a data de retomada, depois da colheita da soja.',
+      },
+    ],
+  },
+  {
+    code: 'MIGRA-ALFA',
+    name: 'Migração do servidor fiscal',
+    client: 'Alfa Distribuidora',
+    members: [['diego', 'Developer']],
+    // Cancelled with tickets still open: the cancellation closes them (ADR-0043).
+    status: 'Cancelled',
+    phases: [
+      {
+        name: 'Planejamento',
+        items: [
+          task('Inventariar rotinas do servidor fiscal', -10, 6, { owner: 'diego', progress: 60 }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'Backup das bases fiscais antes da migração',
+        team: 'Development',
+        priority: 'High',
+        by: 'marina',
+        description:
+          'Fazer o backup completo das bases fiscais antes de desligar o servidor antigo.',
+        steps: [say('diego', 'Começo o backup hoje à noite, fora do horário de uso.')],
+      },
+      {
+        title: 'Licenças do novo servidor',
+        team: 'Development',
+        priority: 'Low',
+        by: 'diego',
+        description: 'Confirmar as licenças do banco de dados do servidor novo.',
+      },
+    ],
+  },
+  {
+    code: 'ERP-EPS',
+    name: 'Implantação do ERP na Épsilon',
+    client: 'Épsilon Farma',
+    manager: 'beatriz',
+    techLead: 'rafael',
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+    ],
+    // From the model saved from the ERP-FIN, starting in four weeks; it stays in Planejamento.
+    fromTemplate: { name: 'Implantação de ERP', start: 28 },
+    phases: [],
+    tickets: [
+      {
+        title: 'Agendar a reunião de abertura',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'beatriz',
+        description: 'Agendar a reunião de abertura com a diretoria financeira do cliente.',
+        steps: [act('carla', 'StartTriage')],
+      },
+    ],
+    documents: [
+      {
+        folder: '02 Contratos e compras',
+        name: 'Proposta comercial ERP Épsilon.pdf',
+        by: 'beatriz',
+        lines: [
+          'Proposta comercial - Implantação do ERP',
+          'Escopo: financeiro, fiscal e contabilidade.',
+          'Valores fictícios de demonstração.',
+        ],
+        status: { by: 'beatriz', to: 'Approved' },
+      },
+    ],
+  },
+  {
+    code: 'REFORMA-26',
+    name: 'Preparação para a Reforma Tributária',
+    client: null,
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+      ['beatriz', 'Contributor'],
+    ],
+    status: 'InProgress',
+    phases: [
+      {
+        name: 'Estudo',
+        items: [
+          task('Estudar as regras do IBS e da CBS', -5, 10, { owner: 'carla', progress: 100 }),
+          task('Mapear impactos nos clientes', 5, 8, {
+            owner: 'beatriz',
+            progress: 50,
+            after: ['Estudar as regras do IBS e da CBS'],
+          }),
+        ],
+      },
+      {
+        name: 'Ferramentas',
+        items: [
+          task('Adaptar o cálculo para a CBS', 12, 8, {
+            owner: 'diego',
+            after: ['Estudar as regras do IBS e da CBS'],
+          }),
+          // Broken into subtasks (ADR-0088): the first takes the dependency of the task.
+          task('Ajustar o cadastro de NCM', 12, 4, {
+            owner: 'diego',
+            progress: 50,
+            inside: 'Adaptar o cálculo para a CBS',
+          }),
+          task('Testar as alíquotas de teste', 18, 4, {
+            owner: 'carla',
+            inside: 'Adaptar o cálculo para a CBS',
+            after: ['Ajustar o cadastro de NCM'],
+          }),
+        ],
+      },
+      {
+        name: 'Treinamento',
+        items: [
+          task('Treinar a equipe', 26, 3, {
+            owner: 'marina',
+            after: ['Testar as alíquotas de teste'],
+          }),
+          milestone('Equipe preparada', 30, { after: ['Treinar a equipe'] }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'Alíquota de teste da CBS no cálculo',
+        team: 'Development',
+        priority: 'Medium',
+        by: 'beatriz',
+        description: 'O cálculo precisa destacar a CBS e o IBS com as alíquotas do ano de teste.',
+        steps: [
+          say('diego', 'O cálculo já destaca 0,9% de CBS e 0,1% de IBS nas notas de teste.'),
+          act('diego', 'Resolve'),
+          act('beatriz', 'ConfirmAndClose'),
+        ],
+      },
+      {
+        title: 'Material do treinamento de IBS e CBS',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'diego',
+        description: 'Montar o material do treinamento interno sobre o IBS e a CBS.',
+        steps: [say('carla', 'Monto o material até sexta, com exemplos de notas de venda.')],
+      },
+    ],
+    documents: [
+      {
+        folder: '05 Entregas e manuais',
+        name: 'Guia rápido do IBS e da CBS.pdf',
+        by: 'carla',
+        lines: ['Guia rápido do IBS e da CBS', 'Ano de teste, alíquotas e destaque nas notas.'],
+        versions: [
+          {
+            by: 'beatriz',
+            lines: [
+              'Guia rápido do IBS e da CBS',
+              'Ano de teste, alíquotas, destaque nas notas e impactos por cliente.',
+            ],
+          },
+        ],
+        status: { by: 'carla', to: 'InReview' },
+      },
+    ],
+    links: [
+      {
+        title: 'Portal da Reforma Tributária',
+        url: 'https://reforma.example/ibs-cbs',
+        category: 'Outros',
+        description: 'Leis, regulamentos e perguntas frequentes.',
+        by: 'carla',
+      },
+      {
+        title: 'Simulador de alíquotas',
+        url: 'https://simulador.empresa.example/cbs',
+        category: 'Sistemas',
+        by: 'diego',
       },
     ],
   },

@@ -8,14 +8,22 @@ Define os dados fictícios de demonstração do desenvolvimento: um comando que,
 
 ### Requirement: Carga dos dados de demonstração
 
-O comando `npm run demo:data` MUST carregar, pela API indicada (padrão `http://localhost:5175`), as pessoas do diretório de demonstração com os papéis delas, clientes, projetos com gerente, líder técnico e membros, e os cronogramas com progresso, marcos atingidos e uma tarefa atrasada. Cada ação MUST ser feita por quem a faria na tela, e todo nome MUST ser fictício. Ao terminar, o comando MUST dizer para abrir as telas em `http://localhost:5173` (ADR-0002, ADR-0003, ADR-0089).
+O comando `npm run demo:data` MUST carregar, pela API indicada (padrão `http://localhost:5175`), as pessoas do diretório de demonstração com os papéis delas, clientes, projetos com gerente, líder técnico e membros, e os cronogramas, cada ação por quem a faria na tela e todo nome fictício. Projetos que já existem MUST ficar como estão: o comando carrega só os que faltam. Ao terminar, MUST dizer para abrir as telas em `http://localhost:5173` (ADR-0002, ADR-0003, ADR-0089).
 
 #### Scenario: Carregar dados de demonstração
 - **WHEN** o comando roda numa instalação de desenvolvimento sem os dados
-- **THEN** o administrador cria os clientes e os projetos, a gerente monta os cronogramas, cada responsável atualiza o progresso da própria tarefa, e o comando diz o que carregou e que as telas abrem em `http://localhost:5173`, com o `npm run dev`
+- **THEN** o administrador cria os clientes e os projetos, a gerente de cada projeto monta o cronograma, cada responsável atualiza o progresso da própria tarefa, e o comando diz o que carregou e que as telas abrem em `http://localhost:5173`, com o `npm run dev`
+
+#### Scenario: Só os dados que faltam
+- **WHEN** o comando roda numa demonstração que já tem parte dos projetos do plano
+- **THEN** o comando carrega só os projetos que faltam, com os clientes e fornecedores que faltam, e diz quais ficaram como estavam
+
+#### Scenario: Categoria, pasta ou modelo desativado
+- **WHEN** o administrador desativou uma categoria de links, uma pasta padrão ou um modelo que o plano usa
+- **THEN** o link vai para a categoria Outros (ou a primeira ativa), o documento para a primeira pasta que não é a de termos e o projeto do modelo nasce em branco, e o comando diz cada troca
 
 #### Scenario: Dados já carregados
-- **WHEN** o comando roda de novo e o projeto ERP-FIN já existe
+- **WHEN** o comando roda de novo e todos os projetos do plano já existem
 - **THEN** o comando avisa que os dados já estão lá, diz como apagar o banco local e os arquivos para carregar de novo e onde abrir as telas, e não cria nem muda nada
 
 #### Scenario: Sem entrada local
@@ -149,3 +157,23 @@ A carga de demonstração MUST levar um chamado sem responsável à triagem e de
 #### Scenario: Atendimento iniciado na demonstração
 - **WHEN** o comando carrega os dados de demonstração
 - **THEN** um chamado aparece Em andamento, com quem iniciou o atendimento como responsável e o evento na conversa
+
+### Requirement: Demonstração mais rica
+
+A carga de demonstração MUST incluir seis clientes e projetos em todos os status (Planejamento, Em andamento, Pausado, Concluído e Cancelado), um deles interno e um criado a partir de um modelo, projetos de uma segunda gerente e chamados, documentos, links, acessos e termos de aceite também fora do projeto principal (ADR-0017, ADR-0043, ADR-0089).
+
+#### Scenario: Projetos em todos os status
+- **WHEN** o comando carrega os dados de demonstração
+- **THEN** a página Projetos mostra projetos em Planejamento, Em andamento, Pausado, Concluído e Cancelado, de seis clientes e internos, todos com chamados
+
+#### Scenario: Projeto a partir de um modelo
+- **WHEN** o comando carrega os dados de demonstração
+- **THEN** o administrador cria um projeto a partir do modelo "Implantação de ERP", com o cronograma gerado pelo servidor a partir do dia escolhido
+
+#### Scenario: Projeto cancelado com chamados
+- **WHEN** o comando cancela um projeto com chamados ainda abertos
+- **THEN** os chamados ficam fechados com o projeto, com o evento na conversa
+
+#### Scenario: Segunda gerente
+- **WHEN** o comando carrega os dados de demonstração e Beatriz Lima entra
+- **THEN** os projetos dela aparecem com os cronogramas montados por ela, e o Meu trabalho dela mostra uma tarefa atrasada, uma da semana e um chamado aguardando a resposta dela

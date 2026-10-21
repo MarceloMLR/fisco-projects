@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '../../src/test/server';
 import { loadDemo, screensAddress } from './load.ts';
-import { type DemoTicket, demoPeople, demoProjects } from './plan.ts';
+import { demoClients, type DemoTicket, demoPeople, demoProjects, demoVendors } from './plan.ts';
 
 /**
  * The API of a development installation, simulated: the local sign-in sets a session cookie with the person, and every
@@ -15,6 +15,12 @@ const calls: string[] = [];
 const bodies = new Map<string, unknown[]>();
 let localSignIn = true;
 let existing: string[] = [];
+let existingClients: string[] = [];
+let existingVendors: string[] = [];
+/** What the Administrator turned off: categories of links, default folders and models (ADR-0032, ADR-0092). */
+let inactiveCategories: string[] = [];
+let missingFolders: string[] = [];
+let missingTemplates: string[] = [];
 let ids = 0;
 let numbers = 0;
 
@@ -22,6 +28,10 @@ const personOfEmail = (email: string) =>
   Object.entries(demoPeople).find(([, value]) => value === email)?.[0];
 const idOf = (person: string) => `0199f5a2-0000-7000-8000-${person.padStart(12, '0').slice(-12)}`;
 const nextId = () => `0199f5a2-1111-7000-8000-${String(++ids).padStart(12, '0')}`;
+const listedId = (kind: string, index: number) =>
+  `0199f5a2-${kind}-7000-8000-${String(index + 1).padStart(12, '0')}`;
+/** The model the project made from a model takes, saved from the ERP-FIN earlier in the load. */
+const erpTemplateId = listedId('4444', 0);
 
 function whoCalls(request: Request): string {
   const cookie = request.headers.get('cookie') ?? '';
@@ -49,6 +59,11 @@ beforeEach(() => {
   bodies.clear();
   localSignIn = true;
   existing = [];
+  existingClients = [];
+  existingVendors = [];
+  inactiveCategories = [];
+  missingFolders = [];
+  missingTemplates = [];
   ids = 0;
   numbers = 0;
   server.use(
@@ -87,6 +102,43 @@ beforeEach(() => {
         today: '2026-10-19',
       }),
     ),
+    http.get(`${base}/api/clients`, () =>
+      HttpResponse.json({
+        items: existingClients.map((name, index) => ({
+          id: listedId('5555', index),
+          name,
+          cnpj: null,
+          logoUrl: null,
+          observation: null,
+          status: 'Active',
+        })),
+        total: existingClients.length,
+      }),
+    ),
+    http.get(`${base}/api/admin/vendors`, () =>
+      HttpResponse.json(
+        existingVendors.map((name, index) => ({
+          id: listedId('6666', index),
+          name,
+          portalUrl: null,
+          isActive: true,
+        })),
+      ),
+    ),
+    // The models saved by the manager of the ERP-FIN and of the TRIB-RS (ADR-0017).
+    http.get(`${base}/api/project-templates`, () =>
+      HttpResponse.json(
+        ['Implantação de ERP', 'Revisão tributária de filial']
+          .map((name, index) => ({
+            id: listedId('4444', index),
+            name,
+            description: null,
+            isActive: true,
+            phases: [],
+          }))
+          .filter((template) => !missingTemplates.includes(template.name)),
+      ),
+    ),
     // The six default folders every new project gets (ADR-0031).
     http.get(`${base}/api/projects/:id/documents/folders`, () =>
       HttpResponse.json({
@@ -97,12 +149,14 @@ beforeEach(() => {
           '04 Atas de reunião',
           '05 Entregas e manuais',
           '06 Termos de aceite',
-        ].map((name, index) => ({
-          id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
-          name,
-          isAcceptance: index === 5,
-          count: 0,
-        })),
+        ]
+          .map((name, index) => ({
+            id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
+            name,
+            isAcceptance: index === 5,
+            count: 0,
+          }))
+          .filter((folder) => !missingFolders.includes(folder.name)),
         total: 0,
         permissions: { canUpload: true, canApprove: true, canDelete: true },
         maxBytes: 25 * 1024 * 1024,
@@ -111,11 +165,13 @@ beforeEach(() => {
     // The categories of links of the migration (ADR-0032).
     http.get(`${base}/api/link-categories`, () =>
       HttpResponse.json(
-        ['Ambientes', 'Outros', 'Painéis', 'Repositórios', 'Sistemas'].map((name, index) => ({
-          id: `0199f5a2-3333-7000-8000-${String(index + 1).padStart(12, '0')}`,
-          name,
-          isActive: true,
-        })),
+        ['Ambientes', 'Outros', 'Painéis', 'Repositórios', 'Sistemas']
+          .map((name, index) => ({
+            id: `0199f5a2-3333-7000-8000-${String(index + 1).padStart(12, '0')}`,
+            name,
+            isActive: true,
+          }))
+          .filter((category) => !inactiveCategories.includes(category.name)),
       ),
     ),
     http.post(`${base}/api/tickets`, () =>
@@ -141,7 +197,7 @@ describe('Carga dos dados de demonstração', () => {
     expect(outcome).toEqual({
       loaded: true,
       firstDay: '2026-10-05',
-      projects: 5,
+      projects: demoProjects.length,
       items: items.length,
     });
     // Everyone of the demo directory signs in, but the people who never signed in (ADR-0078).
@@ -161,15 +217,20 @@ describe('Carga dos dados de demonstração', () => {
     expect((bodies.get(`/api/users/${idOf('rafael')}/role`) ?? [])[0]).toEqual({
       role: 'TechLead',
     });
-    expect(callsBy(/^paulo POST \/api\/clients$/)).toHaveLength(3);
-    expect(callsBy(/^paulo POST \/api\/projects$/)).toHaveLength(5);
+    expect(callsBy(/^paulo POST \/api\/clients$/)).toHaveLength(demoClients.length);
+    expect(callsBy(/^paulo POST \/api\/projects$/)).toHaveLength(demoProjects.length);
     expect(people(/POST \/api\/projects\/[^/]+\/members$/)).toEqual(['paulo']);
-    // The manager builds the schedules, marks the milestones and changes the status.
-    expect(people(/\/schedule\/(phases|items)$/)).toEqual(['marina']);
-    expect(people(/\/reached$/)).toEqual(['marina']);
-    expect(people(/\/projects\/[^/]+\/status$/)).toEqual(['marina']);
+    // Each project with its manager, Marina Costa when the plan names none.
+    const created = (bodies.get('/api/projects') ?? []) as { code: string; managerId: string }[];
+    expect(created.map((project) => [project.code, project.managerId])).toEqual(
+      demoProjects.map((project) => [project.code, idOf(project.manager ?? 'marina')]),
+    );
+    // The managers build the schedules, mark the milestones and change the status.
+    expect(people(/\/schedule\/(phases|items)$/)).toEqual(['beatriz', 'marina']);
+    expect(people(/\/reached$/)).toEqual(['beatriz', 'marina']);
+    expect(people(/\/projects\/[^/]+\/status$/)).toEqual(['beatriz', 'marina']);
     // Each person in charge updates the progress of the task; the manager, of the tasks of no one.
-    expect(people(/\/progress$/)).toEqual(['carla', 'diego', 'marina', 'rafael']);
+    expect(people(/\/progress$/)).toEqual(['beatriz', 'carla', 'diego', 'marina', 'rafael']);
     // The dates follow the day it runs: 19/10/2026 starts the main project on 05/10/2026.
     const first = [...bodies.entries()].find(([path]) => path.endsWith('/schedule/items'))?.[1][0];
     expect(first).toMatchObject({
@@ -195,8 +256,63 @@ describe('Carga dos dados de demonstração', () => {
     expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');
   });
 
+  it('Só os dados que faltam', async () => {
+    // A demonstration loaded before Cronograma-3.3: the first five projects, their clients and the vendors.
+    const before = demoProjects.slice(0, 5).map((project) => project.code);
+    existing = before;
+    existingClients = demoClients.slice(0, 3);
+    existingVendors = demoVendors.map((vendor) => vendor.name);
+    const lines: string[] = [];
+
+    const outcome = await loadDemo(base, (line) => lines.push(line));
+
+    const missing = demoProjects.slice(5);
+    expect(outcome).toMatchObject({ loaded: true, projects: missing.length });
+    const created = (bodies.get('/api/projects') ?? []) as { code: string; clientId: string }[];
+    expect(created.map((project) => project.code)).toEqual(missing.map((project) => project.code));
+    // Only the new clients, and a new project of an old client goes to the one already there.
+    expect(
+      ((bodies.get('/api/clients') ?? []) as { name: string }[]).map((client) => client.name),
+    ).toEqual(demoClients.slice(3));
+    expect(created.find((project) => project.code === 'MIGRA-ALFA')?.clientId).toBe(
+      listedId('5555', 0),
+    );
+    expect(callsBy(/ POST \/api\/admin\/vendors$/)).toEqual([]);
+    expect(lines).toContain(`Projetos que já existiam, mantidos como estão: ${before.join(', ')}.`);
+    expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');
+  });
+
+  it('Categoria, pasta ou modelo desativado', async () => {
+    inactiveCategories = ['Painéis'];
+    missingFolders = ['04 Atas de reunião'];
+    missingTemplates = ['Implantação de ERP'];
+    const lines: string[] = [];
+
+    const outcome = await loadDemo(base, (line) => lines.push(line));
+
+    expect(outcome).toMatchObject({ loaded: true, projects: demoProjects.length });
+    // The links of Painéis go to Outros, the minutes to the first folder, and the project of the model is blank.
+    const links = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/links'))
+      .flatMap(([, saved]) => saved) as { title: string; categoryId: string }[];
+    expect(links.find((link) => link.title === 'Qualidade dos cadastros')?.categoryId).toBe(
+      '0199f5a2-3333-7000-8000-000000000002',
+    );
+    expect(lines).toContain(
+      'O link Qualidade dos cadastros foi para Outros: Painéis não é uma categoria ativa.',
+    );
+    expect(lines).toContain(
+      'Ata da reunião de abertura.txt foi para 01 Gestão do projeto: ERP-FIN não tem a pasta 04 Atas de reunião.',
+    );
+    const created = (bodies.get('/api/projects') ?? []) as { code: string; templateId?: string }[];
+    expect(created.find((project) => project.code === 'ERP-EPS')?.templateId).toBeUndefined();
+    expect(lines).toContain(
+      'ERP-EPS foi criado em branco: o modelo Implantação de ERP não está entre os modelos ativos.',
+    );
+  });
+
   it('Dados já carregados', async () => {
-    existing = ['ERP-FIN'];
+    existing = demoProjects.map((project) => project.code);
     const lines: string[] = [];
 
     const outcome = await loadDemo(base, (line) => lines.push(line));
@@ -227,8 +343,11 @@ describe('Linha de base na demonstração', () => {
 
     // The manager saves the baseline of ERP-FIN and then puts off Parametrizar regras de ICMS, in the same project.
     const changes = callsBy(/ PUT .*\/schedule\/(baseline|items\/[^/]+\/dates)$/);
-    expect(changes).toHaveLength(2);
-    const [saved, moved] = changes;
+    expect(changes).toHaveLength(4);
+    const [saved, moved, savedTms, movedTms] = changes;
+    // The TMS-DELTA too, by its manager.
+    expect(savedTms).toMatch(/^beatriz PUT \/api\/projects\/[^/]+\/schedule\/baseline$/);
+    expect(movedTms?.startsWith(savedTms?.replace(/\/baseline$/, '') ?? '')).toBe(true);
     expect(saved).toMatch(/^marina PUT \/api\/projects\/[^/]+\/schedule\/baseline$/);
     expect(moved).toMatch(/^marina PUT \/api\/projects\/[^/]+\/schedule\/items\/[^/]+\/dates$/);
     expect(moved?.startsWith(saved?.replace(/\/baseline$/, '') ?? '')).toBe(true);
@@ -258,6 +377,15 @@ describe('Modelos na demonstração', () => {
 });
 
 const plannedTickets = () => demoProjects.flatMap((project) => project.tickets ?? []);
+
+/** The number a ticket of the plan gets, loaded in order into an empty installation. */
+function numberOf(title: string): number {
+  const index = plannedTickets().findIndex((ticket) => ticket.title === title);
+  if (index < 0) {
+    throw new Error(`No ticket ${title} in the plan.`);
+  }
+  return index + 1;
+}
 
 /** The status a ticket of the plan ends in, by the flow of the MVP (ADR-0024): a cancelled ticket apart. */
 function finalStatus(ticket: DemoTicket): string {
@@ -326,6 +454,7 @@ describe('Chamados na demonstração', () => {
 
     // Each ticket opened by its person, before the projects get their status.
     expect(people(/ POST \/api\/tickets$/)).toEqual([
+      'beatriz',
       'carla',
       'diego',
       'marina',
@@ -394,17 +523,19 @@ describe('Status na demonstração', () => {
     await loadDemo(base, () => undefined);
 
     // What happens to each ticket, in the order of the plan, each by its person.
+    const assignees = (bodies.get('/api/tickets/assignee') ?? []) as { numbers: number[] }[];
     plannedTickets().forEach((ticket, index) => {
       const number = index + 1;
+      // Each change of assignee goes with its own body, in the order of the calls.
+      let assignee = -1;
       const made = calls
-        .filter(
-          (call) =>
-            call.includes(`/api/tickets/${String(number)}/`) ||
-            (call.endsWith('PUT /api/tickets/assignee') &&
-              (bodies.get('/api/tickets/assignee') ?? []).some((body) =>
-                (body as { numbers: number[] }).numbers.includes(number),
-              )),
-        )
+        .filter((call) => {
+          if (call.endsWith('PUT /api/tickets/assignee')) {
+            assignee += 1;
+            return assignees[assignee]?.numbers.includes(number) ?? false;
+          }
+          return call.includes(`/api/tickets/${String(number)}/`);
+        })
         .map((call) => call.replace(/vendor-tickets\/[0-9a-f-]+$/, 'vendor-tickets/id'));
       expect(made, ticket.title).toEqual(expectedCalls(ticket, number));
     });
@@ -472,10 +603,10 @@ describe('Prazos na demonstração', () => {
     expect(opened.map((ticket) => ticket.priority)).toEqual(
       expect.arrayContaining(['Critical', 'High', 'Medium', 'Low']),
     );
-    // And two wait for the requester, with their deadlines paused.
+    // And some wait for the requester, with their deadlines paused.
     expect(
-      plannedTickets().filter((ticket) => finalStatus(ticket) === 'WaitingForRequester'),
-    ).toHaveLength(2);
+      plannedTickets().filter((ticket) => finalStatus(ticket) === 'WaitingForRequester').length,
+    ).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -484,10 +615,18 @@ describe('Trocas na demonstração', () => {
   it('Trocas na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // The manager assigns the sixth ticket to the developer; the tech lead sends the fourth to Funcional.
-    expect(callsBy(/ PUT \/api\/tickets\/assignee$/)).toEqual(['marina PUT /api/tickets/assignee']);
+    // The manager assigns the sixth ticket to the developer, and the manager of the TMS-DELTA one of hers to the
+    // contributor; the tech lead sends the fourth to Funcional.
+    expect(callsBy(/ PUT \/api\/tickets\/assignee$/)).toEqual([
+      'marina PUT /api/tickets/assignee',
+      'beatriz PUT /api/tickets/assignee',
+    ]);
     expect(bodies.get('/api/tickets/assignee')).toEqual([
       { numbers: [6], assigneeId: idOf('diego') },
+      {
+        numbers: [numberOf('Liberar usuário do cliente no TMS de homologação')],
+        assigneeId: idOf('carla'),
+      },
     ]);
     expect(callsBy(/ PUT \/api\/tickets\/\d+\/team$/)).toEqual(['rafael PUT /api/tickets/4/team']);
     expect(bodies.get('/api/tickets/4/team')).toEqual([{ team: 'Functional' }]);
@@ -501,7 +640,11 @@ describe('Prioridade e acompanhamento na demonstração', () => {
 
     // The manager raises the priority of the first ticket, opened as Média; the Administrator follows the tenth.
     expect((bodies.get('/api/tickets') ?? [])[0]).toMatchObject({ priority: 'Medium' });
-    expect(callsBy(/\/priority$/)).toEqual(['marina PUT /api/tickets/1/priority']);
+    const cte = numberOf('CT-e rejeitado por divergência no valor do frete');
+    expect(callsBy(/\/priority$/)).toEqual([
+      'marina PUT /api/tickets/1/priority',
+      `beatriz PUT /api/tickets/${String(cte)}/priority`,
+    ]);
     expect(bodies.get('/api/tickets/1/priority')).toEqual([{ priority: 'High' }]);
     expect(callsBy(/\/following$/)).toEqual(['paulo PUT /api/tickets/10/following']);
   });
@@ -512,7 +655,9 @@ describe('Fornecedores na demonstração', () => {
   it('Fornecedores na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // Two fictitious vendors, by the Administrator; the tech lead registers two tickets at them and updates them.
+    // Two fictitious vendors, by the Administrator; the tech lead and the developer register tickets at them.
+    const cte = numberOf('CT-e rejeitado por divergência no valor do frete');
+    const reinf = numberOf('Evento R-4020 rejeitado por CNPJ do beneficiário');
     expect(callsBy(/ POST \/api\/admin\/vendors$/)).toEqual([
       'paulo POST /api/admin/vendors',
       'paulo POST /api/admin/vendors',
@@ -535,6 +680,9 @@ describe('Fornecedores na demonstração', () => {
       update(1),
       'rafael POST /api/tickets/10/vendor-tickets',
       update(10),
+      `diego POST /api/tickets/${String(cte)}/vendor-tickets`,
+      `diego PUT /api/tickets/${String(cte)}/vendor-tickets/id`,
+      `diego POST /api/tickets/${String(reinf)}/vendor-tickets`,
     ]);
     expect(bodies.get('/api/tickets/1/vendor-tickets')).toEqual([
       expect.objectContaining({
@@ -556,12 +704,14 @@ describe('Documentos na demonstração', () => {
     const sent = callsBy(/ POST \/api\/projects\/[^/]+\/documents$/);
     const main = demoProjects.find((project) => project.code === 'ERP-FIN');
     const documents = main?.documents ?? [];
-    const versions = documents.reduce(
+    const everyDocument = demoProjects.flatMap((project) => project.documents ?? []);
+    const versions = everyDocument.reduce(
       (total, document) => total + (document.versions?.length ?? 0),
       0,
     );
-    expect(sent).toHaveLength(documents.length + versions);
+    expect(sent).toHaveLength(everyDocument.length + versions);
     expect(people(/ POST \/api\/projects\/[^/]+\/documents$/)).toEqual([
+      'beatriz',
       'carla',
       'diego',
       'marina',
@@ -582,9 +732,14 @@ describe('Documentos na demonstração', () => {
       ),
     ).toBe(true);
     // The approvals by the manager and the tech lead; the links after the documents.
-    expect(people(/ PUT .*\/documents\/[^/]+\/status$/)).toEqual(['carla', 'marina', 'rafael']);
+    expect(people(/ PUT .*\/documents\/[^/]+\/status$/)).toEqual([
+      'beatriz',
+      'carla',
+      'marina',
+      'rafael',
+    ]);
     expect(callsBy(/ PUT .*\/documents\/[^/]+\/link$/)).toHaveLength(
-      documents.filter((document) => document.link !== undefined).length,
+      everyDocument.filter((document) => document.link !== undefined).length,
     );
     const links = [...bodies.entries()]
       .filter(([path]) => path.endsWith('/link'))
@@ -606,8 +761,10 @@ describe('Links na demonstração', () => {
     // Each link included by a person of the project who keeps links, never the viewer (ADR-0045).
     const main = demoProjects.find((project) => project.code === 'ERP-FIN');
     const links = main?.links ?? [];
-    expect(callsBy(/ POST \/api\/projects\/[^/]+\/links$/)).toHaveLength(links.length);
+    const everyLink = demoProjects.flatMap((project) => project.links ?? []);
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/links$/)).toHaveLength(everyLink.length);
     expect(people(/ POST \/api\/projects\/[^/]+\/links$/)).toEqual([
+      'beatriz',
       'carla',
       'diego',
       'marina',
@@ -620,7 +777,9 @@ describe('Links na demonstração', () => {
       .filter(([path]) => path.endsWith('/links'))
       .flatMap(([, saved]) => saved) as { title: string; url: string; categoryId: string }[];
     expect(sent.every((link) => link.url.startsWith('https://'))).toBe(true);
-    expect(new Set(sent.map((link) => link.categoryId)).size).toBe(4);
+    expect(new Set(sent.map((link) => link.categoryId)).size).toBe(
+      new Set(everyLink.map((link) => link.category)).size,
+    );
     // Before the project gets its status.
     const lastLink = calls.findLastIndex((call) => call.endsWith('/links'));
     const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
@@ -636,8 +795,11 @@ describe('Acessos na demonstração', () => {
     // Each credential included by a person of the project who keeps credentials, never the viewer (ADR-0045).
     const main = demoProjects.find((project) => project.code === 'ERP-FIN');
     const credentials = main?.credentials ?? [];
-    expect(callsBy(/ POST \/api\/projects\/[^/]+\/credentials$/)).toHaveLength(credentials.length);
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/credentials$/)).toHaveLength(
+      demoProjects.flatMap((project) => project.credentials ?? []).length,
+    );
     expect(people(/ POST \/api\/projects\/[^/]+\/credentials$/)).toEqual([
+      'beatriz',
       'carla',
       'diego',
       'marina',
@@ -663,10 +825,12 @@ describe('Termos na demonstração', () => {
 
     const main = demoProjects.find((project) => project.code === 'ERP-FIN');
     const terms = main?.acceptances ?? [];
-    const requests = terms.filter((term) => term.attached !== true);
-    // The requests and the attached term by the manager; the answers by the person of each request (ADR-0045).
+    const requests = demoProjects
+      .flatMap((project) => project.acceptances ?? [])
+      .filter((term) => term.attached !== true);
+    // The requests and the attached term by the managers; the answers by the person of each request (ADR-0045).
     expect(callsBy(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toHaveLength(requests.length);
-    expect(people(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toEqual(['marina']);
+    expect(people(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toEqual(['beatriz', 'marina']);
     expect(people(/ POST \/api\/projects\/[^/]+\/acceptances\/attached$/)).toEqual(['marina']);
     expect(people(/ POST .*\/acceptances\/[^/]+\/signed$/)).toEqual(['carla']);
     expect(people(/ POST .*\/acceptances\/[^/]+\/refusal$/)).toEqual(['carla']);
@@ -683,5 +847,110 @@ describe('Termos na demonstração', () => {
     const lastTerm = calls.findLastIndex((call) => call.includes('/acceptances'));
     const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
     expect(lastTerm).toBeLessThan(status);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Demonstração mais rica".
+describe('Demonstração mais rica', () => {
+  it('Projetos em todos os status', async () => {
+    await loadDemo(base, () => undefined);
+
+    // A new project starts in Planejamento; the others go to their status at the end, by their managers.
+    expect(new Set(demoProjects.map((project) => project.status ?? 'Planning'))).toEqual(
+      new Set(['Planning', 'InProgress', 'Paused', 'Completed', 'Cancelled']),
+    );
+    const statuses = [...bodies.entries()]
+      .filter(([path]) => /\/api\/projects\/[^/]+\/status$/.test(path))
+      .flatMap(([, saved]) => saved as { status: string }[])
+      .map((body) => body.status);
+    expect(new Set(statuses)).toEqual(new Set(['InProgress', 'Paused', 'Completed', 'Cancelled']));
+    // Six clients, internal projects too, and every project with tickets.
+    expect(new Set(demoProjects.map((project) => project.client))).toEqual(
+      new Set([...demoClients, null]),
+    );
+    expect(demoProjects.filter((project) => (project.tickets ?? []).length === 0)).toEqual([]);
+    // Documents, links, credentials and terms outside the main project too.
+    const others = demoProjects.filter((project) => project.code !== 'ERP-FIN');
+    for (const of of [
+      (project: (typeof demoProjects)[number]) => project.documents,
+      (project: (typeof demoProjects)[number]) => project.links,
+      (project: (typeof demoProjects)[number]) => project.credentials,
+      (project: (typeof demoProjects)[number]) => project.acceptances,
+    ]) {
+      expect(others.some((project) => (of(project) ?? []).length > 0)).toBe(true);
+    }
+  });
+
+  it('Projeto a partir de um modelo', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The Administrator creates the project from the model saved from the ERP-FIN earlier in the load.
+    const fromModel = demoProjects.filter((project) => project.fromTemplate !== undefined);
+    expect(fromModel.map((project) => project.fromTemplate?.name)).toEqual(['Implantação de ERP']);
+    expect(fromModel.every((project) => project.phases.length === 0)).toBe(true);
+    const created = (bodies.get('/api/projects') ?? []) as {
+      code: string;
+      templateId?: string;
+      scheduleStart?: string;
+    }[];
+    expect(created.find((project) => project.code === fromModel[0]?.code)).toMatchObject({
+      templateId: erpTemplateId,
+      scheduleStart: '2026-11-02',
+    });
+    expect(created.filter((project) => project.templateId !== undefined)).toHaveLength(1);
+    const saved = calls.findIndex((call) => /^marina POST .*\/schedule\/template$/.test(call));
+    expect(calls.indexOf('paulo GET /api/project-templates')).toBeGreaterThan(saved);
+    // Its schedule comes from the server: the command posts no phase of its own for it.
+    expect(callsBy(/ POST .*\/schedule\/phases$/)).toHaveLength(
+      demoProjects.reduce((total, project) => total + project.phases.length, 0),
+    );
+  });
+
+  it('Projeto cancelado com chamados', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Its tickets are still open when the manager cancels it, at the end: the API closes them (ADR-0043).
+    const cancelled = demoProjects.find((project) => project.status === 'Cancelled');
+    const open = (cancelled?.tickets ?? []).map(finalStatus);
+    expect(open.length).toBeGreaterThan(0);
+    expect(open.filter((status) => status === 'Closed' || status === 'Cancelled')).toEqual([]);
+    const [path] =
+      [...bodies.entries()].find(
+        ([key, saved]) =>
+          key.endsWith('/status') &&
+          (saved as { status: string }[]).some((body) => body.status === 'Cancelled'),
+      ) ?? [];
+    const cancel = calls.indexOf(`marina PUT ${String(path)}`);
+    const numbers = (cancelled?.tickets ?? []).map((ticket) => numberOf(ticket.title));
+    const lastTicket = calls.findLastIndex((call) =>
+      numbers.some((number) => call.includes(`/api/tickets/${String(number)}/`)),
+    );
+    expect(lastTicket).toBeGreaterThanOrEqual(0);
+    expect(cancel).toBeGreaterThan(lastTicket);
+  });
+
+  it('Segunda gerente', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Beatriz Lima manages projects of her own and builds their schedules.
+    const hers = demoProjects.filter((project) => project.manager === 'beatriz');
+    expect(hers.length).toBeGreaterThanOrEqual(2);
+    expect(callsBy(/^beatriz POST .*\/schedule\/phases$/)).toHaveLength(
+      hers.reduce((total, project) => total + project.phases.length, 0),
+    );
+    // Her Meu trabalho, loaded on a Monday, the day 14: a late task, one of the week and a ticket waiting for her.
+    const tasks = demoProjects
+      .flatMap((project) => project.phases)
+      .flatMap((phase) => phase.items)
+      .filter(
+        (item) => item.kind === 'Task' && item.owner === 'beatriz' && (item.progress ?? 0) < 100,
+      );
+    expect(tasks.some((item) => item.day + item.duration < 14)).toBe(true);
+    expect(tasks.some((item) => item.day >= 14 && item.day <= 21)).toBe(true);
+    expect(
+      plannedTickets().some(
+        (ticket) => ticket.by === 'beatriz' && finalStatus(ticket) === 'WaitingForRequester',
+      ),
+    ).toBe(true);
   });
 });
