@@ -189,7 +189,7 @@ describe('Dados da API guardados durante a sessão', () => {
   });
 
   it('Saída descarta os dados guardados', async () => {
-    const { queryClient } = await openUsers();
+    const { queryClient, router } = await openUsers();
     expect(queryClient.getQueryCache().getAll().length).toBeGreaterThan(0);
     server.use(
       http.post('/api/session/sign-out', () => {
@@ -229,7 +229,14 @@ describe('Dados da API guardados durante a sessão', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: ptBR.signIn.submit }));
 
-    // Back in the Users screen, the list is asked again, and no row of before shows while it is on its way.
+    // After "Sair", the sign-in leads to Início (Acesso-1.1); back in the Users screen, the list is asked again, and no
+    // row of before shows while it is on its way.
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    await act(async () => {
+      await router.navigate('/admin/users');
+    });
     await screen.findByRole('grid', { name: ptBR.users.table });
     expect(rowsOf(ptBR.users.table)).toHaveLength(0);
     await waitFor(() => {
