@@ -1,8 +1,16 @@
 import { createContext, useContext } from 'react';
 import type { SessionUser, ThemePreference } from '../api/client';
 
+/**
+ * How a session ended: the person chose "Sair", or a call came back 401 while someone was in it (the id of who was).
+ * Without it, nobody was in a session when the application opened.
+ */
+export type SessionEnd = { by: 'signOut' } | { by: 'expired'; userId: string };
+
 export type Session =
-  { status: 'checking' } | { status: 'signed-out' } | { status: 'signed-in'; user: SessionUser };
+  | { status: 'checking' }
+  | { status: 'signed-out'; ended?: SessionEnd }
+  | { status: 'signed-in'; user: SessionUser };
 
 export interface SessionContextValue {
   session: Session;
@@ -26,7 +34,11 @@ export function useSession(): SessionContextValue {
   return value;
 }
 
-/** What a protected screen tells the sign-in page: the address to go back to. */
+/**
+ * What a protected screen tells the sign-in page: the address to go back to and, when the session expired, who was in
+ * it, so only that person goes back there.
+ */
 export interface SignInState {
   from: { pathname: string; search: string; hash: string };
+  userId?: string;
 }

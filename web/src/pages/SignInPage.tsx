@@ -37,9 +37,14 @@ const form = z.object({
 
 type Refusal = 'notInDirectory' | 'inactive' | 'failed';
 
-function destination(state: unknown): string {
-  const from = (state as Partial<SignInState> | null)?.from;
-  return from === undefined ? '/' : `${from.pathname}${from.search}${from.hash}`;
+/** Where the person goes after signing in: back to the screen asked, unless someone else was in the session. */
+function destination(state: unknown, userId: string): string {
+  const asked = state as Partial<SignInState> | null;
+  const from = asked?.from;
+  if (from === undefined || (asked?.userId !== undefined && asked.userId !== userId)) {
+    return '/';
+  }
+  return `${from.pathname}${from.search}${from.hash}`;
 }
 
 /**
@@ -51,7 +56,7 @@ export function SignInPage() {
   const location = useLocation();
 
   if (session.status === 'signed-in') {
-    return <Navigate to={destination(location.state)} replace />;
+    return <Navigate to={destination(location.state, session.user.id)} replace />;
   }
   if (session.status === 'checking') {
     return <SessionPending />;

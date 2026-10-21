@@ -20,7 +20,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 9 | 7 |
-| 2. Acesso e administração | 15 | 10 |
+| 2. Acesso e administração | 15 | 11 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 11 |
 | 5. Chamados | 10 | 7 |
@@ -29,7 +29,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **49** |
+| **Total** | **70** | **50** |
 
 ## 1. Fundação
 
@@ -50,7 +50,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Acesso-1 | `entrada-e-sessao` | Página de entrada, entrada local por e-mail (desenvolvimento e demonstração), usuário no primeiro login, sessão de 8 h, Sair | 0005, 0009, 0054, 0078 | Concluída em 18/10/2026 ([#9](https://github.com/MarceloMLR/fisco-projects/pull/9), [#10](https://github.com/MarceloMLR/fisco-projects/pull/10)) |
-| Acesso-1.1 | `sair-volta-ao-inicio` | Depois de Sair, a próxima entrada vai para o Início; a sessão expirada volta à página só para a mesma pessoa, a pedido de Marcelo | 0054, 0078 | Planejada |
+| Acesso-1.1 | `sair-volta-ao-inicio` | Depois de Sair, a próxima entrada vai para o Início; a sessão expirada volta à página só para a mesma pessoa, a pedido de Marcelo | 0054, 0078 | Concluída em 20/10/2026 ([#56](https://github.com/MarceloMLR/fisco-projects/pull/56)) |
 | Acesso-2 | `usuarios-e-papeis` | Papéis no sistema, primeiro e último administrador, desativar e reativar, tela Usuários | 0006, 0008, 0040 | Concluída em 18/10/2026 ([#11](https://github.com/MarceloMLR/fisco-projects/pull/11)) |
 | Acesso-2.1 | `listas-mais-rapidas` | Listas sem espera aparente: leituras guardadas na sessão (TanStack Query), indicador só depois de 300 ms, menus que fecham na hora e tabela sem redesenho inútil, a pedido de Marcelo | 0049, 0050, 0080 | Concluída em 18/10/2026 ([#15](https://github.com/MarceloMLR/fisco-projects/pull/15)) |
 | Acesso-2.2 | `lider-tecnico-no-sistema` | Líder técnico como papel no sistema: só quem o tem lidera tecnicamente um projeto, e é o sugerido nas telas, a pedido de Marcelo | 0040, 0072 | Planejada |
