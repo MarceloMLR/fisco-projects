@@ -36,7 +36,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Só HTTPS; domínio próprio opcional com certificado gerenciado (ADR-0052).
 - Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING` (do Key Vault); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
 - Backups do Azure SQL: restauração a qualquer ponto em 14 dias (Basic: 7), um backup mensal guardado por 12 meses e redundância por zona dentro da Brazil South (parâmetro da instalação) (ADR-0059).
-- Roteiro de restauração documentado e testado a cada 3 meses (ADR-0059).
+- Roteiro de restauração em [restauracao.md](restauracao.md), testado a cada 3 meses, com o registro de cada teste na própria página (ADR-0059).
 
 ## CI/CD
 
