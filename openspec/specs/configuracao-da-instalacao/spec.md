@@ -186,37 +186,9 @@ O administrador MUST poder escolher, nas Regras gerais das Configurações gerai
 - **WHEN** alguém pede para guardar as notificações por 0 dias ou por mais de 365
 - **THEN** a API recusa com 400 e nada muda
 
-### Requirement: Cor secundária
-
-O administrador MUST poder escolher uma cor secundária em hexadecimal, qualquer cor, ou nenhuma. Sem ela, as telas MUST usar o design system. Com ela, nos dois temas, a barra lateral, a linha selecionada, a notificação não lida, a menção e o painel da entrada MUST segui-la, com os textos sobre ela com contraste de 4,5:1; as cores de status MUST NOT mudar. Uma cor fora do formato MUST ser recusada (ADR-0100).
-
-#### Scenario: Sem cor secundária
-- **WHEN** ninguém escolheu a cor secundária
-- **THEN** a barra lateral, os destaques e o painel da entrada usam as cores do design system
-
-#### Scenario: Trocar a cor secundária
-- **WHEN** o administrador escolhe um azul-marinho como cor secundária e salva
-- **THEN** a barra lateral passa a ser azul-marinho no tema claro e um tom escuro dele no escuro, a linha selecionada ganha o matiz dele e o painel da entrada sai dele
-
-#### Scenario: Contraste na barra lateral
-- **WHEN** a cor secundária é clara, escura, branca ou preta
-- **THEN** os textos, os contadores, o item ativo e o nome da instalação na barra lateral e o texto do painel da entrada têm contraste de pelo menos 4,5:1, nos dois temas
-
-#### Scenario: Cor secundária inválida
-- **WHEN** o administrador envia uma cor secundária fora do formato `#RRGGBB`
-- **THEN** a API responde 400 e nada muda
-
-#### Scenario: Cor secundária pela tela
-- **WHEN** o administrador digita a cor secundária nas Configurações gerais
-- **THEN** a Prévia mostra a barra lateral com a cor antes de salvar, e "Sem cor secundária" volta ao design system
-
-#### Scenario: Cor secundária e logo escuro na auditoria
-- **WHEN** o administrador troca a cor secundária e envia o logo para o tema escuro
-- **THEN** a auditoria registra a cor e o nome do arquivo do logo
-
 ### Requirement: Logo para o tema escuro
 
-O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, opcional, com as regras do logo. A barra lateral escura (o tema escuro, ou uma cor secundária escura) MUST mostrar o logo escuro, quando há; sem ele, o logo. O selo do painel da entrada MUST continuar com o logo (ADR-0100).
+O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, opcional, com as regras do logo. A barra lateral escura (a do tema escuro) MUST mostrar o logo escuro, quando há; sem ele, o logo. No tema claro, a barra lateral MUST mostrar o logo. O selo do painel da entrada MUST continuar com o logo (ADR-0100, ADR-0103).
 
 #### Scenario: Logo para o tema escuro pela API
 - **WHEN** o administrador envia o logo para o tema escuro e depois o remove
@@ -230,46 +202,22 @@ O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, 
 - **WHEN** a barra lateral é escura e a instalação tem o logo escuro
 - **THEN** a barra lateral e a Prévia mostram o logo escuro, e o selo da entrada mostra o logo
 
+#### Scenario: Logo claro na barra lateral clara
+- **WHEN** o tema é o claro e a instalação tem os dois logos
+- **THEN** a barra lateral e a Prévia mostram o logo
+
 #### Scenario: Sem logo escuro
 - **WHEN** a barra lateral é escura e a instalação não tem o logo escuro
 - **THEN** a barra lateral mostra o logo
 
+#### Scenario: Logo escuro na auditoria
+- **WHEN** o administrador envia o logo para o tema escuro
+- **THEN** a auditoria registra o nome do arquivo
+
 ### Requirement: Seletor de cores
 
-Clicar na amostra da cor principal ou da secundária MUST abrir o seletor de cores do navegador, e a cor escolhida MUST ir para o campo em hexadecimal, com as regras de quem digita (ADR-0100).
+Clicar na amostra da cor principal MUST abrir o seletor de cores do navegador, e a cor escolhida MUST ir para o campo em hexadecimal, com as regras de quem digita (ADR-0100).
 
 #### Scenario: Escolher a cor pelo seletor
-- **WHEN** o administrador escolhe as cores no seletor
-- **THEN** os campos mostram as cores em hexadecimal e o formulário fica pronto para salvar
-
-### Requirement: Cores das mensagens
-
-O administrador MUST poder escolher uma cor, em hexadecimal, para as mensagens de cada papel da conversa dos chamados (solicitante, responsável, gerente do projeto, líder técnico, desenvolvimento e funcional), ou voltar ao padrão. Com a cor, nos dois temas, o cartão, o selo, o nome e o avatar do papel MUST segui-la, com os cartões claros no tema claro e escuros no escuro, e o selo, o nome e as iniciais do avatar com 4,5:1. Uma cor fora do formato MUST ser recusada (ADR-0101).
-
-#### Scenario: Cores padrão das mensagens
-- **WHEN** ninguém escolheu as cores das mensagens
-- **THEN** a conversa usa as cores do design system
-
-#### Scenario: Trocar as cores das mensagens
-- **WHEN** o administrador escolhe as cores do responsável e do desenvolvimento e salva
-- **THEN** a marca da instalação traz as duas cores, e depois "Restaurar padrão" de todas volta ao design system
-
-#### Scenario: Contraste das mensagens
-- **WHEN** a cor de um papel é clara, escura, branca ou preta
-- **THEN** o selo e o nome têm 4,5:1 sobre o selo e o cartão, as iniciais do avatar têm 4,5:1, e os cartões continuam claros no tema claro e escuros no escuro
-
-#### Scenario: Cor de mensagem inválida
-- **WHEN** o administrador envia uma cor de mensagem fora do formato
-- **THEN** a API responde 400 e nada muda
-
-#### Scenario: Cores das mensagens pela tela
-- **WHEN** o administrador escolhe a cor do responsável em "Mensagens dos chamados"
-- **THEN** a prévia mostra a mensagem do responsável na cor antes de salvar, e depois de salvar a cor vale em todas as telas
-
-#### Scenario: Cor de mensagem fora do formato
-- **WHEN** o administrador digita uma cor de mensagem que não é hexadecimal
-- **THEN** o campo mostra o erro e nada é enviado
-
-#### Scenario: Cores das mensagens na auditoria
-- **WHEN** o administrador troca a cor das mensagens do líder técnico
-- **THEN** a auditoria registra "Cor das mensagens do líder técnico" com a cor nova
+- **WHEN** o administrador escolhe a cor principal no seletor
+- **THEN** o campo mostra a cor em hexadecimal e o formulário fica pronto para salvar
