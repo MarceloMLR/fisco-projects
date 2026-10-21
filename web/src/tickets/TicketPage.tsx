@@ -174,7 +174,7 @@ function SidePanel({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
         <PersonAvatar
           name={name}
-          tone={person === undefined ? 'requester' : toneOf[person.role]}
+          tone={person === undefined ? 'neutral' : toneOf[person.role]}
           size="sm"
         />
         <Box

@@ -110,7 +110,7 @@ export function AttachmentChip({ number, attachment }: { number: number; attachm
 export function RoleTag({ role }: { role: ParticipantRole }) {
   const { t } = useTranslation();
   const tone = toneOf[role];
-  const neutral = tone === 'requester';
+  const neutral = tone === 'neutral';
   return (
     <Box
       component="span"
@@ -133,7 +133,7 @@ export function RoleTag({ role }: { role: ParticipantRole }) {
   );
 }
 
-/** The avatar of a person in the color of the part (ADR-0069); the requester and the others in the neutral one. */
+/** The avatar of a person in the color of the part (ADR-0069, ADR-0104); whoever has no color of a part in the neutral one. */
 export function PersonAvatar({
   name,
   tone,
@@ -143,7 +143,7 @@ export function PersonAvatar({
   tone: MessageTone;
   size?: 'sm' | 'md';
 }) {
-  return <Avatar name={name} size={size} tone={tone === 'requester' ? undefined : tone} />;
+  return <Avatar name={name} size={size} tone={tone === 'neutral' ? undefined : tone} />;
 }
 
 /**
@@ -394,7 +394,7 @@ export function TicketConversation({
               color: 'var(--text-secondary)',
             }}
           >
-            <Avatar name={requester.name} size="sm" />
+            <PersonAvatar name={requester.name} tone="requester" size="sm" />
             <Box component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
               {requester.name}
             </Box>

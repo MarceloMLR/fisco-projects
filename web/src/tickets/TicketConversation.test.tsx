@@ -106,6 +106,27 @@ describe('Conversa pela tela', () => {
     ).toBeVisible();
   });
 
+  it('Solicitante em rosa e quem não tem papel em cinza', async () => {
+    ticket = {
+      ...ticket,
+      participants: [...ticket.participants, { ...demoPeople.paulo, role: 'Administrator' }],
+      messages: [
+        message(1, demoPeople.carla.id, 'A nota 3381 foi recusada'),
+        message(2, demoPeople.paulo.id, 'Acompanhando'),
+      ],
+    };
+    await openTicket();
+
+    const list = screen.getByRole('list', { name: text.conversation.messages });
+    const carla = within(list).getByRole('article', { name: 'Mensagem de Carla Mendes' });
+    const paulo = within(list).getByRole('article', { name: 'Mensagem de Paulo Nogueira' });
+    // The requester has a color of the part, as the others (ADR-0104); the Administrator outside the project, the grey.
+    expect(carla.closest('li')?.dataset.tone).toBe('requester');
+    expect(paulo.closest('li')?.dataset.tone).toBe('neutral');
+    expect(within(carla).getByText(text.roles.Requester)).toBeVisible();
+    expect(within(paulo).getByText(text.roles.Administrator)).toBeVisible();
+  });
+
   it('Interações antigas recolhidas', async () => {
     ticket = {
       ...ticket,

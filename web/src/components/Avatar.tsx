@@ -19,8 +19,8 @@ export function Avatar({
 }: {
   name?: string;
   size?: keyof typeof sizes;
-  /** The color of the part of the person in a ticket (avatar-*, ADR-0069), with white initials. */
-  tone?: 'owner' | 'manager' | 'techlead' | 'dev' | 'functional';
+  /** The color of the part of the person in a ticket (avatar-*, ADR-0069, ADR-0104), with white initials. */
+  tone?: 'requester' | 'owner' | 'manager' | 'techlead' | 'dev' | 'functional';
 }) {
   const { size: diameter, fontSize, icon } = sizes[size];
   const empty = name === undefined;
