@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
@@ -37,6 +38,7 @@ public sealed record ScheduleItemResponse(
     int LateDays,
     bool CanUpdateProgress,
     ScheduleOwnerResponse? Owner,
+    [property: Description("The client of the project is in charge of the task (ADR-0102).")] bool OwnedByClient,
     IReadOnlyList<Guid> PredecessorIds,
     Guid? ParentId,
     bool HasSubtasks,
@@ -106,7 +108,8 @@ public sealed record NewScheduleItemRequest(
     Guid? OwnerId,
     int Progress,
     IReadOnlyList<Guid>? PredecessorIds,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false);
 
 /// <summary>
 /// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
@@ -121,7 +124,8 @@ public sealed record ScheduleItemRequest(
     Guid? OwnerId,
     int? Progress,
     IReadOnlyList<Guid>? PredecessorIds,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -336,7 +340,8 @@ internal static class ScheduleEndpoints
                 request.OwnerId,
                 request.Progress,
                 request.PredecessorIds,
-                request.ParentId),
+                request.ParentId,
+                request.OwnedByClient),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -370,7 +375,8 @@ internal static class ScheduleEndpoints
                 request.OwnerId,
                 request.Progress,
                 request.PredecessorIds,
-                request.ParentId),
+                request.ParentId,
+                request.OwnedByClient),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -468,6 +474,7 @@ internal static class ScheduleEndpoints
             item.OwnerId is { } ownerId
                 ? new ScheduleOwnerResponse(ownerId, view.OwnerNames.TryGetValue(ownerId, out var name) ? name : string.Empty)
                 : null,
+            item.OwnedByClient,
             view.Predecessors.TryGetValue(item.Id, out var predecessors) ? predecessors : [],
             item.ParentId,
             view.Figures.Summaries.Contains(item.Id),

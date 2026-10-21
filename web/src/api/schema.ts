@@ -2600,6 +2600,11 @@ export interface components {
             predecessorIds: null | string[];
             /** Format: uuid */
             parentId?: null | string;
+            /**
+             * @description The client of the project is in charge of the task, without an owner (ADR-0102).
+             * @default false
+             */
+            ownedByClient: boolean;
         };
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
@@ -3092,6 +3097,11 @@ export interface components {
             predecessorIds: null | string[];
             /** Format: uuid */
             parentId?: null | string;
+            /**
+             * @description The client of the project is in charge of the task, without an owner (ADR-0102).
+             * @default false
+             */
+            ownedByClient: boolean;
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
@@ -3128,6 +3138,8 @@ export interface components {
             lateDays: number;
             canUpdateProgress: boolean;
             owner: null | components["schemas"]["ScheduleOwnerResponse"];
+            /** @description The client of the project is in charge of the task (ADR-0102). */
+            ownedByClient: boolean;
             predecessorIds: string[];
             /** Format: uuid */
             parentId: null | string;

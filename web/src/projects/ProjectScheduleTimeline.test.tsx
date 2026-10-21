@@ -320,6 +320,8 @@ describe('Ligar duas barras', () => {
         start: '2026-10-23',
         duration: 5,
         ownerId: tests.owner?.id,
+        // The client in charge stays as it was (ADR-0102).
+        ownedByClient: false,
         progress: null,
         predecessorIds: [itemNamed('Parametrizar regras de ICMS').id, invoices.id],
         // It stays where it is, right in the phase (ADR-0088).

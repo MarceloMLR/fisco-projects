@@ -22,14 +22,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 9 | 7 |
 | 2. Acesso e administração | 15 | 15 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 12 | 11 |
+| 4. Cronograma | 12 | 12 |
 | 5. Chamados | 10 | 10 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **70** | **57** |
+| **Total** | **70** | **58** |
 
 ## 1. Fundação
 
@@ -80,7 +80,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | --- | --- | --- | --- | --- |
 | Cronograma-1 | `cronograma` | Fases, tarefas e marcos em dias úteis, dependências que empurram, progresso ponderado, atraso, vista em lista | 0019, 0020 | Concluída em 19/10/2026 ([#25](https://github.com/MarceloMLR/fisco-projects/pull/25)) |
 | Cronograma-2 | `progresso-das-tarefas` | Iniciar e Concluir, quem atualiza o quê, marco atingido | 0020, 0043 | Concluída em 19/10/2026 ([#26](https://github.com/MarceloMLR/fisco-projects/pull/26)) |
-| Cronograma-2.1 | `cliente-como-responsavel` | O cliente do projeto como responsável de tarefas, a pedido de Marcelo | 0007, 0019, 0020 | Planejada |
+| Cronograma-2.1 | `cliente-como-responsavel` | O cliente do projeto como responsável de tarefas, a pedido de Marcelo | 0007, 0019, 0020 | Concluída em 21/10/2026 ([#64](https://github.com/MarceloMLR/fisco-projects/pull/64)) |
 | Cronograma-3 | `linha-do-tempo` | Gantt do Syncfusion isolado em `ScheduleGantt`, arrastar, zoom, ajuste ao espaço, Expandir | 0051, 0071 | Concluída em 19/10/2026 ([#27](https://github.com/MarceloMLR/fisco-projects/pull/27)) |
 | Cronograma-3.1 | `dados-de-demonstracao` | Comando que carrega os dados fictícios de demonstração pela API, com datas relativas ao dia, a pedido de Marcelo | 0078, 0089 | Concluída em 19/10/2026 ([#28](https://github.com/MarceloMLR/fisco-projects/pull/28)) |
 | Cronograma-3.2 | `mais-dados-de-demonstracao` | Chamados em todos os projetos e status, com conversas longas, anexos, prioridade, quem acompanha e fornecedores, a pedido de Marcelo | 0089 | Concluída em 20/10/2026 ([#55](https://github.com/MarceloMLR/fisco-projects/pull/55)) |

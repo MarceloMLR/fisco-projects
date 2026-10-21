@@ -20,6 +20,7 @@ import {
   noOwner,
   noParent,
   type ScheduleItemValues,
+  clientOwner,
 } from './scheduleItemValues';
 
 /** A row of fields side by side, with the columns given; one under the other on a narrow screen. */
@@ -73,6 +74,15 @@ export function ScheduleItemFields({
   const phaseOptions = schedule.phases.map((phase) => ({ value: phase.id, label: phase.name }));
   const ownerOptions = [
     { value: noOwner, label: t('projects.schedule.noOwner') },
+    // The client of the project may be in charge of a task, as its tests (ADR-0102).
+    ...(project.client === null
+      ? []
+      : [
+          {
+            value: clientOwner,
+            label: t('projects.schedule.form.clientOwner', { name: project.client.name }),
+          },
+        ]),
     ...project.members
       .filter((member) => member.role !== 'Viewer')
       .toSorted((one, other) => one.name.localeCompare(other.name, 'pt-BR'))

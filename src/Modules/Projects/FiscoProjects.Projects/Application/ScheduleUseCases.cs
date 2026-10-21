@@ -450,8 +450,9 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 /// <summary>
 /// The form of a task or milestone: the phase, the name, the start, the duration in business days (zero for a
 /// milestone), the owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a
-/// new item), the items it depends on and the task it is in (ADR-0088). A task with subtasks takes only the phase, the
-/// name and the owner; its start and duration are not looked at.
+/// new item), the items it depends on, the task it is in (ADR-0088) and whether the client of the project is in charge
+/// instead of a person (ADR-0102). A task with subtasks takes only the phase, the name and the owner; its start and
+/// duration are not looked at.
 /// </summary>
 public sealed record ScheduleItemForm(
     Guid PhaseId,
@@ -461,7 +462,8 @@ public sealed record ScheduleItemForm(
     Guid? OwnerId,
     int? Progress,
     IReadOnlyCollection<Guid>? PredecessorIds,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    bool OwnedByClient = false);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
@@ -500,7 +502,10 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Progress);
         }
 
-        if ((kind == ScheduleItemKind.Milestone && form.OwnerId is not null) || !ScheduleEditing.MayOwn(project, form.OwnerId))
+        // The client is in charge only of a task of a project with a client, and never with a person (ADR-0102).
+        if ((kind == ScheduleItemKind.Milestone && (form.OwnerId is not null || form.OwnedByClient))
+            || !ScheduleEditing.MayOwn(project, form.OwnerId)
+            || (form.OwnedByClient && (form.OwnerId is not null || project.ClientId is null)))
         {
             invalid.Add(ScheduleField.Owner);
         }
@@ -521,7 +526,15 @@ internal static class ScheduleItemChecks
         return invalid.Count > 0
             ? (null, invalid)
             : (new ScheduleItemPlan(
-                form.PhaseId, name!, form.Start, form.Duration, form.OwnerId, form.Progress, [.. predecessors.Distinct()], form.ParentId), invalid);
+                form.PhaseId,
+                name!,
+                form.Start,
+                form.Duration,
+                form.OwnerId,
+                form.Progress,
+                [.. predecessors.Distinct()],
+                form.ParentId,
+                form.OwnedByClient), invalid);
     }
 }
 
@@ -795,7 +808,13 @@ public sealed record ExportedFile(string Name, string MediaType, string Content)
 /// dates the server computed, the calendar of the installation and the baseline.
 /// </summary>
 public sealed class ExportScheduleToMsProject(
-    IProjectStore projects, IScheduleStore schedules, IUserDirectory users, IWorkCalendar calendar, InstallationClock clock, TimeProvider time)
+    IProjectStore projects,
+    IScheduleStore schedules,
+    IUserDirectory users,
+    IWorkCalendar calendar,
+    InstallationClock clock,
+    TimeProvider time,
+    IClientStore clients)
 {
     /// <returns>The file, or null when the project does not exist for the person.</returns>
     public async Task<ExportedFile?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -811,8 +830,9 @@ public sealed class ExportScheduleToMsProject(
         var days = await calendar.GetAsync(cancellationToken);
         var names = await PeopleNames.OfAsync(
             users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
+        var client = project.ClientId is { } clientId ? await clients.FindAsync(clientId, cancellationToken) : null;
         var document = MsProjectExport.Of(
-            project.Code, project.Name, schedule, figures, days, names, time.GetUtcNow().UtcDateTime);
+            project.Code, project.Name, schedule, figures, days, names, time.GetUtcNow().UtcDateTime, client?.Name);
         return new ExportedFile($"{project.Code}-cronograma.xml", "application/xml", document.Declaration + Environment.NewLine + document);
     }
 }

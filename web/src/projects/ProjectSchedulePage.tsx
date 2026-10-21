@@ -33,6 +33,7 @@ import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Dialog } from '../components/Dialog';
 import { DueDate } from '../components/DueDate';
+import { LogoTile } from '../components/LogoTile';
 import { ProgressBar } from '../components/ProgressBar';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { formatDayText } from '../format/dates';
@@ -52,6 +53,7 @@ import {
   type ScheduleRow,
   scheduleRows,
   showsDelay,
+  ownerText,
 } from './schedule';
 import { ScheduleItemFields } from './ScheduleItemFields';
 import { MilestoneState, TaskProgress } from './ScheduleItemProgress';
@@ -275,6 +277,19 @@ export function ProjectSchedulePage() {
             return null;
           }
           const owner = row.item.owner;
+          // The client of the project in charge of the task, with its logo (ADR-0102).
+          if (row.item.ownedByClient) {
+            return (
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}
+              >
+                <LogoTile name={project.client?.name ?? ''} src={project.client?.logoUrl} />
+                <Box component="span" sx={ellipsisSx}>
+                  {ownerText(row.item, project.client?.name ?? null, t)}
+                </Box>
+              </Box>
+            );
+          }
           return owner === null ? (
             <Box component="span" sx={secondarySx}>
               {t('projects.schedule.noOwner')}
@@ -328,7 +343,7 @@ export function ProjectSchedulePage() {
         ),
       },
     ],
-    [t, schedule, collapsed, toggleSubtasks],
+    [t, schedule, collapsed, toggleSubtasks, project.client],
   );
 
   const footer = useCallback(
@@ -1165,7 +1180,9 @@ function ItemDetails({
             <dt>{t('projects.schedule.details.duration')}</dt>
             <dd>{t('projects.schedule.duration', { count: item.duration })}</dd>
             <dt>{t('projects.schedule.details.owner')}</dt>
-            <dd>{item.owner?.name ?? t('projects.schedule.noOwner')}</dd>
+            <dd>
+              {ownerText(item, project.client?.name ?? null, t) ?? t('projects.schedule.noOwner')}
+            </dd>
           </>
         )}
         {subtasks === 0 && (

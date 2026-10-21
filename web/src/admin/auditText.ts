@@ -139,6 +139,7 @@ type ScheduleItemField =
   | 'End'
   | 'Progress'
   | 'OwnerId'
+  | 'OwnedByClient'
   | 'CompletedOn'
   | 'ReachedOn';
 const scheduleItemFields: readonly string[] = [
@@ -151,6 +152,7 @@ const scheduleItemFields: readonly string[] = [
   'End',
   'Progress',
   'OwnerId',
+  'OwnedByClient',
   'CompletedOn',
   'ReachedOn',
 ] satisfies ScheduleItemField[];
@@ -393,6 +395,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   }
   if (entry.itemType === 'ProjectMember' && field === 'Role' && isProjectRole(value)) {
     return t(`projects.roles.${value}`);
+  }
+  if (entry.itemType === 'ScheduleItem' && field === 'OwnedByClient') {
+    return t(value === 'true' ? 'audit.details.yes' : 'audit.details.no');
   }
   if (entry.itemType === 'ScheduleItem' && field === 'Kind' && isScheduleItemKind(value)) {
     return t(`projects.schedule.kinds.${value}`);

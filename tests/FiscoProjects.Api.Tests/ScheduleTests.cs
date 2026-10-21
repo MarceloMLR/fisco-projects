@@ -826,6 +826,48 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             .Should().Contain(["Configuração", "Parametrizar regras de ICMS", "Aceite da configuração"]);
     }
 
+    [Fact(DisplayName = "Cliente como responsável pela API")]
+    public async Task ClientInCharge_IsShown_Audited_AndExported()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        var client = await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, "/api/clients", new { name = "Cliente Fictício" }));
+        (await SendAsync(scene.Admin, HttpMethod.Put, $"/api/projects/{scene.ProjectId}", new
+        {
+            code = "ERP-FIN",
+            name = "Implantação do ERP financeiro",
+            description = (string?)null,
+            clientId = client,
+        })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var marina = await app.SignInAsync(scene.Marina);
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        var changed = await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}", new
+        {
+            phaseId = scene.Phase,
+            name = "Parametrizar regras de ICMS",
+            start = "2026-10-13",
+            duration = 3,
+            ownerId = (Guid?)null,
+            progress = (int?)null,
+            predecessorIds = Array.Empty<Guid>(),
+            ownedByClient = true,
+        });
+
+        changed.StatusCode.Should().Be(HttpStatusCode.OK);
+        var task = (await marina.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation)).GetProperty("phases")[0].GetProperty("items")[0];
+        task.GetProperty("ownedByClient").GetBoolean().Should().BeTrue();
+        task.GetProperty("owner").ValueKind.Should().Be(JsonValueKind.Null);
+        var updated = (await scene.Admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=ScheduleItem&pageSize=100", Cancellation))
+            .GetProperty("items")[0];
+        Values(updated, "OwnedByClient").Should().Be(("false", "true"));
+        var document = System.Xml.Linq.XDocument.Parse(await marina.GetStringAsync($"{scene.Path}/ms-project", Cancellation));
+        document.Descendants().Where(element => element.Name.LocalName == "Resource")
+            .Select(resource => resource.Elements().Single(element => element.Name.LocalName == "Name").Value)
+            .Should().Equal("Cliente Fictício");
+        document.Descendants().Where(element => element.Name.LocalName == "Assignment").Should().ContainSingle();
+    }
+
     [Fact(DisplayName = "Remover o responsável de tarefas")]
     public async Task RemovedPerson_LeavesTheTasksWithoutOwner_AndItIsAudited()
     {

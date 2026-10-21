@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import type { Schedule } from '../api/client';
 import { type DayValue, formatDayMonthText } from '../format/dates';
 import { DueDate } from '../components/DueDate';
-import { lateText, milestoneStatus } from '../projects/schedule';
+import { lateText, milestoneStatus, ownerText } from '../projects/schedule';
 import { ganttPeriod, type GanttScale, ganttUnitWidth } from './ganttLayout';
 import {
   dateOfDay,
@@ -80,6 +80,8 @@ export interface ScheduleGanttProps {
   showCritical?: boolean;
   /** The Syncfusion license of the installation (ADR-0087); none shows the notice of the trial. */
   license: string | null;
+  /** The name of the client of the project, for the tasks in its charge (ADR-0102). */
+  clientName?: string | null;
   onChoose: (target: GanttTarget) => void;
   onMove: (itemId: string, start: DayValue) => void;
   onResize: (itemId: string, start: DayValue, end: DayValue) => void;
@@ -139,6 +141,7 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       showBaseline = false,
       showCritical = false,
       license,
+      clientName = null,
       onChoose,
       onMove,
       onResize,
@@ -433,7 +436,9 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
                   width={columnWidth.owner}
                   template={(data: unknown) => {
                     const target = rowOf(data);
-                    return target?.kind === 'item' ? (target.item.owner?.name ?? '') : '';
+                    return target?.kind === 'item'
+                      ? (ownerText(target.item, clientName, t) ?? '')
+                      : '';
                   }}
                 />
               )}

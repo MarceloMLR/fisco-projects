@@ -135,6 +135,7 @@ export function ScheduleTimeline({
             start: successor.start,
             duration: successor.duration,
             ownerId: successor.owner?.id ?? null,
+            ownedByClient: successor.ownedByClient,
             progress: null,
             predecessorIds: [...successor.predecessorIds, predecessorId],
             parentId: successor.parentId,
@@ -208,6 +209,7 @@ export function ScheduleTimeline({
             showBaseline={display.baseline}
             showCritical={display.critical}
             license={settings.data?.timelineLicense ?? null}
+            clientName={project.client?.name ?? null}
             onChoose={onChoose}
             onMove={move}
             onResize={resize}

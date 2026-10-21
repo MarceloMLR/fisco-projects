@@ -382,6 +382,7 @@ describe('Editar o cronograma pela tela', () => {
             lateDays: 0,
             canUpdateProgress: true,
             owner: { id: demoPeople.rafael.id, name: demoPeople.rafael.name },
+            ownedByClient: false,
             predecessorIds: [itemNamed('Mapear processos fiscais').id],
             parentId: null,
             hasSubtasks: false,
@@ -430,6 +431,7 @@ describe('Editar o cronograma pela tela', () => {
         predecessorIds: [itemNamed('Mapear processos fiscais').id],
         // Right in the phase (ADR-0088).
         parentId: null,
+        ownedByClient: false,
       },
     ]);
     await waitFor(() => {
@@ -557,6 +559,7 @@ describe('Editar o cronograma pela tela', () => {
         predecessorIds: [itemNamed('Reunião de abertura').id],
         // Right in the phase (ADR-0088).
         parentId: null,
+        ownedByClient: false,
       },
     ]);
     // The details start again from what the API computed.
@@ -1078,5 +1081,61 @@ describe('Endereço do detalhe', () => {
     });
 
     expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+  });
+});
+
+// Spec: cronograma, requirement "Cliente como responsável" (ADR-0102).
+describe('Cliente como responsável', () => {
+  it('Cliente como responsável pela tela', async () => {
+    const changes: unknown[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        const body = (await request.json()) as { ownerId: string | null; ownedByClient: boolean };
+        changes.push(body);
+        Object.assign(itemNamed('Mapear processos fiscais'), {
+          owner: null,
+          ownedByClient: body.ownedByClient,
+        });
+        schedule = { ...schedule };
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    const client = project.client?.name ?? '';
+    await openSchedule();
+
+    const drawer = await chooseItem('Mapear processos fiscais');
+    fireEvent.mouseDown(within(drawer).getByRole('combobox', { name: text.form.owner }));
+    fireEvent.click(
+      await screen.findByRole('option', {
+        name: text.form.clientOwner.replace('{{name}}', client),
+      }),
+    );
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    await waitFor(() => {
+      expect(changes).toEqual([expect.objectContaining({ ownerId: null, ownedByClient: true })]);
+    });
+    await closeDrawer(drawer);
+    await waitFor(() => {
+      expect(
+        within(rowOf('Mapear processos fiscais')).getByText(
+          text.clientOwner.replace('{{name}}', client),
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('Cliente como responsável sem cliente pela tela', async () => {
+    project = { ...project, client: null };
+    await openSchedule();
+
+    const drawer = await chooseItem('Mapear processos fiscais');
+    fireEvent.mouseDown(within(drawer).getByRole('combobox', { name: text.form.owner }));
+
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).not.toContain(
+      text.clientOwnerWithoutClient,
+    );
+    expect(options.some((option) => option.textContent.endsWith('(cliente)'))).toBe(false);
   });
 });

@@ -304,6 +304,7 @@ async function loadProject(
             start: dayFrom(firstDay, item.day),
             duration: item.duration,
             ownerId: item.owner === undefined ? null : personOf(item.owner).id,
+            ownedByClient: item.byClient === true,
             progress: 0,
             predecessorIds: (item.after ?? []).map((name) => idOf(name, item.name)),
             parentId: item.inside === undefined ? null : idOf(item.inside, item.name),
