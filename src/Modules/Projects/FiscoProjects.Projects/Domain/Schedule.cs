@@ -16,8 +16,9 @@ public sealed class ScheduleCycleException() : InvalidOperationException("The de
 /// <summary>
 /// What a task or a milestone is asked to be: the phase, the name, the start, the duration (zero for a milestone), the
 /// owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a new item), the
-/// items it depends on and the task it is in, none when it is right in the phase (ADR-0088). For a task with subtasks,
-/// only the phase, the name and the owner count: its dates and progress come from them.
+/// items it depends on, the task it is in, none when it is right in the phase (ADR-0088), and whether the client of the
+/// project is in charge of the task instead of a person (ADR-0102). For a task with subtasks, only the phase, the name
+/// and the owner count: its dates and progress come from them.
 /// </summary>
 public sealed record ScheduleItemPlan(
     Guid PhaseId,
@@ -27,7 +28,8 @@ public sealed record ScheduleItemPlan(
     Guid? OwnerId,
     int? Progress,
     IReadOnlyCollection<Guid> PredecessorIds,
-    Guid? ParentId = null);
+    Guid? ParentId = null,
+    bool OwnedByClient = false);
 
 /// <summary>
 /// The schedule of a project (ADR-0019): phases and, in them, tasks and milestones, in business days of the calendar of
@@ -328,7 +330,8 @@ public sealed class Schedule : Entity
             item.OwnerId,
             Progress: null,
             [.. PredecessorsOf(itemId).Select(predecessor => predecessor.Id)],
-            item.ParentId);
+            item.ParentId,
+            item.OwnedByClient);
         return ChangeItem(itemId, plan, days, today);
     }
 
@@ -625,14 +628,15 @@ public sealed class Schedule : Entity
         var summary = IsSummary(item.Id);
         if ((!summary && (!IsValidDay(plan.Start) || !IsValidDuration(item.Kind, plan.Duration)))
             || (plan.Progress is { } progress && (summary || !IsValidProgress(item.Kind, progress)))
-            || (item.Kind == ScheduleItemKind.Milestone && plan.OwnerId is not null)
+            || (item.Kind == ScheduleItemKind.Milestone && (plan.OwnerId is not null || plan.OwnedByClient))
+            || (plan.OwnerId is not null && plan.OwnedByClient)
             || (plan.ParentId is { } parentId && !MayHold(parentId, item.Id, plan.PhaseId)))
         {
             throw new ArgumentException("The plan is not valid for the kind of item.", nameof(plan));
         }
 
         var name = NameOrThrow(ValidItemName(plan.Name), plan.Name);
-        item.Set(plan.PhaseId, name, summary ? item.Duration : plan.Duration, plan.OwnerId, plan.ParentId);
+        item.Set(plan.PhaseId, name, summary ? item.Duration : plan.Duration, plan.OwnerId, plan.ParentId, plan.OwnedByClient);
         if (summary)
         {
             foreach (var subtask in SubtasksOf(item.Id))
@@ -914,6 +918,12 @@ public sealed class ScheduleItem : Entity
     /// <summary>The person of the project in charge of the task; never for a milestone.</summary>
     public Guid? OwnerId { get; private set; }
 
+    /// <summary>
+    /// The client of the project is in charge of the task, as the tests or the approvals on its side, instead of a person
+    /// of the project (ADR-0102); never for a milestone, nor with an owner.
+    /// </summary>
+    public bool OwnedByClient { get; private set; }
+
     /// <summary>The day the task reached 100%, in the time zone of the installation; null below 100%.</summary>
     public DateOnly? CompletedOn { get; private set; }
 
@@ -937,13 +947,14 @@ public sealed class ScheduleItem : Entity
         return IsLate(today) ? days.CountBusinessDays(End.AddDays(1), today) : 0;
     }
 
-    internal void Set(Guid phaseId, string name, int duration, Guid? ownerId, Guid? parentId)
+    internal void Set(Guid phaseId, string name, int duration, Guid? ownerId, Guid? parentId, bool ownedByClient = false)
     {
         PhaseId = phaseId;
         Name = name;
         Duration = duration;
         OwnerId = ownerId;
         ParentId = parentId;
+        OwnedByClient = ownerId is null && ownedByClient;
     }
 
     /// <summary>A subtask goes with its task to another phase.</summary>
@@ -990,7 +1001,7 @@ public sealed class ScheduleItem : Entity
     internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
 
     internal ItemState State() =>
-        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn);
+        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient);
 
     /// <summary>Every field as it was; the kind never changes.</summary>
     internal void Restore(ItemState state)
@@ -1003,6 +1014,7 @@ public sealed class ScheduleItem : Entity
         End = state.End;
         Progress = state.Progress;
         OwnerId = state.OwnerId;
+        OwnedByClient = state.OwnedByClient;
         CompletedOn = state.CompletedOn;
         ReachedOn = state.ReachedOn;
     }

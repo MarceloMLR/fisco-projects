@@ -81,6 +81,9 @@ export type ProgressValues = z.input<typeof progressSchema>;
 /** The value of the owner field of a task without an owner (an empty value would show an empty select). */
 export const noOwner = 'none';
 
+/** The value of the owner field of a task the client of the project is in charge of (ADR-0102). */
+export const clientOwner = 'client';
+
 /** The value of "Dentro de" for an item right in the phase (ADR-0088). */
 export const noParent = 'phase';
 
@@ -106,7 +109,7 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     phaseId: item.phaseId,
     start: formatDayText(item.start),
     duration: String(item.duration),
-    ownerId: item.owner?.id ?? noOwner,
+    ownerId: item.ownedByClient ? clientOwner : (item.owner?.id ?? noOwner),
     predecessorIds: item.predecessorIds,
     parentId: item.parentId ?? noParent,
     summary: item.hasSubtasks,
@@ -126,7 +129,9 @@ export function bodyOf(values: ScheduleItemValues) {
     name: values.name.trim(),
     start: parseTypedDay(values.start) ?? '',
     duration: task ? Number(values.duration.trim()) : 0,
-    ownerId: task && values.ownerId !== noOwner ? values.ownerId : null,
+    ownerId:
+      task && values.ownerId !== noOwner && values.ownerId !== clientOwner ? values.ownerId : null,
+    ownedByClient: task && values.ownerId === clientOwner,
     predecessorIds: summary ? [] : values.predecessorIds,
     parentId: summary || values.parentId === noParent ? null : values.parentId,
   };

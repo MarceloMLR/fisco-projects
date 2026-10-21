@@ -178,6 +178,18 @@ describe('Carga dos dados de demonstração', () => {
       ownerId: idOf('marina'),
     });
     expect(lines.at(-2)).toContain('2026-10-05');
+    // The tests of the client are in its charge, without a person (ADR-0102).
+    const postedItems = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/schedule/items'))
+      .flatMap(([, posted]) => posted);
+    expect(
+      postedItems.find(
+        (item) => (item as { name?: string }).name === 'Testes com a equipe do cliente',
+      ),
+    ).toMatchObject({
+      ownerId: null,
+      ownedByClient: true,
+    });
     // And where to open the screens, with the code as it is now.
     expect(screensAddress).toBe('http://localhost:5173');
     expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');

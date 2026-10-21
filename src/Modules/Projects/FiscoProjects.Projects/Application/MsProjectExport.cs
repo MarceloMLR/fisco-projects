@@ -29,7 +29,8 @@ public static class MsProjectExport
         ScheduleFigures figures,
         IBusinessDays days,
         IReadOnlyDictionary<Guid, string> ownerNames,
-        DateTime createdAt)
+        DateTime createdAt,
+        string? clientName = null)
     {
         ArgumentNullException.ThrowIfNull(schedule);
         ArgumentNullException.ThrowIfNull(figures);
@@ -73,17 +74,28 @@ public static class MsProjectExport
                 line.Phase.Progress, days)));
 
         var owners = schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value).Distinct().ToList();
-        var resources = owners.Select((owner, index) => new XElement(Ns + "Resource",
+        // The client in charge of tasks is one more resource, after the people (ADR-0102).
+        var clientInCharge = clientName is not null && schedule.Items.Any(item => item.OwnedByClient);
+        var names = owners.Select(owner => ownerNames.TryGetValue(owner, out var ownerName) ? ownerName : string.Empty).ToList();
+        if (clientInCharge)
+        {
+            names.Add(clientName!);
+        }
+
+        var resources = names.Select((resourceName, index) => new XElement(Ns + "Resource",
             new XElement(Ns + "UID", index + 1),
             new XElement(Ns + "ID", index + 1),
-            new XElement(Ns + "Name", ownerNames.TryGetValue(owner, out var ownerName) ? ownerName : string.Empty),
+            new XElement(Ns + "Name", resourceName),
             new XElement(Ns + "Type", 1)));
+        int? ResourceOf(ScheduleItem item) => item.OwnerId is { } ownerId
+            ? owners.IndexOf(ownerId) + 1
+            : item.OwnedByClient && clientInCharge ? names.Count : null;
         var assignments = schedule.Items
-            .Where(item => item.OwnerId is not null && uids.ContainsKey(item.Id))
+            .Where(item => ResourceOf(item) is not null && uids.ContainsKey(item.Id))
             .Select((item, index) => new XElement(Ns + "Assignment",
                 new XElement(Ns + "UID", index + 1),
                 new XElement(Ns + "TaskUID", uids[item.Id]),
-                new XElement(Ns + "ResourceUID", owners.IndexOf(item.OwnerId!.Value) + 1),
+                new XElement(Ns + "ResourceUID", ResourceOf(item)),
                 new XElement(Ns + "Units", 1)));
 
         return new XDocument(

@@ -14,4 +14,4 @@
 
 ## 4. Documentação
 
-- [ ] 4.1 `CLAUDE.md` e roadmap
+- [x] 4.1 `CLAUDE.md` e roadmap

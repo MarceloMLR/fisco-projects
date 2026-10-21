@@ -65,6 +65,16 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
         _database.RunAsync<AddProjectMember, MemberAdded>(add => add.ExecuteAsync(
             _project, new NewProjectMember(userId, null, role), Paulo, Cancellation));
 
+    /// <summary>The project gets a client, as its manager does in "Editar dados".</summary>
+    private async Task SetClientAsync(string name)
+    {
+        var client = await _database.RunAsync<AddClient, ClientSaveResult>(add =>
+            add.ExecuteAsync(new ClientChanges(name, null, null), Cancellation));
+        var changed = await _database.RunAsync<ChangeProject, ProjectSaveResult>(change => change.ExecuteAsync(
+            _project, new ProjectChanges("ERP-FIN", "Implantação do ERP financeiro", null, client.Id), Marina, Cancellation));
+        changed.Outcome.Should().Be(ProjectSaveOutcome.Saved);
+    }
+
     private Task<ScheduleResult> AddPhaseAsync(ProjectViewer viewer, string? name) =>
         _database.RunAsync<AddSchedulePhase, ScheduleResult>(add => add.ExecuteAsync(_project, name, viewer, Cancellation));
 
@@ -282,6 +292,56 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
         (await ChangeItemAsync(Marina, id, TaskForm("Integrar NF-e", D(10, 19), 5, _beatriz))).Invalid.Should().Equal(ScheduleField.Owner);
 
         (await ItemAsync(id)).Item.OwnerId.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Cliente como responsável")]
+    public async Task Client_IsInCharge_OfATask_WithoutAPerson()
+    {
+        await SetClientAsync("Cliente Fictício");
+        var id = await AddTaskAsync("Testes do cliente", D(10, 19), 5);
+
+        var result = await ChangeItemAsync(Marina, id, TaskForm("Testes do cliente", D(10, 19), 5) with { OwnedByClient = true });
+
+        result.Outcome.Should().Be(ScheduleOutcome.Done);
+        var item = (await ItemAsync(id)).Item;
+        item.OwnedByClient.Should().BeTrue();
+        item.OwnerId.Should().BeNull();
+        // Only who edits the schedule updates the progress of a task of the client.
+        (await UpdateProgressAsync(new ProjectViewer(_diego, IsAdministrator: false), id, 50)).Outcome.Should().Be(ScheduleOutcome.Forbidden);
+        (await UpdateProgressAsync(Marina, id, 50)).Outcome.Should().Be(ScheduleOutcome.Done);
+
+        // Another person in charge takes the place of the client.
+        (await ChangeItemAsync(Marina, id, TaskForm("Testes do cliente", D(10, 19), 5, _diego))).Outcome.Should().Be(ScheduleOutcome.Done);
+        (await ItemAsync(id)).Item.OwnedByClient.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Cliente como responsável sem cliente")]
+    public async Task Client_IsNotInCharge_WithoutAClient_NorWithAPerson_NorOfAMilestone()
+    {
+        var id = await AddTaskAsync("Testes do cliente", D(10, 19), 5);
+
+        (await ChangeItemAsync(Marina, id, TaskForm("Testes do cliente", D(10, 19), 5) with { OwnedByClient = true }))
+            .Invalid.Should().Equal(ScheduleField.Owner);
+
+        await SetClientAsync("Cliente Fictício");
+        (await ChangeItemAsync(Marina, id, TaskForm("Testes do cliente", D(10, 19), 5, _diego) with { OwnedByClient = true }))
+            .Invalid.Should().Equal(ScheduleField.Owner);
+        (await AddItemAsync(Marina, Form(_phase, "Aceite do cliente", D(10, 26), 0) with { OwnedByClient = true }, ScheduleItemKind.Milestone))
+            .Invalid.Should().Equal(ScheduleField.Owner);
+        (await ItemAsync(id)).Item.OwnedByClient.Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Desfazer o cliente como responsável")]
+    public async Task ClientInCharge_IsUndone()
+    {
+        await SetClientAsync("Cliente Fictício");
+        var id = await AddTaskAsync("Testes do cliente", D(10, 19), 5);
+        await ChangeItemAsync(Marina, id, TaskForm("Testes do cliente", D(10, 19), 5) with { OwnedByClient = true });
+
+        var undone = await _database.RunAsync<UndoScheduleChange, ScheduleResult>(undo => undo.ExecuteAsync(_project, Marina, Cancellation));
+
+        undone.Outcome.Should().Be(ScheduleOutcome.Done);
+        (await ItemAsync(id)).Item.OwnedByClient.Should().BeFalse();
     }
 
     [Fact(DisplayName = "Dependência circular")]

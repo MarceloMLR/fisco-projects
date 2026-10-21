@@ -57,6 +57,26 @@ export function lateText(item: ScheduleItem, t: TFunction): string {
 }
 
 /** Every task and milestone of the schedule, in the order of the Lista. */
+/**
+ * Who is in charge of a task as the screens say it (ADR-0102): the person, the client of the project, or nobody
+ * (null). A task of the client of a project that lost its client says only "O cliente".
+ */
+export function ownerText(
+  item: Pick<ScheduleItem, 'owner' | 'ownedByClient'>,
+  clientName: string | null,
+  t: TFunction,
+): string | null {
+  if (item.owner !== null) {
+    return item.owner.name;
+  }
+  if (!item.ownedByClient) {
+    return null;
+  }
+  return clientName === null
+    ? t('projects.schedule.clientOwnerWithoutClient')
+    : t('projects.schedule.clientOwner', { name: clientName });
+}
+
 export function itemsOf(schedule: Schedule): ScheduleItem[] {
   return schedule.phases.flatMap((phase) => phase.items);
 }

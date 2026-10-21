@@ -356,6 +356,7 @@ function demoItem(
     baselineDeviation: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
+    ownedByClient: false,
     predecessorIds: [],
     parentId: null,
     hasSubtasks: false,

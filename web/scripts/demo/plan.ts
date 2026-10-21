@@ -69,6 +69,8 @@ export interface DemoItem {
   /** Business days of a task; zero for a milestone. */
   duration: number;
   owner?: DemoPerson;
+  /** The client of the project is in charge of the task, as its tests (ADR-0102). */
+  byClient?: boolean;
   progress?: number;
   /** The names of the items it depends on, of the same project. */
   after?: readonly string[];
@@ -360,8 +362,9 @@ export const demoProjects: readonly DemoProject[] = [
       {
         name: 'Homologação',
         items: [
+          // The tests on the side of the client, in its charge (ADR-0102).
           task('Testes com a equipe do cliente', 25, 2, {
-            owner: 'carla',
+            byClient: true,
             after: ['Executar testes'],
           }),
           milestone('Aceite da homologação', 29, { after: ['Testes com a equipe do cliente'] }),
