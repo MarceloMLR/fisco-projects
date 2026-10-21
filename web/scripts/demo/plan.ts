@@ -1801,6 +1801,42 @@ export const demoProjects: readonly DemoProject[] = [
       },
     ],
   },
+  // A project made in a training, to show the deletion by the Administrator (ADR-0041): "Excluir projeto" in
+  // "Ações do projeto", with what it has and the code to confirm.
+  {
+    code: 'TESTE-01',
+    name: 'Projeto de teste do treinamento',
+    client: null,
+    members: [['carla', 'Contributor']],
+    status: 'Paused',
+    phases: [
+      {
+        name: 'Treinamento',
+        items: [
+          task('Cadastrar o projeto de exemplo', 0, 2, { owner: 'carla', progress: 100 }),
+          milestone('Treinamento concluído', 3, { after: ['Cadastrar o projeto de exemplo'] }),
+        ],
+      },
+    ],
+    tickets: [
+      {
+        title: 'Chamado de exemplo do treinamento',
+        team: 'Functional',
+        priority: 'Low',
+        by: 'carla',
+        description:
+          'Chamado aberto no treinamento para mostrar a abertura. Pode ser apagado com o projeto.',
+      },
+    ],
+    links: [
+      {
+        title: 'Roteiro do treinamento',
+        url: 'https://treinamento.empresa.example/roteiro',
+        category: 'Outros',
+        by: 'carla',
+      },
+    ],
+  },
 ];
 
 const dayInMilliseconds = 24 * 60 * 60 * 1000;
