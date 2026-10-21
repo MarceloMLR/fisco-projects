@@ -25,10 +25,10 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 5. Chamados | 7 | 7 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
-| 8. Telas de síntese | 2 | 0 |
+| 8. Telas de síntese | 2 | 1 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **60** | **46** |
+| **Total** | **60** | **47** |
 
 ## 1. Fundação
 
@@ -117,7 +117,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Síntese-1 | `meu-trabalho` | Fila por urgência, meus projetos e próximos marcos | 0070, 0096 | PR aberto ([#53](https://github.com/MarceloMLR/fisco-projects/pull/53)) |
+| Síntese-1 | `meu-trabalho` | Fila por urgência, meus projetos e próximos marcos | 0070, 0096 | Concluída em 20/10/2026 ([#53](https://github.com/MarceloMLR/fisco-projects/pull/53)) |
 | Síntese-2 | `visao-geral-do-projeto` | "Está no prazo?" | 0073 | Planejada |
 
 ## 9. Microsoft 365 real
