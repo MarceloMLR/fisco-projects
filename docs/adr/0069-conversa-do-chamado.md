@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (cor do solicitante substituída pelo ADR-0104)
 date: 2026-10-17
 decision-makers: Marcelo Ribeiro
 ---

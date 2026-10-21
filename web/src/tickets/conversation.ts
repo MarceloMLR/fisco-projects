@@ -2,8 +2,12 @@ import type { Ticket } from '../api/client';
 
 export type ParticipantRole = Ticket['participants'][number]['role'];
 
-/** The color of each part in the conversation (ADR-0069): the tokens msg-*, role-* and avatar-* of the design system. */
-export type MessageTone = 'requester' | 'owner' | 'manager' | 'techlead' | 'dev' | 'functional';
+/**
+ * The color of each part in the conversation (ADR-0069, ADR-0104): the tokens msg-*, role-* and avatar-* of the design
+ * system; the requester in rose, and whoever has no color of a part (the Administrator outside the project, someone
+ * without a role in it) in the neutral grey.
+ */
+export type MessageTone = 'requester' | 'owner' | 'manager' | 'techlead' | 'dev' | 'functional' | 'neutral';
 
 export const toneOf: Record<ParticipantRole, MessageTone> = {
   Requester: 'requester',
@@ -12,8 +16,8 @@ export const toneOf: Record<ParticipantRole, MessageTone> = {
   TechLead: 'techlead',
   Development: 'dev',
   Functional: 'functional',
-  Administrator: 'requester',
-  Other: 'requester',
+  Administrator: 'neutral',
+  Other: 'neutral',
 };
 
 /** Above this many interactions, the older ones are folded (ADR-0069). */

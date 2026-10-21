@@ -126,7 +126,7 @@ Regras:
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
 | [0068](0068-times-dos-chamados-e-responsavel.md) | Chamados só para os times Funcional e Desenvolvimento, sem filas, com o responsável definido pela primeira resposta e trocado só pelos gestores | aceita | 2026-10-17 |
-| [0069](0069-conversa-do-chamado.md) | Conversa do chamado com cores por papel, rolagem própria e interações antigas recolhidas | aceita | 2026-10-17 |
+| [0069](0069-conversa-do-chamado.md) | Conversa do chamado com cores por papel, rolagem própria e interações antigas recolhidas | aceita (cor do solicitante substituída pelo ADR-0104) | 2026-10-17 |
 | [0070](0070-meu-trabalho-fila-por-urgencia.md) | Meu trabalho como fila única por urgência, com a saúde dos projetos e os próximos marcos | aceita | 2026-10-17 |
 | [0071](0071-cronograma-na-tela.md) | Cronograma na tela, com Linha do tempo que se ajusta ao espaço, Expandir e faixa de fases nos projetos | aceita | 2026-10-17 |
 | [0072](0072-gerente-e-lider-tecnico-na-criacao.md) | Gerente e líder técnico definidos na criação do projeto e mostrados no cabeçalho | aceita | 2026-10-17 |
@@ -166,3 +166,4 @@ Regras:
 | [0101](0101-cores-das-mensagens-dos-chamados.md) | Cores das mensagens dos chamados configuráveis por papel, com os tons calculados | substituída pelo ADR-0103 | 2026-10-21 |
 | [0102](0102-cliente-como-responsavel-de-tarefas.md) | O cliente do projeto como responsável de tarefas do cronograma | aceita | 2026-10-21 |
 | [0103](0103-so-a-cor-principal-na-marca.md) | Só a cor principal na marca da instalação, sem cor secundária nem cores das mensagens | aceita | 2026-10-21 |
+| [0104](0104-solicitante-em-rosa-na-conversa.md) | Solicitante em rosa na conversa do chamado | aceita | 2026-10-21 |
