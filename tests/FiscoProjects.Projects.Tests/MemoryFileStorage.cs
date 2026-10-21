@@ -49,4 +49,7 @@ internal sealed class MemoryFileStorage : IFileStorage
 
     public Task<bool> DeleteFolderIfEmptyAsync(string folderId, CancellationToken cancellationToken) =>
         Task.FromResult(false);
+
+    public Task<string?> FolderOfAsync(string itemId, CancellationToken cancellationToken) =>
+        Task.FromResult(_files.TryGetValue(itemId, out var file) ? file.FolderId : null);
 }

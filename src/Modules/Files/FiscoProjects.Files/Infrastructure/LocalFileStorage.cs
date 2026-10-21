@@ -160,6 +160,19 @@ internal sealed class LocalFileStorage : IFileStorage
         }
     }
 
+    public Task<string?> FolderOfAsync(string itemId, CancellationToken cancellationToken)
+    {
+        var relative = Relative(itemId);
+        var path = FullPath(relative);
+        if (relative.Length == 0 || (!File.Exists(path) && !Directory.Exists(path)))
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var separator = relative.LastIndexOf('/');
+        return Task.FromResult<string?>(separator < 0 ? null : relative[..separator]);
+    }
+
     private StoredFile StoreAsNewVersion(string temporary, string folder, string name, long size)
     {
         var relative = Join(folder, name);

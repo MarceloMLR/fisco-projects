@@ -16,6 +16,7 @@ internal sealed class DigestItemConfiguration : IEntityTypeConfiguration<DigestI
         item.Property(i => i.Key).HasMaxLength(DigestItem.KeyMaxLength);
         item.HasIndex(i => new { i.UserId, i.Key });
         item.HasIndex(i => i.CreatedAt);
+        item.HasIndex(i => i.ProjectId);
         item.ExcludeFromAudit();
     }
 }
@@ -44,6 +45,7 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
         notification.HasIndex(n => new { n.UserId, n.CreatedAt });
         notification.HasIndex(n => new { n.UserId, n.ReadAt });
         notification.HasIndex(n => n.CreatedAt);
+        notification.HasIndex(n => n.ProjectId);
         notification.ExcludeFromAudit();
     }
 }

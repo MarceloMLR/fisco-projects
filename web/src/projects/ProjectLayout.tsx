@@ -1,4 +1,5 @@
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
+import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -24,6 +25,7 @@ import { ApiError, projectClosingQuery, projectQuery, queryKeys } from '../api/q
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { Page } from '../shell/Page';
+import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { ProjectDialog } from './ProjectDialog';
 import { ProjectHeader } from './ProjectHeader';
 import type { ProjectOutlet } from './projectOutlet';
@@ -51,7 +53,7 @@ function problemField(problem: unknown, name: string): unknown {
 /**
  * The page of a project: the header (ProjectHeader) and the tab of the address, Visão geral, Cronograma, Chamados, Documentos or Membros,
  * each at its own address. "Ações do projeto", in every tab, offers to edit the data and to change the status, as the person may
- * (ADR-0043); a closed project says it is read-only (ADR-0016). The tabs get the project and the message at the bottom
+ * (ADR-0043), and to the Administrator, to delete the project (ADR-0041); a closed project says it is read-only (ADR-0016). The tabs get the project and the message at the bottom
  * (useProjectOutlet).
  */
 export function ProjectLayout() {
@@ -80,6 +82,7 @@ export function ProjectLayout() {
   }, [desktop]);
   const [menu, setMenu] = useState<HTMLElement>();
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();
   // The tickets not closed the API found when it refused to complete the project (ADR-0043).
   const [refusedTickets, setRefusedTickets] = useState<number>();
@@ -153,7 +156,7 @@ export function ProjectLayout() {
 
   const { permissions } = project;
   const closed = isClosedStatus(project.status);
-  const hasActions = permissions.canEdit || permissions.canChangeStatus;
+  const hasActions = permissions.canEdit || permissions.canChangeStatus || permissions.canDelete;
   // The tickets not closed keep the project from being completed; the cancellation closes them (ADR-0043).
   const openTickets = refusedTickets ?? closing?.openTickets ?? 0;
   const blocked = confirming === 'Completed' && openTickets > 0;
@@ -292,6 +295,22 @@ export function ProjectLayout() {
             {t('projects.actions.cancel')}
           </MenuItem>
         )}
+        {permissions.canDelete && <Divider sx={{ margin: 'var(--space-1) 0' }} />}
+        {permissions.canDelete && (
+          <MenuItem
+            onClick={() => {
+              setMenu(undefined);
+              setDeleting(true);
+            }}
+            sx={{
+              color: 'var(--status-danger-text)',
+              '& > .MuiSvgIcon-root': { color: 'var(--status-danger-text)' },
+            }}
+          >
+            <DeleteOutlined aria-hidden />
+            {t('projects.actions.delete')}
+          </MenuItem>
+        )}
       </Menu>
       {editing && (
         <ProjectDialog
@@ -303,6 +322,15 @@ export function ProjectLayout() {
             setEditing(false);
             setMessage(saved);
           }}
+        />
+      )}
+      {deleting && (
+        <DeleteProjectDialog
+          project={project}
+          onClose={() => {
+            setDeleting(false);
+          }}
+          onFailed={setMessage}
         />
       )}
       <Dialog

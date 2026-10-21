@@ -261,6 +261,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Apagador de dados pessoais | IPersonalDataEraser, PersonErasure | Cada módulo apaga as cópias do nome e do e-mail, na transação da anonimização |
 | Prazo da auditoria | AuditRetentionYears | "Guardar auditoria por", de 1 a 10 anos (padrão 5), nas Configurações gerais |
 | Limpeza mensal da auditoria | CleanUpAudit, AuditCleanup, AuditCleanupRun (`audit.cleanups`) | Uma vez por mês da instalação; registrada na auditoria, por Sistema, quando apaga algum |
+| Exclusão de projeto | DeleteProject (`POST /api/projects/{id}/deletion`), `ProjectPermissions.CanDelete` | Só o administrador, com o código digitado; definitiva (ADR-0041, ADR-0111) |
+| Resumo da exclusão | GetProjectDeletion (`GET /api/projects/{id}/deletion`), ProjectItemKind | Chamados, documentos, links, acessos, termos de aceite, tarefas e marcos e pessoas |
+| Apagar o que é do projeto | IProjectDeletion, ProjectItemCount | Cada módulo: conta, apaga os arquivos e apaga as linhas na transação da exclusão |
+| Remoção do que foi guardado | StoredFilesRemoval, `IFileStorage.FolderOfAsync` | Os arquivos registrados e as pastas que ficaram vazias, até a raiz |
 
 ## Telas
 

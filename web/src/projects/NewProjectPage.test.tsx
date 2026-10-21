@@ -94,6 +94,7 @@ beforeEach(() => {
           canManagePeople: true,
           canManageManagers: true,
           canEditSchedule: true,
+          canDelete: false,
         },
         scheduleStart: null,
         scheduleEnd: null,

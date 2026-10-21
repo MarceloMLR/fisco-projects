@@ -519,7 +519,14 @@
         "Name": "Nome",
         "Description": "Descrição",
         "ClientId": "Cliente",
-        "Status": "Status"
+        "Status": "Status",
+        "Tickets": "Chamados apagados",
+        "Documents": "Documentos apagados",
+        "Links": "Links apagados",
+        "Credentials": "Acessos apagados",
+        "AcceptanceTerms": "Termos de aceite apagados",
+        "ScheduleItems": "Tarefas e marcos apagados",
+        "Members": "Pessoas tiradas do projeto"
       },
       "ProjectMember": {
         "ProjectId": "Projeto",
@@ -1044,7 +1051,34 @@
       "status": "Status",
       "complete": "Concluir projeto",
       "cancel": "Cancelar projeto",
-      "reopen": "Reabrir projeto"
+      "reopen": "Reabrir projeto",
+      "delete": "Excluir projeto"
+    },
+    "deletion": {
+      "title": "Excluir o projeto {{code}}?",
+      "text": "O projeto {{name}} e tudo o que é dele saem do sistema de vez, inclusive os arquivos que o sistema guardou:",
+      "loading": "Contando o que o projeto tem…",
+      "loadFailed": "Não foi possível contar o que o projeto tem. Tente de novo.",
+      "forGood": "Não dá para desfazer. O cliente, os modelos de projeto e a auditoria continuam.",
+      "code": "Digite {{code}} para confirmar",
+      "cancel": "Voltar",
+      "confirm": "Excluir projeto",
+      "counts": {
+        "tickets_one": "{{count}} chamado, com as mensagens e os anexos",
+        "tickets_other": "{{count}} chamados, com as mensagens e os anexos",
+        "documents_one": "{{count}} documento, com as versões",
+        "documents_other": "{{count}} documentos, com as versões",
+        "links_one": "{{count}} link",
+        "links_other": "{{count}} links",
+        "credentials_one": "{{count}} acesso",
+        "credentials_other": "{{count}} acessos",
+        "acceptanceTerms_one": "{{count}} termo de aceite",
+        "acceptanceTerms_other": "{{count}} termos de aceite",
+        "scheduleItems_one": "{{count}} tarefa ou marco do cronograma",
+        "scheduleItems_other": "{{count}} tarefas e marcos do cronograma",
+        "members_one": "{{count}} pessoa no projeto",
+        "members_other": "{{count}} pessoas no projeto"
+      }
     },
     "confirm": {
       "completeTitle": "Concluir projeto",
@@ -1152,7 +1186,9 @@
       "changed": "Projeto {{name}} alterado.",
       "status": "{{name}}: {{status}}.",
       "failed": "Não foi possível salvar. Tente de novo.",
-      "ticketsChanged": "Alguém mudou um chamado do projeto ao mesmo tempo. Tente de novo."
+      "ticketsChanged": "Alguém mudou um chamado do projeto ao mesmo tempo. Tente de novo.",
+      "deleted": "Projeto {{code}} excluído.",
+      "deleteFailed": "Não foi possível excluir o projeto. Tente de novo: o que já saiu não volta, e o resto é apagado."
     },
     "notFound": "Projeto não encontrado. Ele não existe ou você não está nele.",
     "loadFailed": "Não foi possível carregar o projeto. Tente de novo.",

@@ -69,6 +69,9 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -79,6 +82,8 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("UserId", "Key");
 
@@ -124,6 +129,8 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("UserId", "CreatedAt");
 

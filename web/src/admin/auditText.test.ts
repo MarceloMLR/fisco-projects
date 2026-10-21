@@ -1346,3 +1346,44 @@ describe('Dados pessoais na auditoria', () => {
     expect(changed.changes).toEqual([{ field: 'Guardar auditoria por', before: '5', after: '7' }]);
   });
 });
+
+// Spec: projetos, requirement "Exclusão na auditoria" (ADR-0111).
+describe('Exclusão de projeto na auditoria', () => {
+  it('Exclusão na auditoria', () => {
+    const field = (name: string, before: string | null, after: string | null) => ({
+      field: name,
+      before,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const deleted = describeAuditEntry(
+      entry({
+        action: 'Deleted',
+        itemType: 'Project',
+        itemLabel: 'Implantação do ERP financeiro',
+        changes: [
+          field('Code', 'ERP-FIN', null),
+          field('Name', 'Implantação do ERP financeiro', null),
+          field('ClientId', 'Alfa Distribuidora', null),
+          field('Status', 'InProgress', null),
+          field('Tickets', null, '12'),
+          field('Members', null, '5'),
+        ],
+      }),
+      t,
+    );
+
+    expect(deleted.title).toBe('Excluiu um projeto');
+    expect(deleted.summary).toBe('Implantação do ERP financeiro · ERP-FIN');
+    expect(deleted.sentence).toBe('Paulo Nogueira excluiu um projeto');
+    expect(deleted.changes).toEqual([
+      { field: 'Código', before: 'ERP-FIN', after: '—' },
+      { field: 'Nome', before: 'Implantação do ERP financeiro', after: '—' },
+      { field: 'Cliente', before: 'Alfa Distribuidora', after: '—' },
+      { field: 'Status', before: 'Em andamento', after: '—' },
+      { field: 'Chamados apagados', before: '—', after: '12' },
+      { field: 'Pessoas tiradas do projeto', before: '—', after: '5' },
+    ]);
+  });
+});

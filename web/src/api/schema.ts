@@ -664,6 +664,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What deleting the project would remove (ADR-0041), for the Administrator. */
+        get: operations["GetProjectDeletion"];
+        put?: never;
+        /** @description Deletes the project for good, with everything in it (ADR-0041, ADR-0111): only the Administrator, with the code of the project. */
+        post: operations["DeleteProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/members": {
         parameters: {
             query?: never;
@@ -2191,6 +2209,10 @@ export interface components {
             isAcceptance: boolean;
             isActive: boolean;
         };
+        /** @description The code of the project, typed by the Administrator to confirm the deletion (ADR-0041). */
+        DeleteProjectRequest: {
+            code: null | string;
+        };
         /** @description A person and when the person did something. */
         DocumentActionResponse: {
             /** Format: uuid */
@@ -2881,6 +2903,27 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        /** @description What deleting the project would remove (ADR-0041): how many items of each kind it has in every module. */
+        ProjectDeletionResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** Format: int32 */
+            tickets: number;
+            /** Format: int32 */
+            documents: number;
+            /** Format: int32 */
+            links: number;
+            /** Format: int32 */
+            credentials: number;
+            /** Format: int32 */
+            acceptanceTerms: number;
+            /** Format: int32 */
+            scheduleItems: number;
+            /** Format: int32 */
+            members: number;
+        };
         /** @description One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule. */
         ProjectListItemResponse: {
             /** Format: uuid */
@@ -2951,6 +2994,8 @@ export interface components {
             canManagePeople: boolean;
             canManageManagers: boolean;
             canEditSchedule: boolean;
+            /** @description Deletes the project for good, with everything in it: only the Administrator (ADR-0041). */
+            canDelete: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -6126,6 +6171,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectClosingResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetProjectDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectDeletionResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
             /** @description Unauthorized */

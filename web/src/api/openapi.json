@@ -2697,6 +2697,127 @@
         }
       }
     },
+    "/api/projects/{id}/deletion": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "What deleting the project would remove (ADR-0041), for the Administrator.",
+        "operationId": "GetProjectDeletion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDeletionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "Deletes the project for good, with everything in it (ADR-0041, ADR-0111): only the Administrator, with the code of the project.",
+        "operationId": "DeleteProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/members": {
       "get": {
         "tags": [
@@ -9964,6 +10085,21 @@
         },
         "description": "A default folder: the name, whether it is the folder of the acceptance terms, and whether it is active."
       },
+      "DeleteProjectRequest": {
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The code of the project, typed by the Administrator to confirm the deletion (ADR-0041)."
+      },
       "DocumentActionResponse": {
         "required": [
           "id",
@@ -12179,6 +12315,62 @@
           }
         }
       },
+      "ProjectDeletionResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "tickets",
+          "documents",
+          "links",
+          "credentials",
+          "acceptanceTerms",
+          "scheduleItems",
+          "members"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tickets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "documents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "links": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "credentials": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "acceptanceTerms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scheduleItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "members": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "What deleting the project would remove (ADR-0041): how many items of each kind it has in every module."
+      },
       "ProjectListItemResponse": {
         "required": [
           "id",
@@ -12406,7 +12598,8 @@
           "canChangeStatus",
           "canManagePeople",
           "canManageManagers",
-          "canEditSchedule"
+          "canEditSchedule",
+          "canDelete"
         ],
         "type": "object",
         "properties": {
@@ -12424,6 +12617,10 @@
           },
           "canEditSchedule": {
             "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Deletes the project for good, with everything in it: only the Administrator (ADR-0041)."
           }
         },
         "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."

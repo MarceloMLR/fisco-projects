@@ -69,4 +69,10 @@ public interface IFileStorage
     /// false when it still has something or does not exist.
     /// </summary>
     Task<bool> DeleteFolderIfEmptyAsync(string folderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The id of the folder that holds a file or a folder, so a module can remove the folders left empty above what it
+    /// removed (ADR-0111); null when the item is at the root or does not exist.
+    /// </summary>
+    Task<string?> FolderOfAsync(string itemId, CancellationToken cancellationToken);
 }

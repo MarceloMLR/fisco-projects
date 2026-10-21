@@ -19,11 +19,13 @@ public sealed class DigestItem : Entity
         Values = string.Empty;
     }
 
-    public DigestItem(Guid userId, NoticeKind kind, Guid? actorId, string path, string values, string? key, DateTime now)
+    public DigestItem(
+        Guid userId, NoticeKind kind, Guid? actorId, Guid? projectId, string path, string values, string? key, DateTime now)
     {
         UserId = userId;
         Kind = kind;
         ActorId = actorId;
+        ProjectId = projectId;
         Path = path;
         Values = values;
         Key = key;
@@ -35,6 +37,9 @@ public sealed class DigestItem : Entity
     public NoticeKind Kind { get; private set; }
 
     public Guid? ActorId { get; private set; }
+
+    /// <summary>The project of the item, so it leaves with the project (ADR-0111); empty for the older ones.</summary>
+    public Guid? ProjectId { get; private init; }
 
     public string Path { get; private set; }
 
