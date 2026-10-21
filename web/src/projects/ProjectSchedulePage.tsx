@@ -126,6 +126,7 @@ export function ProjectSchedulePage() {
   const schedule = data ?? emptySchedule;
   const canEdit = project.permissions.canEditSchedule;
   const [page, setPage] = useState(1);
+  /** The task or milestone whose details are open, chosen in the screen or asked by the address (?item=). */
   const [chosenId, setChosenId] = useState<string>();
   const [phaseDialog, setPhaseDialog] = useState<PhaseDialogState>();
   /** "Nova tarefa" open, maybe inside a task ("Nova subtarefa", ADR-0088). */
@@ -153,7 +154,22 @@ export function ProjectSchedulePage() {
     });
   }, []);
   const pageRows = useMemo(() => rows.slice((page - 1) * pageSize, page * pageSize), [rows, page]);
-  const chosen = chosenId === undefined ? undefined : findItem(schedule, chosenId);
+  const openId = chosenId ?? search.get('item') ?? undefined;
+  const chosen = openId === undefined ? undefined : findItem(schedule, openId);
+  /** Closes the details, and takes the item out of the address that asked for it. */
+  const closeDetails = () => {
+    setChosenId(undefined);
+    if (search.has('item')) {
+      setSearch(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete('item');
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  };
   const itemCount = itemsOf(schedule).length;
 
   const columns = useMemo<DataTableColumn<ScheduleRow>[]>(
@@ -634,9 +650,7 @@ export function ProjectSchedulePage() {
       )}
       <DetailsDrawer
         open={chosen !== undefined}
-        onClose={() => {
-          setChosenId(undefined);
-        }}
+        onClose={closeDetails}
         label={t('projects.schedule.details.label')}
       >
         {chosen !== undefined &&
@@ -650,11 +664,11 @@ export function ProjectSchedulePage() {
               item={chosen.item}
               onSaved={notify}
               onRemoved={(message) => {
-                setChosenId(undefined);
+                closeDetails();
                 notify(message);
               }}
               onNewSubtask={() => {
-                setChosenId(undefined);
+                closeDetails();
                 setCreating({ parentId: chosen.item.id });
               }}
               onOpen={setChosenId}

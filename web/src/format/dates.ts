@@ -13,6 +13,14 @@ const dayLength = 86_400_000;
 
 // A day of the calendar has no time zone: its day of the week is the one of its midnight in UTC.
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' });
+const longDay = new Intl.DateTimeFormat('pt-BR', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const shortMonth = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -215,6 +223,32 @@ export function formatDayMonthText(day: DayValue): string {
 export function formatPeriodText(start: DayValue, end: DayValue): string {
   const sameYear = partsOf(start)[0] === partsOf(end)[0];
   return `${sameYear ? formatDayMonthText(start) : formatDayText(start)} – ${formatDayText(end)}`;
+}
+
+/** The day of the week of a day of the calendar, short (segunda, sábado), as a deadline says it. */
+export function formatShortWeekdayText(day: DayValue): string {
+  return weekday.format(new Date(dayNumber(day) * dayLength)).replace('-feira', '');
+}
+
+/** The day of the week and the day (segunda, 26/10), as a deadline says it. */
+export function formatWeekdayDayText(day: DayValue): string {
+  return `${formatShortWeekdayText(day)}, ${formatDayMonthText(day)}`;
+}
+
+/** A day in full, as the title of Meu trabalho shows today: Segunda-feira, 19 de outubro de 2026. */
+export function formatLongDayText(day: DayValue): string {
+  const text = longDay.format(new Date(dayNumber(day) * dayLength));
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The short name of the month of a day (out, nov), as the box of a date shows it. */
+export function formatShortMonthText(day: DayValue): string {
+  return shortMonth.format(new Date(dayNumber(day) * dayLength)).replace('.', '');
+}
+
+/** The number of the day of the month, with two digits (03), as the box of a date shows it. */
+export function formatDayOfMonthText(day: DayValue): string {
+  return pad(partsOf(day)[2]);
 }
 
 /** How many calendar days go from one day to another: 1 from a day to the next, negative backwards. */

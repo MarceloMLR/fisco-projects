@@ -70,6 +70,46 @@ internal sealed class ScheduleStore(ProjectsDbContext db) : IScheduleStore
             .Where(item => ids.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.Name, cancellationToken);
 
+    public async Task<IReadOnlyList<OwnedTask>> OwnedTasksAsync(
+        Guid ownerId, bool isAdministrator, DateOnly until, CancellationToken cancellationToken)
+    {
+        var rows = await (
+            from item in db.ScheduleItems.AsNoTracking()
+            join project in db.Projects.AsNoTracking() on item.ProjectId equals project.Id
+            join phase in db.SchedulePhases.AsNoTracking() on item.PhaseId equals phase.Id
+            where item.Kind == ScheduleItemKind.Task
+                && item.OwnerId == ownerId
+                && item.Progress < 100
+                && item.End <= until
+                && project.Status != ProjectStatus.Completed
+                && project.Status != ProjectStatus.Cancelled
+                && !db.ScheduleItems.Any(child => child.ParentId == item.Id)
+                && (isAdministrator || db.ProjectMembers.Any(member => member.ProjectId == project.Id && member.UserId == ownerId))
+            orderby item.End, project.Code, item.Name
+            select new { item, project.Code, PhaseName = phase.Name })
+            .ToListAsync(cancellationToken);
+        return [.. rows.Select(row => new OwnedTask(row.item.ProjectId, row.Code, row.PhaseName, row.item))];
+    }
+
+    public async Task<IReadOnlyList<UpcomingMilestone>> UpcomingMilestonesAsync(
+        Guid userId, DateOnly firstDay, int count, CancellationToken cancellationToken)
+    {
+        var rows = await (
+            from item in db.ScheduleItems.AsNoTracking()
+            join project in db.Projects.AsNoTracking() on item.ProjectId equals project.Id
+            where item.Kind == ScheduleItemKind.Milestone
+                && item.ReachedOn == null
+                && item.Start >= firstDay
+                && project.Status != ProjectStatus.Completed
+                && project.Status != ProjectStatus.Cancelled
+                && db.ProjectMembers.Any(member => member.ProjectId == project.Id && member.UserId == userId)
+            orderby item.Start, project.Code, item.Name
+            select new { project.Id, project.Code, project.Name, ItemId = item.Id, ItemName = item.Name, item.Start })
+            .Take(count)
+            .ToListAsync(cancellationToken);
+        return [.. rows.Select(row => new UpcomingMilestone(row.Id, row.Code, row.Name, row.ItemId, row.ItemName, row.Start))];
+    }
+
     public async Task<IReadOnlyList<ScheduleChange>> ChangesOfAsync(
         Guid projectId, Guid actorId, CancellationToken cancellationToken) =>
         await db.ScheduleChanges

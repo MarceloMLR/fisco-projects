@@ -291,10 +291,12 @@ describe('Status na demonstração', () => {
   it('Status na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // The tech lead resolves the third ticket he answered; the contributor asks for information in the fifth.
+    // The tech lead resolves the third ticket he answered; the contributor asks for information in the fifth and in
+    // the eighth, which the manager opened.
     expect(callsBy(/ POST \/api\/tickets\/\d+\/transitions$/)).toEqual([
       'rafael POST /api/tickets/3/transitions',
       'carla POST /api/tickets/5/transitions',
+      'carla POST /api/tickets/8/transitions',
     ]);
     expect(bodies.get('/api/tickets/3/transitions')).toEqual([{ action: 'Resolve', body: null }]);
     const [ask] = (bodies.get('/api/tickets/5/transitions') ?? []) as {
@@ -322,11 +324,11 @@ describe('Prazos na demonstração', () => {
     expect(opened.map((ticket) => ticket.priority)).toEqual(
       expect.arrayContaining(['Critical', 'High', 'Medium', 'Low']),
     );
-    // And one waits for the requester, with its deadline paused.
+    // And two wait for the requester, with their deadlines paused.
     const asked = demoProjects
       .flatMap((project) => project.tickets ?? [])
       .filter((ticket) => ticket.changes?.some((change) => change.action === 'AskForInformation'));
-    expect(asked).toHaveLength(1);
+    expect(asked).toHaveLength(2);
   });
 });
 

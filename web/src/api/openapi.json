@@ -685,6 +685,37 @@
         }
       }
     },
+    "/api/my-work": {
+      "get": {
+        "tags": [
+          "MyWork"
+        ],
+        "description": "The tickets, tasks and requests of acceptance of the person by urgency: late, waiting for the person, due up to the next business day and in the next 7 days, in the views for me, opened by me and followed.",
+        "operationId": "GetMyWork",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWorkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/client-settings": {
       "get": {
         "tags": [
@@ -2138,6 +2169,37 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/upcoming-milestones": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The first 10 milestones not reached, from today on, of the open projects the person is in (ADR-0096).",
+        "operationId": "ListUpcomingMilestones",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingMilestonesResponse"
                 }
               }
             }
@@ -10286,6 +10348,355 @@
         },
         "description": "Whether a milestone was reached."
       },
+      "MyWorkAcceptanceResponse": {
+        "required": [
+          "forYou",
+          "recipient",
+          "requestedBy",
+          "requestedAt",
+          "milestone"
+        ],
+        "type": "object",
+        "properties": {
+          "forYou": {
+            "type": "boolean"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/MyWorkPersonResponse"
+          },
+          "requestedBy": {
+            "$ref": "#/components/schemas/MyWorkPersonResponse"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "milestone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A request of acceptance of the queue: whether it is for the person, for whom, who asked, when and the milestone."
+      },
+      "MyWorkAction": {
+        "enum": [
+          "Open",
+          "Reply",
+          "Assign",
+          "Start",
+          "Update",
+          "Complete",
+          "Remind"
+        ],
+        "description": "The one action of a line of the queue (ADR-0070, ADR-0096)."
+      },
+      "MyWorkDeadline": {
+        "enum": [
+          "FirstResponse",
+          "Resolution",
+          null
+        ]
+      },
+      "MyWorkGroup": {
+        "enum": [
+          "Late",
+          "Waiting",
+          "Soon",
+          "Week"
+        ],
+        "description": "The groups of the queue (ADR-0070), in the order of the screen."
+      },
+      "MyWorkGroupResponse": {
+        "required": [
+          "group",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/MyWorkGroup"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyWorkItemResponse"
+            }
+          }
+        },
+        "description": "A group of a view, with its items in order."
+      },
+      "MyWorkItemResponse": {
+        "required": [
+          "kind",
+          "id",
+          "project",
+          "title",
+          "action",
+          "dueOn",
+          "daysLate",
+          "waitingSince",
+          "ticket",
+          "task",
+          "acceptance"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/MyWorkKind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project": {
+            "$ref": "#/components/schemas/MyWorkProjectResponse"
+          },
+          "title": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/components/schemas/MyWorkAction"
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "waitingSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "ticket": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkTicketResponse"
+              }
+            ]
+          },
+          "task": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkTaskResponse"
+              }
+            ]
+          },
+          "acceptance": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkAcceptanceResponse"
+              }
+            ]
+          }
+        },
+        "description": "An item of the queue: the kind, the project, the title, the action of the line, the day it is due (none while it\nwaits for the person), the business days of delay, since when it waits for the person and what the kind tells."
+      },
+      "MyWorkKind": {
+        "enum": [
+          "Ticket",
+          "Task",
+          "Acceptance"
+        ],
+        "description": "What an item of the queue is: a ticket, a task of a schedule or a request of acceptance."
+      },
+      "MyWorkPersonResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "A person an item shows, by the current name."
+      },
+      "MyWorkProjectResponse": {
+        "required": [
+          "id",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "description": "The project of an item: the id and the code."
+      },
+      "MyWorkResponse": {
+        "required": [
+          "today",
+          "nextBusinessDay",
+          "views"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "nextBusinessDay": {
+            "type": "string",
+            "format": "date"
+          },
+          "views": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyWorkViewResponse"
+            }
+          }
+        },
+        "description": "Meu trabalho of the person: today and the next business day of the installation, and the three views."
+      },
+      "MyWorkTaskResponse": {
+        "required": [
+          "phase",
+          "progress"
+        ],
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A task of the queue: the phase and the progress."
+      },
+      "MyWorkTeam": {
+        "enum": [
+          "Functional",
+          "Development"
+        ],
+        "description": "The team of a ticket (ADR-0068)."
+      },
+      "MyWorkTicketResponse": {
+        "required": [
+          "number",
+          "status",
+          "team",
+          "requester",
+          "assignee",
+          "interactions",
+          "deadline"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MyWorkTicketStatus"
+          },
+          "team": {
+            "$ref": "#/components/schemas/MyWorkTeam"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/MyWorkPersonResponse"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkPersonResponse"
+              }
+            ]
+          },
+          "interactions": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkDeadline"
+              }
+            ]
+          }
+        },
+        "description": "A ticket of the queue: the number, the status, the team, who asked, who is in charge and which deadline counts."
+      },
+      "MyWorkTicketStatus": {
+        "enum": [
+          "Open",
+          "Triage",
+          "InProgress",
+          "WaitingForRequester"
+        ],
+        "description": "The statuses of a ticket the queue shows: the open ones (ADR-0024)."
+      },
+      "MyWorkView": {
+        "enum": [
+          "ForMe",
+          "OpenedByMe",
+          "Following"
+        ],
+        "description": "The views of Meu trabalho (ADR-0070), in the order of the screen."
+      },
+      "MyWorkViewResponse": {
+        "required": [
+          "view",
+          "count",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "view": {
+            "$ref": "#/components/schemas/MyWorkView"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyWorkGroupResponse"
+            }
+          }
+        },
+        "description": "A view of the queue: how many items it has and the groups with items, in the order of the screen."
+      },
       "NewDefaultFolderRequest": {
         "required": [
           "name"
@@ -11177,7 +11588,8 @@
           "currentPhase",
           "completedOn",
           "phases",
-          "milestones"
+          "milestones",
+          "lateDays"
         ],
         "type": "object",
         "properties": {
@@ -11226,9 +11638,13 @@
               "type": "string",
               "format": "date"
             }
+          },
+          "lateDays": {
+            "type": "integer",
+            "format": "int32"
           }
         },
-        "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late\n(ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the\nstart), the day the last task was completed when all are at 100%, the phases with items and the days of the\nmilestones."
+        "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late\n(ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the\nstart), the day the last task was completed when all are at 100%, the phases with items, the days of the\nmilestones and the business days of delay of the most late task or milestone (ADR-0096)."
       },
       "ProjectSituation": {
         "enum": [
@@ -13263,6 +13679,82 @@
         },
         "description": "How many notifications of the person are not read."
       },
+      "UpcomingMilestoneProjectResponse": {
+        "required": [
+          "id",
+          "code",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "The project of a milestone ahead."
+      },
+      "UpcomingMilestoneResponse": {
+        "required": [
+          "id",
+          "name",
+          "day",
+          "businessDaysLeft",
+          "acceptanceRequested",
+          "project"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "businessDaysLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "acceptanceRequested": {
+            "type": "boolean"
+          },
+          "project": {
+            "$ref": "#/components/schemas/UpcomingMilestoneProjectResponse"
+          }
+        },
+        "description": "A milestone ahead of the projects of the person: the day, the business days left until it (none on the day itself)\nand whether a request of acceptance for it waits for the answer."
+      },
+      "UpcomingMilestonesResponse": {
+        "required": [
+          "items",
+          "today"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpcomingMilestoneResponse"
+            }
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "description": "The milestones ahead, the soonest first, and today in the time zone of the installation."
+      },
       "UpdateInstallationRequest": {
         "required": [
           "name",
@@ -13639,6 +14131,9 @@
     },
     {
       "name": "Links"
+    },
+    {
+      "name": "MyWork"
     },
     {
       "name": "FiscoProjects.Api"

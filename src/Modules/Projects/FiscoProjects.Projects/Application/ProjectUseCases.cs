@@ -29,7 +29,10 @@ public sealed record ProjectClient(Guid Id, string Name, DateTime? LogoChangedAt
 /// <summary>A person in a project, by name, with the role in it.</summary>
 public sealed record ProjectPerson(Guid Id, string Name, ProjectRole Role);
 
-/// <summary>A project of the list, with the numbers of its schedule (null without tasks and milestones).</summary>
+/// <summary>
+/// A project of the list, with the numbers of its schedule (null without tasks and milestones) and the business days of
+/// delay of its most late task or milestone (ADR-0096).
+/// </summary>
 public sealed record ProjectListItem(
     Guid Id,
     string Code,
@@ -37,7 +40,8 @@ public sealed record ProjectListItem(
     ProjectClient? Client,
     ProjectStatus Status,
     IReadOnlyList<ProjectPerson> Managers,
-    ScheduleFigures? Schedule);
+    ScheduleFigures? Schedule,
+    int LateDays = 0);
 
 /// <summary>A page of the list, with today in the time zone of the installation, the day the schedules are seen on.</summary>
 public sealed record ProjectListPage(IReadOnlyList<ProjectListItem> Items, int Total, DateOnly Today);
@@ -103,7 +107,8 @@ internal static class PeopleNames
 /// The projects the person sees, with the names of the managers (ADR-0016, ADR-0043) and the numbers of their schedules
 /// for the strip of phases and the final deadline (ADR-0071).
 /// </summary>
-public sealed class ListProjects(IProjectStore store, IScheduleStore schedules, IUserDirectory users, InstallationClock clock)
+public sealed class ListProjects(
+    IProjectStore store, IScheduleStore schedules, IUserDirectory users, InstallationClock clock, IWorkCalendar calendar)
 {
     public async Task<ProjectListPage> ExecuteAsync(
         ProjectListQuery query, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -116,19 +121,23 @@ public sealed class ListProjects(IProjectStore store, IScheduleStore schedules, 
         var names = await PeopleNames.OfAsync(users, rows.Items.SelectMany(row => row.ManagerIds), cancellationToken);
         var parts = await schedules.OfProjectsAsync([.. rows.Items.Select(row => row.Id)], cancellationToken);
         var today = await clock.TodayAsync(cancellationToken);
+        var days = await calendar.GetAsync(cancellationToken);
         return new ProjectListPage(
-            [.. rows.Items.Select(row => new ProjectListItem(
-                row.Id,
-                row.Code,
-                row.Name,
-                row.Client,
-                row.Status,
-                [.. row.ManagerIds
-                    .Select(id => new ProjectPerson(id, PeopleNames.NameOf(names, id), ProjectRole.Manager))
-                    .OrderBy(person => person.Name, StringComparer.CurrentCulture)],
-                parts.TryGetValue(row.Id, out var schedule) && schedule.Items.Count > 0
-                    ? ScheduleFigures.Of(schedule.Phases, schedule.Items, today)
-                    : null))],
+            [.. rows.Items.Select(row =>
+            {
+                var schedule = parts.TryGetValue(row.Id, out var found) && found.Items.Count > 0 ? found : null;
+                return new ProjectListItem(
+                    row.Id,
+                    row.Code,
+                    row.Name,
+                    row.Client,
+                    row.Status,
+                    [.. row.ManagerIds
+                        .Select(id => new ProjectPerson(id, PeopleNames.NameOf(names, id), ProjectRole.Manager))
+                        .OrderBy(person => person.Name, StringComparer.CurrentCulture)],
+                    schedule is null ? null : ScheduleFigures.Of(schedule.Phases, schedule.Items, today),
+                    schedule is null ? 0 : ScheduleFigures.LateDaysOf(schedule.Items, today, days).Values.DefaultIfEmpty(0).Max());
+            })],
             rows.Total,
             today);
     }

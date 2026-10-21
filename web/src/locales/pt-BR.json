@@ -2559,5 +2559,105 @@
       "TooLarge": "O arquivo passa do tamanho que o termo aceita.",
       "NotPdf": "O termo precisa ser um PDF."
     }
+  },
+  "myWork": {
+    "views": {
+      "label": "Mostrar",
+      "ForMe": "Para mim",
+      "OpenedByMe": "Abertos por mim",
+      "Following": "Que acompanho"
+    },
+    "viewField": "Mostrar",
+    "queue": "Minha fila",
+    "groups": {
+      "Late": "Atrasado",
+      "Waiting": "Aguardando você",
+      "Soon": "Hoje e {{weekday}}",
+      "SoonTomorrow": "Hoje e amanhã",
+      "Week": "Próximos 7 dias"
+    },
+    "empty": {
+      "ForMe": "Nada pede a sua ação nos próximos 7 dias.",
+      "OpenedByMe": "Nenhum chamado ou pedido de aceite seu vence nos próximos 7 dias.",
+      "Following": "Nenhum chamado que você acompanha vence nos próximos 7 dias."
+    },
+    "loadFailed": "Não foi possível carregar o seu trabalho. Tente de novo em instantes.",
+    "kinds": {
+      "Ticket": "Chamado",
+      "Task": "Tarefa",
+      "Acceptance": "Termo de aceite"
+    },
+    "actions": {
+      "Open": "Abrir",
+      "Reply": "Responder",
+      "Assign": "Atribuir",
+      "Start": "Iniciar",
+      "Update": "Atualizar",
+      "Complete": "Concluir",
+      "Remind": "Lembrar"
+    },
+    "actionLabel": "{{action}}: {{title}}",
+    "meta": {
+      "task": "Tarefa · {{phase}} · {{progress}}%",
+      "taskNotStarted": "Tarefa · {{phase}} · não iniciada",
+      "yours_one": "Você é responsável · {{count}} interação",
+      "yours_other": "Você é responsável · {{count}} interações",
+      "assignee_one": "{{name}} é responsável · {{count}} interação",
+      "assignee_other": "{{name}} é responsável · {{count}} interações",
+      "waiting": "{{name}} aguarda sua resposta {{when}}",
+      "attendant": "Quem atende",
+      "unassigned": "{{team}} · ninguém assumiu ainda",
+      "acceptanceFor": "Termo de aceite pedido por {{name}}",
+      "acceptanceAsked": "Você pediu a {{name}} em {{day}}"
+    },
+    "waiting": {
+      "minutes_one": "há {{count}} min",
+      "minutes_other": "há {{count}} min",
+      "hours_one": "há {{count}} h",
+      "hours_other": "há {{count}} h",
+      "since": "desde {{day}}"
+    },
+    "due": {
+      "late_one": "Venceu há {{count}} dia útil",
+      "late_other": "Venceu há {{count}} dias úteis",
+      "lateOn": "Venceu {{day}}",
+      "on": "Vence {{day}}",
+      "firstResponse": "1ª resposta até {{day}}",
+      "firstResponseLate_one": "1ª resposta venceu há {{count}} dia útil",
+      "firstResponseLate_other": "1ª resposta venceu há {{count}} dias úteis",
+      "firstResponseLateOn": "1ª resposta venceu {{day}}",
+      "paused": "Prazo pausado",
+      "requested": "Pedido em {{day}}",
+      "milestone": "Marco em {{day}}",
+      "milestoneToday": "Marco hoje",
+      "milestoneTomorrow": "Marco amanhã"
+    },
+    "projects": {
+      "title": "Meus projetos",
+      "all": "Ver todos",
+      "progress": "{{progress}}% concluído",
+      "late_one": "{{count}} dia útil de atraso",
+      "late_other": "{{count}} dias úteis de atraso",
+      "lateNoDays": "Atrasado",
+      "starts": "Começa {{day}}",
+      "completed": "Concluído em {{day}}",
+      "onTrack": "No prazo",
+      "noSchedule": "Sem cronograma",
+      "noDate": "Sem data",
+      "strip": "Fases do cronograma de {{start}} a {{end}}",
+      "empty": "Você ainda não está em nenhum projeto aberto."
+    },
+    "milestones": {
+      "title": "Próximos marcos",
+      "today": "Hoje",
+      "left_one": "Em {{count}} dia útil",
+      "left_other": "Em {{count}} dias úteis",
+      "requested": "{{left}} · aceite pedido",
+      "empty": "Nenhum marco pela frente nos seus projetos."
+    },
+    "days": {
+      "today": "hoje",
+      "tomorrow": "amanhã"
+    }
   }
 }

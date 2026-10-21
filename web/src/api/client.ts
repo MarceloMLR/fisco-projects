@@ -75,6 +75,12 @@ export type LinkCategoryCount = components['schemas']['LinkCategoryCountResponse
 export type Credential = components['schemas']['CredentialResponse'];
 export type CredentialList = components['schemas']['CredentialListResponse'];
 export type Spreadsheet = components['schemas']['SpreadsheetResponse'];
+export type MyWork = components['schemas']['MyWorkResponse'];
+export type MyWorkView = components['schemas']['MyWorkView'];
+export type MyWorkGroup = components['schemas']['MyWorkGroup'];
+export type MyWorkItem = components['schemas']['MyWorkItemResponse'];
+export type MyWorkAction = components['schemas']['MyWorkAction'];
+export type UpcomingMilestone = components['schemas']['UpcomingMilestoneResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 

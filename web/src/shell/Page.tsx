@@ -15,12 +15,15 @@ import { useCurrentPage } from './pages';
  */
 export function Page({
   count,
+  subtitle,
   actions,
   withTitle = true,
   flush = false,
   children,
 }: {
   count?: number;
+  /** A line under the title on the computer (fp-sub), as the date of today in Meu trabalho. */
+  subtitle?: string;
   /** Actions of the page, at the right of the title on the computer (fp-head__actions); the phone places its own. */
   actions?: ReactNode;
   /** False when the screen has a header of its own, with the main heading. */
@@ -33,7 +36,7 @@ export function Page({
   const page = useCurrentPage();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
 
-  const heading = (
+  const title = (
     <Typography variant="h1" sx={desktop ? { margin: 0 } : visuallyHidden}>
       {t(page.titleKey)}
       {count !== undefined && (
@@ -52,6 +55,24 @@ export function Page({
       )}
     </Typography>
   );
+  const heading =
+    desktop && subtitle !== undefined ? (
+      <Box sx={{ minWidth: 0 }}>
+        {title}
+        <Box
+          sx={{
+            marginTop: '2px',
+            fontSize: 13,
+            lineHeight: '18px',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          {subtitle}
+        </Box>
+      </Box>
+    ) : (
+      title
+    );
 
   return (
     <Box

@@ -1054,3 +1054,29 @@ describe('Subtarefas pela tela', () => {
     );
   });
 });
+
+// Spec: cronograma, requirement "Endereço do detalhe".
+describe('Endereço do detalhe', () => {
+  it('Detalhe pelo endereço', async () => {
+    const task = itemNamed('Parametrizar regras de ICMS');
+    const { router } = await renderApp(
+      `/projects/${project.id}/schedule?view=list&item=${task.id}`,
+    );
+
+    const drawer = await screen.findByRole('dialog', { name: text.details.label });
+    expect(within(drawer).getByDisplayValue('Parametrizar regras de ICMS')).toBeInTheDocument();
+    await closeDrawer(drawer);
+    expect(router.state.location.search).toBe('?view=list');
+  });
+
+  it('Item que saiu do cronograma', async () => {
+    await renderApp(
+      `/projects/${project.id}/schedule?view=list&item=0199f5a2-7c1e-7d40-9a1b-5000000000ff`,
+    );
+    await waitFor(() => {
+      expect(within(table()).getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    expect(screen.queryByRole('dialog', { name: text.details.label })).not.toBeInTheDocument();
+  });
+});

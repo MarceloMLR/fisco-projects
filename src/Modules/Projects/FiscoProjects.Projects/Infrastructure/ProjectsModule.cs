@@ -1,3 +1,4 @@
+using FiscoProjects.MyWork.Contracts;
 using FiscoProjects.Persistence;
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Contracts;
@@ -44,6 +45,9 @@ public static class ProjectsModule
         services.AddScoped<IMemberChangeNotices, MemberChangeNotices>();
         services.AddScoped<ProjectNotices>();
         services.AddScoped<IUpcomingTasks, UpcomingTaskDirectory>();
+        // The tasks of the person in Meu trabalho and the next milestones of the projects of the person (ADR-0096).
+        services.AddScoped<IMyWorkSource, ScheduleWorkSource>();
+        services.AddScoped<ListUpcomingMilestones>();
         services.AddScoped<IScheduleItems, ScheduleItemDirectory>();
         // The milestones reached by the signed acceptance terms (ADR-0035).
         services.AddScoped<IScheduleMilestones, ScheduleMilestones>();

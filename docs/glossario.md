@@ -113,7 +113,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Feriado local | LocalHoliday | Da cidade, do estado ou da empresa: nome, data e "Repete todo ano", a partir do ano da data |
 | Considerado, desconsiderado | IsConsidered | Considerado, o feriado deixa de ser dia útil; desconsiderado, continua na lista como dia útil |
 | Marcar todos, Desmarcar todos | ConsiderHolidays | Considera (ou desconsidera) de uma vez as datas da lista mostrada |
-| Meu trabalho | MyWork | |
+| Meu trabalho | MyWork | Módulo `MyWork`, sem tabelas, e a página inicial: a fila por urgência dos itens da pessoa (ADR-0070, ADR-0096) |
+| Fila por urgência | MyWorkQueue | A regra dos grupos, da ação de cada linha e da ordem, num lugar só |
+| Visões: Para mim, Abertos por mim, Que acompanho | MyWorkView: ForMe, OpenedByMe, Following | |
+| Grupos: Atrasado, Aguardando você, Hoje e o próximo dia útil, Próximos 7 dias | MyWorkGroup: Late, Waiting, Soon, Week | Próximos 7 dias corridos; o que vence depois fica fora da fila (ADR-0096) |
+| Itens de cada módulo para o Meu trabalho | IMyWorkSource | Contrato do `MyWork.Contracts`, que o `Tickets`, o `Projects` e o `Documents` implementam |
+| Próximos marcos | UpcomingMilestones | Os 10 próximos marcos não atingidos dos projetos abertos da pessoa (`GET /api/projects/upcoming-milestones`) |
+| Atraso do cronograma | LateDays | Os dias úteis de atraso do item mais atrasado do projeto (ADR-0096) |
 | Visão geral do projeto | ProjectOverview | |
 
 ## Chamados

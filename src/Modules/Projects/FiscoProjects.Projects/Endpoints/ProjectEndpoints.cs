@@ -21,8 +21,8 @@ public sealed record SchedulePhaseSummaryResponse(string Name, DateOnly Start, D
 /// <summary>
 /// The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late
 /// (ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the
-/// start), the day the last task was completed when all are at 100%, the phases with items and the days of the
-/// milestones.
+/// start), the day the last task was completed when all are at 100%, the phases with items, the days of the
+/// milestones and the business days of delay of the most late task or milestone (ADR-0096).
 /// </summary>
 public sealed record ProjectScheduleSummaryResponse(
     DateOnly Start,
@@ -33,7 +33,8 @@ public sealed record ProjectScheduleSummaryResponse(
     string? CurrentPhase,
     DateOnly? CompletedOn,
     IReadOnlyList<SchedulePhaseSummaryResponse> Phases,
-    IReadOnlyList<DateOnly> Milestones);
+    IReadOnlyList<DateOnly> Milestones,
+    int LateDays);
 
 /// <summary>One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule.</summary>
 public sealed record ProjectListItemResponse(
@@ -44,6 +45,19 @@ public sealed record ProjectListItemResponse(
     ProjectStatus Status,
     IReadOnlyList<ProjectPersonResponse> Managers,
     ProjectScheduleSummaryResponse? Schedule);
+
+/// <summary>The project of a milestone ahead.</summary>
+public sealed record UpcomingMilestoneProjectResponse(Guid Id, string Code, string Name);
+
+/// <summary>
+/// A milestone ahead of the projects of the person: the day, the business days left until it (none on the day itself)
+/// and whether a request of acceptance for it waits for the answer.
+/// </summary>
+public sealed record UpcomingMilestoneResponse(
+    Guid Id, string Name, DateOnly Day, int BusinessDaysLeft, bool AcceptanceRequested, UpcomingMilestoneProjectResponse Project);
+
+/// <summary>The milestones ahead, the soonest first, and today in the time zone of the installation.</summary>
+public sealed record UpcomingMilestonesResponse(IReadOnlyList<UpcomingMilestoneResponse> Items, DateOnly Today);
 
 /// <summary>A page of the list, with today in the time zone of the installation, the day the schedules are seen on.</summary>
 public sealed record ProjectPageResponse(IReadOnlyList<ProjectListItemResponse> Items, int Total, DateOnly Today);
@@ -154,6 +168,9 @@ internal static class ProjectEndpoints
             .RequireAuthorization(SystemPolicies.ProjectCreators)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapGet("/upcoming-milestones", UpcomingMilestonesAsync).WithName("ListUpcomingMilestones")
+            .WithDescription(
+                "The first 10 milestones not reached, from today on, of the open projects the person is in (ADR-0096).");
         projects.MapGet("/{id:guid}", GetAsync).WithName("GetProject");
         projects.MapPut("/{id:guid}", ChangeAsync).WithName("ChangeProject")
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -208,8 +225,25 @@ internal static class ProjectEndpoints
                 ClientOf(http, links, item.Client),
                 item.Status,
                 [.. item.Managers.Select(PersonOf)],
-                item.Schedule is { } schedule ? SummaryOf(schedule) : null))],
+                item.Schedule is { } schedule ? SummaryOf(schedule, item.LateDays) : null))],
             result.Total,
+            result.Today));
+    }
+
+    private static async Task<Ok<UpcomingMilestonesResponse>> UpcomingMilestonesAsync(
+        HttpContext http, ListUpcomingMilestones list, CancellationToken cancellationToken)
+    {
+        var userId = UserSession.UserIdOf(http.User)
+            ?? throw new InvalidOperationException("The milestones are read in a session.");
+        var result = await list.ExecuteAsync(userId, cancellationToken);
+        return TypedResults.Ok(new UpcomingMilestonesResponse(
+            [.. result.Items.Select(item => new UpcomingMilestoneResponse(
+                item.Milestone.Id,
+                item.Milestone.Name,
+                item.Milestone.Day,
+                item.BusinessDaysLeft,
+                item.AcceptanceRequested,
+                new UpcomingMilestoneProjectResponse(item.Milestone.ProjectId, item.Milestone.ProjectCode, item.Milestone.ProjectName)))],
             result.Today));
     }
 
@@ -346,7 +380,7 @@ internal static class ProjectEndpoints
 
     private static ProjectPersonResponse PersonOf(ProjectPerson person) => new(person.Id, person.Name, person.Role);
 
-    private static ProjectScheduleSummaryResponse SummaryOf(ScheduleFigures figures) =>
+    private static ProjectScheduleSummaryResponse SummaryOf(ScheduleFigures figures, int lateDays) =>
         new(
             figures.Start!.Value,
             figures.End!.Value,
@@ -359,7 +393,8 @@ internal static class ProjectEndpoints
                 .Where(phase => phase.Start is not null)
                 .Select(phase => new SchedulePhaseSummaryResponse(
                     phase.Phase.Name, phase.Start!.Value, phase.End!.Value, phase.Progress, phase.IsLate))],
-            figures.Milestones);
+            figures.Milestones,
+            lateDays);
 
     private static ValidationProblem Invalid(IReadOnlyList<ProjectField> fields) =>
         TypedResults.ValidationProblem(fields.ToDictionary(

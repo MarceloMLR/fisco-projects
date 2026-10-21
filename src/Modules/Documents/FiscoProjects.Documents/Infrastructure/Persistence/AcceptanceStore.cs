@@ -36,6 +36,21 @@ internal sealed class AcceptanceStore(DocumentsDbContext db) : IAcceptanceStore
             .OrderBy(term => term.RequestedAt)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<AcceptanceTerm>> PendingOfAsync(Guid userId, CancellationToken cancellationToken) =>
+        await db.AcceptanceTerms.AsNoTracking()
+            .Where(term => term.Status == AcceptanceStatus.Pending && (term.RecipientId == userId || term.RequestedById == userId))
+            .OrderBy(term => term.RequestedAt)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlySet<Guid>> PendingMilestonesAsync(
+        IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken) =>
+        (await db.AcceptanceTerms.AsNoTracking()
+            .Where(term => term.Status == AcceptanceStatus.Pending && projectIds.Contains(term.ProjectId))
+            .Select(term => term.MilestoneId)
+            .Distinct()
+            .ToListAsync(cancellationToken))
+        .ToHashSet();
+
     public void Add(AcceptanceTerm term) => db.AcceptanceTerms.Add(term);
 
     public void Remove(AcceptanceTerm term) => db.AcceptanceTerms.Remove(term);

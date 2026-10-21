@@ -11,6 +11,8 @@ using FiscoProjects.Credentials.Infrastructure;
 using FiscoProjects.Documents.Endpoints;
 using FiscoProjects.Documents.Infrastructure;
 using FiscoProjects.Files.Infrastructure;
+using FiscoProjects.MyWork.Endpoints;
+using FiscoProjects.MyWork.Infrastructure;
 using FiscoProjects.Notifications.Endpoints;
 using FiscoProjects.Notifications.Infrastructure;
 using FiscoProjects.Persistence;
@@ -70,6 +72,7 @@ public static class ApiSetup
         builder.Services.AddDocumentsModule(builder.Configuration);
         builder.Services.AddCredentialsModule(builder.Configuration);
         builder.Services.AddNotificationsModule(builder.Configuration);
+        builder.Services.AddMyWorkModule(builder.Configuration);
 
         return builder;
     }
@@ -102,6 +105,7 @@ public static class ApiSetup
             .MapDocumentsEndpoints()
             .MapCredentialsEndpoints()
             .MapNotificationsEndpoints()
+            .MapMyWorkEndpoints()
             .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();
