@@ -227,10 +227,10 @@ public sealed class TicketDeadlineTests(SqlServerFixture sqlServer)
     {
         await using var scene = await StartAsync();
         var path = await OpenAsync(scene, "Medium");
-        using var marina = await scene.App.SignInAsync(scene.Marina);
         using var diego = await scene.App.SignInAsync(scene.Diego);
-        (await SendAsync(marina, HttpMethod.Post, $"{path}/transitions", new { action = "StartTriage" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SendAsync(marina, HttpMethod.Post, $"{path}/transitions", new { action = "StartWork" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        // The Administrator, outside the project, starts the work without becoming the assignee (Chamados-3.1).
+        (await SendAsync(scene.Admin, HttpMethod.Post, $"{path}/transitions", new { action = "StartTriage" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await SendAsync(scene.Admin, HttpMethod.Post, $"{path}/transitions", new { action = "StartWork" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var asked = await SendAsync(diego, HttpMethod.Post, $"{path}/transitions", new { action = "AskForInformation", body = Doc("Qual a série?") });
 
