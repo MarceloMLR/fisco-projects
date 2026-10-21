@@ -30,7 +30,8 @@ public sealed class GetTicketFlow(ITicketStore store)
 
 /// <summary>
 /// Takes an action of the flow in a ticket (ADR-0024, ADR-0044): only who may take it, from the status the ticket is
-/// in; the action that needs a message gets it as a message of the conversation.
+/// in; the action that needs a message gets it as a message of the conversation. "Iniciar atendimento" makes whoever
+/// takes it the assignee of a ticket without one, when the person may be its assignee (ADR-0098).
 /// </summary>
 public sealed class ChangeTicketStatus(
     IProjectAccess projects, ITicketStore store, TicketDeadlines deadlines, TicketAnswers answers, TimeProvider clock, TicketNotices notices)
@@ -82,6 +83,14 @@ public sealed class ChangeTicketStatus(
 
         var from = ticket.Status;
         await deadlines.TakeAsync(ticket, transition, viewer.UserId, now, cancellationToken);
+        if (transition.Action == TicketAction.StartWork && ticket.AssigneeId is null
+            && TicketAccess.CanBeAssignee(ticket.Team, project.Role))
+        {
+            ticket.Assign(viewer.UserId, now);
+            store.AddEvent(TicketEvent.AssigneeSet(ticket.Id, viewer.UserId, viewer.UserId, now));
+            await store.FollowAsync(ticket.Id, viewer.UserId, now, cancellationToken);
+        }
+
         try
         {
             await store.SaveChangesAsync(cancellationToken);

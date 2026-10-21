@@ -258,6 +258,66 @@ public sealed class TicketFlowTests(SqlServerFixture sqlServer)
         listed.GetProperty("items").EnumerateArray().Single().GetProperty("interactions").GetInt32().Should().Be(3);
     }
 
+    // Spec: chamados, requirement "Iniciar atendimento assume o chamado" (ADR-0098).
+    [Fact(DisplayName = "Iniciar atendimento sem responsável")]
+    public async Task StartWork_TakesTheTicketWithoutAnAssignee()
+    {
+        await using var scene = await StartAsync();
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+        await TakenAsync(diego, scene.Path, "StartTriage");
+
+        await TakenAsync(diego, scene.Path, "StartWork");
+
+        var ticket = await TicketAsync(diego, scene.Path);
+        ticket.GetProperty("status").GetString().Should().Be("InProgress");
+        AssigneeOf(ticket).Should().Be(scene.Diego);
+        ticket.GetProperty("following").GetBoolean().Should().BeTrue();
+        ticket.GetProperty("events").EnumerateArray().Select(item => item.GetProperty("kind").GetString())
+            .Should().BeEquivalentTo("StatusChanged", "StatusChanged", "AssigneeSet");
+    }
+
+    [Fact(DisplayName = "Iniciar atendimento com responsável")]
+    public async Task StartWork_KeepsTheAssignee()
+    {
+        await using var scene = await StartAsync();
+        using var rafael = await scene.App.SignInAsync(scene.Rafael);
+        (await SendAsync(rafael, HttpMethod.Put, "/api/tickets/assignee", new { numbers = new[] { scene.Number }, assigneeId = scene.Diego }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await TakenAsync(rafael, scene.Path, "StartTriage");
+
+        await TakenAsync(rafael, scene.Path, "StartWork");
+
+        var ticket = await TicketAsync(rafael, scene.Path);
+        ticket.GetProperty("status").GetString().Should().Be("InProgress");
+        AssigneeOf(ticket).Should().Be(scene.Diego);
+    }
+
+    [Fact(DisplayName = "Administrador de fora inicia o atendimento")]
+    public async Task StartWork_ByTheAdministratorOutside_LeavesItUnassigned()
+    {
+        await using var scene = await StartAsync();
+        await TakenAsync(scene.Admin, scene.Path, "StartTriage");
+
+        await TakenAsync(scene.Admin, scene.Path, "StartWork");
+
+        var ticket = await TicketAsync(scene.Admin, scene.Path);
+        ticket.GetProperty("status").GetString().Should().Be("InProgress");
+        AssigneeOf(ticket).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Iniciar triagem não assume")]
+    public async Task StartTriage_LeavesItUnassigned()
+    {
+        await using var scene = await StartAsync();
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+
+        await TakenAsync(diego, scene.Path, "StartTriage");
+
+        var ticket = await TicketAsync(diego, scene.Path);
+        ticket.GetProperty("status").GetString().Should().Be("Triage");
+        AssigneeOf(ticket).Should().BeNull();
+    }
+
     [Fact(DisplayName = "Resposta que não define responsável")]
     public async Task AnswersOfTheManagerAndOfTheRequester_LeaveItUnassigned()
     {
