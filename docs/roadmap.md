@@ -20,7 +20,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 12 | 9 |
+| 1. Fundação | 12 | 10 |
 | 2. Acesso e administração | 16 | 16 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 12 | 12 |
@@ -30,7 +30,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 0 |
-| **Total** | **75** | **62** |
+| **Total** | **75** | **63** |
 
 ## 1. Fundação
 
@@ -47,7 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Concluída em 21/10/2026 ([#68](https://github.com/MarceloMLR/fisco-projects/pull/68)) |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights e registro do aplicativo no Entra | 0052, 0053 | Adiada: aguarda a assinatura do Azure |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Adiada: aguarda a assinatura do Azure |
-| Fundação-8 | `primeira-carga-mais-rapida` | Primeira abertura das telas mais rápida: aquecimento da API ao subir, leituras antes na tela e o código da Linha do tempo carregado antes, a pedido de Marcelo | 0047, 0080, 0106 | Em andamento |
+| Fundação-8 | `primeira-carga-mais-rapida` | Primeira abertura das telas mais rápida: aquecimento da API ao subir, leituras antes na tela e o código da Linha do tempo carregado antes, a pedido de Marcelo | 0047, 0080, 0106 | Concluída em 21/10/2026 ([#69](https://github.com/MarceloMLR/fisco-projects/pull/69)) |
 
 ## 2. Acesso e administração
 
