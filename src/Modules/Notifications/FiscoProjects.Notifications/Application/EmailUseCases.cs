@@ -67,6 +67,9 @@ public interface IOutboxStore
     /// <summary>The last e-mail of the kind, or null.</summary>
     Task<OutboxEmail?> LastOfKindAsync(string kind, CancellationToken cancellationToken);
 
+    /// <summary>How many e-mails wait to be sent, retries included, and since when the oldest waits.</summary>
+    Task<EmailQueueState> WaitingAsync(CancellationToken cancellationToken);
+
     Task SaveChangesAsync(CancellationToken cancellationToken);
 
     /// <summary>Saves the reservation of an e-mail; false when another process changed it first, and nothing was saved.</summary>
@@ -101,8 +104,14 @@ public sealed class EmailQueue(IOutboxStore store, IEmailRenderer renderer, IIns
 /// <summary>A failure of a try, for the log: the e-mail and the error, never the content.</summary>
 public sealed record EmailFailure(Guid EmailId, int Attempts, bool Final, string Error);
 
-/// <summary>What one round of the sending did.</summary>
-public sealed record DispatchResult(int Sent, IReadOnlyList<EmailFailure> Failures);
+/// <summary>The e-mails waiting to be sent and when the oldest of them was put in the queue (ADR-0112).</summary>
+public sealed record EmailQueueState(int Waiting, DateTime? OldestSince)
+{
+    public static readonly EmailQueueState Empty = new(0, null);
+}
+
+/// <summary>What one round of the sending did, and the queue it left.</summary>
+public sealed record DispatchResult(int Sent, IReadOnlyList<EmailFailure> Failures, EmailQueueState Queue);
 
 /// <summary>
 /// Sends the e-mails whose turn came (ADR-0036): each one is reserved before it is sent, so no other process sends it
@@ -150,7 +159,7 @@ public sealed class DispatchEmails(IOutboxStore store, IEmailSender sender, Time
             await store.TrySaveAsync(email, cancellationToken);
         }
 
-        return new DispatchResult(sent, failures);
+        return new DispatchResult(sent, failures, await store.WaitingAsync(cancellationToken));
     }
 }
 

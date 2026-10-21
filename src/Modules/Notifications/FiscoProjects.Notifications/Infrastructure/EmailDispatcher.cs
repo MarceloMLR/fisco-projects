@@ -7,9 +7,11 @@ namespace FiscoProjects.Notifications.Infrastructure;
 
 /// <summary>
 /// Sends the e-mails of the queue in the background of the application (ADR-0036, ADR-0047): when it starts and every
-/// 30 seconds, by the clock of the host; once an hour, it also forgets the content of the old ones (ADR-0058).
+/// 30 seconds, by the clock of the host, with the metrics of the queue (ADR-0112); once an hour, it also forgets the
+/// content of the old ones (ADR-0058).
 /// </summary>
-internal sealed partial class EmailDispatcher(IServiceScopeFactory scopes, TimeProvider clock, ILogger<EmailDispatcher> logger)
+internal sealed partial class EmailDispatcher(
+    IServiceScopeFactory scopes, EmailQueueMetrics metrics, TimeProvider clock, ILogger<EmailDispatcher> logger)
     : BackgroundService
 {
     private static readonly TimeSpan Every = TimeSpan.FromSeconds(30);
@@ -40,6 +42,7 @@ internal sealed partial class EmailDispatcher(IServiceScopeFactory scopes, TimeP
         {
             await using var scope = scopes.CreateAsyncScope();
             var result = await scope.ServiceProvider.GetRequiredService<DispatchEmails>().ExecuteAsync(cancellationToken);
+            metrics.Record(result);
             if (result.Sent > 0)
             {
                 LogSent(logger, result.Sent);

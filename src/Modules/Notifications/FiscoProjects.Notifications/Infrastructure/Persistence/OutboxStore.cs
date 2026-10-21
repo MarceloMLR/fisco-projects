@@ -15,6 +15,15 @@ internal sealed class OutboxStore(NotificationsDbContext db) : IOutboxStore
             .Take(take)
             .ToListAsync(cancellationToken);
 
+    public async Task<EmailQueueState> WaitingAsync(CancellationToken cancellationToken)
+    {
+        var waiting = db.OutboxEmails.AsNoTracking().Where(email => email.Status == OutboxEmailStatus.Pending);
+        var count = await waiting.CountAsync(cancellationToken);
+        return count == 0
+            ? EmailQueueState.Empty
+            : new EmailQueueState(count, await waiting.MinAsync(email => (DateTime?)email.CreatedAt, cancellationToken));
+    }
+
     public async Task<IReadOnlyList<OutboxEmail>> ToForgetAsync(DateTime before, int take, CancellationToken cancellationToken) =>
         await db.OutboxEmails
             .Where(email => email.Status != OutboxEmailStatus.Pending && email.CreatedAt < before && email.ForgottenAt == null)
