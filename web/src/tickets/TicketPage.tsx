@@ -1,3 +1,4 @@
+import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
@@ -15,7 +16,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
-import { type ConversationFilter, toneOf } from './conversation';
+import { attachmentsArchiveUrl, type ConversationFilter, toneOf } from './conversation';
 import { TicketActions } from './TicketActions';
 import { AttachmentChip, PersonAvatar, TicketConversation } from './TicketConversation';
 import { TicketReply } from './TicketReply';
@@ -287,15 +288,42 @@ function SidePanel({
         aria-labelledby="ticket-attachments"
         sx={{ paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}
       >
-        <SectionTitle id="ticket-attachments">
-          {t('tickets.panel.attachments')}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-2)',
+            minHeight: 28,
+            marginBottom: 'var(--space-2)',
+          }}
+        >
           <Box
-            component="span"
-            sx={{ marginLeft: 'var(--space-2)', fontWeight: 400, color: 'var(--text-secondary)' }}
+            component="h2"
+            id="ticket-attachments"
+            sx={{ margin: 0, fontSize: 13, lineHeight: '18px', fontWeight: 500 }}
           >
-            {ticket.attachments.length}
+            {t('tickets.panel.attachments')}
+            <Box
+              component="span"
+              sx={{ marginLeft: 'var(--space-2)', fontWeight: 400, color: 'var(--text-secondary)' }}
+            >
+              {ticket.attachments.length}
+            </Box>
           </Box>
-        </SectionTitle>
+          {ticket.attachments.length > 0 && (
+            <Button
+              variant="text"
+              size="small"
+              href={attachmentsArchiveUrl(ticket.number)}
+              download={`chamado-${String(ticket.number)}-anexos.zip`}
+              startIcon={<DownloadOutlined />}
+              aria-label={t('tickets.panel.downloadAllLabel')}
+            >
+              {t('tickets.panel.downloadAll')}
+            </Button>
+          )}
+        </Box>
         {ticket.attachments.length === 0 ? (
           <Box component="span" sx={labelSx}>
             {t('tickets.panel.noAttachments')}

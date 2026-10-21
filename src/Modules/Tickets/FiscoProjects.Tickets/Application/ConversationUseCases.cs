@@ -359,6 +359,57 @@ public sealed class FollowTicket(IProjectAccess projects, ITicketStore store, Ti
 /// <summary>An attachment of a ticket with its content, for who sees the ticket.</summary>
 public sealed record OpenedAttachment(TicketAttachment Attachment, FileDownload File);
 
+/// <summary>The attachments of a ticket to put in one file, in the order they were sent, each with its name in it.</summary>
+public sealed record TicketArchive(int Number, IReadOnlyList<TicketArchiveEntry> Entries);
+
+/// <summary>An attachment in the file of all the attachments, with a name no other entry has.</summary>
+public sealed record TicketArchiveEntry(string Name, TicketAttachment Attachment);
+
+/// <summary>
+/// All the attachments of a ticket, of the description and of the messages, to download at once (Chamados-2.1): only who
+/// sees the ticket, and only with attachments; null otherwise. A name repeated gets " (2)", " (3)" before the
+/// extension, in the order of sending.
+/// </summary>
+public sealed class ListTicketArchive(IProjectAccess projects, ITicketStore store)
+{
+    public async Task<TicketArchive?> ExecuteAsync(int number, TicketViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var ticket = await store.FindAsync(number, cancellationToken);
+        if (ticket is null
+            || await projects.FindAsync(ticket.ProjectId, viewer.UserId, viewer.IsAdministrator, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var attachments = await store.AttachmentsAsync(ticket.Id, cancellationToken);
+        if (attachments.Count == 0)
+        {
+            return null;
+        }
+
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return new TicketArchive(
+            ticket.Number, [.. attachments.Select(attachment => new TicketArchiveEntry(UniqueName(attachment.Name, used), attachment))]);
+    }
+
+    /// <summary>The name, or the name with " (2)", " (3)"... before the extension, the first one not used yet.</summary>
+    public static string UniqueName(string name, ISet<string> used)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(used);
+        var extension = Path.GetExtension(name);
+        var stem = name[..^extension.Length];
+        var candidate = name;
+        for (var copy = 2; !used.Add(candidate); copy++)
+        {
+            candidate = $"{stem} ({copy}){extension}";
+        }
+
+        return candidate;
+    }
+}
+
 /// <summary>Opens an attachment of a ticket (ADR-0030): only who sees the ticket; null for anyone else.</summary>
 public sealed class OpenTicketAttachment(IProjectAccess projects, ITicketStore store, TicketFiles files)
 {

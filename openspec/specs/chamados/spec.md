@@ -184,7 +184,7 @@ O solicitante MUST acompanhar o chamado desde a abertura. Qualquer pessoa que v�
 
 ### Requirement: Anexos do chamado
 
-Quem manda mensagem MUST poder anexar vários arquivos a ela, e o solicitante, à descrição logo depois de abrir o chamado. Cada arquivo MUST ter até 15 MB (configurável). Executáveis e scripts MUST ser recusados com 400. Os arquivos ficam na pasta do chamado e só quem vê o chamado MUST conseguir abri-los; imagens e PDF abrem no navegador (ADR-0026, ADR-0030).
+Quem manda mensagem MUST poder anexar vários arquivos a ela, e o solicitante, à descrição logo depois de abrir o chamado. Cada arquivo MUST ter até 15 MB (configurável). Executáveis e scripts MUST ser recusados com 400. Os arquivos ficam na pasta do chamado e só quem vê o chamado MUST conseguir abri-los e baixá-los; imagens e PDF abrem no navegador, e MUST poder ser baixados com o nome original. Todos os anexos de um chamado MUST poder ser baixados de uma vez, num `.zip` (ADR-0026, ADR-0030).
 
 #### Scenario: Anexar arquivos a uma mensagem
 - **WHEN** alguém manda uma mensagem com uma imagem e um XML
@@ -196,6 +196,18 @@ Quem manda mensagem MUST poder anexar vários arquivos a ela, e o solicitante, �
 
 #### Scenario: Anexo fora do acesso
 - **WHEN** alguém que não está no projeto pede um anexo de um chamado dele
+- **THEN** a API responde 404
+
+#### Scenario: Baixar um anexo
+- **WHEN** quem vê o chamado pede uma imagem anexada como download
+- **THEN** a API entrega o arquivo como download, com o nome original
+
+#### Scenario: Baixar todos os anexos
+- **WHEN** quem vê o chamado pede todos os anexos de um chamado com dois arquivos de mesmo nome e um PDF
+- **THEN** a API entrega um `.zip` com os três, na ordem da lista de anexos, cada um com o nome que tem no chamado
+
+#### Scenario: Baixar todos sem anexos ou sem acesso
+- **WHEN** alguém pede todos os anexos de um chamado sem anexos, ou de um chamado que não vê
 - **THEN** a API responde 404
 
 ### Requirement: Conversa pela tela
@@ -545,3 +557,15 @@ O chamado fechado pelo cancelamento do projeto MUST ficar Fechado em qualquer st
 #### Scenario: Iniciar triagem não assume
 - **WHEN** um desenvolvedor inicia a triagem de um chamado Aberto sem responsável
 - **THEN** o chamado fica Em triagem e continua sem responsável
+
+### Requirement: Baixar anexos pela tela
+
+Cada anexo, na conversa e em "Anexos da conversa", MUST ter o ícone "Baixar" ao lado do nome, que continua abrindo o arquivo. "Anexos da conversa" MUST ter "Baixar todos" quando há anexos (ADR-0026).
+
+#### Scenario: Baixar pela tela
+- **WHEN** alguém abre um chamado com anexos
+- **THEN** cada anexo mostra o nome, que abre o arquivo, e "Baixar", que baixa com o nome original, e "Anexos da conversa" mostra "Baixar todos"
+
+#### Scenario: Sem anexos para baixar
+- **WHEN** alguém abre um chamado sem anexos
+- **THEN** "Anexos da conversa" diz que não há anexos, sem "Baixar todos"

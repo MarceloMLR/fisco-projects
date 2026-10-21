@@ -23,6 +23,14 @@ export const shownInteractions = 10;
 export const attachmentUrl = (number: number, id: string) =>
   `/api/tickets/${String(number)}/attachments/${id}`;
 
+/** The address that downloads an attachment with its name, even an image or a PDF (Chamados-2.1). */
+export const attachmentDownloadUrl = (number: number, id: string) =>
+  `${attachmentUrl(number, id)}?download=true`;
+
+/** The address of the .zip with all the attachments of a ticket (Chamados-2.1). */
+export const attachmentsArchiveUrl = (number: number) =>
+  `/api/tickets/${String(number)}/attachments/archive`;
+
 /** Whether the file is an image, for its icon. */
 export const isImage = (contentType: string) => contentType.startsWith('image/');
 

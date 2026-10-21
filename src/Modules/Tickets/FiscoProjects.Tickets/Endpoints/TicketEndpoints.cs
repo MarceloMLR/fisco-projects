@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO.Compression;
 using FiscoProjects.Files.Contracts;
 using FiscoProjects.Tickets.Application;
 using FiscoProjects.Tickets.Domain;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace FiscoProjects.Tickets.Endpoints;
 
@@ -362,6 +364,9 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapGet("/{number:int}/attachments/archive", ArchiveAsync).WithName("DownloadTicketAttachments")
+            .WithDescription("All the attachments of the ticket in a .zip, in the order they were sent (Chamados-2.1).")
+            .Produces(StatusCodes.Status200OK, contentType: "application/zip");
         tickets.MapGet("/{number:int}/attachments/{id:guid}", OpenAttachmentAsync).WithName("OpenTicketAttachment")
             .Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
         tickets.MapPut("/{number:int}/following", (int number, HttpContext http, IUserAccess access, FollowTicket follow, CancellationToken cancellationToken) =>
@@ -898,8 +903,51 @@ public static class TicketEndpoints
         }
     }
 
+    private static async Task<Results<PushStreamHttpResult, NotFound>> ArchiveAsync(
+        int number, HttpContext http, IUserAccess access, ListTicketArchive list, TicketFiles files, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        if (await list.ExecuteAsync(number, viewer, cancellationToken) is not { } archive)
+        {
+            return TypedResults.NotFound();
+        }
+
+        var headers = http.Response.Headers;
+        headers.XContentTypeOptions = "nosniff";
+        headers.CacheControl = "private, no-store";
+        // The .zip is put together in memory and, past a small size, in a temporary file, and then sent: the zip
+        // writer is not fully asynchronous, and the answer only takes asynchronous writes (Chamados-2.1).
+        return TypedResults.Stream(
+            async body =>
+            {
+                await using var buffer = new FileBufferingWriteStream();
+                await using (var zip = await ZipArchive.CreateAsync(
+                    buffer, ZipArchiveMode.Create, leaveOpen: true, entryNameEncoding: null, cancellationToken))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        await using var file = await files.OpenAsync(entry.Attachment, cancellationToken);
+                        if (file is null)
+                        {
+                            continue;
+                        }
+
+                        var zipped = zip.CreateEntry(entry.Name, CompressionLevel.Fastest);
+                        await using var target = await zipped.OpenAsync(cancellationToken);
+                        await file.Content.CopyToAsync(target, cancellationToken);
+                    }
+                }
+
+                await buffer.DrainBufferAsync(body, cancellationToken);
+            },
+            "application/zip",
+            $"chamado-{archive.Number}-anexos.zip");
+    }
+
+    // download: sends the file as a download, with its name, even of a type the browser shows (Chamados-2.1).
     private static async Task<Results<FileStreamHttpResult, NotFound>> OpenAttachmentAsync(
-        int number, Guid id, HttpContext http, IUserAccess access, OpenTicketAttachment open, CancellationToken cancellationToken)
+        int number, Guid id, HttpContext http, IUserAccess access, OpenTicketAttachment open, CancellationToken cancellationToken,
+        bool download = false)
     {
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         if (await open.ExecuteAsync(number, id, viewer, cancellationToken) is not { } opened)
@@ -908,7 +956,7 @@ public static class TicketEndpoints
         }
 
         var contentType = opened.Attachment.ContentType;
-        var inline = FileTypes.OpensInBrowser(contentType);
+        var inline = !download && FileTypes.OpensInBrowser(contentType);
         var headers = http.Response.Headers;
         // The browser neither guesses another type nor runs anything of the file (ADR-0026).
         headers.XContentTypeOptions = "nosniff";

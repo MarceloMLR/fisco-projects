@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -369,6 +370,69 @@ public sealed class TicketConversationTests(SqlServerFixture sqlServer) : IDispo
             .StatusCode.Should().Be(HttpStatusCode.NotFound);
         using var diego = await scene.App.SignInAsync(scene.Diego);
         (await PostFormAsync(diego, $"{scene.Path}/attachments", null, ("outro.png", Png))).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact(DisplayName = "Baixar um anexo")]
+    public async Task Attachment_DownloadsWithItsName()
+    {
+        await using var scene = await StartAsync();
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+        (await PostMessageAsync(diego, scene, Doc(Paragraph(Text("Print"))), ("erro-539.png", Png))).StatusCode.Should().Be(HttpStatusCode.Created);
+        using var lucas = await scene.App.SignInAsync(scene.Lucas);
+        var attachment = (await TicketAsync(lucas, scene)).GetProperty("attachments").EnumerateArray().Single();
+
+        var image = await lucas.GetAsync($"{scene.Path}/attachments/{attachment.GetProperty("id").GetGuid()}?download=true", Cancellation);
+
+        image.StatusCode.Should().Be(HttpStatusCode.OK);
+        image.Content.Headers.ContentDisposition?.DispositionType.Should().Be("attachment");
+        image.Content.Headers.ContentDisposition?.FileNameStar.Should().Be("erro-539.png");
+        (await image.Content.ReadAsByteArrayAsync(Cancellation)).Should().Equal(Png);
+    }
+
+    [Fact(DisplayName = "Baixar todos os anexos")]
+    public async Task Archive_HasAllTheAttachments_InTheOrderOfTheList()
+    {
+        await using var scene = await StartAsync();
+        using var carla = await scene.App.SignInAsync(scene.Carla);
+        var pdf = "%PDF-1.4\n"u8.ToArray();
+        (await PostFormAsync(carla, $"{scene.Path}/attachments", null, ("erro.png", Png))).StatusCode.Should().Be(HttpStatusCode.Created);
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+        (await PostMessageAsync(diego, scene, Doc(Paragraph(Text("Outro print e a nota"))), ("erro.png", [.. Png, 0]), ("nota.pdf", pdf)))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+        using var lucas = await scene.App.SignInAsync(scene.Lucas);
+        var attachments = (await TicketAsync(lucas, scene)).GetProperty("attachments").EnumerateArray()
+            .Select(attachment => (Name: attachment.GetProperty("name").GetString(), Size: attachment.GetProperty("size").GetInt64()))
+            .ToList();
+
+        var response = await lucas.GetAsync($"{scene.Path}/attachments/archive", Cancellation);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/zip");
+        response.Content.Headers.ContentDisposition?.FileNameStar.Should().Be($"chamado-{scene.Number}-anexos.zip");
+        response.Headers.CacheControl?.NoStore.Should().BeTrue();
+        await using var zip = await ZipArchive.CreateAsync(
+            await response.Content.ReadAsStreamAsync(Cancellation), ZipArchiveMode.Read, leaveOpen: false, entryNameEncoding: null, Cancellation);
+        // The two "erro.png" already have different names in the ticket, as the folder of the ticket keeps them.
+        attachments.Select(attachment => attachment.Name).Distinct().Should().HaveCount(3);
+        zip.Entries.Select(entry => entry.FullName).Should().Equal(attachments.Select(attachment => attachment.Name));
+        var second = zip.GetEntry(attachments.Single(attachment => attachment.Size == Png.Length + 1).Name!);
+        await using var content = await second!.OpenAsync(Cancellation);
+        using var copy = new MemoryStream();
+        await content.CopyToAsync(copy, Cancellation);
+        copy.ToArray().Should().Equal([.. Png, 0]);
+    }
+
+    [Fact(DisplayName = "Baixar todos sem anexos ou sem acesso")]
+    public async Task Archive_IsNotFound_WithoutAttachmentsOrAccess()
+    {
+        await using var scene = await StartAsync();
+        using var carla = await scene.App.SignInAsync(scene.Carla);
+        (await carla.GetAsync($"{scene.Path}/attachments/archive", Cancellation)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        (await PostFormAsync(carla, $"{scene.Path}/attachments", null, ("erro.png", Png))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await carla.GetAsync($"{scene.Path}/attachments/archive", Cancellation)).StatusCode.Should().Be(HttpStatusCode.OK);
+        using var sofia = await scene.App.SignInAsync(scene.Sofia);
+        (await sofia.GetAsync($"{scene.Path}/attachments/archive", Cancellation)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "Interações na lista")]

@@ -166,7 +166,7 @@ describe('Conversa pela tela', () => {
     // The message at the end of the conversation, and the file in "Anexos da conversa".
     expect(await screen.findByText('Diego, veja o XML')).toBeVisible();
     const panel = screen.getByRole('complementary', { name: text.details.people });
-    expect(within(panel).getByRole('link', { name: /nota-3381\.xml/ })).toHaveAttribute(
+    expect(within(panel).getByRole('link', { name: /^nota-3381\.xml/ })).toHaveAttribute(
       'href',
       '/api/tickets/1/attachments/0199f5a2-7c1e-7d40-9a1b-900000000001',
     );
@@ -195,5 +195,55 @@ describe('Conversa pela tela', () => {
 
     expect(await screen.findByRole('button', { name: text.panel.unfollow })).toBeVisible();
     expect(following).toEqual(['PUT']);
+  });
+});
+
+// Spec: chamados, requirement "Baixar anexos pela tela" (Chamados-2.1).
+describe('Baixar anexos pela tela', () => {
+  it('Baixar pela tela', async () => {
+    ticket = {
+      ...ticket,
+      attachments: [
+        {
+          id: '0199f5a2-7c1e-7d40-9a1b-900000000002',
+          messageId: null,
+          name: 'erro-539.png',
+          size: 12 * 1024,
+          contentType: 'image/png',
+          uploadedAt: '2026-10-15T09:00:00Z',
+        },
+      ],
+    };
+    await openTicket();
+
+    const panel = screen.getByRole('complementary', { name: text.details.people });
+    const section = within(panel).getByRole('region', { name: /^Anexos da conversa/ });
+    expect(within(section).getByRole('link', { name: /^erro-539\.png/ })).toHaveAttribute(
+      'href',
+      '/api/tickets/1/attachments/0199f5a2-7c1e-7d40-9a1b-900000000002',
+    );
+    const download = within(section).getByRole('link', {
+      name: text.conversation.download.replace('{{name}}', 'erro-539.png'),
+    });
+    expect(download).toHaveAttribute(
+      'href',
+      '/api/tickets/1/attachments/0199f5a2-7c1e-7d40-9a1b-900000000002?download=true',
+    );
+    expect(download).toHaveAttribute('download', 'erro-539.png');
+    expect(
+      within(section).getByRole('link', { name: text.panel.downloadAllLabel }),
+    ).toHaveAttribute('href', '/api/tickets/1/attachments/archive');
+  });
+
+  it('Sem anexos para baixar', async () => {
+    ticket = { ...ticket, attachments: [] };
+    await openTicket();
+
+    const panel = screen.getByRole('complementary', { name: text.details.people });
+    const section = within(panel).getByRole('region', { name: /^Anexos da conversa/ });
+    expect(within(section).getByText(text.panel.noAttachments)).toBeVisible();
+    expect(
+      within(section).queryByRole('link', { name: text.panel.downloadAllLabel }),
+    ).not.toBeInTheDocument();
   });
 });

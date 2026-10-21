@@ -1,5 +1,6 @@
 import AutorenewOutlined from '@mui/icons-material/AutorenewOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
@@ -14,6 +15,7 @@ import { Avatar } from '../components/Avatar';
 import { RichText } from '../components/RichText';
 import { useDates } from '../format/useDates';
 import {
+  attachmentDownloadUrl,
   attachmentUrl,
   type ConversationFilter,
   conversationItems,
@@ -29,45 +31,76 @@ type Attachment = Ticket['attachments'][number];
 type Participant = Ticket['participants'][number];
 type TicketEvent = Ticket['events'][number];
 
-/** A file of the conversation (Message.Attachment): opens in a new tab, images and PDF in the browser. */
+/**
+ * A file of the conversation (Message.Attachment): the name opens it in a new tab, images and PDF in the browser, and
+ * "Baixar" downloads it with its name (Chamados-2.1).
+ */
 export function AttachmentChip({ number, attachment }: { number: number; attachment: Attachment }) {
+  const { t } = useTranslation();
   const Icon = isImage(attachment.contentType) ? ImageOutlined : DescriptionOutlined;
   return (
     <Box
-      component="a"
-      href={attachmentUrl(number, attachment.id)}
-      target="_blank"
-      rel="noopener noreferrer"
+      component="span"
       sx={{
         display: 'inline-flex',
-        alignItems: 'center',
-        gap: 'var(--space-2)',
+        alignItems: 'stretch',
         maxWidth: '100%',
         boxSizing: 'border-box',
         height: 32,
-        padding: '0 var(--space-3)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         backgroundColor: 'var(--bg-surface)',
-        color: 'var(--text)',
+        overflow: 'hidden',
         fontSize: 13,
-        textDecoration: 'none',
-        '&:hover': { backgroundColor: 'var(--bg-hover)' },
-        '& > svg': { fontSize: 18, color: 'var(--text-secondary)', flex: 'none' },
+        '& > a': { color: 'var(--text)', textDecoration: 'none' },
+        '& > a:hover': { backgroundColor: 'var(--bg-hover)' },
+        '& > a:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
+        '& svg': { fontSize: 18, color: 'var(--text-secondary)', flex: 'none' },
       }}
     >
-      <Icon aria-hidden />
       <Box
-        component="span"
-        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        component="a"
+        href={attachmentUrl(number, attachment.id)}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          minWidth: 0,
+          padding: '0 var(--space-3)',
+        }}
       >
-        {attachment.name}
+        <Icon aria-hidden />
+        <Box
+          component="span"
+          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {attachment.name}
+        </Box>
+        <Box
+          component="span"
+          sx={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+        >
+          {sizeText(attachment.size)}
+        </Box>
       </Box>
       <Box
-        component="span"
-        sx={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+        component="a"
+        href={attachmentDownloadUrl(number, attachment.id)}
+        download={attachment.name}
+        aria-label={t('tickets.conversation.download', { name: attachment.name })}
+        title={t('tickets.conversation.download', { name: attachment.name })}
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 'none',
+          width: 32,
+          borderLeft: '1px solid var(--border)',
+        }}
       >
-        {sizeText(attachment.size)}
+        <DownloadOutlined aria-hidden />
       </Box>
     </Box>
   );
