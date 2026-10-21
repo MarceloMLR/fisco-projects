@@ -171,3 +171,4 @@ Regras:
 | [0106](0106-primeira-carga-mais-rapida.md) | Primeira abertura das telas mais rápida: aquecimento da API, leituras antes e o código da Linha do tempo carregado antes | aceita | 2026-10-21 |
 | [0107](0107-mencionar-ao-digitar.md) | Mencionar ao digitar "@" no editor dos chamados | aceita | 2026-10-21 |
 | [0108](0108-logo-na-aba-do-navegador.md) | Logo da instalação na aba do navegador | aceita | 2026-10-21 |
+| [0109](0109-confirmacoes-no-alto-da-tela.md) | Confirmações no alto da tela, no meio | aceita | 2026-10-21 |

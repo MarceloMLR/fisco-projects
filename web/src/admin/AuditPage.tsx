@@ -279,7 +279,6 @@ export function AuditPage() {
         open={message !== undefined}
         message={message}
         autoHideDuration={8000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         onClose={() => {
           setMessage(undefined);
         }}

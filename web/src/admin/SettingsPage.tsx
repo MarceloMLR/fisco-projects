@@ -647,7 +647,6 @@ export function SettingsPage() {
         open={message !== undefined}
         message={message}
         autoHideDuration={6000}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         onClose={() => {
           setMessage(undefined);
         }}

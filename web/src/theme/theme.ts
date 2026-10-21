@@ -257,6 +257,20 @@ export const theme = createTheme({
     MuiDivider: {
       styleOverrides: { root: { borderColor: 'var(--border)' } },
     },
+    // Confirmations at the top, in the middle (ADR-0109): on the computer, in the strip of the invisible header and in
+    // the middle of the content, so it never covers the sidebar; on the phone, just below the top bar.
+    MuiSnackbar: {
+      defaultProps: { anchorOrigin: { vertical: 'top', horizontal: 'center' } },
+      styleOverrides: {
+        anchorOriginTopCenter: {
+          top: 'calc(var(--topbar-height) + var(--space-2))',
+          '@media (min-width: 900px)': {
+            top: 'calc((var(--topbar-height) - 44px) / 2)',
+            left: 'calc(50% + var(--sidebar-width) / 2)',
+          },
+        },
+      },
+    },
     // Snackbar of the design system (fp-snackbar): inverse colors, short message, optional action.
     MuiSnackbarContent: {
       styleOverrides: {
