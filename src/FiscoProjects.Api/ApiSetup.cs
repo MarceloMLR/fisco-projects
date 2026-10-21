@@ -28,7 +28,7 @@ namespace FiscoProjects.Api;
 
 /// <summary>
 /// Common HTTP behavior of the API: health (including the database), Problem Details errors, OpenAPI contract,
-/// the session, the /api route group, the shared persistence services and the frontend build.
+/// the monitoring, the session, the /api route group, the shared persistence services and the frontend build.
 /// Program.cs and the integration tests compose the application through these two methods.
 /// </summary>
 public static class ApiSetup
@@ -52,6 +52,8 @@ public static class ApiSetup
         });
         builder.Services.AddOpenApi();
         builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
+        // Application Insights, only with its connection (ADR-0057, ADR-0112).
+        builder.AddFiscoProjectsMonitoring();
         builder.Services.AddFiscoProjectsPersistence();
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.AddSessionAuthentication(builder.Configuration);

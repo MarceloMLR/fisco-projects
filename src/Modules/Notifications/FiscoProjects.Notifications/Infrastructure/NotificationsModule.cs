@@ -64,6 +64,9 @@ public static class NotificationsModule
         services.AddScoped<DeliverNotices>();
         services.AddScoped<SendDailySummaries>();
         services.AddSingleton<INoticeBoard, NoticeBoard>();
+        // The metrics of the queue, for the alert of a queue that stopped (ADR-0112).
+        services.AddMetrics();
+        services.AddSingleton<EmailQueueMetrics>();
         services.AddHostedService<EmailDispatcher>();
         services.AddHostedService<DailySummaryScheduler>();
         services.AddHostedService<NotificationCleanup>();

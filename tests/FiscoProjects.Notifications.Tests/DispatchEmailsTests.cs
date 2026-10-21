@@ -29,6 +29,28 @@ public sealed class DispatchEmailsTests(SqlServerFixture sqlServer)
         email.Attempts.Should().Be(1);
     }
 
+    // Spec: monitoramento, requirement "Métricas da fila de e-mails" (ADR-0112).
+    [Fact(DisplayName = "Fila parada")]
+    public async Task TheRound_SaysTheQueueItLeft()
+    {
+        await using var database = await NotificationsDatabase.CreateAsync(sqlServer);
+        var queuedAt = database.Clock.GetUtcNow().UtcDateTime;
+        await database.EnqueueAsync();
+        database.Clock.Advance(TimeSpan.FromMinutes(5));
+        await database.EnqueueAsync("rafael.souza@empresa.example", "Rafael Souza");
+        database.Sender.Failing = true;
+
+        var failed = await database.RunAsync<DispatchEmails, DispatchResult>(
+            dispatch => dispatch.ExecuteAsync(TestContext.Current.CancellationToken));
+        database.Sender.Failing = false;
+        database.Clock.Advance(TimeSpan.FromMinutes(1));
+        var sent = await database.RunAsync<DispatchEmails, DispatchResult>(
+            dispatch => dispatch.ExecuteAsync(TestContext.Current.CancellationToken));
+
+        failed.Queue.Should().Be(new EmailQueueState(2, queuedAt));
+        sent.Queue.Should().Be(EmailQueueState.Empty);
+    }
+
     [Fact]
     public async Task AFailureIsTriedAgainAfterTheWait()
     {
