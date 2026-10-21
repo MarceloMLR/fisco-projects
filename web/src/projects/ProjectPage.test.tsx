@@ -34,6 +34,7 @@ beforeEach(() => {
     canManagePeople: true,
     canManageManagers: true,
     canEditSchedule: true,
+    canDelete: false,
   };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
@@ -192,6 +193,7 @@ describe('Ações do projeto', () => {
       canManagePeople: true,
       canManageManagers: false,
       canEditSchedule: false,
+      canDelete: false,
     };
     await openProject();
 
@@ -312,6 +314,7 @@ describe('Ações do projeto', () => {
       canManagePeople: false,
       canManageManagers: false,
       canEditSchedule: false,
+      canDelete: false,
     };
     await openProject();
 
@@ -434,5 +437,91 @@ describe('Encerramento pela tela', () => {
 
     expect(await screen.findByText(text.closed.Cancelled)).toBeVisible();
     expect(requests).toEqual(['PUT status Cancelled']);
+  });
+});
+
+// Spec: projetos, requirement "Exclusão pela tela" (ADR-0041, ADR-0111).
+describe('Exclusão pela tela', () => {
+  const deletion = text.deletion;
+
+  function asAdministrator() {
+    signedInAs('Administrator');
+    permissions = { ...permissions, canDelete: true };
+    server.use(
+      http.get('/api/projects/:id/deletion', ({ params }) =>
+        HttpResponse.json({
+          id: params.id,
+          code: 'ERP-FIN',
+          name: 'Implantação do ERP financeiro',
+          tickets: 2,
+          documents: 1,
+          links: 0,
+          credentials: 3,
+          acceptanceTerms: 1,
+          scheduleItems: 12,
+          members: 5,
+        }),
+      ),
+      http.post('/api/projects/:id/deletion', async ({ request, params }) => {
+        const { code } = (await request.json()) as { code: string };
+        requests.push(`POST deletion ${code}`);
+        projects.splice(
+          projects.findIndex((project) => project.id === params.id),
+          1,
+        );
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+  }
+
+  it('Excluir pela tela', async () => {
+    asAdministrator();
+    await openProject();
+
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.delete }));
+    const dialog = await screen.findByRole('alertdialog', {
+      name: deletion.title.replace('{{code}}', 'ERP-FIN'),
+    });
+    const list = await within(dialog).findByRole('list');
+    expect(
+      within(list)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      deletion.counts.tickets_other.replace('{{count}}', '2'),
+      deletion.counts.documents_one.replace('{{count}}', '1'),
+      deletion.counts.credentials_other.replace('{{count}}', '3'),
+      deletion.counts.acceptanceTerms_one.replace('{{count}}', '1'),
+      deletion.counts.scheduleItems_other.replace('{{count}}', '12'),
+      deletion.counts.members_other.replace('{{count}}', '5'),
+    ]);
+    expect(dialog).toHaveTextContent(deletion.forGood);
+    const confirm = within(dialog).getByRole('button', { name: deletion.confirm });
+    const code = within(dialog).getByRole('textbox', {
+      name: deletion.code.replace('{{code}}', 'ERP-FIN'),
+    });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(code, { target: { value: 'ERP' } });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(code, { target: { value: ' erp-fin ' } });
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+
+    expect(
+      await screen.findByText(text.messages.deleted.replace('{{code}}', 'ERP-FIN')),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(ptBR.pages.projects.title);
+    expect(requests).toEqual(['POST deletion erp-fin']);
+  });
+
+  it('Excluir só para o administrador', async () => {
+    await openProject();
+
+    const menu = await openActions();
+
+    expect(
+      within(menu).queryByRole('menuitem', { name: text.actions.delete }),
+    ).not.toBeInTheDocument();
   });
 });

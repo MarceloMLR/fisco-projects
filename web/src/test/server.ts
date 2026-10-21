@@ -313,6 +313,7 @@ function demoProject(
       canManagePeople: status !== 'Completed' && status !== 'Cancelled',
       canManageManagers: status !== 'Completed' && status !== 'Cancelled',
       canEditSchedule: status !== 'Completed' && status !== 'Cancelled',
+      canDelete: false,
     },
     scheduleStart: null,
     scheduleEnd: null,

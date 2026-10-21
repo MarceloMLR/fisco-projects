@@ -139,6 +139,17 @@ export function projectClosingQuery(id: string) {
   });
 }
 
+/** What deleting a project would remove, for the Administrator (ADR-0041). */
+export function projectDeletionQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'deletion'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/deletion', { params: { path: { id } }, signal })),
+    // Counted again each time the confirmation opens: someone may have added a ticket meanwhile.
+    staleTime: 0,
+  });
+}
+
 /** The people of a project, by name, with their role, when they joined and their last access. */
 export function projectMembersQuery(id: string) {
   return queryOptions({

@@ -96,13 +96,33 @@ const clientFields: readonly string[] = [
 
 const isClientField = (field: string): field is ClientField => clientFields.includes(field);
 
-type ProjectField = 'Code' | 'Name' | 'Description' | 'ClientId' | 'Status';
+type ProjectField =
+  | 'Code'
+  | 'Name'
+  | 'Description'
+  | 'ClientId'
+  | 'Status'
+  | 'Tickets'
+  | 'Documents'
+  | 'Links'
+  | 'Credentials'
+  | 'AcceptanceTerms'
+  | 'ScheduleItems'
+  | 'Members';
 const projectFields: readonly string[] = [
   'Code',
   'Name',
   'Description',
   'ClientId',
   'Status',
+  // What the deletion of the project removed (ADR-0111).
+  'Tickets',
+  'Documents',
+  'Links',
+  'Credentials',
+  'AcceptanceTerms',
+  'ScheduleItems',
+  'Members',
 ] satisfies ProjectField[];
 
 const isProjectField = (field: string): field is ProjectField => projectFields.includes(field);
@@ -913,6 +933,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   // A document sent or removed says the folder and the project.
   if (entry.itemType === 'Document' && entry.action !== 'Updated') {
     return join(label, folderOf(entry), projectOfMember(entry));
+  }
+  // A project deleted says its code (ADR-0111).
+  if (entry.itemType === 'Project' && entry.action === 'Deleted') {
+    return join(label, changeOf(entry, 'Code')?.before ?? '');
   }
   if (entry.action !== 'Updated') {
     return label;
