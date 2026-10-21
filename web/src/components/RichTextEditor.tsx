@@ -7,22 +7,27 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import MenuList from '@mui/material/MenuList';
+import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
 import { Node } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { type MouseEvent, type ReactNode, useState } from 'react';
+import { type MouseEvent, type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from './Avatar';
 import { Dialog } from './Dialog';
 import { richTextSx } from './richTextSx';
 import { TextField } from './TextField';
+import {
+  type MentionChoice,
+  type TypedMention,
+  TypedMentions,
+  typedMentionExtension,
+} from './typedMention';
 
-/** A person who may be mentioned. */
-export interface MentionChoice {
-  id: string;
-  name: string;
-}
+export type { MentionChoice } from './typedMention';
 
 /** A mention of a person (ADR-0026): kept with the id and the name, shown as @name. */
 const Mention = Node.create({
@@ -86,8 +91,9 @@ function ToolButton({
 
 /**
  * The editor of the tickets (Tiptap, ADR-0026; Composer of the design system): bold, bulleted lists, links and
- * mentions of the people who may be mentioned, chosen by "@". Gives the document as JSON, as the API keeps it, and
- * whether it is empty. To clear it after sending, give it another key.
+ * mentions of the people who may be mentioned, chosen by the button "@" or by typing "@" and part of the name
+ * (ADR-0107). Gives the document as JSON, as the API keeps it, and whether it is empty. To clear it after sending, give
+ * it another key.
  */
 export function RichTextEditor({
   label,
@@ -115,6 +121,16 @@ export function RichTextEditor({
   const [people, setPeople] = useState<HTMLElement>();
   const [linking, setLinking] = useState(false);
   const [address, setAddress] = useState('');
+  // The list of a mention typed after "@" (ADR-0107), shared with the editor, which reads the people of now.
+  const [mentions] = useState(() => new TypedMentions());
+  const [typed, setTyped] = useState<TypedMention>();
+  const typedListId = useId();
+  useEffect(() => {
+    mentions.listen(setTyped);
+  }, [mentions]);
+  useEffect(() => {
+    mentions.setPeople(mentionable ?? []);
+  }, [mentions, mentionable]);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -135,6 +151,7 @@ export function RichTextEditor({
       }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       Mention,
+      typedMentionExtension(mentions),
     ],
     editorProps: { attributes: { 'aria-label': label, 'aria-multiline': 'true', role: 'textbox' } },
     onUpdate: ({ editor: changed }) => {
@@ -261,6 +278,56 @@ export function RichTextEditor({
         <EditorContent editor={editor} />
       </Box>
       {footer}
+      <Popper
+        open={typed !== undefined}
+        placement="bottom-start"
+        anchorEl={
+          typed === undefined
+            ? null
+            : { getBoundingClientRect: () => typed.rect() ?? new DOMRect() }
+        }
+        sx={{ zIndex: (theme) => theme.zIndex.tooltip }}
+      >
+        <Paper
+          sx={{
+            minWidth: 220,
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-menu)',
+          }}
+        >
+          {/* The focus stays in the editor: the keys of the editor mark and choose (typedMention.ts). */}
+          <MenuList
+            id={typedListId}
+            role="listbox"
+            aria-label={t('editor.mention')}
+            autoFocus={false}
+            autoFocusItem={false}
+            sx={{ padding: 'var(--space-1) 0' }}
+          >
+            {typed?.people.map((person, index) => (
+              <MenuItem
+                key={person.id}
+                role="option"
+                aria-selected={index === typed.marked}
+                selected={index === typed.marked}
+                onMouseDown={(event) => {
+                  // Keeps the focus and the text in the editor while the person is chosen.
+                  event.preventDefault();
+                }}
+                onClick={() => {
+                  typed.choose(person);
+                }}
+                sx={{ gap: 'var(--space-2)' }}
+              >
+                <Avatar name={person.name} size="sm" />
+                {person.name}
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Paper>
+      </Popper>
       <Menu
         anchorEl={people}
         open={people !== undefined}
