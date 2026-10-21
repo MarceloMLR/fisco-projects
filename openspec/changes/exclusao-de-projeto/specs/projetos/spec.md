@@ -13,8 +13,8 @@ Só o administrador MUST poder excluir um projeto, de qualquer status, digitando
 - **THEN** a API recusa com 400 no campo do código, e nada é apagado
 
 #### Scenario: Só o administrador exclui
-- **WHEN** o gerente do projeto ou outra pessoa pede o resumo ou a exclusão
-- **THEN** a API recusa com 403
+- **WHEN** o gerente ou outra pessoa do projeto pede o resumo ou a exclusão
+- **THEN** a API recusa com 403, e quem não está no projeto recebe 404
 
 #### Scenario: Número de chamado não reaproveitado
 - **WHEN** um chamado é aberto depois da exclusão de um projeto com chamados
