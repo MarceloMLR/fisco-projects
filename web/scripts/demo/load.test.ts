@@ -155,7 +155,12 @@ describe('Carga dos dados de demonstração', () => {
     expect(callsBy(/^paulo PUT \/api\/users\/.+\/role$/)).toEqual([
       `paulo PUT /api/users/${idOf('marina')}/role`,
       `paulo PUT /api/users/${idOf('beatriz')}/role`,
+      `paulo PUT /api/users/${idOf('rafael')}/role`,
     ]);
+    // The tech lead gets the role Tech lead in the system before the projects (ADR-0097).
+    expect((bodies.get(`/api/users/${idOf('rafael')}/role`) ?? [])[0]).toEqual({
+      role: 'TechLead',
+    });
     expect(callsBy(/^paulo POST \/api\/clients$/)).toHaveLength(3);
     expect(callsBy(/^paulo POST \/api\/projects$/)).toHaveLength(5);
     expect(people(/POST \/api\/projects\/[^/]+\/members$/)).toEqual(['paulo']);

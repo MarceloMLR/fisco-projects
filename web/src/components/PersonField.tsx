@@ -20,6 +20,8 @@ export interface PersonChoice {
   name: string;
   /** An active Administrator or Project manager, who may manage a project (ADR-0085). */
   canBeManager: boolean;
+  /** An active Administrator or Tech lead, who may lead a project technically (ADR-0097). */
+  canBeTechLead: boolean;
 }
 
 /** The same person, by the user or by the directory. */
@@ -40,6 +42,7 @@ export function PersonField({
   value,
   onChange,
   managersOnly = false,
+  techLeadsOnly = false,
   placeholder,
   youId,
   exclude,
@@ -53,6 +56,8 @@ export function PersonField({
   onChange: (person: PersonChoice | null) => void;
   /** Only the Administrators and the Project managers. */
   managersOnly?: boolean;
+  /** Only the Administrators and the Tech leads (ADR-0097). */
+  techLeadsOnly?: boolean;
   /** What the empty field says, as "Sem líder técnico". */
   placeholder?: string;
   /** The person in the session, marked "(você)". */
@@ -76,6 +81,7 @@ export function PersonField({
     ...peopleQuery({
       search: term === '' ? undefined : term,
       managers: managersOnly,
+      techLeads: techLeadsOnly,
       limit: optionsShown,
     }),
     enabled: open,
@@ -85,11 +91,12 @@ export function PersonField({
     () =>
       (data ?? [])
         .filter((person) => person.id === null || !(exclude ?? []).includes(person.id))
-        .map(({ id, directoryId, name, canBeManager }) => ({
+        .map(({ id, directoryId, name, canBeManager, canBeTechLead }) => ({
           id,
           directoryId,
           name,
           canBeManager,
+          canBeTechLead,
         })),
     [data, exclude],
   );

@@ -69,12 +69,14 @@ export function IncludePersonDialog({
   const person = useWatch({ control, name: 'person' });
   const { canManageManagers } = project.permissions;
   const notManager = canManageManagers && person !== null && !person.canBeManager;
+  // Only who has the system role leads a project technically (ADR-0097).
+  const notTechLead = person !== null && !person.canBeTechLead;
   const roleOptions = projectRoles
     .filter((role) => role !== 'Manager' || canManageManagers)
     .map((role) => ({
       value: role,
       label: t(`projects.roles.${role}`),
-      disabled: role === 'Manager' && notManager,
+      disabled: (role === 'Manager' && notManager) || (role === 'TechLead' && notTechLead),
     }));
   const errorText = (message: string | undefined) => (isErrorKey(message) ? t(message) : undefined);
 
@@ -142,8 +144,11 @@ export function IncludePersonDialog({
               value={field.value}
               onChange={(chosen) => {
                 field.onChange(chosen);
-                // Who may not be a manager does not keep the role.
-                if (chosen !== null && !chosen.canBeManager) {
+                // A tech lead of the system comes as tech lead (ADR-0097); who may not be a manager does not keep
+                // the role.
+                if (chosen !== null && chosen.canBeTechLead && !chosen.canBeManager) {
+                  setValue('role', 'TechLead' satisfies ProjectRole);
+                } else if (chosen !== null && !chosen.canBeManager) {
                   setValue('role', 'Viewer' satisfies ProjectRole);
                 }
               }}
@@ -158,7 +163,14 @@ export function IncludePersonDialog({
           name="role"
           render={({ field }) => {
             const roleError = errorText(fieldErrors.role?.message);
-            const helper = notManager ? t('projects.members.dialog.notManager') : undefined;
+            const helper =
+              notManager && notTechLead
+                ? t('projects.members.dialog.notManagerNorTechLead')
+                : notManager
+                  ? t('projects.members.dialog.notManager')
+                  : notTechLead
+                    ? t('projects.members.dialog.notTechLead')
+                    : undefined;
             return (
               <FormField
                 label={t('projects.members.dialog.role')}

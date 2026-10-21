@@ -498,6 +498,15 @@
             }
           },
           {
+            "name": "techLeads",
+            "in": "query",
+            "description": "Only the Administrators and the Tech leads, who may lead a project technically.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "description": "How many people at most, from 1 to 100.",
@@ -11651,7 +11660,8 @@
           "directoryId",
           "name",
           "email",
-          "canBeManager"
+          "canBeManager",
+          "canBeTechLead"
         ],
         "type": "object",
         "properties": {
@@ -11676,9 +11686,12 @@
           },
           "canBeManager": {
             "type": "boolean"
+          },
+          "canBeTechLead": {
+            "type": "boolean"
           }
         },
-        "description": "A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of\nthe company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an\nactive Administrator or Project manager can be a manager (ADR-0085)."
+        "description": "A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of\nthe company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an\nactive Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a\ntech lead (ADR-0097)."
       },
       "ProblemDetails": {
         "type": "object",
@@ -11895,7 +11908,8 @@
           "role",
           "addedAt",
           "lastSignInAt",
-          "canBeManager"
+          "canBeManager",
+          "canBeTechLead"
         ],
         "type": "object",
         "properties": {
@@ -11925,9 +11939,12 @@
           },
           "canBeManager": {
             "type": "boolean"
+          },
+          "canBeTechLead": {
+            "type": "boolean"
           }
         },
-        "description": "A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in\n(null for who never signed in) and whether the person may be a manager of a project (ADR-0085)."
+        "description": "A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in\n(null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) of a project."
       },
       "ProjectMemberRoleRequest": {
         "required": [
@@ -12961,7 +12978,8 @@
         "enum": [
           "User",
           "ProjectManager",
-          "Administrator"
+          "Administrator",
+          "TechLead"
         ],
         "description": "Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a\nvalid role."
       },

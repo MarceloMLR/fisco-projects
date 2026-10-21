@@ -21,7 +21,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Pessoas da demonstração | LocalSignIn.People | Diretório fictício da entrada local |
 | Sessão | Session | |
 | Sair | SignOut | |
-| Papel no sistema | SystemRole | Administrador, Gerente de projeto ou Usuário (ADR-0040) |
+| Papel no sistema | SystemRole | Administrador, Gerente de projeto, Líder técnico ou Usuário (ADR-0040, ADR-0097) |
 | Primeiro administrador | FirstAdministrator | Configuração `Users:FirstAdministrator` (ADR-0006) |
 | Último administrador ativo | LastAdministrator | Recusa da troca ou da desativação que deixaria a instalação sem administrador |
 | Desativar acesso, Reativar acesso | Deactivate, Reactivate | |
@@ -33,7 +33,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Papel no projeto | ProjectRole | Gerente de projeto, Líder técnico, Colaborador, Desenvolvedor ou Leitor, um por pessoa no projeto (ADR-0040) |
 | Administrador | Administrator | |
 | Gerente de projeto | ProjectManager | Papel no sistema e no projeto (ADR-0040) |
-| Líder técnico | TechLead | |
+| Líder técnico | TechLead | Papel no projeto e, pelo ADR-0097, também no sistema: só quem o tem no sistema (ou o administrador) lidera tecnicamente um projeto (`SystemRoles.LeadsTechnically`, `canBeTechLead`) |
 | Colaborador | Contributor | Time Funcional |
 | Desenvolvedor | Developer | Time de Desenvolvimento |
 | Leitor | Viewer | |

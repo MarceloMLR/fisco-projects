@@ -154,6 +154,7 @@
     "roles": {
       "Administrator": "Administrador",
       "ProjectManager": "Gerente de projeto",
+      "TechLead": "Líder técnico",
       "User": "Usuário"
     },
     "status": {
@@ -1110,6 +1111,8 @@
         "personPlaceholder": "Buscar pelo nome ou e-mail",
         "role": "Papel no projeto",
         "notManager": "Só administradores e gerentes de projeto podem ser gerentes.",
+        "notTechLead": "Só administradores e líderes técnicos podem ser líderes técnicos.",
+        "notManagerNorTechLead": "Gerente e líder técnico só para quem tem esse papel no sistema.",
         "submit": "Incluir pessoa",
         "cancel": "Cancelar"
       },

@@ -46,6 +46,9 @@ export const manager: DemoPerson = 'marina';
 /** The people who get the role Project manager in the system (ADR-0040, ADR-0085). */
 export const projectManagers: readonly DemoPerson[] = ['marina', 'beatriz'];
 
+/** The people who get the role Tech lead in the system, to lead projects technically (ADR-0097). */
+export const techLeads: readonly DemoPerson[] = ['rafael'];
+
 export const demoClients = ['Alfa Distribuidora', 'Beta Alimentos', 'Gama Têxtil'] as const;
 
 export type DemoClient = (typeof demoClients)[number];

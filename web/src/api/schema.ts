@@ -2726,7 +2726,8 @@ export interface components {
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
-         *     active Administrator or Project manager can be a manager (ADR-0085).
+         *     active Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a
+         *     tech lead (ADR-0097).
          */
         PersonResponse: {
             /** Format: uuid */
@@ -2735,6 +2736,7 @@ export interface components {
             name: string;
             email: string;
             canBeManager: boolean;
+            canBeTechLead: boolean;
         };
         ProblemDetails: {
             type?: null | string;
@@ -2802,7 +2804,7 @@ export interface components {
         };
         /**
          * @description A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in
-         *     (null for who never signed in) and whether the person may be a manager of a project (ADR-0085).
+         *     (null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) of a project.
          */
         ProjectMemberResponse: {
             /** Format: uuid */
@@ -2815,6 +2817,7 @@ export interface components {
             /** Format: date-time */
             lastSignInAt: null | string;
             canBeManager: boolean;
+            canBeTechLead: boolean;
         };
         ProjectMemberRoleRequest: {
             role: components["schemas"]["ProjectRole"];
@@ -3163,7 +3166,7 @@ export interface components {
          *     valid role.
          * @enum {unknown}
          */
-        SystemRole: "User" | "ProjectManager" | "Administrator";
+        SystemRole: "User" | "ProjectManager" | "Administrator" | "TechLead";
         TemplateCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -4148,6 +4151,8 @@ export interface operations {
                 search?: string;
                 /** @description Only the Administrators and the Project managers, who may manage a project. */
                 managers?: boolean;
+                /** @description Only the Administrators and the Tech leads, who may lead a project technically. */
+                techLeads?: boolean;
                 /** @description How many people at most, from 1 to 100. */
                 limit?: number;
             };

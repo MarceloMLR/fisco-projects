@@ -219,6 +219,29 @@ describe('Tela Usuários', () => {
     ]);
   });
 
+  // Spec: usuarios-e-papeis, requirement "Papel no sistema" (ADR-0097).
+  it('Papel Líder técnico', async () => {
+    await openUsers();
+
+    const menu = await openMenuOf('Rafael Souza');
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: text.roles.TechLead }));
+
+    await waitFor(() => {
+      expect(within(rowOf('Rafael Souza')).getAllByRole('gridcell')[1]).toHaveTextContent(
+        text.roles.TechLead,
+      );
+    });
+    expect(requests).toEqual([
+      expect.objectContaining({
+        path: `/api/users/${demoUsers[3]?.id ?? ''}/role`,
+        body: { role: 'TechLead' },
+      }),
+    ]);
+    // The filter by role offers it too.
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: text.filters.role }));
+    expect(await screen.findByRole('option', { name: text.roles.TechLead })).toBeInTheDocument();
+  });
+
   it('Desativar e reativar na tela', async () => {
     await openUsers();
 
