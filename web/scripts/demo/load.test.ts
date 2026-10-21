@@ -17,6 +17,10 @@ let localSignIn = true;
 let existing: string[] = [];
 let existingClients: string[] = [];
 let existingVendors: string[] = [];
+/** What the Administrator turned off: categories of links, default folders and models (ADR-0032, ADR-0092). */
+let inactiveCategories: string[] = [];
+let missingFolders: string[] = [];
+let missingTemplates: string[] = [];
 let ids = 0;
 let numbers = 0;
 
@@ -57,6 +61,9 @@ beforeEach(() => {
   existing = [];
   existingClients = [];
   existingVendors = [];
+  inactiveCategories = [];
+  missingFolders = [];
+  missingTemplates = [];
   ids = 0;
   numbers = 0;
   server.use(
@@ -121,13 +128,15 @@ beforeEach(() => {
     // The models saved by the manager of the ERP-FIN and of the TRIB-RS (ADR-0017).
     http.get(`${base}/api/project-templates`, () =>
       HttpResponse.json(
-        ['Implantação de ERP', 'Revisão tributária de filial'].map((name, index) => ({
-          id: listedId('4444', index),
-          name,
-          description: null,
-          isActive: true,
-          phases: [],
-        })),
+        ['Implantação de ERP', 'Revisão tributária de filial']
+          .map((name, index) => ({
+            id: listedId('4444', index),
+            name,
+            description: null,
+            isActive: true,
+            phases: [],
+          }))
+          .filter((template) => !missingTemplates.includes(template.name)),
       ),
     ),
     // The six default folders every new project gets (ADR-0031).
@@ -140,12 +149,14 @@ beforeEach(() => {
           '04 Atas de reunião',
           '05 Entregas e manuais',
           '06 Termos de aceite',
-        ].map((name, index) => ({
-          id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
-          name,
-          isAcceptance: index === 5,
-          count: 0,
-        })),
+        ]
+          .map((name, index) => ({
+            id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
+            name,
+            isAcceptance: index === 5,
+            count: 0,
+          }))
+          .filter((folder) => !missingFolders.includes(folder.name)),
         total: 0,
         permissions: { canUpload: true, canApprove: true, canDelete: true },
         maxBytes: 25 * 1024 * 1024,
@@ -154,11 +165,13 @@ beforeEach(() => {
     // The categories of links of the migration (ADR-0032).
     http.get(`${base}/api/link-categories`, () =>
       HttpResponse.json(
-        ['Ambientes', 'Outros', 'Painéis', 'Repositórios', 'Sistemas'].map((name, index) => ({
-          id: `0199f5a2-3333-7000-8000-${String(index + 1).padStart(12, '0')}`,
-          name,
-          isActive: true,
-        })),
+        ['Ambientes', 'Outros', 'Painéis', 'Repositórios', 'Sistemas']
+          .map((name, index) => ({
+            id: `0199f5a2-3333-7000-8000-${String(index + 1).padStart(12, '0')}`,
+            name,
+            isActive: true,
+          }))
+          .filter((category) => !inactiveCategories.includes(category.name)),
       ),
     ),
     http.post(`${base}/api/tickets`, () =>
@@ -267,6 +280,35 @@ describe('Carga dos dados de demonstração', () => {
     expect(callsBy(/ POST \/api\/admin\/vendors$/)).toEqual([]);
     expect(lines).toContain(`Projetos que já existiam, mantidos como estão: ${before.join(', ')}.`);
     expect(lines.at(-1)).toBe('Abra as telas em http://localhost:5173 (npm run dev).');
+  });
+
+  it('Categoria, pasta ou modelo desativado', async () => {
+    inactiveCategories = ['Painéis'];
+    missingFolders = ['04 Atas de reunião'];
+    missingTemplates = ['Implantação de ERP'];
+    const lines: string[] = [];
+
+    const outcome = await loadDemo(base, (line) => lines.push(line));
+
+    expect(outcome).toMatchObject({ loaded: true, projects: demoProjects.length });
+    // The links of Painéis go to Outros, the minutes to the first folder, and the project of the model is blank.
+    const links = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/links'))
+      .flatMap(([, saved]) => saved) as { title: string; categoryId: string }[];
+    expect(links.find((link) => link.title === 'Qualidade dos cadastros')?.categoryId).toBe(
+      '0199f5a2-3333-7000-8000-000000000002',
+    );
+    expect(lines).toContain(
+      'O link Qualidade dos cadastros foi para Outros: Painéis não é uma categoria ativa.',
+    );
+    expect(lines).toContain(
+      'Ata da reunião de abertura.txt foi para 01 Gestão do projeto: ERP-FIN não tem a pasta 04 Atas de reunião.',
+    );
+    const created = (bodies.get('/api/projects') ?? []) as { code: string; templateId?: string }[];
+    expect(created.find((project) => project.code === 'ERP-EPS')?.templateId).toBeUndefined();
+    expect(lines).toContain(
+      'ERP-EPS foi criado em branco: o modelo Implantação de ERP não está entre os modelos ativos.',
+    );
   });
 
   it('Dados já carregados', async () => {

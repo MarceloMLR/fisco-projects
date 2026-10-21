@@ -12,6 +12,10 @@ O comando `npm run demo:data` MUST carregar, pela API indicada (padrão `http://
 - **WHEN** o comando roda numa demonstração que já tem parte dos projetos do plano
 - **THEN** o comando carrega só os projetos que faltam, com os clientes e fornecedores que faltam, e diz quais ficaram como estavam
 
+#### Scenario: Categoria, pasta ou modelo desativado
+- **WHEN** o administrador desativou uma categoria de links, uma pasta padrão ou um modelo que o plano usa
+- **THEN** o link vai para a categoria Outros (ou a primeira ativa), o documento para a primeira pasta que não é a de termos e o projeto do modelo nasce em branco, e o comando diz cada troca
+
 #### Scenario: Dados já carregados
 - **WHEN** o comando roda de novo e todos os projetos do plano já existem
 - **THEN** o comando avisa que os dados já estão lá, diz como apagar o banco local e os arquivos para carregar de novo e onde abrir as telas, e não cria nem muda nada

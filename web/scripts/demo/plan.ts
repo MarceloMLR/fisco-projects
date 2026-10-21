@@ -68,6 +68,9 @@ export const demoVendors = [
 
 export type DemoVendor = (typeof demoVendors)[number]['name'];
 
+/** The category of links that takes the links of a category the Administrator deactivated (ADR-0032). */
+export const fallbackCategory = 'Outros';
+
 export interface DemoItem {
   kind: 'Task' | 'Milestone';
   name: string;

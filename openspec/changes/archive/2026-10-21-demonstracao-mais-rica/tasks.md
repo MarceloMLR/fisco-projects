@@ -2,6 +2,7 @@
 
 - [x] 1.1 Carregar só os projetos, clientes e fornecedores que faltam
 - [x] 1.2 Gerente por projeto e projeto a partir de um modelo
+- [x] 1.3 Outra categoria, pasta ou projeto em branco quando o administrador desativou o do plano
 
 ## 2. Dados
 

@@ -15,6 +15,7 @@ import {
   type DemoProject,
   demoProjects,
   demoVendors,
+  fallbackCategory,
   firstDayFor,
   mainProject,
   manager,
@@ -208,7 +209,16 @@ export async function loadDemo(
   const firstDay = firstDayFor(today);
   let items = 0;
   for (const project of missing) {
-    items += await loadProject(project, firstDay, today, admin.api, clients, vendors, personOf);
+    items += await loadProject(
+      project,
+      firstDay,
+      today,
+      admin.api,
+      clients,
+      vendors,
+      personOf,
+      log,
+    );
   }
   const count = (of: (project: DemoProject) => readonly unknown[] | undefined) =>
     missing.reduce((total, project) => total + (of(project)?.length ?? 0), 0);
@@ -237,11 +247,15 @@ async function existingProjects(admin: Api): Promise<{ codes: Set<string>; today
   }
 }
 
-/** The model and the start of a project created from a model of an earlier project of the plan (ADR-0017). */
+/**
+ * The model and the start of a project created from a model of an earlier project of the plan (ADR-0017); without the
+ * model, which the Administrator may have renamed or removed, the project is created blank.
+ */
 async function fromTemplate(
   project: DemoProject,
   firstDay: string,
   admin: Api,
+  log: (line: string) => void,
 ): Promise<{ templateId?: string; scheduleStart?: string }> {
   if (project.fromTemplate === undefined) {
     return {};
@@ -251,7 +265,8 @@ async function fromTemplate(
     (model) => model.name === name,
   );
   if (template === undefined) {
-    throw new Error(`${project.code} vem do modelo ${name}, que não existe.`);
+    log(`${project.code} foi criado em branco: o modelo ${name} não está entre os modelos ativos.`);
+    return {};
   }
   return { templateId: template.id, scheduleStart: dayFrom(firstDay, start) };
 }
@@ -286,6 +301,7 @@ async function loadProject(
   clients: ReadonlyMap<string, string>,
   vendors: ReadonlyMap<string, string>,
   personOf: (person: DemoPerson) => { api: Api; id: string },
+  log: (line: string) => void,
 ): Promise<number> {
   const leader = project.manager ?? manager;
   const created = must(
@@ -297,7 +313,7 @@ async function loadProject(
         clientId: project.client === null ? null : (clients.get(project.client) ?? null),
         managerId: personOf(leader).id,
         techLeadId: project.techLead === undefined ? null : personOf(project.techLead).id,
-        ...(await fromTemplate(project, firstDay, admin)),
+        ...(await fromTemplate(project, firstDay, admin, log)),
       },
     }),
     `Projeto ${project.code}`,
@@ -533,11 +549,11 @@ async function loadProject(
   }
 
   if ((project.documents ?? []).length > 0) {
-    await loadDocuments(project, id, ids, phaseIds, builder, personOf);
+    await loadDocuments(project, id, ids, phaseIds, builder, personOf, log);
   }
 
   if ((project.links ?? []).length > 0) {
-    await loadLinks(project, id, builder, personOf);
+    await loadLinks(project, id, builder, personOf, log);
   }
 
   if ((project.credentials ?? []).length > 0) {
@@ -607,7 +623,8 @@ async function sendDocument(
 
 /**
  * Sends the documents of the project to their folders, each by its person, then the new versions, the status and the
- * link with the schedule (ADR-0031, ADR-0045).
+ * link with the schedule (ADR-0031, ADR-0045). A folder the project lacks, because the Administrator deactivated or
+ * renamed its default folder, gives way to the first folder that is not the one of the terms.
  */
 async function loadDocuments(
   project: DemoProject,
@@ -616,6 +633,7 @@ async function loadDocuments(
   phases: ReadonlyMap<string, string>,
   builder: Api,
   personOf: (person: DemoPerson) => { api: Api; id: string },
+  log: (line: string) => void,
 ): Promise<void> {
   const area = must(
     await builder.GET('/api/projects/{projectId}/documents/folders', {
@@ -624,10 +642,18 @@ async function loadDocuments(
     `Pastas de ${project.code}`,
   );
   for (const document of project.documents ?? []) {
-    const folderId = area.folders.find((folder) => folder.name === document.folder)?.id;
-    if (folderId === undefined) {
-      throw new Error(`${document.name} vai para ${document.folder}, que ${project.code} não tem.`);
+    const folder =
+      area.folders.find((item) => item.name === document.folder) ??
+      area.folders.find((item) => !item.isAcceptance);
+    if (folder === undefined) {
+      throw new Error(`${project.code} não tem pastas para receber ${document.name}.`);
     }
+    if (folder.name !== document.folder) {
+      log(
+        `${document.name} foi para ${folder.name}: ${project.code} não tem a pasta ${document.folder}.`,
+      );
+    }
+    const folderId = folder.id;
     const documentId = await sendDocument(
       personOf(document.by).api,
       projectId,
@@ -667,19 +693,32 @@ async function loadDocuments(
   }
 }
 
-/** Includes the links of the project, each by its person, in the categories of the migration (ADR-0032). */
+/**
+ * Includes the links of the project, each by its person, in the categories of the migration (ADR-0032). A category the
+ * Administrator deactivated or renamed gives way to the fallback one of the plan, or to the first active one.
+ */
 async function loadLinks(
   project: DemoProject,
   projectId: string,
   builder: Api,
   personOf: (person: DemoPerson) => { api: Api; id: string },
+  log: (line: string) => void,
 ): Promise<void> {
   const categories = must(await builder.GET('/api/link-categories'), 'Categorias de links');
   for (const link of project.links ?? []) {
-    const categoryId = categories.find((category) => category.name === link.category)?.id;
-    if (categoryId === undefined) {
-      throw new Error(`${link.title} vai para ${link.category}, que não é uma categoria ativa.`);
+    const category =
+      categories.find((item) => item.name === link.category) ??
+      categories.find((item) => item.name === fallbackCategory) ??
+      categories[0];
+    if (category === undefined) {
+      throw new Error(`Não há categorias de links ativas para ${link.title}.`);
     }
+    if (category.name !== link.category) {
+      log(
+        `O link ${link.title} foi para ${category.name}: ${link.category} não é uma categoria ativa.`,
+      );
+    }
+    const categoryId = category.id;
     must(
       await personOf(link.by).api.POST('/api/projects/{projectId}/links', {
         params: { path: { projectId } },

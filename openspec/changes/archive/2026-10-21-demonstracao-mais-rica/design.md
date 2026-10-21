@@ -18,6 +18,7 @@ O `loadDemo` (`web/scripts/demo/load.ts`) entra como cada pessoa do diretório d
 - **Gerente por projeto**: `manager` no projeto do plano (padrão Marina). A gerente monta o cronograma, muda o status e atualiza o progresso das tarefas sem responsável.
 - **Projeto a partir de um modelo**: `fromTemplate` com o nome do modelo e o dia do início; o comando busca o modelo pelo nome em `GET /api/project-templates` e cria o projeto com `templateId` e `scheduleStart`, que gera o cronograma no servidor. O modelo vem de um projeto anterior do plano.
 - **Projeto cancelado**: o cancelamento, no fim, fecha os chamados ainda abertos do projeto, com o evento na conversa (ADR-0043).
+- **O que o administrador desativou**: o plano usa as categorias de links, as pastas padrão e um modelo pelo nome. Um link de categoria inativa vai para Outros (ou a primeira ativa), um documento de pasta que o projeto não tem vai para a primeira pasta que não é a de termos, e um projeto de modelo que não existe nasce em branco; o comando diz cada troca, em vez de parar no meio de um projeto.
 - **Pessoas**: as mesmas seis que entram; Beatriz Lima, que já é gerente de projeto no sistema, gerencia três projetos novos, e Marina é leitora num deles, sem abrir chamados ali.
 
 ## Risks / Trade-offs
