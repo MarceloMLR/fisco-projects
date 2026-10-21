@@ -8,6 +8,7 @@ import { auditPage, problem, server, signedInAs } from '../test/server';
 
 const text = ptBR.settings;
 const logoUrl = '/api/installation/logo?v=1';
+const darkLogoUrl = '/api/installation/logo/dark?v=1';
 
 /** The installation as the simulated API keeps it, changed by the requests as the real one would. */
 let installation: Installation;
@@ -17,7 +18,13 @@ let notificationRetentionDays: number;
 const requests: string[] = [];
 
 beforeEach(() => {
-  installation = { name: 'FiscoProjects', logoUrl: null, mainColor: null };
+  installation = {
+    name: 'FiscoProjects',
+    logoUrl: null,
+    mainColor: null,
+    secondaryColor: null,
+    darkLogoUrl: null,
+  };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
   notificationRetentionDays = 90;
@@ -33,13 +40,21 @@ beforeEach(() => {
         name: string;
         timeZone: string;
         mainColor: string | null;
+        secondaryColor: string | null;
         dailySummaryAt: string;
         notificationRetentionDays: number;
       };
       requests.push(
-        `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
+        `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}${
+          body.secondaryColor === null ? '' : ` secondary ${body.secondaryColor}`
+        }`,
       );
-      installation = { ...installation, name: body.name, mainColor: body.mainColor };
+      installation = {
+        ...installation,
+        name: body.name,
+        mainColor: body.mainColor,
+        secondaryColor: body.secondaryColor,
+      };
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
       notificationRetentionDays = body.notificationRetentionDays;
@@ -55,6 +70,16 @@ beforeEach(() => {
     http.delete('/api/installation/logo', () => {
       requests.push('DELETE logo');
       installation = { ...installation, logoUrl: null };
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.put('/api/installation/logo/dark', () => {
+      requests.push('PUT dark logo');
+      installation = { ...installation, darkLogoUrl };
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.delete('/api/installation/logo/dark', () => {
+      requests.push('DELETE dark logo');
+      installation = { ...installation, darkLogoUrl: null };
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -238,7 +263,13 @@ describe('Nome e logo nas Configurações gerais', () => {
   });
 
   it('Remover o logo', async () => {
-    installation = { name: 'FiscoProjects', logoUrl, mainColor: null };
+    installation = {
+      name: 'FiscoProjects',
+      logoUrl,
+      mainColor: null,
+      secondaryColor: null,
+      darkLogoUrl: null,
+    };
     await openSettings();
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
 
@@ -446,7 +477,9 @@ describe('Cor principal nas Configurações gerais', () => {
 
     fireEvent.change(colorField(), { target: { value: '0f766e' } });
 
-    expect(screen.getByTestId('color-swatch')).toHaveStyle({ backgroundColor: hash('0F766E') });
+    expect(
+      within(screen.getByRole('group', { name: text.mainColor })).getByTestId('color-swatch'),
+    ).toHaveStyle({ backgroundColor: hash('0F766E') });
     expect(
       screen
         .getByRole('complementary', { name: text.previewLabel })
@@ -499,7 +532,13 @@ describe('Cor principal nas Configurações gerais', () => {
   });
 
   it('Voltar ao padrão', async () => {
-    installation = { name: 'FiscoProjects', logoUrl: null, mainColor: hash('7A1F3D') };
+    installation = {
+      name: 'FiscoProjects',
+      logoUrl: null,
+      mainColor: hash('7A1F3D'),
+      secondaryColor: null,
+      darkLogoUrl: null,
+    };
     await openSettings();
     await waitFor(() => {
       expect(colorField()).toHaveValue(hash('7A1F3D'));
@@ -608,5 +647,100 @@ describe('Guarda das notificações na instalação', () => {
 
     expect(await screen.findByText(text.saved)).toBeInTheDocument();
     expect(notificationRetentionDays).toBe(30);
+  });
+});
+
+function secondaryField() {
+  return screen.getByRole('textbox', { name: text.secondaryColorHex });
+}
+
+// Spec: configuracao-da-instalacao, requirements "Cor secundária", "Logo para o tema escuro" and "Seletor de cores"
+// (General settings, ADR-0100).
+describe('Cor secundária e logo escuro nas Configurações gerais', () => {
+  it('Cor secundária pela tela', async () => {
+    await openSettings();
+    // Without a secondary color, the sidebar of the design system.
+    expect(
+      screen
+        .getByRole('complementary', { name: text.previewLabel })
+        .style.getPropertyValue('--sidebar-bg'),
+    ).toBe('');
+
+    fireEvent.change(secondaryField(), { target: { value: '0b2545' } });
+
+    const previewStyle = screen.getByRole('complementary', { name: text.previewLabel }).style;
+    expect(previewStyle.getPropertyValue('--sidebar-bg')).toBe(hash('0b2545'));
+    expect(previewStyle.getPropertyValue('--sidebar-title')).not.toBe('');
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(requests).toEqual([`PUT FiscoProjects America/Sao_Paulo secondary ${hash('0B2545')}`]);
+    await waitFor(() => {
+      expect(appliedBrandColors()).toMatch(new RegExp(`--sidebar-bg:\\s*${hash('0b2545')}`));
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: text.noSecondaryColor }));
+    expect(secondaryField()).toHaveValue('');
+  });
+
+  it('Escolher a cor pelo seletor', async () => {
+    await openSettings();
+
+    fireEvent.change(screen.getByLabelText('Escolher cor principal no seletor de cores'), {
+      target: { value: hash('0f766e') },
+    });
+    fireEvent.change(screen.getByLabelText('Escolher cor secundária no seletor de cores'), {
+      target: { value: hash('0b2545') },
+    });
+
+    expect(colorField()).toHaveValue(hash('0F766E'));
+    expect(secondaryField()).toHaveValue(hash('0B2545'));
+    expect(saveButton()).toBeEnabled();
+  });
+
+  it('Enviar o logo para o tema escuro', async () => {
+    installation = { ...installation, logoUrl };
+    await openSettings();
+
+    fireEvent.change(screen.getByTestId('dark-logo-file'), { target: { files: [png()] } });
+    await waitFor(() => {
+      expect(screen.getByTestId('dark-logo-tile').querySelector('img')).not.toBeNull();
+    });
+    // The tile of the logo for the dark theme is dark, as the sidebar that shows it.
+    expect(screen.getByTestId('dark-logo-tile')).toHaveAttribute('data-theme', 'dark');
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(requests).toEqual(['PUT dark logo']);
+    expect(screen.getByRole('button', { name: text.replaceDarkLogo })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: text.removeDarkLogo }));
+    fireEvent.click(saveButton());
+    await waitFor(() => {
+      expect(requests).toEqual(['PUT dark logo', 'DELETE dark logo']);
+    });
+  });
+
+  it('Logo escuro na barra lateral escura', async () => {
+    installation = { ...installation, logoUrl, darkLogoUrl, secondaryColor: hash('0B2545') };
+    await openSettings();
+
+    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', darkLogoUrl);
+    // The sign-in page shows the logo on its light badge.
+    expect(screen.getByTestId('preview-sign-in').querySelector('img')).toHaveAttribute(
+      'src',
+      logoUrl,
+    );
+    expect(screen.getByTestId('preview-sidebar').querySelector('img')).toHaveAttribute(
+      'src',
+      darkLogoUrl,
+    );
+  });
+
+  it('Sem logo escuro', async () => {
+    installation = { ...installation, logoUrl, secondaryColor: hash('0B2545') };
+    await openSettings();
+
+    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
   });
 });

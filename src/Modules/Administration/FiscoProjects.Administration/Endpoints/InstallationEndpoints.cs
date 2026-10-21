@@ -1,5 +1,6 @@
 using System.Globalization;
 using FiscoProjects.Administration.Application;
+using FiscoProjects.Administration.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,19 +11,26 @@ using Microsoft.AspNetCore.Routing;
 namespace FiscoProjects.Administration.Endpoints;
 
 /// <summary>
-/// The brand of the installation: the name shown, the address of the logo (null without one) and the main color as
-/// #RRGGBB (null for the color of the design system). The address of the logo changes whenever the logo changes, so the
-/// browser may keep it.
+/// The brand of the installation: the name shown, the address of the logo (null without one), the main color as
+/// #RRGGBB (null for the color of the design system), the secondary color (null for none) and the address of the logo
+/// for the dark theme (null without one, and the logo shows, ADR-0100). The address of a logo changes whenever the logo
+/// changes, so the browser may keep it.
 /// </summary>
-public sealed record InstallationResponse(string Name, string? LogoUrl, string? MainColor);
+public sealed record InstallationResponse(
+    string Name, string? LogoUrl, string? MainColor, string? SecondaryColor, string? DarkLogoUrl);
 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
-/// for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone) and how many days the
-/// notifications are kept (1 to 365).
+/// for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
+/// notifications are kept (1 to 365) and the secondary color (#RRGGBB, or null for none, ADR-0100).
 /// </summary>
 public sealed record UpdateInstallationRequest(
-    string Name, string TimeZone, string? MainColor, TimeOnly? DailySummaryAt, int? NotificationRetentionDays);
+    string Name,
+    string TimeZone,
+    string? MainColor,
+    TimeOnly? DailySummaryAt,
+    int? NotificationRetentionDays,
+    string? SecondaryColor = null);
 
 /// <summary>
 /// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
@@ -79,6 +87,22 @@ internal static class InstallationEndpoints
             .RequireAuthorization(SystemPolicies.Administrator)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        // The logo for the dark theme, optional, with the same rules (ADR-0100).
+        installation.MapGet("/logo/dark", GetDarkLogoAsync).WithName("GetInstallationDarkLogo").AllowAnonymous()
+            .WithMetadata(KeepSession.Instance)
+            .Produces(StatusCodes.Status200OK, contentType: "image/png", additionalContentTypes: "image/svg+xml");
+        installation.MapPut("/logo/dark", ReplaceDarkLogoAsync).WithName("ReplaceInstallationDarkLogo")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(UploadLimit))
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        installation.MapDelete("/logo/dark", RemoveDarkLogoAsync).WithName("RemoveInstallationDarkLogo")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
     }
 
     private static async Task<Ok<InstallationResponse>> GetAsync(
@@ -88,13 +112,25 @@ internal static class InstallationEndpoints
         var logoUrl = installation.LogoChangedAt is { } changedAt
             ? links.GetPathByName(http, "GetInstallationLogo", new { v = VersionOf(changedAt) })
             : null;
-        return TypedResults.Ok(new InstallationResponse(installation.Name, logoUrl, installation.MainColor));
+        var darkLogoUrl = installation.DarkLogoChangedAt is { } darkChangedAt
+            ? links.GetPathByName(http, "GetInstallationDarkLogo", new { v = VersionOf(darkChangedAt) })
+            : null;
+        return TypedResults.Ok(new InstallationResponse(
+            installation.Name, logoUrl, installation.MainColor, installation.SecondaryColor, darkLogoUrl));
     }
 
-    private static async Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
-        HttpContext http, GetInstallationLogo getLogo, CancellationToken cancellationToken, string? v = null)
+    private static Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
+        HttpContext http, GetInstallationLogo getLogo, CancellationToken cancellationToken, string? v = null) =>
+        LogoAsync(http, getLogo, LogoTheme.Light, v, cancellationToken);
+
+    private static Task<Results<FileStreamHttpResult, NotFound>> GetDarkLogoAsync(
+        HttpContext http, GetInstallationLogo getLogo, CancellationToken cancellationToken, string? v = null) =>
+        LogoAsync(http, getLogo, LogoTheme.Dark, v, cancellationToken);
+
+    private static async Task<Results<FileStreamHttpResult, NotFound>> LogoAsync(
+        HttpContext http, GetInstallationLogo getLogo, LogoTheme theme, string? v, CancellationToken cancellationToken)
     {
-        var logo = await getLogo.ExecuteAsync(cancellationToken);
+        var logo = await getLogo.ExecuteAsync(theme, cancellationToken);
         if (logo is null)
         {
             return TypedResults.NotFound();
@@ -120,15 +156,28 @@ internal static class InstallationEndpoints
     {
         var invalid = await updateInstallation.ExecuteAsync(
             new InstallationChanges(
-                request.Name, request.TimeZone, request.MainColor, request.DailySummaryAt, request.NotificationRetentionDays),
+                request.Name,
+                request.TimeZone,
+                request.MainColor,
+                request.DailySummaryAt,
+                request.NotificationRetentionDays,
+                request.SecondaryColor),
             cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
             : TypedResults.ValidationProblem(invalid.ToDictionary(KeyOf, field => new[] { ReasonOf(field) }));
     }
 
-    private static async Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceLogoAsync(
-        IFormFile? file, ReplaceInstallationLogo replaceLogo, CancellationToken cancellationToken)
+    private static Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceLogoAsync(
+        IFormFile? file, ReplaceInstallationLogo replaceLogo, CancellationToken cancellationToken) =>
+        ReplaceAsync(file, replaceLogo, LogoTheme.Light, cancellationToken);
+
+    private static Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceDarkLogoAsync(
+        IFormFile? file, ReplaceInstallationLogo replaceLogo, CancellationToken cancellationToken) =>
+        ReplaceAsync(file, replaceLogo, LogoTheme.Dark, cancellationToken);
+
+    private static async Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceAsync(
+        IFormFile? file, ReplaceInstallationLogo replaceLogo, LogoTheme theme, CancellationToken cancellationToken)
     {
         if (file is null)
         {
@@ -139,7 +188,7 @@ internal static class InstallationEndpoints
         }
 
         await using var content = file.OpenReadStream();
-        return await replaceLogo.ExecuteAsync(file.FileName, content, cancellationToken) switch
+        return await replaceLogo.ExecuteAsync(file.FileName, content, theme, cancellationToken) switch
         {
             null => TypedResults.NoContent(),
             LogoRefusal.TooLarge => Refused(InstallationProblems.LogoTooLarge, "Logo too large", "The logo has up to 1 MB."),
@@ -152,7 +201,14 @@ internal static class InstallationEndpoints
     private static async Task<NoContent> RemoveLogoAsync(
         RemoveInstallationLogo removeLogo, CancellationToken cancellationToken)
     {
-        await removeLogo.ExecuteAsync(cancellationToken);
+        await removeLogo.ExecuteAsync(LogoTheme.Light, cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> RemoveDarkLogoAsync(
+        RemoveInstallationLogo removeLogo, CancellationToken cancellationToken)
+    {
+        await removeLogo.ExecuteAsync(LogoTheme.Dark, cancellationToken);
         return TypedResults.NoContent();
     }
 
@@ -162,6 +218,7 @@ internal static class InstallationEndpoints
         InstallationField.TimeZone => "timeZone",
         InstallationField.DailySummaryAt => "dailySummaryAt",
         InstallationField.NotificationRetentionDays => "notificationRetentionDays",
+        InstallationField.SecondaryColor => "secondaryColor",
         _ => "mainColor",
     };
 
@@ -171,6 +228,7 @@ internal static class InstallationEndpoints
         InstallationField.TimeZone => "Choose an IANA time zone, such as America/Sao_Paulo.",
         InstallationField.DailySummaryAt => "Choose the time of the daily summary, such as 07:30:00.",
         InstallationField.NotificationRetentionDays => "Keep the notifications from 1 to 365 days.",
+        InstallationField.SecondaryColor => "Choose a #RRGGBB color, or none for the colors of the design system.",
         _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
     };
 

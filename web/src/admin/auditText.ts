@@ -53,7 +53,9 @@ type SettingsField =
   | 'TimeZone'
   | 'MainColor'
   | 'DailySummaryAt'
-  | 'NotificationRetentionDays';
+  | 'NotificationRetentionDays'
+  | 'SecondaryColor'
+  | 'DarkLogoFileName';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
@@ -61,6 +63,8 @@ const settingsFields: readonly string[] = [
   'MainColor',
   'DailySummaryAt',
   'NotificationRetentionDays',
+  'SecondaryColor',
+  'DarkLogoFileName',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);

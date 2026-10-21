@@ -911,6 +911,8 @@ export const defaultInstallation: Installation = {
   name: 'FiscoProjects',
   logoUrl: null,
   mainColor: null,
+  secondaryColor: null,
+  darkLogoUrl: null,
 };
 
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */

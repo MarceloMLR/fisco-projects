@@ -33,6 +33,24 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasColumnType("time")
                         .HasDefaultValue(new TimeOnly(7, 30, 0));
 
+                    b.Property<DateTime?>("DarkLogoChangedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("DarkLogoContentType")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("DarkLogoFileId")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("DarkLogoFileName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<DateTime?>("LogoChangedAt")
                         .HasColumnType("datetime2")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
@@ -64,6 +82,10 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(90);
+
+                    b.Property<string>("SecondaryColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()

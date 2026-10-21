@@ -8,6 +8,9 @@ import {
   defaultMainColor,
   hasContrast,
   normalizeHex,
+  secondaryTokenNames,
+  secondaryTokens,
+  sidebarIsDark,
 } from './brandColors';
 import { color, colorSchemes } from './tokens';
 
@@ -142,5 +145,85 @@ describe('Cores da marca', () => {
     expect(sheet).toContain('[data-theme="dark"][data-theme="dark"] {');
     expect(sheet).toContain(`  --action: ${typed('0f766e')};`);
     expect(sheet).toContain('  --mui-palette-primary-mainChannel: 15 118 110;');
+  });
+});
+
+/** Secondary colors of every kind: navy, a light yellow, white, black, a red and a light gray. */
+const secondaries = ['0B2545', 'FFD400', 'FFFFFF', '000000', 'B4232A', 'E5E7EB'];
+
+// Spec: configuracao-da-instalacao, requirement "Cor secundária" (ADR-0100).
+describe('Cor secundária', () => {
+  it('Sem cor secundária', () => {
+    expect(secondaryTokens(null)).toBeNull();
+    expect(secondaryTokens('azul')).toBeNull();
+    const variables = brandVariables(null, 'light');
+    expect(Object.keys(variables)).not.toContain('--sidebar-bg');
+    expect(Object.keys(variables)).not.toContain('--sidebar-title');
+  });
+
+  it('Trocar a cor secundária', () => {
+    const tokens = secondaryTokens(typed('0B2545'));
+    if (tokens === null) {
+      throw new Error('No tokens.');
+    }
+    // The sidebar is the color itself in the light theme, and a dark shade of its hue in the dark one.
+    expect(tokens.light['sidebar-bg']).toBe(typed('0B2545'));
+    expect(contrast(tokens.dark['sidebar-bg'], color('sidebar-bg', 'dark'))).toBeLessThan(1.3);
+    // The highlight keeps the lightness of the design system.
+    expect(contrast(tokens.light['bg-selected'], color('bg-selected', 'light'))).toBeLessThan(1.1);
+    const variables = brandVariables(null, 'light', typed('0B2545'));
+    for (const name of [...secondaryTokenNames, 'sidebar-title']) {
+      expect(variables[`--${name}`], name).toMatch(/^#[0-9a-f]{6}$/);
+    }
+    expect(brandStyleSheet(null, typed('0B2545'))).toContain(`--sidebar-bg: ${typed('0B2545')};`);
+  });
+
+  it('Contraste na barra lateral', () => {
+    for (const secondary of secondaries) {
+      const tokens = secondaryTokens(typed(secondary), typed('0F766E'));
+      if (tokens === null) {
+        throw new Error('No tokens.');
+      }
+      for (const scheme of colorSchemes) {
+        const value = tokens[scheme];
+        const label = `${secondary} ${scheme}`;
+        expect(contrast(value['sidebar-text'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        expect(
+          contrast(value['sidebar-text'], value['sidebar-hover-bg']),
+          label,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(value['sidebar-muted'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        expect(contrast(value['sidebar-title'], value['sidebar-bg']), label).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        expect(
+          contrast(value['sidebar-text-active'], value['sidebar-active-bg']),
+          label,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrast(value['sidebar-indicator'], value['sidebar-active-bg']),
+          label,
+        ).toBeGreaterThanOrEqual(3);
+        const panelText = color('brand-panel-text', scheme);
+        expect(contrast(panelText, value['brand-panel-bg']), label).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(panelText, value['brand-panel-bg-2']), label).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrast(value['brand-panel-muted'], value['brand-panel-bg']),
+          label,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('Logo escuro na barra lateral escura', () => {
+    expect(sidebarIsDark(null, 'light')).toBe(false);
+    expect(sidebarIsDark(null, 'dark')).toBe(true);
+    expect(sidebarIsDark(typed('0B2545'), 'light')).toBe(true);
+    expect(sidebarIsDark(typed('FFD400'), 'light')).toBe(false);
+    expect(sidebarIsDark(typed('FFD400'), 'dark')).toBe(true);
   });
 });

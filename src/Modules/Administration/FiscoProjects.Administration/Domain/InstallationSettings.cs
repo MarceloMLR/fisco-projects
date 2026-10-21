@@ -4,10 +4,17 @@ using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Administration.Domain;
 
+/// <summary>The theme a logo is for (ADR-0100): the light one, the logo of always, or the dark one, optional.</summary>
+public enum LogoTheme
+{
+    Light = 1,
+    Dark = 2,
+}
+
 /// <summary>
 /// The settings of the installation the Administrator changes in General settings (ADR-0003, ADR-0011): the name
-/// shown, the logo, the main color, the time zone, the time of the daily summary and how long the notifications are
-/// kept. There is one, created with the database.
+/// shown, the logo and the one for the dark theme, the main and the secondary colors, the time zone, the time of the
+/// daily summary and how long the notifications are kept. There is one, created with the database.
 /// </summary>
 public sealed partial class InstallationSettings : Entity
 {
@@ -71,6 +78,25 @@ public sealed partial class InstallationSettings : Entity
 
     public bool HasLogo => LogoFileId is not null;
 
+    /// <summary>
+    /// The secondary color as #RRGGBB, or null for the colors of the design system (ADR-0100): the sidebar, the support
+    /// highlights and the panel of the sign-in page. Any color: the texts over it take the contrast they need.
+    /// </summary>
+    public string? SecondaryColor { get; private set; }
+
+    /// <summary>Id of the logo for the dark theme in the file storage; null without one, and the light one shows (ADR-0100).</summary>
+    public string? DarkLogoFileId { get; private set; }
+
+    /// <summary>Name of the file of the logo for the dark theme the Administrator sent, as the audit shows it.</summary>
+    public string? DarkLogoFileName { get; private set; }
+
+    public string? DarkLogoContentType { get; private set; }
+
+    /// <summary>When the logo for the dark theme last changed, so its address changes with it.</summary>
+    public DateTime? DarkLogoChangedAt { get; private set; }
+
+    public bool HasDarkLogo => DarkLogoFileId is not null;
+
     /// <summary>The name without the spaces at the ends, when it is not empty and has up to 60 characters.</summary>
     public static string? ValidName(string? name)
     {
@@ -123,6 +149,30 @@ public sealed partial class InstallationSettings : Entity
         return 1.05 / (luminance + 0.05);
     }
 
+    /// <summary>The secondary color as it is kept: null (or empty) for none, or #RRGGBB in capitals; false for anything else.</summary>
+    public static bool TryNormalizeSecondaryColor(string? value, out string? color)
+    {
+        color = null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        var trimmed = value.Trim();
+        if (!HexColor().IsMatch(trimmed))
+        {
+            return false;
+        }
+
+        color = trimmed.ToUpperInvariant();
+        return true;
+    }
+
+    public void ChangeSecondaryColor(string? color) =>
+        SecondaryColor = TryNormalizeSecondaryColor(color, out var normalized)
+            ? normalized
+            : throw new ArgumentException($"'{color}' is no #RRGGBB color.", nameof(color));
+
     public void ChangeMainColor(string? color) =>
         MainColor = TryNormalizeMainColor(color, out var normalized)
             ? normalized
@@ -145,19 +195,44 @@ public sealed partial class InstallationSettings : Entity
         Name = ValidName(name) ?? throw new ArgumentException(
             $"The name of the installation is needed and has up to {NameMaxLength} characters.", nameof(name));
 
-    public void ReplaceLogo(string fileId, string fileName, string contentType, DateTime changedAt)
+    /// <summary>The file of the logo of a theme in the storage; null without one.</summary>
+    public string? LogoFileIdOf(LogoTheme theme) => theme == LogoTheme.Dark ? DarkLogoFileId : LogoFileId;
+
+    public string? LogoContentTypeOf(LogoTheme theme) => theme == LogoTheme.Dark ? DarkLogoContentType : LogoContentType;
+
+    public DateTime? LogoChangedAtOf(LogoTheme theme) => theme == LogoTheme.Dark ? DarkLogoChangedAt : LogoChangedAt;
+
+    public void ReplaceLogo(string fileId, string fileName, string contentType, DateTime changedAt, LogoTheme theme = LogoTheme.Light)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileId);
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+        if (theme == LogoTheme.Dark)
+        {
+            DarkLogoFileId = fileId;
+            DarkLogoFileName = fileName;
+            DarkLogoContentType = contentType;
+            DarkLogoChangedAt = changedAt;
+            return;
+        }
+
         LogoFileId = fileId;
         LogoFileName = fileName;
         LogoContentType = contentType;
         LogoChangedAt = changedAt;
     }
 
-    public void RemoveLogo()
+    public void RemoveLogo(LogoTheme theme = LogoTheme.Light)
     {
+        if (theme == LogoTheme.Dark)
+        {
+            DarkLogoFileId = null;
+            DarkLogoFileName = null;
+            DarkLogoContentType = null;
+            DarkLogoChangedAt = null;
+            return;
+        }
+
         LogoFileId = null;
         LogoFileName = null;
         LogoContentType = null;

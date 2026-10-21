@@ -13,10 +13,11 @@ public interface IInstallationSettingsStore
 }
 
 /// <summary>
-/// The brand of the installation: its name, when the logo last changed (with a logo) and the main color (null for the
-/// default one).
+/// The brand of the installation: its name, when each logo last changed (with a logo), the main color (null for the
+/// default one) and the secondary color (null for none, ADR-0100).
 /// </summary>
-public sealed record Installation(string Name, DateTime? LogoChangedAt, string? MainColor);
+public sealed record Installation(
+    string Name, DateTime? LogoChangedAt, string? MainColor, string? SecondaryColor = null, DateTime? DarkLogoChangedAt = null);
 
 /// <summary>The logo to serve: the file, its type and when it changed.</summary>
 public sealed record InstallationLogo(FileDownload File, string ContentType, DateTime ChangedAt);
@@ -26,17 +27,27 @@ public sealed class GetInstallation(IInstallationSettingsStore store)
     public async Task<Installation> ExecuteAsync(CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        return new Installation(settings.Name, settings.HasLogo ? settings.LogoChangedAt : null, settings.MainColor);
+        return new Installation(
+            settings.Name,
+            settings.HasLogo ? settings.LogoChangedAt : null,
+            settings.MainColor,
+            settings.SecondaryColor,
+            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null);
     }
 }
 
 public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileStorage files)
 {
-    /// <returns>Null without a logo, or when its file is gone from the storage.</returns>
-    public async Task<InstallationLogo?> ExecuteAsync(CancellationToken cancellationToken)
+    public Task<InstallationLogo?> ExecuteAsync(CancellationToken cancellationToken) =>
+        ExecuteAsync(LogoTheme.Light, cancellationToken);
+
+    /// <returns>Null without a logo of the theme, or when its file is gone from the storage.</returns>
+    public async Task<InstallationLogo?> ExecuteAsync(LogoTheme theme, CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        if (settings is not { LogoFileId: { } fileId, LogoContentType: { } contentType, LogoChangedAt: { } changedAt })
+        if (settings.LogoFileIdOf(theme) is not { } fileId
+            || settings.LogoContentTypeOf(theme) is not { } contentType
+            || settings.LogoChangedAtOf(theme) is not { } changedAt)
         {
             return null;
         }
@@ -69,14 +80,20 @@ public enum InstallationField
     MainColor = 3,
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
+    SecondaryColor = 6,
 }
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
-/// summary and how many days the notifications are kept.
+/// The General settings form, saved as a whole: the name shown, the time zone, the main and the secondary colors, the
+/// time of the daily summary and how many days the notifications are kept.
 /// </summary>
 public sealed record InstallationChanges(
-    string? Name, string? TimeZone, string? MainColor, TimeOnly? DailySummaryAt, int? NotificationRetentionDays);
+    string? Name,
+    string? TimeZone,
+    string? MainColor,
+    TimeOnly? DailySummaryAt,
+    int? NotificationRetentionDays,
+    string? SecondaryColor = null);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -106,6 +123,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.MainColor);
         }
 
+        if (!InstallationSettings.TryNormalizeSecondaryColor(changes.SecondaryColor, out var secondaryColor))
+        {
+            invalid.Add(InstallationField.SecondaryColor);
+        }
+
         if (changes.DailySummaryAt is null)
         {
             invalid.Add(InstallationField.DailySummaryAt);
@@ -125,6 +147,7 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeMainColor(mainColor);
+        settings.ChangeSecondaryColor(secondaryColor);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         await store.SaveChangesAsync(cancellationToken);
@@ -133,8 +156,8 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
 }
 
 /// <summary>
-/// Keeps a new logo: checked by its content, stored in the folder of the system in the file storage (ADR-0030), and
-/// only then recorded. The file of a logo of another format is removed after the record is saved.
+/// Keeps a new logo of a theme (ADR-0100): checked by its content, stored in the folder of the system in the file
+/// storage (ADR-0030), and only then recorded. The file of a logo of another format is removed after the record is saved.
 /// </summary>
 public sealed class ReplaceInstallationLogo(IInstallationSettingsStore store, IFileStorage files, TimeProvider clock)
 {
@@ -143,10 +166,17 @@ public sealed class ReplaceInstallationLogo(IInstallationSettingsStore store, IF
 
     public const string FileStem = "installation-logo";
 
+    /// <summary>The name of the file of the logo of a theme, without the extension.</summary>
+    public static string FileStemOf(LogoTheme theme) => theme == LogoTheme.Dark ? $"{FileStem}-dark" : FileStem;
+
     private const int FileNameMaxLength = 200;
 
     /// <returns>Null when the logo was kept, or why it was refused; nothing changes when it is refused.</returns>
-    public async Task<LogoRefusal?> ExecuteAsync(string? fileName, Stream content, CancellationToken cancellationToken)
+    public Task<LogoRefusal?> ExecuteAsync(string? fileName, Stream content, CancellationToken cancellationToken) =>
+        ExecuteAsync(fileName, content, LogoTheme.Light, cancellationToken);
+
+    public async Task<LogoRefusal?> ExecuteAsync(
+        string? fileName, Stream content, LogoTheme theme, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);
         var bytes = await ReadAtMostAsync(content, LogoFile.MaxBytes + 1, cancellationToken);
@@ -157,13 +187,14 @@ public sealed class ReplaceInstallationLogo(IInstallationSettingsStore store, IF
         }
 
         var settings = await store.GetAsync(cancellationToken);
-        var previous = settings.LogoFileId;
+        var previous = settings.LogoFileIdOf(theme);
         var folder = await files.EnsureFolderAsync(null, Folder, cancellationToken);
         await using var stream = new MemoryStream(bytes, writable: false);
         var stored = await files.UploadAsync(
-            folder.Id, $"{FileStem}.{format.Extension}", stream, SameNameAction.NewVersion, cancellationToken);
+            folder.Id, $"{FileStemOf(theme)}.{format.Extension}", stream, SameNameAction.NewVersion, cancellationToken);
 
-        settings.ReplaceLogo(stored.Id, SentName(fileName, stored.Name), format.ContentType, clock.GetUtcNow().UtcDateTime);
+        settings.ReplaceLogo(
+            stored.Id, SentName(fileName, stored.Name), format.ContentType, clock.GetUtcNow().UtcDateTime, theme);
         try
         {
             await store.SaveChangesAsync(cancellationToken);
@@ -213,18 +244,20 @@ public sealed class ReplaceInstallationLogo(IInstallationSettingsStore store, IF
     }
 }
 
-/// <summary>Removes the logo: the record first, then the file, so the screen never points to a missing file.</summary>
+/// <summary>Removes the logo of a theme: the record first, then the file, so the screen never points to a missing file.</summary>
 public sealed class RemoveInstallationLogo(IInstallationSettingsStore store, IFileStorage files)
 {
-    public async Task ExecuteAsync(CancellationToken cancellationToken)
+    public Task ExecuteAsync(CancellationToken cancellationToken) => ExecuteAsync(LogoTheme.Light, cancellationToken);
+
+    public async Task ExecuteAsync(LogoTheme theme, CancellationToken cancellationToken)
     {
         var settings = await store.GetAsync(cancellationToken);
-        if (settings.LogoFileId is not { } fileId)
+        if (settings.LogoFileIdOf(theme) is not { } fileId)
         {
             return;
         }
 
-        settings.RemoveLogo();
+        settings.RemoveLogo(theme);
         await store.SaveChangesAsync(cancellationToken);
         await files.DeleteFileAsync(fileId, cancellationToken);
     }

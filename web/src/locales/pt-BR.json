@@ -475,7 +475,9 @@
         "TimeZone": "Fuso horário",
         "MainColor": "Cor principal",
         "DailySummaryAt": "Horário do resumo diário",
-        "NotificationRetentionDays": "Guardar notificações por"
+        "NotificationRetentionDays": "Guardar notificações por",
+        "SecondaryColor": "Cor secundária",
+        "DarkLogoFileName": "Logo para o tema escuro"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -666,11 +668,21 @@
     "sendLogo": "Enviar logo",
     "replaceLogo": "Trocar logo",
     "removeLogo": "Remover logo",
+    "darkLogo": "Logo para o tema escuro",
+    "darkLogoHint": "PNG ou SVG, até 1 MB. Aparece na barra lateral escura; sem ele, vale o logo.",
+    "sendDarkLogo": "Enviar logo escuro",
+    "replaceDarkLogo": "Trocar logo escuro",
+    "removeDarkLogo": "Remover logo escuro",
     "mainColor": "Cor principal",
     "mainColorHex": "Cor principal em hexadecimal",
     "defaultColor": "Voltar ao padrão",
     "contrastApproved": "Contraste aprovado",
     "contrastLow": "Contraste insuficiente",
+    "secondaryColor": "Cor secundária",
+    "secondaryColorHex": "Cor secundária em hexadecimal",
+    "secondaryHint": "Barra lateral, destaques de apoio e painel da entrada. Os textos sobre ela ganham o contraste que precisam.",
+    "noSecondaryColor": "Sem cor secundária",
+    "pickColor": "Escolher {{color}} no seletor de cores",
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",

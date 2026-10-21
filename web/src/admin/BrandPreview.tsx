@@ -50,10 +50,13 @@ function Bar({
 export function BrandPreview({
   name,
   logo,
+  sidebarLogo = logo,
   colors,
 }: {
   name: string;
   logo: string | null;
+  /** The logo the sidebar shows: the one for the dark theme over a dark sidebar (ADR-0100). */
+  sidebarLogo?: string | null;
   /** The brand tokens of the color being typed, so the Preview shows it before saving. */
   colors?: Record<string, string>;
 }) {
@@ -125,17 +128,17 @@ export function BrandPreview({
               gap: '4px',
               minWidth: 0,
               padding: '0 var(--space-2)',
-              color: 'var(--text)',
+              color: 'var(--sidebar-title, var(--text))',
               fontSize: 10,
               lineHeight: '14px',
               fontWeight: 500,
               whiteSpace: 'nowrap',
             }}
           >
-            {logo === null ? (
+            {sidebarLogo === null ? (
               <Badge size={12} />
             ) : (
-              <InstallationLogo src={logo} maxHeight={12} maxWidth={48} />
+              <InstallationLogo src={sidebarLogo} maxHeight={12} maxWidth={48} />
             )}
             <Box
               component="span"
@@ -190,14 +193,18 @@ export function BrandPreview({
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'var(--sidebar-bg)',
             border: '1px solid var(--sidebar-border)',
-            color: 'var(--text)',
+            color: 'var(--sidebar-title, var(--text))',
             fontSize: 16,
             lineHeight: '24px',
             fontWeight: 500,
             whiteSpace: 'nowrap',
           }}
         >
-          {logo === null ? <Badge size={28} /> : <InstallationLogo src={logo} maxHeight={28} />}
+          {sidebarLogo === null ? (
+            <Badge size={28} />
+          ) : (
+            <InstallationLogo src={sidebarLogo} maxHeight={28} />
+          )}
           <Box component="span" sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {name}
           </Box>
