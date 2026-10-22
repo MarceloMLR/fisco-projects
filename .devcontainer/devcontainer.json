@@ -1,0 +1,26 @@
+{
+  "name": "FiscoProjects (demonstração)",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:2-10.0",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  },
+  "forwardPorts": [5175],
+  "portsAttributes": {
+    "5175": {
+      "label": "FiscoProjects",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "otherPortsAttributes": {
+    "onAutoForward": "silent"
+  },
+  "postCreateCommand": "bash .devcontainer/prepare.sh",
+  "postAttachCommand": "bash .devcontainer/start.sh"
+}
