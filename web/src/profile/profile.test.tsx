@@ -49,6 +49,23 @@ async function openAccountMenu() {
   return screen.findByRole('menu', { name: ptBR.shell.accountMenu });
 }
 
+/** The declarations of an element below the width of one column, from the styles on the page. */
+function singleColumnRule(element: Element | null): string {
+  if (element === null) {
+    return '';
+  }
+  const css = [...document.querySelectorAll('style')].map((style) => style.textContent).join('');
+  const rules = [...element.classList]
+    .filter((name) => name.startsWith('css-'))
+    .flatMap((name) => {
+      const rule = new RegExp(`@media \\(max-width: ?1100px\\)\\{\\.${name}\\{([^}]*)\\}`).exec(
+        css,
+      );
+      return rule === null ? [] : [rule[1]];
+    });
+  return rules.join('');
+}
+
 function themeInMenu(menu: HTMLElement, name: string) {
   return within(within(menu).getByRole('radiogroup', { name: text.theme })).getByRole('radio', {
     name,
@@ -206,6 +223,18 @@ describe('Tela Meu perfil', () => {
       'aria-checked',
       'true',
     );
+  });
+
+  // jsdom does not lay out the page: the test reads the rules the page gets below one column (Acesso-5.1).
+  it('Meu perfil no celular', async () => {
+    simulateDevice({ width: 390 });
+    await renderApp('/profile');
+
+    const account = screen.getByRole('complementary', { name: text.account });
+    // One under the other, each as tall as its content, so that neither covers the other.
+    expect(singleColumnRule(account.parentElement)).toContain('grid-template-rows:auto 1fr;');
+    expect(singleColumnRule(account.previousElementSibling)).toContain('min-height:auto;');
+    expect(singleColumnRule(account)).toContain('min-height:auto;');
   });
 
   it('Meu perfil pelo menu da conta', async () => {
