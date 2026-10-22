@@ -49,7 +49,13 @@ export function ProfilePage() {
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) 400px',
         overflow: 'hidden',
-        [singleColumn]: { gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'auto' },
+        // One under the other, each as tall as its content, and the whole page scrolls; the account fills
+        // what is left of the window.
+        [singleColumn]: {
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gridTemplateRows: 'auto 1fr',
+          overflow: 'auto',
+        },
       }}
     >
       <Box
@@ -62,7 +68,7 @@ export function ProfilePage() {
           gap: '20px',
           padding: 'var(--space-5) var(--space-6) var(--space-6)',
           overflow: 'auto',
-          [singleColumn]: { overflow: 'visible' },
+          [singleColumn]: { minHeight: 'auto', overflow: 'visible' },
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
@@ -116,6 +122,7 @@ export function ProfilePage() {
           borderLeft: '1px solid var(--border)',
           overflow: 'auto',
           [singleColumn]: {
+            minHeight: 'auto',
             borderLeft: 0,
             borderTop: '1px solid var(--border)',
             overflow: 'visible',

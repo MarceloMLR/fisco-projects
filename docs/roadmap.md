@@ -15,6 +15,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
 - Em 20/10/2026, depois da Síntese, Marcelo pediu dez ajustes, feitos em sequência antes do grupo 10: mais dados de demonstração, Sair voltando ao Início, Líder técnico como papel no sistema, "Iniciar atendimento" assumindo o chamado, baixar anexos, chamado no fornecedor num diálogo, relatório da auditoria em Excel, personalização da marca, cores das mensagens e o cliente como responsável de tarefas.
 - Em 21/10/2026, Marcelo pediu mais ajustes, feitos em sequência: só a cor principal na marca, o solicitante em rosa na conversa, o espaço do ícone nos botões, o Voltar do navegador e a primeira carga mais rápida; e depois a menção ao digitar "@", a descrição do chamado em rosa, o logo na aba do navegador e os avisos no topo.
+- Em 21/10/2026, depois da Operação-4, Marcelo viu Meu perfil quebrado no celular, e a correção entrou como Acesso-5.1 (`perfil-no-celular`).
 
 ## Marcos
 
@@ -64,6 +65,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-3.2 | `relatorio-da-auditoria` | Relatório da auditoria em Excel com os filtros da tela, só do administrador e registrado na própria auditoria, a pedido de Marcelo | 0039, 0046, 0058 | Concluída em 21/10/2026 ([#61](https://github.com/MarceloMLR/fisco-projects/pull/61)) |
 | Acesso-4 | `armazenamento-de-arquivos` | Interface de arquivos com a implementação local | 0004 | Concluída em 18/10/2026 ([#14](https://github.com/MarceloMLR/fisco-projects/pull/14)) |
 | Acesso-5 | `perfil-e-tema` | Tema no perfil e tela Meu perfil (separada da configuração da instalação a pedido de Marcelo) | 0014, 0066 | Concluída em 18/10/2026 ([#17](https://github.com/MarceloMLR/fisco-projects/pull/17)) |
+| Acesso-5.1 | `perfil-no-celular` | Meu perfil no celular sem a Conta por cima das Preferências e dos Avisos por e-mail, a pedido de Marcelo | 0066 | PR aberto ([#79](https://github.com/MarceloMLR/fisco-projects/pull/79)) |
 | Acesso-6 | `configuracao-da-instalacao` | Tela Configurações gerais com o nome e o logo da instalação, exibidos na barra lateral, na entrada e na aba (separada do fuso e da cor a pedido de Marcelo) | 0003, 0009, 0030, 0046, 0066 | Concluída em 19/10/2026 ([#18](https://github.com/MarceloMLR/fisco-projects/pull/18)) |
 | Acesso-7 | `fuso-da-instalacao` | Fuso horário nas Configurações gerais; datas e filtros de período no fuso da instalação | 0013 | Concluída em 19/10/2026 ([#19](https://github.com/MarceloMLR/fisco-projects/pull/19)) |
 | Acesso-8 | `cor-da-instalacao` | Cor principal nas Configurações gerais, com os tokens da marca derivados nos dois temas e a checagem de contraste | 0003, 0050, 0063, 0067, 0082 | Concluída em 19/10/2026 ([#20](https://github.com/MarceloMLR/fisco-projects/pull/20)) |
