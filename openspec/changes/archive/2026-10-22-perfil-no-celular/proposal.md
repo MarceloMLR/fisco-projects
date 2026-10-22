@@ -13,7 +13,7 @@ Marcelo abriu Meu perfil no celular e a Conta apareceu por cima das Preferência
 ### New Capabilities
 
 ### Modified Capabilities
-- `perfil`: Meu perfil no celular, com a conta abaixo das preferências e dos avisos, sem cobri-los.
+- `perfil`: novo requisito Meu perfil no celular, com a conta abaixo das preferências e dos avisos, sem cobri-los.
 
 ## Impact
 
