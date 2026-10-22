@@ -225,7 +225,8 @@ describe('Tela Meu perfil', () => {
     );
   });
 
-  // jsdom does not lay out the page: the test reads the rules the page gets below one column (Acesso-5.1).
+  // Spec: perfil, requirement "Meu perfil no celular". jsdom does not lay out the page: the test reads the rules
+  // the page gets below one column (Acesso-5.1).
   it('Meu perfil no celular', async () => {
     simulateDevice({ width: 390 });
     await renderApp('/profile');

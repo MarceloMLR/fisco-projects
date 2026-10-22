@@ -50,6 +50,14 @@ A tela Meu perfil MUST mostrar o avatar, o nome, o e-mail e o papel no sistema d
 - **WHEN** a pessoa escolhe Meu perfil no menu da conta
 - **THEN** a tela Meu perfil abre, com Meu perfil como título e na trilha
 
+### Requirement: Meu perfil no celular
+
+No celular e em janelas estreitas, a Conta de Meu perfil MUST ficar abaixo das Preferências e dos Avisos por e-mail, cada parte com a altura do próprio conteúdo, sem uma cobrir a outra, e a página MUST rolar inteira (ADR-0066).
+
+#### Scenario: Meu perfil no celular
+- **WHEN** a pessoa abre Meu perfil no celular
+- **THEN** as Preferências e os Avisos por e-mail aparecem inteiros, a Conta e o Sair logo abaixo deles, sem cobri-los, e a página rola até o fim
+
 ### Requirement: Avisos por e-mail no perfil
 
 O cartão "Avisos por e-mail" de Meu perfil MUST mostrar o resumo diário, com o horário da instalação, numa caixa que a pessoa marca e desmarca, gravada na hora no perfil dela; e os avisos na hora, sempre marcados e sem poder desmarcar, porque não se desligam (ADR-0037). O resumo MUST vir ligado para quem nunca escolheu.
