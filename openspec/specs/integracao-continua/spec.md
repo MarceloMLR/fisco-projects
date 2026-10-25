@@ -8,7 +8,7 @@ Define as verificações automáticas que todo pull request para a `main` precis
 
 ### Requirement: Verificações em todo pull request
 
-Todo pull request para a `main` MUST passar por estas verificações: build do backend sem avisos, testes do backend (inclusive os que usam SQL Server em contêiner), formatação do código do backend, verificações do frontend (licenças das dependências, pacotes vulneráveis, formatação, lint, tipos, testes e build) e validação das specs do OpenSpec. Se qualquer verificação falhar, o pull request MUST ficar com a verificação reprovada.
+Todo pull request para a `main` MUST passar por estas verificações: build do backend sem avisos, testes do backend (inclusive os que usam SQL Server em contêiner), formatação do código do backend, verificações do frontend (licenças das dependências, pacotes vulneráveis, formatação, lint, tipos, testes e build), formatação e validação do Terraform e validação das specs do OpenSpec. Se qualquer verificação falhar, o pull request MUST ficar com a verificação reprovada.
 
 #### Scenario: Pull request para a main
 - **WHEN** um pull request para a `main` é aberto, reaberto ou recebe commits novos
@@ -16,7 +16,7 @@ Todo pull request para a `main` MUST passar por estas verificações: build do b
 
 #### Scenario: Todas as verificações no pull request
 - **WHEN** a verificação do pull request roda num commit que muda código
-- **THEN** build e testes, formatação, frontend e specs rodam em jobs paralelos, e o job `verify` só aprova quando todos passaram
+- **THEN** build e testes, formatação, frontend, infraestrutura e specs rodam em jobs paralelos, e o job `verify` só aprova quando todos passaram
 
 #### Scenario: Comando que falha reprova a verificação
 - **WHEN** qualquer comando de uma verificação termina com erro
@@ -33,6 +33,10 @@ Todo pull request para a `main` MUST passar por estas verificações: build do b
 #### Scenario: Dependência do frontend com licença não permitida
 - **WHEN** uma dependência do frontend, direta ou transitiva, tem licença fora da lista permitida (licenças permissivas, sem copyleft forte nem licença comercial)
 - **THEN** a verificação do frontend falha e aponta o pacote
+
+#### Scenario: Terraform fora do padrão
+- **WHEN** o código do Terraform está fora da formatação ou não é válido
+- **THEN** a verificação da infraestrutura falha, sem precisar de credenciais do Azure
 
 ### Requirement: Verificações em scripts do repositório
 
