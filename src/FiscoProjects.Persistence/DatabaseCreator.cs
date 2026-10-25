@@ -40,8 +40,9 @@ public static class DatabaseCreator
 
     private static async Task<bool> OpensAsync(string connectionString, CancellationToken cancellationToken)
     {
-        // Outside the pool, so that the failed attempt leaves nothing behind for the connections of the modules.
-        var builder = new SqlConnectionStringBuilder(connectionString) { Pooling = false };
+        // Outside the pool, so that the failed attempt leaves nothing behind for the connections of the modules, and
+        // without the retries of the client, which take a missing database as a passing failure and wait 10 seconds.
+        var builder = new SqlConnectionStringBuilder(connectionString) { Pooling = false, ConnectRetryCount = 0 };
         try
         {
             await using var connection = new SqlConnection(builder.ConnectionString);
