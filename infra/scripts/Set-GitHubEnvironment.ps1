@@ -4,8 +4,9 @@ Prepares the GitHub environment whose pipeline publishes an environment of the i
 
 .DESCRIPTION
 Creates the environment on GitHub, accepting deployments only from main, and sets its variables: the identity of the
-pipeline (from terraform output), the tenant, the subscription and the personal values of local.auto.tfvars. None of
-them is a secret: the pipeline reaches Azure by federation. Needs the GitHub CLI signed in with the repo scope, the
+pipeline (from terraform output), the tenant, the subscription and who operates the installation, from
+local.auto.tfvars. None of them is a secret: the pipeline reaches Azure by federation. GitHub shows them in the public
+logs, so the e-mail of the alerts is not one of them: the pipeline reads it from the action group (ADR-0116). Needs the GitHub CLI signed in with the repo scope, the
 Azure CLI on the subscription and the environment already applied. Running it again updates the values.
 
 .EXAMPLE
@@ -34,7 +35,6 @@ $variables = [ordered]@{
     AZURE_TENANT_ID       = az account show --query tenantId -o tsv
     AZURE_SUBSCRIPTION_ID = az account show --query id -o tsv
     OPERATOR_OBJECT_IDS   = [regex]::Match($personal, 'operator_object_ids\s*=\s*(\[[^\]]*\])').Groups[1].Value
-    ALERT_EMAIL           = [regex]::Match($personal, 'alert_email\s*=\s*"([^"]+)"').Groups[1].Value
 }
 foreach ($name in $variables.Keys) {
     if (-not $variables[$name]) {

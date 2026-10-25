@@ -60,7 +60,7 @@ public sealed partial class InfrastructureTests
         {
             var lines = File.ReadAllLines(file);
             lines.Should().NotContain(line => PersonalValue().IsMatch(line), "the operators and the e-mail of the alerts are personal");
-            lines.Should().NotContain(line => line.Contains('@'));
+            lines.Should().NotContain(line => EmailAddress().IsMatch(line));
         }
     }
 
@@ -130,17 +130,32 @@ public sealed partial class InfrastructureTests
             .And.Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"")
             .And.Contain("role_definition_name = \"Contributor\"\n  principal_id")
             .And.Contain("role_definition_name = \"Storage Blob Data Contributor\"")
-            .And.Contain("app_role_ids[\"Directory.Read.All\"]");
+            .And.Contain("scope                = var.state_account_id\n  role_definition_name = \"Reader\"")
+            .And.Contain("app_role_ids[\"Directory.Read.All\"]")
+            .And.Contain("app_role_ids[\"Application.Read.All\"]");
         ci.Should().NotContain("Owner").And.NotContain("User Access Administrator").And.NotContain("ReadWrite")
             .And.NotContain("azuread_application_password");
-        Regex.Matches(ci, "resource \"azurerm_role_assignment\"").Should().HaveCount(2);
+        Regex.Matches(ci, "resource \"azurerm_role_assignment\"").Should().HaveCount(3);
+        Regex.Matches(ci, "resource \"azuread_app_role_assignment\"").Should().HaveCount(2);
         Read("main.tf").Should().Contain("resource_group_id  = azurerm_resource_group.main.id");
         // The container of the state has the names of the script that creates it.
         var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
         script.Should().Contain("$group = \"rg-fiscoprojects-$Installation-tfstate\"").And.Contain("$account = \"stfp${Installation}tfstate\"");
-        Read("main.tf").Should().Contain("resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate/blobServices/default/containers/tfstate");
+        Read("main.tf").Should().Contain("resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate\"\n")
+            .And.Contain("state_container_id = \"${local.state_account_id}/blobServices/default/containers/tfstate\"");
         Regex.Match(Read("variables.tf"), "variable \"alert_email\" \\{[^}]*sensitive   = true", RegexOptions.Singleline).Success
             .Should().BeTrue("the plans are shown in public logs");
+    }
+
+    [Fact(DisplayName = "Federação pelos números do repositório")]
+    public void PipelineIdentity_TrustsTheImmutableSubjectOfGitHub()
+    {
+        // GitHub names the repository by the ids of the owner and of the repository in the subject of its tokens, so
+        // that a renamed or recreated repository with the same name does not get the identity (ADR-0116).
+        var validation = Regex.Match(Read("variables.tf"), "variable \"github_repository\" \\{.*?\\n\\}", RegexOptions.Singleline).Value;
+        validation.Should().Contain("can(regex(\"^[^@/]+@[0-9]+/[^@/]+@[0-9]+$\", var.github_repository))");
+        Read("environments", "dev.tfvars").Should().Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+        Read("modules", "ci", "main.tf").Should().Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"");
     }
 
     private static string Read(params string[] relativePath) => File.ReadAllText(Path.Combine([Folder, .. relativePath]));
@@ -166,4 +181,7 @@ public sealed partial class InfrastructureTests
 
     [GeneratedRegex(@"^\s*(alert_email|operator_object_ids)\s*=")]
     private static partial Regex PersonalValue();
+
+    [GeneratedRegex(@"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}", RegexOptions.IgnoreCase)]
+    private static partial Regex EmailAddress();
 }

@@ -1,7 +1,8 @@
 # Publishes the application in the development and demonstration environment after each merge to main, and compares
 # its infrastructure with the code (ADR-0055, ADR-0115). The logic lives in scripts/cd; this file only prepares the
 # tools and calls those scripts. Azure is reached by federation (OIDC), only from the GitHub environment "dev", which
-# accepts only main: there are no secrets here.
+# accepts only main: there are no secrets here. GitHub shows the values of the variables in the log of every step, and
+# the logs are public: no personal value goes here (ADR-0116).
 name: deploy-dev
 
 on:
@@ -34,7 +35,6 @@ jobs:
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_operator_object_ids: ${{ vars.OPERATOR_OBJECT_IDS }}
-      TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

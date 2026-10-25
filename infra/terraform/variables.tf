@@ -50,9 +50,14 @@ variable "alert_email" {
 }
 
 variable "github_repository" {
-  description = "Repository on GitHub (owner/name) whose pipeline publishes this environment; null creates no identity for a pipeline (ADR-0115)."
+  description = "Repository on GitHub whose pipeline publishes this environment, as the immutable subject of GitHub names it (owner@owner_id/name@repository_id), which a renamed or recreated repository does not take over; null creates no identity for a pipeline (ADR-0115, ADR-0116)."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.github_repository == null || can(regex("^[^@/]+@[0-9]+/[^@/]+@[0-9]+$", var.github_repository))
+    error_message = "Use owner@owner_id/name@repository_id, with the ids of gh api repos/<owner>/<name> (owner.id and id)."
+  }
 }
 
 variable "aspnetcore_environment" {

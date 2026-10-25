@@ -22,3 +22,9 @@
 
 - [x] 5.1 Testes do workflow, dos scripts de publicação, das licenças e da identidade do pipeline
 - [x] 5.2 `docs/instalacao.md`, `CLAUDE.md`, glossário e roadmap
+
+## 6. Primeira publicação pela `main`
+
+- [x] 6.1 ADR-0116: federação pelo subject imutável do GitHub e as leituras que faltavam ao `plan`
+- [x] 6.2 E-mail dos alertas fora do workflow, lido do grupo de ações e mascarado pelo `plan.sh`
+- [ ] 6.3 Federação aplicada no Azure e publicação pela `main` conferida
