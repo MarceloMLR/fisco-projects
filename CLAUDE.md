@@ -45,6 +45,7 @@ tests/                                testes do backend (unitários, integraçã
 infra/terraform/                      módulos e configuração por instalação e ambiente
 infra/scripts/                        o que o Terraform não cobre (Exchange, SharePoint)
 scripts/ci/                           verificações do PR, chamadas pelo GitHub Actions (.github/workflows)
+scripts/cd/                           publicação do ambiente de desenvolvimento a cada merge (ADR-0115)
 docs/adr/                             decisões (MADR), leitura obrigatória da área antes de mudar
 docs/                                 discovery, apresentação, instalação, custos, design
 openspec/                             config, specs e changes do OpenSpec
@@ -171,8 +172,10 @@ Verificação do PR: em todo PR para a `main`, o GitHub Actions (`.github/workfl
 Infraestrutura (ADR-0053, ADR-0114): o Terraform de `infra/terraform` monta a instalação no Azure com os módulos `app`, `database`, `key-vault`, `monitoring`, `alerts` e `entra`, com os parâmetros de cada ambiente em `environments/` e os valores pessoais (quem opera, o e-mail dos alertas) num `local.auto.tfvars` fora do Git; o banco aceita só o Entra ID, e a aplicação entra nele e no Key Vault pela identidade gerenciada. O passo a passo, com o estado preparado pelo `infra/scripts/Prepare-TerraformState.ps1`, os segredos e o `destroy`, fica em `docs/instalacao.md`. O ambiente `dev` de Marcelo (`app-fiscoprojects-mlr-dev`, com a aplicação e o banco na West US 3 enquanto a assinatura de avaliação não tem cota de App Service na Brazil South) roda como `Development` até as integrações com o Microsoft 365. Recurso novo do Azure entra num módulo, com a variável no padrão da produção, e o `InfrastructureTests` confere as regras.
 
 ```
-bash scripts/ci/infra.sh             # fmt, init sem o estado e validate, com o Terraform fixado (1.16.5)
+bash scripts/ci/infra.sh             # fmt, init sem o estado e validate, com o Terraform fixado (1.16.5, scripts/ci/terraform.sh)
 ```
+
+Publicação (ADR-0055, ADR-0115): a cada merge na `main`, o workflow `deploy-dev` (`.github/workflows/deploy-dev.yml`) roda os scripts de `scripts/cd` no environment `dev` do GitHub, só da `main`: `publish.sh` (telas e API em `artifacts/app.zip`), `deploy.sh` (publica no App Service, espera o `/health` e, em `Development`, carrega os dados de demonstração que faltam) e `plan.sh` (`terraform plan`, que só avisa quando a infraestrutura está diferente do código). O Azure é alcançado pela identidade do módulo `ci`, por federação e sem segredos, que não dá papéis nem muda o Entra ID: o `apply` fica com quem opera, pelo `docs/instalacao.md`. As variáveis do environment vêm do `infra/scripts/Set-GitHubEnvironment.ps1`. O job `backend` do PR confere as licenças do NuGet (`scripts/ci/licenses.sh`, com as mesmas licenças permissivas do frontend; as partes nativas do SqlClient e do MSAL ficam aceitas pelo nome). O `DeploymentTests` roda os scripts de publicação com substitutos do `az`, do `curl`, do `npm` e do `terraform`.
 
 Desenvolvimento local com Docker (SQL Server), implementações locais de e-mail e arquivos e um tenant Microsoft pessoal, nunca o da empresa (ADR-0002, ADR-0004, ADR-0048).
 

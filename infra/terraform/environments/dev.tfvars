@@ -15,6 +15,8 @@ app_is_database_admin  = true
 app_settings = {
   FileStorage__Local__RootPath = "/home/data/files"
   Email__Local__Folder         = "/home/data/emails"
+  # The first start applies every migration on the Basic plan, which takes a few minutes.
+  WEBSITES_CONTAINER_START_TIME_LIMIT = "600"
 }
 
 # Basic instead of the free offer, which the background processes would use up in a few days (ADR-0114); without
@@ -30,5 +32,8 @@ key_vault_soft_delete_days = 7
 # Fewer runs of the availability test: each one is billed.
 availability_test_frequency = 900
 
-# Off until the Fundação-7 publishes the application.
-alerts_enabled = false
+# The pipeline of this repository publishes the environment after each merge (ADR-0115).
+github_repository = "MarceloMLR/fisco-projects"
+
+# On since the Fundação-7 publishes the application.
+alerts_enabled = true

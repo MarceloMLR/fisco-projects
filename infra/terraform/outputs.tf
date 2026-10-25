@@ -32,3 +32,8 @@ output "entra_client_id" {
   description = "Client ID of the application in Entra ID."
   value       = module.entra.client_id
 }
+
+output "ci_client_id" {
+  description = "Client ID of the identity of the pipeline, for the variable AZURE_CLIENT_ID of the GitHub environment."
+  value       = one(module.ci[*].client_id)
+}

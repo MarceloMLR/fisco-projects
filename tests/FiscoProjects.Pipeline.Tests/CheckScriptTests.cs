@@ -1,13 +1,18 @@
 using System.Text.Json;
 using System.Xml.Linq;
+using FiscoProjects.Testing;
 
 namespace FiscoProjects.Pipeline.Tests;
 
 // Spec: integracao-continua.
 public sealed class CheckScriptTests
 {
+    /// <summary>The scripts of the verification (scripts/ci) and of the publication (scripts/cd), as "ci/build".</summary>
     public static TheoryData<string> Scripts() =>
-        [.. Directory.GetFiles(Repository.ScriptsFolder, "*.sh").Select(path => Path.GetFileNameWithoutExtension(path)).Order()];
+        [.. new[] { "ci", "cd" }
+            .SelectMany(folder => Directory.GetFiles(RepositoryFiles.PathOf("scripts", folder), "*.sh")
+                .Select(path => $"{folder}/{Path.GetFileNameWithoutExtension(path)}"))
+            .Order()];
 
     [Theory(DisplayName = "Comando que falha reprova a verificação")]
     [MemberData(nameof(Scripts))]
@@ -60,7 +65,7 @@ public sealed class CheckScriptTests
         command.Split("--onlyAllow ")[1].Split(' ')[0].Trim('"').Split(';');
 
     private static string[] FirstCommands(string script) =>
-        [.. File.ReadAllLines(Path.Combine(Repository.ScriptsFolder, script + ".sh"))
+        [.. File.ReadAllLines(RepositoryFiles.PathOf(["scripts", .. script.Split('/')]) + ".sh")
             .Where(line => line.Length > 0 && !line.StartsWith('#'))
             .Take(2)];
 }

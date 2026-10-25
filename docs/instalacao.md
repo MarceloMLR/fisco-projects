@@ -75,7 +75,9 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
 
 ## CI/CD
 
-- Identidade federada (OIDC) entre o GitHub Actions e a assinatura Azure da instalação (ADR-0055).
+- Identidade federada (OIDC) entre o GitHub Actions e a assinatura Azure da instalação (ADR-0055), criada pelo Terraform quando o `.tfvars` do ambiente tem `github_repository`. Ela vale só para o environment do GitHub de mesmo nome do ambiente, publica no grupo de recursos, trava e lê o estado e lê o diretório do Entra ID, sem dar papéis nem mudar o Entra ID (ADR-0115).
+- Depois do `apply`, prepare o environment do GitHub com `./infra/scripts/Set-GitHubEnvironment.ps1 -Environment <ambiente>`, com o GitHub CLI na conta dona do repositório. O script aceita só a `main` no environment e grava as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `OPERATOR_OBJECT_IDS` e `ALERT_EMAIL`; nenhuma é segredo.
+- A cada merge na `main`, o workflow `deploy-dev` monta o pacote, publica no App Service, espera o `/health`, carrega os dados de demonstração que faltam (no ambiente em `Development`) e roda o `terraform plan`. Uma diferença na infraestrutura aparece como aviso no resumo da execução: aplique o plano à mão, como em "Criar ou atualizar uma instalação" (ADR-0115). Para publicar de novo sem merge, rode o workflow pela aba Actions.
 - `main` protegida por uma regra do GitHub (ruleset), recebendo código só por PR com verificações aprovadas, sem exceções e sem poder ser apagada ou reescrita (ADR-0055). Em repositório público a regra é gratuita; em repositório privado, exige GitHub Pro ou superior.
 - Dependabot com alertas e correções de segurança (ADR-0060).
 

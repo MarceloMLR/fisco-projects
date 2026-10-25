@@ -1,0 +1,37 @@
+## ADDED Requirements
+
+### Requirement: Publicação a cada merge
+
+Cada merge na `main` MUST publicar a aplicação no ambiente de desenvolvimento e demonstração, montando o pacote com as telas e a API, e MUST esperar o `/health` responder antes de terminar. No ambiente com a entrada local, a publicação MUST carregar em seguida os dados de demonstração que faltam. A lógica MUST ficar nos scripts de `scripts/cd`, chamados pelo workflow, uma publicação por vez (ADR-0055, ADR-0089, ADR-0115).
+
+#### Scenario: Publicação a cada merge
+- **WHEN** um PR entra na `main`
+- **THEN** o workflow `deploy-dev` monta o pacote, publica no App Service do ambiente `dev` e confere a infraestrutura, nessa ordem
+
+#### Scenario: Demonstração depois da publicação
+- **WHEN** a aplicação publicada responde no `/health` num ambiente em `Development`
+- **THEN** os dados de demonstração que faltam são carregados pela própria API
+
+### Requirement: Pipeline sem segredos e com poder limitado
+
+O pipeline MUST alcançar o Azure por identidade federada, sem segredos no GitHub, só a partir do environment do GitHub do ambiente, que aceita só a `main`. A identidade do pipeline MUST poder só publicar no grupo de recursos do ambiente, travar e ler o estado do Terraform e ler o diretório do Entra ID; ela MUST NOT dar papéis no Azure nem mudar o Entra ID (ADR-0055, ADR-0115).
+
+#### Scenario: Pipeline sem segredos
+- **WHEN** o workflow de publicação é conferido
+- **THEN** ele não usa segredos, só pede o token de identidade e a leitura do código, e usa ações fixadas por commit
+
+#### Scenario: Identidade do pipeline com poder limitado
+- **WHEN** a identidade do pipeline é criada pelo Terraform
+- **THEN** ela só vale para o environment do GitHub do ambiente e tem só os papéis de colaborar no grupo de recursos, gravar no contêiner do estado e ler o diretório
+
+### Requirement: Conferência da infraestrutura
+
+Depois de publicar, o pipeline MUST rodar o `terraform plan` com o estado do ambiente, sem aplicar. Uma diferença MUST aparecer como aviso no resumo da execução, com o que mudaria, sem reprovar a publicação; uma falha do `plan` MUST reprovar. O e-mail dos alertas MUST ficar fora dos planos, que aparecem nos logs públicos (ADR-0115).
+
+#### Scenario: Infraestrutura diferente do código
+- **WHEN** o `terraform plan` encontra diferenças
+- **THEN** a execução avisa que a infraestrutura está diferente do código, mostra o que mudaria e não falha
+
+#### Scenario: Infraestrutura igual ao código
+- **WHEN** o `terraform plan` não encontra diferenças
+- **THEN** a execução diz que a infraestrutura está igual ao código; se o `plan` falhar, a execução falha
