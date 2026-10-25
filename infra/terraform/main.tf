@@ -18,6 +18,8 @@ locals {
     action_group   = "ag-${local.name}"
   }
   host = "${local.names.app}.azurewebsites.net"
+  # The application and the database stay together, for the latency of the queries.
+  app_location = coalesce(var.app_location, var.location)
   tags = {
     aplicacao  = "FiscoProjects"
     instalacao = var.installation
@@ -44,7 +46,7 @@ module "database" {
   source = "./modules/database"
 
   resource_group_name   = azurerm_resource_group.main.name
-  location              = var.location
+  location              = local.app_location
   server_name           = local.names.sql_server
   database_name         = local.names.database
   admins_group_name     = "FiscoProjects ${var.installation} ${var.environment} - administradores do banco"
@@ -85,7 +87,7 @@ module "app" {
   source = "./modules/app"
 
   resource_group_name    = azurerm_resource_group.main.name
-  location               = var.location
+  location               = local.app_location
   plan_name              = local.names.plan
   name                   = local.names.app
   sku                    = var.app_service_sku

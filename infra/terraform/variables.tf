@@ -27,6 +27,12 @@ variable "location" {
   default     = "brazilsouth"
 }
 
+variable "app_location" {
+  description = "Region of the application and of the database, when the subscription has no quota for the App Service in the region of the installation; null keeps them in location. Only for the dev environment, with fictitious data (ADR-0114)."
+  type        = string
+  default     = null
+}
+
 variable "operator_object_ids" {
   description = "Object IDs in Entra ID of who operates the installation: owners of the Entra objects, administrators of the database and of the Key Vault. Personal identifiers: passed outside the repository (local.auto.tfvars or TF_VAR_operator_object_ids)."
   type        = list(string)

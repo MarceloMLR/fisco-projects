@@ -76,6 +76,7 @@ public sealed partial class InfrastructureTests
         Default(variables, "aspnetcore_environment").Should().Be("\"Production\"");
         Default(variables, "app_is_database_admin").Should().Be("false");
         Default(variables, "location").Should().Be("\"brazilsouth\"");
+        Default(variables, "app_location").Should().Be("null", "the application and the database stay in the region of the installation");
         Read("modules", "key-vault", "main.tf").Should().Contain("purge_protection_enabled   = true");
         Read("modules", "app", "main.tf").Should().Contain("https_only                                     = true");
     }
