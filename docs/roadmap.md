@@ -25,14 +25,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 13 | 11 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 4 | 4 |
-| 4. Cronograma | 13 | 13 |
+| 4. Cronograma | 14 | 14 |
 | 5. Chamados | 13 | 13 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 0 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **81** | **73** |
+| **Total** | **82** | **74** |
 
 ## 1. Fundação
 
@@ -95,7 +95,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-3.1 | `dados-de-demonstracao` | Comando que carrega os dados fictícios de demonstração pela API, com datas relativas ao dia, a pedido de Marcelo | 0078, 0089 | Concluída em 19/10/2026 ([#28](https://github.com/MarceloMLR/fisco-projects/pull/28)) |
 | Cronograma-3.2 | `mais-dados-de-demonstracao` | Chamados em todos os projetos e status, com conversas longas, anexos, prioridade, quem acompanha e fornecedores, a pedido de Marcelo | 0089 | Concluída em 20/10/2026 ([#55](https://github.com/MarceloMLR/fisco-projects/pull/55)) |
 | Cronograma-3.3 | `demonstracao-mais-rica` | Mais clientes e projetos na demonstração, em todos os status, de uma segunda gerente e a partir de um modelo, com chamados e os demais itens, e a carga só do que falta, a pedido de Marcelo | 0017, 0043, 0089 | Concluída em 21/10/2026 ([#74](https://github.com/MarceloMLR/fisco-projects/pull/74)) |
-| Cronograma-3.4 | `demonstracao-no-codespaces` | Demonstração no GitHub Codespaces, preparada e carregada sozinha, com o link para compartilhar, a pedido de Marcelo | 0089, 0113 | PR aberto ([#81](https://github.com/MarceloMLR/fisco-projects/pull/81)) |
+| Cronograma-3.4 | `demonstracao-no-codespaces` | Demonstração no GitHub Codespaces, preparada e carregada sozinha, com o link para compartilhar, a pedido de Marcelo | 0089, 0113 | Concluída em 25/10/2026 ([#81](https://github.com/MarceloMLR/fisco-projects/pull/81)) |
 | Cronograma-4 | `subtarefas` | Subtarefas em um nível, tarefa-resumo calculada, dependências entre quem faz o trabalho | 0019, 0088 | Concluída em 19/10/2026 ([#29](https://github.com/MarceloMLR/fisco-projects/pull/29)) |
 | Cronograma-4.1 | `ajustes-das-telas` | Ajustes pedidos por Marcelo: barra de rolagem extra nas abas do projeto, dias úteis de atraso de tarefas e marcos, reabrir a mesma linha da Linha do tempo, motivo exato do CNPJ inválido, subtarefas mais claras na Lista e no detalhe e o endereço das telas no fim da carga de demonstração | 0015, 0020, 0065, 0071, 0086, 0088, 0089 | Concluída em 19/10/2026 ([#30](https://github.com/MarceloMLR/fisco-projects/pull/30)) |
 | Cronograma-5 | `linha-de-base-e-caminho-critico` | Linha de base e caminho crítico | 0021, 0043, 0067, 0071 | Concluída em 20/10/2026 ([#32](https://github.com/MarceloMLR/fisco-projects/pull/32)) |
