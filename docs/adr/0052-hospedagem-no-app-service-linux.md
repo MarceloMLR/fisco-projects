@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (certificado do aplicativo no Entra substituído pelo ADR-0117)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
@@ -33,7 +33,7 @@ Regras:
 - Ambientes: produção (App Service B1 e Azure SQL S0, ou Basic para começar); desenvolvimento e demonstração, opcional (App Service B1 e Azure SQL na oferta gratuita); desenvolvimento local com Docker.
 - Always On ligado em produção.
 - A aplicação acessa o Azure SQL e o Key Vault pela identidade gerenciada do App Service, sem senhas.
-- Segredos no Key Vault: certificado do aplicativo no Entra (usado pelo Graph) e chave de licença do Syncfusion (ADR-0051).
+- Segredos no Key Vault: certificado do aplicativo no Entra (usado pelo Graph) e chave de licença do Syncfusion (ADR-0051). Substituído pelo ADR-0117: o aplicativo do Entra confia na identidade gerenciada do App Service, sem certificado.
 - Só HTTPS; domínio próprio opcional, com certificado gerenciado gratuito.
 - Monitoramento, backups e retenção são decididos em ADRs próprios.
 
