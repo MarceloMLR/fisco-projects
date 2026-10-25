@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation } from 'react-router';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { z } from 'zod';
 import { api, signInProblems } from '../api/client';
 import { Alert } from '../components/Alert';
@@ -16,6 +16,7 @@ import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
 import { SessionPending } from '../session/RequireSession';
 import { type SignInState, useSession } from '../session/SessionContext';
+import { microsoftSignIn } from '../session/microsoftSignIn';
 import { rememberEmail, rememberedEmail } from '../session/rememberedEmail';
 import { SignInArt } from './SignInArt';
 
@@ -35,7 +36,33 @@ const form = z.object({
     .pipe(z.email({ error: emailErrors.invalid })),
 });
 
-type Refusal = 'notInDirectory' | 'inactive' | 'failed';
+type Refusal = 'notInDirectory' | 'inactive' | 'guest' | 'notAssigned' | 'failed';
+
+/** Why the API sent the person back from the sign-in through Entra ID, in the "refused" parameter (ADR-0117). */
+const refusalsOfEntra: readonly Refusal[] = ['guest', 'notAssigned', 'inactive', 'failed'];
+
+function refusalOf(search: string): Refusal | undefined {
+  const refused = new URLSearchParams(search).get('refused');
+  return refusalsOfEntra.find((refusal) => refusal === refused);
+}
+
+/** How this installation signs people in: the local sign-in of the demo, Entra ID, or both. */
+interface SignInMethods {
+  local: boolean;
+  entra: boolean;
+}
+
+/** Before the API answers, the page shows the local sign-in, as it did before the Entra ID. */
+const untilKnown: SignInMethods = { local: true, entra: false };
+
+async function loadSignInMethods(): Promise<SignInMethods> {
+  try {
+    const { data } = await api.GET('/api/session/sign-in-options');
+    return { local: data?.localSignIn ?? false, entra: data?.entraSignIn ?? false };
+  } catch {
+    return { local: false, entra: false };
+  }
+}
 
 /** Where the person goes after signing in: back to the screen asked, unless someone else was in the session. */
 function destination(state: unknown, userId: string): string {
@@ -49,7 +76,8 @@ function destination(state: unknown, userId: string): string {
 
 /**
  * Sign-in page (ADR-0009), as in the sign-in screen of the canvas: split card over the navy background, brand panel on the
- * left and the e-mail form on the right. Without a tenant it is the local sign-in of the demo (ADR-0078).
+ * left and the e-mail form on the right. It signs in through Entra ID (ADR-0117) and, without a tenant or in the
+ * demonstration, by the local sign-in of the demo (ADR-0078).
  */
 export function SignInPage() {
   const { session } = useSession();
@@ -68,8 +96,13 @@ function SignInScreen() {
   const { t } = useTranslation();
   const { refresh } = useSession();
   const installation = useInstallation();
-  const [localSignIn, setLocalSignIn] = useState<boolean>();
-  const [refusal, setRefusal] = useState<Refusal>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Asked once; a submit before the answer waits for it.
+  const [knownMethods] = useState(loadSignInMethods);
+  const [methods, setMethods] = useState<SignInMethods>();
+  const [refusal, setRefusal] = useState<Refusal | undefined>(() => refusalOf(location.search));
+  const [leaving, setLeaving] = useState(false);
   const {
     register,
     handleSubmit,
@@ -79,47 +112,92 @@ function SignInScreen() {
     defaultValues: { email: rememberedEmail() },
   });
 
+  // The refusal that came back from Microsoft is shown once: the address goes back to the plain sign-in page.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has('refused')) {
+      void navigate({ search: '' }, { replace: true, state: location.state as unknown });
+    }
+  }, [location.search, location.state, navigate]);
+
   useEffect(() => {
     let active = true;
-    api
-      .GET('/api/session/sign-in-options')
-      .then(({ data }) => {
-        if (active) {
-          setLocalSignIn(data?.localSignIn ?? false);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setLocalSignIn(false);
-        }
-      });
+    void knownMethods.then((known) => {
+      if (active) {
+        setMethods(known);
+      }
+    });
     return () => {
       active = false;
     };
-  }, []);
+  }, [knownMethods]);
+
+  const shown = methods ?? untilKnown;
+
+  /** To Microsoft, with the screen asked and, after an expired session, who had it (ADR-0117). */
+  async function signInWithEntra(email: string) {
+    const asked = location.state as Partial<SignInState> | null;
+    const from = asked?.from;
+    const { data, response } = await api.POST('/api/session/entra', {
+      body: {
+        email,
+        returnUrl: from === undefined ? '/' : `${from.pathname}${from.search}${from.hash}`,
+        previousUserId: asked?.userId ?? null,
+      },
+    });
+    if (!response.ok || data === undefined) {
+      setRefusal('failed');
+      return;
+    }
+    rememberEmail(email);
+    setLeaving(true);
+    microsoftSignIn.go(data.location);
+  }
 
   const signIn = handleSubmit(async ({ email }) => {
     setRefusal(undefined);
     try {
+      const known = await knownMethods;
+      if (!known.local) {
+        if (known.entra) {
+          await signInWithEntra(email);
+        } else {
+          setRefusal('failed');
+        }
+        return;
+      }
       const { error, response } = await api.POST('/api/session/local', { body: { email } });
       if (response.ok) {
         rememberEmail(email);
         await refresh();
         return;
       }
-      if (response.status === 403) {
-        setRefusal(error?.type === signInProblems.inactive ? 'inactive' : 'notInDirectory');
+      if (response.status !== 403) {
+        setRefusal('failed');
         return;
       }
-      setRefusal('failed');
+      if (error?.type === signInProblems.inactive) {
+        setRefusal('inactive');
+        return;
+      }
+      // Outside the demo directory: with the Entra ID on too, the person is someone of the company.
+      if (known.entra) {
+        await signInWithEntra(email);
+        return;
+      }
+      setRefusal('notInDirectory');
     } catch {
       setRefusal('failed');
     }
   });
 
   const emailError = errors.email?.message;
-  const local = localSignIn ?? true;
-  const NoteIcon = local ? InfoOutlined : LockOutlined;
+  const NoteIcon = shown.local && !shown.entra ? InfoOutlined : LockOutlined;
+  const texts =
+    shown.local && shown.entra
+      ? { hint: t('signIn.hintBoth'), note: t('signIn.noteBoth') }
+      : shown.local
+        ? { hint: t('signIn.hintLocal'), note: t('signIn.noteLocal') }
+        : { hint: t('signIn.hint'), note: t('signIn.note') };
 
   return (
     <Box
@@ -295,17 +373,17 @@ function SignInScreen() {
               sx={{
                 margin: 'calc(var(--space-2) * -1) 0 var(--space-2)',
                 color: 'var(--text-secondary)',
-                visibility: localSignIn === undefined ? 'hidden' : 'visible',
+                visibility: methods === undefined ? 'hidden' : 'visible',
               }}
             >
-              {local ? t('signIn.hintLocal') : t('signIn.hint')}
+              {texts.hint}
             </Box>
             {refusal === 'failed' && (
               <Alert tone="danger" title={t('signIn.failed.title')}>
                 {t('signIn.failed.body')}
               </Alert>
             )}
-            {(refusal === 'notInDirectory' || refusal === 'inactive') && (
+            {refusal !== undefined && refusal !== 'failed' && (
               <Alert tone="danger" title={t('signIn.refused.title')}>
                 {t(`signIn.refused.${refusal}`)}
               </Alert>
@@ -328,7 +406,7 @@ function SignInScreen() {
               variant="contained"
               size="large"
               fullWidth
-              disabled={isSubmitting}
+              disabled={isSubmitting || leaving}
             >
               {t('signIn.submit')}
             </Button>
@@ -340,11 +418,11 @@ function SignInScreen() {
                 fontSize: 13,
                 lineHeight: '18px',
                 color: 'var(--text-secondary)',
-                visibility: localSignIn === undefined ? 'hidden' : 'visible',
+                visibility: methods === undefined ? 'hidden' : 'visible',
               }}
             >
               <NoteIcon aria-hidden sx={{ fontSize: 'var(--icon-sm)' }} />
-              {local ? t('signIn.noteLocal') : t('signIn.note')}
+              {texts.note}
             </Box>
           </Box>
           <Box

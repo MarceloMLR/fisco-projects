@@ -1436,7 +1436,9 @@ export const handlers = [
   http.get('/api/audit', ({ request }) =>
     HttpResponse.json(auditPage(demoAuditEntries, new URL(request.url))),
   ),
-  http.get('/api/session/sign-in-options', () => HttpResponse.json({ localSignIn: true })),
+  http.get('/api/session/sign-in-options', () =>
+    HttpResponse.json({ localSignIn: true, entraSignIn: false }),
+  ),
   http.post('/api/session/sign-out', () => new HttpResponse(null, { status: 204 })),
   http.get('/api/profile', () => HttpResponse.json(profileOf(marina))),
   http.put('/api/profile/theme', () => new HttpResponse(null, { status: 204 })),

@@ -833,10 +833,12 @@ function providerOf(entry: AuditEntry, t: TFunction): string {
     : (entry.detail ?? '');
 }
 
+/** The reasons of a refused sign-in that the API sends (SignInRefusal). */
+const refusalReasons = ['NotInDirectory', 'Inactive', 'Guest'] as const;
+
 function reasonOf(entry: AuditEntry, t: TFunction): string {
-  return entry.detail === 'NotInDirectory' || entry.detail === 'Inactive'
-    ? t(`audit.refusals.${entry.detail}`)
-    : (entry.detail ?? '');
+  const reason = refusalReasons.find((known) => known === entry.detail);
+  return reason === undefined ? (entry.detail ?? '') : t(`audit.refusals.${reason}`);
 }
 
 /** The anonymization of a person: the change that gave the number (ADR-0110). */

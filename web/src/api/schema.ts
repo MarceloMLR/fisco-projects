@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/session/entra": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StartEntraSignIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/session/sign-out": {
         parameters: {
             query?: never;
@@ -2329,6 +2345,20 @@ export interface components {
             at: string;
             to: null | string;
         };
+        /**
+         * @description The start of the sign-in through Entra ID: the e-mail for the hint, the screen to go back to and, after an expired
+         *     session, the user who had it.
+         */
+        EntraSignInRequest: {
+            email: null | string;
+            returnUrl: null | string;
+            /** Format: uuid */
+            previousUserId: null | string;
+        };
+        /** @description The address of Microsoft where the browser goes to sign in. */
+        EntraSignInStartResponse: {
+            location: string;
+        };
         /** @description An environment the credentials of the project use, with how many credentials it has. */
         EnvironmentCountResponse: {
             name: string;
@@ -3290,9 +3320,10 @@ export interface components {
             role: components["schemas"]["SystemRole"];
             theme: components["schemas"]["ThemePreference"];
         };
-        /** @description How the sign-in page may sign people in. */
+        /** @description How the sign-in page may sign people in: the local sign-in of the demo, Entra ID, or both. */
         SignInOptionsResponse: {
             localSignIn: boolean;
+            entraSignIn: boolean;
         };
         /** @description The spreadsheet read: the names of the sheets, the sheet read, the header and the lines under it. */
         SpreadsheetResponse: {
@@ -3956,6 +3987,37 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    StartEntraSignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntraSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntraSignInStartResponse"];
                 };
             };
             /** @description Not Found */

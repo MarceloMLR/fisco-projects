@@ -137,6 +137,26 @@ describe('Texto dos registros da auditoria', () => {
       { label: 'Motivo', value: 'conta desativada' },
     ]);
   });
+
+  it('Entrada pelo Entra e convidado recusado', () => {
+    const signIn = describeAuditEntry(
+      entry({ action: 'SignedIn', itemType: 'SignIn', detail: 'entra' }),
+      t,
+    );
+    const guest = describeAuditEntry(
+      entry({
+        action: 'SignInRefused',
+        itemType: 'SignIn',
+        actor: null,
+        itemLabel: 'joao.silva@parceiro.example',
+        detail: 'Guest',
+      }),
+      t,
+    );
+
+    expect(signIn.summary).toBe('Conta Microsoft');
+    expect(guest.summary).toBe('joao.silva@parceiro.example · conta convidada');
+  });
 });
 
 // Spec: calendario, requirement "Mudanças do calendário na auditoria".

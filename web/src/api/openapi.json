@@ -91,6 +91,39 @@
         }
       }
     },
+    "/api/session/entra": {
+      "post": {
+        "tags": [
+          "Session"
+        ],
+        "operationId": "StartEntraSignIn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntraSignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntraSignInStartResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/session/sign-out": {
       "post": {
         "tags": [
@@ -10470,6 +10503,48 @@
         },
         "description": "The last test of the sending: where it stands, when and to whom (null once the queue forgot it)."
       },
+      "EntraSignInRequest": {
+        "required": [
+          "email",
+          "returnUrl",
+          "previousUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "returnUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "previousUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "The start of the sign-in through Entra ID: the e-mail for the hint, the screen to go back to and, after an expired\nsession, the user who had it."
+      },
+      "EntraSignInStartResponse": {
+        "required": [
+          "location"
+        ],
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          }
+        },
+        "description": "The address of Microsoft where the browser goes to sign in."
+      },
       "EnvironmentCountResponse": {
         "required": [
           "name",
@@ -13463,15 +13538,19 @@
       },
       "SignInOptionsResponse": {
         "required": [
-          "localSignIn"
+          "localSignIn",
+          "entraSignIn"
         ],
         "type": "object",
         "properties": {
           "localSignIn": {
             "type": "boolean"
+          },
+          "entraSignIn": {
+            "type": "boolean"
           }
         },
-        "description": "How the sign-in page may sign people in."
+        "description": "How the sign-in page may sign people in: the local sign-in of the demo, Entra ID, or both."
       },
       "SpreadsheetResponse": {
         "required": [
