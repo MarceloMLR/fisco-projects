@@ -3,6 +3,10 @@
 installation = "mlr"
 environment  = "dev"
 
+# The trial subscription has no quota for the Basic plan (B1): the free plan, which sleeps after 20 minutes without
+# use and has 60 minutes of processing a day (ADR-0114). Back to B1 with quota or pay-as-you-go.
+app_service_sku = "F1"
+
 # Development until the integrations with Microsoft 365: local sign-in, files and e-mails in the persistent folder of
 # the App Service, and the migrations applied by the application itself.
 aspnetcore_environment = "Development"
