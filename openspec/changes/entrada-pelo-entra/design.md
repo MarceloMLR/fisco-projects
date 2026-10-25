@@ -37,6 +37,6 @@ A sessão é o cookie do BFF (`SessionAuthentication`, ADR-0054), aberta pela en
 
 ## Migration Plan
 
-1. Merge com o Entra desligado no `dev`; o `apply` liga o aplicativo e as configurações.
-2. Marcelo cria as pessoas de teste no tenant e as atribui ao aplicativo empresarial.
-3. Testa a entrada, o convidado e a falta de atribuição no endereço do `dev`.
+1. Quem opera aplica o Terraform do `dev`: o aplicativo do Entra fica pronto, e a aplicação recebe o tenant e o cliente; sem o código novo, as configurações ficam sem efeito.
+2. O merge publica o código; a entrada local continua, e a do Entra passa a valer para os e-mails fora da demonstração.
+3. Marcelo cria as pessoas de teste no tenant, as atribui ao aplicativo empresarial e testa a entrada, o convidado e a falta de atribuição no endereço do `dev`.
