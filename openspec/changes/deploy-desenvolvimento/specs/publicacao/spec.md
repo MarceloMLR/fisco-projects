@@ -14,7 +14,7 @@ Cada merge na `main` MUST publicar a aplicação no ambiente de desenvolvimento 
 
 ### Requirement: Pipeline sem segredos e com poder limitado
 
-O pipeline MUST alcançar o Azure por identidade federada, sem segredos no GitHub, só a partir do environment do GitHub do ambiente, que aceita só a `main`. A identidade do pipeline MUST poder só publicar no grupo de recursos do ambiente, travar e ler o estado do Terraform e ler o diretório do Entra ID; ela MUST NOT dar papéis no Azure nem mudar o Entra ID (ADR-0055, ADR-0115).
+O pipeline MUST alcançar o Azure por identidade federada, sem segredos no GitHub, só a partir do environment do GitHub do ambiente, que aceita só a `main`, e pelo subject imutável do GitHub, com os números do dono e do repositório. A identidade do pipeline MUST poder só publicar no grupo de recursos do ambiente, travar e ler o estado do Terraform e ler o Entra ID; ela MUST NOT dar papéis no Azure nem mudar o Entra ID (ADR-0055, ADR-0115, ADR-0116).
 
 #### Scenario: Pipeline sem segredos
 - **WHEN** o workflow de publicação é conferido
@@ -22,11 +22,15 @@ O pipeline MUST alcançar o Azure por identidade federada, sem segredos no GitHu
 
 #### Scenario: Identidade do pipeline com poder limitado
 - **WHEN** a identidade do pipeline é criada pelo Terraform
-- **THEN** ela só vale para o environment do GitHub do ambiente e tem só os papéis de colaborar no grupo de recursos, gravar no contêiner do estado e ler o diretório
+- **THEN** ela só vale para o environment do GitHub do ambiente e tem só os papéis de colaborar no grupo de recursos, gravar no contêiner do estado, ler a conta do estado e ler o diretório e os aplicativos
+
+#### Scenario: Federação pelos números do repositório
+- **WHEN** o repositório do pipeline é configurado no ambiente
+- **THEN** ele é dado pelo dono e pelo repositório com os números de cada um, como no subject do token do GitHub, e um repositório com o mesmo nome e outros números não ganha a identidade
 
 ### Requirement: Conferência da infraestrutura
 
-Depois de publicar, o pipeline MUST rodar o `terraform plan` com o estado do ambiente, sem aplicar. Uma diferença MUST aparecer como aviso no resumo da execução, com o que mudaria, sem reprovar a publicação; uma falha do `plan` MUST reprovar. O e-mail dos alertas MUST ficar fora dos planos, que aparecem nos logs públicos (ADR-0115).
+Depois de publicar, o pipeline MUST rodar o `terraform plan` com o estado do ambiente, sem aplicar. Uma diferença MUST aparecer como aviso no resumo da execução, com o que mudaria, sem reprovar a publicação; uma falha do `plan` MUST reprovar. O e-mail dos alertas MUST ficar fora do workflow e dos planos, que aparecem nos logs públicos: o pipeline MUST lê-lo do grupo de ações da instalação e mascará-lo antes de tudo (ADR-0115, ADR-0116).
 
 #### Scenario: Infraestrutura diferente do código
 - **WHEN** o `terraform plan` encontra diferenças
@@ -35,3 +39,7 @@ Depois de publicar, o pipeline MUST rodar o `terraform plan` com o estado do amb
 #### Scenario: Infraestrutura igual ao código
 - **WHEN** o `terraform plan` não encontra diferenças
 - **THEN** a execução diz que a infraestrutura está igual ao código; se o `plan` falhar, a execução falha
+
+#### Scenario: E-mail dos alertas fora dos logs
+- **WHEN** o pipeline confere a infraestrutura
+- **THEN** o e-mail dos alertas não está no workflow, é lido do grupo de ações e mascarado antes de qualquer linha do log, e a conferência falha se o grupo não tiver e-mail

@@ -9,6 +9,7 @@ Com a infraestrutura criada (Fundação-6), falta pôr o FiscoProjects no ar no 
 - `infra/scripts/Set-GitHubEnvironment.ps1` prepara o environment do GitHub e as variáveis.
 - O job `backend` do PR confere as licenças dos pacotes do NuGet (`scripts/ci/licenses.sh`); o Terraform fixado passa a vir de um script só (`scripts/ci/terraform.sh`).
 - O e-mail dos alertas fica sensível no Terraform, porque os planos aparecem nos logs públicos.
+- Depois da primeira publicação pela `main` (ADR-0116): a federação pelo subject imutável do GitHub, com os números do dono e do repositório; o e-mail dos alertas fora das variáveis do workflow, que o GitHub mostra nos logs, lido do grupo de ações pelo `plan.sh`; e as leituras que faltavam ao `plan` (`Application.Read.All` e o papel Leitor na conta do estado).
 
 ## Capabilities
 
@@ -22,5 +23,5 @@ Com a infraestrutura criada (Fundação-6), falta pôr o FiscoProjects no ar no 
 
 - `.github/workflows/deploy-dev.yml`, `scripts/cd`, `scripts/ci/licenses.sh`, `scripts/ci/terraform.sh`, o workflow do PR e os testes de `tests/FiscoProjects.Pipeline.Tests`.
 - `infra/terraform` (módulo `ci`, `github_repository` no `dev`), `infra/scripts/Set-GitHubEnvironment.ps1`.
-- `docs/instalacao.md`, ADR-0115, `CLAUDE.md`, glossário e roadmap.
+- `docs/instalacao.md`, ADR-0115, ADR-0116, `CLAUDE.md`, glossário e roadmap.
 - GitHub de Marcelo: o environment `dev`, só para a `main`, com as variáveis do pipeline; nenhum segredo.
