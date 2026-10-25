@@ -55,12 +55,13 @@ interface SignInMethods {
 /** Before the API answers, the page shows the local sign-in, as it did before the Entra ID. */
 const untilKnown: SignInMethods = { local: true, entra: false };
 
-async function loadSignInMethods(): Promise<SignInMethods> {
+/** The sign-in methods, or nothing when the API did not answer them. */
+async function loadSignInMethods(): Promise<SignInMethods | undefined> {
   try {
     const { data } = await api.GET('/api/session/sign-in-options');
-    return { local: data?.localSignIn ?? false, entra: data?.entraSignIn ?? false };
+    return data === undefined ? undefined : { local: data.localSignIn, entra: data.entraSignIn };
   } catch {
-    return { local: false, entra: false };
+    return undefined;
   }
 }
 
@@ -98,8 +99,8 @@ function SignInScreen() {
   const installation = useInstallation();
   const location = useLocation();
   const navigate = useNavigate();
-  // Asked once; a submit before the answer waits for it.
-  const [knownMethods] = useState(loadSignInMethods);
+  // Asked once; a submit before the answer waits for it, and asks again if there was no answer.
+  const [firstMethods] = useState(loadSignInMethods);
   const [methods, setMethods] = useState<SignInMethods>();
   const [refusal, setRefusal] = useState<Refusal | undefined>(() => refusalOf(location.search));
   const [leaving, setLeaving] = useState(false);
@@ -121,15 +122,15 @@ function SignInScreen() {
 
   useEffect(() => {
     let active = true;
-    void knownMethods.then((known) => {
+    void firstMethods.then((known) => {
       if (active) {
-        setMethods(known);
+        setMethods(known ?? untilKnown);
       }
     });
     return () => {
       active = false;
     };
-  }, [knownMethods]);
+  }, [firstMethods]);
 
   const shown = methods ?? untilKnown;
 
@@ -156,7 +157,7 @@ function SignInScreen() {
   const signIn = handleSubmit(async ({ email }) => {
     setRefusal(undefined);
     try {
-      const known = await knownMethods;
+      const known = (await firstMethods) ?? (await loadSignInMethods()) ?? untilKnown;
       if (!known.local) {
         if (known.entra) {
           await signInWithEntra(email);
