@@ -14,7 +14,9 @@ app="app-fiscoprojects-$installation-$environment"
 group="rg-fiscoprojects-$installation-$environment"
 address="https://$app.azurewebsites.net"
 
-az webapp deploy --resource-group "$group" --name "$app" --src-path artifacts/app.zip --type zip --output none
+# The startup is followed here, by /health: the tracking of the Azure CLI can keep waiting after the site is up.
+az webapp deploy --resource-group "$group" --name "$app" --src-path artifacts/app.zip --type zip --track-status false --output none
+sleep 20
 
 healthy=0
 for _ in $(seq 1 60); do

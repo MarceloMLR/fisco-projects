@@ -49,12 +49,13 @@ public sealed partial class DeploymentTests : IDisposable
         Fake("az", "echo \"az $*\" >> \"$FAKES/calls\"");
         Fake("curl", "echo \"curl ${@: -1}\" >> \"$FAKES/calls\"; printf 200");
         Fake("npm", "echo \"npm $* ($(basename \"$PWD\"))\" >> \"$FAKES/calls\"");
+        Fake("sleep", "true");
 
         var result = Run("deploy");
 
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
-            "az webapp deploy --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --src-path artifacts/app.zip --type zip --output none",
+            "az webapp deploy --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --src-path artifacts/app.zip --type zip --track-status false --output none",
             "curl https://app-fiscoprojects-mlr-dev.azurewebsites.net/health",
             "npm run demo:data -- https://app-fiscoprojects-mlr-dev.azurewebsites.net (web)");
     }
