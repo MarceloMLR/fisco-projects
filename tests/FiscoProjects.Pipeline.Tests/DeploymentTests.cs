@@ -3,8 +3,8 @@ using FiscoProjects.Testing;
 
 namespace FiscoProjects.Pipeline.Tests;
 
-// Spec: publicacao (ADR-0055, ADR-0115). The workflow is read as text; the scripts run with stand-ins for az, curl,
-// npm and terraform, which write down how they were called.
+// Spec: publicacao (ADR-0055, ADR-0115, ADR-0116). The workflow is read as text; the scripts run with stand-ins for az,
+// curl, npm and terraform, which write down how they were called.
 public sealed partial class DeploymentTests : IDisposable
 {
     private readonly string _fakes = Directory.CreateTempSubdirectory("fisco-deploy-").FullName;
@@ -64,7 +64,7 @@ public sealed partial class DeploymentTests : IDisposable
     public void Plan_WithDifferences_WarnsWithoutFailing()
     {
         Shell.SkipWithoutBash();
-        FakeTerraform(planExit: 2, planOutput: "  # module.app.azurerm_linux_web_app.main will be updated in-place\nPlan: 0 to add, 1 to change, 0 to destroy.");
+        FakePlan(planExit: 2, planOutput: "  # module.app.azurerm_linux_web_app.main will be updated in-place\nPlan: 0 to add, 1 to change, 0 to destroy.");
 
         var result = Run("plan");
 
@@ -78,20 +78,47 @@ public sealed partial class DeploymentTests : IDisposable
     public void Plan_WithoutDifferences_Passes_AndAFailureFails()
     {
         Shell.SkipWithoutBash();
-        FakeTerraform(planExit: 0, planOutput: "No changes.");
+        FakePlan(planExit: 0, planOutput: "No changes.");
         Run("plan").Output.Should().Contain("Infrastructure of dev matches the code.");
 
-        FakeTerraform(planExit: 1, planOutput: "Error: unauthorized");
+        FakePlan(planExit: 1, planOutput: "Error: unauthorized");
         var failed = Run("plan");
         failed.ExitCode.Should().Be(1);
         failed.Errors.Should().Contain("Error: unauthorized");
     }
 
-    private void FakeTerraform(int planExit, string planOutput)
+    [Fact(DisplayName = "E-mail dos alertas fora dos logs")]
+    public void Plan_ReadsTheAlertEmailFromTheActionGroup_AndMasksItFirst()
     {
+        Shell.SkipWithoutBash();
+        WorkflowLines().Should().NotContain(line => line.Contains("alert_email", StringComparison.OrdinalIgnoreCase),
+            "GitHub shows the variables of the workflow in the public logs");
+        FakePlan(planExit: 0, planOutput: "No changes.", alertEmail: "alertas@empresa.example");
+
+        var result = Run("plan");
+
+        result.ExitCode.Should().Be(0, result.Errors);
+        result.Output.Split('\n')[0].Should().Be("::add-mask::alertas@empresa.example", "the e-mail is masked before anything is written");
+        Calls().Should().ContainInOrder(
+            "az monitor action-group show --resource-group rg-fiscoprojects-mlr-dev --name ag-fiscoprojects-mlr-dev --query emailReceivers[0].emailAddress --output tsv",
+            "terraform sees the alert e-mail alertas@empresa.example");
+
+        FakePlan(planExit: 0, planOutput: "No changes.", alertEmail: "");
+        var withoutEmail = Run("plan");
+        withoutEmail.ExitCode.Should().Be(1);
+        withoutEmail.Errors.Should().Contain("has no e-mail");
+    }
+
+    private void FakePlan(int planExit, string planOutput, string alertEmail = "alertas@empresa.example")
+    {
+        Fake("az", $$"""
+            echo "az $*" >> "$FAKES/calls"
+            echo "{{alertEmail}}"
+            """);
         File.WriteAllText(Path.Combine(_fakes, "plan-output"), planOutput + "\n");
         Fake("terraform", $$"""
             echo "terraform $*" >> "$FAKES/calls"
+            if [ -n "${TF_VAR_alert_email:-}" ]; then echo "terraform sees the alert e-mail $TF_VAR_alert_email" >> "$FAKES/calls"; fi
             case "$*" in
               "version -json") echo '{"terraform_version": "1.16.5"}' ;;
               *" plan "*) cat "$FAKES/plan-output"; exit {{planExit}} ;;

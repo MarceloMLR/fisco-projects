@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 # Compares the infrastructure of an environment with the Terraform code (ADR-0115): terraform plan with the state of the
 # environment, without applying. A difference only warns, because the apply stays with whoever operates the
-# installation (docs/instalacao.md). ENVIRONMENT names the environment; the credentials come from the ARM_* variables.
+# installation (docs/instalacao.md). ENVIRONMENT names the environment; the credentials come from the ARM_* variables,
+# and the Azure CLI must be signed in.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 environment=${ENVIRONMENT:?Set ENVIRONMENT to an environment of infra/terraform/environments, as dev.}
 summary=${GITHUB_STEP_SUMMARY:-/dev/null}
-if [ -n "${TF_VAR_alert_email:-}" ] && [ -n "${GITHUB_ACTIONS:-}" ]; then
-  echo "::add-mask::$TF_VAR_alert_email"
+installation=$(sed -n 's/^installation *= *"\([^"]*\)".*/\1/p' "infra/terraform/environments/$environment.tfvars")
+name="fiscoprojects-$installation-$environment"
+
+# The e-mail of the alerts is personal, and the logs of the repository are public (ADR-0116): it is not a variable of
+# the workflow, whose values GitHub shows in every step, but read here from the action group of the installation, which
+# the apply keeps, and masked before anything else.
+alert_email=$(az monitor action-group show --resource-group "rg-$name" --name "ag-$name" \
+  --query "emailReceivers[0].emailAddress" --output tsv)
+if [ -z "$alert_email" ]; then
+  echo "The action group ag-$name has no e-mail: apply the infrastructure first (docs/instalacao.md)." >&2
+  exit 1
 fi
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "::add-mask::$alert_email"
+fi
+export TF_VAR_alert_email=$alert_email
 
 terraform=$(bash scripts/ci/terraform.sh)
 plan=$(mktemp)
