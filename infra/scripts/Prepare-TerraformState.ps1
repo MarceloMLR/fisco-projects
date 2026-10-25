@@ -42,8 +42,9 @@ az storage account blob-service-properties update --account-name $account --reso
 
 $me = az ad signed-in-user show --query id -o tsv
 $scope = az storage account show --name $account --resource-group $group --query id -o tsv
-$assigned = az role assignment list --assignee $me --scope $scope --role 'Storage Blob Data Contributor' --query 'length(@)' -o tsv
-if ($assigned -eq '0') {
+# No parentheses in the query: on Windows, az is a .cmd file, and cmd.exe breaks on them.
+$assigned = @(az role assignment list --assignee $me --scope $scope --role 'Storage Blob Data Contributor' --query '[].id' -o tsv)
+if ($assigned.Count -eq 0) {
     az role assignment create --assignee-object-id $me --assignee-principal-type User `
         --role 'Storage Blob Data Contributor' --scope $scope --output none
 }
