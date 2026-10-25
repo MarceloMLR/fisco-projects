@@ -85,7 +85,8 @@ module "monitoring" {
 
 # The state stays in the storage account of infra/scripts/Prepare-TerraformState.ps1, with the same names.
 locals {
-  state_container_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate/blobServices/default/containers/tfstate"
+  state_account_id   = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate"
+  state_container_id = "${local.state_account_id}/blobServices/default/containers/tfstate"
 }
 
 module "ci" {
@@ -97,6 +98,7 @@ module "ci" {
   repository         = var.github_repository
   environment        = var.environment
   resource_group_id  = azurerm_resource_group.main.id
+  state_account_id   = local.state_account_id
   state_container_id = local.state_container_id
 }
 
