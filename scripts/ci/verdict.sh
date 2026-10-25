@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Decides the verification of the pull request from the result of each part (ADR-0090): changes and specs always pass;
-# backend, format and frontend pass when the commit changes code (CODE=true), and may be skipped when it changes only
+# backend, format, frontend and infra pass when the commit changes code (CODE=true), and may be skipped when it changes only
 # documentation. Each result is success, failure, cancelled or skipped, as GitHub Actions names them.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -27,5 +27,6 @@ fi
 check backend "${BACKEND:-}" "$code_parts"
 check format "${FORMAT:-}" "$code_parts"
 check frontend "${FRONTEND:-}" "$code_parts"
+check infra "${INFRA:-}" "$code_parts"
 
 exit "$failed"

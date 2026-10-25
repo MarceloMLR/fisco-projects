@@ -109,6 +109,19 @@ jobs:
       - name: frontend
         run: bash scripts/ci/frontend.sh
 
+  infra:
+    name: infra
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: infra
+        run: bash scripts/ci/infra.sh
+
   specs:
     name: specs
     runs-on: ubuntu-24.04
@@ -127,7 +140,7 @@ jobs:
 
   verify:
     name: verify
-    needs: [changes, backend, format, frontend, specs]
+    needs: [changes, backend, format, frontend, infra, specs]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -142,5 +155,6 @@ jobs:
           BACKEND: ${{ needs.backend.result }}
           FORMAT: ${{ needs.format.result }}
           FRONTEND: ${{ needs.frontend.result }}
+          INFRA: ${{ needs.infra.result }}
           SPECS: ${{ needs.specs.result }}
         run: bash scripts/ci/verdict.sh

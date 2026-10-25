@@ -13,6 +13,7 @@ public sealed partial class PullRequestWorkflowTests
         ("backend", ["build", "test"]),
         ("format", ["format"]),
         ("frontend", ["frontend"]),
+        ("infra", ["infra"]),
         ("specs", ["specs"]),
         ("verify", ["verdict"]),
     ];
@@ -40,14 +41,14 @@ public sealed partial class PullRequestWorkflowTests
         }
 
         // The code parts wait only for changes; the specs wait for nothing; verify waits for everything.
-        foreach (var job in new[] { "backend", "format", "frontend" })
+        foreach (var job in new[] { "backend", "format", "frontend", "infra" })
         {
             jobs[job].Should().Contain("    needs: changes").And.Contain(OnlyWithCode);
         }
 
         jobs["specs"].Should().NotContain(line => line.StartsWith("    needs:", StringComparison.Ordinal) || line.StartsWith("    if:", StringComparison.Ordinal));
         jobs["verify"].Should().Contain("    name: verify", "the \"Protect main\" rule requires this check name")
-            .And.Contain("    needs: [changes, backend, format, frontend, specs]")
+            .And.Contain("    needs: [changes, backend, format, frontend, infra, specs]")
             .And.Contain("    if: ${{ !cancelled() }}");
         // The tests run only after a successful build.
         jobs["backend"].Should().Contain("        if: ${{ !cancelled() && steps.build.outcome == 'success' }}");
