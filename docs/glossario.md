@@ -266,6 +266,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Apagar o que é do projeto | IProjectDeletion, ProjectItemCount | Cada módulo: conta, apaga os arquivos e apaga as linhas na transação da exclusão |
 | Remoção do que foi guardado | StoredFilesRemoval, `IFileStorage.FolderOfAsync` | Os arquivos registrados e as pastas que ficaram vazias, até a raiz |
 | Monitoramento | Monitoring (`AddFiscoProjectsMonitoring`), Application Insights | OpenTelemetry pela distribuição do Azure Monitor, só com `APPLICATIONINSIGHTS_CONNECTION_STRING` (ADR-0057, ADR-0112) |
+| Código da instalação | installation (Terraform) | De 2 a 6 letras ou números, parte do nome de todo recurso do Azure, como `app-fiscoprojects-mlr-dev` (ADR-0114) |
+| Ambiente | environment (Terraform) | `prod` ou `dev` (desenvolvimento e demonstração); parâmetros em `infra/terraform/environments/` (ADR-0052, ADR-0114) |
+| Estado do Terraform | Terraform state | Guardado numa conta de armazenamento por instalação, criada pelo `Prepare-TerraformState.ps1` (ADR-0053) |
+| Administradores do banco | grupo "FiscoProjects <instalação> <ambiente> - administradores do banco" | Grupo do Entra ID que administra o Azure SQL, que aceita só o Entra ID (ADR-0114) |
+| Identidade gerenciada | managed identity (App Service) | Como a aplicação entra no banco e no Key Vault, sem senha (ADR-0052) |
 | Métricas da fila de e-mails | EmailQueueMetrics, EmailQueueState | `fiscoprojects.emails.waiting`, `.oldest_waiting`, `.sent` e `.failed`, para o alerta de fila parada |
 
 ## Telas
