@@ -4,7 +4,7 @@ Registro para consulta e para a apresentação do projeto (pedido de Marcelo em 
 
 ## Como os valores foram obtidos
 
-- Data da consulta: 15/10/2026.
+- Data da consulta: 15/10/2026; o teste de disponibilidade e os alertas, em 25/10/2026.
 - Fonte: API de preços de varejo do Azure (Azure Retail Prices), consultada pela ferramenta de preços do Azure.
 - Região: Brazil South.
 - Preços de tabela, sem impostos e sem descontos. A tabela em reais da Microsoft equivale a cerca de R$ 5,22 por dólar.
@@ -32,16 +32,21 @@ Registro para consulta e para a apresentação do projeto (pedido de Marcelo em 
 | Azure SQL serverless (pago) | R$ 5,17 por hora de vCore; mínimo de 0,5 vCore acordado | variável | variável |
 | Azure SQL oferta gratuita | 100 mil segundos de vCore e 32 GB por mês, por banco | 0,00 | 0,00 |
 | Application Insights | faixa gratuita; acima dela, R$ 24,01 por GB | ~0 | ~0 |
+| Teste de disponibilidade | US$ 0,001 por execução: de 5 em 5 minutos, de um lugar, 8.640 por mês | 45,10 | 8,64 |
+| Teste de disponibilidade (desenvolvimento) | de 15 em 15 minutos, de um lugar, 2.880 por mês | 15,03 | 2,88 |
+| Alertas | três de métrica (US$ 0,10 cada) e um de consulta de 15 em 15 minutos (US$ 0,50) | 4,18 | 0,80 |
 
 ## Cenários para 5 a 6 pessoas
 
 | Cenário | Composição | R$/mês |
 | --- | --- | --- |
-| Recomendado | App Service B1 + Azure SQL S0 | ≈ 170 |
-| Econômico | App Service B1 + Azure SQL Basic (sobe para S0 sem migração) | ≈ 107 |
-| Desenvolvimento e demonstração no Azure | App Service B1 + Azure SQL na oferta gratuita | ≈ 76 |
+| Recomendado | App Service B1 + Azure SQL S0 + teste de disponibilidade e alertas | ≈ 220 |
+| Econômico | App Service B1 + Azure SQL Basic (sobe para S0 sem migração) + teste de disponibilidade e alertas | ≈ 157 |
+| Desenvolvimento e demonstração no Azure | App Service B1 + Azure SQL Basic + teste de disponibilidade de 15 em 15 minutos e alertas (ADR-0114) | ≈ 126 |
 | Desenvolvimento só na máquina local | Docker com SQL Server | 0 |
 | Serverless pago (só comparação, não recomendado) | App Service B1 + serverless acordado ~200 h/mês | ≈ 450 ou mais |
+
+Por que não a oferta gratuita no desenvolvimento: os processos em segundo plano mantêm o banco acordado, e os 100 mil segundos de vCore do mês acabam em dois ou três dias; depois, o banco fica parado até o mês seguinte (ADR-0114).
 
 Por que não serverless em produção: com uso em horário comercial o banco fica acordado cerca de 200 horas por mês, e os processos em segundo plano impedem a pausa automática. O custo passaria de R$ 375 por mês, podendo chegar a mais de R$ 1.700 se o banco nunca pausar.
 
@@ -67,4 +72,4 @@ Por que não serverless em produção: com uso em horário comercial o banco fic
 
 ## Frase para a apresentação
 
-Operar o FiscoProjects para uma equipe de 5 a 6 pessoas custa cerca de R$ 170 por mês no Azure (ou cerca de R$ 107 na configuração econômica), aproveitando o Microsoft 365 que a empresa já tem.
+Operar o FiscoProjects para uma equipe de 5 a 6 pessoas custa cerca de R$ 220 por mês no Azure, com o monitoramento (ou cerca de R$ 157 na configuração econômica), aproveitando o Microsoft 365 que a empresa já tem.

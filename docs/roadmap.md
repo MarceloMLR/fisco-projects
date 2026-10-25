@@ -17,6 +17,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 21/10/2026, Marcelo pediu mais ajustes, feitos em sequência: só a cor principal na marca, o solicitante em rosa na conversa, o espaço do ícone nos botões, o Voltar do navegador e a primeira carga mais rápida; e depois a menção ao digitar "@", a descrição do chamado em rosa, o logo na aba do navegador e os avisos no topo.
 - Em 21/10/2026, depois da Operação-4, Marcelo viu Meu perfil quebrado no celular, e a correção entrou como Acesso-5.1 (`perfil-no-celular`).
 - Em 22/10/2026, com o computador desligado, Marcelo pediu um jeito fácil de demonstrar de outro computador: a Cronograma-3.4 (`demonstracao-no-codespaces`) põe a demonstração no GitHub Codespaces (ADR-0113).
+- Em 25/10/2026, Marcelo criou a assinatura do Azure (avaliação gratuita) para testar o sistema de ponta a ponta: a Fundação-6 e a Fundação-7 voltam para a fila, seguidas do grupo M365, com a avaliação do Microsoft 365 só para o SharePoint e o e-mail (ADR-0114).
 
 ## Marcos
 
@@ -48,7 +49,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-5.1 | `espaco-do-icone-nos-botoes` | Ícone dos botões a 8px do texto, como no design system, a pedido de Marcelo | 0062, 0065 | Concluída em 21/10/2026 ([#67](https://github.com/MarceloMLR/fisco-projects/pull/67)) |
 | Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Concluída em 21/10/2026 ([#68](https://github.com/MarceloMLR/fisco-projects/pull/68)) |
 | Fundação-5.3 | `avisos-no-topo` | As confirmações curtas no alto, no meio da tela, a pedido de Marcelo | 0066, 0109 | Concluída em 21/10/2026 ([#73](https://github.com/MarceloMLR/fisco-projects/pull/73)) |
-| Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights (com o teste de disponibilidade e os alertas do ADR-0112), backups do Azure SQL (ADR-0059) e registro do aplicativo no Entra | 0052, 0053 | Adiada: aguarda a assinatura do Azure |
+| Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights (com o teste de disponibilidade e os alertas do ADR-0112), backups do Azure SQL (ADR-0059) e registro do aplicativo no Entra | 0052, 0053, 0114 | PR aberto ([#83](https://github.com/MarceloMLR/fisco-projects/pull/83)) |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061 | Adiada: aguarda a assinatura do Azure |
 | Fundação-8 | `primeira-carga-mais-rapida` | Primeira abertura das telas mais rápida: aquecimento da API ao subir, leituras antes na tela e o código da Linha do tempo carregado antes, a pedido de Marcelo | 0047, 0080, 0106 | Concluída em 21/10/2026 ([#69](https://github.com/MarceloMLR/fisco-projects/pull/69)) |
 

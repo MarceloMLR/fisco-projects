@@ -30,13 +30,48 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Conta de armazenamento para o estado do Terraform, criada pelo script de preparação, com versionamento e acesso restrito (ADR-0053).
 - Região Brazil South (ADR-0052).
 - Produção: App Service Linux B1 com Always On e Azure SQL provisionado (S0, ou Basic para começar) (ADR-0048, ADR-0052, [custos estimados](custos-estimados.md)).
-- Desenvolvimento e demonstração (opcional): App Service B1 e Azure SQL na oferta gratuita serverless, com "pausar até o mês seguinte" ao atingir o limite (ADR-0048, ADR-0052).
+- Desenvolvimento e demonstração (opcional): App Service B1 e Azure SQL Basic, sem backups mensais; a oferta gratuita do Azure SQL acabaria em poucos dias com os processos em segundo plano (ADR-0052, ADR-0114). Uma assinatura de avaliação pode não ter cota de App Service na Brazil South: aí `app_location` leva a aplicação e o banco para uma região com cota, só nesse ambiente, que tem só dados fictícios (ADR-0114).
 - Identidade gerenciada do App Service com acesso ao Azure SQL e ao Key Vault (ADR-0052).
 - Key Vault com o certificado do aplicativo no Entra e a chave de licença do Syncfusion, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059).
 - Só HTTPS; domínio próprio opcional com certificado gerenciado (ADR-0052).
-- Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING` (do Key Vault); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
+- Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING`, posta pelo Terraform nas configurações do App Service (ADR-0114); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
 - Backups do Azure SQL: restauração a qualquer ponto em 14 dias (Basic: 7), um backup mensal guardado por 12 meses e redundância por zona dentro da Brazil South (parâmetro da instalação) (ADR-0059).
+- Banco só com Entra ID: o administrador do servidor é o grupo "FiscoProjects <instalação> <ambiente> - administradores do banco", e a aplicação entra pela identidade gerenciada, sem senha (ADR-0114).
 - Roteiro de restauração em [restauracao.md](restauracao.md), testado a cada 3 meses, com o registro de cada teste na própria página (ADR-0059).
+
+### Criar ou atualizar uma instalação
+
+Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terraform --version 1.16.5`) e o PowerShell 7 (ADR-0053, ADR-0114):
+
+1. Entre na conta e escolha a assinatura: `az login` e `az account set --subscription <assinatura>`.
+2. Uma vez por instalação, prepare o estado: `./infra/scripts/Prepare-TerraformState.ps1 -Installation <código>` (de 2 a 6 letras minúsculas ou números). Os parâmetros do ambiente ficam em `infra/terraform/environments/<ambiente>.tfvars` e `<ambiente>.backend.hcl`, como os do `dev`.
+3. Ponha os valores pessoais em `infra/terraform/local.auto.tfvars`, que fica fora do Git:
+
+   ```hcl
+   operator_object_ids = ["<identificador seu no Entra ID: az ad signed-in-user show --query id -o tsv>"]
+   alert_email         = "<e-mail que recebe os alertas>"
+   ```
+
+4. Aplique, conferindo o plano antes:
+
+   ```bash
+   terraform -chdir=infra/terraform init -backend-config=environments/<ambiente>.backend.hcl
+   terraform -chdir=infra/terraform plan -var-file=environments/<ambiente>.tfvars -out=<ambiente>.tfplan
+   terraform -chdir=infra/terraform apply <ambiente>.tfplan
+   ```
+
+5. Crie os segredos à mão no Key Vault (o nome sai no `key_vault_name` do `terraform output`), sem deixar a chave no histórico do terminal:
+
+   ```powershell
+   $chave = Read-Host 'Chave do Syncfusion'
+   az keyvault secret set --vault-name <cofre> --name Syncfusion--LicenseKey --value $chave --output none
+   ```
+
+   Depois, ponha `syncfusion_license_in_key_vault = true` no `.tfvars` e aplique de novo.
+
+### Apagar um ambiente
+
+`terraform -chdir=infra/terraform destroy -var-file=environments/<ambiente>.tfvars` apaga o ambiente inteiro. O Key Vault fica recuperável pelo prazo da exclusão reversível (7 dias no `dev`), sem custo parado. A conta do estado sobra e custa centavos por mês; apagada a última instalação da assinatura, saia com `az group delete --name rg-fiscoprojects-<código>-tfstate`. Na produção, os backups mensais continuam cobrados até vencerem.
 
 ## CI/CD
 

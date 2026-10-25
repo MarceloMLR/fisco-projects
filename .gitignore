@@ -47,6 +47,8 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+# Personal values of an installation (operators, e-mail of the alerts), loaded by Terraform itself (ADR-0114)
+*.auto.tfvars
 
 # Secrets and local configuration (never commit)
 .env
