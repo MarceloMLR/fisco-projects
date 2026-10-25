@@ -44,8 +44,15 @@ variable "operator_object_ids" {
 }
 
 variable "alert_email" {
-  description = "E-mail of the administrator who receives the alerts (ADR-0057, ADR-0112). Passed outside the repository."
+  description = "E-mail of the administrator who receives the alerts (ADR-0057, ADR-0112). Passed outside the repository, and kept out of the plans, which the pipeline shows (ADR-0115)."
   type        = string
+  sensitive   = true
+}
+
+variable "github_repository" {
+  description = "Repository on GitHub (owner/name) whose pipeline publishes this environment; null creates no identity for a pipeline (ADR-0115)."
+  type        = string
+  default     = null
 }
 
 variable "aspnetcore_environment" {

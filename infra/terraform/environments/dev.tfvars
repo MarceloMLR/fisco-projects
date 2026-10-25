@@ -30,5 +30,8 @@ key_vault_soft_delete_days = 7
 # Fewer runs of the availability test: each one is billed.
 availability_test_frequency = 900
 
+# The pipeline of this repository publishes the environment after each merge (ADR-0115).
+github_repository = "MarceloMLR/fisco-projects"
+
 # Off until the Fundação-7 publishes the application.
 alerts_enabled = false

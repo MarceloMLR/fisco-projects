@@ -10,7 +10,7 @@ public sealed partial class PullRequestWorkflowTests
     private static readonly (string Job, string[] Scripts)[] Jobs =
     [
         ("changes", ["changes"]),
-        ("backend", ["build", "test"]),
+        ("backend", ["build", "licenses", "test"]),
         ("format", ["format"]),
         ("frontend", ["frontend"]),
         ("infra", ["infra"]),

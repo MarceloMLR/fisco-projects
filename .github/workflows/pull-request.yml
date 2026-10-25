@@ -62,10 +62,13 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/Directory.*.props', 'global.json') }}
           restore-keys: nuget-${{ runner.os }}-
-      # Tests need a successful build.
+      # The licenses and the tests need a successful build.
       - name: build
         id: build
         run: bash scripts/ci/build.sh
+      - name: licenses
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: bash scripts/ci/licenses.sh
       - name: test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: bash scripts/ci/test.sh

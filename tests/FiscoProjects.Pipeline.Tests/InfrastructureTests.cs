@@ -9,7 +9,7 @@ public sealed partial class InfrastructureTests
 {
     private static readonly string Folder = RepositoryFiles.PathOf("infra", "terraform");
 
-    private static readonly string[] Modules = ["alerts", "app", "database", "entra", "key-vault", "monitoring"];
+    private static readonly string[] Modules = ["alerts", "app", "ci", "database", "entra", "key-vault", "monitoring"];
 
     [Fact(DisplayName = "Ambiente criado pelo Terraform")]
     public void Terraform_DescribesTheWholeInstallation_WithPinnedVersions()
@@ -25,7 +25,7 @@ public sealed partial class InfrastructureTests
         var versions = Read("versions.tf");
         var terraform = RequiredTerraform().Match(versions).Groups["version"].Value;
         terraform.Should().NotBeEmpty();
-        Repository.Read("scripts", "ci", "infra.sh").Should().Contain($"version={terraform}\n", "the CI checks with the same Terraform");
+        Repository.Read("scripts", "ci", "terraform.sh").Should().Contain($"version={terraform}\n", "the CI checks with the same Terraform");
         ProviderVersions().Matches(versions).Should().HaveCount(2).And.AllSatisfy(match => match.Groups["version"].Value.Should().MatchRegex(@"^\d+\.\d+\.\d+$"));
         File.Exists(Path.Combine(Folder, ".terraform.lock.hcl")).Should().BeTrue("the providers are checked by their hashes");
         Read("environments", "dev.tfvars").Should().Contain("installation = \"").And.Contain("environment  = \"dev\"");
@@ -119,6 +119,28 @@ public sealed partial class InfrastructureTests
             .And.Contain("--enable-container-delete-retention true")
             .And.Contain("$ErrorActionPreference = 'Stop'");
         Read("environments", "dev.backend.hcl").Should().Contain("container_name       = \"tfstate\"");
+    }
+
+    [Fact(DisplayName = "Identidade do pipeline com poder limitado")]
+    public void PipelineIdentity_PublishesAndReads_WithoutGivingRolesOrChangingEntra()
+    {
+        var ci = Read("modules", "ci", "main.tf");
+
+        ci.Should().Contain("issuer         = \"https://token.actions.githubusercontent.com\"")
+            .And.Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"")
+            .And.Contain("role_definition_name = \"Contributor\"\n  principal_id")
+            .And.Contain("role_definition_name = \"Storage Blob Data Contributor\"")
+            .And.Contain("app_role_ids[\"Directory.Read.All\"]");
+        ci.Should().NotContain("Owner").And.NotContain("User Access Administrator").And.NotContain("ReadWrite")
+            .And.NotContain("azuread_application_password");
+        Regex.Matches(ci, "resource \"azurerm_role_assignment\"").Should().HaveCount(2);
+        Read("main.tf").Should().Contain("resource_group_id  = azurerm_resource_group.main.id");
+        // The container of the state has the names of the script that creates it.
+        var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
+        script.Should().Contain("$group = \"rg-fiscoprojects-$Installation-tfstate\"").And.Contain("$account = \"stfp${Installation}tfstate\"");
+        Read("main.tf").Should().Contain("resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate/blobServices/default/containers/tfstate");
+        Regex.Match(Read("variables.tf"), "variable \"alert_email\" \\{[^}]*sensitive   = true", RegexOptions.Singleline).Success
+            .Should().BeTrue("the plans are shown in public logs");
     }
 
     private static string Read(params string[] relativePath) => File.ReadAllText(Path.Combine([Folder, .. relativePath]));
