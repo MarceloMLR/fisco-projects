@@ -27,4 +27,4 @@
 
 - [x] 6.1 ADR-0116: federação pelo subject imutável do GitHub e as leituras que faltavam ao `plan`
 - [x] 6.2 E-mail dos alertas fora do workflow, lido do grupo de ações e mascarado pelo `plan.sh`
-- [ ] 6.3 Federação aplicada no Azure e publicação pela `main` conferida
+- [x] 6.3 Federação aplicada no Azure e publicação pela `main` conferida

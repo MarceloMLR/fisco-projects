@@ -8,7 +8,7 @@ Define as verificações automáticas que todo pull request para a `main` precis
 
 ### Requirement: Verificações em todo pull request
 
-Todo pull request para a `main` MUST passar por estas verificações: build do backend sem avisos, testes do backend (inclusive os que usam SQL Server em contêiner), formatação do código do backend, verificações do frontend (licenças das dependências, pacotes vulneráveis, formatação, lint, tipos, testes e build), formatação e validação do Terraform e validação das specs do OpenSpec. Se qualquer verificação falhar, o pull request MUST ficar com a verificação reprovada.
+Todo pull request para a `main` MUST passar pelas verificações do backend (build sem avisos, licenças do NuGet, testes, inclusive com SQL Server em contêiner, e formatação), do frontend (licenças, pacotes vulneráveis, formatação, lint, tipos, testes e build), do Terraform (formatação e validação) e das specs do OpenSpec. Se qualquer verificação falhar, o pull request MUST ficar com a verificação reprovada.
 
 #### Scenario: Pull request para a main
 - **WHEN** um pull request para a `main` é aberto, reaberto ou recebe commits novos
@@ -25,6 +25,10 @@ Todo pull request para a `main` MUST passar por estas verificações: build do b
 #### Scenario: Pacote com vulnerabilidade conhecida
 - **WHEN** um pacote do NuGet usado pelo backend, direto ou transitivo, tem vulnerabilidade conhecida
 - **THEN** o build falha
+
+#### Scenario: Pacote do NuGet com licença não permitida
+- **WHEN** um pacote do NuGet usado pelo backend, direto ou transitivo, tem licença fora da lista permitida (licenças permissivas, sem copyleft forte nem licença comercial) ou sem expressão de licença, fora das partes nativas aceitas do SqlClient e do MSAL
+- **THEN** a verificação do backend falha e aponta o pacote
 
 #### Scenario: Pacote do frontend com vulnerabilidade conhecida
 - **WHEN** um pacote que vai para o navegador, direto ou transitivo, tem vulnerabilidade conhecida
