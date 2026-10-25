@@ -8,6 +8,9 @@ public enum SignInRefusal
 
     /// <summary>The user exists but was deactivated.</summary>
     Inactive = 2,
+
+    /// <summary>A guest account of the tenant, which the v1 refuses (ADR-0007).</summary>
+    Guest = 3,
 }
 
 /// <summary>

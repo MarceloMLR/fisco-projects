@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Users.Infrastructure;
 
-/// <summary>Services of the Users module: people, their identity links and the local sign-in.</summary>
+/// <summary>Services of the Users module: people, their identity links, the local sign-in and the sign-in through Entra ID.</summary>
 public static class UsersModule
 {
     public static IServiceCollection AddUsersModule(this IServiceCollection services, IConfiguration configuration)
@@ -64,6 +64,14 @@ public static class UsersModule
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<LocalSignInOptions>, LocalSignInValidation>();
         services.AddScoped<SignInLocally>();
+
+        // The sign-in through Entra ID (ADR-0117); the scheme itself is added with the session (AddEntraSignIn).
+        services.AddOptions<EntraSignInOptions>()
+            .Bind(configuration.GetSection(EntraSignInOptions.Section))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<EntraSignInOptions>, EntraSignInValidation>();
+        services.TryAddSingleton<IEntraClientAssertion, ManagedIdentityClientAssertion>();
+        services.AddScoped<SignInWithEntra>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, UsersWarmUp>();
         return services;

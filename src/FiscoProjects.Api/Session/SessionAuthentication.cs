@@ -1,4 +1,5 @@
 using FiscoProjects.Users.Contracts;
+using FiscoProjects.Users.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
@@ -30,7 +31,8 @@ internal static class SessionAuthentication
             .Validate(options => options.IdleTimeout > TimeSpan.Zero, "Session:IdleTimeout must be greater than zero.")
             .ValidateOnStart();
 
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+        // The sign-in through Entra ID, when on, opens the same session at the end (ADR-0117).
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie().AddEntraSignIn(configuration);
         services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
             .Configure<IOptions<UserSessionOptions>>((cookie, session) =>
             {
