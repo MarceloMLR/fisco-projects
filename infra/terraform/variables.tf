@@ -83,6 +83,24 @@ variable "app_settings" {
   default     = {}
 }
 
+variable "entra_sign_in" {
+  description = "Whether people sign in through Entra ID (ADR-0117). The application of Entra ID is ready either way."
+  type        = bool
+  default     = true
+}
+
+variable "entra_assignment_required" {
+  description = "Whether only the people and groups assigned to the application in Entra ID sign in (ADR-0005)."
+  type        = bool
+  default     = true
+}
+
+variable "first_administrator_object_id" {
+  description = "Object ID in Entra ID of the first administrator of the installation (ADR-0006), in local.auto.tfvars; null leaves the first administrator out of the settings."
+  type        = string
+  default     = null
+}
+
 variable "syncfusion_license_in_key_vault" {
   description = "Whether the secret Syncfusion--LicenseKey already exists in the Key Vault; when true, the application reads it from there (ADR-0051, ADR-0087)."
   type        = bool

@@ -123,6 +123,9 @@ resource "azurerm_linux_web_app" "main" {
     ASPNETCORE_ENVIRONMENT                = var.aspnetcore_environment
     APPLICATIONINSIGHTS_CONNECTION_STRING = var.insights_connection
     Email__SiteUrl                        = var.site_url
+    # The App Service ends the TLS: the application reads the https of the request from the proxy, for the address of
+    # the way back of the sign-in (ADR-0117).
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED = "true"
   })
 
   # No password: the application signs in to the database with its managed identity (ADR-0052).

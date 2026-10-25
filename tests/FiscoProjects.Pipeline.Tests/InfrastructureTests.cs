@@ -147,6 +147,44 @@ public sealed partial class InfrastructureTests
             .Should().BeTrue("the plans are shown in public logs");
     }
 
+    [Fact(DisplayName = "Aplicativo do Entra para a entrada")]
+    public void EntraApplication_IsReadyForTheSignIn()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+        var main = Read("main.tf");
+
+        entra.Should().Contain("redirect_uris = [var.redirect_uri]")
+            .And.Contain("id_token_issuance_enabled     = false")
+            .And.Contain("name = \"acct\"").And.Contain("name = \"email\"")
+            .And.Contain("sign_in_scopes = [\"openid\", \"profile\", \"email\"]")
+            .And.Contain("claim_values                         = local.sign_in_scopes")
+            .And.Contain("app_role_assignment_required = var.assignment_required");
+        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "only the scopes of the sign-in, for now");
+        main.Should().Contain("redirect_uri              = \"https://${local.host}/signin-oidc\"")
+            .And.Contain("app_identity_principal_id = module.app.principal_id")
+            .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
+            .And.Contain("EntraSignIn__ClientId = module.entra.client_id")
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings)");
+        Read("modules", "app", "main.tf").Should().Contain("ASPNETCORE_FORWARDEDHEADERS_ENABLED = \"true\"");
+        var variables = Read("variables.tf");
+        Default(variables, "entra_sign_in").Should().Be("true");
+        Default(variables, "entra_assignment_required").Should().Be("true", "only the people assigned sign in (ADR-0005)");
+        Default(variables, "first_administrator_object_id").Should().Be("null");
+    }
+
+    [Fact(DisplayName = "Aplicativo do Entra sem segredo")]
+    public void EntraApplication_TrustsOnlyTheManagedIdentity()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        Regex.Matches(entra, "resource \"azuread_application_federated_identity_credential\"").Should().HaveCount(1);
+        entra.Should().Contain("audiences      = [\"api://AzureADTokenExchange\"]")
+            .And.Contain("issuer         = \"https://login.microsoftonline.com/${var.tenant_id}/v2.0\"")
+            .And.Contain("subject        = var.app_identity_principal_id")
+            .And.NotContain("azuread_application_password").And.NotContain("azuread_application_certificate")
+            .And.NotContain("azuread_service_principal_password").And.NotContain("azuread_service_principal_certificate");
+    }
+
     [Fact(DisplayName = "Federação pelos números do repositório")]
     public void PipelineIdentity_TrustsTheImmutableSubjectOfGitHub()
     {
@@ -179,7 +217,7 @@ public sealed partial class InfrastructureTests
     [GeneratedRegex("version = \"= (?<version>[^\"]+)\"")]
     private static partial Regex ProviderVersions();
 
-    [GeneratedRegex(@"^\s*(alert_email|operator_object_ids)\s*=")]
+    [GeneratedRegex(@"^\s*(alert_email|operator_object_ids|first_administrator_object_id)\s*=")]
     private static partial Regex PersonalValue();
 
     [GeneratedRegex(@"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}", RegexOptions.IgnoreCase)]
