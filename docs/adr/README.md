@@ -99,7 +99,7 @@ Regras:
 | [0049](0049-frontend-react-typescript.md) | Frontend em React com TypeScript | aceita | 2026-10-15 |
 | [0050](0050-mui-como-biblioteca-de-componentes.md) | Material UI (MUI) como biblioteca de componentes, só com pacotes gratuitos | aceita | 2026-10-15 |
 | [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | aceita (nome do componente substituído pelo ADR-0074: `ScheduleGantt`) | 2026-10-15 |
-| [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita | 2026-10-15 |
+| [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita (certificado do aplicativo no Entra substituído pelo ADR-0117) | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
 | [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
 | [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita (linha "Em todo pull request" substituída pelo ADR-0090) | 2026-10-15 |
@@ -179,3 +179,4 @@ Regras:
 | [0114](0114-infraestrutura-do-azure-na-pratica.md) | Como o Terraform monta uma instalação no Azure | aceita | 2026-10-25 |
 | [0115](0115-publicacao-no-ambiente-de-desenvolvimento.md) | Publicação no ambiente de desenvolvimento a cada merge | aceita (e-mail dos alertas nas variáveis e leitura do Entra ID substituídos pelo ADR-0116) | 2026-10-25 |
 | [0116](0116-identidade-do-pipeline-e-logs-publicos.md) | Identidade do pipeline pelos números do repositório e nada pessoal nos logs públicos | aceita | 2026-10-25 |
+| [0117](0117-entrada-pelo-entra-na-pratica.md) | Como a entrada pelo Entra ID funciona, com a credencial pela identidade gerenciada | aceita | 2026-10-25 |

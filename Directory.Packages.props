@@ -11,6 +11,10 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.13" />
+    <!-- The sign-in through Entra ID, with the managed identity as the credential (ADR-0117). Azure.Identity came
+         already through Microsoft.Data.SqlClient. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.13" />
+    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <!-- OpenTelemetry exported to Application Insights (ADR-0057, ADR-0112). -->
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
   </ItemGroup>

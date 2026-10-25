@@ -20,6 +20,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Entrada (login) | SignIn | |
 | Entrada local | LocalSignIn | Por e-mail, sem senha, só fora da produção (ADR-0078) |
 | Pessoas da demonstração | LocalSignIn.People | Diretório fictício da entrada local |
+| Entrada pelo Entra ID | EntraSignIn, SignInWithEntra | Pela página da Microsoft, com o e-mail como dica, só numa instalação no Azure (ADR-0117) |
+| Conta convidada | Guest (`acct`, `idp`) | Recusada na entrada, sem criar usuário (ADR-0007) |
+| Atribuição no Entra | `entra_assignment_required` | Só as pessoas atribuídas ao aplicativo empresarial entram (ADR-0005) |
+| Prova do aplicativo | IEntraClientAssertion | Token da identidade gerenciada que o aplicativo do Entra aceita, sem segredo nem certificado (ADR-0117) |
 | Sessão | Session | |
 | Sair | SignOut | |
 | Papel no sistema | SystemRole | Administrador, Gerente de projeto, Líder técnico ou Usuário (ADR-0040, ADR-0097) |
@@ -53,7 +57,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Quem cria projetos | SystemPolicies.ProjectCreators | Administrador ou gerente de projeto (ADR-0043): cria projetos e lista e inclui clientes |
 | Clientes para escolher | ClientChoice (`GET /api/clients/choices`) | Nome, logo e situação de todos os clientes, para qualquer pessoa com sessão, sem o CNPJ |
 | Pessoas para escolher | Person (`GET /api/people`) | Usuários ativos e pessoas do diretório que nunca entraram, buscados pelo nome ou e-mail por qualquer pessoa com sessão; com `managers`, só administradores e gerentes de projeto |
-| Diretório da empresa | IPeopleDirectory | Onde as pessoas são achadas antes de entrar (ADR-0005): hoje o de demonstração da entrada local (`LocalSignIn:People`); na M365-1, o Microsoft Graph |
+| Diretório da empresa | IPeopleDirectory | Onde as pessoas são achadas antes de entrar (ADR-0005): hoje o de demonstração da entrada local (`LocalSignIn:People`); na M365-2, o Microsoft Graph |
 | Pessoa do diretório (que nunca entrou) | DirectoryPerson, `directoryId` | Identificada na API por `"{provider}:{externalId}"` até virar usuário |
 | Usuário criado pelo diretório | `User.FromDirectory`, IUserProvisioning | Criado ao ser incluído num projeto, com o papel Usuário e sem último acesso; na primeira entrada, usa o mesmo usuário |
 | Nunca entrou | `LastSignInAt` nulo | O último acesso de quem foi incluído pelo diretório e ainda não entrou |

@@ -6,8 +6,10 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## Entra ID
 
-- Registrar o aplicativo do FiscoProjects como aplicativo de um único tenant (ADR-0003, ADR-0004), com credencial por certificado guardado no Key Vault (ADR-0052); o registro é criado pelo Terraform (ADR-0053).
-- Recomendado: ligar a atribuição obrigatória no aplicativo empresarial, por pessoa ou por grupo; grupo exige Entra ID P1/P2 (ADR-0005).
+- O aplicativo do FiscoProjects, de um único tenant (ADR-0003, ADR-0004), é criado pelo Terraform (ADR-0053), pronto para a entrada (ADR-0117): o endereço de retorno `https://<endereço>/signin-oidc`, as declarações opcionais `acct` e `email`, o consentimento do administrador só para `openid`, `profile` e `email` e a confiança na identidade gerenciada do App Service, a única credencial dele, sem segredo nem certificado. O `apply` pede uma conta que possa criar aplicativos e dar consentimento no tenant.
+- A atribuição obrigatória vem ligada (`entra_assignment_required`, ADR-0005): no Microsoft Entra, em Aplicativos empresariais → o aplicativo → Usuários e grupos, atribua cada pessoa (ou grupo, que exige Entra ID P1/P2). Administradores globais entram sem atribuição; teste a recusa com uma pessoa comum. Quem não foi atribuído vê a recusa do Entra, que o FiscoProjects explica quando ela volta para ele.
+- Contas de convidado são recusadas na entrada (ADR-0007), inclusive a conta Microsoft pessoal que criou o tenant; teste com usuários do próprio tenant (`nome@<tenant>.onmicrosoft.com`).
+- A entrada pelo Entra só funciona numa instalação no Azure, com a identidade gerenciada; ela é ligada pelo Terraform (`entra_sign_in`, ligado por padrão), que passa o tenant e o aplicativo à aplicação (`EntraSignIn:*`).
 - Conceder a permissão do Graph para leitura básica de usuários do diretório, usada na inclusão de pessoas em projetos (ADR-0005; permissão exata a confirmar).
 - Não conceder Mail.Send no Entra ID (ADR-0036).
 - Opcional: personalizar a tela de login da Microsoft com a marca da empresa (company branding; exige Entra ID P1/P2 ou Office 365) (ADR-0009).
@@ -32,7 +34,7 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 - Produção: App Service Linux B1 com Always On e Azure SQL provisionado (S0, ou Basic para começar) (ADR-0048, ADR-0052, [custos estimados](custos-estimados.md)).
 - Desenvolvimento e demonstração (opcional): App Service B1 e Azure SQL Basic, sem backups mensais; a oferta gratuita do Azure SQL acabaria em poucos dias com os processos em segundo plano (ADR-0052, ADR-0114). Uma assinatura de avaliação pode não ter cota de App Service na Brazil South: aí `app_location` leva a aplicação e o banco para uma região com cota, só nesse ambiente, que tem só dados fictícios (ADR-0114).
 - Identidade gerenciada do App Service com acesso ao Azure SQL e ao Key Vault (ADR-0052).
-- Key Vault com o certificado do aplicativo no Entra e a chave de licença do Syncfusion, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059).
+- Key Vault com a chave de licença do Syncfusion, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059). O aplicativo no Entra não tem certificado: ele confia na identidade gerenciada (ADR-0117).
 - Só HTTPS; domínio próprio opcional com certificado gerenciado (ADR-0052).
 - Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING`, posta pelo Terraform nas configurações do App Service (ADR-0114); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
 - Backups do Azure SQL: restauração a qualquer ponto em 14 dias (Basic: 7), um backup mensal guardado por 12 meses e redundância por zona dentro da Brazil South (parâmetro da instalação) (ADR-0059).
@@ -50,6 +52,8 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
    ```hcl
    operator_object_ids = ["<identificador seu no Entra ID: az ad signed-in-user show --query id -o tsv>"]
    alert_email         = "<e-mail que recebe os alertas>"
+   # Opcional: quem vira Administrador na primeira entrada pelo Entra (ADR-0006).
+   first_administrator_object_id = "<oid da pessoa: az ad user show --id <e-mail> --query id -o tsv>"
    ```
 
 4. Aplique, conferindo o plano antes:
@@ -95,7 +99,7 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
 
 ## Configuração da instalação no FiscoProjects
 
-- Primeiro administrador, em `Users:FirstAdministrator`: `Provider` `entra` e, em `ExternalId`, o identificador (`oid`) da pessoa no Entra ID. Ela recebe o papel Administrador na primeira entrada, ou na entrada seguinte se a instalação estiver sem administrador ativo; depois disso, os papéis são trocados na tela Usuários (ADR-0006).
+- Primeiro administrador, em `Users:FirstAdministrator`: `Provider` `entra` e, em `ExternalId`, o identificador (`oid`) da pessoa no Entra ID, posto pelo Terraform a partir do `first_administrator_object_id`. Ela recebe o papel Administrador na primeira entrada, ou na entrada seguinte se a instalação estiver sem administrador ativo; depois disso, os papéis são trocados na tela Usuários (ADR-0006).
 - Nome, logo e cor principal exibidos; a cor principal pinta as ações, o item ativo da barra lateral e o painel da página de entrada, e só é aceita se passar nas verificações de contraste descritas no design system (ADR-0003, ADR-0009, ADR-0050, ADR-0063, ADR-0067).
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).

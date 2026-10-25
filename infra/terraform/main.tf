@@ -38,8 +38,25 @@ resource "azurerm_resource_group" "main" {
 module "entra" {
   source = "./modules/entra"
 
-  display_name = "FiscoProjects (${var.installation} ${var.environment})"
-  owners       = var.operator_object_ids
+  display_name              = "FiscoProjects (${var.installation} ${var.environment})"
+  owners                    = var.operator_object_ids
+  tenant_id                 = data.azurerm_client_config.current.tenant_id
+  redirect_uri              = "https://${local.host}/signin-oidc"
+  app_identity_principal_id = module.app.principal_id
+  assignment_required       = var.entra_assignment_required
+}
+
+# The sign-in through Entra ID (ADR-0117): the tenant and the application, and the first administrator by the object id.
+locals {
+  first_administrator_settings = var.first_administrator_object_id == null ? {} : {
+    Users__FirstAdministrator__Provider   = "entra"
+    Users__FirstAdministrator__ExternalId = var.first_administrator_object_id
+  }
+  entra_settings = var.entra_sign_in ? merge(local.first_administrator_settings, {
+    EntraSignIn__Enabled  = "true"
+    EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id
+    EntraSignIn__ClientId = module.entra.client_id
+  }) : {}
 }
 
 module "database" {
@@ -118,7 +135,7 @@ module "app" {
   key_vault_id           = module.key_vault.id
   key_vault_name         = module.key_vault.name
   syncfusion_in_vault    = var.syncfusion_license_in_key_vault
-  app_settings           = var.app_settings
+  app_settings           = merge(var.app_settings, local.entra_settings)
   database_admin         = var.app_is_database_admin
   database_admins_group  = module.database.admins_group_object_id
   tags                   = local.tags

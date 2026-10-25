@@ -38,7 +38,12 @@ public abstract record LocalSignInResult
     public sealed record Disabled : LocalSignInResult;
 }
 
-public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWithIdentity signIn, ISecurityEvents securityEvents)
+/// <remarks>
+/// With the sign-in through Entra ID on too, as in the development environment in Azure (ADR-0117), an e-mail outside the
+/// demo directory is not refused: the sign-in page takes it to Microsoft, so no refusal is recorded.
+/// </remarks>
+public sealed class SignInLocally(
+    IOptions<LocalSignInOptions> options, IOptions<EntraSignInOptions> entra, SignInWithIdentity signIn, ISecurityEvents securityEvents)
 {
     public const string Provider = "local";
 
@@ -55,7 +60,11 @@ public sealed class SignInLocally(IOptions<LocalSignInOptions> options, SignInWi
         var person = options.Value.People.FirstOrDefault(person => Normalize(person.Email) == externalId);
         if (person is null)
         {
-            await securityEvents.SignInRefusedAsync(email ?? string.Empty, SignInRefusal.NotInDirectory, cancellationToken);
+            if (!entra.Value.Enabled)
+            {
+                await securityEvents.SignInRefusedAsync(email ?? string.Empty, SignInRefusal.NotInDirectory, cancellationToken);
+            }
+
             return new LocalSignInResult.NotInDirectory();
         }
 

@@ -107,16 +107,20 @@
     "title": "Entrar",
     "hint": "Use o e-mail da empresa.",
     "hintLocal": "Use o e-mail de uma pessoa da demonstração.",
+    "hintBoth": "Use o e-mail da empresa ou o de uma pessoa da demonstração.",
     "email": "E-mail",
     "emailPlaceholder": "nome@empresa.com.br",
     "submit": "Entrar",
     "note": "A senha é pedida na página da Microsoft.",
     "noteLocal": "Entrada de demonstração, sem senha.",
+    "noteBoth": "Pessoas da demonstração entram sem senha; as da empresa, pela página da Microsoft.",
     "foot": "Sem acesso? Fale com o administrador do sistema.",
     "refused": {
       "title": "Acesso não liberado",
       "notInDirectory": "Nenhuma pessoa da demonstração usa esse e-mail.",
-      "inactive": "Sua conta está desativada. Fale com o administrador do sistema."
+      "inactive": "Sua conta está desativada. Fale com o administrador do sistema.",
+      "guest": "Contas de convidado não entram no sistema. Use a conta da empresa.",
+      "notAssigned": "Sua conta ainda não foi liberada para o sistema. Peça ao administrador do Entra ID para atribuí-la ao aplicativo."
     },
     "failed": {
       "title": "Não foi possível entrar",
@@ -439,7 +443,8 @@
     },
     "refusals": {
       "NotInDirectory": "fora do diretório",
-      "Inactive": "conta desativada"
+      "Inactive": "conta desativada",
+      "Guest": "conta convidada"
     },
     "details": {
       "label": "Registro selecionado",
