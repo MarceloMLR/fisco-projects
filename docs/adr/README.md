@@ -176,3 +176,6 @@ Regras:
 | [0111](0111-exclusao-de-projeto-na-pratica.md) | Como a exclusão de um projeto funciona | aceita | 2026-10-21 |
 | [0112](0112-monitoramento-na-pratica.md) | Como a aplicação envia o monitoramento | aceita | 2026-10-21 |
 | [0113](0113-demonstracao-no-codespaces.md) | Demonstração no GitHub Codespaces | aceita | 2026-10-22 |
+| [0114](0114-infraestrutura-do-azure-na-pratica.md) | Como o Terraform monta uma instalação no Azure | aceita | 2026-10-25 |
+| [0115](0115-publicacao-no-ambiente-de-desenvolvimento.md) | Publicação no ambiente de desenvolvimento a cada merge | aceita (e-mail dos alertas nas variáveis e leitura do Entra ID substituídos pelo ADR-0116) | 2026-10-25 |
+| [0116](0116-identidade-do-pipeline-e-logs-publicos.md) | Identidade do pipeline pelos números do repositório e nada pessoal nos logs públicos | aceita | 2026-10-25 |

@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (e-mail dos alertas nas variáveis e leitura do Entra ID substituídos pelo ADR-0116)
 date: 2026-10-25
 decision-makers: Marcelo Ribeiro
 ---
@@ -28,8 +28,8 @@ O ADR-0055 decidiu que cada merge na `main` publica a aplicação no ambiente de
 
 Opção 1, escolhida por Marcelo.
 
-- **Identidade do pipeline**: um aplicativo do Entra ID por ambiente, criado pelo Terraform (módulo `ci`, ligado por `github_repository`). O GitHub Actions a alcança por federação, só a partir do environment do GitHub de mesmo nome (`dev`), que aceita só a `main`. Ela é colaboradora do grupo de recursos do ambiente, para publicar, grava no contêiner do estado, para o `plan` travar o estado, e lê o diretório do Entra ID (`Directory.Read.All`), para o `plan` conferir o aplicativo e os grupos. Ela não dá papéis no Azure nem muda o Entra ID.
-- **Variáveis do environment do GitHub**: o cliente da identidade, o tenant, a assinatura e os valores pessoais da instalação (quem opera e o e-mail dos alertas). Nenhuma é segredo. Elas são preparadas pelo `infra/scripts/Set-GitHubEnvironment.ps1`, que também restringe o environment à `main`. O e-mail dos alertas é sensível no Terraform e mascarado nos logs, que são públicos.
+- **Identidade do pipeline**: um aplicativo do Entra ID por ambiente, criado pelo Terraform (módulo `ci`, ligado por `github_repository`). O GitHub Actions a alcança por federação, só a partir do environment do GitHub de mesmo nome (`dev`), que aceita só a `main`. Ela é colaboradora do grupo de recursos do ambiente, para publicar, grava no contêiner do estado, para o `plan` travar o estado, e lê o diretório do Entra ID (`Directory.Read.All`), para o `plan` conferir o aplicativo e os grupos. Ela não dá papéis no Azure nem muda o Entra ID. Leituras completadas pelo ADR-0116: `Application.Read.All` e o papel Leitor na conta do estado, com a federação pelo subject imutável do GitHub.
+- **Variáveis do environment do GitHub**: o cliente da identidade, o tenant, a assinatura e os valores pessoais da instalação (quem opera e o e-mail dos alertas). Nenhuma é segredo. Elas são preparadas pelo `infra/scripts/Set-GitHubEnvironment.ps1`, que também restringe o environment à `main`. O e-mail dos alertas é sensível no Terraform e mascarado nos logs, que são públicos. Substituído pelo ADR-0116: o GitHub mostra as variáveis no log de cada passo, e o e-mail passa a ser lido do grupo de ações pelo `plan.sh`, fora das variáveis.
 - **A cada merge na `main`** (`.github/workflows/deploy-dev.yml`, com a lógica em `scripts/cd`):
   1. `publish.sh` monta o pacote: as telas compiladas dentro da API e a API publicada para o .NET do App Service.
   2. `deploy.sh` publica o pacote pelo Azure CLI, sem as credenciais básicas do App Service, que ficam desligadas, e espera o `/health` responder. No ambiente em `Development`, a aplicação aplica as próprias migrações ao subir (ADR-0114), e depois o script carrega os dados de demonstração que faltam (ADR-0089).
