@@ -1,7 +1,8 @@
 # The application of the installation in Entra ID, single tenant (ADR-0003, ADR-0004), ready for the sign-in (ADR-0117):
 # the way back to the application, the claims that tell a guest, the consent of the administrator only for the sign-in,
-# the assignment of the people and the trust in the managed identity of the App Service as its only credential. The
-# permissions of the Microsoft Graph for the people, the files and the e-mails come with M365-2 to M365-4.
+# the assignment of the people and the trust in the managed identity of the App Service as its only credential, and the
+# reading of the directory for the people search (ADR-0119). The permissions for the files and the e-mails come with
+# M365-3 and M365-4.
 
 variable "display_name" {
   description = "Name of the application in Entra ID."
@@ -37,6 +38,8 @@ locals {
   graph_app_id = "00000003-0000-0000-c000-000000000000"
   # Only the scopes of the sign-in: who the person is, the name and the e-mail.
   sign_in_scopes = ["openid", "profile", "email"]
+  # The only permission of the application itself: to read the people of the directory (ADR-0119).
+  directory_role = "User.Read.All"
 }
 
 data "azuread_service_principal" "graph" {
@@ -79,6 +82,11 @@ resource "azuread_application" "main" {
         type = "Scope"
       }
     }
+
+    resource_access {
+      id   = data.azuread_service_principal.graph.app_role_ids[local.directory_role]
+      type = "Role"
+    }
   }
 }
 
@@ -98,6 +106,13 @@ resource "azuread_service_principal_delegated_permission_grant" "sign_in" {
   service_principal_object_id          = azuread_service_principal.main.object_id
   resource_service_principal_object_id = data.azuread_service_principal.graph.object_id
   claim_values                         = local.sign_in_scopes
+}
+
+# The consent of the administrator for the reading of the directory by the application (ADR-0119).
+resource "azuread_app_role_assignment" "directory" {
+  app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.directory_role]
+  principal_object_id = azuread_service_principal.main.object_id
+  resource_object_id  = data.azuread_service_principal.graph.object_id
 }
 
 # The only credential of the application: a token of the managed identity of the App Service. No secret nor certificate.

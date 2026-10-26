@@ -181,3 +181,4 @@ Regras:
 | [0116](0116-identidade-do-pipeline-e-logs-publicos.md) | Identidade do pipeline pelos números do repositório e nada pessoal nos logs públicos | aceita | 2026-10-25 |
 | [0117](0117-entrada-pelo-entra-na-pratica.md) | Como a entrada pelo Entra ID funciona, com a credencial pela identidade gerenciada | aceita | 2026-10-25 |
 | [0118](0118-cartao-da-pessoa.md) | Cartão da pessoa ao clicar no avatar | aceita | 2026-10-26 |
+| [0119](0119-diretorio-da-microsoft-pelo-graph.md) | Diretório da empresa pelo Microsoft Graph | aceita | 2026-10-26 |
