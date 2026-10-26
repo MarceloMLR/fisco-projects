@@ -158,7 +158,8 @@ public sealed partial class InfrastructureTests
             .And.Contain("name = \"acct\"").And.Contain("name = \"email\"")
             .And.Contain("sign_in_scopes = [\"openid\", \"profile\", \"email\"]")
             .And.Contain("claim_values                         = local.sign_in_scopes")
-            .And.Contain("app_role_assignment_required = var.assignment_required");
+            .And.Contain("app_role_assignment_required = var.assignment_required")
+            .And.Contain("feature_tags {\n    enterprise = true\n  }");
         Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "only the scopes of the sign-in, for now");
         main.Should().Contain("redirect_uri              = \"https://${local.host}/signin-oidc\"")
             .And.Contain("app_identity_principal_id = module.app.principal_id")
