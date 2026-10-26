@@ -160,7 +160,7 @@ public sealed partial class InfrastructureTests
             .And.Contain("claim_values                         = local.sign_in_scopes")
             .And.Contain("app_role_assignment_required = var.assignment_required")
             .And.Contain("feature_tags {\n    enterprise = true\n  }");
-        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "only the scopes of the sign-in, for now");
+        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "only Microsoft Graph");
         main.Should().Contain("redirect_uri              = \"https://${local.host}/signin-oidc\"")
             .And.Contain("app_identity_principal_id = module.app.principal_id")
             .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
@@ -171,6 +171,20 @@ public sealed partial class InfrastructureTests
         Default(variables, "entra_sign_in").Should().Be("true");
         Default(variables, "entra_assignment_required").Should().Be("true", "only the people assigned sign in (ADR-0005)");
         Default(variables, "first_administrator_object_id").Should().Be("null");
+    }
+
+    [Fact(DisplayName = "Permissão para ler o diretório")]
+    public void EntraApplication_ReadsTheDirectory_AndNothingElse()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        entra.Should().Contain("directory_role = \"User.Read.All\"")
+            .And.Contain("id   = data.azuread_service_principal.graph.app_role_ids[local.directory_role]\n      type = \"Role\"")
+            .And.Contain("app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.directory_role]")
+            .And.Contain("principal_object_id = azuread_service_principal.main.object_id");
+        Regex.Matches(entra, "type = \"Role\"").Should().HaveCount(1, "no other permission of the application (ADR-0119)");
+        Regex.Matches(entra, "resource \"azuread_app_role_assignment\"").Should().HaveCount(1);
+        entra.Should().NotContain("Mail.Send").And.NotContain("Sites.").And.NotContain("ReadWrite");
     }
 
     [Fact(DisplayName = "Aplicativo do Entra sem segredo")]
