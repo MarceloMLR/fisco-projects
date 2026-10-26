@@ -18,6 +18,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 21/10/2026, depois da Operação-4, Marcelo viu Meu perfil quebrado no celular, e a correção entrou como Acesso-5.1 (`perfil-no-celular`).
 - Em 22/10/2026, com o computador desligado, Marcelo pediu um jeito fácil de demonstrar de outro computador: a Cronograma-3.4 (`demonstracao-no-codespaces`) põe a demonstração no GitHub Codespaces (ADR-0113).
 - Em 25/10/2026, Marcelo criou a assinatura do Azure (avaliação gratuita) para testar o sistema de ponta a ponta: a Fundação-6 e a Fundação-7 voltam para a fila, seguidas do grupo M365, com a avaliação do Microsoft 365 só para o SharePoint e o e-mail (ADR-0114).
+- Em 25/10/2026, depois da M365-1, Marcelo pediu o e-mail embaixo do nome na menção, para separar pessoas de mesmo nome (Chamados-2.5, `mencao-com-email`), e o cartão da pessoa ao clicar na foto (Fundação-5.4, `cartao-da-pessoa`), os dois antes da M365-2.
 
 ## Marcos
 
@@ -27,13 +28,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 14 | 14 |
-| 5. Chamados | 13 | 13 |
+| 5. Chamados | 14 | 14 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 1 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **83** | **78** |
+| **Total** | **84** | **79** |
 
 ## 1. Fundação
 
@@ -115,7 +116,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Chamados-2.2 | `solicitante-em-rosa` | Solicitante em rosa na conversa do chamado, e quem não tem papel no cinza neutro, a pedido de Marcelo | 0069, 0104 | Concluída em 21/10/2026 ([#66](https://github.com/MarceloMLR/fisco-projects/pull/66)) |
 | Chamados-2.3 | `mencionar-ao-digitar` | Mencionar ao digitar "@" e parte do nome no editor dos chamados, a pedido de Marcelo | 0026, 0107 | Concluída em 21/10/2026 ([#70](https://github.com/MarceloMLR/fisco-projects/pull/70)) |
 | Chamados-2.4 | `descricao-em-rosa` | A descrição do chamado, a primeira mensagem do solicitante, na cor dele, a pedido de Marcelo | 0104 | Concluída em 21/10/2026 ([#71](https://github.com/MarceloMLR/fisco-projects/pull/71)) |
-| Chamados-2.5 | `mencao-com-email` | O e-mail embaixo do nome nas listas da menção, para separar pessoas de mesmo nome, a pedido de Marcelo | 0026, 0107 | PR aberto ([#92](https://github.com/MarceloMLR/fisco-projects/pull/92)) |
+| Chamados-2.5 | `mencao-com-email` | O e-mail embaixo do nome nas listas da menção, para separar pessoas de mesmo nome, a pedido de Marcelo | 0026, 0107 | Concluída em 26/10/2026 ([#92](https://github.com/MarceloMLR/fisco-projects/pull/92)) |
 | Chamados-3 | `fluxo-de-status` | Fluxo em tabela, responsável pela primeira resposta, fechamento automático | 0024, 0068 | Concluída em 20/10/2026 ([#38](https://github.com/MarceloMLR/fisco-projects/pull/38)) |
 | Chamados-3.1 | `iniciar-atendimento-assume` | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável, a pedido de Marcelo | 0024, 0068 | Concluída em 20/10/2026 ([#58](https://github.com/MarceloMLR/fisco-projects/pull/58)) |
 | Chamados-4 | `prazos-dos-chamados`* | Dias úteis por prioridade, pausa, primeira resposta | 0025 | Concluída em 20/10/2026 ([#39](https://github.com/MarceloMLR/fisco-projects/pull/39)) |
