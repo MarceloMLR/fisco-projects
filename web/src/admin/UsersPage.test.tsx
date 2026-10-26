@@ -57,6 +57,14 @@ beforeEach(() => {
       find(String(params.id)).status = 'Active';
       return new HttpResponse(null, { status: 204 });
     }),
+    http.get('/api/people/:id', ({ params }) => {
+      const person = find(String(params.id));
+      return HttpResponse.json({
+        id: person.id,
+        name: person.name,
+        email: person.email === '' ? null : person.email,
+      });
+    }),
     http.post('/api/users/:id/anonymization', async ({ request, params }) => {
       await record(request);
       Object.assign(find(String(params.id)), {
@@ -328,8 +336,12 @@ describe('Anonimizar uma pessoa', () => {
     const row = rowOf('Pessoa removida nº 1');
     expect(row).toHaveTextContent(text.anonymizedData);
     expect(row).toHaveClass('row-muted');
-    // For good: no menu for the person anymore.
-    expect(within(row).queryByRole('button')).not.toBeInTheDocument();
+    // For good: no menu for the person anymore, only the card (ADR-0118).
+    expect(
+      within(row)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual([ptBR.person.open.replace('{{name}}', 'Pessoa removida nº 1')]);
     expect(requests).toEqual([
       expect.objectContaining({
         method: 'POST',
@@ -431,5 +443,47 @@ describe('Menus fecham na hora', () => {
     expect((paper as HTMLElement | null)?.style.transition).toMatch(/^opacity 0ms/);
     await act(() => new Promise<void>((resolve) => setTimeout(resolve, 20)));
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Cartão da pessoa" (ADR-0118).
+describe('Cartão da pessoa em Usuários', () => {
+  it('Pessoa anonimizada no cartão', async () => {
+    const livia = people[4];
+    if (livia === undefined) {
+      throw new Error('No Lívia.');
+    }
+    Object.assign(livia, { name: 'Pessoa removida nº 1', email: '', status: 'Anonymized' });
+    // Without the e-mail of the anonymized person, openUsers would wait for one too many.
+    await renderApp('/admin/users');
+    await waitFor(() => {
+      expect(rowOf('Pessoa removida nº 1')).toBeVisible();
+    });
+
+    fireEvent.click(
+      within(rowOf('Pessoa removida nº 1')).getByRole('button', {
+        name: ptBR.person.open.replace('{{name}}', 'Pessoa removida nº 1'),
+      }),
+    );
+
+    const card = await screen.findByRole('dialog', { name: 'Pessoa removida nº 1' });
+    expect(await within(card).findByText(ptBR.person.removed)).toBeVisible();
+    expect(
+      within(card).queryByRole('button', { name: ptBR.person.copyEmail }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Papel no sistema no cartão', async () => {
+    await openUsers();
+
+    fireEvent.click(
+      within(rowOf('Beatriz Lima')).getByRole('button', {
+        name: ptBR.person.open.replace('{{name}}', 'Beatriz Lima'),
+      }),
+    );
+
+    const card = await screen.findByRole('dialog', { name: 'Beatriz Lima' });
+    expect(card).toHaveTextContent(text.roles.ProjectManager);
+    expect(await within(card).findByText('beatriz.lima@empresa.example')).toBeVisible();
   });
 });

@@ -202,6 +202,15 @@
   "details": {
     "close": "Fechar"
   },
+  "person": {
+    "open": "Ver o cartão de {{name}}",
+    "loading": "Carregando o e-mail…",
+    "failed": "Não foi possível carregar o e-mail.",
+    "removed": "Nome e e-mail removidos",
+    "copyEmail": "Copiar e-mail",
+    "copied": "E-mail copiado.",
+    "copyFailed": "Não foi possível copiar o e-mail."
+  },
   "profile": {
     "subtitle": "{{email}} · {{role}}",
     "preferences": "Preferências",

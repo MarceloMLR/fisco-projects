@@ -17,7 +17,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, systemRoles, type SystemRole, type UserRow, userProblems } from '../api/client';
 import { queryKeys, usersQuery } from '../api/queries';
-import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
 import { Select } from '../components/Select';
@@ -142,7 +142,7 @@ export function UsersPage() {
         minWidth: 240,
         renderCell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <Avatar name={row.name} />
+            <CardAvatar person={row} role={t(`users.roles.${row.role}`)} />
             <Box sx={{ minWidth: 0 }}>
               <Box
                 component="span"

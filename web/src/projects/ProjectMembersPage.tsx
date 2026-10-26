@@ -18,6 +18,7 @@ import {
 } from '../api/client';
 import { ApiError, projectMembersQuery, queryKeys } from '../api/queries';
 import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { MemberTickets } from './MemberTickets';
@@ -115,7 +116,7 @@ export function ProjectMembersPage() {
             </Box>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-              <Avatar name={row.member.name} />
+              <CardAvatar person={row.member} role={t(`projects.roles.${row.member.role}`)} />
               <Box sx={{ minWidth: 0 }}>
                 <Box
                   component="span"

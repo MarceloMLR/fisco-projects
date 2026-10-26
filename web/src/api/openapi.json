@@ -654,6 +654,50 @@
         }
       }
     },
+    "/api/people/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "GetPerson",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/schedule/template": {
       "post": {
         "tags": [
@@ -12210,6 +12254,30 @@
           }
         },
         "description": "A ticket at a vendor without an update for the business days of the setting (ADR-0028)."
+      },
+      "PersonDetailsResponse": {
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The name and the e-mail of a user, for the card of the person (ADR-0118); the anonymized has no e-mail."
       },
       "PersonResponse": {
         "required": [

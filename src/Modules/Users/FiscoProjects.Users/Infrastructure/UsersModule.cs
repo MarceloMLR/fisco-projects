@@ -31,6 +31,7 @@ public static class UsersModule
         services.AddScoped<AnonymizeUser>();
         services.AddScoped<ListUsers>();
         services.AddScoped<ListPeople>();
+        services.AddScoped<GetPerson>();
         services.AddScoped<IPeopleDirectory, LocalPeopleDirectory>();
         services.AddScoped<IUserProvisioning, UserFromDirectory>();
         services.AddScoped<GetProfile>();

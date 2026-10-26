@@ -16,15 +16,29 @@ namespace FiscoProjects.Users.Endpoints;
 public sealed record PersonResponse(
     Guid? Id, string? DirectoryId, string Name, string Email, bool CanBeManager, bool CanBeTechLead);
 
+/// <summary>The name and the e-mail of a user, for the card of the person (ADR-0118); the anonymized has no e-mail.</summary>
+public sealed record PersonDetailsResponse(Guid Id, string Name, string? Email);
+
 /// <summary>
-/// The people of the company to choose (ADR-0005, ADR-0072). Anyone with a session asks: the tech lead of a project also
-/// includes people, and the names of the company are known to the people of the company (ADR-0007).
+/// The people of the company to choose (ADR-0005, ADR-0072) and the card of a person (ADR-0118). Anyone with a session
+/// asks: the tech lead of a project also includes people, and the names of the company are known to the people of the
+/// company (ADR-0007).
 /// </summary>
 internal static class PeopleEndpoints
 {
-    public static void MapPeopleEndpoints(this RouteGroupBuilder api) =>
+    public static void MapPeopleEndpoints(this RouteGroupBuilder api)
+    {
         api.MapGet("/people", ListAsync).WithName("ListPeople").WithTags("Users")
             .ProducesProblem(StatusCodes.Status401Unauthorized);
+        api.MapGet("/people/{id:guid}", GetAsync).WithName("GetPerson").WithTags("Users")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+    }
+
+    private static async Task<Results<Ok<PersonDetailsResponse>, NotFound>> GetAsync(
+        Guid id, GetPerson getPerson, CancellationToken cancellationToken) =>
+        await getPerson.ExecuteAsync(id, cancellationToken) is { } person
+            ? TypedResults.Ok(new PersonDetailsResponse(person.Id, person.Name, person.Email))
+            : TypedResults.NotFound();
 
     private static async Task<Results<Ok<IReadOnlyList<PersonResponse>>, ValidationProblem>> ListAsync(
         ListPeople listPeople,

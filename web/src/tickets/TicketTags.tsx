@@ -13,6 +13,7 @@ import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import type { TicketPriority, TicketStatus, VendorTicketStatus } from '../api/client';
 import { Avatar } from '../components/Avatar';
+import { CardAvatar, type CardPerson } from '../components/PersonCard';
 import { StatusBadge, type StatusTone } from '../components/StatusBadge';
 
 const statuses: Record<TicketStatus, { tone: StatusTone; icon: typeof SvgIcon }> = {
@@ -90,12 +91,20 @@ export function PriorityTag({ priority }: { priority: TicketPriority }) {
   );
 }
 
-/** A person of a ticket (Person, fp-person): the avatar and the name; without one, "Sem responsável" (ADR-0068). */
-export function TicketPersonTag({ name }: { name: string | undefined }) {
+/**
+ * A person of a ticket (Person, fp-person): the avatar, which opens the card of the person (ADR-0118), and the name;
+ * without one, "Sem responsável" (ADR-0068).
+ */
+export function TicketPersonTag({ person }: { person: CardPerson | null | undefined }) {
   const { t } = useTranslation();
+  const name = person?.name;
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-      <Avatar name={name} size="sm" />
+      {person === null || person === undefined ? (
+        <Avatar size="sm" />
+      ) : (
+        <CardAvatar person={person} size="sm" />
+      )}
       <Box
         component="span"
         sx={{

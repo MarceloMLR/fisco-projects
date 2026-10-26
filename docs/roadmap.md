@@ -24,7 +24,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 14 | 14 |
+| 1. Fundação | 15 | 15 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 14 | 14 |
@@ -34,7 +34,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 1 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **84** | **79** |
+| **Total** | **85** | **80** |
 
 ## 1. Fundação
 
@@ -50,6 +50,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-5.1 | `espaco-do-icone-nos-botoes` | Ícone dos botões a 8px do texto, como no design system, a pedido de Marcelo | 0062, 0065 | Concluída em 21/10/2026 ([#67](https://github.com/MarceloMLR/fisco-projects/pull/67)) |
 | Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Concluída em 21/10/2026 ([#68](https://github.com/MarceloMLR/fisco-projects/pull/68)) |
 | Fundação-5.3 | `avisos-no-topo` | As confirmações curtas no alto, no meio da tela, a pedido de Marcelo | 0066, 0109 | Concluída em 21/10/2026 ([#73](https://github.com/MarceloMLR/fisco-projects/pull/73)) |
+| Fundação-5.4 | `cartao-da-pessoa` | O avatar de outra pessoa abre o cartão dela, com o nome, o papel, o e-mail e "Copiar e-mail", em todas as telas, a pedido de Marcelo | 0065, 0069, 0118 | Concluída em 26/10/2026 ([#94](https://github.com/MarceloMLR/fisco-projects/pull/94)) |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights (com o teste de disponibilidade e os alertas do ADR-0112), backups do Azure SQL (ADR-0059) e registro do aplicativo no Entra | 0052, 0053, 0114 | Concluída em 25/10/2026 ([#83](https://github.com/MarceloMLR/fisco-projects/pull/83)) |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061, 0115, 0116 | Concluída em 25/10/2026 ([#85](https://github.com/MarceloMLR/fisco-projects/pull/85)) |
 | Fundação-7.1 | `demonstracao-depois-do-reinicio` | A carga dos dados de demonstração tenta de novo quando a aplicação reinicia logo depois da publicação | 0089, 0115 | Concluída em 25/10/2026 ([#90](https://github.com/MarceloMLR/fisco-projects/pull/90)) |

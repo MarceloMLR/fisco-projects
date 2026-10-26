@@ -11,7 +11,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import type { ProjectRow, ProjectSituation } from '../api/client';
 import { prefetchProject } from '../api/prefetch';
 import { clientChoicesQuery, projectsQuery } from '../api/queries';
-import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { ScheduleStrip } from '../components/ScheduleStrip';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -213,7 +213,7 @@ export function ProjectsPage() {
           const manager = row.managers[0];
           return manager === undefined ? null : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-              <Avatar name={manager.name} size="sm" />
+              <CardAvatar person={manager} role={t(`projects.roles.${manager.role}`)} size="sm" />
               <Box
                 component="span"
                 sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
