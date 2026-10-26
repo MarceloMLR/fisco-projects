@@ -28,6 +28,8 @@ database_monthly_backup_months = 0
 database_backup_redundancy     = "Local"
 
 key_vault_soft_delete_days = 7
+# The secret Syncfusion--LicenseKey was created by hand in the Key Vault (docs/instalacao.md, step 5).
+syncfusion_license_in_key_vault = true
 
 # Fewer runs of the availability test: each one is billed.
 availability_test_frequency = 900
