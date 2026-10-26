@@ -86,6 +86,11 @@ resource "azuread_service_principal" "main" {
   client_id                    = azuread_application.main.client_id
   owners                       = var.owners
   app_role_assignment_required = var.assignment_required
+
+  # Listed in Enterprise applications of the portal, where the people are assigned (ADR-0005).
+  feature_tags {
+    enterprise = true
+  }
 }
 
 # The consent of the administrator for everyone, so no person is asked for the scopes of the sign-in.

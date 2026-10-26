@@ -31,9 +31,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
-| 9. Microsoft 365 real | 4 | 0 |
+| 9. Microsoft 365 real | 4 | 1 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **82** | **76** |
+| **Total** | **82** | **77** |
 
 ## 1. Fundação
 
@@ -153,7 +153,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| M365-1 | `entrada-pelo-entra` | Login pelo Entra ID, recusa de convidados e recusa sem atribuição no Entra | 0004, 0007, 0009, 0117 | PR aberto ([#88](https://github.com/MarceloMLR/fisco-projects/pull/88)) |
+| M365-1 | `entrada-pelo-entra` | Login pelo Entra ID, recusa de convidados e recusa sem atribuição no Entra | 0004, 0007, 0009, 0117 | Concluída em 25/10/2026 ([#88](https://github.com/MarceloMLR/fisco-projects/pull/88)) |
 | M365-2 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005 | Planejada |
 | M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030 | Planejada |
 | M365-4 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |

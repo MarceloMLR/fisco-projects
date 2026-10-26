@@ -25,4 +25,5 @@
 ## 5. Documentação e conferência
 
 - [x] 5.1 `docs/instalacao.md` (pessoas de teste, atribuição e primeiro administrador), `CLAUDE.md`, glossário e roadmap
-- [ ] 5.2 Entrada pelo Entra conferida no ambiente `dev`
+- [x] 5.2 Entrada pelo Entra conferida no ambiente `dev`: pessoa atribuída, sem atribuição, conta convidada e pessoa da demonstração
+- [x] 5.3 Aplicativo do Entra na lista de aplicativos empresariais do portal, onde as pessoas são atribuídas
