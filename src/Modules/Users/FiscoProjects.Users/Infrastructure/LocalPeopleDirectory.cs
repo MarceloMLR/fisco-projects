@@ -5,12 +5,14 @@ using Microsoft.Extensions.Options;
 namespace FiscoProjects.Users.Infrastructure;
 
 /// <summary>
-/// The company directory while there is no Microsoft tenant: the fictitious people of the local sign-in (ADR-0078),
-/// with the same provider and ids the local sign-in uses, so a person included in a project signs in with the same
-/// user. With the local sign-in off, the directory has nobody.
+/// The demo directory of the local sign-in: its fictitious people (ADR-0078), with the same provider and ids the local
+/// sign-in uses, so a person included in a project signs in with the same user. With the local sign-in off, the
+/// directory has nobody.
 /// </summary>
-internal sealed class LocalPeopleDirectory(IOptions<LocalSignInOptions> options) : IPeopleDirectory
+internal sealed class LocalPeopleDirectory(IOptions<LocalSignInOptions> options) : IProviderDirectory
 {
+    public string Provider => SignInLocally.Provider;
+
     public Task<IReadOnlyList<DirectoryPerson>> SearchAsync(string? search, int limit, CancellationToken cancellationToken)
     {
         var text = SearchText.Simplify(search);

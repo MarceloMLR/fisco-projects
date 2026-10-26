@@ -32,7 +32,11 @@ public static class UsersModule
         services.AddScoped<ListUsers>();
         services.AddScoped<ListPeople>();
         services.AddScoped<GetPerson>();
-        services.AddScoped<IPeopleDirectory, LocalPeopleDirectory>();
+        // The company directory: the demo one of the local sign-in and the one of Microsoft Graph (ADR-0119).
+        services.AddScoped<IProviderDirectory, LocalPeopleDirectory>();
+        services.AddScoped<IProviderDirectory, GraphPeopleDirectory>();
+        services.AddScoped<IPeopleDirectory, CompanyDirectory>();
+        services.AddHttpClient(MicrosoftGraph.ClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<IUserProvisioning, UserFromDirectory>();
         services.AddScoped<GetProfile>();
         services.AddScoped<ChooseTheme>();
@@ -72,6 +76,7 @@ public static class UsersModule
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<EntraSignInOptions>, EntraSignInValidation>();
         services.TryAddSingleton<IEntraClientAssertion, ManagedIdentityClientAssertion>();
+        services.TryAddSingleton<IGraphTokens, ClientAssertionGraphTokens>();
         services.AddScoped<SignInWithEntra>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, UsersWarmUp>();

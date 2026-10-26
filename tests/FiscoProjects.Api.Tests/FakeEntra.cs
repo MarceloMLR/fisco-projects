@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -41,6 +42,9 @@ internal sealed class FakeEntra : HttpMessageHandler
     /// <summary>The nonce of the sign-in, which the ID token must carry back.</summary>
     public string? Nonce { get; set; }
 
+    /// <summary>The directory of the tenant, read through Microsoft Graph (ADR-0119), empty unless the test fills it.</summary>
+    public FakeGraph Graph { get; } = new();
+
     /// <summary>The form of the last exchange of a code, as the application sent it.</summary>
     public IReadOnlyDictionary<string, string> LastTokenRequest { get; private set; } = new Dictionary<string, string>();
 
@@ -63,6 +67,8 @@ internal sealed class FakeEntra : HttpMessageHandler
         builder.Configuration["EntraSignIn:TenantId"] = TenantId;
         builder.Configuration["EntraSignIn:ClientId"] = ClientId;
         builder.Services.AddSingleton<IEntraClientAssertion>(new FixedProof());
+        builder.Services.AddSingleton<IGraphTokens>(new FixedGraphToken());
+        builder.Services.AddHttpClient(MicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
         builder.Services.PostConfigure<OpenIdConnectOptions>(EntraSignInOptions.Scheme, options =>
         {
             var configuration = new OpenIdConnectConfiguration
@@ -148,6 +154,11 @@ internal sealed class FakeEntra : HttpMessageHandler
     private sealed class FixedProof : IEntraClientAssertion
     {
         public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult(ManagedIdentityProof);
+    }
+
+    private sealed class FixedGraphToken : IGraphTokens
+    {
+        public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult(FakeGraph.Token);
     }
 }
 
