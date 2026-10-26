@@ -180,3 +180,4 @@ Regras:
 | [0115](0115-publicacao-no-ambiente-de-desenvolvimento.md) | Publicação no ambiente de desenvolvimento a cada merge | aceita (e-mail dos alertas nas variáveis e leitura do Entra ID substituídos pelo ADR-0116) | 2026-10-25 |
 | [0116](0116-identidade-do-pipeline-e-logs-publicos.md) | Identidade do pipeline pelos números do repositório e nada pessoal nos logs públicos | aceita | 2026-10-25 |
 | [0117](0117-entrada-pelo-entra-na-pratica.md) | Como a entrada pelo Entra ID funciona, com a credencial pela identidade gerenciada | aceita | 2026-10-25 |
+| [0118](0118-cartao-da-pessoa.md) | Cartão da pessoa ao clicar no avatar | aceita | 2026-10-26 |
