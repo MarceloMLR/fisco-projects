@@ -60,6 +60,35 @@ public sealed partial class DeploymentTests : IDisposable
             "npm run demo:data -- https://app-fiscoprojects-mlr-dev.azurewebsites.net (web)");
     }
 
+    [Fact(DisplayName = "Demonstração depois de um reinício")]
+    public void Deploy_TriesTheDemonstrationAgain_WhileTheApplicationRestarts()
+    {
+        Shell.SkipWithoutBash();
+        Fake("az", "true");
+        Fake("curl", "printf 200");
+        Fake("sleep", "echo \"sleep $*\" >> \"$FAKES/calls\"");
+        // The first load fails, as when the App Service restarts with the new package in the middle of it.
+        Fake("npm", """
+            echo "npm" >> "$FAKES/calls"
+            runs=$(( $(cat "$FAKES/npm-runs" 2>/dev/null || echo 0) + 1 ))
+            echo "$runs" > "$FAKES/npm-runs"
+            [ "$runs" -ge 2 ]
+            """);
+
+        var result = Run("deploy");
+
+        result.ExitCode.Should().Be(0, result.Errors);
+        Calls().Should().Equal("sleep 20", "npm", "sleep 30", "npm");
+
+        File.Delete(Path.Combine(_fakes, "calls"));
+        Fake("npm", "echo \"npm\" >> \"$FAKES/calls\"; exit 1");
+        var failed = Run("deploy");
+
+        failed.ExitCode.Should().Be(1);
+        failed.Errors.Should().Contain("did not load in 3 attempts");
+        Calls().Should().Equal("sleep 20", "npm", "sleep 30", "npm", "sleep 30", "npm");
+    }
+
     [Fact(DisplayName = "Infraestrutura diferente do código")]
     public void Plan_WithDifferences_WarnsWithoutFailing()
     {

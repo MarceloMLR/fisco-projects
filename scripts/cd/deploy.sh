@@ -32,6 +32,19 @@ if [ "$healthy" -eq 0 ]; then
 fi
 echo "Published: $address"
 
+# The App Service may still restart with the new package after the first answers of /health; the load adds only what
+# is missing, so trying again is safe.
 if grep -q '^aspnetcore_environment *= *"Development"' "$tfvars"; then
-  (cd web && npm run demo:data -- "$address")
+  attempts=3
+  for attempt in $(seq 1 "$attempts"); do
+    if (cd web && npm run demo:data -- "$address"); then
+      break
+    fi
+    if [ "$attempt" -eq "$attempts" ]; then
+      echo "The demonstration data did not load in $attempts attempts." >&2
+      exit 1
+    fi
+    echo "The demonstration data did not load; the application may be restarting. Trying again in 30 seconds."
+    sleep 30
+  done
 fi

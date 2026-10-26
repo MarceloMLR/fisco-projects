@@ -121,7 +121,12 @@ export async function loadDemo(
 ): Promise<DemoOutcome> {
   const anonymous = apiFor(baseUrl);
   const options = await anonymous.GET('/api/session/sign-in-options');
-  if (!options.response.ok || options.data?.localSignIn !== true) {
+  if (!options.response.ok) {
+    throw new Error(
+      `A API não respondeu às formas de entrada (${String(options.response.status)}); ela pode estar reiniciando.`,
+    );
+  }
+  if (options.data?.localSignIn !== true) {
     throw new Error(
       'A entrada local está desligada nesta API: os dados de demonstração só entram no desenvolvimento (ADR-0078).',
     );
