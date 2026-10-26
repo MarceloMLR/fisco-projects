@@ -29,6 +29,26 @@ import {
 
 export type { MentionChoice } from './typedMention';
 
+/** A person in the lists of a mention: the name and, below, the e-mail that tells apart people of the same name. */
+function MentionPerson({ person }: { person: MentionChoice }) {
+  return (
+    <>
+      <Avatar name={person.name} size="sm" />
+      <Box component="span" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <span>{person.name}</span>
+        {person.email !== undefined && person.email !== null && (
+          <Box
+            component="span"
+            sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
+          >
+            {person.email}
+          </Box>
+        )}
+      </Box>
+    </>
+  );
+}
+
 /** A mention of a person (ADR-0026): kept with the id and the name, shown as @name. */
 const Mention = Node.create({
   name: 'mention',
@@ -321,8 +341,7 @@ export function RichTextEditor({
                 }}
                 sx={{ gap: 'var(--space-2)' }}
               >
-                <Avatar name={person.name} size="sm" />
-                {person.name}
+                <MentionPerson person={person} />
               </MenuItem>
             ))}
           </MenuList>
@@ -353,8 +372,7 @@ export function RichTextEditor({
             }}
             sx={{ gap: 'var(--space-2)' }}
           >
-            <Avatar name={person.name} size="sm" />
-            {person.name}
+            <MentionPerson person={person} />
           </MenuItem>
         ))}
       </Menu>

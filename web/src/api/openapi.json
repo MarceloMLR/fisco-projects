@@ -14485,6 +14485,7 @@
         "required": [
           "id",
           "name",
+          "email",
           "role"
         ],
         "type": "object",
@@ -14496,11 +14497,17 @@
           "name": {
             "type": "string"
           },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/TicketParticipantRole"
           }
         },
-        "description": "A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069)."
+        "description": "A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069), with\nthe e-mail that tells apart people of the same name; null for someone anonymized."
       },
       "TicketParticipantRole": {
         "enum": [

@@ -109,7 +109,10 @@ describe('Conversa pela tela', () => {
   it('Solicitante em rosa e quem não tem papel em cinza', async () => {
     ticket = {
       ...ticket,
-      participants: [...ticket.participants, { ...demoPeople.paulo, role: 'Administrator' }],
+      participants: [
+        ...ticket.participants,
+        { ...demoPeople.paulo, email: null, role: 'Administrator' },
+      ],
       messages: [
         message(1, demoPeople.carla.id, 'A nota 3381 foi recusada'),
         message(2, demoPeople.paulo.id, 'Acompanhando'),
@@ -176,7 +179,11 @@ describe('Conversa pela tela', () => {
       within(people)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual(['CMCarla Mendes', 'DTDiego Torres', 'RSRafael Souza']);
+    ).toEqual([
+      'CMCarla Mendescarla.mendes@empresa.example',
+      'DTDiego Torresdiego.torres@empresa.example',
+      'RSRafael Souzarafael.souza@empresa.example',
+    ]);
     fireEvent.click(within(people).getByRole('menuitem', { name: /Diego Torres/ }));
     const input = screen.getByLabelText(text.reply.files, { selector: 'input' });
     fireEvent.change(input, {
@@ -214,7 +221,7 @@ describe('Conversa pela tela', () => {
       within(typed)
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['DTDiego Torres']);
+    ).toEqual(['DTDiego Torresdiego.torres@empresa.example']);
     // Enter chooses the person marked, as a click would.
     fireEvent.keyDown(screen.getByRole('textbox', { name: text.reply.label }), { key: 'Enter' });
     await waitFor(() => {
@@ -231,6 +238,56 @@ describe('Conversa pela tela', () => {
     expect(form).toContain(demoPeople.diego.id);
     expect(form).toContain(demoPeople.rafael.id);
     expect(form).not.toContain('@die');
+  });
+
+  // Spec: chamados, requirement "Mencionar ao digitar" (Chamados-2.5).
+  it('Pessoas de mesmo nome na menção', async () => {
+    const other = { id: '0199f5a2-7c1e-7d40-9a1b-000000000099', name: 'Marina Costa' };
+    // Paulo writes, so both are in the lists (the person who writes is not).
+    server.use(
+      http.get('/api/session', () =>
+        HttpResponse.json({
+          ...marina,
+          ...demoPeople.paulo,
+          email: 'paulo.nogueira@empresa.example',
+          role: 'Administrator',
+        }),
+      ),
+    );
+    ticket = {
+      ...ticket,
+      mentionable: [...ticket.mentionable, other.id],
+      participants: [
+        ...ticket.participants,
+        { ...other, email: 'marina.costa2@empresa.example', role: 'Functional' },
+      ],
+    };
+    await openTicket();
+
+    await typeInEditor(text.reply.label, 'veja @mar');
+    const typed = await screen.findByRole('listbox', { name: ptBR.editor.mention });
+    expect(
+      within(typed)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual([
+      'MCMarina Costamarina.costa@empresa.example',
+      'MCMarina Costamarina.costa2@empresa.example',
+    ]);
+    fireEvent.click(within(typed).getByRole('option', { name: /marina\.costa2@/ }));
+    fireEvent.click(screen.getByRole('button', { name: ptBR.editor.mention }));
+    const people = await screen.findByRole('menu', { name: ptBR.editor.mention });
+    expect(within(people).getByRole('menuitem', { name: /marina\.costa@/ })).toBeVisible();
+    expect(within(people).getByRole('menuitem', { name: /marina\.costa2@/ })).toBeVisible();
+    fireEvent.keyDown(people, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: text.reply.send }));
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    const form = sent[0] ?? '';
+    expect(form).toContain(other.id);
+    expect(form).not.toContain(marina.id);
   });
 
   it('Sem resposta para quem só vê', async () => {

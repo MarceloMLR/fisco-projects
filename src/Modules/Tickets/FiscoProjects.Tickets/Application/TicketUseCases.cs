@@ -374,8 +374,11 @@ public sealed class OpenTicket(
     }
 }
 
-/// <summary>A person of the conversation and the part the person plays in the ticket (ADR-0069).</summary>
-public sealed record TicketParticipant(Guid Id, string Name, TicketParticipantRole Role);
+/// <summary>
+/// A person of the conversation and the part the person plays in the ticket (ADR-0069), with the e-mail that tells apart
+/// people of the same name; null when there is none.
+/// </summary>
+public sealed record TicketParticipant(Guid Id, string Name, string? Email, TicketParticipantRole Role);
 
 /// <summary>
 /// What the person may do in the conversation: send messages, attach files to the description, and the actions of the
@@ -469,12 +472,14 @@ public sealed class GetTicket(
             .. atVendors.Select(row => row.Record.RegisteredById),
             viewer.UserId,
         ];
-        var names = await users.NamesAsync([.. people.Distinct()], cancellationToken);
-        var everyone = people.Distinct().Where(names.ContainsKey).ToList();
+        var found = (await users.PeopleAsync([.. people.Distinct()], cancellationToken)).ToDictionary(person => person.Id);
+        var names = found.ToDictionary(pair => pair.Key, pair => pair.Value.Name);
+        var everyone = people.Distinct().Where(found.ContainsKey).ToList();
         // The Administrator is told apart only for whom the session says it is; the others are known by the project.
         var participants = everyone.Select(id => new TicketParticipant(
                 id,
-                names[id],
+                found[id].Name,
+                string.IsNullOrWhiteSpace(found[id].Email) ? null : found[id].Email,
                 TicketAccess.RoleIn(
                     ticket,
                     id,

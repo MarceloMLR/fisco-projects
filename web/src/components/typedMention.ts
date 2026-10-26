@@ -1,10 +1,11 @@
 import { Extension } from '@tiptap/core';
 import Suggestion, { type SuggestionProps } from '@tiptap/suggestion';
 
-/** A person who may be mentioned. */
+/** A person who may be mentioned, with the e-mail that tells apart people of the same name. */
 export interface MentionChoice {
   id: string;
   name: string;
+  email?: string | null;
 }
 
 /** The most people the list of a mention being typed shows. */
