@@ -1,25 +1,10 @@
 using Azure.Core;
 using Azure.Identity;
 using FiscoProjects.Users.Application;
+using FiscoProjects.Users.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Users.Infrastructure;
-
-/// <summary>How the application reaches Microsoft Graph (ADR-0119).</summary>
-public static class MicrosoftGraph
-{
-    /// <summary>The name of the <see cref="HttpClient"/> of the calls to Graph.</summary>
-    public const string ClientName = "graph";
-
-    /// <summary>The address of Microsoft Graph, version 1.0.</summary>
-    public static readonly Uri Address = new("https://graph.microsoft.com/v1.0/");
-}
-
-/// <summary>The access tokens of the application to Microsoft Graph (ADR-0119).</summary>
-public interface IGraphTokens
-{
-    Task<string> GetAsync(CancellationToken cancellationToken);
-}
 
 /// <summary>
 /// The token of the application to Microsoft Graph, asked to Entra ID with the proof of the managed identity, as the
@@ -37,6 +22,14 @@ internal sealed class ClientAssertionGraphTokens(IOptions<EntraSignInOptions> op
         assertion.GetAsync,
         new ClientAssertionCredentialOptions { AuthorityHost = new Uri(options.Value.Instance) }));
 
-    public async Task<string> GetAsync(CancellationToken cancellationToken) =>
-        (await _credential.Value.GetTokenAsync(Graph, cancellationToken)).Token;
+    public async Task<string> GetAsync(CancellationToken cancellationToken)
+    {
+        if (options.Value is not { Enabled: true, TenantId.Length: > 0, ClientId.Length: > 0 })
+        {
+            throw new InvalidOperationException(
+                "Microsoft Graph needs the application of the installation in Entra ID: turn on the sign-in through Entra ID (EntraSignIn:*).");
+        }
+
+        return (await _credential.Value.GetTokenAsync(Graph, cancellationToken)).Token;
+    }
 }
