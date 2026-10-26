@@ -160,7 +160,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | --- | --- | --- | --- | --- |
 | M365-1 | `entrada-pelo-entra` | Login pelo Entra ID, recusa de convidados e recusa sem atribuição no Entra | 0004, 0007, 0009, 0117 | Concluída em 25/10/2026 ([#88](https://github.com/MarceloMLR/fisco-projects/pull/88)) |
 | M365-2 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005, 0119 | Concluída em 26/10/2026 ([#95](https://github.com/MarceloMLR/fisco-projects/pull/95)) |
-| M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030 | Planejada |
+| M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030, 0120 | Em andamento |
 | M365-4 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
 
 ## 10. Governança e operação
