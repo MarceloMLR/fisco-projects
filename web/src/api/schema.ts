@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPerson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/schedule/template": {
         parameters: {
             query?: never;
@@ -2870,6 +2886,13 @@ export interface components {
             /** Format: int32 */
             staleDays: number;
         };
+        /** @description The name and the e-mail of a user, for the card of the person (ADR-0118); the anonymized has no e-mail. */
+        PersonDetailsResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: null | string;
+        };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
@@ -4469,6 +4492,44 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+        };
+    };
+    GetPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetailsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
