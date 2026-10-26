@@ -1,4 +1,5 @@
 using FiscoProjects.Files.Contracts;
+using FiscoProjects.Users.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,8 +8,9 @@ using Microsoft.Extensions.Options;
 namespace FiscoProjects.Files.Infrastructure;
 
 /// <summary>
-/// Services of the Files module: the file storage the other modules use, chosen in the configuration (ADR-0079).
-/// The module has no tables and no routes; each module that keeps files registers them and serves them.
+/// Services of the Files module: the file storage the other modules use, chosen in the configuration (ADR-0079): a
+/// site of SharePoint through Microsoft Graph (ADR-0120) or a local folder outside production. The module has no
+/// tables and no routes; each module that keeps files registers them and serves them.
 /// </summary>
 public static class FilesModule
 {
@@ -18,13 +20,23 @@ public static class FilesModule
             .Bind(configuration.GetSection(FileStorageOptions.Section))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<FileStorageOptions>, FileStorageValidation>();
+        // Uploads of documents take longer than reads; Graph is asked again when it throttles.
+        services.AddHttpClient(SharePointFileStorage.ClientName, client => client.Timeout = TimeSpan.FromMinutes(2));
         services.AddSingleton<IFileStorage>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<FileStorageOptions>>().Value;
+            if (options.IsSharePoint)
+            {
+                return new SharePointFileStorage(
+                    provider.GetRequiredService<IHttpClientFactory>(),
+                    provider.GetRequiredService<IGraphTokens>(),
+                    options.SharePoint);
+            }
+
             if (!options.IsLocal)
             {
                 throw new InvalidOperationException(
-                    "No file storage is configured. Set FileStorage:Provider (Local in development) to use files.");
+                    "No file storage is configured. Set FileStorage:Provider (SharePoint, or Local in development) to use files.");
             }
 
             var contentRoot = provider.GetRequiredService<IHostEnvironment>().ContentRootPath;

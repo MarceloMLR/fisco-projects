@@ -1,3 +1,4 @@
+using FiscoProjects.Files.Application;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -13,10 +14,15 @@ internal sealed class FileStorageValidation(IHostEnvironment environment) : IVal
             return ValidateOptionsResult.Success;
         }
 
+        if (options.IsSharePoint)
+        {
+            return ValidateSharePoint(options.SharePoint);
+        }
+
         if (!options.IsLocal)
         {
             return ValidateOptionsResult.Fail(
-                $"The file storage '{options.Provider}' (FileStorage:Provider) is unknown. Use {FileStorageOptions.LocalProvider}.");
+                $"The file storage '{options.Provider}' (FileStorage:Provider) is unknown. Use {FileStorageOptions.SharePointProvider} or {FileStorageOptions.LocalProvider}.");
         }
 
         if (environment.IsProduction())
@@ -28,5 +34,29 @@ internal sealed class FileStorageValidation(IHostEnvironment environment) : IVal
         return string.IsNullOrWhiteSpace(options.Local.RootPath)
             ? ValidateOptionsResult.Fail("The local file storage needs a folder (FileStorage:Local:RootPath).")
             : ValidateOptionsResult.Success;
+    }
+
+    private static ValidateOptionsResult ValidateSharePoint(SharePointStorageOptions sharePoint)
+    {
+        var failures = new List<string>();
+        if (!Uri.TryCreate(sharePoint.SiteUrl, UriKind.Absolute, out var site) || site.Scheme != Uri.UriSchemeHttps
+            || !string.IsNullOrEmpty(site.Query) || !string.IsNullOrEmpty(site.Fragment))
+        {
+            failures.Add("The SharePoint storage needs the address of the site, in https (FileStorage:SharePoint:SiteUrl).");
+        }
+
+        if (!string.IsNullOrWhiteSpace(sharePoint.RootFolder))
+        {
+            try
+            {
+                FileNames.Segments(sharePoint.RootFolder);
+            }
+            catch (ArgumentException)
+            {
+                failures.Add("The root folder of the SharePoint storage cannot go up (FileStorage:SharePoint:RootFolder).");
+            }
+        }
+
+        return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }
 }

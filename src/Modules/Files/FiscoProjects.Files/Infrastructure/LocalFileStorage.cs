@@ -1,7 +1,6 @@
 using System.Globalization;
 using FiscoProjects.Files.Application;
 using FiscoProjects.Files.Contracts;
-using Microsoft.AspNetCore.StaticFiles;
 
 namespace FiscoProjects.Files.Infrastructure;
 
@@ -14,9 +13,7 @@ internal sealed class LocalFileStorage : IFileStorage
 {
     private const string VersionsFolder = "versions";
     private const string TemporaryFolder = "tmp";
-    private const string DefaultContentType = "application/octet-stream";
 
-    private static readonly FileExtensionContentTypeProvider ContentTypes = new();
     private static readonly StringComparer Alphabetical = StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: true);
 
     // One writer at a time: versions and "keep both" read and change several files in a row.
@@ -109,7 +106,7 @@ internal sealed class LocalFileStorage : IFileStorage
         var name = Path.GetFileName(current);
         var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
         return Task.FromResult<FileDownload?>(new FileDownload(
-            stream, name, ContentTypeOf(name), stream.Length, version.ToString(CultureInfo.InvariantCulture)));
+            stream, name, ContentTypes.Of(name), stream.Length, version.ToString(CultureInfo.InvariantCulture)));
     }
 
     public async Task<bool> DeleteFileAsync(string fileId, CancellationToken cancellationToken)
@@ -261,7 +258,4 @@ internal sealed class LocalFileStorage : IFileStorage
     private static string[] Split(string relative) => relative.Length == 0 ? [] : relative.Split('/');
 
     private static string Join(string folder, string name) => folder.Length == 0 ? name : $"{folder}/{name}";
-
-    private static string ContentTypeOf(string name) =>
-        ContentTypes.TryGetContentType(name, out var contentType) ? contentType : DefaultContentType;
 }
