@@ -52,3 +52,11 @@ Depois de publicar, o pipeline MUST rodar o `terraform plan` com o estado do amb
 #### Scenario: E-mail dos alertas fora dos logs
 - **WHEN** o pipeline confere a infraestrutura
 - **THEN** o e-mail dos alertas não está no workflow, é lido do grupo de ações e mascarado antes de qualquer linha do log, e a conferência falha se o grupo não tiver e-mail
+
+### Requirement: Site do SharePoint fora dos logs
+
+O endereço do site do SharePoint MUST ficar fora do workflow, porque traz o nome do tenant: a conferência da infraestrutura MUST lê-lo da configuração da aplicação no ar e mascará-lo antes de conferir (ADR-0116, ADR-0120).
+
+#### Scenario: Site do SharePoint fora dos logs
+- **WHEN** o pipeline confere a infraestrutura de um ambiente com o site do SharePoint
+- **THEN** o endereço não está no workflow, é lido da aplicação no ar e mascarado, e sem ele a conferência segue sem o site
