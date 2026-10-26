@@ -417,6 +417,19 @@ describe('Carga dos dados de demonstração', () => {
     await expect(loadDemo(base)).rejects.toThrow('A entrada local está desligada');
     expect(calls).toEqual(['anonymous GET /api/session/sign-in-options']);
   });
+
+  it('API reiniciando', async () => {
+    server.use(
+      http.get(
+        `${base}/api/session/sign-in-options`,
+        () => new HttpResponse(null, { status: 503 }),
+      ),
+    );
+
+    await expect(loadDemo(base)).rejects.toThrow(
+      'A API não respondeu às formas de entrada (503); ela pode estar reiniciando.',
+    );
+  });
 });
 
 // Spec: dados-de-demonstracao, requirement "Linha de base na demonstração".
