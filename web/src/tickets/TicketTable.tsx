@@ -254,7 +254,7 @@ export function TicketTable({
                 gap: '2px',
               }}
             >
-              <TicketPersonTag name={undefined} />
+              <TicketPersonTag person={null} />
               <Box
                 component="button"
                 type="button"
@@ -268,7 +268,7 @@ export function TicketTable({
               </Box>
             </Box>
           ) : (
-            <TicketPersonTag name={row.assignee?.name} />
+            <TicketPersonTag person={row.assignee} />
           ),
       },
       {

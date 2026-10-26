@@ -173,8 +173,10 @@ function SidePanel({
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
         <PersonAvatar
+          id={id}
           name={name}
           tone={person === undefined ? 'neutral' : toneOf[person.role]}
+          role={person?.role}
           size="sm"
         />
         <Box
@@ -247,7 +249,7 @@ function SidePanel({
           </PanelRow>
           <PanelRow label={t('tickets.details.assignee')}>
             {ticket.assignee === null ? (
-              <TicketPersonTag name={undefined} />
+              <TicketPersonTag person={null} />
             ) : (
               toned(ticket.assignee.id, ticket.assignee.name)
             )}

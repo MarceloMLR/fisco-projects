@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Ticket } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { typeInEditor } from '../test/editor';
@@ -363,5 +363,43 @@ describe('Baixar anexos pela tela', () => {
     expect(
       within(section).queryByRole('link', { name: text.panel.downloadAllLabel }),
     ).not.toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Cartão da pessoa" (ADR-0118).
+describe('Cartão da pessoa no chamado', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'clipboard');
+  });
+
+  async function openDiegosCard() {
+    ticket = { ...ticket, messages: [message(1, demoPeople.diego.id, 'Vou olhar o XML')] };
+    await openTicket();
+    const list = screen.getByRole('list', { name: text.conversation.messages });
+    fireEvent.click(
+      within(list).getByRole('button', {
+        name: ptBR.person.open.replace('{{name}}', 'Diego Torres'),
+      }),
+    );
+    return screen.findByRole('dialog', { name: 'Diego Torres' });
+  }
+
+  it('Cartão pelo avatar', async () => {
+    const card = await openDiegosCard();
+
+    expect(card).toHaveTextContent(text.roles.Development);
+    expect(await within(card).findByText('diego.torres@empresa.example')).toBeVisible();
+    expect(within(card).getByRole('button', { name: ptBR.person.copyEmail })).toBeVisible();
+  });
+
+  it('Copiar o e-mail do cartão', async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const card = await openDiegosCard();
+
+    fireEvent.click(await within(card).findByRole('button', { name: ptBR.person.copyEmail }));
+
+    expect(await screen.findByText(ptBR.person.copied)).toBeVisible();
+    expect(writeText).toHaveBeenCalledWith('diego.torres@empresa.example');
   });
 });

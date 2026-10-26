@@ -12,6 +12,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ticket } from '../api/client';
 import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { RichText } from '../components/RichText';
 import { useDates } from '../format/useDates';
 import {
@@ -133,17 +134,35 @@ export function RoleTag({ role }: { role: ParticipantRole }) {
   );
 }
 
-/** The avatar of a person in the color of the part (ADR-0069, ADR-0104); whoever has no color of a part in the neutral one. */
+/**
+ * The avatar of a person in the color of the part (ADR-0069, ADR-0104), whoever has no color of a part in the neutral
+ * one, which opens the card of the person with the part in the ticket (ADR-0118).
+ */
 export function PersonAvatar({
+  id,
   name,
   tone,
+  role,
   size = 'md',
 }: {
+  id: string;
   name: string;
   tone: MessageTone;
+  role?: ParticipantRole;
   size?: 'sm' | 'md';
 }) {
-  return <Avatar name={name} size={size} tone={tone === 'neutral' ? undefined : tone} />;
+  const { t } = useTranslation();
+  const color = tone === 'neutral' ? undefined : tone;
+  return name === '' ? (
+    <Avatar name={name} size={size} tone={color} />
+  ) : (
+    <CardAvatar
+      person={{ id, name }}
+      role={role === undefined ? undefined : t(`tickets.roles.${role}`)}
+      size={size}
+      tone={color}
+    />
+  );
 }
 
 /**
@@ -396,7 +415,13 @@ export function TicketConversation({
               color: 'var(--text-secondary)',
             }}
           >
-            <PersonAvatar name={requester.name} tone="requester" size="sm" />
+            <PersonAvatar
+              id={requester.id}
+              name={requester.name}
+              tone="requester"
+              role="Requester"
+              size="sm"
+            />
             <Box component="span" sx={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
               {requester.name}
             </Box>
@@ -513,7 +538,7 @@ export function TicketConversation({
                   paddingRight: left ? 'var(--space-8)' : 0,
                 }}
               >
-                <PersonAvatar name={author.name} tone={tone} />
+                <PersonAvatar id={author.id} name={author.name} tone={tone} role={author.role} />
                 <Box
                   component="article"
                   aria-label={t('tickets.conversation.message', { name: author.name })}

@@ -14,6 +14,7 @@ import {
 } from '../api/client';
 import { auditQuery, queryKeys } from '../api/queries';
 import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Select } from '../components/Select';
@@ -135,7 +136,11 @@ export function AuditPage() {
                 color: name === undefined ? 'var(--text-secondary)' : 'inherit',
               }}
             >
-              <Avatar name={name} size="sm" />
+              {row.actor === null || name === undefined ? (
+                <Avatar size="sm" />
+              ) : (
+                <CardAvatar person={{ id: row.actor.id, name }} size="sm" />
+              )}
               <Box component="span" sx={ellipsis}>
                 {name ?? t('audit.system')}
               </Box>

@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { OverviewTeam, ProjectOverview as Overview } from '../api/client';
 import { projectOverviewQuery } from '../api/queries';
-import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { Card } from '../components/Card';
 import { DueDate } from '../components/DueDate';
 import { formatDayMonthText } from '../format/dates';
@@ -422,7 +422,12 @@ function TeamCard({ teams, fill }: { teams: OverviewTeam[]; fill: boolean }) {
                       boxShadow: '0 0 0 2px var(--bg-surface)',
                     }}
                   >
-                    <Avatar name={person.name} size="sm" tone={toneOf[person.role]} />
+                    <CardAvatar
+                      person={person}
+                      role={t(`projects.roles.${person.role}`)}
+                      size="sm"
+                      tone={toneOf[person.role]}
+                    />
                   </Box>
                 ))}
               </Box>

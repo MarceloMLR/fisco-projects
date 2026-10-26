@@ -132,6 +132,25 @@ describe('Lista de projetos', () => {
   });
 });
 
+// Spec: estrutura-das-telas, requirement "Cartão da pessoa" (ADR-0118).
+describe('Cartão da pessoa na lista de projetos', () => {
+  it('Cartão numa linha de tabela', async () => {
+    const { router } = await openProjects();
+
+    fireEvent.click(
+      within(rowOf('Revisão tributária')).getByRole('button', {
+        name: ptBR.person.open.replace('{{name}}', 'Marina Costa'),
+      }),
+    );
+    const card = await screen.findByRole('dialog', { name: 'Marina Costa' });
+    fireEvent.click(await within(card).findByText('marina.costa@empresa.example'));
+
+    expect(card).toHaveTextContent(text.roles.Manager);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(router.state.location.pathname).toBe('/projects');
+  });
+});
+
 /** The strip of phases of a row, by its accessible name. */
 function stripOf(row: HTMLElement, start: string, end: string) {
   return within(row).getByRole('img', {

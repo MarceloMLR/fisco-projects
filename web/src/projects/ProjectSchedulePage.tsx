@@ -28,7 +28,7 @@ import {
 } from '../api/client';
 import { projectScheduleQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
-import { Avatar } from '../components/Avatar';
+import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Dialog } from '../components/Dialog';
@@ -296,7 +296,7 @@ export function ProjectSchedulePage() {
             </Box>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-              <Avatar name={owner.name} size="sm" />
+              <CardAvatar person={owner} size="sm" />
               <Box component="span" sx={ellipsisSx}>
                 {owner.name}
               </Box>
