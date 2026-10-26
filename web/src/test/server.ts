@@ -1477,6 +1477,18 @@ export const handlers = [
   ),
   http.get('/api/my-work', () => HttpResponse.json(emptyMyWork)),
   http.get('/api/people', () => HttpResponse.json([])),
+  // The card of a person (ADR-0118): the users of the Users screen and the people of the tickets and projects.
+  http.get('/api/people/:id', ({ params }) => {
+    const id = String(params.id);
+    const known =
+      demoUsers.find((row) => row.id === id) ??
+      Object.values(demoPeople).find((person) => person.id === id);
+    if (known === undefined) {
+      return problem(404);
+    }
+    const email = 'email' in known ? known.email : emailOf(known.name);
+    return HttpResponse.json({ id, name: known.name, email: email === '' ? null : email });
+  }),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
   http.get('/api/projects/:id/overview', () => HttpResponse.json(emptyOverview)),

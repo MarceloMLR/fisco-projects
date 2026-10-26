@@ -179,6 +179,15 @@ export function peopleQuery(params: PeopleParams) {
   });
 }
 
+/** The name and the e-mail of a user, for the card of the person (ADR-0118); the anonymized has no e-mail. */
+export function personQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.people, 'person', id] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/people/{id}', { params: { path: { id } }, signal })),
+  });
+}
+
 /** A page of the audit, with the filters of the Audit screen. */
 export function auditQuery(params: AuditParams) {
   return queryOptions({
