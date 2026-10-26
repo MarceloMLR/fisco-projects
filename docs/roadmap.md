@@ -23,7 +23,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 13 | 13 |
+| 1. Fundação | 14 | 14 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 4 | 4 |
 | 4. Cronograma | 14 | 14 |
@@ -33,7 +33,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 4 | 1 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **82** | **77** |
+| **Total** | **83** | **78** |
 
 ## 1. Fundação
 
@@ -51,7 +51,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-5.3 | `avisos-no-topo` | As confirmações curtas no alto, no meio da tela, a pedido de Marcelo | 0066, 0109 | Concluída em 21/10/2026 ([#73](https://github.com/MarceloMLR/fisco-projects/pull/73)) |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights (com o teste de disponibilidade e os alertas do ADR-0112), backups do Azure SQL (ADR-0059) e registro do aplicativo no Entra | 0052, 0053, 0114 | Concluída em 25/10/2026 ([#83](https://github.com/MarceloMLR/fisco-projects/pull/83)) |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061, 0115, 0116 | Concluída em 25/10/2026 ([#85](https://github.com/MarceloMLR/fisco-projects/pull/85)) |
-| Fundação-7.1 | `demonstracao-depois-do-reinicio` | A carga dos dados de demonstração tenta de novo quando a aplicação reinicia logo depois da publicação | 0089, 0115 | PR aberto ([#90](https://github.com/MarceloMLR/fisco-projects/pull/90)) |
+| Fundação-7.1 | `demonstracao-depois-do-reinicio` | A carga dos dados de demonstração tenta de novo quando a aplicação reinicia logo depois da publicação | 0089, 0115 | Concluída em 25/10/2026 ([#90](https://github.com/MarceloMLR/fisco-projects/pull/90)) |
 | Fundação-8 | `primeira-carga-mais-rapida` | Primeira abertura das telas mais rápida: aquecimento da API ao subir, leituras antes na tela e o código da Linha do tempo carregado antes, a pedido de Marcelo | 0047, 0080, 0106 | Concluída em 21/10/2026 ([#69](https://github.com/MarceloMLR/fisco-projects/pull/69)) |
 
 ## 2. Acesso e administração
