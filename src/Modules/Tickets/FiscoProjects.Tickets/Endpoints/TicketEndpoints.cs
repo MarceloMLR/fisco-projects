@@ -112,8 +112,11 @@ public sealed record TicketAttachmentResponse(Guid Id, Guid? MessageId, string N
 /// <summary>A message of the conversation, with its text as the JSON of the editor.</summary>
 public sealed record TicketMessageResponse(Guid Id, Guid AuthorId, string Body, DateTime SentAt);
 
-/// <summary>A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069).</summary>
-public sealed record TicketParticipantResponse(Guid Id, string Name, TicketParticipantRole Role);
+/// <summary>
+/// A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069), with
+/// the e-mail that tells apart people of the same name; null for someone anonymized.
+/// </summary>
+public sealed record TicketParticipantResponse(Guid Id, string Name, string? Email, TicketParticipantRole Role);
 
 /// <summary>Where a deadline stands (ADR-0025): its state, the day it is due and, when overdue, by how many business days.</summary>
 public sealed record TicketDueResponse(TicketDueState State, DateOnly? DueOn, int? DaysLate);
@@ -543,7 +546,7 @@ public static class TicketEndpoints
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
             details.Followers,
             details.Mentionable,
-            [.. details.Participants.Select(person => new TicketParticipantResponse(person.Id, person.Name, person.Role))],
+            [.. details.Participants.Select(person => new TicketParticipantResponse(person.Id, person.Name, person.Email, person.Role))],
             new TicketConversationPermissionsResponse(
                 details.Permissions.CanSend,
                 details.Permissions.CanAttachToDescription,

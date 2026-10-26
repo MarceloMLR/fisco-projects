@@ -3608,11 +3608,15 @@ export interface components {
             /** Format: int32 */
             total: number;
         };
-        /** @description A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069). */
+        /**
+         * @description A person of the conversation and the part the person plays in the ticket, for the color and the tag (ADR-0069), with
+         *     the e-mail that tells apart people of the same name; null for someone anonymized.
+         */
         TicketParticipantResponse: {
             /** Format: uuid */
             id: string;
             name: string;
+            email: null | string;
             role: components["schemas"]["TicketParticipantRole"];
         };
         /**

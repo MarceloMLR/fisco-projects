@@ -254,6 +254,10 @@ public sealed class TicketConversationTests(SqlServerFixture sqlServer) : IDispo
             .ToDictionary(person => person.GetProperty("id").GetGuid(), person => person.GetProperty("role").GetString());
         (roles[scene.Carla], roles[scene.Diego], roles[scene.Marina], roles[scene.Rafael])
             .Should().Be(("Requester", "Development", "Manager", "TechLead"));
+        // The e-mail tells apart people of the same name in the list of the mention.
+        ticket.GetProperty("participants").EnumerateArray()
+            .Single(person => person.GetProperty("id").GetGuid() == scene.Diego)
+            .GetProperty("email").GetString().Should().Be("diego.torres@empresa.example");
     }
 
     [Fact(DisplayName = "Menção fora dos envolvidos")]
