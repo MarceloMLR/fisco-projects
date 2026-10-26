@@ -1274,14 +1274,16 @@ export function demoTicket(row: TicketRow): Ticket {
       demoPeople.diego.id,
     ],
     participants: [
-      { ...row.requester, role: 'Requester' },
+      { ...row.requester, email: emailOf(row.requester.name), role: 'Requester' },
       {
         ...demoPeople.marina,
+        email: emailOf(demoPeople.marina.name),
         role: row.requester.id === demoPeople.marina.id ? 'Requester' : 'Manager',
       },
-      { ...demoPeople.rafael, role: 'TechLead' },
+      { ...demoPeople.rafael, email: emailOf(demoPeople.rafael.name), role: 'TechLead' },
       {
         ...demoPeople.diego,
+        email: emailOf(demoPeople.diego.name),
         role: row.requester.id === demoPeople.diego.id ? 'Requester' : 'Development',
       },
     ],

@@ -129,12 +129,16 @@ export function TicketReply({ ticket, me }: { ticket: Ticket; me: string }) {
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
   const [round, setRound] = useState(0);
-  const names = new Map(ticket.participants.map((person) => [person.id, person.name]));
+  const people = new Map(ticket.participants.map((person) => [person.id, person]));
   const mentionable: MentionChoice[] = ticket.mentionable
     .filter((id) => id !== me)
-    .map((id) => ({ id, name: names.get(id) ?? '' }))
+    .map((id) => ({ id, name: people.get(id)?.name ?? '', email: people.get(id)?.email }))
     .filter((person) => person.name !== '')
-    .sort((one, other) => one.name.localeCompare(other.name, 'pt-BR'));
+    .sort(
+      (one, other) =>
+        one.name.localeCompare(other.name, 'pt-BR') ||
+        (one.email ?? '').localeCompare(other.email ?? '', 'pt-BR'),
+    );
 
   const send = async () => {
     if (text.empty) {

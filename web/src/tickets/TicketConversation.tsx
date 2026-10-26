@@ -325,7 +325,7 @@ export function TicketConversation({
     [ticket.participants],
   );
   const personOf = (id: string): Participant =>
-    people.get(id) ?? { id, name: '', role: 'Other' as const };
+    people.get(id) ?? { id, name: '', email: null, role: 'Other' as const };
   const requester = personOf(ticket.requester.id);
   const filesOf = (messageId: string | null) =>
     ticket.attachments.filter((attachment) => attachment.messageId === messageId);
