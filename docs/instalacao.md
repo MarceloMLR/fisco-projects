@@ -16,8 +16,15 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## SharePoint
 
-- Definir o local dos arquivos: site, biblioteca e pasta raiz, que pode ser uma área já existente (ADR-0030).
-- Conceder ao aplicativo Sites.Selected com papel de escrita nesse site, limitado à biblioteca quando possível (ADR-0030); confirmar que o papel permite excluir os arquivos criados pelo sistema (ADR-0041). Script em `infra/scripts` (ADR-0053).
+- Definir o local dos arquivos: o site, a biblioteca e a pasta raiz, que pode ser uma área já existente (ADR-0030). O endereço do site vai no `local.auto.tfvars` (`sharepoint_site_url`, porque ele traz o nome do tenant), e a biblioteca e a pasta raiz, no `.tfvars` do ambiente (`sharepoint_library`, a padrão do site quando vazia, e `sharepoint_root_folder`, `FiscoProjects` por padrão). Com o site, o Terraform liga o armazenamento do SharePoint (`FileStorage:Provider` = `SharePoint`), e a aplicação cria a pasta raiz na primeira vez (ADR-0120).
+- O Terraform dá ao aplicativo a permissão de aplicativo `Sites.Selected`, com o consentimento do administrador: sozinha, ela não alcança site nenhum. Depois do `apply`, dê o site ao aplicativo com o papel de escrita, que lê, cria e exclui arquivos e pastas, sem mexer em permissões (ADR-0030, ADR-0041), com uma conta que possa administrar todos os sites (Administrador global ou do SharePoint):
+
+   ```powershell
+   Install-Module Microsoft.Graph.Authentication, Microsoft.Graph.Sites -Scope CurrentUser   # uma vez por máquina
+   ./infra/scripts/Grant-SharePointSite.ps1
+   ```
+
+- Os arquivos removidos pelo FiscoProjects vão para a lixeira do site, como qualquer exclusão no SharePoint.
 - Restringir a área de projetos a quem realmente precisa, porque quem acessa direto no SharePoint vê os arquivos de todos os projetos e chamados ali, inclusive termos de aceite (ADR-0030, ADR-0045).
 
 ## Exchange Online (e-mail)
@@ -54,6 +61,8 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
    alert_email         = "<e-mail que recebe os alertas>"
    # Opcional: quem vira Administrador na primeira entrada pelo Entra (ADR-0006).
    first_administrator_object_id = "<oid da pessoa: az ad user show --id <e-mail> --query id -o tsv>"
+   # Opcional: o site do SharePoint dos arquivos (ADR-0120); veja a seção SharePoint.
+   sharepoint_site_url = "https://<tenant>.sharepoint.com/sites/<site>"
    ```
 
 4. Aplique, conferindo o plano antes:
@@ -103,7 +112,7 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
 - Nome, logo e cor principal exibidos; a cor principal pinta as ações, o item ativo da barra lateral e o painel da página de entrada, e só é aceita se passar nas verificações de contraste descritas no design system (ADR-0003, ADR-0009, ADR-0050, ADR-0063, ADR-0067).
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
-- Local dos arquivos no SharePoint (ADR-0030), com o armazenamento escolhido em `FileStorage:Provider`. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
+- Local dos arquivos no SharePoint (ADR-0030, ADR-0120), com o armazenamento escolhido em `FileStorage:Provider` (`SharePoint`) e o site, a biblioteca e a pasta raiz em `FileStorage:SharePoint:*`, postos pelo Terraform. O armazenamento do SharePoint usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
 - Endereço da caixa de envio, em `Email:Mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036). O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
 - Tamanho máximo de cada documento enviado, em `Documents:MaxMegabytes`, padrão 25 MB (ADR-0031). As pastas padrão dos projetos novos ficam em "Pastas padrão" na Administração; a migração cria as seis do MVP (ADR-0031, ADR-0093). O mesmo limite vale para os termos de aceite em PDF; os termos para assinar ficam na pasta `{código} - {nome}/Pedidos de aceite` de cada projeto, e os assinados, na pasta de termos dos documentos (ADR-0035, ADR-0095).
 - Horário do resumo diário de e-mails, padrão 07:30 no fuso da instalação, em "Horário do resumo diário" das Configurações gerais (ADR-0037).

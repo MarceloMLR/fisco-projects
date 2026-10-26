@@ -25,6 +25,17 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
 fi
 export TF_VAR_alert_email=$alert_email
 
+# The address of the SharePoint site names the tenant (ADR-0120): read from the application as the last apply left it,
+# and masked the same way. Without it, the files stay where the settings of the environment put them.
+site_url=$(az webapp config appsettings list --resource-group "rg-$name" --name "app-$name" \
+  --query "[?name=='FileStorage__SharePoint__SiteUrl'].value | [0]" --output tsv)
+if [ -n "$site_url" ]; then
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    echo "::add-mask::$site_url"
+  fi
+  export TF_VAR_sharepoint_site_url=$site_url
+fi
+
 terraform=$(bash scripts/ci/terraform.sh)
 plan=$(mktemp)
 trap 'rm -f "$plan"' EXIT
