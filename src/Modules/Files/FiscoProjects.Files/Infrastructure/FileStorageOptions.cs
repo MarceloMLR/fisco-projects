@@ -41,6 +41,9 @@ public sealed class SharePointStorageOptions
     /// <summary>The name of the document library; empty for the default library of the site.</summary>
     public string? Library { get; set; }
 
-    /// <summary>The folder inside the library where the files of the system go (folders separated by "/").</summary>
-    public string RootFolder { get; set; } = "FiscoProjects";
+    /// <summary>
+    /// The folder inside the library where the files of the system go (folders separated by "/"), as an area of projects
+    /// the company already keeps; empty for the library itself, as in a site only for the system.
+    /// </summary>
+    public string RootFolder { get; set; } = string.Empty;
 }

@@ -199,11 +199,11 @@ public sealed partial class InfrastructureTests
         var variables = Read("variables.tf");
         var script = Repository.Read("infra", "scripts", "Grant-SharePointSite.ps1");
 
-        main.Should().Contain("FileStorage__Provider               = \"SharePoint\"")
-            .And.Contain("FileStorage__SharePoint__SiteUrl    = var.sharepoint_site_url")
+        main.Should().Contain("FileStorage__Provider            = \"SharePoint\"")
+            .And.Contain("FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url")
             .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)");
         Default(variables, "sharepoint_site_url").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
-        Default(variables, "sharepoint_root_folder").Should().Be("\"FiscoProjects\"");
+        Default(variables, "sharepoint_root_folder").Should().Be("null", "the library itself, in a site only for the system");
         Read("environments", "dev.tfvars").Should().NotContain("sharepoint_site_url");
         script.Should().Contain("roles               = @('write')").And.Contain("-Scopes 'Sites.FullControl.All'")
             .And.NotContain("'owner'").And.NotContain("'fullcontrol'");

@@ -65,7 +65,7 @@ public sealed class FileStorageHostTests : IDisposable
         var stored = await storage.UploadAsync(folder.Id, "Contrato.pdf", new MemoryStream([1, 2, 3]), SameNameAction.NewVersion, Cancellation);
 
         stored.Size.Should().Be(3);
-        site.NamesIn("Documentos", "FiscoProjects/ERP-FIN - Implantação/Documentos").Should().Equal("Contrato.pdf");
+        site.NamesIn("Documentos", "ERP-FIN - Implantação/Documentos").Should().Equal("Contrato.pdf");
     }
 
     [Fact(DisplayName = "SharePoint sem o endereço do site")]

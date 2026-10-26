@@ -119,9 +119,9 @@ variable "sharepoint_library" {
 }
 
 variable "sharepoint_root_folder" {
-  description = "Folder inside the library where the files of the system go (ADR-0030), created when missing."
+  description = "Folder inside the library where the files of the system go (ADR-0030), created when missing; null for the library itself."
   type        = string
-  default     = "FiscoProjects"
+  default     = null
 }
 
 variable "syncfusion_license_in_key_vault" {

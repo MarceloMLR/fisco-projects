@@ -19,7 +19,7 @@ O `IFileStorage` (Files.Contracts) tem a implementação local (`LocalFileStorag
 - **Abrir:** a versão atual por `items/{id}/content` e uma anterior por `versions/{id}/content`; o `HttpClient` segue o endereço de download sem o token. O tipo sai do nome (`ContentTypes`, extraído da local).
 - **Dentro da raiz:** antes de abrir, excluir ou dizer a pasta de um item, o `parentReference.path` precisa estar dentro da pasta raiz, e a biblioteca, ser a mesma; senão, o item conta como inexistente. Um id que não é do Graph (400) também.
 - **Repetir:** 429, 503 e 504 são repetidos até 4 vezes, depois do `Retry-After` (no máximo 30 s) ou de 2, 4, 6 s.
-- **Configuração e Terraform:** `FileStorage:SharePoint:SiteUrl`, `Library` e `RootFolder` (`FiscoProjects`); a validação exige o endereço https. O Terraform liga o armazenamento com `sharepoint_site_url` (no `local.auto.tfvars`), `sharepoint_library` e `sharepoint_root_folder`, e dá `Sites.Selected` com consentimento. O `plan.sh` lê o site do App Service e o mascara.
+- **Configuração e Terraform:** `FileStorage:SharePoint:SiteUrl`, `Library` e `RootFolder` (vazia por padrão: a própria biblioteca, num site só do sistema); a validação exige o endereço https. O Terraform liga o armazenamento com `sharepoint_site_url` (no `local.auto.tfvars`), `sharepoint_library` e `sharepoint_root_folder`, e dá `Sites.Selected` com consentimento. O `plan.sh` lê o site do App Service e o mascara.
 - **Testes:** `FakeSharePoint` (`FiscoProjects.Testing`) simula o site, as bibliotecas, as pastas, as versões, os `eTag`, o `409`, as páginas e o `429`; `SharePointFileStorageTests` herda o `FileStorageContract`.
 
 ## Risks / Trade-offs

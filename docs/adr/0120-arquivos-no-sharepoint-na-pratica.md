@@ -37,13 +37,13 @@ Graph pelo `HttpClient` e o script do administrador.
 
 - **Token:** o `IGraphTokens` passa para o `Users.Contracts`, porque o `Users` é dono do aplicativo do Entra; o `Files` o recebe pelo contrato.
 - **Permissão:** o Terraform dá ao aplicativo `Sites.Selected` com o consentimento do administrador. O `infra/scripts/Grant-SharePointSite.ps1`, rodado por quem administra o SharePoint, dá o site com o papel `write`: ler, criar e excluir arquivos e pastas, sem permissões.
-- **Raiz:** o site é achado pelo endereço, a biblioteca pelo nome (ou a padrão do site), e a pasta raiz é criada na primeira vez. Um id fora da pasta raiz conta como inexistente, para nada de fora ser aberto ou excluído.
+- **Raiz:** o site é achado pelo endereço, a biblioteca pelo nome (ou a padrão do site), e a pasta raiz, quando configurada, é criada na primeira vez. Sem pasta raiz, os arquivos ficam na própria biblioteca, como num site só do sistema; num site que já tem outras áreas, a pasta raiz é a área dos projetos. Um id fora da raiz conta como inexistente, para nada de fora ser aberto ou excluído.
 - **Ids e versões:** os ids do contrato são os dos itens do SharePoint, que não mudam ao renomear. A versão de um arquivo é a do SharePoint ("1.0", "2.0"); a nova versão é o envio com o mesmo nome ("replace"), e "manter os dois" tenta o nome seguinte enquanto o SharePoint diz que o nome já existe ("fail").
 - **Detalhes:** o tipo do arquivo para o navegador sai do nome, como na implementação local. O envio vai inteiro, com o limite de cada módulo (até 25 MB, abaixo dos 250 MB do envio simples). A exclusão vai para a lixeira do site, e a de uma pasta confere o `eTag` lido. Quando o Graph limita as chamadas (429) ou está ocupado (503, 504), a chamada é repetida depois da espera pedida, até quatro vezes. As falhas dizem o código do Graph, nunca os nomes dos arquivos.
 - **Configuração:** em `FileStorage:SharePoint` (`SiteUrl`, `Library`, `RootFolder`). O endereço do site vem do `local.auto.tfvars`, fora do Git, e a conferência da infraestrutura no pipeline o lê da configuração da aplicação no ar e o mascara antes de tudo, como o e-mail dos alertas (ADR-0116).
 - **Testes:** um SharePoint simulado no processo (`FakeSharePoint`) responde ao Graph, e os testes do contrato valem para as duas implementações.
 
-Ligar um projeto a uma pasta que já existe no SharePoint, prevista no ADR-0030, fica para uma change própria: hoje o sistema cria a pasta `{código} - {nome}` na raiz.
+Ligar um projeto a uma pasta que já existe no SharePoint, prevista no ADR-0030, fica para uma change própria: hoje o sistema cria a pasta `{código} - {nome}` na raiz. Renomear o projeto não renomeia essa pasta: os arquivos já guardados continuam nela, porque os ids não mudam, mas uma pasta criada depois, como a dos anexos de um chamado novo, vai para uma pasta com o nome novo. Guardar uma pasta só por projeto fica para a mesma change.
 
 ### Consequências
 

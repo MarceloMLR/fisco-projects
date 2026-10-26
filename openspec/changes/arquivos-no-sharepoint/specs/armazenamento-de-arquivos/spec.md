@@ -2,11 +2,11 @@
 
 ### Requirement: Arquivos no SharePoint
 
-Com `FileStorage:Provider` = `SharePoint`, os arquivos MUST ficar na pasta raiz configurada de uma biblioteca do site do SharePoint, criada na primeira vez, pelo Microsoft Graph com o token do aplicativo, com as mesmas regras da implementação local. Um id fora da pasta raiz MUST valer como inexistente. Sem o endereço https do site, a aplicação MUST NOT subir (ADR-0030, ADR-0120).
+Com `FileStorage:Provider` = `SharePoint`, os arquivos MUST ficar numa biblioteca do site do SharePoint, ou na pasta raiz configurada dentro dela, criada na primeira vez, pelo Microsoft Graph com o token do aplicativo, com as mesmas regras da implementação local. Um id fora da pasta raiz MUST valer como inexistente. Sem o endereço https do site, a aplicação MUST NOT subir (ADR-0030, ADR-0120).
 
 #### Scenario: Implementação do SharePoint em produção
 - **WHEN** a aplicação sobe em produção com o SharePoint e um módulo guarda um arquivo
-- **THEN** o arquivo fica na pasta raiz da biblioteca do site, criada na primeira vez
+- **THEN** o arquivo fica na biblioteca do site, ou na pasta raiz configurada, criada na primeira vez
 
 #### Scenario: SharePoint sem o endereço do site
 - **WHEN** a aplicação sobe com o SharePoint sem um endereço https do site

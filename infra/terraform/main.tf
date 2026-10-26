@@ -58,11 +58,13 @@ locals {
     EntraSignIn__ClientId = module.entra.client_id
   }) : {}
   # The files in a site of SharePoint (ADR-0030, ADR-0120); without the site, the settings of the environment decide.
-  storage_settings = var.sharepoint_site_url == null ? {} : merge({
-    FileStorage__Provider               = "SharePoint"
-    FileStorage__SharePoint__SiteUrl    = var.sharepoint_site_url
-    FileStorage__SharePoint__RootFolder = var.sharepoint_root_folder
-  }, var.sharepoint_library == null ? {} : { FileStorage__SharePoint__Library = var.sharepoint_library })
+  storage_settings = var.sharepoint_site_url == null ? {} : merge(
+    {
+      FileStorage__Provider            = "SharePoint"
+      FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url
+    },
+    var.sharepoint_library == null ? {} : { FileStorage__SharePoint__Library = var.sharepoint_library },
+  var.sharepoint_root_folder == null ? {} : { FileStorage__SharePoint__RootFolder = var.sharepoint_root_folder })
 }
 
 module "database" {

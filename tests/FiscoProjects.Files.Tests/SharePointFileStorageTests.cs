@@ -8,7 +8,7 @@ namespace FiscoProjects.Files.Tests;
 
 /// <summary>
 /// The SharePoint implementation (ADR-0120), against the contract and the simulated site of Microsoft Graph: the
-/// library "Documentos" and the root folder "FiscoProjects" in it.
+/// default library "Documentos" itself as the root, as in a site only for the system.
 /// </summary>
 // Spec: armazenamento-de-arquivos, requirement "Arquivos no SharePoint".
 public sealed class SharePointFileStorageTests : FileStorageContract
@@ -25,8 +25,9 @@ public sealed class SharePointFileStorageTests : FileStorageContract
     [Fact(DisplayName = "Pasta raiz criada no SharePoint")]
     public async Task TheRootFolder_IsCreatedInTheLibraryOnFirstUse()
     {
-        await Storage.EnsureFolderAsync(null, "ERP-FIN - Implantação/Chamados/#101", Cancellation);
-        await Storage.ListFoldersAsync(null, Cancellation);
+        var area = StorageOf(new SharePointStorageOptions { SiteUrl = FakeSharePoint.SiteUrl, RootFolder = "Projetos" });
+        await area.EnsureFolderAsync(null, "ERP-FIN - Implantação/Chamados/#101", Cancellation);
+        await area.ListFoldersAsync(null, Cancellation);
         _site.Requests.Should().ContainSingle(request => request.StartsWith("GET sites/empresa.sharepoint.example:/sites/Projetos", StringComparison.Ordinal),
             "the site is found once");
         var otherLibrary = StorageOf(new SharePointStorageOptions
@@ -37,9 +38,9 @@ public sealed class SharePointFileStorageTests : FileStorageContract
         });
         await otherLibrary.EnsureFolderAsync(null, "Logos", Cancellation);
 
-        _site.NamesIn("Documentos", string.Empty).Should().Equal("FiscoProjects");
-        _site.NamesIn("Documentos", "FiscoProjects").Should().Equal("ERP-FIN - Implantação");
-        _site.NamesIn("Documentos", "FiscoProjects/ERP-FIN - Implantação/Chamados").Should().Equal("#101");
+        _site.NamesIn("Documentos", string.Empty).Should().Equal("Projetos");
+        _site.NamesIn("Documentos", "Projetos").Should().Equal("ERP-FIN - Implantação");
+        _site.NamesIn("Documentos", "Projetos/ERP-FIN - Implantação/Chamados").Should().Equal("#101");
         _site.NamesIn("Arquivo morto", "Sistemas/FiscoProjects").Should().Equal("Logos");
     }
 
@@ -59,19 +60,20 @@ public sealed class SharePointFileStorageTests : FileStorageContract
     [Fact(DisplayName = "Item fora da pasta raiz")]
     public async Task ItemsOutsideTheRoot_AreNeverOpenedNorRemoved()
     {
-        await Storage.EnsureFolderAsync(null, "Projetos", Cancellation);
+        var area = StorageOf(new SharePointStorageOptions { SiteUrl = FakeSharePoint.SiteUrl, RootFolder = "Projetos" });
+        await area.EnsureFolderAsync(null, "ERP-FIN", Cancellation);
         var outside = _site.AddFile("Documentos", string.Empty, "Planilha da diretoria.xlsx", Encoding.UTF8.GetBytes("de fora"));
 
-        (await Storage.OpenAsync(outside, null, Cancellation)).Should().BeNull();
-        (await Storage.DeleteFileAsync(outside, Cancellation)).Should().BeFalse();
-        (await Storage.FolderOfAsync(outside, Cancellation)).Should().BeNull();
+        (await area.OpenAsync(outside, null, Cancellation)).Should().BeNull();
+        (await area.DeleteFileAsync(outside, Cancellation)).Should().BeFalse();
+        (await area.FolderOfAsync(outside, Cancellation)).Should().BeNull();
         foreach (var id in new[] { "Projetos/Contrato.pdf", "../fora.txt", string.Empty })
         {
-            (await Storage.OpenAsync(id, null, Cancellation)).Should().BeNull(id);
-            (await Storage.DeleteFolderIfEmptyAsync(id, Cancellation)).Should().BeFalse(id);
+            (await area.OpenAsync(id, null, Cancellation)).Should().BeNull(id);
+            (await area.DeleteFolderIfEmptyAsync(id, Cancellation)).Should().BeFalse(id);
         }
 
-        _site.NamesIn("Documentos", string.Empty).Should().Equal("FiscoProjects", "Planilha da diretoria.xlsx");
+        _site.NamesIn("Documentos", string.Empty).Should().Equal("Planilha da diretoria.xlsx", "Projetos");
     }
 
     [Fact(DisplayName = "Graph ocupado")]
