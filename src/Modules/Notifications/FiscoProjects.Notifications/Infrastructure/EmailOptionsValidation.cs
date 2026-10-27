@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -24,10 +25,15 @@ internal sealed class EmailOptionsValidation(IHostEnvironment environment) : IVa
             return ValidateOptionsResult.Success;
         }
 
+        if (options.IsGraph)
+        {
+            return ValidateGraph(options);
+        }
+
         if (!options.IsLocal)
         {
             return ValidateOptionsResult.Fail(
-                $"The e-mail sending '{options.Provider}' (Email:Provider) is unknown. Use {EmailOptions.LocalProvider}.");
+                $"The e-mail sending '{options.Provider}' (Email:Provider) is unknown. Use {EmailOptions.GraphProvider}, or {EmailOptions.LocalProvider} outside production.");
         }
 
         if (environment.IsProduction())
@@ -38,6 +44,37 @@ internal sealed class EmailOptionsValidation(IHostEnvironment environment) : IVa
 
         return string.IsNullOrWhiteSpace(options.Local.Folder)
             ? ValidateOptionsResult.Fail("The local e-mail sending needs a folder (Email:Local:Folder).")
+            : ValidateOptionsResult.Success;
+    }
+
+    /// <summary>The shared mailbox, and the domains kept in the local folder only outside production (ADR-0123).</summary>
+    private ValidateOptionsResult ValidateGraph(EmailOptions options)
+    {
+        if (!MailAddress.TryCreate(options.Mailbox?.Trim(), out var mailbox) || mailbox.DisplayName.Length > 0)
+        {
+            return ValidateOptionsResult.Fail(
+                "The sending by the Microsoft Graph needs the address of the shared mailbox (Email:Mailbox), as projetos@empresa.com.br.");
+        }
+
+        var domains = options.Graph.LocalDomains;
+        if (domains.Count == 0)
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        if (environment.IsProduction())
+        {
+            return ValidateOptionsResult.Fail(
+                "The domains kept in the local folder (Email:Graph:LocalDomains) are only for the demonstration, never in production (ADR-0123).");
+        }
+
+        if (domains.Any(domain => string.IsNullOrWhiteSpace(domain) || domain.Contains('@', StringComparison.Ordinal)))
+        {
+            return ValidateOptionsResult.Fail("Each domain kept in the local folder is a domain, as empresa.example (Email:Graph:LocalDomains).");
+        }
+
+        return string.IsNullOrWhiteSpace(options.Local.Folder)
+            ? ValidateOptionsResult.Fail("The domains kept in the local folder need the folder (Email:Local:Folder).")
             : ValidateOptionsResult.Success;
     }
 }
