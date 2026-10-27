@@ -124,6 +124,17 @@ variable "sharepoint_root_folder" {
   default     = null
 }
 
+variable "email_mailbox" {
+  description = "Address of the shared mailbox the e-mails leave from through Microsoft Graph (ADR-0036, ADR-0123), in local.auto.tfvars: it names the domain of the tenant. Null keeps the e-mail sending of app_settings."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.email_mailbox == null || can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.email_mailbox))
+    error_message = "The shared mailbox is an e-mail address, as projetos@empresa.com.br."
+  }
+}
+
 variable "syncfusion_license_in_key_vault" {
   description = "Whether the secret Syncfusion--LicenseKey already exists in the Key Vault; when true, the application reads it from there (ADR-0051, ADR-0087)."
   type        = bool

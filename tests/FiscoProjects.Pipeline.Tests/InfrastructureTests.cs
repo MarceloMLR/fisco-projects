@@ -165,7 +165,7 @@ public sealed partial class InfrastructureTests
             .And.Contain("app_identity_principal_id = module.app.principal_id")
             .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
             .And.Contain("EntraSignIn__ClientId = module.entra.client_id")
-            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)");
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)");
         Read("modules", "app", "main.tf").Should().Contain("ASPNETCORE_FORWARDEDHEADERS_ENABLED = \"true\"");
         var variables = Read("variables.tf");
         Default(variables, "entra_sign_in").Should().Be("true");
@@ -201,12 +201,59 @@ public sealed partial class InfrastructureTests
 
         main.Should().Contain("FileStorage__Provider            = \"SharePoint\"")
             .And.Contain("FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url")
-            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)");
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)");
         Default(variables, "sharepoint_site_url").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
         Default(variables, "sharepoint_root_folder").Should().Be("null", "the library itself, in a site only for the system");
         Read("environments", "dev.tfvars").Should().NotContain("sharepoint_site_url");
         script.Should().Contain("roles               = @('write')").And.Contain("-Scopes 'Sites.FullControl.All'")
             .And.NotContain("'owner'").And.NotContain("'fullcontrol'");
+    }
+
+    // Spec: infraestrutura, requirement "E-mails pela caixa compartilhada" (ADR-0036, ADR-0123).
+    [Fact(DisplayName = "Caixa de envio pelo Terraform")]
+    public void SharedMailbox_IsPersonal_AndTheOnlyOneTheApplicationSendsFrom()
+    {
+        var main = Read("main.tf");
+        var variables = Read("variables.tf");
+        var script = Repository.Read("infra", "scripts", "Grant-ExchangeMailbox.ps1");
+
+        main.Should().Contain("Email__Provider = \"Graph\"").And.Contain("Email__Mailbox  = var.email_mailbox");
+        Default(variables, "email_mailbox").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
+        Read("environments", "dev.tfvars").Should().NotContain("email_mailbox");
+        Read("modules", "entra", "main.tf").Should().NotContain("Mail.", "the role to send comes from Exchange, only for the mailbox");
+        script.Should().Contain("New-Mailbox -Shared")
+            .And.Contain("--account-enabled false")
+            .And.Contain("$recipient.RecipientTypeDetails -notin 'SharedMailbox', 'UserMailbox'")
+            .And.Contain("$enabled = if ($recipient) { 'kept' } else { $null }")
+            .And.Contain("\"$($_.InScope)\" -eq 'True'")
+            .And.Contain("Enable-OrganizationCustomization")
+            .And.Contain("New-ServicePrincipal -AppId $clientId")
+            .And.Contain("-RecipientRestrictionFilter $filter")
+            .And.Contain("$filter = \"PrimarySmtpAddress -eq '$Mailbox'\"")
+            .And.Contain("-Role 'Application Mail.Send'")
+            .And.Contain("-CustomResourceScope $scopeName")
+            .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $Mailbox")
+            .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $me")
+            .And.NotContain("Application Mail Full Access").And.NotContain("Application Exchange Full Access");
+    }
+
+    [Fact(DisplayName = "Caixa que a empresa já tem")]
+    public void ExchangeScript_UsesTheMailboxTheCompanyHas_AsItIs()
+    {
+        var script = Repository.Read("infra", "scripts", "Grant-ExchangeMailbox.ps1");
+        var existing = script[script.IndexOf("if ($recipient) {", StringComparison.Ordinal)..script.IndexOf("else {", script.IndexOf("if ($recipient) {", StringComparison.Ordinal), StringComparison.Ordinal)];
+
+        existing.Should().Contain("sem mudar nada nela").And.NotContain("Set-").And.NotContain("az ad user update");
+        script.Should().Contain("Get-EXORecipient -Identity $Mailbox");
+    }
+
+    [Fact(DisplayName = "E-mails da demonstração no ambiente dev")]
+    public void DevEnvironment_KeepsTheEmailsOfTheDemonstrationInTheFolder()
+    {
+        var dev = Read("environments", "dev.tfvars");
+
+        dev.Should().Contain("Email__Graph__LocalDomains__0 = \"empresa.example\"")
+            .And.Contain("Email__Local__Folder         = \"/home/data/emails\"");
     }
 
     [Fact(DisplayName = "Aplicativo do Entra sem segredo")]

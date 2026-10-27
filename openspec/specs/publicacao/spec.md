@@ -60,3 +60,11 @@ O endereço do site do SharePoint MUST ficar fora do workflow, porque traz o nom
 #### Scenario: Site do SharePoint fora dos logs
 - **WHEN** o pipeline confere a infraestrutura de um ambiente com o site do SharePoint
 - **THEN** o endereço não está no workflow, é lido da aplicação no ar e mascarado, e sem ele a conferência segue sem o site
+
+### Requirement: Caixa de envio fora dos logs
+
+A conferência da infraestrutura MUST ler a caixa de envio da configuração da aplicação no ar e mascará-la nos logs antes de rodar o Terraform, sem que ela vire variável do workflow (ADR-0116, ADR-0123).
+
+#### Scenario: Caixa de envio mascarada
+- **WHEN** a conferência da infraestrutura roda com a caixa de envio na configuração da aplicação
+- **THEN** a caixa é mascarada nos logs e chega ao Terraform pela variável `email_mailbox`

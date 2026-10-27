@@ -65,6 +65,12 @@ locals {
     },
     var.sharepoint_library == null ? {} : { FileStorage__SharePoint__Library = var.sharepoint_library },
   var.sharepoint_root_folder == null ? {} : { FileStorage__SharePoint__RootFolder = var.sharepoint_root_folder })
+  # The e-mails from the shared mailbox through Microsoft Graph (ADR-0036, ADR-0123); without it, the settings of the
+  # environment decide.
+  email_settings = var.email_mailbox == null ? {} : {
+    Email__Provider = "Graph"
+    Email__Mailbox  = var.email_mailbox
+  }
 }
 
 module "database" {
@@ -143,7 +149,7 @@ module "app" {
   key_vault_id           = module.key_vault.id
   key_vault_name         = module.key_vault.name
   syncfusion_in_vault    = var.syncfusion_license_in_key_vault
-  app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)
+  app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)
   database_admin         = var.app_is_database_admin
   database_admins_group  = module.database.admins_group_object_id
   tags                   = local.tags

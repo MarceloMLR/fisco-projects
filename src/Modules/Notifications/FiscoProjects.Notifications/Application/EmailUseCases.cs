@@ -9,7 +9,7 @@ public sealed record EmailMessage(string ToAddress, string ToName, string Subjec
 
 /// <summary>
 /// Sends an e-mail now (ADR-0004, ADR-0036): the local implementation, which writes it to a folder, in development and
-/// tests; the Microsoft Graph from the shared mailbox in production (M365-4). Only the queue calls it.
+/// tests; the Microsoft Graph from the shared mailbox in production (ADR-0123). Only the queue calls it.
 /// </summary>
 public interface IEmailSender
 {

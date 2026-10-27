@@ -8,6 +8,9 @@ public sealed class EmailOptions
     /// <summary>The folder of the disk, for development and tests: nothing leaves (ADR-0004).</summary>
     public const string LocalProvider = "Local";
 
+    /// <summary>Microsoft Graph, from the shared mailbox of <see cref="Mailbox"/> (ADR-0036, ADR-0123).</summary>
+    public const string GraphProvider = "Graph";
+
     /// <summary>Which implementation sends the e-mails; empty while none is configured, and the e-mails wait in the queue.</summary>
     public string? Provider { get; set; }
 
@@ -22,7 +25,20 @@ public sealed class EmailOptions
 
     public LocalEmailOptions Local { get; set; } = new();
 
+    public GraphEmailOptions Graph { get; set; } = new();
+
     public bool IsLocal => string.Equals(Provider, LocalProvider, StringComparison.OrdinalIgnoreCase);
+
+    public bool IsGraph => string.Equals(Provider, GraphProvider, StringComparison.OrdinalIgnoreCase);
+}
+
+public sealed class GraphEmailOptions
+{
+    /// <summary>
+    /// Outside production, the domains whose e-mails stay in the local folder instead of leaving, as the one of the
+    /// people of the demonstration (ADR-0123).
+    /// </summary>
+    public List<string> LocalDomains { get; set; } = [];
 }
 
 public sealed class LocalEmailOptions

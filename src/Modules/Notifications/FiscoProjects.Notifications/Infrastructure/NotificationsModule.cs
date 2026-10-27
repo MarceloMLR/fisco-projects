@@ -5,6 +5,7 @@ using FiscoProjects.Persistence;
 using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
+using FiscoProjects.Users.Contracts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -35,16 +36,29 @@ public static class NotificationsModule
         });
         services.AddSingleton<IEmailRenderer>(provider =>
             new EmailRenderer(provider.GetRequiredService<IOptions<EmailOptions>>().Value.SiteUrl));
+        // The sending by the shared mailbox; Graph is asked again by the queue when it refuses or throttles (ADR-0123).
+        services.AddHttpClient(GraphEmailSender.ClientName, client => client.Timeout = TimeSpan.FromSeconds(30));
         services.TryAddSingleton<IEmailSender>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<EmailOptions>>().Value;
-            if (!options.IsLocal)
+            var contentRoot = provider.GetRequiredService<IHostEnvironment>().ContentRootPath;
+            if (options.IsGraph)
             {
-                return new NoEmailSender();
+                var graph = new GraphEmailSender(
+                    provider.GetRequiredService<IHttpClientFactory>(),
+                    provider.GetRequiredService<IGraphTokens>(),
+                    options.Mailbox!.Trim());
+                return options.Graph.LocalDomains.Count == 0
+                    ? graph
+                    : new EmailRouting(
+                        graph,
+                        new LocalEmailSender(Path.Combine(contentRoot, options.Local.Folder), options.Mailbox),
+                        options.Graph.LocalDomains);
             }
 
-            var contentRoot = provider.GetRequiredService<IHostEnvironment>().ContentRootPath;
-            return new LocalEmailSender(Path.Combine(contentRoot, options.Local.Folder), options.Mailbox);
+            return options.IsLocal
+                ? new LocalEmailSender(Path.Combine(contentRoot, options.Local.Folder), options.Mailbox)
+                : new NoEmailSender();
         });
         services.AddScoped<IOutboxStore, OutboxStore>();
         services.AddScoped<EmailQueue>();
@@ -83,5 +97,5 @@ public static class NotificationsModule
 internal sealed class NoEmailSender : IEmailSender
 {
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken) =>
-        throw new InvalidOperationException("No e-mail sending is configured. Set Email:Provider (Local in development).");
+        throw new InvalidOperationException("No e-mail sending is configured. Set Email:Provider (Graph, or Local in development).");
 }

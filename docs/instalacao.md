@@ -29,9 +29,16 @@ Os comandos exatos (Exchange Online, SharePoint, Terraform) são confirmados na 
 
 ## Exchange Online (e-mail)
 
-- Criar a caixa compartilhada de envio (por exemplo, projetos@empresa.com.br) (ADR-0036).
-- Registrar o aplicativo como service principal no Exchange Online, criar um escopo de gerenciamento só com essa caixa e atribuir o papel "Application Mail.Send" restrito ao escopo (ADR-0036). Script em `infra/scripts` (ADR-0053).
-- Testar com Test-ServicePrincipalAuthorization (ADR-0036).
+- Os e-mails saem pelo Microsoft Graph a partir de uma caixa compartilhada (por exemplo, projetos@empresa.com.br), com o aplicativo podendo enviar só por ela. Nada de Mail.Send no Entra ID: o papel de envio vem do Exchange, num escopo só com a caixa (ADR-0036, ADR-0123).
+- Depois do `apply` que criou o aplicativo do Entra, prepare a caixa com uma conta de Administrador do Exchange ou Administrador global. Se a empresa já tem uma caixa para isso, como um projetos@ que a equipe lê, ponha o endereço dela em `email_mailbox` antes: o script a usa como está, seja compartilhada ou de usuário, sem mudar nada nela (grupos e listas de distribuição não servem); as respostas aos e-mails do sistema chegam nela. Sem caixa, o script cria uma compartilhada, com a entrada da conta bloqueada (assim ela não aparece na busca de pessoas); num tenant novo, libera uma vez a personalização da organização no Exchange (`Enable-OrganizationCustomization`, sem volta, e o Exchange pode levar até 1 hora para aceitar o escopo, que o script espera); registra o aplicativo no Exchange, cria o escopo `FiscoProjects - caixa de envio` só com a caixa e dá o papel "Application Mail.Send" nele; e confere com `Test-ServicePrincipalAuthorization` que o aplicativo envia pela caixa e não pela de quem roda o script. O endereço sai do `email_mailbox` do `local.auto.tfvars` ou de `-Mailbox`; sem os dois, é `fiscoprojects@` o domínio padrão do tenant. Rodar de novo não muda nada.
+
+   ```powershell
+   Install-Module ExchangeOnlineManagement -Scope CurrentUser   # uma vez por máquina
+   ./infra/scripts/Grant-ExchangeMailbox.ps1                     # -DisableWAM se a entrada do Windows falhar
+   ```
+
+- Ponha a caixa em `email_mailbox` no `local.auto.tfvars` e aplique: o Terraform liga o envio pelo Graph (`Email:Provider` = `Graph`, `Email:Mailbox`). A permissão do Exchange leva de 30 minutos a 2 horas para valer; até lá, os e-mails falham e voltam para a fila. Depois, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
+- No ambiente de demonstração, os e-mails para o domínio das pessoas fictícias ficam na pasta local do App Service (`Email:Graph:LocalDomains`, no `.tfvars` do ambiente), e só os das pessoas do tenant saem; a aplicação não sobe em produção com domínios locais (ADR-0123).
 
 ## Azure
 
@@ -63,6 +70,8 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
    first_administrator_object_id = "<oid da pessoa: az ad user show --id <e-mail> --query id -o tsv>"
    # Opcional: o site do SharePoint dos arquivos (ADR-0120); veja a seção SharePoint.
    sharepoint_site_url = "https://<tenant>.sharepoint.com/sites/<site>"
+   # Opcional: a caixa compartilhada dos e-mails (ADR-0123); veja a seção Exchange Online.
+   email_mailbox = "<caixa>@<domínio do tenant>"
    ```
 
 4. Aplique, conferindo o plano antes:
@@ -113,7 +122,7 @@ Com o Azure CLI, o Terraform 1.16 (no Windows, `winget install Hashicorp.Terrafo
 - Fuso da instalação, padrão America/Sao_Paulo (ADR-0013).
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
 - Local dos arquivos no SharePoint (ADR-0030, ADR-0120), com o armazenamento escolhido em `FileStorage:Provider` (`SharePoint`) e o site, a biblioteca e a pasta raiz em `FileStorage:SharePoint:*`, postos pelo Terraform. O armazenamento do SharePoint usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
-- Endereço da caixa de envio, em `Email:Mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036). O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
+- O envio dos e-mails, em `Email:Provider` (`Graph`), e o endereço da caixa de envio, em `Email:Mailbox`, postos pelo Terraform a partir do `email_mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036, ADR-0123). O envio pelo Graph usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
 - Tamanho máximo de cada documento enviado, em `Documents:MaxMegabytes`, padrão 25 MB (ADR-0031). As pastas padrão dos projetos novos ficam em "Pastas padrão" na Administração; a migração cria as seis do MVP (ADR-0031, ADR-0093). O mesmo limite vale para os termos de aceite em PDF; os termos para assinar ficam na pasta `{código} - {nome}/Pedidos de aceite` de cada projeto, e os assinados, na pasta de termos dos documentos (ADR-0035, ADR-0095).
 - Horário do resumo diário de e-mails, padrão 07:30 no fuso da instalação, em "Horário do resumo diário" das Configurações gerais (ADR-0037).
 - Prazo de guarda das notificações do sino, padrão 90 dias (de 1 a 365), em "Guardar notificações por" das Configurações gerais (ADR-0038).

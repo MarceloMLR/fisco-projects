@@ -46,7 +46,12 @@ internal sealed class SessionApp : IAsyncDisposable
 
     public int Changes { get; private set; }
 
-    public static async Task<SessionApp> StartAsync(SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null)
+    /// <summary>
+    /// The application on a database of its own; without <paramref name="recordEmails"/>, the e-mails leave by the sending
+    /// the configuration chooses, as the one of Microsoft Graph simulated by a test.
+    /// </summary>
+    public static async Task<SessionApp> StartAsync(
+        SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null, bool recordEmails = true)
     {
         var connectionString = sqlServer.NewDatabase();
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero));
@@ -74,7 +79,10 @@ internal sealed class SessionApp : IAsyncDisposable
             builder.Configuration[TestApp.ConnectionStringKey] = connectionString;
             builder.Services.AddSingleton<TimeProvider>(clock);
             configure?.Invoke(builder);
-            builder.Services.TryAddSingleton<IEmailSender>(emails);
+            if (recordEmails)
+            {
+                builder.Services.TryAddSingleton<IEmailSender>(emails);
+            }
         });
 
         session = new SessionApp(app, connectionString, clock, emails);
