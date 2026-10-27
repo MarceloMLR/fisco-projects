@@ -84,7 +84,7 @@ O Editar dados MUST ter o campo "Pasta dos arquivos" para o administrador e o ge
 
 ### Requirement: Pasta renomeada com o projeto
 
-Quando o código ou o nome do projeto muda, a pasta do projeto que o sistema criou MUST ser renomeada para o `{código} - {nome}` novo, depois de gravar o projeto, e os arquivos de dentro MUST continuar abrindo; a pasta escolhida por alguém MUST ficar com o nome que tem. Se já houver uma pasta com esse nome ao lado ou o armazenamento falhar, o projeto MUST ficar gravado, a pasta MUST ficar com o nome que tinha, com tudo nela, e a próxima alteração dos dados do projeto MUST tentar de novo (ADR-0121, ADR-0122).
+Quando o código ou o nome do projeto muda, a pasta criada pelo sistema MUST ser renomeada para o `{código} - {nome}` novo depois de gravar o projeto, com os arquivos de dentro abrindo; a pasta escolhida MUST ficar com o nome que tem. Com o nome já usado ao lado ou o armazenamento com falha, o projeto MUST ficar gravado, a pasta MUST ficar como estava, com tudo nela, e a próxima alteração dos dados MUST tentar de novo (ADR-0121, ADR-0122).
 
 #### Scenario: Renomear o projeto
 - **WHEN** o gerente troca o nome do projeto "Implantação" para "Implantação do ERP", num projeto com documentos
