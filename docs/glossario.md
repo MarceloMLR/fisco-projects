@@ -247,6 +247,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Caixa de envio | `Email:Mailbox` | Caixa compartilhada de onde os e-mails saem; só leitura nas Configurações gerais |
 | Endereço das telas | `Email:SiteUrl` | Base dos links dos e-mails |
 | Envio local | LocalEmailSender (`Email:Provider` = `Local`) | Grava `.eml` numa pasta, sem enviar; recusado em produção |
+| Envio pelo Microsoft Graph | GraphEmailSender (`Email:Provider` = `Graph`) | `sendMail` da caixa de envio, com o token do aplicativo e o papel "Application Mail.Send" só nela (ADR-0123) |
+| Domínios locais | `Email:Graph:LocalDomains` | Fora da produção, os e-mails para esses domínios (os da demonstração) ficam na pasta local |
 | Teste de envio | SendTestEmail (`POST /api/admin/email/test`) | E-mail para o próprio administrador, na seção Microsoft 365 |
 | Auditoria | Audit | Módulo `Audit`, dono das tabelas da auditoria (schema `audit`) |
 | Registro de auditoria | AuditEntry | Só acrescentado; a anonimização apaga dele o nome e o e-mail da pessoa, e a limpeza mensal apaga os mais antigos que o prazo (ADR-0039, ADR-0110) |
