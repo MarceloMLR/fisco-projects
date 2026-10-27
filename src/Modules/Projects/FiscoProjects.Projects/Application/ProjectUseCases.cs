@@ -200,6 +200,9 @@ public enum ProjectField
 
     /// <summary>A project made from a model needs the day its schedule starts.</summary>
     ScheduleStart = 8,
+
+    /// <summary>The folder chosen for the files may not be the folder of the project (ADR-0122).</summary>
+    Folder = 9,
 }
 
 public enum ProjectSaveOutcome
@@ -298,7 +301,8 @@ public sealed record NewProject(
     Guid? TechLeadId,
     string? TechLeadDirectoryId = null,
     Guid? TemplateId = null,
-    DateOnly? ScheduleStart = null);
+    DateOnly? ScheduleStart = null,
+    string? FolderId = null);
 
 /// <summary>
 /// Creates a project in Planning (ADR-0016) with its manager and, optionally, its tech lead (ADR-0072). The manager is
@@ -316,7 +320,8 @@ public sealed class CreateProject(
     IWorkCalendar calendar,
     InstallationClock installationClock,
     ProjectNotices notices,
-    IProjectSetupNotices setup)
+    IProjectSetupNotices setup,
+    ProjectFolderChoices folders)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -355,6 +360,13 @@ public sealed class CreateProject(
             invalid.Add(ProjectField.ScheduleStart);
         }
 
+        // A folder that already exists, instead of the one the system creates (ADR-0122).
+        var folder = string.IsNullOrWhiteSpace(form.FolderId) ? null : await folders.CheckAsync(form.FolderId, null, cancellationToken);
+        if (folder is { Refusal: not null })
+        {
+            invalid.Add(ProjectField.Folder);
+        }
+
         if (invalid.Count > 0)
         {
             return ProjectSaveResult.InvalidFields(invalid);
@@ -368,6 +380,11 @@ public sealed class CreateProject(
         var techLead = form.TechLeadId;
         var project = Project.Create(
             data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, clock.GetUtcNow().UtcDateTime);
+        if (folder is not null)
+        {
+            project.ChooseFolder(folder.Id, folder.Name);
+        }
+
         store.Add(project);
         if (template is not null)
         {

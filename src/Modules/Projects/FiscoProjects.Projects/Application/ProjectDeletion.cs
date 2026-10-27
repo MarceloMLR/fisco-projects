@@ -103,7 +103,8 @@ public sealed class DeleteProject(
             await module.DeleteFilesAsync(id, project.StorageFolderId, cancellationToken);
         }
 
-        if (project.StorageFolderId is { } folder)
+        // A folder someone chose stays (ADR-0122).
+        if (project.StorageFolderId is { } folder && !project.StorageFolderChosen)
         {
             await files.DeleteFolderIfEmptyAsync(folder, cancellationToken);
         }

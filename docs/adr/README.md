@@ -184,4 +184,5 @@ Regras:
 | [0119](0119-diretorio-da-microsoft-pelo-graph.md) | Diretório da empresa pelo Microsoft Graph | aceita | 2026-10-26 |
 | [0120](0120-arquivos-no-sharepoint-na-pratica.md) | Como os arquivos ficam no SharePoint | aceita | 2026-10-26 |
 | [0121](0121-pasta-de-cada-projeto.md) | Uma pasta por projeto no armazenamento, renomeada com o projeto | aceita | 2026-10-26 |
+| [0122](0122-escolher-a-pasta-do-projeto.md) | Escolher uma pasta que já existe para o projeto | aceita | 2026-10-27 |
 | [0123](0123-emails-pelo-graph-na-pratica.md) | Como os e-mails saem pelo Microsoft Graph | aceita | 2026-10-27 |

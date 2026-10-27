@@ -34,8 +34,9 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         project.HasAuditLabel(p => p.Name);
         project.Property(p => p.ClientId).IsAuditReference(ProjectsAudit.ClientReference);
         project.Property(p => p.CreatedAt).ExcludeFromAudit();
+        // The folder chosen, and a change of it, show by the name; what the system does by itself stays out (ADR-0122).
         project.Property(p => p.StorageFolderId).ExcludeFromAudit();
-        project.Property(p => p.StorageFolderName).ExcludeFromAudit();
+        project.Property(p => p.StorageFolderChosen).ExcludeFromAudit();
     }
 }
 

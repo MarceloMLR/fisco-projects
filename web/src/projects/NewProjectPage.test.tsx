@@ -95,6 +95,7 @@ beforeEach(() => {
           canManageManagers: true,
           canEditSchedule: true,
           canDelete: false,
+          canChooseFolder: false,
         },
         scheduleStart: null,
         scheduleEnd: null,
@@ -379,5 +380,162 @@ describe('Novo projeto a partir de um modelo', () => {
     });
     expect(bodies[0]).toMatchObject({ templateId: null, scheduleStart: null });
     expect(screen.queryByRole('complementary', { name: form.preview })).not.toBeInTheDocument();
+  });
+});
+
+// Spec: projetos, requirement "Pasta do projeto na tela" (ADR-0122).
+describe('Pasta do projeto na tela', () => {
+  const folderText = text.folder;
+  const folders = {
+    clientes: '01clientes',
+    alfa: '01alfa',
+    projetos: '01projetos',
+    erpFin: '01erpfin',
+  };
+
+  beforeEach(() => {
+    server.use(
+      http.get('/api/installation/rules', () =>
+        HttpResponse.json({
+          timeZone: 'America/Sao_Paulo',
+          dailySummaryAt: '07:30:00',
+          notificationRetentionDays: 90,
+          auditRetentionYears: 5,
+          projectsFolder: 'Projetos',
+        }),
+      ),
+      http.get('/api/project-folders', ({ request }) => {
+        const parentId = new URL(request.url).searchParams.get('parentId') ?? '';
+        const folder = (
+          id: string,
+          name: string,
+          refusal: string | null = null,
+          code?: string,
+        ) => ({
+          id,
+          name,
+          refusal,
+          projectCode: code ?? null,
+        });
+        const lists: Record<
+          string,
+          { current: ReturnType<typeof folder> | null; folders: ReturnType<typeof folder>[] }
+        > = {
+          '': {
+            current: null,
+            folders: [
+              folder(folders.clientes, 'Clientes'),
+              folder(folders.projetos, 'Projetos', 'ProjectsFolder'),
+            ],
+          },
+          [folders.clientes]: {
+            current: folder(folders.clientes, 'Clientes'),
+            folders: [folder(folders.alfa, 'Alfa')],
+          },
+          [folders.alfa]: { current: folder(folders.alfa, 'Alfa'), folders: [] },
+          [folders.projetos]: {
+            current: folder(folders.projetos, 'Projetos', 'ProjectsFolder'),
+            folders: [folder(folders.erpFin, 'ERP-FIN - Implantação', 'InUse', 'ERP-FIN')],
+          },
+        };
+        return HttpResponse.json(lists[parentId]);
+      }),
+    );
+  });
+
+  async function openFolders() {
+    fireEvent.click(screen.getByRole('button', { name: folderText.choose }));
+    return screen.findByRole('dialog', { name: folderText.dialogTitle });
+  }
+
+  it('Escolher a pasta no Novo projeto', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'trib-mg');
+    fill(form.name, 'Revisão tributária');
+    // Until someone chooses another, the folder is the one the system creates in the folder of the projects.
+    expect(screen.getByRole('textbox', { name: folderText.field })).toHaveValue(
+      'Projetos / TRIB-MG - Revisão tributária',
+    );
+    expect(screen.queryByRole('button', { name: folderText.useSystem })).not.toBeInTheDocument();
+
+    const dialog = await openFolders();
+    // At the root, nothing is chosen yet.
+    expect(await within(dialog).findByText(folderText.openOne)).toBeVisible();
+    expect(within(dialog).getByRole('button', { name: folderText.use })).toBeDisabled();
+    fireEvent.click(await within(dialog).findByRole('button', { name: /Clientes/ }));
+    fireEvent.click(await within(dialog).findByRole('button', { name: /Alfa/ }));
+    await within(dialog).findByText(folderText.empty);
+    const path = within(dialog).getByRole('navigation', { name: folderText.path });
+    expect(within(path).getByRole('button', { name: 'Alfa' })).toHaveAttribute(
+      'aria-current',
+      'location',
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: folderText.use }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: folderText.dialogTitle }),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('textbox', { name: folderText.field })).toHaveValue('Clientes / Alfa');
+    expect(screen.getByText(folderText.chosenHelper)).toBeVisible();
+    expect(screen.getByRole('button', { name: folderText.useSystem })).toBeVisible();
+    create();
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    expect(bodies[0]).toMatchObject({ code: 'TRIB-MG', folderId: folders.alfa });
+  });
+
+  it('Pasta que não pode ser escolhida no diálogo', async () => {
+    await openNewProject();
+
+    const dialog = await openFolders();
+    fireEvent.click(await within(dialog).findByRole('button', { name: /Projetos/ }));
+    await within(dialog).findByText('ERP-FIN - Implantação');
+    // The folder of another project shows its code and does not open.
+    const list = within(dialog).getByRole('list', { name: folderText.folders });
+    expect(within(list).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(list).getByText('ERP-FIN')).toBeVisible();
+    expect(
+      within(list).getByText(folderText.refusals.InUse.replace('{{code}}', 'ERP-FIN')),
+    ).toBeVisible();
+    // The folder of the projects is never the folder of a project, and the dialog says why.
+    const use = within(dialog).getByRole('button', { name: folderText.use });
+    expect(use).toBeDisabled();
+    expect(use).toHaveAccessibleDescription(folderText.why.ProjectsFolder);
+  });
+
+  it('Pasta recusada pelo servidor na criação', async () => {
+    server.use(
+      http.post('/api/projects', () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            title: 'Bad Request',
+            errors: { folderId: ['Another project uses the folder.'] },
+          },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    await openNewProject();
+    fill(form.code, 'trib-mg');
+    fill(form.name, 'Revisão tributária');
+    const dialog = await openFolders();
+    fireEvent.click(await within(dialog).findByRole('button', { name: /Clientes/ }));
+    await within(dialog).findByRole('button', { name: /Alfa/ });
+    fireEvent.click(within(dialog).getByRole('button', { name: folderText.use }));
+    create();
+
+    expect(await screen.findByText(folderText.invalid)).toBeVisible();
   });
 });

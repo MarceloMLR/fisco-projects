@@ -714,6 +714,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/folder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The folder of the project in the file storage (ADR-0122). */
+        get: operations["GetProjectFolder"];
+        /** @description Changes the folder of the project to one that already exists, or back to the one the system creates, while the project has no files (ADR-0122). */
+        put: operations["ChangeProjectFolder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/members": {
         parameters: {
             query?: never;
@@ -963,6 +981,23 @@ export interface paths {
         };
         /** @description The numbers, the timeline, what needs attention and the team of the project (ADR-0073). */
         get: operations["GetProjectOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/project-folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The folders inside a folder of the file storage, or of its root, and whether each may be the folder of a project (ADR-0122). */
+        get: operations["ListProjectFolders"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2633,7 +2668,9 @@ export interface components {
          * @description The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
          *     project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
          *     the company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the
-         *     schedule is made from it, starting on `scheduleStart` (ADR-0017).
+         *     schedule is made from it, starting on `scheduleStart` (ADR-0017). With `folderId`, a folder of the file storage
+         *     that already exists, from `GET /api/project-folders`, holds the files instead of the one the system creates
+         *     (ADR-0122).
          */
         NewProjectRequest: {
             code: null | string;
@@ -2650,6 +2687,7 @@ export interface components {
             templateId?: null | string;
             /** Format: date */
             scheduleStart?: null | string;
+            folderId?: null | string;
         };
         /**
          * @description A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
@@ -2978,6 +3016,37 @@ export interface components {
             /** Format: int32 */
             members: number;
         };
+        /**
+         * @description A folder of the file storage (ADR-0122): when it may not be the folder of a project, why, and the code of the
+         *     project that uses it or holds it.
+         */
+        ProjectFolderChoiceResponse: {
+            id: string;
+            name: string;
+            refusal: null | components["schemas"]["ProjectFolderRefusal"];
+            projectCode: null | string;
+        };
+        /** @description The folder listed (none for the root, which is never chosen) and the folders inside it, in alphabetical order. */
+        ProjectFolderChoicesResponse: {
+            current: null | components["schemas"]["ProjectFolderChoiceResponse"];
+            folders: components["schemas"]["ProjectFolderChoiceResponse"][];
+        };
+        /** @enum {unknown} */
+        ProjectFolderRefusal: "InUse" | "InsideProject" | "ProjectsFolder" | "AboveProjects" | "SystemFolder" | "NotFound" | null;
+        /** @description A folder that already exists, from `GET /api/project-folders`; none goes back to the folder the system creates. */
+        ProjectFolderRequest: {
+            folderId: null | string;
+        };
+        /**
+         * @description The folder of the project in the file storage (ADR-0122): its name, whether someone chose it among the ones that
+         *     already existed, whether a module stored files of the project (then it stays) and whether the person may change it.
+         */
+        ProjectFolderResponse: {
+            name: string;
+            chosen: boolean;
+            hasFiles: boolean;
+            canChange: boolean;
+        };
         /** @description One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule. */
         ProjectListItemResponse: {
             /** Format: uuid */
@@ -3050,6 +3119,8 @@ export interface components {
             canEditSchedule: boolean;
             /** @description Deletes the project for good, with everything in it: only the Administrator (ADR-0041). */
             canDelete: boolean;
+            /** @description Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122). */
+            canChooseFolder: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -6436,6 +6507,111 @@ export interface operations {
             };
         };
     };
+    GetProjectFolder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFolderResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChangeProjectFolder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListProjectMembers: {
         parameters: {
             query?: never;
@@ -7573,6 +7749,56 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+        };
+    };
+    ListProjectFolders: {
+        parameters: {
+            query?: {
+                /** @description The folder whose folders are listed, by the id the list gave; none for the root. */
+                parentId?: string;
+                /** @description The project being edited, whose own folder may be chosen again. */
+                projectId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFolderChoicesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -46,6 +46,7 @@ public static class TicketsModule
         // The tickets of a project being completed or cancelled (ADR-0043).
         services.AddScoped<IProjectClosing, TicketProjectClosing>();
         services.AddScoped<IProjectDeletion, TicketProjectDeletion>();
+        services.AddScoped<IProjectFolderUse, TicketProjectFolderUse>();
         // The tickets of the person in Meu trabalho (ADR-0096).
         services.AddScoped<IMyWorkSource, TicketWorkSource>();
         // The tickets of a project in its overview (ADR-0073).

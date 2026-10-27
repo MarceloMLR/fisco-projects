@@ -8,6 +8,9 @@ namespace FiscoProjects.Projects.Application;
 /// <summary>What the folder of a project needs from the project: the code, the name and the folder kept.</summary>
 public sealed record ProjectFolderInfo(string Code, string Name, string? FolderId, string? FolderName);
 
+/// <summary>A project that has its folder in the storage, by the code, for the rules of the choice of a folder (ADR-0122).</summary>
+public sealed record ProjectFolderOwner(Guid ProjectId, string Code, string FolderId);
+
 /// <summary>
 /// Where the folder of each project is kept, outside the audit and without the tracking of the project, so a file of
 /// another module never saves the project with it (ADR-0121).
@@ -24,6 +27,9 @@ public interface IProjectFolderStore
 
     /// <summary>The name the folder of the project got.</summary>
     Task RenamedAsync(Guid projectId, string folderName, CancellationToken cancellationToken);
+
+    /// <summary>The projects that have a folder, with it.</summary>
+    Task<IReadOnlyList<ProjectFolderOwner>> OwnersAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>
