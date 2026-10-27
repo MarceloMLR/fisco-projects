@@ -17,7 +17,7 @@
 ## 4. Documentação e conferência
 
 - [x] 4.1 `docs/instalacao.md`, `CLAUDE.md` e roadmap (M365-4)
-- [ ] 4.2 Build sem avisos, testes, `dotnet format`, `infra.sh`, lint, typecheck e `openspec validate --all --strict`
+- [x] 4.2 Build sem avisos, testes, `dotnet format`, `infra.sh`, lint, typecheck e `openspec validate --all --strict`
 
 ## Workflow follow-up
 
