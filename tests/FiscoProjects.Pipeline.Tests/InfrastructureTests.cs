@@ -223,6 +223,9 @@ public sealed partial class InfrastructureTests
         Read("modules", "entra", "main.tf").Should().NotContain("Mail.", "the role to send comes from Exchange, only for the mailbox");
         script.Should().Contain("New-Mailbox -Shared")
             .And.Contain("--account-enabled false")
+            .And.Contain("$recipient.RecipientTypeDetails -notin 'SharedMailbox', 'UserMailbox'")
+            .And.Contain("$enabled = if ($recipient) { 'kept' } else { $null }")
+            .And.Contain("\"$($_.InScope)\" -eq 'True'")
             .And.Contain("Enable-OrganizationCustomization")
             .And.Contain("New-ServicePrincipal -AppId $clientId")
             .And.Contain("-RecipientRestrictionFilter $filter")
@@ -232,6 +235,16 @@ public sealed partial class InfrastructureTests
             .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $Mailbox")
             .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $me")
             .And.NotContain("Application Mail Full Access").And.NotContain("Application Exchange Full Access");
+    }
+
+    [Fact(DisplayName = "Caixa que a empresa já tem")]
+    public void ExchangeScript_UsesTheMailboxTheCompanyHas_AsItIs()
+    {
+        var script = Repository.Read("infra", "scripts", "Grant-ExchangeMailbox.ps1");
+        var existing = script[script.IndexOf("if ($recipient) {", StringComparison.Ordinal)..script.IndexOf("else {", script.IndexOf("if ($recipient) {", StringComparison.Ordinal), StringComparison.Ordinal)];
+
+        existing.Should().Contain("sem mudar nada nela").And.NotContain("Set-").And.NotContain("az ad user update");
+        script.Should().Contain("Get-EXORecipient -Identity $Mailbox");
     }
 
     [Fact(DisplayName = "E-mails da demonstração no ambiente dev")]

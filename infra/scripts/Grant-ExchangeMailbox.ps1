@@ -6,8 +6,9 @@ Creates the shared mailbox of the e-mails of the installation and lets the appli
 The application sends the e-mails through Microsoft Graph, from a shared mailbox, without Mail.Send in the Entra ID,
 which would let it send as anyone. This script, in Exchange Online:
 
-1. creates the shared mailbox, when it does not exist yet, and blocks the sign-in of its account, so it is no person
-   of the company directory (ADR-0119);
+1. uses the mailbox the company already has, shared or of a person, without changing it; or, when it does not exist
+   yet, creates a shared mailbox and blocks the sign-in of its account, so it is no person of the company directory
+   (ADR-0119);
 2. registers the application of terraform output entra_client_id as a service principal of Exchange;
 3. creates a management scope with only that mailbox and gives the application the role "Application Mail.Send"
    restricted to it (RBAC for Applications);
@@ -69,22 +70,25 @@ try {
         Write-Host 'Personalização da organização no Exchange liberada.'
     }
 
-    # 1. The shared mailbox, with the sign-in of its account blocked.
-    $found = try { Get-EXOMailbox -Identity $Mailbox -ErrorAction Stop } catch { $null }
-    if (-not $found) {
-        $alias = ($Mailbox -split '@')[0]
-        $found = New-Mailbox -Shared -Name $DisplayName -DisplayName $DisplayName -Alias $alias -PrimarySmtpAddress $Mailbox
-        Write-Host "Caixa compartilhada $Mailbox criada."
+    # 1. The mailbox: one that exists, shared or of a person, is used as it is. A group or a list is no mailbox the
+    #    application sends from. A new one is shared, with the sign-in of its account blocked.
+    $recipient = try { Get-EXORecipient -Identity $Mailbox -ErrorAction Stop } catch { $null }
+    if ($recipient -and $recipient.RecipientTypeDetails -notin 'SharedMailbox', 'UserMailbox') {
+        throw "$Mailbox é um $($recipient.RecipientTypeDetails), não uma caixa de correio: escolha uma caixa compartilhada ou de usuário."
     }
-    elseif ($found.RecipientTypeDetails -ne 'SharedMailbox') {
-        throw "$Mailbox não é uma caixa compartilhada ($($found.RecipientTypeDetails))."
+
+    if ($recipient) {
+        Write-Host "Usando a caixa $Mailbox, que já existia ($($recipient.RecipientTypeDetails)), sem mudar nada nela."
     }
     else {
-        Write-Host "A caixa compartilhada $Mailbox já existia."
+        $alias = ($Mailbox -split '@')[0]
+        New-Mailbox -Shared -Name $DisplayName -DisplayName $DisplayName -Alias $alias -PrimarySmtpAddress $Mailbox | Out-Null
+        Write-Host "Caixa compartilhada $Mailbox criada."
     }
 
     # The account of a new mailbox reaches the Entra ID after a while.
-    $enabled = $null
+    # A mailbox that already existed keeps its account as it is.
+    $enabled = if ($recipient) { 'kept' } else { $null }
     for ($attempt = 1; $attempt -le 12 -and $null -eq $enabled; $attempt++) {
         $account = (Get-EXOMailbox -Identity $Mailbox -Properties ExternalDirectoryObjectId).ExternalDirectoryObjectId
         $enabled = if ($account) {
@@ -97,7 +101,7 @@ try {
     if ($null -eq $enabled) {
         Write-Warning 'A conta da caixa ainda não está no Entra ID: bloqueie a entrada dela no centro de administração do Microsoft 365 (Usuários ativos, Bloquear entrada).'
     }
-    elseif ($enabled -ne 'false') {
+    elseif ($enabled -notin 'false', 'kept') {
         try {
             az ad user update --id $account --account-enabled false
             Write-Host 'Entrada da conta da caixa bloqueada.'
@@ -153,18 +157,18 @@ try {
         Write-Host "O aplicativo $ApplicationName já envia só pela caixa $Mailbox."
     }
 
-    # 4. Sends from the mailbox, and from no other.
+    # 4. Sends from the mailbox, and from no other. InScope comes as the text "True" or "False".
     $allowed = Test-ServicePrincipalAuthorization -Identity $clientId -Resource $Mailbox |
-        Where-Object RoleName -eq 'Application Mail.Send'
-    if (-not ($allowed | Where-Object InScope)) {
+        Where-Object { $_.RoleName -eq 'Application Mail.Send' -and "$($_.InScope)" -eq 'True' }
+    if (-not $allowed) {
         throw "O aplicativo não envia pela caixa $Mailbox."
     }
 
     $me = (Get-ConnectionInformation | Select-Object -First 1).UserPrincipalName
     if ($me -and $(try { Get-EXOMailbox -Identity $me -ErrorAction Stop } catch { $null })) {
-        $denied = Test-ServicePrincipalAuthorization -Identity $clientId -Resource $me |
-            Where-Object RoleName -eq 'Application Mail.Send'
-        if ($denied | Where-Object InScope) {
+        $alsoAllowed = Test-ServicePrincipalAuthorization -Identity $clientId -Resource $me |
+            Where-Object { $_.RoleName -eq 'Application Mail.Send' -and "$($_.InScope)" -eq 'True' }
+        if ($alsoAllowed) {
             throw "O aplicativo também envia pela caixa de $me; confira as atribuições do papel Application Mail.Send."
         }
     }
