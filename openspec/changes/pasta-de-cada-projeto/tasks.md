@@ -24,7 +24,7 @@
 ## 5. Documentação e conferência
 
 - [x] 5.1 `CLAUDE.md`, `docs/instalacao.md` e roadmap (M365-3.1)
-- [ ] 5.2 Build sem avisos, `dotnet test`, `dotnet format`, lint, typecheck e testes do frontend, `openspec validate --all --strict`
+- [x] 5.2 Build sem avisos, `dotnet test`, `dotnet format`, lint, typecheck e testes do frontend, `openspec validate --all --strict`
 
 ## Workflow follow-up
 
