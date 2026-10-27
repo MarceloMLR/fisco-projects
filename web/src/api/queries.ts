@@ -139,6 +139,35 @@ export function projectClosingQuery(id: string) {
   });
 }
 
+/** The folder of a project in the file storage and whether it may still change (ADR-0122). */
+export function projectFolderQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'folder'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/folder', { params: { path: { id } }, signal })),
+    // Read again each time "Editar dados" opens: a document may have been sent meanwhile.
+    staleTime: 0,
+  });
+}
+
+/**
+ * The folders inside a folder of the file storage (the root without one), for choosing the folder of a project
+ * (ADR-0122); the project being edited may choose its own folder again.
+ */
+export function projectFoldersQuery(parentId: string | undefined, projectId: string | undefined) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, 'folders', parentId ?? '', projectId ?? ''] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/project-folders', {
+          params: { query: { parentId, projectId } },
+          signal,
+        }),
+      ),
+    staleTime: 0,
+  });
+}
+
 /** What deleting a project would remove, for the Administrator (ADR-0041). */
 export function projectDeletionQuery(id: string) {
   return queryOptions({
