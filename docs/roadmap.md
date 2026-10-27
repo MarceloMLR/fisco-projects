@@ -32,9 +32,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
-| 9. Microsoft 365 real | 4 | 3 |
+| 9. Microsoft 365 real | 6 | 3 |
 | 10. Governança e operação | 6 | 4 |
-| **Total** | **86** | **83** |
+| **Total** | **88** | **83** |
 
 ## 1. Fundação
 
@@ -161,6 +161,8 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | M365-1 | `entrada-pelo-entra` | Login pelo Entra ID, recusa de convidados e recusa sem atribuição no Entra | 0004, 0007, 0009, 0117 | Concluída em 25/10/2026 ([#88](https://github.com/MarceloMLR/fisco-projects/pull/88)) |
 | M365-2 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005, 0119 | Concluída em 26/10/2026 ([#95](https://github.com/MarceloMLR/fisco-projects/pull/95)) |
 | M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030, 0120 | Concluída em 26/10/2026 ([#97](https://github.com/MarceloMLR/fisco-projects/pull/97)) |
+| M365-3.1 | `pasta-de-cada-projeto` | Uma pasta por projeto no armazenamento, renomeada com o projeto, e a pasta dos projetos nas Configurações gerais, a pedido de Marcelo | 0030, 0121 | Planejada |
+| M365-3.2 | `pasta-existente-do-projeto` | Escolher uma pasta que já existe no SharePoint para o projeto, a pedido de Marcelo | 0030, 0121 | Planejada |
 | M365-4 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
 
 ## 10. Governança e operação
