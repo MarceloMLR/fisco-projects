@@ -192,6 +192,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Status do documento: Rascunho, Em revisão, Aprovado, Obsoleto | DocumentStatus: Draft, InReview, Approved, Obsolete | A nova versão de um aprovado volta para Em revisão (ADR-0093) |
 | Pasta padrão | DefaultFolder | Lista da Administração, copiada para cada projeto novo |
 | Pasta do projeto | DocumentFolder | Cópia de uma pasta padrão, com a pasta no armazenamento |
+| Pasta do projeto no armazenamento | `Project.StorageFolderId`, IProjectStorage | Uma por projeto, `{código} - {nome}`, criada no primeiro arquivo e renomeada com o projeto (ADR-0121) |
+| Pasta dos projetos | InstallationSettings.ProjectsFolder | Onde as pastas dos projetos são criadas, nas Configurações gerais; vazia, na raiz do armazenamento |
+| Renomear pasta | `IFileStorage.RenameFolderAsync` | Mantém o id da pasta e de tudo dentro dela |
 | Pasta de termos de aceite | `IsAcceptance` | Só leitura na área de documentos, só para a gestão (ADR-0093) |
 | Enviar arquivos | UploadDocument | Um arquivo por vez; o mesmo nome na mesma pasta vira nova versão |
 | Vincular ao cronograma | LinkDocument | A uma fase, tarefa ou marco do mesmo projeto |
@@ -268,7 +271,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Exclusão de projeto | DeleteProject (`POST /api/projects/{id}/deletion`), `ProjectPermissions.CanDelete` | Só o administrador, com o código digitado; definitiva (ADR-0041, ADR-0111) |
 | Resumo da exclusão | GetProjectDeletion (`GET /api/projects/{id}/deletion`), ProjectItemKind | Chamados, documentos, links, acessos, termos de aceite, tarefas e marcos e pessoas |
 | Apagar o que é do projeto | IProjectDeletion, ProjectItemCount | Cada módulo: conta, apaga os arquivos e apaga as linhas na transação da exclusão |
-| Remoção do que foi guardado | StoredFilesRemoval, `IFileStorage.FolderOfAsync` | Os arquivos registrados e as pastas que ficaram vazias, até a raiz |
+| Remoção do que foi guardado | StoredFilesRemoval, `IFileStorage.FolderOfAsync` | Os arquivos registrados e as pastas que ficaram vazias, até a pasta do projeto ou a raiz |
 | Monitoramento | Monitoring (`AddFiscoProjectsMonitoring`), Application Insights | OpenTelemetry pela distribuição do Azure Monitor, só com `APPLICATIONINSIGHTS_CONNECTION_STRING` (ADR-0057, ADR-0112) |
 | Código da instalação | installation (Terraform) | De 2 a 6 letras ou números, parte do nome de todo recurso do Azure, como `app-fiscoprojects-mlr-dev` (ADR-0114) |
 | Ambiente | environment (Terraform) | `prod` ou `dev` (desenvolvimento e demonstração); parâmetros em `infra/terraform/environments/` (ADR-0052, ADR-0114) |
