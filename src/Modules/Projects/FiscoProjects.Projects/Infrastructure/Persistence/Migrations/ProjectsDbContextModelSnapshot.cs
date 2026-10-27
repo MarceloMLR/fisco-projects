@@ -109,6 +109,10 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
+                    b.Property<bool>("StorageFolderChosen")
+                        .HasColumnType("bit")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.Property<string>("StorageFolderId")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)")
@@ -116,8 +120,7 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("StorageFolderName")
                         .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
-                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                        .HasColumnType("nvarchar(400)");
 
                     b.HasKey("Id");
 

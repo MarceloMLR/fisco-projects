@@ -104,6 +104,7 @@ type ProjectField =
   | 'Description'
   | 'ClientId'
   | 'Status'
+  | 'StorageFolderName'
   | 'Tickets'
   | 'Documents'
   | 'Links'
@@ -117,6 +118,8 @@ const projectFields: readonly string[] = [
   'Description',
   'ClientId',
   'Status',
+  // The folder of the files, chosen or back to the one the system creates (ADR-0122).
+  'StorageFolderName',
   // What the deletion of the project removed (ADR-0111).
   'Tickets',
   'Documents',

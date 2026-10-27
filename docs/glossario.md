@@ -195,6 +195,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Pasta do projeto no armazenamento | `Project.StorageFolderId`, IProjectStorage | Uma por projeto, `{código} - {nome}`, criada no primeiro arquivo e renomeada com o projeto (ADR-0121) |
 | Pasta dos projetos | InstallationSettings.ProjectsFolder | Onde as pastas dos projetos são criadas, nas Configurações gerais; vazia, na raiz do armazenamento |
 | Renomear pasta | `IFileStorage.RenameFolderAsync` | Mantém o id da pasta e de tudo dentro dela |
+| Pasta escolhida | `Project.StorageFolderChosen`, ChooseFolder | Uma pasta que já existia, escolhida para o projeto; não é renomeada nem apagada (ADR-0122) |
+| Escolher a pasta | `ProjectPermissions.CanChooseFolder`, ProjectFolderChoices (`GET /api/project-folders`) | Administrador e gerente, enquanto o projeto não guardou arquivos |
+| Uso da pasta pelos módulos | IProjectFolderUse | Cada módulo diz se guardou arquivos do projeto e refaz as pastas dele na troca |
 | Pasta de termos de aceite | `IsAcceptance` | Só leitura na área de documentos, só para a gestão (ADR-0093) |
 | Enviar arquivos | UploadDocument | Um arquivo por vez; o mesmo nome na mesma pasta vira nova versão |
 | Vincular ao cronograma | LinkDocument | A uma fase, tarefa ou marco do mesmo projeto |

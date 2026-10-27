@@ -36,8 +36,15 @@ internal sealed class ProjectFolderStore(ProjectsDbContext db) : IProjectFolderS
             .ExecuteUpdateAsync(
                 update => update
                     .SetProperty(project => project.StorageFolderId, (string?)null)
-                    .SetProperty(project => project.StorageFolderName, (string?)null),
+                    .SetProperty(project => project.StorageFolderName, (string?)null)
+                    .SetProperty(project => project.StorageFolderChosen, false),
                 cancellationToken);
+
+    public async Task<IReadOnlyList<ProjectFolderOwner>> OwnersAsync(CancellationToken cancellationToken) =>
+        await db.Projects.AsNoTracking()
+            .Where(project => project.StorageFolderId != null)
+            .Select(project => new ProjectFolderOwner(project.Id, project.Code, project.StorageFolderId!))
+            .ToListAsync(cancellationToken);
 
     public Task RenamedAsync(Guid projectId, string folderName, CancellationToken cancellationToken) =>
         db.Projects

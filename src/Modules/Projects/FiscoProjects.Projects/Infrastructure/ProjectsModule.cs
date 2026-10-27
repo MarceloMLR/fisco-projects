@@ -59,6 +59,10 @@ public static class ProjectsModule
         services.AddScoped<IProjectFolderStore, ProjectFolderStore>();
         services.AddScoped<IProjectStorage, ProjectStorage>();
         services.AddScoped<IProjectFolderRenaming, ProjectFolderRenaming>();
+        services.AddScoped<ProjectFolderChoices>();
+        services.AddScoped<GetProjectFolder>();
+        services.AddScoped<ChangeProjectFolder>();
+        services.AddScoped<IProjectFolderCleanup, ProjectFolderCleanup>();
         services.AddScoped<GetSchedule>();
         services.AddScoped<AddSchedulePhase>();
         services.AddScoped<RenameSchedulePhase>();

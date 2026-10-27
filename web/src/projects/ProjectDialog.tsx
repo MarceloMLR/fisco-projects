@@ -1,16 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Button from '@mui/material/Button';
-import { useQueryClient } from '@tanstack/react-query';
-import { Controller, useForm } from 'react-hook-form';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { api, type Project, projectProblems } from '../api/client';
-import { queryKeys } from '../api/queries';
+import { generalRulesQuery, projectFolderQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { ClientSelectField } from './ClientSelectField';
+import type { ChosenFolder } from './ProjectFolderDialog';
+import { ProjectFolderField } from './ProjectFolderField';
+import { systemFolderPath } from './projectFolder';
 import {
   invalidFields,
   isProjectFieldError,
@@ -26,7 +30,8 @@ type FormValues = z.input<typeof projectDataSchema>;
 
 /**
  * "Editar dados" of a project: the code, the name, the client and the description (ADR-0016). The administrator, the
- * manager and the tech lead change them while the project is open (ADR-0043).
+ * manager and the tech lead change them while the project is open (ADR-0043). The administrator and the manager also
+ * see the folder of the files, which changes until the project stores a file (ADR-0122).
  */
 export function ProjectDialog({
   project,
@@ -56,6 +61,50 @@ export function ProjectDialog({
     },
   });
 
+  const canChooseFolder = project.permissions.canChooseFolder;
+  const folderInfo = useQuery({ ...projectFolderQuery(project.id), enabled: canChooseFolder });
+  const rules = useQuery({ ...generalRulesQuery(), enabled: canChooseFolder });
+  // Undefined while the folder stays as it is; null goes back to the folder the system creates.
+  const [folder, setFolder] = useState<ChosenFolder | null>();
+  const [folderError, setFolderError] = useState<string>();
+  const typedCode = useWatch({ control, name: 'code' });
+  const typedName = useWatch({ control, name: 'name' });
+  const current = folderInfo.data;
+  const shownFolder =
+    folder !== undefined
+      ? folder
+      : current?.chosen === true
+        ? { id: '', path: current.name }
+        : null;
+  const systemText =
+    current !== undefined && !current.chosen && folder === undefined
+      ? current.name
+      : (systemFolderPath(rules.data?.projectsFolder ?? '', typedCode, typedName) ??
+        t('projects.folder.pending'));
+
+  /** Changes the folder first, so nothing is saved when the folder is refused; true when the data may follow. */
+  const changeFolder = async () => {
+    if (folder === undefined) {
+      return true;
+    }
+    const { error, response } = await api.PUT('/api/projects/{id}/folder', {
+      params: { path: { id: project.id } },
+      body: { folderId: folder?.id ?? null },
+    });
+    if (response.ok) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      return true;
+    }
+    if (response.status === 409 && problemType(error) === projectProblems.hasFiles) {
+      setFolderError(t('projects.folder.locked'));
+    } else if (response.status === 400) {
+      setFolderError(t('projects.folder.invalid'));
+    } else {
+      setError('root', { message: t('projects.messages.failed') });
+    }
+    return false;
+  };
+
   const errorText = (message: string | undefined) =>
     isProjectFieldError(message) ? t(message) : undefined;
   const codeError =
@@ -66,6 +115,9 @@ export function ProjectDialog({
   const save = handleSubmit(async (values) => {
     const name = values.name.trim();
     try {
+      if (!(await changeFolder())) {
+        return;
+      }
       const { error, response } = await api.PUT('/api/projects/{id}', {
         params: { path: { id: project.id } },
         body: {
@@ -170,6 +222,21 @@ export function ProjectDialog({
         error={errorText(errors.description?.message)}
         {...register('description')}
       />
+      {canChooseFolder && current !== undefined && (
+        <ProjectFolderField
+          value={shownFolder}
+          onChange={(chosen) => {
+            setFolder(chosen);
+            setFolderError(undefined);
+          }}
+          systemText={systemText}
+          systemHelper={t('projects.folder.systemHelper')}
+          chosenHelper={t('projects.folder.chosenHelper')}
+          projectId={project.id}
+          locked={current.hasFiles ? t('projects.folder.locked') : undefined}
+          error={folderError}
+        />
+      )}
       {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
     </Dialog>
   );

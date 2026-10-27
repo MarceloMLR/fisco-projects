@@ -69,8 +69,17 @@ public sealed class Project : Entity
     /// </summary>
     public string? StorageFolderId { get; private set; }
 
-    /// <summary>The name the folder was created or renamed with last, so a rename that failed is tried again.</summary>
+    /// <summary>
+    /// The name the folder was created or renamed with last, so a rename that failed is tried again, or the name of the
+    /// folder someone chose.
+    /// </summary>
     public string? StorageFolderName { get; private set; }
+
+    /// <summary>
+    /// Whether someone chose the folder among the ones that already existed (ADR-0122): it is never renamed with the
+    /// project nor removed with it.
+    /// </summary>
+    public bool StorageFolderChosen { get; private set; }
 
     /// <summary>The name of the folder of the project: "{code} - {name}".</summary>
     public string FolderName => FolderNameOf(Code, Name);
@@ -178,6 +187,22 @@ public sealed class Project : Entity
         EnsureAnotherManager(member);
         _members.Remove(member);
         return true;
+    }
+
+    /// <summary>Uses a folder that already existed, already checked by the rules of the choice (ADR-0122).</summary>
+    public void ChooseFolder(string folderId, string folderName)
+    {
+        StorageFolderId = folderId;
+        StorageFolderName = folderName;
+        StorageFolderChosen = true;
+    }
+
+    /// <summary>Goes back to the folder the system creates, made with the next folder a module asks for (ADR-0121).</summary>
+    public void UseSystemFolder()
+    {
+        StorageFolderId = null;
+        StorageFolderName = null;
+        StorageFolderChosen = false;
     }
 
     /// <summary>

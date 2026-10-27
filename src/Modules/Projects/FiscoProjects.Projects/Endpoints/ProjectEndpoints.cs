@@ -74,7 +74,8 @@ public sealed record ProjectPermissionsResponse(
     bool CanManagePeople,
     bool CanManageManagers,
     bool CanEditSchedule,
-    [property: Description("Deletes the project for good, with everything in it: only the Administrator (ADR-0041).")] bool CanDelete);
+    [property: Description("Deletes the project for good, with everything in it: only the Administrator (ADR-0041).")] bool CanDelete,
+    [property: Description("Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122).")] bool CanChooseFolder);
 
 /// <summary>
 /// A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none
@@ -96,7 +97,9 @@ public sealed record ProjectResponse(
 /// The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
 /// project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
 /// the company directory who never signed in, by the <c>directoryId</c> of the people search (ADR-0005). With a model, the
-/// schedule is made from it, starting on <c>scheduleStart</c> (ADR-0017).
+/// schedule is made from it, starting on <c>scheduleStart</c> (ADR-0017). With <c>folderId</c>, a folder of the file storage
+/// that already exists, from <c>GET /api/project-folders</c>, holds the files instead of the one the system creates
+/// (ADR-0122).
 /// </summary>
 public sealed record NewProjectRequest(
     string? Code,
@@ -107,12 +110,31 @@ public sealed record NewProjectRequest(
     Guid? TechLeadId,
     string? TechLeadDirectoryId = null,
     Guid? TemplateId = null,
-    DateOnly? ScheduleStart = null);
+    DateOnly? ScheduleStart = null,
+    string? FolderId = null);
 
 /// <summary>The data of a project that may change after its creation.</summary>
 public sealed record ProjectRequest(string? Code, string? Name, string? Description, Guid? ClientId);
 
 public sealed record ProjectStatusRequest(ProjectStatus Status);
+
+/// <summary>
+/// The folder of the project in the file storage (ADR-0122): its name, whether someone chose it among the ones that
+/// already existed, whether a module stored files of the project (then it stays) and whether the person may change it.
+/// </summary>
+public sealed record ProjectFolderResponse(string Name, bool Chosen, bool HasFiles, bool CanChange);
+
+/// <summary>A folder that already exists, from <c>GET /api/project-folders</c>; none goes back to the folder the system creates.</summary>
+public sealed record ProjectFolderRequest(string? FolderId);
+
+/// <summary>
+/// A folder of the file storage (ADR-0122): when it may not be the folder of a project, why, and the code of the
+/// project that uses it or holds it.
+/// </summary>
+public sealed record ProjectFolderChoiceResponse(string Id, string Name, ProjectFolderRefusal? Refusal, string? ProjectCode);
+
+/// <summary>The folder listed (none for the root, which is never chosen) and the folders inside it, in alphabetical order.</summary>
+public sealed record ProjectFolderChoicesResponse(ProjectFolderChoiceResponse? Current, IReadOnlyList<ProjectFolderChoiceResponse> Folders);
 
 /// <summary>
 /// What completing or cancelling the project would leave behind (ADR-0043): the tickets not closed, which keep it from
@@ -163,6 +185,9 @@ public static class ProjectProblems
     /// <summary>The change would leave the project without a manager (ADR-0042).</summary>
     public const string LastManager = "urn:fiscoprojects:problem:project-last-manager";
 
+    /// <summary>A module stored a file of the project, so its folder does not change anymore (ADR-0122); status 409.</summary>
+    public const string HasFiles = "urn:fiscoprojects:problem:project-has-files";
+
     /// <summary>An item of the schedule would depend on an item that already depends on it (ADR-0019); status 400.</summary>
     public const string ScheduleCycle = "urn:fiscoprojects:problem:schedule-cycle";
 
@@ -210,6 +235,13 @@ internal static class ProjectEndpoints
             .WithDescription(
                 "Deletes the project for good, with everything in it (ADR-0041, ADR-0111): only the Administrator, with the code of the project.")
             .ProducesProblem(StatusCodes.Status403Forbidden);
+        projects.MapGet("/{id:guid}/folder", FolderAsync).WithName("GetProjectFolder")
+            .WithDescription("The folder of the project in the file storage (ADR-0122).");
+        projects.MapPut("/{id:guid}/folder", ChangeFolderAsync).WithName("ChangeProjectFolder")
+            .WithDescription(
+                "Changes the folder of the project to one that already exists, or back to the one the system creates, while the project has no files (ADR-0122).")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
         projects.MapOverviewEndpoints();
@@ -285,7 +317,7 @@ internal static class ProjectEndpoints
         var result = await createProject.ExecuteAsync(
             new NewProject(
                 request.Code, request.Name, request.Description, request.ClientId, request.ManagerId, request.TechLeadId,
-                request.TechLeadDirectoryId, request.TemplateId, request.ScheduleStart),
+                request.TechLeadDirectoryId, request.TemplateId, request.ScheduleStart, request.FolderId),
             creatorId,
             cancellationToken);
         return result.Outcome switch
@@ -326,7 +358,8 @@ internal static class ProjectEndpoints
                 CanManagePeople: details.Permissions.CanManagePeople && !project.IsClosed,
                 CanManageManagers: details.Permissions.CanManageManagers && !project.IsClosed,
                 CanEditSchedule: details.Permissions.CanEditSchedule && !project.IsClosed,
-                CanDelete: details.Permissions.CanDelete),
+                CanDelete: details.Permissions.CanDelete,
+                CanChooseFolder: details.Permissions.CanChooseFolder && !project.IsClosed),
             details.Schedule?.Start,
             details.Schedule?.End));
     }
@@ -379,6 +412,43 @@ internal static class ProjectEndpoints
                 detail: "Someone changed a ticket of the project at the same time; nothing changed.",
                 type: ProjectProblems.TicketsChanged),
             _ => TypedResults.Forbid(),
+        };
+    }
+
+    private static async Task<Results<Ok<ProjectFolderResponse>, NotFound>> FolderAsync(
+        Guid id, HttpContext http, IUserAccess access, GetProjectFolder getFolder, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await getFolder.ExecuteAsync(id, viewer, cancellationToken) is { } folder
+            ? TypedResults.Ok(new ProjectFolderResponse(folder.Name, folder.Chosen, folder.HasFiles, folder.CanChange))
+            : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> ChangeFolderAsync(
+        Guid id,
+        HttpContext http,
+        ProjectFolderRequest request,
+        IUserAccess access,
+        ChangeProjectFolder changeFolder,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        var result = await changeFolder.ExecuteAsync(id, request.FolderId, viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            ProjectFolderOutcome.Saved => TypedResults.NoContent(),
+            ProjectFolderOutcome.NotFound => TypedResults.NotFound(),
+            ProjectFolderOutcome.Forbidden => TypedResults.Forbid(),
+            ProjectFolderOutcome.Closed => Closed(),
+            ProjectFolderOutcome.HasFiles => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Project with files",
+                detail: "The folder of a project does not change after the project stores files.",
+                type: ProjectProblems.HasFiles),
+            _ => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["folderId"] = [ProjectFolderEndpoints.ReasonOf(result.Refusal)],
+            }),
         };
     }
 
@@ -482,6 +552,7 @@ internal static class ProjectEndpoints
                 ProjectField.Manager => "managerId",
                 ProjectField.Template => "templateId",
                 ProjectField.ScheduleStart => "scheduleStart",
+                ProjectField.Folder => "folderId",
                 _ => "techLeadId",
             },
             field => new[]
@@ -495,6 +566,7 @@ internal static class ProjectEndpoints
                     ProjectField.Manager => "The manager is an active Project manager or Administrator.",
                     ProjectField.Template => "The model is an active model of project.",
                     ProjectField.ScheduleStart => "A project made from a model needs the day its schedule starts, from 2000 to 2099.",
+                    ProjectField.Folder => "The folder exists and is no folder of another project, of the projects or of the system, nor inside or above one.",
                     _ => "The tech lead is an active Tech lead or Administrator other than the manager.",
                 },
             }));
@@ -522,6 +594,7 @@ public static class ProjectsEndpoints
     {
         api.MapClientEndpoints();
         api.MapProjectEndpoints();
+        api.MapProjectFolderEndpoints();
         api.MapTemplateEndpoints();
         return api;
     }

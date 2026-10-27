@@ -35,6 +35,7 @@ beforeEach(() => {
     canManageManagers: true,
     canEditSchedule: true,
     canDelete: false,
+    canChooseFolder: false,
   };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
@@ -194,6 +195,7 @@ describe('Ações do projeto', () => {
       canManageManagers: false,
       canEditSchedule: false,
       canDelete: false,
+      canChooseFolder: false,
     };
     await openProject();
 
@@ -315,6 +317,7 @@ describe('Ações do projeto', () => {
       canManageManagers: false,
       canEditSchedule: false,
       canDelete: false,
+      canChooseFolder: false,
     };
     await openProject();
 
@@ -522,6 +525,79 @@ describe('Exclusão pela tela', () => {
 
     expect(
       within(menu).queryByRole('menuitem', { name: text.actions.delete }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+// Spec: projetos, requirement "Pasta do projeto no Editar dados" (ADR-0122).
+describe('Pasta do projeto no Editar dados', () => {
+  const folderText = text.folder;
+
+  beforeEach(() => {
+    permissions = { ...permissions, canChooseFolder: true };
+  });
+
+  async function openEdit() {
+    await openProject();
+    const menu = await openActions();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.actions.edit }));
+    return screen.findByRole('dialog', { name: text.form.editTitle });
+  }
+
+  it('Pasta que não muda mais', async () => {
+    server.use(
+      http.get('/api/projects/:id/folder', () =>
+        HttpResponse.json({
+          name: 'ERP-FIN - Implantação do ERP financeiro',
+          chosen: false,
+          hasFiles: true,
+          canChange: false,
+        }),
+      ),
+    );
+    const dialog = await openEdit();
+
+    const field = await within(dialog).findByRole('textbox', { name: folderText.field });
+    expect(field).toHaveValue('ERP-FIN - Implantação do ERP financeiro');
+    expect(field).toHaveAccessibleDescription(folderText.locked);
+    expect(
+      within(dialog).queryByRole('button', { name: folderText.choose }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Voltar à pasta do sistema pelo Editar dados', async () => {
+    server.use(
+      http.get('/api/projects/:id/folder', () =>
+        HttpResponse.json({ name: 'Alfa', chosen: true, hasFiles: false, canChange: true }),
+      ),
+      http.put('/api/projects/:id/folder', async ({ request }) => {
+        const { folderId } = (await request.json()) as { folderId: string | null };
+        requests.push(`PUT folder ${String(folderId)}`);
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const dialog = await openEdit();
+
+    const field = await within(dialog).findByRole('textbox', { name: folderText.field });
+    expect(field).toHaveValue('Alfa');
+    fireEvent.click(within(dialog).getByRole('button', { name: folderText.useSystem }));
+    expect(field).toHaveValue('ERP-FIN - Implantação do ERP financeiro');
+    fireEvent.click(within(dialog).getByRole('button', { name: text.form.save }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: text.form.editTitle })).not.toBeInTheDocument();
+    });
+    // The folder changes first, so a folder refused leaves the data as they were.
+    expect(requests).toEqual(['PUT folder null', 'PUT ERP-FIN Implantação do ERP financeiro']);
+  });
+
+  it('Pasta sem ação para quem não escolhe', async () => {
+    permissions = { ...permissions, canChooseFolder: false };
+    const dialog = await openEdit();
+
+    expect(within(dialog).getByRole('textbox', { name: text.form.code })).toBeVisible();
+    expect(
+      within(dialog).queryByRole('textbox', { name: folderText.field }),
     ).not.toBeInTheDocument();
   });
 });

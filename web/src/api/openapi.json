@@ -2895,6 +2895,127 @@
         }
       }
     },
+    "/api/projects/{id}/folder": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The folder of the project in the file storage (ADR-0122).",
+        "operationId": "GetProjectFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFolderResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "Changes the folder of the project to one that already exists, or back to the one the system creates, while the project has no files (ADR-0122).",
+        "operationId": "ChangeProjectFolder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectFolderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/members": {
       "get": {
         "tags": [
@@ -4277,6 +4398,69 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/project-folders": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The folders inside a folder of the file storage, or of its root, and whether each may be the folder of a project (ADR-0122).",
+        "operationId": "ListProjectFolders",
+        "parameters": [
+          {
+            "name": "parentId",
+            "in": "query",
+            "description": "The folder whose folders are listed, by the id the list gave; none for the root.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "The project being edited, whose own folder may be chosen again.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFolderChoicesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -11482,9 +11666,15 @@
               "string"
             ],
             "format": "date"
+          },
+          "folderId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the\nschedule is made from it, starting on `scheduleStart` (ADR-0017)."
+        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the\nschedule is made from it, starting on `scheduleStart` (ADR-0017). With `folderId`, a folder of the file storage\nthat already exists, from `GET /api/project-folders`, holds the files instead of the one the system creates\n(ADR-0122)."
       },
       "NewScheduleItemRequest": {
         "required": [
@@ -12518,6 +12708,116 @@
         },
         "description": "What deleting the project would remove (ADR-0041): how many items of each kind it has in every module."
       },
+      "ProjectFolderChoiceResponse": {
+        "required": [
+          "id",
+          "name",
+          "refusal",
+          "projectCode"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "refusal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectFolderRefusal"
+              }
+            ]
+          },
+          "projectCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A folder of the file storage (ADR-0122): when it may not be the folder of a project, why, and the code of the\nproject that uses it or holds it."
+      },
+      "ProjectFolderChoicesResponse": {
+        "required": [
+          "current",
+          "folders"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectFolderChoiceResponse"
+              }
+            ]
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFolderChoiceResponse"
+            }
+          }
+        },
+        "description": "The folder listed (none for the root, which is never chosen) and the folders inside it, in alphabetical order."
+      },
+      "ProjectFolderRefusal": {
+        "enum": [
+          "InUse",
+          "InsideProject",
+          "ProjectsFolder",
+          "AboveProjects",
+          "SystemFolder",
+          "NotFound",
+          null
+        ]
+      },
+      "ProjectFolderRequest": {
+        "required": [
+          "folderId"
+        ],
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A folder that already exists, from `GET /api/project-folders`; none goes back to the folder the system creates."
+      },
+      "ProjectFolderResponse": {
+        "required": [
+          "name",
+          "chosen",
+          "hasFiles",
+          "canChange"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "chosen": {
+            "type": "boolean"
+          },
+          "hasFiles": {
+            "type": "boolean"
+          },
+          "canChange": {
+            "type": "boolean"
+          }
+        },
+        "description": "The folder of the project in the file storage (ADR-0122): its name, whether someone chose it among the ones that\nalready existed, whether a module stored files of the project (then it stays) and whether the person may change it."
+      },
       "ProjectListItemResponse": {
         "required": [
           "id",
@@ -12746,7 +13046,8 @@
           "canManagePeople",
           "canManageManagers",
           "canEditSchedule",
-          "canDelete"
+          "canDelete",
+          "canChooseFolder"
         ],
         "type": "object",
         "properties": {
@@ -12768,6 +13069,10 @@
           "canDelete": {
             "type": "boolean",
             "description": "Deletes the project for good, with everything in it: only the Administrator (ADR-0041)."
+          },
+          "canChooseFolder": {
+            "type": "boolean",
+            "description": "Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122)."
           }
         },
         "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."

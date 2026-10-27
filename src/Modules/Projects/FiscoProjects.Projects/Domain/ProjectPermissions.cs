@@ -18,6 +18,10 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// </param>
 /// <param name="CanUpdateOwnProgress">Updates the progress of the tasks the person is in charge of (ADR-0043).</param>
 /// <param name="CanDelete">Deletes the project for good, with everything in it: only the Administrator (ADR-0041).</param>
+/// <param name="CanChooseFolder">
+/// Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager
+/// (ADR-0122).
+/// </param>
 public sealed record ProjectPermissions(
     bool CanView,
     bool CanEditData,
@@ -26,9 +30,10 @@ public sealed record ProjectPermissions(
     bool CanManageManagers,
     bool CanEditSchedule,
     bool CanUpdateOwnProgress,
-    bool CanDelete = false)
+    bool CanDelete = false,
+    bool CanChooseFolder = false)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true);
     private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)

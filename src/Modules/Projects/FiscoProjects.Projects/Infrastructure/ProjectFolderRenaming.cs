@@ -17,7 +17,8 @@ internal sealed partial class ProjectFolderRenaming(
     {
         ArgumentNullException.ThrowIfNull(project);
         var name = project.FolderName;
-        if (project.StorageFolderId is not { } folderId || project.StorageFolderName == name)
+        // A folder someone chose keeps its name (ADR-0122).
+        if (project.StorageFolderId is not { } folderId || project.StorageFolderChosen || project.StorageFolderName == name)
         {
             return;
         }
