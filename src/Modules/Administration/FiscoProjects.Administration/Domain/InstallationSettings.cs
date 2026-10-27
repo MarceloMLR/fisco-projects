@@ -72,6 +72,12 @@ public sealed partial class InstallationSettings : Entity
     /// <summary>How many years the audit is kept; the monthly cleanup removes what is older (ADR-0058, ADR-0110).</summary>
     public int AuditRetentionYears { get; private set; } = DefaultAuditRetentionYears;
 
+    /// <summary>
+    /// The folder of the projects in the file storage, with the folders separated by "/": where the folder of each new
+    /// project is created; empty for the root of the storage (ADR-0121).
+    /// </summary>
+    public string ProjectsFolder { get; private set; } = string.Empty;
+
     /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082).</summary>
     public string? MainColor { get; private set; }
 
@@ -179,6 +185,9 @@ public sealed partial class InstallationSettings : Entity
             ? years
             : throw new ArgumentOutOfRangeException(
                 nameof(years), years, $"The audit is kept from {MinAuditRetentionYears} to {MaxAuditRetentionYears} years.");
+
+    /// <summary>The folder of the projects, already checked against the rules of names of the storage.</summary>
+    public void ChangeProjectsFolder(string folder) => ProjectsFolder = folder;
 
     public void Rename(string name) =>
         Name = ValidName(name) ?? throw new ArgumentException(

@@ -88,6 +88,13 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(90);
 
+                    b.Property<string>("ProjectsFolder")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -107,6 +114,7 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                             DailySummaryAt = new TimeOnly(7, 30, 0),
                             Name = "FiscoProjects",
                             NotificationRetentionDays = 90,
+                            ProjectsFolder = "",
                             TimeZone = "America/Sao_Paulo"
                         });
                 });
