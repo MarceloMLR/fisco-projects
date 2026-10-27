@@ -4,7 +4,7 @@
 
 ## 2. Armazenamento
 
-- [x] 2.1 `RenameFolderAsync` no contrato e `StoragePaths` no `Files.Contracts`, com os testes do contrato "Renomear pasta", "Nome já usado ao lado" e "Pasta que não existe" nas duas implementações
+- [x] 2.1 `RenameFolderAsync` no contrato e `FileNames.IsKeptAsTyped` no `Files.Contracts`, com os testes do contrato "Renomear pasta", "Nome já usado ao lado" e "Pasta que não existe" nas duas implementações
 - [x] 2.2 Ids estáveis na implementação local (índice e diário), com o teste "Ids antigos da implementação local" e os testes do contrato passando
 - [x] 2.3 Renomear no SharePoint e no `FakeSharePoint`, com os testes do contrato
 - [x] 2.4 `StoredFilesRemoval` com a pasta que fica, com o teste "Até a pasta indicada"
