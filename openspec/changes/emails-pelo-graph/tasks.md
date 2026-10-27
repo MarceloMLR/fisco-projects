@@ -10,13 +10,13 @@
 
 ## 3. Infraestrutura e publicação
 
-- [ ] 3.1 `email_mailbox` no Terraform, `dev.tfvars` com os domínios locais e o teste "Caixa de envio pelo Terraform" e "E-mails da demonstração no ambiente dev"
-- [ ] 3.2 `infra/scripts/Grant-ExchangeMailbox.ps1`
-- [ ] 3.3 `plan.sh` com a caixa mascarada, com o teste "Caixa de envio mascarada"
+- [x] 3.1 `email_mailbox` no Terraform, `dev.tfvars` com os domínios locais e o teste "Caixa de envio pelo Terraform" e "E-mails da demonstração no ambiente dev"
+- [x] 3.2 `infra/scripts/Grant-ExchangeMailbox.ps1`
+- [x] 3.3 `plan.sh` com a caixa mascarada, com o teste "Caixa de envio mascarada"
 
 ## 4. Documentação e conferência
 
-- [ ] 4.1 `docs/instalacao.md`, `CLAUDE.md` e roadmap (M365-4)
+- [x] 4.1 `docs/instalacao.md`, `CLAUDE.md` e roadmap (M365-4)
 - [ ] 4.2 Build sem avisos, testes, `dotnet format`, `infra.sh`, lint, typecheck e `openspec validate --all --strict`
 
 ## Workflow follow-up
