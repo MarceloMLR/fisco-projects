@@ -1,12 +1,12 @@
 ## 1. Decisão
 
-- [ ] 1.1 ADR-0123, índice dos ADRs e glossário
+- [x] 1.1 ADR-0123, índice dos ADRs e glossário
 
 ## 2. Servidor
 
-- [ ] 2.1 `GraphEmailSender`, `EmailSendException` e o `HttpClient` `graph-mail`, com os testes "E-mail pela caixa compartilhada", "Caixa sem permissão de envio" e "Graph fora do ar"
-- [ ] 2.2 Opções do Graph conferidas ao subir, com os testes "Graph sem caixa de envio" e "Domínios locais em produção"
-- [ ] 2.3 Domínios locais na pasta (`EmailRouting`), com os testes "Endereço da demonstração na pasta" e "Endereço do tenant pelo Graph"
+- [x] 2.1 `GraphEmailSender`, `EmailSendException` e o `HttpClient` `graph-mail`, com os testes "E-mail pela caixa compartilhada", "Caixa sem permissão de envio" e "Graph fora do ar"
+- [x] 2.2 Opções do Graph conferidas ao subir, com os testes "Graph sem caixa de envio" e "Domínios locais em produção"
+- [x] 2.3 Domínios locais na pasta (`EmailRouting`), com os testes "Endereço da demonstração na pasta" e "Endereço do tenant pelo Graph"
 
 ## 3. Infraestrutura e publicação
 

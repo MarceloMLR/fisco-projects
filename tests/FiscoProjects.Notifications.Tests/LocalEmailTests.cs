@@ -39,6 +39,7 @@ public sealed class LocalEmailTests : IDisposable
     [Theory]
     [InlineData("", true)]
     [InlineData("Local", true)]
+    [InlineData("Graph", false)]
     [InlineData("Smtp", false)]
     public void TheProviderIsOneTheApplicationKnows(string provider, bool valid)
     {
@@ -47,6 +48,44 @@ public sealed class LocalEmailTests : IDisposable
         var result = validation.Validate(null, new EmailOptions { Provider = provider });
 
         result.Succeeded.Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("projetos", false)]
+    [InlineData("FiscoProjects <projetos@empresa.example>", false)]
+    [InlineData("projetos@empresa.example", true)]
+    public void TheGraphNeedsTheAddressOfTheMailbox(string? mailbox, bool valid)
+    {
+        var validation = new EmailOptionsValidation(new Environment(Environments.Production));
+
+        var result = validation.Validate(null, new EmailOptions { Provider = EmailOptions.GraphProvider, Mailbox = mailbox });
+
+        result.Succeeded.Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData("", false)]
+    [InlineData("marina@empresa.example", false)]
+    [InlineData("empresa.example", true)]
+    public void TheLocalDomainsAreDomains(string domain, bool valid)
+    {
+        var validation = new EmailOptionsValidation(new Environment(Environments.Development));
+        var options = new EmailOptions { Provider = EmailOptions.GraphProvider, Mailbox = "projetos@empresa.example" };
+        options.Graph.LocalDomains.Add(domain);
+
+        validation.Validate(null, options).Succeeded.Should().Be(valid);
+    }
+
+    [Theory]
+    [InlineData("marina.costa@empresa.example", true)]
+    [InlineData("Marina.Costa@EMPRESA.EXAMPLE", true)]
+    [InlineData("marina.costa@sub.empresa.example", false)]
+    [InlineData("empresa.example@contoso.example", false)]
+    [InlineData("sem-arroba", false)]
+    public void TheLocalDomainsAreTheWholeDomainOfTheAddress(string address, bool local)
+    {
+        EmailRouting.IsLocal(address, ["empresa.example"]).Should().Be(local);
     }
 
     [Theory]

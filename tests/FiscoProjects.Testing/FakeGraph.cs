@@ -11,11 +11,16 @@ namespace FiscoProjects.Testing;
 public sealed record FakeGraphUser(
     string Id, string DisplayName, string? Mail, string UserPrincipalName, bool Guest = false, bool Enabled = true);
 
+/// <summary>An e-mail the simulation accepted from a mailbox: what the sending gave to Graph.</summary>
+public sealed record FakeGraphMail(
+    string Mailbox, string Subject, string ContentType, string Content, string ToAddress, string ToName, bool SaveToSentItems);
+
 /// <summary>
 /// Microsoft Graph simulated inside the process (ADR-0056, ADR-0119): the list and the search of the users of a
-/// fictitious tenant and one user by id, as the directory of the people asks them. Like the real one, the search finds
-/// the beginning of the words of the name and the beginning of the e-mail and of the sign-in name, without telling case
-/// apart, and asks for the header of the advanced queries. Nothing reaches the network.
+/// fictitious tenant and one user by id, as the directory of the people asks them, and the sending of e-mails from the
+/// mailboxes the application may send from (ADR-0123). Like the real one, the search finds the beginning of the words
+/// of the name and the beginning of the e-mail and of the sign-in name, without telling case apart, and asks for the
+/// header of the advanced queries; and a mailbox outside the scope of Exchange answers 403. Nothing reaches the network.
 /// </summary>
 public sealed partial class FakeGraph : HttpMessageHandler
 {
@@ -23,8 +28,15 @@ public sealed partial class FakeGraph : HttpMessageHandler
     public const string Token = "token-of-the-application-to-graph";
 
     private readonly ConcurrentQueue<Uri> _requests = new();
+    private readonly ConcurrentQueue<FakeGraphMail> _mail = new();
 
     public List<FakeGraphUser> Users { get; } = [];
+
+    /// <summary>The mailboxes the application may send from, as the scope of "Application Mail.Send" in Exchange.</summary>
+    public List<string> Mailboxes { get; } = [];
+
+    /// <summary>The e-mails accepted, in order.</summary>
+    public IReadOnlyList<FakeGraphMail> Mail => [.. _mail];
 
     /// <summary>When on, every request answers 503, as Graph out of service.</summary>
     public bool Down { get; set; }
@@ -49,6 +61,12 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
         var query = HttpUtility.ParseQueryString(address.Query);
         var path = address.AbsolutePath;
+        var send = SendMail().Match(path);
+        if (send.Success && request.Method == HttpMethod.Post)
+        {
+            return await SendMailAsync(Uri.UnescapeDataString(send.Groups[1].Value), request, cancellationToken);
+        }
+
         if (path == "/v1.0/users")
         {
             return List(request, query);
@@ -110,6 +128,33 @@ public sealed partial class FakeGraph : HttpMessageHandler
         return Json(new { value = found.Select(user => Shown(user, query["$select"], withState: false)).ToList() });
     }
 
+    private async Task<HttpResponseMessage> SendMailAsync(string mailbox, HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (!Mailboxes.Contains(mailbox, StringComparer.OrdinalIgnoreCase))
+        {
+            // As Exchange answers a mailbox outside the scope of the role of the application.
+            return new HttpResponseMessage(HttpStatusCode.Forbidden)
+            {
+                Content = JsonContent.Create(
+                    new { error = new { code = "ErrorAccessDenied", message = $"Access is denied for {mailbox}." } },
+                    options: JsonSerializerOptions.Web),
+            };
+        }
+
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+        var message = body.RootElement.GetProperty("message");
+        var to = message.GetProperty("toRecipients")[0].GetProperty("emailAddress");
+        _mail.Enqueue(new FakeGraphMail(
+            mailbox,
+            message.GetProperty("subject").GetString()!,
+            message.GetProperty("body").GetProperty("contentType").GetString()!,
+            message.GetProperty("body").GetProperty("content").GetString()!,
+            to.GetProperty("address").GetString()!,
+            to.GetProperty("name").GetString()!,
+            body.RootElement.GetProperty("saveToSentItems").GetBoolean()));
+        return new HttpResponseMessage(HttpStatusCode.Accepted);
+    }
+
     /// <summary>The user with the fields asked, as Graph answers them.</summary>
     private static Dictionary<string, object?> Shown(FakeGraphUser user, string? select, bool withState)
     {
@@ -139,6 +184,9 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
     [GeneratedRegex("^/v1\\.0/users/([^/]+)$")]
     private static partial Regex OneUser();
+
+    [GeneratedRegex("^/v1\\.0/users/([^/]+)/sendMail$")]
+    private static partial Regex SendMail();
 
     [GeneratedRegex("\"(\\w+):((?:[^\"\\\\]|\\\\.)*)\"")]
     private static partial Regex Clause();
