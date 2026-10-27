@@ -1390,6 +1390,32 @@ describe('Dados pessoais na auditoria', () => {
   });
 });
 
+// Spec: projetos, requirement "Pasta anterior e auditoria da troca" (ADR-0122).
+describe('Pasta do projeto na auditoria', () => {
+  it('Troca da pasta na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'Project',
+        changes: [
+          {
+            field: 'StorageFolderName',
+            before: 'ERP-FIN - Implantação',
+            after: 'Alfa',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.changes).toEqual([
+      { field: 'Pasta dos arquivos', before: 'ERP-FIN - Implantação', after: 'Alfa' },
+    ]);
+  });
+});
+
 // Spec: projetos, requirement "Exclusão na auditoria" (ADR-0111).
 describe('Exclusão de projeto na auditoria', () => {
   it('Exclusão na auditoria', () => {

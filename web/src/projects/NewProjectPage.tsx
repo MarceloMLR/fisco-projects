@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 import { api, projectProblems } from '../api/client';
-import { queryKeys, templatesQuery } from '../api/queries';
+import { generalRulesQuery, queryKeys, templatesQuery } from '../api/queries';
 import { ClientDialog } from '../admin/ClientDialog';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
@@ -22,6 +22,9 @@ import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { ClientSelectField } from './ClientSelectField';
+import type { ChosenFolder } from './ProjectFolderDialog';
+import { ProjectFolderField } from './ProjectFolderField';
+import { systemFolderPath } from './projectFolder';
 import { ScheduleOriginChoice, TemplatePreview } from './TemplateChoice';
 import {
   invalidFields,
@@ -100,6 +103,10 @@ export function NewProjectPage() {
   const { session } = useSession();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [newClient, setNewClient] = useState(false);
+  // The folder of the files: one that already exists, or the one the system creates (ADR-0122).
+  const [folder, setFolder] = useState<ChosenFolder | null>(null);
+  const [folderError, setFolderError] = useState<string>();
+  const rules = useQuery(generalRulesQuery());
   const me = session.status === 'signed-in' ? session.user : undefined;
   const isAdministrator = me?.role === 'Administrator';
 
@@ -146,6 +153,8 @@ export function NewProjectPage() {
   const manager = useWatch({ control, name: 'manager' });
   const otherManager = manager !== null && me !== undefined && manager.id !== me.id;
   const techLead = useWatch({ control, name: 'techLead' });
+  const typedCode = useWatch({ control, name: 'code' });
+  const typedName = useWatch({ control, name: 'name' });
   const errorText = (message: string | undefined) =>
     isProjectFieldError(message) ? t(message) : undefined;
   const codeError =
@@ -166,6 +175,7 @@ export function NewProjectPage() {
           techLeadId: values.techLead?.id ?? null,
           templateId: values.origin === 'template' ? values.templateId : null,
           scheduleStart: values.origin === 'template' ? values.scheduleStart : null,
+          folderId: folder?.id ?? null,
         },
       });
       if (data !== undefined) {
@@ -192,6 +202,10 @@ export function NewProjectPage() {
         scheduleStart: ['scheduleStart', projectFieldErrors.scheduleStartRequired],
       } as const;
       let known = false;
+      if (fields.includes('folderId')) {
+        setFolderError(t('projects.folder.invalid'));
+        known = true;
+      }
       for (const [field, [name, message]] of Object.entries(byField)) {
         if (fields.includes(field)) {
           setError(name, { message });
@@ -343,6 +357,20 @@ export function NewProjectPage() {
                 maxLength={4500}
                 error={errorText(errors.description?.message)}
                 {...register('description')}
+              />
+              <ProjectFolderField
+                value={folder}
+                onChange={(chosen) => {
+                  setFolder(chosen);
+                  setFolderError(undefined);
+                }}
+                systemText={
+                  systemFolderPath(rules.data?.projectsFolder ?? '', typedCode, typedName) ??
+                  t('projects.folder.pending')
+                }
+                systemHelper={t('projects.folder.newHelper')}
+                chosenHelper={t('projects.folder.chosenHelper')}
+                error={folderError}
               />
             </Box>
             <Box

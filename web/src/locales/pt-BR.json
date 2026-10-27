@@ -535,6 +535,7 @@
         "Description": "Descrição",
         "ClientId": "Cliente",
         "Status": "Status",
+        "StorageFolderName": "Pasta dos arquivos",
         "Tickets": "Chamados apagados",
         "Documents": "Documentos apagados",
         "Links": "Links apagados",
@@ -1646,6 +1647,42 @@
       },
       "messages": {
         "saved": "Modelo {{name}} salvo."
+      }
+    },
+    "folder": {
+      "field": "Pasta dos arquivos",
+      "choose": "Escolher pasta…",
+      "useSystem": "Usar a pasta criada pelo sistema",
+      "pending": "Criada com o código e o nome do projeto",
+      "newHelper": "O sistema cria esta pasta com o projeto.",
+      "systemHelper": "Criada pelo sistema; acompanha o código e o nome do projeto.",
+      "chosenHelper": "Pasta escolhida: os arquivos do projeto vão para ela, e ela não muda de nome com o projeto.",
+      "locked": "A pasta não muda depois que o projeto guarda arquivos.",
+      "invalid": "Não foi possível usar esta pasta. Escolha outra.",
+      "dialogTitle": "Escolher pasta",
+      "use": "Usar esta pasta",
+      "path": "Caminho",
+      "root": "Início",
+      "folders": "Pastas",
+      "loading": "Carregando as pastas…",
+      "empty": "Nenhuma pasta aqui.",
+      "failed": "Não foi possível abrir a pasta. Volte ao início e tente de novo.",
+      "openOne": "Abra a pasta que o projeto vai usar.",
+      "refusals": {
+        "InUse": "Pasta do projeto {{code}}",
+        "InsideProject": "Dentro da pasta do projeto {{code}}",
+        "ProjectsFolder": "Pasta dos projetos",
+        "AboveProjects": "Guarda a pasta dos projetos ou a de um projeto",
+        "SystemFolder": "Pasta do sistema",
+        "NotFound": "A pasta não existe mais"
+      },
+      "why": {
+        "InUse": "Esta é a pasta do projeto {{code}}.",
+        "InsideProject": "Esta pasta fica dentro da pasta do projeto {{code}}.",
+        "ProjectsFolder": "A pasta dos projetos não pode ser a pasta de um projeto. Abra uma pasta dentro dela.",
+        "AboveProjects": "Esta pasta guarda a pasta dos projetos ou a de um projeto. Abra uma pasta dentro dela.",
+        "SystemFolder": "Esta é a pasta do sistema.",
+        "NotFound": "Esta pasta não existe mais."
       }
     }
   },

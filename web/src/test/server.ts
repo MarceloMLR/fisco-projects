@@ -314,6 +314,7 @@ function demoProject(
       canManageManagers: status !== 'Completed' && status !== 'Cancelled',
       canEditSchedule: status !== 'Completed' && status !== 'Cancelled',
       canDelete: false,
+      canChooseFolder: false,
     },
     scheduleStart: null,
     scheduleEnd: null,
