@@ -1365,6 +1365,29 @@ describe('Dados pessoais na auditoria', () => {
 
     expect(changed.changes).toEqual([{ field: 'Guardar auditoria por', before: '5', after: '7' }]);
   });
+
+  it('Pasta dos projetos na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'InstallationSettings',
+        changes: [
+          {
+            field: 'ProjectsFolder',
+            before: '',
+            after: 'Projetos',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.changes).toEqual([
+      { field: 'Pasta dos projetos', before: '', after: 'Projetos' },
+    ]);
+  });
 });
 
 // Spec: projetos, requirement "Exclusão na auditoria" (ADR-0111).

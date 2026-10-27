@@ -61,7 +61,8 @@ type SettingsField =
   | 'DailySummaryAt'
   | 'NotificationRetentionDays'
   | 'DarkLogoFileName'
-  | 'AuditRetentionYears';
+  | 'AuditRetentionYears'
+  | 'ProjectsFolder';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
@@ -71,6 +72,7 @@ const settingsFields: readonly string[] = [
   'NotificationRetentionDays',
   'DarkLogoFileName',
   'AuditRetentionYears',
+  'ProjectsFolder',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
