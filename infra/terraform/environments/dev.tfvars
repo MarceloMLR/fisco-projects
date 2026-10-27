@@ -15,6 +15,8 @@ app_is_database_admin  = true
 app_settings = {
   FileStorage__Local__RootPath = "/home/data/files"
   Email__Local__Folder         = "/home/data/emails"
+  # With the shared mailbox, the e-mails to the people of the demonstration stay in the folder (ADR-0123).
+  Email__Graph__LocalDomains__0 = "empresa.example"
   # The first start applies every migration on the Basic plan, which takes a few minutes.
   WEBSITES_CONTAINER_START_TIME_LIMIT = "600"
 }

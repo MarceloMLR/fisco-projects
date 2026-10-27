@@ -36,6 +36,17 @@ if [ -n "$site_url" ]; then
   export TF_VAR_sharepoint_site_url=$site_url
 fi
 
+# The shared mailbox of the e-mails names the domain of the tenant (ADR-0123): read and masked the same way. Without it,
+# the e-mails leave as the settings of the environment say.
+mailbox=$(az webapp config appsettings list --resource-group "rg-$name" --name "app-$name" \
+  --query "[?name=='Email__Mailbox'].value | [0]" --output tsv)
+if [ -n "$mailbox" ]; then
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    echo "::add-mask::$mailbox"
+  fi
+  export TF_VAR_email_mailbox=$mailbox
+fi
+
 terraform=$(bash scripts/ci/terraform.sh)
 plan=$(mktemp)
 trap 'rm -f "$plan"' EXIT

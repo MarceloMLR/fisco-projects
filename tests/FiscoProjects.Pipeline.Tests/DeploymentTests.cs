@@ -163,13 +163,40 @@ public sealed partial class DeploymentTests : IDisposable
         Calls().Should().NotContain(call => call.StartsWith("terraform sees the site", StringComparison.Ordinal));
     }
 
-    private void FakePlan(int planExit, string planOutput, string alertEmail = "alertas@empresa.example", string siteUrl = "")
+    // Spec: publicacao, requirement "Caixa de envio fora dos logs" (ADR-0123).
+    [Fact(DisplayName = "Caixa de envio mascarada")]
+    public void Plan_ReadsTheMailboxFromTheApplication_AndMasksIt()
+    {
+        Shell.SkipWithoutBash();
+        WorkflowLines().Should().NotContain(line => line.Contains("mailbox", StringComparison.OrdinalIgnoreCase),
+            "GitHub shows the variables of the workflow in the public logs");
+        FakePlan(planExit: 0, planOutput: "No changes.", mailbox: "fiscoprojects@empresa.example");
+
+        var result = Run("plan");
+
+        result.ExitCode.Should().Be(0, result.Errors);
+        result.Output.Split('\n').Take(2).Should().Equal(
+            "::add-mask::alertas@empresa.example", "::add-mask::fiscoprojects@empresa.example");
+        Calls().Should().ContainInOrder(
+            "az webapp config appsettings list --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --query [?name=='Email__Mailbox'].value | [0] --output tsv",
+            "terraform sees the mailbox fiscoprojects@empresa.example");
+
+        File.Delete(Path.Combine(_fakes, "calls"));
+        FakePlan(planExit: 0, planOutput: "No changes.");
+        var withoutMailbox = Run("plan");
+        withoutMailbox.ExitCode.Should().Be(0, withoutMailbox.Errors);
+        Calls().Should().NotContain(call => call.StartsWith("terraform sees the mailbox", StringComparison.Ordinal));
+    }
+
+    private void FakePlan(
+        int planExit, string planOutput, string alertEmail = "alertas@empresa.example", string siteUrl = "", string mailbox = "")
     {
         Fake("az", $$"""
             echo "az $*" >> "$FAKES/calls"
             case "$*" in
               *"action-group"*) echo "{{alertEmail}}" ;;
-              *"appsettings"*) echo "{{siteUrl}}" ;;
+              *"FileStorage__SharePoint__SiteUrl"*) echo "{{siteUrl}}" ;;
+              *"Email__Mailbox"*) echo "{{mailbox}}" ;;
             esac
             """);
         File.WriteAllText(Path.Combine(_fakes, "plan-output"), planOutput + "\n");
@@ -177,6 +204,7 @@ public sealed partial class DeploymentTests : IDisposable
             echo "terraform $*" >> "$FAKES/calls"
             if [ -n "${TF_VAR_alert_email:-}" ]; then echo "terraform sees the alert e-mail $TF_VAR_alert_email" >> "$FAKES/calls"; fi
             if [ -n "${TF_VAR_sharepoint_site_url:-}" ]; then echo "terraform sees the site $TF_VAR_sharepoint_site_url" >> "$FAKES/calls"; fi
+            if [ -n "${TF_VAR_email_mailbox:-}" ]; then echo "terraform sees the mailbox $TF_VAR_email_mailbox" >> "$FAKES/calls"; fi
             case "$*" in
               "version -json") echo '{"terraform_version": "1.16.5"}' ;;
               *" plan "*) cat "$FAKES/plan-output"; exit {{planExit}} ;;
