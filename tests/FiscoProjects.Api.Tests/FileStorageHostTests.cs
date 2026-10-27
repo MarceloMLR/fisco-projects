@@ -1,4 +1,6 @@
 using FiscoProjects.Files.Contracts;
+using FiscoProjects.Testing;
+using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -43,6 +45,38 @@ public sealed class FileStorageHostTests : IDisposable
             .Which.Message.Should().Contain("not allowed in production");
     }
 
+    // Spec: armazenamento-de-arquivos, requirement "Arquivos no SharePoint" (ADR-0120).
+    [Fact(DisplayName = "Implementação do SharePoint em produção")]
+    public async Task SharePointInProduction_StoresTheFilesInTheSite()
+    {
+        var site = new FakeSharePoint();
+        await using var app = await StartAsync(
+            TestApp.Production,
+            services =>
+            {
+                services.AddSingleton<IGraphTokens>(new FixedGraphToken());
+                services.AddHttpClient("sharepoint").ConfigurePrimaryHttpMessageHandler(() => site);
+            },
+            ("FileStorage:Provider", "SharePoint"),
+            ("FileStorage:SharePoint:SiteUrl", FakeSharePoint.SiteUrl));
+        var storage = app.Services.GetRequiredService<IFileStorage>();
+
+        var folder = await storage.EnsureFolderAsync(null, "ERP-FIN - Implantação/Documentos", Cancellation);
+        var stored = await storage.UploadAsync(folder.Id, "Contrato.pdf", new MemoryStream([1, 2, 3]), SameNameAction.NewVersion, Cancellation);
+
+        stored.Size.Should().Be(3);
+        site.NamesIn("Documentos", "ERP-FIN - Implantação/Documentos").Should().Equal("Contrato.pdf");
+    }
+
+    [Fact(DisplayName = "SharePoint sem o endereço do site")]
+    public async Task SharePointWithoutTheSite_StopsTheApplication()
+    {
+        var start = () => StartAsync(TestApp.Development, ("FileStorage:Provider", "SharePoint"), ("FileStorage:SharePoint:SiteUrl", "http://empresa.example/sites/Projetos"));
+
+        (await start.Should().ThrowAsync<OptionsValidationException>())
+            .Which.Message.Should().Contain("FileStorage:SharePoint:SiteUrl");
+    }
+
     [Fact(DisplayName = "Implementação desconhecida")]
     public async Task UnknownProvider_StopsTheApplication()
     {
@@ -61,8 +95,13 @@ public sealed class FileStorageHostTests : IDisposable
     }
 
     private static Task<WebApplication> StartAsync(string environment, params (string Key, string Value)[] settings) =>
+        StartAsync(environment, _ => { }, settings);
+
+    private static Task<WebApplication> StartAsync(
+        string environment, Action<IServiceCollection> services, params (string Key, string Value)[] settings) =>
         TestApp.ComposedAsync(environment, _ => { }, builder =>
         {
+            services(builder.Services);
             // No database here: this checks only how the file storage is set up.
             builder.Configuration["Database:MigrateOnStartup"] = "false";
             if (environment == TestApp.Production)
@@ -75,4 +114,9 @@ public sealed class FileStorageHostTests : IDisposable
                 builder.Configuration[key] = value;
             }
         });
+
+    private sealed class FixedGraphToken : IGraphTokens
+    {
+        public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult(FakeSharePoint.Token);
+    }
 }

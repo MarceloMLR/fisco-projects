@@ -57,6 +57,14 @@ locals {
     EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id
     EntraSignIn__ClientId = module.entra.client_id
   }) : {}
+  # The files in a site of SharePoint (ADR-0030, ADR-0120); without the site, the settings of the environment decide.
+  storage_settings = var.sharepoint_site_url == null ? {} : merge(
+    {
+      FileStorage__Provider            = "SharePoint"
+      FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url
+    },
+    var.sharepoint_library == null ? {} : { FileStorage__SharePoint__Library = var.sharepoint_library },
+  var.sharepoint_root_folder == null ? {} : { FileStorage__SharePoint__RootFolder = var.sharepoint_root_folder })
 }
 
 module "database" {
@@ -135,7 +143,7 @@ module "app" {
   key_vault_id           = module.key_vault.id
   key_vault_name         = module.key_vault.name
   syncfusion_in_vault    = var.syncfusion_license_in_key_vault
-  app_settings           = merge(var.app_settings, local.entra_settings)
+  app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)
   database_admin         = var.app_is_database_admin
   database_admins_group  = module.database.admins_group_object_id
   tags                   = local.tags

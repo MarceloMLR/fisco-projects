@@ -165,7 +165,7 @@ public sealed partial class InfrastructureTests
             .And.Contain("app_identity_principal_id = module.app.principal_id")
             .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
             .And.Contain("EntraSignIn__ClientId = module.entra.client_id")
-            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings)");
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)");
         Read("modules", "app", "main.tf").Should().Contain("ASPNETCORE_FORWARDEDHEADERS_ENABLED = \"true\"");
         var variables = Read("variables.tf");
         Default(variables, "entra_sign_in").Should().Be("true");
@@ -174,17 +174,39 @@ public sealed partial class InfrastructureTests
     }
 
     [Fact(DisplayName = "Permissão para ler o diretório")]
-    public void EntraApplication_ReadsTheDirectory_AndNothingElse()
+    public void EntraApplication_ReadsTheDirectory_AndWritesOnlyInTheSitesGiven()
     {
         var entra = Read("modules", "entra", "main.tf");
 
         entra.Should().Contain("directory_role = \"User.Read.All\"")
+            .And.Contain("sites_role     = \"Sites.Selected\"")
             .And.Contain("id   = data.azuread_service_principal.graph.app_role_ids[local.directory_role]\n      type = \"Role\"")
+            .And.Contain("id   = data.azuread_service_principal.graph.app_role_ids[local.sites_role]\n      type = \"Role\"")
             .And.Contain("app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.directory_role]")
+            .And.Contain("app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.sites_role]")
             .And.Contain("principal_object_id = azuread_service_principal.main.object_id");
-        Regex.Matches(entra, "type = \"Role\"").Should().HaveCount(1, "no other permission of the application (ADR-0119)");
-        Regex.Matches(entra, "resource \"azuread_app_role_assignment\"").Should().HaveCount(1);
-        entra.Should().NotContain("Mail.Send").And.NotContain("Sites.").And.NotContain("ReadWrite");
+        Regex.Matches(entra, "type = \"Role\"").Should().HaveCount(2, "no other permission of the application (ADR-0119, ADR-0120)");
+        Regex.Matches(entra, "resource \"azuread_app_role_assignment\"").Should().HaveCount(2);
+        entra.Should().NotContain("Mail.Send").And.NotContain("Sites.ReadWrite").And.NotContain("Sites.FullControl")
+            .And.NotContain("Files.").And.NotContain("ReadWrite");
+    }
+
+    // Spec: infraestrutura, requirement "Arquivos no site do SharePoint" (ADR-0120).
+    [Fact(DisplayName = "Arquivos no site do SharePoint")]
+    public void SharePointSite_IsPersonal_AndGivenOnlyToWrite()
+    {
+        var main = Read("main.tf");
+        var variables = Read("variables.tf");
+        var script = Repository.Read("infra", "scripts", "Grant-SharePointSite.ps1");
+
+        main.Should().Contain("FileStorage__Provider            = \"SharePoint\"")
+            .And.Contain("FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url")
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings)");
+        Default(variables, "sharepoint_site_url").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
+        Default(variables, "sharepoint_root_folder").Should().Be("null", "the library itself, in a site only for the system");
+        Read("environments", "dev.tfvars").Should().NotContain("sharepoint_site_url");
+        script.Should().Contain("roles               = @('write')").And.Contain("-Scopes 'Sites.FullControl.All'")
+            .And.NotContain("'owner'").And.NotContain("'fullcontrol'");
     }
 
     [Fact(DisplayName = "Aplicativo do Entra sem segredo")]

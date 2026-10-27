@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="../../../FiscoProjects.SharedKernel/FiscoProjects.SharedKernel.csproj" />
     <ProjectReference Include="../FiscoProjects.Files.Contracts/FiscoProjects.Files.Contracts.csproj" />
+    <!-- The token of the application to Microsoft Graph, for the SharePoint storage (ADR-0120). -->
+    <ProjectReference Include="../../Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

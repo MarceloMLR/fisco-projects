@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FiscoProjects.Users.Application;
+using FiscoProjects.Users.Contracts;
 using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Users.Infrastructure;

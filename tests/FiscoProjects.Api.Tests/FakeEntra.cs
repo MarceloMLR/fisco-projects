@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;

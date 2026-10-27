@@ -1,6 +1,7 @@
 using System.Web;
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

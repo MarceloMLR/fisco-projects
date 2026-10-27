@@ -101,6 +101,29 @@ variable "first_administrator_object_id" {
   default     = null
 }
 
+variable "sharepoint_site_url" {
+  description = "Address of the SharePoint site of the files (ADR-0030, ADR-0120), in local.auto.tfvars: it names the tenant. Null keeps the file storage of app_settings."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.sharepoint_site_url == null || can(regex("^https://[^/?#]+(/[^?#]*)?$", var.sharepoint_site_url))
+    error_message = "The SharePoint site is an https address, as https://contoso.sharepoint.com/sites/Projetos."
+  }
+}
+
+variable "sharepoint_library" {
+  description = "Document library of the SharePoint site; null for the default library of the site."
+  type        = string
+  default     = null
+}
+
+variable "sharepoint_root_folder" {
+  description = "Folder inside the library where the files of the system go (ADR-0030), created when missing; null for the library itself."
+  type        = string
+  default     = null
+}
+
 variable "syncfusion_license_in_key_vault" {
   description = "Whether the secret Syncfusion--LicenseKey already exists in the Key Vault; when true, the application reads it from there (ADR-0051, ADR-0087)."
   type        = bool
