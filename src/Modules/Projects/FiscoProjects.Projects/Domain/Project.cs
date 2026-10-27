@@ -63,6 +63,18 @@ public sealed class Project : Entity
 
     public DateTime CreatedAt { get; private init; }
 
+    /// <summary>
+    /// The folder of the project in the file storage, where every module keeps its files (ADR-0121); null until the
+    /// first file. Kept by the store, outside the audit, as the ids of the folders of the other modules.
+    /// </summary>
+    public string? StorageFolderId { get; private set; }
+
+    /// <summary>The name the folder was created or renamed with last, so a rename that failed is tried again.</summary>
+    public string? StorageFolderName { get; private set; }
+
+    /// <summary>The name of the folder of the project: "{code} - {name}".</summary>
+    public string FolderName => FolderNameOf(Code, Name);
+
     public IReadOnlyList<ProjectMember> Members => _members;
 
     /// <summary>Completed or cancelled: read-only until reopened.</summary>
@@ -167,6 +179,13 @@ public sealed class Project : Entity
         _members.Remove(member);
         return true;
     }
+
+    /// <summary>
+    /// The name of the folder of a project in the file storage (ADR-0030, ADR-0121), one folder: a "/" or "\\" of the
+    /// name becomes "-", as the folder was always named.
+    /// </summary>
+    public static string FolderNameOf(string code, string name) =>
+        $"{code} - {name}".Replace('/', '-').Replace('\\', '-');
 
     /// <summary>Changes the code, the name, the description and the client.</summary>
     /// <exception cref="ProjectClosedException">The project is completed or cancelled.</exception>

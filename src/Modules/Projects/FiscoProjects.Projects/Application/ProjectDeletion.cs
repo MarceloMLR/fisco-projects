@@ -1,3 +1,4 @@
+using FiscoProjects.Files.Contracts;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Domain;
 
@@ -69,10 +70,12 @@ public sealed class GetProjectDeletion(IProjectStore store, IScheduleStore sched
 
 /// <summary>
 /// Deletes a project for good, with everything in it, by the Administrator, who types its code to confirm (ADR-0041,
-/// ADR-0111): first each module removes the files it stored, then the rows of every module go in one transaction, with
-/// one audit record. A failure leaves the project, and deleting it again finishes the work.
+/// ADR-0111): first each module removes the files it stored, up to the folder of the project, which goes last when it
+/// was left empty, never the folder of the projects (ADR-0121); then the rows of every module go in one transaction,
+/// with one audit record. A failure leaves the project, and deleting it again finishes the work.
 /// </summary>
-public sealed class DeleteProject(IProjectStore store, IProjectDeletionStore deletion, IEnumerable<IProjectDeletion> modules)
+public sealed class DeleteProject(
+    IProjectStore store, IProjectDeletionStore deletion, IEnumerable<IProjectDeletion> modules, IFileStorage files)
 {
     public async Task<ProjectDeletionOutcome> ExecuteAsync(
         Guid id, string? code, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -97,7 +100,12 @@ public sealed class DeleteProject(IProjectStore store, IProjectDeletionStore del
 
         foreach (var module in modules)
         {
-            await module.DeleteFilesAsync(id, cancellationToken);
+            await module.DeleteFilesAsync(id, project.StorageFolderId, cancellationToken);
+        }
+
+        if (project.StorageFolderId is { } folder)
+        {
+            await files.DeleteFolderIfEmptyAsync(folder, cancellationToken);
         }
 
         await deletion.DeleteAsync(project, cancellationToken);

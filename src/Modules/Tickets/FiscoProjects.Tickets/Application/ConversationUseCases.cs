@@ -33,7 +33,7 @@ public sealed record ConversationResult(ConversationOutcome Outcome, string? Fil
 }
 
 /// <summary>Keeps the files of a ticket in its folder, made with the first one (ADR-0030).</summary>
-public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings settings)
+public sealed class TicketFiles(IFileStorage files, IProjectStorage storage, TicketAttachmentSettings settings)
 {
     /// <summary>Why one of the files is refused; null when all are taken. Each content is read back from its start.</summary>
     public async Task<ConversationResult?> RefusalOfAsync(IReadOnlyList<NewAttachment> attachments, CancellationToken cancellationToken)
@@ -59,8 +59,8 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
     }
 
     /// <summary>
-    /// Stores the files in the folder of the ticket, "{code} - {name}/Chamados/#{number}" under the root while the
-    /// project has no folder of its own (ADR-0030), keeping both when a name repeats.
+    /// Stores the files in the folder of the ticket, "Chamados/#{number}" inside the folder of the project (ADR-0030,
+    /// ADR-0121), keeping both when a name repeats. A folder removed straight in the storage is made again, once.
     /// </summary>
     public async Task<IReadOnlyList<TicketAttachment>> StoreAsync(
         Ticket ticket,
@@ -76,16 +76,27 @@ public sealed class TicketFiles(IFileStorage files, TicketAttachmentSettings set
             return [];
         }
 
-        var folder = ticket.AttachmentFolderId
-            ?? (await files.EnsureFolderAsync(
-                null, $"{project.Code} - {project.Name}/Chamados/#{ticket.Number}", cancellationToken)).Id;
+        var path = $"Chamados/#{ticket.Number}";
+        var folder = ticket.AttachmentFolderId ?? await storage.EnsureFolderAsync(project.Id, path, cancellationToken);
         ticket.KeepAttachmentFolder(folder);
         var stored = new List<TicketAttachment>();
         try
         {
             foreach (var attachment in attachments)
             {
-                var file = await files.UploadAsync(folder, attachment.Name, attachment.Content, SameNameAction.KeepBoth, cancellationToken);
+                StoredFile file;
+                try
+                {
+                    file = await files.UploadAsync(folder, attachment.Name, attachment.Content, SameNameAction.KeepBoth, cancellationToken);
+                }
+                catch (StorageFolderNotFoundException) when (stored.Count == 0 && attachment.Content.CanSeek)
+                {
+                    folder = await storage.EnsureFolderAsync(project.Id, path, cancellationToken);
+                    ticket.KeepAttachmentFolder(folder);
+                    attachment.Content.Position = 0;
+                    file = await files.UploadAsync(folder, attachment.Name, attachment.Content, SameNameAction.KeepBoth, cancellationToken);
+                }
+
                 stored.Add(new TicketAttachment(
                     ticket.Id, messageId, file.Id, file.Name, file.Size, FileTypes.ContentTypeOf(file.Name), uploadedById, now));
             }

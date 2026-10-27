@@ -11,7 +11,7 @@ internal sealed class CredentialProjectDeletion(CredentialsDbContext db) : IProj
     public async Task<IReadOnlyList<ProjectItemCount>> CountAsync(Guid projectId, CancellationToken cancellationToken) =>
         [new(ProjectItemKind.Credentials, await db.PortalCredentials.CountAsync(item => item.ProjectId == projectId, cancellationToken))];
 
-    public Task DeleteFilesAsync(Guid projectId, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task DeleteFilesAsync(Guid projectId, string? projectFolderId, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public async Task<IReadOnlyList<ProjectItemCount>> DeleteDataAsync(
         Guid projectId, DbTransaction transaction, CancellationToken cancellationToken)

@@ -14,7 +14,7 @@ internal sealed class NotificationProjectDeletion : IProjectDeletion
     public Task<IReadOnlyList<ProjectItemCount>> CountAsync(Guid projectId, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<ProjectItemCount>>([]);
 
-    public Task DeleteFilesAsync(Guid projectId, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task DeleteFilesAsync(Guid projectId, string? projectFolderId, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public async Task<IReadOnlyList<ProjectItemCount>> DeleteDataAsync(
         Guid projectId, DbTransaction transaction, CancellationToken cancellationToken)

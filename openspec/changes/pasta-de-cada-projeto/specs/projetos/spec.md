@@ -2,11 +2,11 @@
 
 ### Requirement: Pasta de cada projeto
 
-Cada projeto MUST ter uma pasta só no armazenamento, onde ficam todos os arquivos dele: os documentos, os pedidos de aceite e os anexos dos chamados. A pasta MUST ser criada quando o projeto guarda o primeiro arquivo, com o nome `{código} - {nome}`, dentro da pasta dos projetos da instalação, e a partir daí MUST ser achada pelo projeto, nunca pelo nome (ADR-0030, ADR-0121).
+Cada projeto MUST ter uma pasta só no armazenamento, onde ficam todos os arquivos dele: os documentos, os pedidos de aceite e os anexos dos chamados. A pasta MUST ser criada com o projeto, com as pastas de documentos, com o nome `{código} - {nome}`, dentro da pasta dos projetos da instalação, e a partir daí MUST ser achada pelo projeto, nunca pelo nome (ADR-0030, ADR-0121).
 
-#### Scenario: Pasta criada no primeiro arquivo
-- **WHEN** o gerente envia o primeiro documento de um projeto com a pasta dos projetos "Projetos"
-- **THEN** o documento fica em "Projetos/{código} - {nome}/Documentos/{pasta}"
+#### Scenario: Pasta criada com o projeto
+- **WHEN** o administrador cria um projeto com a pasta dos projetos "Projetos", e o gerente envia o primeiro documento
+- **THEN** "Projetos/{código} - {nome}" já tem as pastas de documentos, e o documento fica em ".../Documentos/{pasta}"
 
 #### Scenario: Tudo na mesma pasta
 - **WHEN** o projeto recebe um documento, um anexo de chamado e um pedido de aceite

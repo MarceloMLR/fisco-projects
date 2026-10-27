@@ -9,7 +9,7 @@ O administrador MUST poder escolher, na seção Arquivos das Configurações ger
 - **THEN** as Configurações gerais mostram o campo vazio, e as pastas dos projetos ficam na raiz do armazenamento
 
 #### Scenario: Escolher a pasta dos projetos
-- **WHEN** o administrador salva "Clientes/Projetos" e um projeto novo guarda o primeiro arquivo
+- **WHEN** o administrador salva "Clientes/Projetos" e cria um projeto
 - **THEN** a pasta do projeto é criada em "Clientes/Projetos", com as pastas que faltavam
 
 #### Scenario: Pasta dos projetos inválida

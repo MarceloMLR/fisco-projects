@@ -16,7 +16,7 @@ internal sealed class TicketProjectDeletion(TicketsDbContext db, IFileStorage fi
     public async Task<IReadOnlyList<ProjectItemCount>> CountAsync(Guid projectId, CancellationToken cancellationToken) =>
         [new(ProjectItemKind.Tickets, await db.Tickets.CountAsync(ticket => ticket.ProjectId == projectId, cancellationToken))];
 
-    public async Task DeleteFilesAsync(Guid projectId, CancellationToken cancellationToken)
+    public async Task DeleteFilesAsync(Guid projectId, string? projectFolderId, CancellationToken cancellationToken)
     {
         var tickets = db.Tickets.AsNoTracking().Where(ticket => ticket.ProjectId == projectId);
         var fileIds = await db.TicketAttachments.AsNoTracking()
@@ -27,7 +27,7 @@ internal sealed class TicketProjectDeletion(TicketsDbContext db, IFileStorage fi
             .Where(ticket => ticket.AttachmentFolderId != null)
             .Select(ticket => ticket.AttachmentFolderId!)
             .ToListAsync(cancellationToken);
-        await files.RemoveAsync(fileIds, folderIds, cancellationToken);
+        await files.RemoveAsync(fileIds, folderIds, projectFolderId, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ProjectItemCount>> DeleteDataAsync(

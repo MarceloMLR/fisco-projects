@@ -16,7 +16,7 @@
 
 ## 4. Pasta de cada projeto
 
-- [ ] 4.1 Pasta do projeto no `Projects` (migração e `IProjectStorage`), com os testes "Pasta criada no primeiro arquivo", "Projeto com a pasta de antes", "Pasta apagada por fora" e "Escolher a pasta dos projetos"
+- [ ] 4.1 Pasta do projeto no `Projects` (migração e `IProjectStorage`), com os testes "Pasta criada com o projeto", "Projeto com a pasta de antes", "Pasta apagada por fora" e "Escolher a pasta dos projetos"
 - [ ] 4.2 Documentos, pedidos de aceite e anexos dos chamados pela pasta do projeto, com o teste "Tudo na mesma pasta"
 - [ ] 4.3 Renomear a pasta com o projeto, com os testes "Renomear o projeto", "Nome da pasta já usado" e "Armazenamento fora do ar"
 - [ ] 4.4 Exclusão até a pasta do projeto (`IProjectDeletion`), com os testes "Arquivo de fora fica" e "Pasta dos projetos fica"
