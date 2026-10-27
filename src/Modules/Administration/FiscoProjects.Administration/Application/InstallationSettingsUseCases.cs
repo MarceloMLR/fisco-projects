@@ -58,9 +58,10 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
 
 /// <summary>
 /// The rules of the installation every person in a session needs: the time zone of the screens and the time of the
-/// daily summary, which the profile shows.
+/// daily summary, which the profile shows, and the ones the General settings show.
 /// </summary>
-public sealed record GeneralRules(string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears);
+public sealed record GeneralRules(
+    string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears, string ProjectsFolder);
 
 public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
@@ -68,7 +69,11 @@ public sealed class GetGeneralRules(IInstallationSettingsStore store)
     {
         var settings = await store.GetAsync(cancellationToken);
         return new GeneralRules(
-            settings.TimeZone, settings.DailySummaryAt, settings.NotificationRetentionDays, settings.AuditRetentionYears);
+            settings.TimeZone,
+            settings.DailySummaryAt,
+            settings.NotificationRetentionDays,
+            settings.AuditRetentionYears,
+            settings.ProjectsFolder);
     }
 }
 
@@ -81,12 +86,13 @@ public enum InstallationField
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
     AuditRetentionYears = 6,
+    ProjectsFolder = 7,
 }
 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
-/// summary, how many days the notifications are kept and how many years the audit is kept (none keeps the years it
-/// had, ADR-0110).
+/// summary, how many days the notifications are kept, how many years the audit is kept (none keeps the years it had,
+/// ADR-0110) and the folder of the projects (none keeps the one it had, ADR-0121).
 /// </summary>
 public sealed record InstallationChanges(
     string? Name,
@@ -94,7 +100,8 @@ public sealed record InstallationChanges(
     string? MainColor,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
-    int? AuditRetentionYears = null);
+    int? AuditRetentionYears = null,
+    string? ProjectsFolder = null);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -139,6 +146,12 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.AuditRetentionYears);
         }
 
+        var projectsFolder = ProjectsFolderOf(changes.ProjectsFolder);
+        if (changes.ProjectsFolder is not null && projectsFolder is null)
+        {
+            invalid.Add(InstallationField.ProjectsFolder);
+        }
+
         if (name is null || invalid.Count > 0)
         {
             return invalid;
@@ -155,8 +168,23 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             settings.ChangeAuditRetention(auditYears);
         }
 
+        if (projectsFolder is not null)
+        {
+            settings.ChangeProjectsFolder(projectsFolder);
+        }
+
         await store.SaveChangesAsync(cancellationToken);
         return [];
+    }
+
+    /// <summary>
+    /// The folder of the projects as kept: without spaces nor "/" at the ends, empty for the root of the storage, and
+    /// null when the storage would not keep it as typed (ADR-0121).
+    /// </summary>
+    public static string? ProjectsFolderOf(string? typed)
+    {
+        var folder = (typed ?? string.Empty).Trim().Trim('/').Trim();
+        return folder.Length == 0 || FileNames.IsKeptAsTyped(folder) ? folder : null;
     }
 }
 

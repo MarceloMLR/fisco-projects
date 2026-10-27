@@ -30,12 +30,13 @@ public interface IProjectDeletion
     Task<IReadOnlyList<ProjectItemCount>> CountAsync(Guid projectId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Removes the files the module stored for the project and the folders left empty, before the rows; a file already
-    /// gone is skipped.
+    /// Removes the files the module stored for the project and the folders left empty up to the folder of the project,
+    /// which stays for the Projects module to remove last (ADR-0121), before the rows; a file already gone is skipped.
     /// </summary>
     /// <param name="projectId">The project.</param>
+    /// <param name="projectFolderId">The folder of the project in the file storage; null when it has none.</param>
     /// <param name="cancellationToken">Stops the work.</param>
-    Task DeleteFilesAsync(Guid projectId, CancellationToken cancellationToken);
+    Task DeleteFilesAsync(Guid projectId, string? projectFolderId, CancellationToken cancellationToken);
 
     /// <summary>Removes the rows of the project, through the connection and the transaction of the deletion.</summary>
     /// <param name="projectId">The project.</param>

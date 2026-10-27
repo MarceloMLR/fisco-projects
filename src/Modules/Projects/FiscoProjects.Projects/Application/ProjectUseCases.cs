@@ -405,9 +405,10 @@ public sealed record ProjectChanges(string? Code, string? Name, string? Descript
 
 /// <summary>
 /// Changes the code, the name, the description and the client: the Administrator, the manager and the tech lead of an
-/// open project (ADR-0016, ADR-0043). A client that became inactive stays while it is not changed.
+/// open project (ADR-0016, ADR-0043). A client that became inactive stays while it is not changed. After saving, the
+/// folder of the project follows its code and name (ADR-0121).
 /// </summary>
-public sealed class ChangeProject(IProjectStore store, IClientStore clients)
+public sealed class ChangeProject(IProjectStore store, IClientStore clients, IProjectFolderRenaming folder)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(
         Guid id, ProjectChanges changes, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -448,7 +449,13 @@ public sealed class ChangeProject(IProjectStore store, IClientStore clients)
         }
 
         project.Change(data.Code, data.Name, data.Description, changes.ClientId);
-        return await ProjectSaving.SaveAsync(store, project, cancellationToken);
+        var saved = await ProjectSaving.SaveAsync(store, project, cancellationToken);
+        if (saved.Outcome == ProjectSaveOutcome.Saved)
+        {
+            await folder.FollowAsync(project, cancellationToken);
+        }
+
+        return saved;
     }
 }
 

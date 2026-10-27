@@ -298,8 +298,7 @@ public sealed class UploadDocument(
             return new(DocumentOutcome.Refused, Refusal: refusal);
         }
 
-        var storageFolder = await folders.StorageOfAsync(folder, area.Project, cancellationToken);
-        var stored = await files.UploadAsync(storageFolder, name, file.Content, SameNameAction.NewVersion, cancellationToken);
+        var stored = await folders.UploadAsync(folder, area.Project, name, file.Content, SameNameAction.NewVersion, cancellationToken);
         var now = clock.GetUtcNow().UtcDateTime;
         var document = await documents.FindByFileAsync(folder.Id, stored.Id, cancellationToken);
         var isNew = document is null;

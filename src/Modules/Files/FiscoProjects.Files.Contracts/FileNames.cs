@@ -1,8 +1,9 @@
-namespace FiscoProjects.Files.Application;
+namespace FiscoProjects.Files.Contracts;
 
 /// <summary>
 /// Names of files and folders adjusted to the SharePoint rules (ADR-0030, ADR-0079), and paths that never leave the
-/// root. Every implementation of the storage uses these rules, so a name is stored the same way everywhere.
+/// root. Every implementation of the storage uses these rules, so a name is stored the same way everywhere, and a
+/// module checks with them a path someone types, as the folder of the projects (ADR-0121).
 /// </summary>
 public static class FileNames
 {
@@ -11,6 +12,9 @@ public static class FileNames
 
     /// <summary>Longest name kept, extension included.</summary>
     public const int MaxLength = 200;
+
+    /// <summary>Longest path someone may type for a folder, as the folder of the projects.</summary>
+    public const int MaxPathLength = 400;
 
     /// <summary>Name of a file or folder whose name is empty after the adjustments.</summary>
     public const string Fallback = "file";
@@ -64,6 +68,14 @@ public static class FileNames
 
         return [.. parts.Select(Normalize)];
     }
+
+    /// <summary>
+    /// True when the storage keeps the path as typed: folders separated by "/", none empty, "." or "..", and each one
+    /// already within the SharePoint rules, up to <see cref="MaxPathLength"/> characters.
+    /// </summary>
+    public static bool IsKeptAsTyped(string path) =>
+        !string.IsNullOrEmpty(path) && path.Length <= MaxPathLength
+        && path.Split('/').All(part => part is not ("." or "..") && part.Length > 0 && Normalize(part) == part);
 
     /// <summary>The name of the n-th file kept beside another of the same name: "print (1).png".</summary>
     public static string Numbered(string name, int number)

@@ -92,6 +92,9 @@ public sealed class DocumentFolder : Entity
 
     public void KeepStorage(string folderId) => StorageFolderId = folderId;
 
+    /// <summary>Forgets the folder in the storage, removed outside the system, so it is made again (ADR-0121).</summary>
+    public void ForgetStorage() => StorageFolderId = null;
+
     /// <summary>The folders of a new project: a copy of the active default folders, in the order of the name.</summary>
     public static IReadOnlyList<DocumentFolder> For(Guid projectId, IEnumerable<DefaultFolder> defaults) =>
         [.. defaults.Where(folder => folder.IsActive)

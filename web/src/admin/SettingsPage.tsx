@@ -41,6 +41,7 @@ const fieldErrors = {
   dailySummaryRequired: 'settings.errors.dailySummaryRequired',
   retentionRange: 'settings.errors.retentionRange',
   auditRetentionRange: 'settings.errors.auditRetentionRange',
+  projectsFolderInvalid: 'settings.errors.projectsFolderInvalid',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
@@ -66,6 +67,8 @@ const form = z.object({
     .int({ error: fieldErrors.auditRetentionRange })
     .min(1, { error: fieldErrors.auditRetentionRange })
     .max(10, { error: fieldErrors.auditRetentionRange }),
+  // Where the folders of the new projects go in the file storage; the server checks the names (ADR-0121).
+  projectsFolder: z.string().trim(),
   // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
   mainColor: z
     .string()
@@ -317,6 +320,7 @@ export function SettingsPage() {
       dailySummaryAt: '',
       notificationRetentionDays: '',
       auditRetentionYears: '',
+      projectsFolder: '',
     },
     values:
       installation === undefined || rules === undefined
@@ -328,6 +332,7 @@ export function SettingsPage() {
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
             auditRetentionYears: String(rules.auditRetentionYears),
+            projectsFolder: rules.projectsFolder,
           },
   });
 
@@ -391,6 +396,7 @@ export function SettingsPage() {
       dailySummaryAt,
       notificationRetentionDays,
       auditRetentionYears,
+      projectsFolder,
     }) => {
       // The new logos stay on screen until the brand is read again, so the old ones never flash back.
       let logoSaved = false;
@@ -418,6 +424,7 @@ export function SettingsPage() {
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
               auditRetentionYears,
+              projectsFolder,
             },
           });
           if (response.status === 400) {
@@ -437,6 +444,9 @@ export function SettingsPage() {
             }
             if (invalid.includes('auditRetentionYears')) {
               setError('auditRetentionYears', { message: fieldErrors.auditRetentionRange });
+            }
+            if (invalid.includes('projectsFolder')) {
+              setError('projectsFolder', { message: fieldErrors.projectsFolderInvalid });
             }
             if (invalid.includes('timeZone') || invalid.length === 0) {
               setError('timeZone', { message: fieldErrors.timeZoneInvalid });
@@ -471,6 +481,7 @@ export function SettingsPage() {
   const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
   const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
   const auditRetentionError = errors.auditRetentionYears?.message as FieldError | undefined;
+  const projectsFolderError = errors.projectsFolder?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -630,6 +641,21 @@ export function SettingsPage() {
                       helper={t('settings.auditRetentionHint')}
                       error={auditRetentionError === undefined ? undefined : t(auditRetentionError)}
                       {...register('auditRetentionYears')}
+                    />
+                  </Box>
+                </Box>
+                <Box component="section" aria-labelledby="settings-files" sx={sectionSx}>
+                  <Box component="h2" id="settings-files" sx={sectionTitleSx}>
+                    {t('settings.files')}
+                  </Box>
+                  <Box sx={{ maxWidth: 520 }}>
+                    <TextField
+                      label={t('settings.projectsFolder')}
+                      autoComplete="off"
+                      spellCheck={false}
+                      helper={t('settings.projectsFolderHint')}
+                      error={projectsFolderError === undefined ? undefined : t(projectsFolderError)}
+                      {...register('projectsFolder')}
                     />
                   </Box>
                 </Box>

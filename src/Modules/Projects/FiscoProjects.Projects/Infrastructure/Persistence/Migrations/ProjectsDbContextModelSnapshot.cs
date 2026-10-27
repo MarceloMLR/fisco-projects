@@ -109,6 +109,16 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
+                    b.Property<string>("StorageFolderId")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("StorageFolderName")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");

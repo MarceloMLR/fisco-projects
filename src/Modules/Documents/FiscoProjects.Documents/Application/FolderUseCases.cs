@@ -127,7 +127,7 @@ public sealed class ChangeDefaultFolder(IFolderStore folders)
 /// project, or on the first need for a project made before the module; and their folders in the storage, made on the
 /// first upload, at "{code} - {name}/Documentos/{folder}" under the root.
 /// </summary>
-public sealed class ProjectFolders(IFolderStore folders, IFileStorage files)
+public sealed class ProjectFolders(IFolderStore folders, IProjectStorage storage, IFileStorage files)
 {
     /// <summary>The folder of the documents in the folder of a project, as "Chamados" for the tickets.</summary>
     public const string DocumentsFolder = "Documentos";
@@ -166,16 +166,33 @@ public sealed class ProjectFolders(IFolderStore folders, IFileStorage files)
             return id;
         }
 
-        var stored = await files.EnsureFolderAsync(null, $"{PathOf(project)}/{DocumentsFolder}/{folder.Name}", cancellationToken);
-        folder.KeepStorage(stored.Id);
-        return stored.Id;
+        // Inside the folder of the project, whatever its name (ADR-0121).
+        var stored = await storage.EnsureFolderAsync(project.Id, $"{DocumentsFolder}/{folder.Name}", cancellationToken);
+        folder.KeepStorage(stored);
+        return stored;
     }
 
-    /// <summary>The folder of a project under the root, "{code} - {name}", without anything that would make more folders.</summary>
-    public static string PathOf(ProjectAccess project)
+    /// <summary>
+    /// Stores a file in the folder of the storage of a folder of documents; a folder removed straight in the storage is
+    /// made again, once (ADR-0121). The caller saves the folder with its work.
+    /// </summary>
+    public async Task<StoredFile> UploadAsync(
+        DocumentFolder folder, ProjectAccess project, string name, Stream content, SameNameAction sameName, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(project);
-        return $"{project.Code} - {project.Name}".Replace('/', '-').Replace('\\', '-');
+        ArgumentNullException.ThrowIfNull(folder);
+        ArgumentNullException.ThrowIfNull(content);
+        var storageFolder = await StorageOfAsync(folder, project, cancellationToken);
+        try
+        {
+            return await files.UploadAsync(storageFolder, name, content, sameName, cancellationToken);
+        }
+        catch (StorageFolderNotFoundException) when (content.CanSeek)
+        {
+            folder.ForgetStorage();
+            storageFolder = await StorageOfAsync(folder, project, cancellationToken);
+            content.Position = 0;
+            return await files.UploadAsync(storageFolder, name, content, sameName, cancellationToken);
+        }
     }
 }
 

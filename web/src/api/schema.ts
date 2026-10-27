@@ -2383,8 +2383,8 @@ export interface components {
         };
         /**
          * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
-         *     daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038) and how
-         *     many years the audit is kept (ADR-0110).
+         *     daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how
+         *     many years the audit is kept (ADR-0110) and the folder of the projects in the file storage (ADR-0121).
          */
         GeneralRulesResponse: {
             timeZone: string;
@@ -2394,6 +2394,7 @@ export interface components {
             notificationRetentionDays: number;
             /** Format: int32 */
             auditRetentionYears: number;
+            projectsFolder: string;
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -3819,7 +3820,9 @@ export interface components {
         /**
          * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
          *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-         *     notifications are kept (1 to 365) and how many years the audit is kept (1 to 10; none keeps the years it had).
+         *     notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
+         *     folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
+         *     it had).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -3831,6 +3834,7 @@ export interface components {
             notificationRetentionDays: null | number;
             /** Format: int32 */
             auditRetentionYears?: null | number;
+            projectsFolder?: null | string;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];

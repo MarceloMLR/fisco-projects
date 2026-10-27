@@ -1,4 +1,5 @@
 using FiscoProjects.Administration.Domain;
+using FiscoProjects.Files.Contracts;
 using FiscoProjects.Persistence.Auditing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -17,6 +18,7 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
         settings.Property(s => s.DailySummaryAt).HasDefaultValue(InstallationSettings.DefaultDailySummaryAt);
         settings.Property(s => s.NotificationRetentionDays).HasDefaultValue(InstallationSettings.DefaultNotificationRetentionDays);
         settings.Property(s => s.AuditRetentionYears).HasDefaultValue(InstallationSettings.DefaultAuditRetentionYears);
+        settings.Property(s => s.ProjectsFolder).HasMaxLength(FileNames.MaxPathLength).HasDefaultValue(string.Empty);
         settings.Property(s => s.MainColor).HasMaxLength(7);
         settings.Property(s => s.LogoFileId).HasMaxLength(400);
         settings.Property(s => s.LogoFileName).HasMaxLength(200);
@@ -36,6 +38,7 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
             DailySummaryAt = InstallationSettings.DefaultDailySummaryAt,
             NotificationRetentionDays = InstallationSettings.DefaultNotificationRetentionDays,
             AuditRetentionYears = InstallationSettings.DefaultAuditRetentionYears,
+            ProjectsFolder = string.Empty,
         });
 
         // Audit (ADR-0039): the name and the name of the logo file sent tell what changed; the item is always the

@@ -16,6 +16,7 @@ let timeZone: string;
 let dailySummaryAt: string;
 let notificationRetentionDays: number;
 let auditRetentionYears: number;
+let projectsFolder: string;
 const requests: string[] = [];
 
 beforeEach(() => {
@@ -29,6 +30,7 @@ beforeEach(() => {
   dailySummaryAt = '07:30:00';
   notificationRetentionDays = 90;
   auditRetentionYears = 5;
+  projectsFolder = '';
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
@@ -39,6 +41,7 @@ beforeEach(() => {
         dailySummaryAt,
         notificationRetentionDays,
         auditRetentionYears,
+        projectsFolder,
       }),
     ),
     http.put('/api/installation', async ({ request }) => {
@@ -49,6 +52,7 @@ beforeEach(() => {
         dailySummaryAt: string;
         notificationRetentionDays: number;
         auditRetentionYears: number;
+        projectsFolder: string;
       };
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
@@ -62,6 +66,7 @@ beforeEach(() => {
       dailySummaryAt = body.dailySummaryAt;
       notificationRetentionDays = body.notificationRetentionDays;
       auditRetentionYears = body.auditRetentionYears;
+      projectsFolder = body.projectsFolder;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -100,6 +105,10 @@ async function openSettings() {
 
 function nameField() {
   return screen.getByRole('textbox', { name: text.name });
+}
+
+function projectsFolderField() {
+  return screen.getByRole('textbox', { name: text.projectsFolder });
 }
 
 function saveButton() {
@@ -175,6 +184,9 @@ describe('Tela Configurações gerais', () => {
     expect(within(brand).getByText(text.logoHint)).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: text.previewLabel })).toBeInTheDocument();
     expect(preview()).toHaveTextContent('FiscoProjects');
+    const files = screen.getByRole('region', { name: text.files });
+    expect(within(files).getByRole('textbox', { name: text.projectsFolder })).toHaveValue('');
+    expect(within(files).getByText(text.projectsFolderHint)).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
     expect(discardButton()).toBeDisabled();
   });
@@ -203,6 +215,7 @@ describe('Tela Configurações gerais', () => {
   it('Descartar alterações', async () => {
     await openSettings();
     fireEvent.change(nameField(), { target: { value: 'Consultoria Fictícia' } });
+    fireEvent.change(projectsFolderField(), { target: { value: 'Clientes/Projetos' } });
     chooseLogo(png());
     await waitFor(() => {
       expect(screen.getByTestId('logo-tile').querySelector('img')).not.toBeNull();
@@ -211,6 +224,7 @@ describe('Tela Configurações gerais', () => {
     fireEvent.click(discardButton());
 
     expect(nameField()).toHaveValue('FiscoProjects');
+    expect(projectsFolderField()).toHaveValue('');
     expect(screen.getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
     expect(saveButton()).toBeDisabled();
     expect(discardButton()).toBeDisabled();
@@ -701,6 +715,52 @@ describe('Prazo da auditoria', () => {
     fireEvent.click(saveButton());
 
     expect(await screen.findByText(text.errors.auditRetentionRange)).toBeInTheDocument();
+  });
+});
+
+// Spec: configuracao-da-instalacao, requirement "Pasta dos projetos" (the screen, ADR-0121).
+describe('Pasta dos projetos nas Configurações gerais', () => {
+  it('Escolher a pasta dos projetos', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(nameField()).toHaveValue('FiscoProjects');
+    });
+
+    fireEvent.change(projectsFolderField(), { target: { value: ' Clientes/Projetos ' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(projectsFolder).toBe('Clientes/Projetos');
+    await waitFor(() => {
+      expect(projectsFolderField()).toHaveValue('Clientes/Projetos');
+    });
+  });
+
+  it('Pasta dos projetos inválida', async () => {
+    server.use(
+      http.put('/api/installation', () =>
+        HttpResponse.json(
+          {
+            type: 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
+            title: 'One or more validation errors occurred.',
+            status: 400,
+            errors: { projectsFolder: ['Separate the folders with /.'] },
+          },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    await openSettings();
+    await waitFor(() => {
+      expect(nameField()).toHaveValue('FiscoProjects');
+    });
+
+    fireEvent.change(projectsFolderField(), { target: { value: 'Projetos/Fin:2026' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.errors.projectsFolderInvalid)).toBeInTheDocument();
+    expect(projectsFolderField()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByText(text.errors.timeZoneInvalid)).not.toBeInTheDocument();
   });
 });
 

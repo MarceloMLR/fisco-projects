@@ -51,6 +51,14 @@ public interface IFileStorage
     /// <summary>The folder at the path (folders separated by "/"), creating the ones missing.</summary>
     Task<StoredFolder> EnsureFolderAsync(string? parentFolderId, string path, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Renames a folder, keeping its id and the ids of everything in it (ADR-0121), with the name adjusted to the
+    /// SharePoint rules; null when a file or a folder with that name is already beside it, and nothing changes.
+    /// Throws <see cref="StorageFolderNotFoundException"/> when the folder does not exist and
+    /// <see cref="ArgumentException"/> for the root.
+    /// </summary>
+    Task<StoredFolder?> RenameFolderAsync(string folderId, string name, CancellationToken cancellationToken);
+
     /// <summary>The folders directly inside a folder, in alphabetical order.</summary>
     Task<IReadOnlyList<StoredFolder>> ListFoldersAsync(string? parentFolderId, CancellationToken cancellationToken);
 

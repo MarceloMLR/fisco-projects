@@ -30,7 +30,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var rules = await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation));
 
-        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30), 90, 5));
+        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30), 90, 5, string.Empty));
     }
 
     [Fact(DisplayName = "Trocar o nome e o fuso")]

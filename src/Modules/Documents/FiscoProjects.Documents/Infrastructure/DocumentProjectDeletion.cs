@@ -20,7 +20,7 @@ internal sealed class DocumentProjectDeletion(DocumentsDbContext db, IFileStorag
         new(ProjectItemKind.AcceptanceTerms, await db.AcceptanceTerms.CountAsync(term => term.ProjectId == projectId, cancellationToken)),
     ];
 
-    public async Task DeleteFilesAsync(Guid projectId, CancellationToken cancellationToken)
+    public async Task DeleteFilesAsync(Guid projectId, string? projectFolderId, CancellationToken cancellationToken)
     {
         var fileIds = await db.Documents.AsNoTracking()
             .Where(document => document.ProjectId == projectId)
@@ -34,7 +34,7 @@ internal sealed class DocumentProjectDeletion(DocumentsDbContext db, IFileStorag
             .Where(folder => folder.ProjectId == projectId && folder.StorageFolderId != null)
             .Select(folder => folder.StorageFolderId!)
             .ToListAsync(cancellationToken);
-        await files.RemoveAsync(fileIds, folderIds, cancellationToken);
+        await files.RemoveAsync(fileIds, folderIds, projectFolderId, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ProjectItemCount>> DeleteDataAsync(

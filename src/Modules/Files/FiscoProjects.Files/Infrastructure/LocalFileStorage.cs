@@ -1,29 +1,32 @@
 using System.Globalization;
-using FiscoProjects.Files.Application;
 using FiscoProjects.Files.Contracts;
 
 namespace FiscoProjects.Files.Infrastructure;
 
 /// <summary>
 /// Files in a folder of the disk, for development and tests (ADR-0004, ADR-0079). It behaves as SharePoint does for
-/// the modules: folders, versions of a file and ids kept by whoever uses them. The id of a folder or file is its path
-/// from the root, with "/"; previous versions and temporary files live in the internal folder, never listed.
+/// the modules: folders, versions of a file and ids kept by whoever uses them, which do not change when a folder is
+/// renamed (<see cref="LocalFileIds"/>, ADR-0121). The ids given before were the paths from the root, with "/", and
+/// still work. Previous versions, temporary files and the ids live in the internal folder, never listed.
 /// </summary>
 internal sealed class LocalFileStorage : IFileStorage
 {
     private const string VersionsFolder = "versions";
     private const string TemporaryFolder = "tmp";
+    private const string IdsFile = "ids.json";
 
     private static readonly StringComparer Alphabetical = StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: true);
 
     // One writer at a time: versions and "keep both" read and change several files in a row.
     private readonly SemaphoreSlim _writing = new(1, 1);
     private readonly string _root;
+    private readonly LocalFileIds _ids;
 
     public LocalFileStorage(string rootPath)
     {
         _root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootPath));
         Directory.CreateDirectory(_root);
+        _ids = new LocalFileIds(Path.Combine(_root, FileNames.InternalFolder, IdsFile));
     }
 
     public Task<StoredFolder> EnsureFolderAsync(string? parentFolderId, string path, CancellationToken cancellationToken)
@@ -31,8 +34,55 @@ internal sealed class LocalFileStorage : IFileStorage
         var parent = ExistingFolder(parentFolderId);
         var segments = FileNames.Segments(path);
         var relative = string.Join('/', [.. Split(parent), .. segments]);
+        var existed = Directory.Exists(FullPath(relative));
         Directory.CreateDirectory(FullPath(relative));
-        return Task.FromResult(new StoredFolder(relative, segments[^1]));
+        var id = existed ? _ids.IdOf(relative) : _ids.Created(relative);
+        return Task.FromResult(new StoredFolder(id, segments[^1]));
+    }
+
+    public async Task<StoredFolder?> RenameFolderAsync(string folderId, string name, CancellationToken cancellationToken)
+    {
+        var relative = string.IsNullOrEmpty(folderId)
+            ? throw new ArgumentException("The root of the storage is never renamed.", nameof(folderId))
+            : ExistingFolder(folderId);
+        var newName = FileNames.Normalize(name);
+        var separator = relative.LastIndexOf('/');
+        var parent = separator < 0 ? string.Empty : relative[..separator];
+        var target = Join(parent, newName);
+        await _writing.WaitAsync(cancellationToken);
+        try
+        {
+            if (target == relative)
+            {
+                return new StoredFolder(folderId, newName);
+            }
+
+            // Another item with the name beside it, in any case, as in SharePoint; the folder itself is not another.
+            var current = FullPath(relative);
+            if (new DirectoryInfo(FullPath(parent)).EnumerateFileSystemInfos().Any(entry =>
+                string.Equals(entry.Name, newName, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(entry.FullName, current, StringComparison.OrdinalIgnoreCase)))
+            {
+                return null;
+            }
+
+            var inside = Directory.EnumerateFileSystemEntries(FullPath(relative), "*", SearchOption.AllDirectories)
+                .Select(entry => Join(relative, Path.GetRelativePath(FullPath(relative), entry).Replace('\\', '/')))
+                .ToList();
+            Move(FullPath(relative), FullPath(target));
+            if (Directory.Exists(VersionsPath(relative)))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(VersionsPath(target))!);
+                Move(VersionsPath(relative), VersionsPath(target));
+            }
+
+            _ids.Moved(relative, target, inside);
+            return new StoredFolder(folderId, newName);
+        }
+        finally
+        {
+            _writing.Release();
+        }
     }
 
     public Task<IReadOnlyList<StoredFolder>> ListFoldersAsync(string? parentFolderId, CancellationToken cancellationToken)
@@ -42,7 +92,7 @@ internal sealed class LocalFileStorage : IFileStorage
         [
             .. new DirectoryInfo(FullPath(parent)).EnumerateDirectories()
                 .Where(folder => parent.Length > 0 || !string.Equals(folder.Name, FileNames.InternalFolder, StringComparison.OrdinalIgnoreCase))
-                .Select(folder => new StoredFolder(Join(parent, folder.Name), folder.Name))
+                .Select(folder => new StoredFolder(_ids.IdOf(Join(parent, folder.Name)), folder.Name))
                 .OrderBy(folder => folder.Name, Alphabetical),
         ];
         return Task.FromResult(folders);
@@ -86,7 +136,7 @@ internal sealed class LocalFileStorage : IFileStorage
 
     public Task<FileDownload?> OpenAsync(string fileId, string? versionId, CancellationToken cancellationToken)
     {
-        var relative = Relative(fileId);
+        var relative = PathOf(fileId);
         var current = FullPath(relative);
         if (relative.Length == 0 || !File.Exists(current))
         {
@@ -111,7 +161,7 @@ internal sealed class LocalFileStorage : IFileStorage
 
     public async Task<bool> DeleteFileAsync(string fileId, CancellationToken cancellationToken)
     {
-        var relative = Relative(fileId);
+        var relative = PathOf(fileId);
         var path = FullPath(relative);
         await _writing.WaitAsync(cancellationToken);
         try
@@ -127,6 +177,7 @@ internal sealed class LocalFileStorage : IFileStorage
                 Directory.Delete(VersionsPath(relative), recursive: true);
             }
 
+            _ids.Removed(relative);
             return true;
         }
         finally
@@ -137,7 +188,7 @@ internal sealed class LocalFileStorage : IFileStorage
 
     public async Task<bool> DeleteFolderIfEmptyAsync(string folderId, CancellationToken cancellationToken)
     {
-        var relative = Relative(folderId);
+        var relative = PathOf(folderId);
         var path = FullPath(relative);
         await _writing.WaitAsync(cancellationToken);
         try
@@ -149,6 +200,7 @@ internal sealed class LocalFileStorage : IFileStorage
             }
 
             Directory.Delete(path);
+            _ids.Removed(relative);
             return true;
         }
         finally
@@ -159,7 +211,7 @@ internal sealed class LocalFileStorage : IFileStorage
 
     public Task<string?> FolderOfAsync(string itemId, CancellationToken cancellationToken)
     {
-        var relative = Relative(itemId);
+        var relative = PathOf(itemId);
         var path = FullPath(relative);
         if (relative.Length == 0 || (!File.Exists(path) && !Directory.Exists(path)))
         {
@@ -167,7 +219,7 @@ internal sealed class LocalFileStorage : IFileStorage
         }
 
         var separator = relative.LastIndexOf('/');
-        return Task.FromResult<string?>(separator < 0 ? null : relative[..separator]);
+        return Task.FromResult<string?>(separator < 0 ? null : _ids.IdOf(relative[..separator]));
     }
 
     private StoredFile StoreAsNewVersion(string temporary, string folder, string name, long size)
@@ -175,7 +227,8 @@ internal sealed class LocalFileStorage : IFileStorage
         var relative = Join(folder, name);
         var target = FullPath(relative);
         var version = 1;
-        if (File.Exists(target))
+        var existed = File.Exists(target);
+        if (existed)
         {
             var previous = CurrentVersion(relative);
             Directory.CreateDirectory(VersionsPath(relative));
@@ -184,7 +237,8 @@ internal sealed class LocalFileStorage : IFileStorage
         }
 
         File.Move(temporary, target);
-        return new StoredFile(relative, name, size, version.ToString(CultureInfo.InvariantCulture));
+        var id = existed ? _ids.IdOf(relative) : _ids.Created(relative);
+        return new StoredFile(id, name, size, version.ToString(CultureInfo.InvariantCulture));
     }
 
     private StoredFile StoreBeside(string temporary, string folder, string name, long size)
@@ -200,7 +254,7 @@ internal sealed class LocalFileStorage : IFileStorage
             }
 
             File.Move(temporary, target);
-            return new StoredFile(relative, candidate, size, "1");
+            return new StoredFile(_ids.Created(relative), candidate, size, "1");
         }
     }
 
@@ -214,23 +268,35 @@ internal sealed class LocalFileStorage : IFileStorage
 
     private string ExistingFolder(string? folderId)
     {
-        var relative = Relative(folderId);
+        var relative = PathOf(folderId);
         return Directory.Exists(FullPath(relative))
             ? relative
             : throw new StorageFolderNotFoundException(folderId ?? string.Empty);
     }
 
-    /// <summary>
-    /// The path of an id, checked: no "." or "..", no rooted path, nothing in the internal folder and nothing that
-    /// resolves outside the root. Ids come from this storage, so anything else is refused, never adjusted.
-    /// </summary>
-    private string Relative(string? id)
+    /// <summary>The path of an id: the one written down, or the id itself, as the ids given before were.</summary>
+    private string PathOf(string? id) =>
+        string.IsNullOrEmpty(id) ? string.Empty : _ids.PathOf(id) ?? Relative(id);
+
+    /// <summary>Moves a folder, through another name when only the upper and lower case change.</summary>
+    private static void Move(string from, string to)
     {
-        if (string.IsNullOrEmpty(id))
+        if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
-            return string.Empty;
+            var between = $"{from}.{Guid.NewGuid():N}";
+            Directory.Move(from, between);
+            from = between;
         }
 
+        Directory.Move(from, to);
+    }
+
+    /// <summary>
+    /// The path of an id given before the ids were written down, checked: no "." or "..", no rooted path, nothing in
+    /// the internal folder and nothing that resolves outside the root. Anything else is refused, never adjusted.
+    /// </summary>
+    private string Relative(string id)
+    {
         var parts = id.Split('/');
         if (Path.IsPathRooted(id) || id.Contains('\\', StringComparison.Ordinal)
             || parts.Any(part => part.Length == 0 || part is "." or "..")

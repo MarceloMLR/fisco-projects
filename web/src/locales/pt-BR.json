@@ -510,7 +510,8 @@
         "DailySummaryAt": "Horário do resumo diário",
         "NotificationRetentionDays": "Guardar notificações por",
         "DarkLogoFileName": "Logo para o tema escuro",
-        "AuditRetentionYears": "Guardar auditoria por"
+        "AuditRetentionYears": "Guardar auditoria por",
+        "ProjectsFolder": "Pasta dos projetos"
       },
       "WorkCalendar": {
         "WorkingDays": "Dias de trabalho"
@@ -738,6 +739,9 @@
     "notificationRetentionHint": "De 1 a 365 dias. As mais antigas saem do sino, lidas ou não.",
     "auditRetention": "Guardar auditoria por (anos)",
     "auditRetentionHint": "De 1 a 10 anos. Uma vez por mês, os registros mais antigos são apagados.",
+    "files": "Arquivos",
+    "projectsFolder": "Pasta dos projetos",
+    "projectsFolderHint": "Onde ficam as pastas dos projetos novos, com as pastas separadas por /, como Projetos ou Clientes/Projetos. Vazia, elas ficam na raiz do armazenamento. Os projetos que já têm pasta continuam onde estão.",
     "m365": "Microsoft 365",
     "mailbox": "Caixa de envio",
     "mailboxHint": "Os e-mails do sistema saem por ela.",
@@ -765,7 +769,8 @@
       "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro.",
       "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
       "retentionRange": "Use de 1 a 365 dias.",
-      "auditRetentionRange": "Use de 1 a 10 anos."
+      "auditRetentionRange": "Use de 1 a 10 anos.",
+      "projectsFolderInvalid": "Separe as pastas por /, sem pasta vazia, sem . ou .., sem espaço nas pontas de cada uma e sem os caracteres \" * : < > ? \\ |."
     },
     "preview": "Prévia",
     "previewLabel": "Prévia da marca",

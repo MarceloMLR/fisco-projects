@@ -243,7 +243,13 @@ public sealed record AcceptanceRequest(Guid? MilestoneId, Guid? RecipientId, str
 /// of the terms to sign, and the signed term kept as an approved document of the folder of the terms (ADR-0093).
 /// </summary>
 public sealed class AcceptanceFiles(
-    ProjectFolders folders, IDocumentStore documents, IFileStorage files, IScheduleItems schedule, IProjectAccess projects, DocumentSettings settings)
+    ProjectFolders folders,
+    IDocumentStore documents,
+    IFileStorage files,
+    IScheduleItems schedule,
+    IProjectAccess projects,
+    DocumentSettings settings,
+    IProjectStorage storage)
 {
     /// <summary>The folder of the terms to sign in the folder of a project, beside "Documentos".</summary>
     public const string RequestsFolder = "Pedidos de aceite";
@@ -300,11 +306,12 @@ public sealed class AcceptanceFiles(
         return await FileTypes.IsPdfAsync(file.Name, file.Content, cancellationToken) ? AcceptanceFileRefusal.None : AcceptanceFileRefusal.NotPdf;
     }
 
-    /// <summary>Keeps the term to sign at "{code} - {name}/Pedidos de aceite", beside a file with the same name.</summary>
+    /// <summary>Keeps the term to sign in "Pedidos de aceite" of the folder of the project, beside a file with the same name.</summary>
     public async Task<StoredFile> KeepToSignAsync(ProjectAccess project, string name, Stream content, CancellationToken cancellationToken)
     {
-        var folder = await files.EnsureFolderAsync(null, $"{ProjectFolders.PathOf(project)}/{RequestsFolder}", cancellationToken);
-        return await files.UploadAsync(folder.Id, name, content, SameNameAction.KeepBoth, cancellationToken);
+        ArgumentNullException.ThrowIfNull(project);
+        var folder = await storage.EnsureFolderAsync(project.Id, RequestsFolder, cancellationToken);
+        return await files.UploadAsync(folder, name, content, SameNameAction.KeepBoth, cancellationToken);
     }
 
     /// <summary>
@@ -317,8 +324,7 @@ public sealed class AcceptanceFiles(
         ArgumentNullException.ThrowIfNull(project);
         var folder = (await folders.OfAsync(project.Id, cancellationToken)).FirstOrDefault(item => item.IsAcceptance)
             ?? throw new InvalidOperationException("The project has no folder of the acceptance terms.");
-        var storageFolder = await folders.StorageOfAsync(folder, project, cancellationToken);
-        var stored = await files.UploadAsync(storageFolder, name, content, SameNameAction.KeepBoth, cancellationToken);
+        var stored = await folders.UploadAsync(folder, project, name, content, SameNameAction.KeepBoth, cancellationToken);
         var document = Document.Upload(project.Id, folder.Id, stored.Name, stored.Id, stored.VersionId, stored.Size, userId, now);
         document.ChangeStatus(DocumentStatus.Approved, userId, now);
         document.Link(null, milestoneId);

@@ -232,8 +232,8 @@ public sealed class Ticket : Entity
         UpdatedAt = now;
     }
 
-    /// <summary>Keeps the folder of the attachments, made with the first one.</summary>
-    public void KeepAttachmentFolder(string folderId) => AttachmentFolderId ??= folderId;
+    /// <summary>Keeps the folder of the attachments, made with the first one, or made again when it was removed (ADR-0121).</summary>
+    public void KeepAttachmentFolder(string folderId) => AttachmentFolderId = folderId;
 
     /// <summary>A new ticket, Open and without an assignee, from data already checked by <see cref="TicketForm"/>.</summary>
     public static Ticket Open(int number, Guid projectId, TicketForm form, Guid requesterId, DateTime now)

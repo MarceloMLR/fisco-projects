@@ -19,6 +19,9 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         project.Property(p => p.Description).HasMaxLength(Project.DescriptionMaxLength);
         project.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
         project.Ignore(p => p.IsClosed);
+        project.Ignore(p => p.FolderName);
+        project.Property(p => p.StorageFolderId).HasMaxLength(512);
+        project.Property(p => p.StorageFolderName).HasMaxLength(400);
         // One project per code, open or closed (ADR-0016).
         project.HasIndex(p => p.Code).IsUnique().HasDatabaseName(CodeIndex);
         project.HasIndex(p => p.Name);
@@ -31,6 +34,8 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         project.HasAuditLabel(p => p.Name);
         project.Property(p => p.ClientId).IsAuditReference(ProjectsAudit.ClientReference);
         project.Property(p => p.CreatedAt).ExcludeFromAudit();
+        project.Property(p => p.StorageFolderId).ExcludeFromAudit();
+        project.Property(p => p.StorageFolderName).ExcludeFromAudit();
     }
 }
 
