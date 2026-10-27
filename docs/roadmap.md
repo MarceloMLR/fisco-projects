@@ -162,7 +162,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | M365-2 | `diretorio-microsoft` | Busca de pessoas pelo Graph | 0005, 0119 | Concluída em 26/10/2026 ([#95](https://github.com/MarceloMLR/fisco-projects/pull/95)) |
 | M365-3 | `arquivos-no-sharepoint` | Arquivos no SharePoint, na pasta de cada projeto | 0030, 0120 | Concluída em 26/10/2026 ([#97](https://github.com/MarceloMLR/fisco-projects/pull/97)) |
 | M365-3.1 | `pasta-de-cada-projeto` | Uma pasta por projeto no armazenamento, renomeada com o projeto, e a pasta dos projetos nas Configurações gerais, a pedido de Marcelo | 0030, 0121 | Concluída em 26/10/2026 ([#98](https://github.com/MarceloMLR/fisco-projects/pull/98)) |
-| M365-3.2 | `pasta-existente-do-projeto` | Escolher uma pasta que já existe no SharePoint para o projeto, a pedido de Marcelo | 0030, 0121 | Planejada |
+| M365-3.2 | `pasta-existente-do-projeto` | Escolher uma pasta que já existe no SharePoint para o projeto, a pedido de Marcelo | 0030, 0121, 0122 | Em andamento |
 | M365-4 | `emails-pelo-graph` | Envio pela caixa compartilhada | 0036 | Planejada |
 
 ## 10. Governança e operação
