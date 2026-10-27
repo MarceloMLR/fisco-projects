@@ -1,4 +1,4 @@
-using FiscoProjects.Files.Application;
+using FiscoProjects.Files.Contracts;
 
 namespace FiscoProjects.Files.Tests;
 

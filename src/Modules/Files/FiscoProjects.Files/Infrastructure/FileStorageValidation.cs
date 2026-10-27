@@ -1,4 +1,4 @@
-using FiscoProjects.Files.Application;
+using FiscoProjects.Files.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 

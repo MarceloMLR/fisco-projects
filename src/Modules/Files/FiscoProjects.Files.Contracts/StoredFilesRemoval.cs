@@ -2,8 +2,9 @@ namespace FiscoProjects.Files.Contracts;
 
 /// <summary>
 /// Removes what a module stored, as when a project is deleted (ADR-0041, ADR-0111): the files, with their versions, and
-/// then the folders left empty, one by one up to the root, never the root nor a folder with anything in it, so what the
-/// system did not create stays. A file or folder that is already gone is skipped, so running it again finishes it.
+/// then the folders left empty, one by one up to the root or to the folder that stays, as the folder of the project
+/// (ADR-0121), never the root, that folder nor a folder with anything in it, so what the system did not create stays.
+/// A file or folder that is already gone is skipped, so running it again finishes it.
 /// </summary>
 public static class StoredFilesRemoval
 {
@@ -13,10 +14,25 @@ public static class StoredFilesRemoval
     /// <param name="folderIds">The folders the module registered, such as the folder of a ticket.</param>
     /// <param name="cancellationToken">Stops the work.</param>
     /// <returns>How many files were removed.</returns>
+    public static Task<int> RemoveAsync(
+        this IFileStorage files,
+        IEnumerable<string> fileIds,
+        IEnumerable<string> folderIds,
+        CancellationToken cancellationToken) =>
+        files.RemoveAsync(fileIds, folderIds, null, cancellationToken);
+
+    /// <summary>Removes the files and then the folders left empty, up to the folder that stays.</summary>
+    /// <param name="files">The storage.</param>
+    /// <param name="fileIds">The files the module registered.</param>
+    /// <param name="folderIds">The folders the module registered, such as the folder of a ticket.</param>
+    /// <param name="keepFolderId">The folder where the removal of empty folders stops, kept even when empty; none goes up to the root.</param>
+    /// <param name="cancellationToken">Stops the work.</param>
+    /// <returns>How many files were removed.</returns>
     public static async Task<int> RemoveAsync(
         this IFileStorage files,
         IEnumerable<string> fileIds,
         IEnumerable<string> folderIds,
+        string? keepFolderId,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(files);
@@ -39,16 +55,16 @@ public static class StoredFilesRemoval
 
         foreach (var folder in folders)
         {
-            await RemoveEmptyAsync(files, folder, cancellationToken);
+            await RemoveEmptyAsync(files, folder, keepFolderId, cancellationToken);
         }
 
         return removed;
     }
 
-    /// <summary>Removes the folder while it is empty, and then the one above it, up to the root.</summary>
-    private static async Task RemoveEmptyAsync(IFileStorage files, string folderId, CancellationToken cancellationToken)
+    /// <summary>Removes the folder while it is empty, and then the one above it, up to the root or the folder that stays.</summary>
+    private static async Task RemoveEmptyAsync(IFileStorage files, string folderId, string? keepFolderId, CancellationToken cancellationToken)
     {
-        for (string? current = folderId; current is not null;)
+        for (string? current = folderId; current is not null && current != keepFolderId;)
         {
             var above = await files.FolderOfAsync(current, cancellationToken);
             if (!await files.DeleteFolderIfEmptyAsync(current, cancellationToken))

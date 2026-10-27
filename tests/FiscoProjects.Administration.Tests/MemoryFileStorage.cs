@@ -25,6 +25,14 @@ internal sealed class MemoryFileStorage : IFileStorage
         return Task.FromResult(folder);
     }
 
+    public Task<StoredFolder?> RenameFolderAsync(string folderId, string name, CancellationToken cancellationToken)
+    {
+        var (key, folder) = _folders.Single(entry => entry.Value.Id == folderId);
+        var renamed = folder with { Name = name };
+        _folders[key] = renamed;
+        return Task.FromResult<StoredFolder?>(renamed);
+    }
+
     public Task<IReadOnlyList<StoredFolder>> ListFoldersAsync(string? parentFolderId, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<StoredFolder>>([.. _folders.Values]);
 

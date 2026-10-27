@@ -224,6 +224,78 @@ public abstract class FileStorageContract
         (await Storage.FolderOfAsync(other.Id, Cancellation)).Should().BeNull();
     }
 
+    [Fact(DisplayName = "Até a pasta indicada")]
+    public async Task RemovingUpToAFolder_KeepsThatFolderAndTheOnesAbove()
+    {
+        var project = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN - Projeto", Cancellation);
+        var ticket = await Storage.EnsureFolderAsync(project.Id, "Chamados/#104", Cancellation);
+        var file = await UploadAsync(ticket.Id, "nota.xml", "<nfe/>", SameNameAction.KeepBoth);
+        var projects = await Storage.FolderOfAsync(project.Id, Cancellation);
+
+        await Storage.RemoveAsync([file.Id], [], project.Id, Cancellation);
+
+        (await NamesAsync(null)).Should().Equal("Projetos");
+        (await NamesAsync(projects)).Should().Equal("ERP-FIN - Projeto");
+        (await NamesAsync(project.Id)).Should().BeEmpty("the folders of the tickets were left empty");
+    }
+
+    [Fact(DisplayName = "Renomear pasta")]
+    public async Task RenamingAFolder_KeepsTheIdsOfEverythingInIt()
+    {
+        var project = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN - Implantação", Cancellation);
+        var documents = await Storage.EnsureFolderAsync(project.Id, "Documentos/01 Gestão", Cancellation);
+        var first = await UploadAsync(documents.Id, "Contrato.pdf", "versão 1", SameNameAction.NewVersion);
+        var second = await UploadAsync(documents.Id, "Contrato.pdf", "versão 2", SameNameAction.NewVersion);
+        var projects = await Storage.FolderOfAsync(project.Id, Cancellation);
+
+        var renamed = await Storage.RenameFolderAsync(project.Id, "ERP-FIN: Implantação do ERP", Cancellation);
+
+        renamed.Should().Be(new StoredFolder(project.Id, "ERP-FIN_ Implantação do ERP"));
+        (await NamesAsync(projects)).Should().Equal("ERP-FIN_ Implantação do ERP");
+        (await Storage.EnsureFolderAsync(project.Id, "Documentos/01 Gestão", Cancellation)).Id.Should().Be(documents.Id);
+        (await Storage.FolderOfAsync(second.Id, Cancellation)).Should().Be(documents.Id);
+        second.Id.Should().Be(first.Id);
+        await using (var current = await Storage.OpenAsync(second.Id, null, Cancellation))
+        {
+            (await ReadAsync(current!)).Should().Be("versão 2");
+        }
+
+        await using var previous = await Storage.OpenAsync(first.Id, first.VersionId, Cancellation);
+        (await ReadAsync(previous!)).Should().Be("versão 1");
+        var next = await UploadAsync(documents.Id, "Contrato.pdf", "versão 3", SameNameAction.NewVersion);
+        next.Id.Should().Be(first.Id, "a new version after the rename is still the same file");
+    }
+
+    [Fact(DisplayName = "Nome já usado ao lado")]
+    public async Task RenamingToANameInUse_ChangesNothing()
+    {
+        var first = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN - Implantação", Cancellation);
+        var second = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN - Suporte", Cancellation);
+        var projects = await Storage.FolderOfAsync(first.Id, Cancellation);
+        await UploadAsync(projects!, "Leia-me.txt", "de fora", SameNameAction.KeepBoth);
+
+        var toFolder = await Storage.RenameFolderAsync(first.Id, "erp-fin - suporte", Cancellation);
+        var toFile = await Storage.RenameFolderAsync(second.Id, "Leia-me.txt", Cancellation);
+
+        toFolder.Should().BeNull();
+        toFile.Should().BeNull();
+        (await NamesAsync(projects)).Should().Equal("ERP-FIN - Implantação", "ERP-FIN - Suporte");
+    }
+
+    [Fact(DisplayName = "Pasta que não existe")]
+    public async Task RenamingAFolderThatIsNotThere_IsRefused()
+    {
+        var folder = await Storage.EnsureFolderAsync(null, "Projetos/ERP-FIN - Implantação", Cancellation);
+        await Storage.DeleteFolderIfEmptyAsync(folder.Id, Cancellation);
+
+        var gone = () => Storage.RenameFolderAsync(folder.Id, "Outro nome", Cancellation);
+        var root = () => Storage.RenameFolderAsync(string.Empty, "Outro nome", Cancellation);
+
+        await gone.Should().ThrowAsync<StorageFolderNotFoundException>();
+        await root.Should().ThrowAsync<ArgumentException>();
+        (await NamesAsync(null)).Should().Equal("Projetos");
+    }
+
     [Fact(DisplayName = "Arquivo de fora fica")]
     public async Task AFileTheModuleDidNotStore_KeepsItsFolders()
     {

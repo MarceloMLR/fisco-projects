@@ -41,6 +41,37 @@ public sealed class LocalFileStorageTests : FileStorageContract, IDisposable
         Directory.EnumerateFileSystemEntries(_parent).Select(Path.GetFileName).Should().BeEquivalentTo(["root", "fora.txt"]);
     }
 
+    [Fact(DisplayName = "Ids antigos da implementação local")]
+    public async Task IdsGivenBefore_StillWork_EvenAfterARename()
+    {
+        // As the storage left them before the ids were written down: the id of each item was its path.
+        Directory.CreateDirectory(Path.Combine(_root, "ERP-FIN - Implantação", "Documentos"));
+        await File.WriteAllTextAsync(Path.Combine(_root, "ERP-FIN - Implantação", "Documentos", "Contrato.pdf"), "antes", Cancellation);
+        const string project = "ERP-FIN - Implantação";
+        const string documents = "ERP-FIN - Implantação/Documentos";
+        const string contract = "ERP-FIN - Implantação/Documentos/Contrato.pdf";
+
+        (await Storage.EnsureFolderAsync(null, project, Cancellation)).Id.Should().Be(project);
+        (await UploadAsync(documents, "Contrato.pdf", "depois", SameNameAction.NewVersion)).Id.Should().Be(contract);
+        await Storage.RenameFolderAsync(project, "ERP-FIN - Implantação do ERP", Cancellation);
+        var restarted = new LocalFileStorage(_root);
+
+        await using (var renamed = await restarted.OpenAsync(contract, null, Cancellation))
+        {
+            (await ReadAsync(renamed!)).Should().Be("depois");
+        }
+
+        await using (var previous = await restarted.OpenAsync(contract, "1", Cancellation))
+        {
+            (await ReadAsync(previous!)).Should().Be("antes");
+        }
+
+        (await restarted.FolderOfAsync(contract, Cancellation)).Should().Be(documents);
+        (await restarted.EnsureFolderAsync(project, "Documentos", Cancellation)).Id.Should().Be(documents);
+        Directory.Exists(Path.Combine(_root, "ERP-FIN - Implantação do ERP", "Documentos")).Should().BeTrue();
+        Directory.Exists(Path.Combine(_root, "ERP-FIN - Implantação")).Should().BeFalse();
+    }
+
     [Fact(DisplayName = "Arquivos na pasta configurada")]
     public async Task Files_LiveInTheConfiguredFolder()
     {
@@ -60,7 +91,8 @@ public sealed class LocalFileStorageTests : FileStorageContract, IDisposable
 
         await upload.Should().ThrowAsync<IOException>();
         Directory.EnumerateFiles(Path.Combine(_root, "Projetos")).Should().BeEmpty();
-        Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories).Should().BeEmpty("the temporary file is removed too");
+        Directory.EnumerateFiles(Path.Combine(_root, ".fiscoprojects"), "*", SearchOption.AllDirectories).Select(Path.GetFileName)
+            .Should().Equal(["ids.json"], "the temporary file is removed too, and only the ids stay");
     }
 
     public void Dispose()

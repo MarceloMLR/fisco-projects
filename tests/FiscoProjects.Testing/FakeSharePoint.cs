@@ -158,6 +158,7 @@ public sealed partial class FakeSharePoint : HttpMessageHandler
             ("GET", null, _) when VersionPath().Match(rest) is { Success: true } version && !item.IsFolder =>
                 VersionOf(item, Uri.UnescapeDataString(version.Groups["version"].Value), version.Groups["content"].Success),
             ("DELETE", null, "") => Delete(request, item),
+            ("PATCH", null, "") => Rename(item, body),
             _ => Failure(HttpStatusCode.BadRequest, "invalidRequest"),
         };
     }
@@ -201,6 +202,26 @@ public sealed partial class FakeSharePoint : HttpMessageHandler
         }
 
         return Json(Shown(NewItem(drive, parent, name, isFolder: true)), HttpStatusCode.Created);
+    }
+
+    private HttpResponseMessage Rename(Item item, byte[] body)
+    {
+        var json = JsonNode.Parse(body)!;
+        var name = json["name"]?.GetValue<string>();
+        if (item.ParentId is null || string.IsNullOrWhiteSpace(name) || json["@microsoft.graph.conflictBehavior"]?.GetValue<string>() != "fail")
+        {
+            return Failure(HttpStatusCode.BadRequest, "invalidRequest");
+        }
+
+        if (Children(_items[item.ParentId]).Any(child => child.Id != item.Id && Same(child.Name, name)))
+        {
+            return Failure(HttpStatusCode.Conflict, "nameAlreadyExists");
+        }
+
+        var renamed = item with { Name = name };
+        _items[item.Id] = renamed;
+        Touch(renamed);
+        return Json(Shown(renamed));
     }
 
     private HttpResponseMessage ChildrenPage(Drive drive, Item folder, string? token)

@@ -4,7 +4,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FiscoProjects.Files.Application;
 using FiscoProjects.Files.Contracts;
 using FiscoProjects.Users.Contracts;
 
@@ -45,6 +44,46 @@ internal sealed class SharePointFileStorage(IHttpClientFactory clients, IGraphTo
         }
 
         return new StoredFolder(folder!.Id, folder.Name);
+    }
+
+    public async Task<StoredFolder?> RenameFolderAsync(string folderId, string name, CancellationToken cancellationToken)
+    {
+        var newName = FileNames.Normalize(name);
+        var root = await RootAsync(cancellationToken);
+        if (string.IsNullOrEmpty(folderId) || folderId == root.FolderId)
+        {
+            throw new ArgumentException("The root of the storage is never renamed.", nameof(folderId));
+        }
+
+        if (await ItemInsideAsync(root, folderId, cancellationToken) is not { Folder: not null } folder)
+        {
+            throw new StorageFolderNotFoundException(folderId);
+        }
+
+        if (folder.Name == newName)
+        {
+            return new StoredFolder(folder.Id, folder.Name);
+        }
+
+        // The item keeps its id; "fail" says another item beside it already has the name.
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Patch, $"drives/{root.DriveId}/items/{folder.Id}")
+            {
+                Content = JsonContent.Create(new NewName(newName, "fail"), options: JsonSerializerOptions.Web),
+            },
+            cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            return null;
+        }
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageFolderNotFoundException(folderId);
+        }
+
+        var renamed = await ReadAsync<GraphItem>(response, "rename a folder", cancellationToken);
+        return new StoredFolder(renamed.Id, renamed.Name);
     }
 
     public async Task<IReadOnlyList<StoredFolder>> ListFoldersAsync(string? parentFolderId, CancellationToken cancellationToken)
@@ -445,6 +484,10 @@ internal sealed class SharePointFileStorage(IHttpClientFactory clients, IGraphTo
     private sealed record NewFolder(
         string Name,
         EmptyFacet Folder,
+        [property: JsonPropertyName("@microsoft.graph.conflictBehavior")] string ConflictBehavior);
+
+    private sealed record NewName(
+        string Name,
         [property: JsonPropertyName("@microsoft.graph.conflictBehavior")] string ConflictBehavior);
 
     private sealed record GraphError(string? Code);
