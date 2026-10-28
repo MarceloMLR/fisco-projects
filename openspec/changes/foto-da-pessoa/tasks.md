@@ -11,7 +11,7 @@
 ## 3. Documentação e conferência
 
 - [x] 3.1 ADR-0124, `CLAUDE.md`, roadmap (M365-5) e glossário
-- [ ] 3.2 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
+- [x] 3.2 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
 
 ## Workflow follow-up
 
