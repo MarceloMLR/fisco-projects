@@ -3,15 +3,19 @@ using FiscoProjects.Testing;
 
 namespace FiscoProjects.Pipeline.Tests;
 
-// Spec: publicacao (ADR-0055, ADR-0115, ADR-0116). The workflow is read as text; the scripts run with stand-ins for az,
-// curl, npm and terraform, which write down how they were called.
+// Spec: publicacao (ADR-0055, ADR-0115, ADR-0116, ADR-0125). The workflows are read as text; the scripts run with
+// stand-ins for az, curl, dotnet, npm and terraform, which write down how they were called.
 public sealed partial class DeploymentTests : IDisposable
 {
     private readonly string _fakes = Directory.CreateTempSubdirectory("fisco-deploy-").FullName;
 
     public void Dispose() => Directory.Delete(_fakes, recursive: true);
 
-    private static string[] WorkflowLines() => File.ReadAllLines(RepositoryFiles.PathOf(".github", "workflows", "deploy-dev.yml"));
+    private static string[] WorkflowLines(string workflow = "deploy-dev") =>
+        File.ReadAllLines(RepositoryFiles.PathOf(".github", "workflows", workflow + ".yml"));
+
+    private static string[] ScriptsOf(string[] lines) =>
+        [.. lines.Select(line => ScriptStep().Match(line)).Where(match => match.Success).Select(match => match.Groups["script"].Value)];
 
     [Fact(DisplayName = "Publicação a cada merge")]
     public void Workflow_PublishesTheDevelopmentEnvironmentAfterEachMergeToMain()
@@ -21,25 +25,136 @@ public sealed partial class DeploymentTests : IDisposable
 
         workflow.Should().Contain("on:\n  push:\n    branches: [main]\n  workflow_dispatch:\n");
         workflow.Should().Contain("    environment: dev\n").And.Contain("      ENVIRONMENT: dev\n");
-        lines.Select(line => ScriptStep().Match(line)).Where(match => match.Success).Select(match => match.Groups["script"].Value)
-            .Should().Equal(["publish", "deploy", "plan"], "the package is built, published and then the infrastructure is compared");
+        ScriptsOf(lines).Should().Equal(["publish", "deploy", "plan"], "the package is built, published and then the infrastructure is compared");
         workflow.Should().Contain("concurrency:\n  group: deploy-dev\n  cancel-in-progress: false\n", "one publication at a time, none cut in the middle");
     }
 
     [Fact(DisplayName = "Pipeline sem segredos")]
     public void Workflow_ReachesAzureByFederation_WithoutSecrets()
     {
-        var lines = WorkflowLines();
+        foreach (var name in (string[])["deploy-dev", "deploy-prod"])
+        {
+            var lines = WorkflowLines(name);
+            var workflow = string.Join('\n', lines);
+
+            workflow.Should().NotContain("secrets.").And.NotContain("secrets:");
+            workflow.Should().Contain("\npermissions:\n  contents: read\n  id-token: write\n\n");
+            Regex.Count(workflow, "permissions:").Should().Be(1);
+            lines.Where(line => line.TrimStart().StartsWith("- uses:", StringComparison.Ordinal))
+                .Should().AllSatisfy(line => PinnedAction().IsMatch(line).Should().BeTrue($"\"{line.Trim()}\" must be pinned to a commit"));
+            lines.Should().Contain("          persist-credentials: false").And.Contain("      ARM_USE_OIDC: \"true\"");
+            lines.Where(line => line.TrimStart().StartsWith("run:", StringComparison.Ordinal))
+                .Should().AllSatisfy(line => ScriptStep().IsMatch(line).Should().BeTrue("the logic lives in scripts/cd"));
+        }
+    }
+
+    // Spec: publicacao, requirement "Publicação em produção" (ADR-0125).
+    [Fact(DisplayName = "Publicação em produção por versão")]
+    public void ProductionWorkflow_StartsByHand_ChecksMigratesAndPublishes()
+    {
+        var lines = WorkflowLines("deploy-prod");
         var workflow = string.Join('\n', lines);
 
-        workflow.Should().NotContain("secrets.").And.NotContain("secrets:");
-        workflow.Should().Contain("\npermissions:\n  contents: read\n  id-token: write\n\n");
-        Regex.Count(workflow, "permissions:").Should().Be(1);
-        lines.Where(line => line.TrimStart().StartsWith("- uses:", StringComparison.Ordinal))
-            .Should().AllSatisfy(line => PinnedAction().IsMatch(line).Should().BeTrue($"\"{line.Trim()}\" must be pinned to a commit"));
-        lines.Should().Contain("          persist-credentials: false").And.Contain("      ARM_USE_OIDC: \"true\"");
-        lines.Where(line => line.TrimStart().StartsWith("run:", StringComparison.Ordinal))
-            .Should().AllSatisfy(line => ScriptStep().IsMatch(line).Should().BeTrue("the logic lives in scripts/cd"));
+        workflow.Should().Contain("on:\n  workflow_dispatch:\n\n", "only by hand, on the tag of the version")
+            .And.NotContain("push:").And.NotContain("inputs:");
+        workflow.Should().Contain("    environment: prod\n").And.Contain("      ENVIRONMENT: prod\n")
+            .And.Contain("      PLAN_MUST_MATCH: \"true\"\n");
+        ScriptsOf(lines).Should().Equal(
+            ["version", "plan", "publish", "migrate", "deploy"],
+            "nothing changes before the version and the infrastructure are checked, and the migrations come before the new version");
+        Array.FindIndex(lines, line => line.Contains("scripts/cd/version.sh", StringComparison.Ordinal))
+            .Should().BeLessThan(Array.FindIndex(lines, line => line.Contains("azure/login", StringComparison.Ordinal)));
+        workflow.Should().Contain("concurrency:\n  group: deploy-prod\n  cancel-in-progress: false\n");
+    }
+
+    [Fact(DisplayName = "Produção só por tag de versão")]
+    public void Version_AcceptsOnlyTheTagOfAVersion()
+    {
+        Shell.SkipWithoutBash();
+
+        Run("version", "prod", new() { ["GITHUB_REF_TYPE"] = "branch", ["GITHUB_REF_NAME"] = "main" }).ExitCode.Should().Be(1);
+        Run("version", "prod", new() { ["GITHUB_REF_TYPE"] = "tag", ["GITHUB_REF_NAME"] = "v1.2" }).ExitCode.Should().Be(1);
+        Run("version", "prod", new() { ["GITHUB_REF_TYPE"] = "tag", ["GITHUB_REF_NAME"] = "release-1.2.3" }).ExitCode.Should().Be(1);
+        var version = Run("version", "prod", new() { ["GITHUB_REF_TYPE"] = "tag", ["GITHUB_REF_NAME"] = "v1.2.3" });
+
+        version.ExitCode.Should().Be(0, version.Errors);
+        version.Output.Should().Contain("Versão: v1.2.3");
+        File.ReadAllText(Path.Combine(_fakes, "summary")).Should().Contain("v1.2.3");
+    }
+
+    [Fact(DisplayName = "Produção com a infraestrutura diferente")]
+    public void Plan_WithDifferencesInProduction_StopsTheDeployment()
+    {
+        Shell.SkipWithoutBash();
+        FakePlan(planExit: 2, planOutput: "  # module.app.azurerm_linux_web_app.main will be updated in-place\nPlan: 0 to add, 1 to change, 0 to destroy.");
+
+        var result = Run("plan", "prod", new() { ["PLAN_MUST_MATCH"] = "true" });
+
+        result.ExitCode.Should().Be(1);
+        result.Errors.Should().Contain("A infraestrutura de prod está diferente do código");
+        result.Output.Should().Contain("::error::");
+        File.ReadAllText(Path.Combine(_fakes, "summary")).Should().Contain("Plan: 0 to add, 1 to change, 0 to destroy.");
+        Calls().Should().Contain(call => call.Contains("-var-file=environments/prod.tfvars", StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "Migrações antes da publicação")]
+    public void Migrate_RunsTheCommandOfThePackage_WithEntraAndTheIdentityOfTheApplication()
+    {
+        Shell.SkipWithoutBash();
+        Fake("az", "echo \"az $*\" >> \"$FAKES/calls\"; echo 7f3e2d1c-0b9a-4876-9543-210fedcba987");
+        Fake("dotnet", """
+            {
+              echo "dotnet $*"
+              echo "environment $ASPNETCORE_ENVIRONMENT"
+              echo "connection $ConnectionStrings__FiscoProjects"
+              echo "identity $Database__AppIdentity__Name $Database__AppIdentity__ObjectId"
+            } >> "$FAKES/calls"
+            """);
+
+        var result = Run("migrate", "prod");
+
+        result.ExitCode.Should().Be(0, result.Errors);
+        Calls().Should().Equal(
+            "az webapp identity show --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --query principalId --output tsv",
+            "dotnet artifacts/app/FiscoProjects.Api.dll migrate",
+            "environment Production",
+            "connection Server=tcp:sql-fiscoprojects-mlr-prod.database.windows.net,1433;Database=sqldb-fiscoprojects;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False",
+            "identity app-fiscoprojects-mlr-prod 7f3e2d1c-0b9a-4876-9543-210fedcba987");
+
+        Fake("az", "true");
+        var withoutIdentity = Run("migrate", "prod");
+        withoutIdentity.ExitCode.Should().Be(1);
+        withoutIdentity.Errors.Should().Contain("has no managed identity");
+    }
+
+    [Fact(DisplayName = "Produção sem dados de demonstração")]
+    public void Deploy_InProduction_LoadsNoDemonstration()
+    {
+        Shell.SkipWithoutBash();
+        Fake("az", "echo \"az $*\" >> \"$FAKES/calls\"");
+        Fake("curl", "echo \"curl ${@: -1}\" >> \"$FAKES/calls\"; printf 200");
+        Fake("npm", "echo \"npm $*\" >> \"$FAKES/calls\"");
+        Fake("sleep", "true");
+
+        var result = Run("deploy", "prod");
+
+        result.ExitCode.Should().Be(0, result.Errors);
+        Calls().Should().Equal(
+            "az webapp deploy --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --src-path artifacts/app.zip --type zip --track-status false --output none",
+            "curl https://app-fiscoprojects-mlr-prod.azurewebsites.net/health");
+    }
+
+    [Fact(DisplayName = "Produção com aprovação")]
+    public void ProductionEnvironment_AcceptsOnlyTheVersions_AfterTheApprovalOfWhoOperates()
+    {
+        var script = Repository.Read("infra", "scripts", "Set-GitHubEnvironment.ps1");
+
+        script.Should().Contain("$settings.reviewers = @(@{ type = 'User'; id = [long](gh api user --jq .id) })")
+            .And.Contain("$settings.prevent_self_review = $false")
+            .And.Contain("$policy = @{ name = 'v*'; type = 'tag' }")
+            .And.Contain("$policy = @{ name = 'main'; type = 'branch' }", "dev still accepts only main");
+        Regex.Match(script, @"if \(\$Environment -eq 'prod'\) \{\s+\$settings\.reviewers").Success.Should().BeTrue(
+            "the approval is only for production");
     }
 
     [Fact(DisplayName = "Demonstração depois da publicação")]
@@ -212,17 +327,23 @@ public sealed partial class DeploymentTests : IDisposable
             """);
     }
 
-    private Shell.Result Run(string script)
+    private Shell.Result Run(string script, string environment = "dev", Dictionary<string, string>? more = null)
     {
         var bin = Path.Combine(_fakes, "bin");
-        return Shell.Run(RepositoryFiles.PathOf(), new Dictionary<string, string>
+        var variables = new Dictionary<string, string>
         {
             ["PATH"] = $"{bin}:{Environment.GetEnvironmentVariable("PATH")}",
             ["FAKES"] = _fakes,
-            ["ENVIRONMENT"] = "dev",
+            ["ENVIRONMENT"] = environment,
             ["GITHUB_ACTIONS"] = "true",
             ["GITHUB_STEP_SUMMARY"] = Path.Combine(_fakes, "summary"),
-        }, "bash", Path.Combine("scripts", "cd", script + ".sh"));
+        };
+        foreach (var (name, value) in more ?? [])
+        {
+            variables[name] = value;
+        }
+
+        return Shell.Run(RepositoryFiles.PathOf(), variables, "bash", Path.Combine("scripts", "cd", script + ".sh"));
     }
 
     private string[] Calls()
