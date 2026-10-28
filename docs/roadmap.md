@@ -89,7 +89,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | Concluída em 19/10/2026 ([#22](https://github.com/MarceloMLR/fisco-projects/pull/22)) |
 | Projetos-3 | `projetos` | Criação com gerente e líder técnico, lista, status, somente leitura quando encerrado | 0016, 0043, 0072 | Concluída em 19/10/2026 ([#23](https://github.com/MarceloMLR/fisco-projects/pull/23)) |
 | Projetos-4 | `membros-do-projeto` | Incluir pessoas pelo diretório (versão simulada), papéis no projeto, último gerente protegido | 0040, 0042 | Concluída em 19/10/2026 ([#24](https://github.com/MarceloMLR/fisco-projects/pull/24)) |
-| Projetos-4.1 | `pessoa-com-email` | O e-mail embaixo do nome em toda escolha de pessoa | 0005, 0027, 0107 | PR aberto |
+| Projetos-4.1 | `pessoa-com-email` | O e-mail embaixo do nome em toda escolha de pessoa | 0005, 0027, 0107 | PR aberto ([#101](https://github.com/MarceloMLR/fisco-projects/pull/101)) |
 
 ## 4. Cronograma
 
