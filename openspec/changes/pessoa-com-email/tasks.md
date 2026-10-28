@@ -10,8 +10,8 @@
 
 ## 3. Documentação e conferência
 
-- [ ] 3.1 `CLAUDE.md` e roadmap (Projetos-4.1)
-- [ ] 3.2 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
+- [x] 3.1 `CLAUDE.md` e roadmap (Projetos-4.1)
+- [x] 3.2 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
 
 ## Workflow follow-up
 
