@@ -7,7 +7,7 @@ import { useId, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { ProjectPerson } from '../api/client';
-import { acceptanceMilestonesQuery } from '../api/queries';
+import { acceptanceMilestonesQuery, emailsOf, projectMembersQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { FormField } from '../components/FormField';
@@ -62,6 +62,12 @@ export function AcceptanceDialog({
   const { data: milestones, isError } = useQuery({
     ...acceptanceMilestonesQuery(projectId),
     enabled: !onBehalf,
+  });
+  // The e-mail below each name tells apart people of the same name; the people come from the members of the project.
+  const { data: emails } = useQuery({
+    ...projectMembersQuery(projectId),
+    enabled: !onBehalf,
+    select: emailsOf,
   });
   const {
     register,
@@ -205,7 +211,11 @@ export function AcceptanceDialog({
                     value={field.value}
                     options={[
                       { value: '', label: t('acceptances.dialog.chooseRecipient'), disabled: true },
-                      ...people.map((member) => ({ value: member.id, label: member.name })),
+                      ...people.map((member) => ({
+                        value: member.id,
+                        label: member.name,
+                        detail: emails?.get(member.id),
+                      })),
                     ]}
                     invalid={invalid.recipientId !== undefined}
                     describedBy={`${ids}-recipient-help`}

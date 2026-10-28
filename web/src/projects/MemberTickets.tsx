@@ -53,7 +53,11 @@ function HandOverField({
       value={value}
       options={[
         { value: '', label: t('projects.members.tickets.keep') },
-        ...(people ?? []).map((person) => ({ value: person.id, label: person.name })),
+        ...(people ?? []).map((person) => ({
+          value: person.id,
+          label: person.name,
+          detail: person.email ?? undefined,
+        })),
       ]}
       onChange={onChange}
     />

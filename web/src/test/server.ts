@@ -199,6 +199,13 @@ export const demoPeople = {
 export const emailOf = (name: string) =>
   `${withoutAccents(name).replace(' ', '.')}@empresa.example`;
 
+/** A person to choose as the assignee or the requester of tickets, as the API answers it: with the e-mail. */
+export const ticketChoiceOf = (person: { id: string; name: string }) => ({
+  id: person.id,
+  name: person.name,
+  email: emailOf(person.name),
+});
+
 /** When the people last signed in; who is not here never did. */
 const lastSignIns: Record<string, string> = {
   [demoPeople.paulo.id]: '2026-10-19T15:00:00Z',

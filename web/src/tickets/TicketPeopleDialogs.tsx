@@ -103,7 +103,11 @@ export function PeopleChangeDialog({
             value={personId}
             options={[
               { value: '', label: t('tickets.people.choose'), disabled: true },
-              ...people.map((person) => ({ value: person.id, label: person.name })),
+              ...people.map((person) => ({
+                value: person.id,
+                label: person.name,
+                detail: person.email ?? undefined,
+              })),
             ]}
             onChange={setPersonId}
           />

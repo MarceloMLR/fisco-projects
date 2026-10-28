@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuditEntry } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
-import { auditPage, demoAuditEntries, problem, server, signedInAs } from '../test/server';
+import { auditPage, demoAuditEntries, emailOf, problem, server, signedInAs } from '../test/server';
 import { unzip } from '../test/unzip';
 
 const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
@@ -136,7 +136,10 @@ describe('Tela de Auditoria', () => {
     fireEvent.change(screen.getByRole('combobox', { name: text.filters.person }), {
       target: { value: 'Pau' },
     });
-    fireEvent.click(await screen.findByRole('option', { name: 'Paulo Nogueira' }));
+    // The e-mail below the name tells apart people of the same name.
+    const paulo = await screen.findByRole('option', { name: /^Paulo Nogueira/ });
+    expect(paulo).toHaveTextContent(`Paulo Nogueira${emailOf('Paulo Nogueira')}`);
+    fireEvent.click(paulo);
 
     await waitFor(() => {
       expect(lastRequest().get('actorId')).toBe('0199f5a2-7c1e-7d40-9a1b-000000000001');
@@ -378,7 +381,7 @@ describe('Relatório pela tela', () => {
     fireEvent.change(screen.getByRole('combobox', { name: text.filters.person }), {
       target: { value: 'Pau' },
     });
-    fireEvent.click(await screen.findByRole('option', { name: 'Paulo Nogueira' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Paulo Nogueira/ }));
     await waitFor(() => {
       expect(lastRequest().get('actorId')).toBe('0199f5a2-7c1e-7d40-9a1b-000000000001');
     });

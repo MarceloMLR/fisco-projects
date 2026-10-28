@@ -188,6 +188,32 @@ public sealed class TicketChangeTests(SqlServerFixture sqlServer)
         (await marina.GetAsync("/api/tickets/assignee-choices?number=999", Cancellation)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    // Spec: usuarios-e-papeis, "E-mail na escolha de pessoa".
+    [Fact(DisplayName = "Responsável com o e-mail")]
+    public async Task Choices_BringTheEmail()
+    {
+        await using var scene = await StartAsync();
+        var namesake = await scene.App.CreateUserAsync("Diego Torres", "diego.torres.ti@empresa.example");
+        await scene.App.AddProjectMemberAsync(scene.Erp, namesake, "Developer");
+        var number = await OpenAsync(scene.App, scene.Carla, scene.Erp, "Development");
+        using var marina = await scene.App.SignInAsync(scene.Marina);
+
+        var choices = await marina.GetFromJsonAsync<JsonElement>(
+            $"/api/tickets/assignee-choices?number={number}", Cancellation);
+        var requesters = await marina.GetFromJsonAsync<JsonElement>(
+            $"/api/tickets/requester-choices?number={number}", Cancellation);
+
+        choices.EnumerateArray()
+            .Where(person => person.GetProperty("name").GetString() == "Diego Torres")
+            .Select(person => (person.GetProperty("id").GetGuid(), person.GetProperty("email").GetString()))
+            .Should().BeEquivalentTo([
+                (scene.Diego, "diego.torres@empresa.example"),
+                (namesake, "diego.torres.ti@empresa.example"),
+            ]);
+        requesters.EnumerateArray().Should().AllSatisfy(person =>
+            person.GetProperty("email").GetString().Should().EndWith("@empresa.example"));
+    }
+
     [Fact(DisplayName = "Chamado encerrado mantém o responsável")]
     public async Task FinishedTicket_KeepsTheAssignee()
     {

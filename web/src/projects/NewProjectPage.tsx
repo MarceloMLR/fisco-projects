@@ -132,6 +132,7 @@ export function NewProjectPage() {
               id: me.id,
               directoryId: null,
               name: me.name,
+              email: me.email,
               canBeManager: true,
               canBeTechLead: me.role === 'Administrator',
             },

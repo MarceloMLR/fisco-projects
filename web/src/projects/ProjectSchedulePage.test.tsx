@@ -10,7 +10,9 @@ import {
   demoProjects,
   demoSchedule,
   demoScheduleWithSubtasks,
+  emailOf,
   emptySchedule,
+  membersOf,
   problem,
   projectsPage,
   scheduleSeenBy,
@@ -1085,6 +1087,33 @@ describe('Endereço do detalhe', () => {
 });
 
 // Spec: cronograma, requirement "Cliente como responsável" (ADR-0102).
+// Spec: usuarios-e-papeis, requirement "E-mail na escolha de pessoa".
+describe('E-mail na escolha de pessoa', () => {
+  it('Responsável da tarefa com o e-mail', async () => {
+    server.use(http.get('/api/projects/:id/members', () => HttpResponse.json(membersOf(project))));
+    await openSchedule();
+
+    fireEvent.click(screen.getByRole('button', { name: text.newItem }));
+    const dialog = await screen.findByRole('dialog', { name: text.form.title });
+    const field = within(dialog).getByRole('combobox', { name: text.form.owner });
+    fireEvent.mouseDown(field);
+
+    // The people who may own a task, each with the e-mail below the name; the field shows only the name.
+    const people = project.members
+      .filter((member) => member.role !== 'Viewer')
+      .map((member) => member.name);
+    await waitFor(() => {
+      expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(
+        expect.arrayContaining(people.map((name) => `${name}${emailOf(name)}`)),
+      );
+    });
+    fireEvent.click(
+      screen.getByRole('option', { name: (name) => name.startsWith('Rafael Souza') }),
+    );
+    expect(field).toHaveTextContent(/^Rafael Souza$/);
+  });
+});
+
 describe('Cliente como responsável', () => {
   it('Cliente como responsável pela tela', async () => {
     const changes: unknown[] = [];

@@ -9,6 +9,7 @@ import { peopleQuery } from '../api/queries';
 import { useDebounced } from '../hooks/useDebounced';
 import { fieldControl } from './fieldControl';
 import { FormField } from './FormField';
+import { PersonLines } from './PersonLines';
 
 /**
  * A person to choose: a user (id) or a person of the company directory who never signed in (directoryId), who becomes
@@ -18,6 +19,8 @@ export interface PersonChoice {
   id: string | null;
   directoryId: string | null;
   name: string;
+  /** Shown below the name, to tell apart people of the same name; none for an anonymized person. */
+  email?: string | null;
   /** An active Administrator or Project manager, who may manage a project (ADR-0085). */
   canBeManager: boolean;
   /** An active Administrator or Tech lead, who may lead a project technically (ADR-0097). */
@@ -33,8 +36,9 @@ const optionsShown = 20;
 
 /**
  * A person to choose in a form, such as the manager of a project: looks like the design system select and searches
- * the active people and the company directory as the person types, so it works with any number of people. The person
- * in the session is marked "(você)", and a person of the directory says "Nunca entrou".
+ * the active people and the company directory as the person types, so it works with any number of people. Each option
+ * shows the e-mail below the name, as the mentions do; the person in the session is marked "(você)", and a person of
+ * the directory says "Nunca entrou".
  */
 export function PersonField({
   label,
@@ -91,10 +95,11 @@ export function PersonField({
     () =>
       (data ?? [])
         .filter((person) => person.id === null || !(exclude ?? []).includes(person.id))
-        .map(({ id, directoryId, name, canBeManager, canBeTechLead }) => ({
+        .map(({ id, directoryId, name, email, canBeManager, canBeTechLead }) => ({
           id,
           directoryId,
           name,
+          email,
           canBeManager,
           canBeTechLead,
         })),
@@ -133,17 +138,11 @@ export function PersonField({
         isOptionEqualToValue={samePerson}
         renderOption={({ key, ...props }, person) => (
           <Box component="li" key={key} {...props}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span>{nameOf(person)}</span>
-              {person.id === null && (
-                <Box
-                  component="span"
-                  sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
-                >
-                  {t('dates.never')}
-                </Box>
-              )}
-            </Box>
+            <PersonLines
+              name={nameOf(person)}
+              email={person.email}
+              note={person.id === null ? t('dates.never') : undefined}
+            />
           </Box>
         )}
         noOptionsText={t('projects.form.noPeople')}

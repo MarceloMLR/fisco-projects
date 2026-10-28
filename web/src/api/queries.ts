@@ -188,6 +188,16 @@ export function projectMembersQuery(id: string) {
   });
 }
 
+/**
+ * The e-mail of each person of a project by the id, from its members, to tell apart people of the same name in a
+ * list to choose; an anonymized person has none.
+ */
+export function emailsOf(members: readonly { id: string; email: string }[]) {
+  return new Map(
+    members.filter((member) => member.email !== '').map((member) => [member.id, member.email]),
+  );
+}
+
 /** The schedule of a project: phases, tasks and milestones with the dates and delays computed by the API. */
 export function projectScheduleQuery(id: string) {
   return queryOptions({

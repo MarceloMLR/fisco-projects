@@ -4,7 +4,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Ticket, TicketRow } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
-import { demoPeople, demoTicket, demoTickets, server, signedInAs } from '../test/server';
+import {
+  demoPeople,
+  demoTicket,
+  demoTickets,
+  emailOf,
+  server,
+  signedInAs,
+  ticketChoiceOf,
+} from '../test/server';
 
 const text = ptBR.tickets;
 let rows: TicketRow[];
@@ -30,7 +38,7 @@ beforeEach(() => {
   server.use(
     http.get('/api/tickets', () => HttpResponse.json({ items: rows, total: rows.length })),
     http.get('/api/tickets/assignee-choices', () =>
-      HttpResponse.json([demoPeople.diego, demoPeople.marina]),
+      HttpResponse.json([demoPeople.diego, demoPeople.marina].map(ticketChoiceOf)),
     ),
     http.put('/api/tickets/assignee', async ({ request }) => {
       const body = (await request.json()) as { numbers: number[]; assigneeId: string };
@@ -62,7 +70,7 @@ describe('Trocas pela tela', () => {
     fireEvent.mouseDown(
       await within(dialog).findByRole('combobox', { name: text.people.assignee }),
     );
-    fireEvent.click(await screen.findByRole('option', { name: 'Diego Torres' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Diego Torres/ }));
     fireEvent.click(within(dialog).getByRole('button', { name: text.people.save }));
 
     expect(await screen.findByText('2 chamados atribuídos a Diego Torres.')).toBeInTheDocument();
@@ -88,11 +96,35 @@ describe('Trocas pela tela', () => {
     fireEvent.mouseDown(
       await within(dialog).findByRole('combobox', { name: text.people.assignee }),
     );
-    fireEvent.click(await screen.findByRole('option', { name: 'Diego Torres' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Diego Torres/ }));
     fireEvent.click(within(dialog).getByRole('button', { name: text.people.save }));
 
     expect(await screen.findByText('Chamado atribuído a Diego Torres.')).toBeInTheDocument();
     expect(assigned).toEqual([{ numbers: [first.number], assigneeId: demoPeople.diego.id }]);
+  });
+
+  // Spec: usuarios-e-papeis, requirement "E-mail na escolha de pessoa".
+  it('Responsável com o e-mail', async () => {
+    await renderApp('/tickets');
+    const [first] = rows;
+    if (first === undefined) {
+      throw new Error('No tickets.');
+    }
+    await screen.findByText(first.title);
+
+    fireEvent.click(within(rowOf(first.title)).getByRole('button', { name: text.assignLink }));
+    const dialog = await screen.findByRole('dialog', { name: text.people.assignTitle_one });
+    const field = await within(dialog).findByRole('combobox', { name: text.people.assignee });
+    fireEvent.mouseDown(field);
+
+    // Each person with the e-mail below the name; the field shows only the name.
+    const options = (await screen.findAllByRole('option')).slice(1);
+    expect(options.map((option) => option.textContent)).toEqual([
+      `Diego Torres${emailOf('Diego Torres')}`,
+      `Marina Costa${emailOf('Marina Costa')}`,
+    ]);
+    fireEvent.click(await screen.findByRole('option', { name: /^Diego Torres/ }));
+    expect(field).toHaveTextContent(/^Diego Torres$/);
   });
 
   it('Sem seleção para quem não troca', async () => {

@@ -16,6 +16,9 @@ namespace FiscoProjects.Tickets.Endpoints;
 /// <summary>A person of a ticket.</summary>
 public sealed record TicketPersonResponse(Guid Id, string Name);
 
+/// <summary>A person who may be chosen as the assignee or the requester, with the e-mail; none when anonymized.</summary>
+public sealed record TicketPersonChoiceResponse(Guid Id, string Name, string? Email);
+
 /// <summary>The project of a ticket: the screens show the code beside the number (ADR-0029).</summary>
 public sealed record TicketProjectResponse(Guid Id, string Code, string Name);
 
@@ -582,16 +585,17 @@ public static class TicketEndpoints
         return ChangeResultOf(await transfer.ExecuteAsync(number, request.Team, viewer, cancellationToken));
     }
 
-    private static async Task<Results<Ok<IReadOnlyList<TicketPersonResponse>>, NotFound>> ChoicesOfAsync(
+    private static async Task<Results<Ok<IReadOnlyList<TicketPersonChoiceResponse>>, NotFound>> ChoicesOfAsync(
         int[] numbers,
         HttpContext http,
         IUserAccess access,
-        Func<TicketViewer, CancellationToken, Task<IReadOnlyList<TicketPerson>?>> choose,
+        Func<TicketViewer, CancellationToken, Task<IReadOnlyList<TicketPersonChoice>?>> choose,
         CancellationToken cancellationToken)
     {
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
         return numbers.Length > 0 && await choose(viewer, cancellationToken) is { } people
-            ? TypedResults.Ok<IReadOnlyList<TicketPersonResponse>>([.. people.Select(PersonOf)])
+            ? TypedResults.Ok<IReadOnlyList<TicketPersonChoiceResponse>>(
+                [.. people.Select(person => new TicketPersonChoiceResponse(person.Id, person.Name, person.Email))])
             : TypedResults.NotFound();
     }
 

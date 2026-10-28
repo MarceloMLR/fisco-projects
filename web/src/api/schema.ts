@@ -3721,6 +3721,13 @@ export interface components {
          * @enum {unknown}
          */
         TicketParticipantRole: "Requester" | "Owner" | "Manager" | "TechLead" | "Development" | "Functional" | "Administrator" | "Other";
+        /** @description A person who may be chosen as the assignee or the requester, with the e-mail; none when anonymized. */
+        TicketPersonChoiceResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: null | string;
+        };
         /** @description A person of a ticket. */
         TicketPersonResponse: {
             /** Format: uuid */
@@ -8459,7 +8466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TicketPersonResponse"][];
+                    "application/json": components["schemas"]["TicketPersonChoiceResponse"][];
                 };
             };
             /** @description Unauthorized */
@@ -8497,7 +8504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TicketPersonResponse"][];
+                    "application/json": components["schemas"]["TicketPersonChoiceResponse"][];
                 };
             };
             /** @description Unauthorized */

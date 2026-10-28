@@ -10,7 +10,14 @@ import {
   emptyMyWork,
 } from '../test/demoMyWork';
 import { phoneWidth, renderApp } from '../test/renderApp';
-import { demoPeople, demoProjects, projectsPage, server, signedInAs } from '../test/server';
+import {
+  demoPeople,
+  demoProjects,
+  projectsPage,
+  server,
+  signedInAs,
+  ticketChoiceOf,
+} from '../test/server';
 
 const text = ptBR.myWork;
 
@@ -38,7 +45,7 @@ beforeEach(() => {
       return new HttpResponse(null, { status: 204 });
     }),
     http.get('/api/tickets/assignee-choices', () =>
-      HttpResponse.json([demoPeople.diego, demoPeople.marina]),
+      HttpResponse.json([demoPeople.diego, demoPeople.marina].map(ticketChoiceOf)),
     ),
     http.put('/api/tickets/assignee', async ({ request }) => {
       assigned.push((await request.json()) as { numbers: number[]; assigneeId: string });
@@ -249,7 +256,7 @@ describe('Ações pela tela', () => {
     fireEvent.mouseDown(
       await within(dialog).findByRole('combobox', { name: ptBR.tickets.people.assignee }),
     );
-    fireEvent.click(await screen.findByRole('option', { name: 'Diego Torres' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Diego Torres/ }));
     fireEvent.click(within(dialog).getByRole('button', { name: ptBR.tickets.people.save }));
 
     expect(await screen.findByText('Chamado atribuído a Diego Torres.')).toBeInTheDocument();
