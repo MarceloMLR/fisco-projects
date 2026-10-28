@@ -698,6 +698,43 @@
         }
       }
     },
+    "/api/people/{id}/photo": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "operationId": "GetPersonPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/schedule/template": {
       "post": {
         "tags": [

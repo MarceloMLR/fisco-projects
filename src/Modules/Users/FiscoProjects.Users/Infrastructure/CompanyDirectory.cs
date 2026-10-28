@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Azure.Identity;
 using FiscoProjects.Users.Application;
 using Microsoft.Extensions.Logging;
 
@@ -23,9 +21,9 @@ internal sealed partial class CompanyDirectory(IEnumerable<IProviderDirectory> d
             {
                 found.AddRange(await directory.SearchAsync(search, limit, cancellationToken));
             }
-            catch (Exception exception) when (Failed(exception, cancellationToken))
+            catch (Exception exception) when (GraphFailures.Failed(exception, cancellationToken))
             {
-                LogSearchFailed(logger, directory.Provider, StatusOf(exception), exception.GetType().Name);
+                LogSearchFailed(logger, directory.Provider, GraphFailures.StatusOf(exception), exception.GetType().Name);
             }
         }
 
@@ -44,19 +42,12 @@ internal sealed partial class CompanyDirectory(IEnumerable<IProviderDirectory> d
         {
             return await directory.FindAsync(provider, externalId, cancellationToken);
         }
-        catch (Exception exception) when (Failed(exception, cancellationToken))
+        catch (Exception exception) when (GraphFailures.Failed(exception, cancellationToken))
         {
-            LogFindFailed(logger, provider, StatusOf(exception), exception.GetType().Name);
+            LogFindFailed(logger, provider, GraphFailures.StatusOf(exception), exception.GetType().Name);
             return null;
         }
     }
-
-    /// <summary>A failure of the directory, not the request of the person cancelled.</summary>
-    private static bool Failed(Exception exception, CancellationToken cancellationToken) =>
-        exception is HttpRequestException or AuthenticationFailedException or JsonException
-        || (exception is TaskCanceledException && !cancellationToken.IsCancellationRequested);
-
-    private static int? StatusOf(Exception exception) => (int?)(exception as HttpRequestException)?.StatusCode;
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The people directory {Provider} failed in a search ({Status}, {Failure}).")]
     private static partial void LogSearchFailed(ILogger logger, string provider, int? status, string failure);
