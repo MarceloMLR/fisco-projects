@@ -2,7 +2,8 @@
 # Actions reaches by federation (OIDC), only from the GitHub environment of the same name of this repository, without
 # secrets. It publishes the application and runs terraform plan: it changes the resource group, reads and locks the
 # Terraform state and reads Entra ID, but cannot give roles or change Entra ID, so the apply stays with whoever operates
-# the installation.
+# the installation. Where the application does not administer the database, as in production, it joins the group of
+# database administrators to apply the migrations (ADR-0125).
 
 variable "display_name" {
   type = string
@@ -33,6 +34,16 @@ variable "state_account_id" {
 
 variable "state_container_id" {
   description = "Container of the Terraform state, read and locked by terraform plan."
+  type        = string
+}
+
+variable "database_admin" {
+  description = "Whether the identity joins the group of database administrators, to apply the migrations (ADR-0125)."
+  type        = bool
+}
+
+variable "database_admins_group" {
+  description = "Group of database administrators."
   type        = string
 }
 
@@ -91,6 +102,15 @@ resource "azuread_app_role_assignment" "application_read" {
   app_role_id         = data.azuread_service_principal.graph.app_role_ids["Application.Read.All"]
   principal_object_id = azuread_service_principal.main.object_id
   resource_object_id  = data.azuread_service_principal.graph.object_id
+}
+
+# Only where the application does not apply the migrations itself (ADR-0114, ADR-0125). The membership is given by the
+# apply of whoever operates the installation, never by the pipeline.
+resource "azuread_group_member" "database_admin" {
+  count = var.database_admin ? 1 : 0
+
+  group_object_id  = var.database_admins_group
+  member_object_id = azuread_service_principal.main.object_id
 }
 
 output "client_id" {

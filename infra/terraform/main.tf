@@ -131,6 +131,9 @@ module "ci" {
   resource_group_id  = azurerm_resource_group.main.id
   state_account_id   = local.state_account_id
   state_container_id = local.state_container_id
+  # The pipeline applies the migrations where the application does not (ADR-0125).
+  database_admin        = !var.app_is_database_admin
+  database_admins_group = module.database.admins_group_object_id
 }
 
 module "app" {

@@ -137,6 +137,9 @@ public sealed partial class InfrastructureTests
             .And.NotContain("azuread_application_password");
         Regex.Matches(ci, "resource \"azurerm_role_assignment\"").Should().HaveCount(3);
         Regex.Matches(ci, "resource \"azuread_app_role_assignment\"").Should().HaveCount(2);
+        // Only where the application does not apply the migrations itself, as production (ADR-0125).
+        ci.Should().Contain("resource \"azuread_group_member\" \"database_admin\" {\n  count = var.database_admin ? 1 : 0\n\n  group_object_id  = var.database_admins_group\n  member_object_id = azuread_service_principal.main.object_id");
+        Read("main.tf").Should().Contain("database_admin        = !var.app_is_database_admin\n  database_admins_group = module.database.admins_group_object_id");
         Read("main.tf").Should().Contain("resource_group_id  = azurerm_resource_group.main.id");
         // The container of the state has the names of the script that creates it.
         var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
@@ -278,6 +281,14 @@ public sealed partial class InfrastructureTests
         validation.Should().Contain("can(regex(\"^[^@/]+@[0-9]+/[^@/]+@[0-9]+$\", var.github_repository))");
         Read("environments", "dev.tfvars").Should().Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
         Read("modules", "ci", "main.tf").Should().Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"");
+        // The production of the installation: the defaults of production, its own state, and nothing personal (ADR-0125).
+        var production = Read("environments", "prod.tfvars");
+        production.Should().Contain("installation = \"mlr\"").And.Contain("environment  = \"prod\"")
+            .And.Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+        Regex.Matches(production, "^\\w+ *=", RegexOptions.Multiline).Select(match => match.Value.Split(' ')[0])
+            .Should().Equal(["installation", "environment", "github_repository"], "the rest are the defaults of production");
+        Read("environments", "prod.backend.hcl").Should().Contain("key                  = \"prod.tfstate\"")
+            .And.Contain("storage_account_name = \"stfpmlrtfstate\"");
     }
 
     private static string Read(params string[] relativePath) => File.ReadAllText(Path.Combine([Folder, .. relativePath]));
