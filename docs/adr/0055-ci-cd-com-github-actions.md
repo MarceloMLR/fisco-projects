@@ -1,5 +1,5 @@
 ---
-status: aceita (linha "Em todo pull request" substituída pelo ADR-0090)
+status: aceita (linha "Em todo pull request" substituída pelo ADR-0090; linha "Produção" substituída pelo ADR-0125)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
@@ -34,7 +34,7 @@ Fluxo:
 | Em todo pull request | Build do backend e do frontend; testes unitários, de arquitetura e de integração (SQL Server em contêiner); lint, formatação e checagem de tipos; dependências vulneráveis; validação das specs do OpenSpec; `terraform fmt`, `validate` e `plan`, com o plano comentado no PR. *Substituído pelo ADR-0090: as partes rodam em paralelo, e o commit que só muda documentação roda só as specs.* |
 | Regra da `main` | Só recebe código por PR, com todas as verificações aprovadas |
 | Merge na `main` | Deploy automático no ambiente de desenvolvimento e demonstração: `terraform apply`, migrações do banco e publicação da aplicação |
-| Produção | Workflow acionado manualmente, por versão: revisão do plano, `terraform apply`, migrações do banco e publicação |
+| Produção | Workflow acionado manualmente, por versão: revisão do plano, `terraform apply`, migrações do banco e publicação. *Substituído pelo ADR-0125: o workflow roda na tag da versão, com a aprovação do environment `prod`, e o `apply` fica com quem opera.* |
 
 Regras:
 

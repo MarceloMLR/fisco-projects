@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Compares the infrastructure of an environment with the Terraform code (ADR-0115): terraform plan with the state of the
-# environment, without applying. A difference only warns, because the apply stays with whoever operates the
-# installation (docs/instalacao.md). ENVIRONMENT names the environment; the credentials come from the ARM_* variables,
-# and the Azure CLI must be signed in.
+# environment, without applying, because the apply stays with whoever operates the installation (docs/instalacao.md).
+# A difference only warns, or, with PLAN_MUST_MATCH=true, as in production, stops the deployment before it changes
+# anything (ADR-0125). ENVIRONMENT names the environment; the credentials come from the ARM_* variables, and the Azure
+# CLI must be signed in.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -74,6 +75,13 @@ case "$status" in
       echo "$changes"
       echo '```'
     } >> "$summary"
+    if [ "${PLAN_MUST_MATCH:-false}" = true ]; then
+      echo "A infraestrutura de $environment está diferente do código: aplique o plano (docs/instalacao.md) e publique de novo." >&2
+      if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        echo "::error::A infraestrutura de $environment está diferente do código: aplique o plano (docs/instalacao.md) e publique de novo."
+      fi
+      exit 1
+    fi
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
       echo "::warning::A infraestrutura de $environment está diferente do código: aplique o plano (docs/instalacao.md)."
     fi
