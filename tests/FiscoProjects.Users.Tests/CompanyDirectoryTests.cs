@@ -1,7 +1,6 @@
 using System.Web;
 using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
-using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -117,10 +116,9 @@ public sealed class CompanyDirectoryTests
         logger.Entries[0].Message.Should().Contain("entra").And.Contain("503")
             .And.NotContain("hel", "the text searched is personal");
     }
-
     private GraphPeopleDirectory Graph(bool enabled = true) => new(
-        new Clients(_graph),
-        new FixedTokens(),
+        new GraphClients(_graph),
+        new GraphToken(),
         Options.Create(new EntraSignInOptions
         {
             Enabled = enabled,
@@ -133,16 +131,6 @@ public sealed class CompanyDirectoryTests
         Enabled = true,
         People = [new LocalPerson { Name = "Hélio Neves", Email = "helio.neves@empresa.example" }],
     }));
-
-    private sealed class Clients(FakeGraph graph) : IHttpClientFactory
-    {
-        public HttpClient CreateClient(string name) => new(graph, disposeHandler: false);
-    }
-
-    private sealed class FixedTokens : IGraphTokens
-    {
-        public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult(FakeGraph.Token);
-    }
 }
 
 /// <summary>A logger that keeps what was written, to check the level and that nothing personal goes to the log.</summary>

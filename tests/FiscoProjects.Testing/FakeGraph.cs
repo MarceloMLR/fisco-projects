@@ -11,6 +11,12 @@ namespace FiscoProjects.Testing;
 public sealed record FakeGraphUser(
     string Id, string DisplayName, string? Mail, string UserPrincipalName, bool Guest = false, bool Enabled = true);
 
+/// <summary>
+/// The photo of a user of the simulated tenant: the bytes, the type Graph answers and whether Microsoft 365 has it in the
+/// size of 96x96, as a photo kept only in Entra ID may not.
+/// </summary>
+public sealed record FakeGraphPhoto(byte[] Content, string ContentType = "image/jpeg", bool Sized = true);
+
 /// <summary>An e-mail the simulation accepted from a mailbox: what the sending gave to Graph.</summary>
 public sealed record FakeGraphMail(
     string Mailbox, string Subject, string ContentType, string Content, string ToAddress, string ToName, bool SaveToSentItems);
@@ -18,7 +24,7 @@ public sealed record FakeGraphMail(
 /// <summary>
 /// Microsoft Graph simulated inside the process (ADR-0056, ADR-0119): the list and the search of the users of a
 /// fictitious tenant and one user by id, as the directory of the people asks them, and the sending of e-mails from the
-/// mailboxes the application may send from (ADR-0123). Like the real one, the search finds the beginning of the words
+/// mailboxes the application may send from (ADR-0123), and the photos of the users (ADR-0124). Like the real one, the search finds the beginning of the words
 /// of the name and the beginning of the e-mail and of the sign-in name, without telling case apart, and asks for the
 /// header of the advanced queries; and a mailbox outside the scope of Exchange answers 403. Nothing reaches the network.
 /// </summary>
@@ -31,6 +37,9 @@ public sealed partial class FakeGraph : HttpMessageHandler
     private readonly ConcurrentQueue<FakeGraphMail> _mail = new();
 
     public List<FakeGraphUser> Users { get; } = [];
+
+    /// <summary>The photos of the users, by the id of the user.</summary>
+    public Dictionary<string, FakeGraphPhoto> Photos { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The mailboxes the application may send from, as the scope of "Application Mail.Send" in Exchange.</summary>
     public List<string> Mailboxes { get; } = [];
@@ -65,6 +74,12 @@ public sealed partial class FakeGraph : HttpMessageHandler
         if (send.Success && request.Method == HttpMethod.Post)
         {
             return await SendMailAsync(Uri.UnescapeDataString(send.Groups[1].Value), request, cancellationToken);
+        }
+
+        var photo = UserPhoto().Match(path);
+        if (photo.Success && request.Method == HttpMethod.Get)
+        {
+            return PhotoOf(photo.Groups[1].Value, sized: photo.Groups[2].Value != "photo");
         }
 
         if (path == "/v1.0/users")
@@ -155,6 +170,24 @@ public sealed partial class FakeGraph : HttpMessageHandler
         return new HttpResponseMessage(HttpStatusCode.Accepted);
     }
 
+    /// <summary>The photo of a user, as Graph answers it: 404 without a photo, or without one in the size asked.</summary>
+    private HttpResponseMessage PhotoOf(string userId, bool sized)
+    {
+        if (!Photos.TryGetValue(userId, out var photo) || (sized && !photo.Sized))
+        {
+            return new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = JsonContent.Create(
+                    new { error = new { code = "ImageNotFound", message = "Exception of type 'Microsoft.Fast.Profile.Core.Exception.ImageNotFoundException' was thrown." } },
+                    options: JsonSerializerOptions.Web),
+            };
+        }
+
+        var content = new ByteArrayContent(photo.Content);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(photo.ContentType);
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+    }
+
     /// <summary>The user with the fields asked, as Graph answers them.</summary>
     private static Dictionary<string, object?> Shown(FakeGraphUser user, string? select, bool withState)
     {
@@ -187,6 +220,9 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
     [GeneratedRegex("^/v1\\.0/users/([^/]+)/sendMail$")]
     private static partial Regex SendMail();
+
+    [GeneratedRegex("^/v1\\.0/users/([^/]+)/(photos/96x96|photo)/\\$value$")]
+    private static partial Regex UserPhoto();
 
     [GeneratedRegex("\"(\\w+):((?:[^\"\\\\]|\\\\.)*)\"")]
     private static partial Regex Clause();

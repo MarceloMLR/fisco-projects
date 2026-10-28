@@ -180,9 +180,10 @@ Regras:
 | [0115](0115-publicacao-no-ambiente-de-desenvolvimento.md) | Publicação no ambiente de desenvolvimento a cada merge | aceita (e-mail dos alertas nas variáveis e leitura do Entra ID substituídos pelo ADR-0116) | 2026-10-25 |
 | [0116](0116-identidade-do-pipeline-e-logs-publicos.md) | Identidade do pipeline pelos números do repositório e nada pessoal nos logs públicos | aceita | 2026-10-25 |
 | [0117](0117-entrada-pelo-entra-na-pratica.md) | Como a entrada pelo Entra ID funciona, com a credencial pela identidade gerenciada | aceita | 2026-10-25 |
-| [0118](0118-cartao-da-pessoa.md) | Cartão da pessoa ao clicar no avatar | aceita | 2026-10-26 |
+| [0118](0118-cartao-da-pessoa.md) | Cartão da pessoa ao clicar no avatar | aceita (fotos do Microsoft 365 substituído pelo ADR-0124) | 2026-10-26 |
 | [0119](0119-diretorio-da-microsoft-pelo-graph.md) | Diretório da empresa pelo Microsoft Graph | aceita | 2026-10-26 |
 | [0120](0120-arquivos-no-sharepoint-na-pratica.md) | Como os arquivos ficam no SharePoint | aceita | 2026-10-26 |
 | [0121](0121-pasta-de-cada-projeto.md) | Uma pasta por projeto no armazenamento, renomeada com o projeto | aceita | 2026-10-26 |
 | [0122](0122-escolher-a-pasta-do-projeto.md) | Escolher uma pasta que já existe para o projeto | aceita | 2026-10-27 |
 | [0123](0123-emails-pelo-graph-na-pratica.md) | Como os e-mails saem pelo Microsoft Graph | aceita | 2026-10-27 |
+| [0124](0124-foto-da-pessoa-pelo-microsoft-365.md) | Foto da pessoa no avatar, lida do Microsoft 365 | aceita | 2026-10-27 |

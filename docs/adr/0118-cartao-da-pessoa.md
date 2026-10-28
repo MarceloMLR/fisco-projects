@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (fotos do Microsoft 365 substituído pelo ADR-0124)
 date: 2026-10-26
 decision-makers: Marcelo Ribeiro
 ---
@@ -17,7 +17,7 @@ As telas mostram as pessoas pelo avatar com as iniciais e o nome ao lado. Com du
 - O mesmo cartão em todas as telas, que funcione no celular, onde não existe "passar o mouse".
 - As listas não trazem o e-mail de cada pessoa: ele só é lido quando alguém abre o cartão.
 - O e-mail das pessoas da empresa já aparece para quem tem sessão, na busca de pessoas (ADR-0005, ADR-0007); a pessoa anonimizada não tem mais e-mail (ADR-0110).
-- Fotos do Microsoft 365 não são usadas na v1 (design system, Avatar).
+- Fotos do Microsoft 365 não são usadas na v1 (design system, Avatar). Substituído pelo ADR-0124: o avatar mostra a foto da pessoa no Microsoft 365.
 
 ## Opções consideradas
 

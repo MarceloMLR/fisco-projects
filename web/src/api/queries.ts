@@ -263,6 +263,18 @@ export function clientSettingsQuery() {
   });
 }
 
+/**
+ * The ways in of the installation, the local one and the one through Entra ID (ADR-0078, ADR-0117): the photos of the
+ * people come from Microsoft 365 only with the second (ADR-0124). It changes only with the configuration.
+ */
+export function signInOptionsQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.installation, 'sign-in-options'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/session/sign-in-options', { signal })),
+    staleTime: Infinity,
+  });
+}
+
 /** The rules of the installation for the screens of a session: the time zone of dates and times (ADR-0013). */
 export function generalRulesQuery() {
   return queryOptions({

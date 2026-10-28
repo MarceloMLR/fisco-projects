@@ -16,6 +16,7 @@ import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { type MouseEvent, type ReactNode, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { Avatar } from './Avatar';
 import { Dialog } from './Dialog';
 import { PersonLines } from './PersonLines';
@@ -32,9 +33,10 @@ export type { MentionChoice } from './typedMention';
 
 /** A person in the lists of a mention: the name and, below, the e-mail that tells apart people of the same name. */
 function MentionPerson({ person }: { person: MentionChoice }) {
+  const photo = usePersonPhoto()(person.id);
   return (
     <>
-      <Avatar name={person.name} size="sm" />
+      <Avatar name={person.name} size="sm" photo={photo} />
       <PersonLines name={person.name} email={person.email} />
     </>
   );

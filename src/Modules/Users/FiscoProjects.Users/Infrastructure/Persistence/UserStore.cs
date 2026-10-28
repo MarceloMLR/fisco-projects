@@ -33,6 +33,13 @@ internal sealed class UserStore(UsersDbContext db, IEnumerable<IPersonalDataEras
             .OrderBy(provider => provider)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<UserIdentity>> IdentitiesAsync(Guid userId, CancellationToken cancellationToken) =>
+        await db.IdentityLinks.AsNoTracking()
+            .Where(link => link.UserId == userId)
+            .OrderBy(link => link.Provider)
+            .Select(link => new UserIdentity(link.Provider, link.ExternalId))
+            .ToListAsync(cancellationToken);
+
     public void Add(User user, IdentityLink link)
     {
         db.Users.Add(user);

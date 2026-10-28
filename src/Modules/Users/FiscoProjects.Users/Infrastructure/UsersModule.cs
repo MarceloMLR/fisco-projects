@@ -32,6 +32,10 @@ public static class UsersModule
         services.AddScoped<ListUsers>();
         services.AddScoped<ListPeople>();
         services.AddScoped<GetPerson>();
+        // The photos of Microsoft 365, kept only in the memory (ADR-0124).
+        services.AddScoped<GetPersonPhoto>();
+        services.AddSingleton<PersonPhotoCache>();
+        services.AddScoped<IPersonPhotos, GraphPersonPhotos>();
         // The company directory: the demo one of the local sign-in and the one of Microsoft Graph (ADR-0119).
         services.AddScoped<IProviderDirectory, LocalPeopleDirectory>();
         services.AddScoped<IProviderDirectory, GraphPeopleDirectory>();

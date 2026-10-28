@@ -11,14 +11,16 @@ import { Link } from 'react-router';
 import type { SessionUser } from '../api/client';
 import { Avatar } from '../components/Avatar';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { useThemeChoice, useThemeOptions } from '../profile/themeChoice';
 import { useSession } from '../session/SessionContext';
 
 /** Name and e-mail of the person in the session, next to the avatar (fp-appbar__who). */
 export function SessionPerson({ user, mutedColor }: { user: SessionUser; mutedColor: string }) {
+  const photo = usePersonPhoto()(user.id);
   return (
     <>
-      <Avatar name={user.name} />
+      <Avatar name={user.name} photo={photo} />
       <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
         <Box sx={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {user.name}
@@ -52,6 +54,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
   const open = anchor !== null;
+  const photoOf = usePersonPhoto();
 
   return (
     <>
@@ -82,7 +85,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
           },
         }}
       >
-        <Avatar name={user.name} />
+        <Avatar name={user.name} photo={photoOf(user.id)} />
       </Box>
       <Menu
         id={menuId}
