@@ -28,6 +28,7 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { Select } from '../components/Select';
 import { TextField } from '../components/TextField';
 import { useDates } from '../format/useDates';
+import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
 import { IncludePersonDialog } from './IncludePersonDialog';
@@ -310,6 +311,7 @@ function MemberDetails({
   const queryClient = useQueryClient();
   const { formatLastAccess, formatDate } = useDates();
   const roleHelpId = useId();
+  const photoOf = usePersonPhoto();
   const [removing, setRemoving] = useState(false);
   const [roleError, setRoleError] = useState<string>();
   const { permissions } = project;
@@ -397,7 +399,7 @@ function MemberDetails({
         sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
-          <Avatar name={member.name} size="lg" />
+          <Avatar name={member.name} size="lg" photo={photoOf(member.id)} />
           <Box sx={{ minWidth: 0 }}>
             <Box
               component="h2"

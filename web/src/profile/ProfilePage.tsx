@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { profileQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
 import { useDates } from '../format/useDates';
+import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { useSession } from '../session/SessionContext';
 import { EmailNotices } from './EmailNotices';
 import { ProfileCard, ProfileRow, singleColumn } from './ProfileCard';
@@ -31,6 +32,7 @@ export function ProfilePage() {
   const { theme, choose, message, dismiss } = useThemeChoice();
   const [notice, setNotice] = useState<string>();
   const profile = useQuery(profileQuery()).data;
+  const photoOf = usePersonPhoto();
 
   if (session.status !== 'signed-in') {
     return null;
@@ -72,7 +74,7 @@ export function ProfilePage() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-          <Avatar name={user.name} size="lg" />
+          <Avatar name={user.name} size="lg" photo={photoOf(user.id)} />
           <Box sx={{ minWidth: 0 }}>
             <Box
               component="h1"

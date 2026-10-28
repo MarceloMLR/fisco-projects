@@ -403,3 +403,61 @@ describe('Cartão da pessoa no chamado', () => {
     expect(writeText).toHaveBeenCalledWith('diego.torres@empresa.example');
   });
 });
+
+// Spec: estrutura-das-telas, requirement "Foto no avatar" (ADR-0124).
+describe('Foto no avatar', () => {
+  /** The avatar of Diego in his message, with the photo of Microsoft 365 when the installation signs in through Entra ID. */
+  async function diegosAvatar() {
+    server.use(
+      http.get('/api/session/sign-in-options', () =>
+        HttpResponse.json({ localSignIn: false, entraSignIn: true }),
+      ),
+    );
+    ticket = { ...ticket, messages: [message(1, demoPeople.diego.id, 'Vou olhar o XML')] };
+    await openTicket();
+    const list = screen.getByRole('list', { name: text.conversation.messages });
+    return within(list).getByRole('button', {
+      name: ptBR.person.open.replace('{{name}}', 'Diego Torres'),
+    });
+  }
+
+  function photoIn(avatar: HTMLElement) {
+    const photo = avatar.querySelector('img');
+    if (photo === null) {
+      throw new Error('No photo.');
+    }
+    return photo;
+  }
+
+  it('Avatar com a foto', async () => {
+    const avatar = await diegosAvatar();
+    const photo = await waitFor(() => photoIn(avatar));
+
+    // The initials until the photo loads; then the photo covers the circle, without a ring.
+    expect(photo).toHaveAttribute('src', `/api/people/${demoPeople.diego.id}/photo`);
+    expect(photo).toHaveStyle({ opacity: '0' });
+    fireEvent.load(photo);
+
+    expect(photo).toHaveStyle({ opacity: '1', objectFit: 'cover' });
+    expect(photo.parentElement).toHaveStyle({ borderWidth: '0px' });
+  });
+
+  it('Avatar sem foto', async () => {
+    const avatar = await diegosAvatar();
+    const photo = await waitFor(() => photoIn(avatar));
+
+    fireEvent.error(photo);
+
+    expect(avatar.querySelector('img')).toBeNull();
+    expect(avatar).toHaveTextContent('DT');
+  });
+
+  it('Avatar sem a entrada pelo Entra', async () => {
+    ticket = { ...ticket, messages: [message(1, demoPeople.diego.id, 'Vou olhar o XML')] };
+    await openTicket();
+    const list = screen.getByRole('list', { name: text.conversation.messages });
+
+    expect(list.querySelector('img')).toBeNull();
+    expect(within(list).getAllByText('DT')[0]).toBeInTheDocument();
+  });
+});

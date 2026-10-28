@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { type ComponentProps, type MouseEvent, type SyntheticEvent, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { personQuery } from '../api/queries';
+import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { Avatar } from './Avatar';
 
 /** A person shown by the avatar: the user and the name the screen already has. */
@@ -49,6 +50,7 @@ export function CardAvatar({
   const titleId = useId();
   const open = anchor !== null;
   const details = useQuery({ ...personQuery(person.id), enabled: open });
+  const photo = usePersonPhoto()(person.id);
   const name = details.data?.name ?? person.name;
   const email = details.data?.email ?? null;
 
@@ -85,7 +87,7 @@ export function CardAvatar({
           '&:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: 2 },
         }}
       >
-        <Avatar name={person.name} size={size} tone={tone} />
+        <Avatar name={person.name} size={size} tone={tone} photo={photo} />
       </Box>
       <Popover
         open={open}
@@ -115,7 +117,7 @@ export function CardAvatar({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
-          <Avatar name={name} size="lg" tone={tone} />
+          <Avatar name={name} size="lg" tone={tone} photo={photo} />
           <Box sx={{ minWidth: 0 }}>
             <Box
               id={titleId}
