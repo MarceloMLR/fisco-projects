@@ -19,6 +19,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 22/10/2026, com o computador desligado, Marcelo pediu um jeito fácil de demonstrar de outro computador: a Cronograma-3.4 (`demonstracao-no-codespaces`) põe a demonstração no GitHub Codespaces (ADR-0113).
 - Em 25/10/2026, Marcelo criou a assinatura do Azure (avaliação gratuita) para testar o sistema de ponta a ponta: a Fundação-6 e a Fundação-7 voltam para a fila, seguidas do grupo M365, com a avaliação do Microsoft 365 só para o SharePoint e o e-mail (ADR-0114).
 - Em 25/10/2026, depois da M365-1, Marcelo pediu o e-mail embaixo do nome na menção, para separar pessoas de mesmo nome (Chamados-2.5, `mencao-com-email`), e o cartão da pessoa ao clicar na foto (Fundação-5.4, `cartao-da-pessoa`), os dois antes da M365-2.
+- Em 27/10/2026, depois da M365-4, com duas "Marina Costa" no `dev` (a fictícia e a do tenant), Marcelo pediu o e-mail embaixo do nome em toda escolha de pessoa (Projetos-4.1, `pessoa-com-email`).
 
 ## Marcos
 
@@ -88,6 +89,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Projetos-2 | `clientes` | Cadastro de clientes, inclusive o cliente novo criado pelo gerente na criação do projeto | 0015, 0046 | Concluída em 19/10/2026 ([#22](https://github.com/MarceloMLR/fisco-projects/pull/22)) |
 | Projetos-3 | `projetos` | Criação com gerente e líder técnico, lista, status, somente leitura quando encerrado | 0016, 0043, 0072 | Concluída em 19/10/2026 ([#23](https://github.com/MarceloMLR/fisco-projects/pull/23)) |
 | Projetos-4 | `membros-do-projeto` | Incluir pessoas pelo diretório (versão simulada), papéis no projeto, último gerente protegido | 0040, 0042 | Concluída em 19/10/2026 ([#24](https://github.com/MarceloMLR/fisco-projects/pull/24)) |
+| Projetos-4.1 | `pessoa-com-email` | O e-mail embaixo do nome em toda escolha de pessoa | 0005, 0027, 0107 | PR aberto |
 
 ## 4. Cronograma
 
