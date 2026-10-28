@@ -10,7 +10,15 @@ import {
   demoMilestones,
 } from '../test/demoAcceptances';
 import { phoneWidth, renderApp } from '../test/renderApp';
-import { demoPeople, demoProjects, problem, server, signedInAs } from '../test/server';
+import {
+  demoPeople,
+  demoProjects,
+  emailOf,
+  membersOf,
+  problem,
+  server,
+  signedInAs,
+} from '../test/server';
 
 const text = ptBR.acceptances;
 const requests: { method: string; path: string; body: string }[] = [];
@@ -52,6 +60,7 @@ beforeEach(() => {
   signedInAs('ProjectManager');
   server.use(
     http.get('/api/projects/:id', () => HttpResponse.json(project)),
+    http.get('/api/projects/:id/members', () => HttpResponse.json(membersOf(project))),
     http.get('/api/projects/:id/acceptances', ({ request }) =>
       HttpResponse.json(acceptanceList(terms, new URL(request.url), manage)),
     ),
@@ -127,9 +136,10 @@ function titles(): string[] {
     .map((row) => within(row).queryAllByRole('gridcell')[0]?.textContent ?? '');
 }
 
+/** Chooses an option by its label, above the e-mail of a person. */
 async function choose(dialog: HTMLElement, field: string, option: string) {
   fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: field }));
-  fireEvent.click(await screen.findByRole('option', { name: option }));
+  fireEvent.click(await screen.findByRole('option', { name: (name) => name.startsWith(option) }));
 }
 
 async function openTerm(termId = pendingId, width?: number) {
@@ -196,6 +206,32 @@ describe('Termos pela tela', () => {
       expect(titles()[0]).toContain('Aceite do cadastro de produtos');
     });
     expect(screen.queryByRole('dialog', { name: text.dialog.requestTitle })).toBeNull();
+  });
+
+  // Spec: usuarios-e-papeis, requirement "E-mail na escolha de pessoa".
+  it('Pessoa do pedido de aceite com o e-mail', async () => {
+    await renderApp(path);
+    fireEvent.click(await screen.findByRole('button', { name: text.request }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.requestTitle });
+    const field = within(dialog).getByRole('combobox', { name: text.dialog.recipient });
+
+    fireEvent.mouseDown(field);
+
+    const people = project.members
+      .map((member) => member.name)
+      .toSorted((one, other) => one.localeCompare(other, 'pt-BR'));
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole('option')
+          .slice(1)
+          .map((option) => option.textContent),
+      ).toEqual(people.map((name) => `${name}${emailOf(name)}`));
+    });
+    fireEvent.click(
+      screen.getByRole('option', { name: (name) => name.startsWith('Carla Mendes') }),
+    );
+    expect(field).toHaveTextContent(/^Carla Mendes$/);
   });
 
   it('Pedido incompleto pela tela', async () => {

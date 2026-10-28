@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import {
   type Control,
@@ -9,6 +10,7 @@ import {
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Project, Schedule, ScheduleItemKind } from '../api/client';
+import { emailsOf, projectMembersQuery } from '../api/queries';
 import { FormField } from '../components/FormField';
 import { MultiSelect } from '../components/MultiSelect';
 import { Select } from '../components/Select';
@@ -72,6 +74,11 @@ export function ScheduleItemFields({
   const errorText = (message: string | undefined) =>
     isScheduleItemError(message) ? t(message) : undefined;
   const phaseOptions = schedule.phases.map((phase) => ({ value: phase.id, label: phase.name }));
+  // The e-mail below each name tells apart people of the same name; it comes from the members of the project.
+  const { data: emails } = useQuery({
+    ...projectMembersQuery(project.id),
+    select: emailsOf,
+  });
   const ownerOptions = [
     { value: noOwner, label: t('projects.schedule.noOwner') },
     // The client of the project may be in charge of a task, as its tests (ADR-0102).
@@ -86,7 +93,7 @@ export function ScheduleItemFields({
     ...project.members
       .filter((member) => member.role !== 'Viewer')
       .toSorted((one, other) => one.name.localeCompare(other.name, 'pt-BR'))
-      .map((member) => ({ value: member.id, label: member.name })),
+      .map((member) => ({ value: member.id, label: member.name, detail: emails?.get(member.id) })),
   ];
   const items = itemsOf(schedule);
   // A task right in a phase holds subtasks, one level only (ADR-0088).

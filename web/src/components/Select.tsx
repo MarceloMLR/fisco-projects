@@ -1,19 +1,24 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
+import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import MenuItem from '@mui/material/MenuItem';
 import MuiSelect from '@mui/material/Select';
 import { fieldControl } from './fieldControl';
+import { detailLineSx } from './detailLineSx';
 
 export interface SelectOption<Value extends string> {
   value: Value;
   label: string;
+  /** Shown below the label in the list, and not in the field, such as the e-mail of a person. */
+  detail?: string;
   /** Shown but not chosen, such as a role the person may not have. */
   disabled?: boolean;
 }
 
 /**
  * Selection field of the design system (Select, fp-field with fp-select): same control as the text field, with
- * the options in a menu. Used without a visible label, as in the filters of a table, it takes an accessible name.
+ * the options in a menu. Used without a visible label, as in the filters of a table, it takes an accessible name. An
+ * option with a detail shows it below the label in the menu, as the e-mail below the name of a person.
  */
 export function Select<Value extends string>({
   label,
@@ -46,6 +51,12 @@ export function Select<Value extends string>({
       // An empty value shows its option, such as "Escolha o fornecedor" or "Manter como está".
       displayEmpty
       disabled={disabled}
+      // The field shows only the label of the option chosen; the detail is for telling the options apart in the list.
+      renderValue={
+        options.some((option) => option.detail !== undefined)
+          ? (chosen) => options.find((option) => option.value === chosen)?.label ?? ''
+          : undefined
+      }
       onChange={(event) => {
         onChange(event.target.value as Value);
       }}
@@ -80,7 +91,16 @@ export function Select<Value extends string>({
     >
       {options.map((option) => (
         <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
-          {option.label}
+          {option.detail === undefined ? (
+            option.label
+          ) : (
+            <Box component="span" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span>{option.label}</span>
+              <Box component="span" sx={detailLineSx}>
+                {option.detail}
+              </Box>
+            </Box>
+          )}
         </MenuItem>
       ))}
     </MuiSelect>

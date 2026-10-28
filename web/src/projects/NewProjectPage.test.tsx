@@ -10,6 +10,7 @@ import {
   demoPeopleChoices,
   type DemoProject,
   demoProjects,
+  emailOf,
   marina,
   peopleOf,
   server,
@@ -123,9 +124,10 @@ function fill(label: string, value: string) {
   fireEvent.change(screen.getByRole('textbox', { name: label }), { target: { value } });
 }
 
+/** Chooses a person by the name, the first line of the option, above the e-mail. */
 async function choosePerson(label: string, search: string, name: string) {
   fireEvent.change(screen.getByRole('combobox', { name: label }), { target: { value: search } });
-  fireEvent.click(await screen.findByRole('option', { name }));
+  fireEvent.click(await within(await screen.findByRole('listbox')).findByText(name));
 }
 
 async function chooseClient(name: string) {
@@ -291,10 +293,11 @@ describe('Gerente e cliente no Novo projeto', () => {
     });
 
     const options = await screen.findAllByRole('option');
+    // The name and, below, the e-mail.
     expect(options.map((option) => option.textContent)).toEqual([
-      'Beatriz Lima',
-      form.you.replace('{{name}}', marina.name),
-      'Paulo Nogueira',
+      `Beatriz Lima${emailOf('Beatriz Lima')}`,
+      `${form.you.replace('{{name}}', marina.name)}${marina.email}`,
+      `Paulo Nogueira${emailOf('Paulo Nogueira')}`,
     ]);
   });
 
@@ -308,7 +311,10 @@ describe('Gerente e cliente no Novo projeto', () => {
 
     // The Administrator and the tech lead of the system, without the people of the directory.
     const options = await screen.findAllByRole('option');
-    expect(options.map((option) => option.textContent)).toEqual(['Paulo Nogueira', 'Rafael Souza']);
+    expect(options.map((option) => option.textContent)).toEqual([
+      `Paulo Nogueira${emailOf('Paulo Nogueira')}`,
+      `Rafael Souza${emailOf('Rafael Souza')}`,
+    ]);
   });
 
   it('Gerente e líder técnico são pessoas diferentes', async () => {

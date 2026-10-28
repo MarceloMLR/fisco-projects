@@ -18,6 +18,7 @@ import { type MouseEvent, type ReactNode, useEffect, useId, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import { Avatar } from './Avatar';
 import { Dialog } from './Dialog';
+import { PersonLines } from './PersonLines';
 import { richTextSx } from './richTextSx';
 import { TextField } from './TextField';
 import {
@@ -34,17 +35,7 @@ function MentionPerson({ person }: { person: MentionChoice }) {
   return (
     <>
       <Avatar name={person.name} size="sm" />
-      <Box component="span" sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <span>{person.name}</span>
-        {person.email !== undefined && person.email !== null && (
-          <Box
-            component="span"
-            sx={{ fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' }}
-          >
-            {person.email}
-          </Box>
-        )}
-      </Box>
+      <PersonLines name={person.name} email={person.email} />
     </>
   );
 }

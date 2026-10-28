@@ -1,16 +1,20 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Autocomplete from '@mui/material/Autocomplete';
+import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usersQuery } from '../api/queries';
 import { fieldControl } from '../components/fieldControl';
+import { PersonLines } from '../components/PersonLines';
 import { useDebounced } from '../hooks/useDebounced';
 
 export interface PersonOption {
   id: string;
   name: string;
+  /** Shown below the name, to tell apart people of the same name; empty for an anonymized person. */
+  email?: string;
 }
 
 const searchDelay = 300;
@@ -18,7 +22,7 @@ const optionsShown = 20;
 
 /**
  * Filter of the Audit by person: looks like the design system select and searches the people as the administrator
- * types, so it works with any number of people. Empty, it shows every person.
+ * types, so it works with any number of people, each with the e-mail below the name. Empty, it shows every person.
  */
 export function PersonFilter({
   value,
@@ -42,7 +46,7 @@ export function PersonFilter({
     placeholderData: keepPreviousData,
   });
   const options = useMemo<PersonOption[]>(
-    () => data?.items.map(({ id, name }) => ({ id, name })) ?? [],
+    () => data?.items.map(({ id, name, email }) => ({ id, name, email })) ?? [],
     [data],
   );
 
@@ -70,6 +74,11 @@ export function PersonFilter({
       // The API already searched; the options are kept as they came, in alphabetical order.
       filterOptions={(people) => people}
       getOptionLabel={(person) => person.name}
+      renderOption={({ key, ...props }, person) => (
+        <Box component="li" key={key} {...props}>
+          <PersonLines name={person.name} email={person.email} />
+        </Box>
+      )}
       isOptionEqualToValue={(option, chosen) => option.id === chosen.id}
       noOptionsText={t('audit.filters.noPeople')}
       popupIcon={<ExpandMoreOutlined />}

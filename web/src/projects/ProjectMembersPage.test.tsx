@@ -5,17 +5,19 @@ import { type Project, type ProjectRole, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
-  type DemoProject,
   demoPeople,
   demoPeopleChoices,
+  type DemoProject,
   demoProjects,
   demoTickets,
+  emailOf,
   marina,
   membersOf,
   peopleOf,
   projectsPage,
   server,
   signedInAs,
+  ticketChoiceOf,
 } from '../test/server';
 
 const text = ptBR.projects.members;
@@ -246,7 +248,7 @@ describe('Incluir pessoa pela tela', () => {
       target: { value: 'lucas' },
     });
     const lucas = await screen.findByRole('option', { name: /Lucas Prado/ });
-    expect(lucas).toHaveTextContent(`Lucas Prado${ptBR.dates.never}`);
+    expect(lucas).toHaveTextContent(`Lucas Prado${emailOf('Lucas Prado')}${ptBR.dates.never}`);
     fireEvent.click(lucas);
     fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.dialog.role }));
     fireEvent.click(await screen.findByRole('option', { name: roles.Contributor }));
@@ -276,10 +278,11 @@ describe('Incluir pessoa pela tela', () => {
     });
 
     const options = await screen.findAllByRole('option');
+    // The name and, below, the e-mail; who never signed in says so.
     expect(options.map((option) => option.textContent)).toEqual([
-      'Beatriz Lima',
-      `Lucas Prado${ptBR.dates.never}`,
-      `Sofia Martins${ptBR.dates.never}`,
+      `Beatriz Lima${emailOf('Beatriz Lima')}`,
+      `Lucas Prado${emailOf('Lucas Prado')}${ptBR.dates.never}`,
+      `Sofia Martins${emailOf('Sofia Martins')}${ptBR.dates.never}`,
     ]);
   });
 
@@ -349,6 +352,46 @@ describe('Incluir pessoa pela tela', () => {
       'aria-disabled',
       'true',
     );
+  });
+
+  // Spec: usuarios-e-papeis, requirement "E-mail na escolha de pessoa".
+  it('Pessoas de mesmo nome na inclusão', async () => {
+    const namesake = (id: string, email: string) => ({
+      id,
+      directoryId: null,
+      name: 'Marina Costa',
+      email,
+      canBeManager: false,
+      canBeTechLead: false,
+    });
+    server.use(
+      http.get('/api/people', () =>
+        HttpResponse.json([
+          namesake('0199f5a2-7c1e-7d40-9a1b-000000000021', 'marina.costa@empresa.example'),
+          namesake('0199f5a2-7c1e-7d40-9a1b-000000000022', 'marina.costa.ti@empresa.example'),
+        ]),
+      ),
+    );
+    await openMembers();
+    fireEvent.click(screen.getByRole('button', { name: text.include }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.title });
+
+    fireEvent.change(within(dialog).getByRole('combobox', { name: text.dialog.person }), {
+      target: { value: 'mar' },
+    });
+
+    const options = await screen.findAllByRole('option', { name: /Marina Costa/ });
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Marina Costamarina.costa@empresa.example',
+      'Marina Costamarina.costa.ti@empresa.example',
+    ]);
+    fireEvent.click(
+      within(screen.getByRole('listbox')).getByText('marina.costa.ti@empresa.example'),
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: text.dialog.submit }));
+    await waitFor(() => {
+      expect(requests[0]).toMatch(/^POST 0199f5a2-7c1e-7d40-9a1b-000000000022 null /);
+    });
   });
 
   it('Líder técnico sem a opção Gerente', async () => {
@@ -583,7 +626,7 @@ describe('Chamados no detalhe da pessoa', () => {
     server.use(
       http.get('/api/tickets', () => HttpResponse.json({ items: current, total: current.length })),
       http.get('/api/tickets/assignee-choices', () =>
-        HttpResponse.json([demoPeople.marina, demoPeople.rafael]),
+        HttpResponse.json([demoPeople.marina, demoPeople.rafael].map(ticketChoiceOf)),
       ),
       http.put('/api/tickets/assignee', async ({ request }) => {
         saved.push(await request.json());
@@ -601,7 +644,7 @@ describe('Chamados no detalhe da pessoa', () => {
     fireEvent.mouseDown(
       within(dialog).getByRole('combobox', { name: 'Novo responsável (2 chamados)' }),
     );
-    fireEvent.click(await screen.findByRole('option', { name: 'Rafael Souza' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Rafael Souza/ }));
     fireEvent.click(within(dialog).getByRole('button', { name: text.tickets.handOver }));
 
     expect(
