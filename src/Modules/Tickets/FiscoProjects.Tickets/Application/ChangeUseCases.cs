@@ -202,21 +202,24 @@ public sealed class ChangeTicketRequesters(TicketBatch batch, ITicketStore store
     }
 }
 
+/// <summary>A person who may be chosen, with the e-mail that tells apart people of the same name; none when anonymized.</summary>
+public sealed record TicketPersonChoice(Guid Id, string Name, string? Email);
+
 /// <summary>
-/// Who may be chosen as the assignee or as the requester of all the tickets (ADR-0027, ADR-0068), by name; the rule is
-/// the one of the change, so the screen only shows it. Null when a ticket is not seen.
+/// Who may be chosen as the assignee or as the requester of all the tickets (ADR-0027, ADR-0068), by name and e-mail;
+/// the rule is the one of the change, so the screen only shows it. Null when a ticket is not seen.
 /// </summary>
 public sealed class ListTicketPeopleChoices(TicketBatch batch, IUserDirectory users)
 {
-    public async Task<IReadOnlyList<TicketPerson>?> AssigneesAsync(
+    public async Task<IReadOnlyList<TicketPersonChoice>?> AssigneesAsync(
         IReadOnlyCollection<int>? numbers, TicketViewer viewer, CancellationToken cancellationToken) =>
         await ChoicesAsync(numbers, viewer, (ticket, role) => TicketAccess.CanBeAssignee(ticket.Team, role), cancellationToken);
 
-    public async Task<IReadOnlyList<TicketPerson>?> RequestersAsync(
+    public async Task<IReadOnlyList<TicketPersonChoice>?> RequestersAsync(
         IReadOnlyCollection<int>? numbers, TicketViewer viewer, CancellationToken cancellationToken) =>
         await ChoicesAsync(numbers, viewer, (_, role) => TicketAccess.CanBeRequester(role), cancellationToken);
 
-    private async Task<IReadOnlyList<TicketPerson>?> ChoicesAsync(
+    private async Task<IReadOnlyList<TicketPersonChoice>?> ChoicesAsync(
         IReadOnlyCollection<int>? numbers,
         TicketViewer viewer,
         Func<Ticket, ProjectMemberRole?, bool> fits,
@@ -237,11 +240,12 @@ public sealed class ListTicketPeopleChoices(TicketBatch batch, IUserDirectory us
         var people = roles.Keys.Select(key => key.UserId).Distinct()
             .Where(person => tickets.All(item => fits(item.Ticket, ChangeTicketAssignees.RoleOf(roles, item.Project.Id, person))))
             .ToList();
-        var names = await users.NamesAsync(people, cancellationToken);
-        return [.. people
-            .Where(names.ContainsKey)
-            .Select(person => new TicketPerson(person, names[person]))
-            .OrderBy(person => person.Name, StringComparer.CurrentCulture)];
+        var found = await users.PeopleAsync(people, cancellationToken);
+        return [.. found
+            .Select(person => new TicketPersonChoice(
+                person.Id, person.Name, string.IsNullOrWhiteSpace(person.Email) ? null : person.Email))
+            .OrderBy(person => person.Name, StringComparer.CurrentCulture)
+            .ThenBy(person => person.Email, StringComparer.OrdinalIgnoreCase)];
     }
 }
 

@@ -5283,7 +5283,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TicketPersonResponse"
+                    "$ref": "#/components/schemas/TicketPersonChoiceResponse"
                   }
                 }
               }
@@ -5334,7 +5334,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TicketPersonResponse"
+                    "$ref": "#/components/schemas/TicketPersonChoiceResponse"
                   }
                 }
               }
@@ -14898,6 +14898,30 @@
           "Other"
         ],
         "description": "The part a person plays in a ticket, which gives the color and the tag of the messages (ADR-0069): the requester,\nthe assignee (even being of a team), the manager, the tech lead, the teams, the Administrator outside the project,\nor anyone else."
+      },
+      "TicketPersonChoiceResponse": {
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A person who may be chosen as the assignee or the requester, with the e-mail; none when anonymized."
       },
       "TicketPersonResponse": {
         "required": [
