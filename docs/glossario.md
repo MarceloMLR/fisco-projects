@@ -58,6 +58,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Clientes para escolher | ClientChoice (`GET /api/clients/choices`) | Nome, logo e situação de todos os clientes, para qualquer pessoa com sessão, sem o CNPJ |
 | Pessoas para escolher | Person (`GET /api/people`) | Usuários ativos e pessoas do diretório que nunca entraram, buscados pelo nome ou e-mail por qualquer pessoa com sessão; com `managers`, só administradores e gerentes de projeto |
 | Diretório da empresa | IPeopleDirectory | Onde as pessoas são achadas antes de entrar (ADR-0005): hoje o de demonstração da entrada local (`LocalSignIn:People`); na M365-2, o Microsoft Graph |
+| Foto da pessoa | PersonPhoto (`GetPersonPhoto`, `GraphPersonPhotos`) | A foto do Microsoft 365 no avatar, lida pelo Graph e guardada só na memória por uma hora (`PersonPhotoCache`), nunca no banco (ADR-0124) |
 | Pessoa do diretório (que nunca entrou) | DirectoryPerson, `directoryId` | Identificada na API por `"{provider}:{externalId}"` até virar usuário |
 | Usuário criado pelo diretório | `User.FromDirectory`, IUserProvisioning | Criado ao ser incluído num projeto, com o papel Usuário e sem último acesso; na primeira entrada, usa o mesmo usuário |
 | Nunca entrou | `LastSignInAt` nulo | O último acesso de quem foi incluído pelo diretório e ainda não entrou |
