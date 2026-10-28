@@ -102,7 +102,7 @@ Regras:
 | [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita (certificado do aplicativo no Entra substituído pelo ADR-0117) | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
 | [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
-| [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita (linha "Em todo pull request" substituída pelo ADR-0090) | 2026-10-15 |
+| [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita (linha "Em todo pull request" substituída pelo ADR-0090; linha "Produção" substituída pelo ADR-0125) | 2026-10-15 |
 | [0056](0056-estrategia-de-testes.md) | Pirâmide de testes ligada às specs, com matrizes de permissão 100% cobertas | aceita | 2026-10-15 |
 | [0057](0057-monitoramento-com-application-insights.md) | Monitoramento com Application Insights e instrumentação OpenTelemetry | aceita | 2026-10-15 |
 | [0058](0058-dados-pessoais-anonimizacao-e-retencao.md) | Dados pessoais com anonimização a pedido e prazos de retenção configuráveis (LGPD) | aceita | 2026-10-15 |
@@ -187,3 +187,4 @@ Regras:
 | [0122](0122-escolher-a-pasta-do-projeto.md) | Escolher uma pasta que já existe para o projeto | aceita | 2026-10-27 |
 | [0123](0123-emails-pelo-graph-na-pratica.md) | Como os e-mails saem pelo Microsoft Graph | aceita | 2026-10-27 |
 | [0124](0124-foto-da-pessoa-pelo-microsoft-365.md) | Foto da pessoa no avatar, lida do Microsoft 365 | aceita | 2026-10-27 |
+| [0125](0125-publicacao-em-producao.md) | Publicação em produção por versão, com aprovação e migrações pelo pipeline | aceita | 2026-10-28 |
