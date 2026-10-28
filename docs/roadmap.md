@@ -177,5 +177,5 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | Operação-2 | `exclusao-de-projeto` | Exclusão definitiva pelo administrador (no fim, porque apaga dados de todos os módulos) | 0041, 0111 | Concluída em 21/10/2026 ([#76](https://github.com/MarceloMLR/fisco-projects/pull/76)) |
 | Operação-3 | `monitoramento-e-alertas` | OpenTelemetry, Application Insights, saúde e as métricas dos alertas; o recurso, o teste de disponibilidade e os alertas ficam na Fundação-6 | 0057, 0112 | Concluída em 21/10/2026 ([#77](https://github.com/MarceloMLR/fisco-projects/pull/77)) |
 | Operação-4 | `backup-e-restauracao` | Roteiro de restauração e teste trimestral; as definições dos backups ficam na Fundação-6 | 0059 | Concluída em 21/10/2026 ([#78](https://github.com/MarceloMLR/fisco-projects/pull/78)) |
-| Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | PR aberto |
+| Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | PR aberto ([#103](https://github.com/MarceloMLR/fisco-projects/pull/103)) |
 | Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint | 0030, 0036, 0053 | Planejada |
