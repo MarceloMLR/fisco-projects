@@ -1,0 +1,45 @@
+# Attaches to each version published on GitHub (a release on the tag v1.2.3) the package that installs and updates the
+# installations outside this repository (ADR-0127): the application, the Terraform, the scripts of infra/scripts and the
+# guides. Nothing reaches Azure here. The logic lives in scripts/cd; this file only prepares the tools and calls those
+# scripts. GitHub shows the values of the variables in the log of every step, and the logs are public: no personal value
+# goes here (ADR-0116).
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  package:
+    name: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: publish
+        run: bash scripts/cd/publish.sh
+      - name: release
+        run: bash scripts/cd/release.sh

@@ -250,6 +250,31 @@ public sealed partial class InfrastructureTests
         script.Should().Contain("Get-EXORecipient -Identity $Mailbox");
     }
 
+    // Spec: infraestrutura, requirement "Guia de instalação" (ADR-0127).
+    [Fact(DisplayName = "Cada script no guia")]
+    public void Guide_CitesEveryScriptOfWhoOperates_AndOnlyScriptsThatExist()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+        var scripts = Directory.GetFiles(RepositoryFiles.PathOf("infra", "scripts")).Select(Path.GetFileName).ToList();
+
+        scripts.Should().NotBeEmpty().And.AllSatisfy(script => guide.Should().Contain($"./infra/scripts/{script}"));
+        GuideScript().Matches(guide).Select(match => match.Groups["script"].Value).Distinct()
+            .Should().AllSatisfy(script => scripts.Should().Contain(script, "the guide cites only scripts that exist"));
+    }
+
+    [Fact(DisplayName = "Guia do começo ao fim")]
+    public void Guide_GoesFromWhatTheCompanyProvides_ToTheUpdates()
+    {
+        var headings = Repository.Read("docs", "instalacao.md").Split('\n')
+            .Where(line => line.StartsWith("## ", StringComparison.Ordinal))
+            .Select(line => line[3..].Trim())
+            .ToList();
+
+        string[] parts = ["Antes de começar", "Quem instala", "Pacote da versão", "Instalar", "Atualizar para uma versão nova"];
+        var positions = parts.Select(part => headings.IndexOf(part)).ToList();
+        positions.Should().NotContain(-1, $"the guide has the parts {string.Join(", ", parts)}").And.BeInAscendingOrder();
+    }
+
     [Fact(DisplayName = "E-mails da demonstração no ambiente dev")]
     public void DevEnvironment_KeepsTheEmailsOfTheDemonstrationInTheFolder()
     {
@@ -317,4 +342,7 @@ public sealed partial class InfrastructureTests
 
     [GeneratedRegex(@"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}", RegexOptions.IgnoreCase)]
     private static partial Regex EmailAddress();
+
+    [GeneratedRegex(@"infra/scripts/(?<script>[\w-]+\.ps1)")]
+    private static partial Regex GuideScript();
 }
