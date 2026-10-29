@@ -888,6 +888,27 @@
       "dateRequired": "Informe a data.",
       "dateInvalid": "Use uma data válida, como 30/12/2026.",
       "dateOutOfRange": "Use um ano de 1900 a 2199."
+    },
+    "recalculation": {
+      "title": "O calendário mudou",
+      "text_one": "1 tarefa ou marco de {{projects}} ainda segue o calendário anterior.",
+      "text_other": "{{count}} tarefas e marcos de {{projects}} ainda seguem o calendário anterior.",
+      "projects_one": "1 projeto em aberto",
+      "projects_other": "{{count}} projetos em aberto",
+      "action": "Recalcular as datas",
+      "dialog": {
+        "title": "Recalcular as datas",
+        "text": "As tarefas e os marcos não concluídos mantêm o início e a duração em dias úteis, e as dependências empurram os seguintes. As tarefas concluídas, os marcos atingidos e a linha de base não mudam.",
+        "notice": "Os responsáveis são avisados das novas datas, e o recálculo não entra no Desfazer do cronograma.",
+        "projects": "Projetos que mudam",
+        "items_one": "1 tarefa ou marco",
+        "items_other": "{{count}} tarefas e marcos",
+        "confirm": "Recalcular as datas"
+      },
+      "done_one": "Datas recalculadas em 1 projeto.",
+      "done_other": "Datas recalculadas em {{count}} projetos.",
+      "nothing": "As datas já seguem o calendário atual.",
+      "failed": "Não foi possível recalcular as datas. Tente de novo."
     }
   },
   "clients": {

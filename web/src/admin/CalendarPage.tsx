@@ -26,8 +26,9 @@ import {
   type DayOfWeek,
   weekdays,
 } from '../api/client';
-import { ApiError, calendarYearQuery, queryKeys } from '../api/queries';
+import { ApiError, calendarYearQuery, queryKeys, scheduleRecalculationQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
+import { CodeChip } from '../components/Card';
 import { Checkbox } from '../components/Checkbox';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
@@ -97,7 +98,9 @@ function withConsideration(
  * Calendar and holidays of the Administration, as in the canvas (AdminCalendario, ADR-0018, ADR-0083): the working
  * days at the top and the dates of a year below, with the kind, the repetition and "Considerado". Checking a box saves
  * at once; "Marcar todos" considers every date shown, and "Desmarcar todos" disregards them when all are considered.
- * Local holidays are included, changed and removed in dialogs. On the phone the dates are a list.
+ * Local holidays are included, changed and removed in dialogs. On the phone the dates are a list. While tasks and
+ * milestones of open projects still follow the calendar before, a warning at the top offers "Recalcular as datas",
+ * asked again after every change (ADR-0126).
  */
 export function CalendarPage() {
   const { t } = useTranslation();
@@ -111,11 +114,13 @@ export function CalendarPage() {
   const [menu, setMenu] = useState<{ anchor: HTMLElement; day: CalendarDay }>();
   const [editing, setEditing] = useState<{ holiday?: CalendarDay }>();
   const [removing, setRemoving] = useState<CalendarDay>();
+  const [recalculating, setRecalculating] = useState(false);
 
   const { data, isFetching, isError } = useQuery({
     ...calendarYearQuery(year),
     placeholderData: keepPreviousData,
   });
+  const { data: recalculation } = useQuery(scheduleRecalculationQuery());
 
   // After the last of the changes in a row, the calendar and the Audit are asked again; before, a refresh could
   // bring back a box the person just changed.
@@ -204,6 +209,34 @@ export function CalendarPage() {
     },
     onSettled: () => {
       setRemoving(undefined);
+    },
+  });
+
+  const recalculate = useMutation({
+    mutationFn: async () => {
+      const { data: done, response } = await api.POST('/api/admin/schedule-recalculation');
+      if (done === undefined) {
+        throw new ApiError(response.status, null);
+      }
+      return done;
+    },
+    onSuccess: (done) => {
+      setMessage(
+        done.projects.length === 0
+          ? t('calendar.recalculation.nothing')
+          : t('calendar.recalculation.done', { count: done.projects.length }),
+      );
+      // The dates of the schedules changed: every screen that shows them asks again.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.calendar });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.myWork });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+    },
+    onError: () => {
+      setMessage(t('calendar.recalculation.failed'));
+    },
+    onSettled: () => {
+      setRecalculating(false);
     },
   });
 
@@ -490,6 +523,30 @@ export function CalendarPage() {
   return (
     <Page actions={newHoliday(false)}>
       {isError && data === undefined && <Alert tone="danger">{t('calendar.loadFailed')}</Alert>}
+      {recalculation !== undefined && recalculation.items > 0 && (
+        <Alert
+          tone="warning"
+          title={t('calendar.recalculation.title')}
+          actions={
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setRecalculating(true);
+              }}
+            >
+              {t('calendar.recalculation.action')}
+            </Button>
+          }
+        >
+          {t('calendar.recalculation.text', {
+            count: recalculation.items,
+            projects: t('calendar.recalculation.projects', {
+              count: recalculation.projects.length,
+            }),
+          })}
+        </Alert>
+      )}
       {workingDaysCard}
       {desktop ? (
         <DataTable
@@ -747,6 +804,95 @@ export function CalendarPage() {
             name: holidayName(removing, t),
             date: formatDayValue(removing.date),
           })}
+      </Dialog>
+      <Dialog
+        open={recalculating && recalculation !== undefined}
+        title={t('calendar.recalculation.dialog.title')}
+        onClose={() => {
+          setRecalculating(false);
+        }}
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setRecalculating(false);
+              }}
+            >
+              {t('calendar.cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              disabled={recalculate.isPending}
+              onClick={() => {
+                recalculate.mutate();
+              }}
+            >
+              {t('calendar.recalculation.dialog.confirm')}
+            </Button>
+          </>
+        }
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <Box component="p" sx={{ margin: 0 }}>
+            {t('calendar.recalculation.dialog.text')}
+          </Box>
+          <Box
+            component="ul"
+            aria-label={t('calendar.recalculation.dialog.projects')}
+            sx={{
+              maxHeight: 240,
+              overflow: 'auto',
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+            }}
+          >
+            {recalculation?.projects.map((project) => (
+              <Box
+                component="li"
+                key={project.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)',
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderBottom: '1px solid var(--border)',
+                  '&:last-of-type': { borderBottom: 0 },
+                }}
+              >
+                <CodeChip code={project.code} />
+                <Box
+                  component="span"
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {project.name}
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    flex: 'none',
+                    color: 'var(--text-secondary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {t('calendar.recalculation.dialog.items', { count: project.items })}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+          <Box component="p" sx={{ margin: 0, color: 'var(--text-secondary)' }}>
+            {t('calendar.recalculation.dialog.notice')}
+          </Box>
+        </Box>
       </Dialog>
       <Snackbar
         open={message !== undefined}

@@ -292,6 +292,17 @@ export function calendarYearQuery(year: number) {
   });
 }
 
+/**
+ * The tasks and milestones of open projects that change with the calendar as it is now (ADR-0126), under the key of
+ * the calendar, so every change of the calendar asks for it again.
+ */
+export function scheduleRecalculationQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.calendar, 'schedule-recalculation'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/schedule-recalculation', { signal })),
+  });
+}
+
 /** The active models of project, for a new project (ADR-0017). */
 export function templatesQuery() {
   return queryOptions({

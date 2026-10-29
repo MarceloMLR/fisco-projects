@@ -403,3 +403,87 @@ describe('Calendário só do administrador', () => {
     expect(screen.queryByText(text.workingDays)).not.toBeInTheDocument();
   });
 });
+
+// Spec: calendario, requirement "Recálculo das datas pela tela" (ADR-0126).
+describe('Recálculo das datas pela tela', () => {
+  const recalculationText = text.recalculation;
+  const project = {
+    id: '0199f5a2-7c1e-7d40-9a1b-300000000001',
+    code: 'ERP-FIN',
+    name: 'Implantação do ERP financeiro',
+    items: 1,
+  };
+
+  /**
+   * The schedules of the simulated installation: the task of ERP-FIN changes while the Dia do Servidor Público is
+   * considered and the dates were not recalculated.
+   */
+  function simulateSchedules() {
+    const current = calendar;
+    let recalculated = false;
+    const pending = () => current.considered.has('PublicServantsDay') && !recalculated;
+    server.use(
+      http.get('/api/admin/schedule-recalculation', () =>
+        HttpResponse.json(
+          pending() ? { items: 1, projects: [project] } : { items: 0, projects: [] },
+        ),
+      ),
+      http.post('/api/admin/schedule-recalculation', () => {
+        requests.push('POST schedule-recalculation');
+        const done = pending() ? { items: 1, projects: [project] } : { items: 0, projects: [] };
+        recalculated = true;
+        return HttpResponse.json(done);
+      }),
+    );
+  }
+
+  it('Aviso depois de mudar o calendário', async () => {
+    simulateSchedules();
+    await openCalendar();
+    expect(screen.queryByText(recalculationText.title)).not.toBeInTheDocument();
+
+    fireEvent.click(considered(text.holidays.PublicServantsDay));
+
+    expect(await screen.findByText(recalculationText.title)).toBeVisible();
+    expect(
+      screen.getByText(
+        '1 tarefa ou marco de 1 projeto em aberto ainda segue o calendário anterior.',
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: recalculationText.action })).toBeVisible();
+  });
+
+  it('Recalcular as datas pela tela', async () => {
+    calendar.considered.add('PublicServantsDay');
+    simulateSchedules();
+    await openCalendar();
+
+    fireEvent.click(await screen.findByRole('button', { name: recalculationText.action }));
+
+    const dialog = await screen.findByRole('dialog', { name: recalculationText.dialog.title });
+    const projects = within(dialog).getByRole('list', { name: recalculationText.dialog.projects });
+    expect(within(projects).getByText('ERP-FIN')).toBeVisible();
+    expect(within(projects).getByText('Implantação do ERP financeiro')).toBeVisible();
+    expect(within(projects).getByText('1 tarefa ou marco')).toBeVisible();
+    expect(requests).toEqual([]);
+    fireEvent.click(within(dialog).getByRole('button', { name: recalculationText.dialog.confirm }));
+
+    expect(await screen.findByText('Datas recalculadas em 1 projeto.')).toBeVisible();
+    expect(requests).toEqual(['POST schedule-recalculation']);
+    await waitFor(() => {
+      expect(screen.queryByText(recalculationText.title)).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('Cronogramas em dia', async () => {
+    await openCalendar();
+
+    expect(screen.queryByText(recalculationText.title)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: recalculationText.action }),
+    ).not.toBeInTheDocument();
+  });
+});
