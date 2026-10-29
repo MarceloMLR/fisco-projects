@@ -11,8 +11,8 @@ Metas: perder no máximo alguns minutos de dados e voltar ao ar em até 4 horas.
 | Banco (projetos, chamados, documentos registrados, acessos, auditoria, chaves dos acessos) | Azure SQL, com restauração a qualquer ponto em 14 dias (Basic: 7) e um backup por mês guardado por 12 meses, com redundância por zona na Brazil South | Restauração a um ponto no tempo ou de um backup mensal |
 | Arquivos (anexos, documentos, termos, logos) | SharePoint da empresa, na pasta da instalação (ADR-0030) | Histórico de versões e lixeira do Microsoft 365 |
 | Segredos e certificados (certificado do aplicativo, chave do Syncfusion, certificado das chaves dos acessos) | Key Vault, com exclusão reversível e proteção contra exclusão definitiva | Recuperar o item excluído |
-| Infraestrutura e configuração | Terraform, com o estado versionado (ADR-0053) | `terraform apply` com o `.tfvars` da instalação |
-| Código | GitHub | Novo deploy pelo workflow de produção (ADR-0055) |
+| Infraestrutura e configuração | Terraform, com o estado versionado, e os arquivos privados da instalação (ADR-0053, ADR-0127) | `terraform apply` com os parâmetros da instalação |
+| Versão da aplicação | Pacote da versão (`fiscoprojects-vX.Y.Z.zip`), na página da versão no GitHub | Nova publicação pelo `Publish-Version.ps1` ou pelo workflow de produção (ADR-0055, ADR-0127) |
 
 As chaves que cifram as senhas dos acessos ficam no próprio banco (`credentials.data_protection_keys`) e voltam com ele; quando a instalação usa o certificado de `Credentials:KeyCertificate`, ele precisa estar no Key Vault, senão as senhas não abrem (ADR-0033).
 
