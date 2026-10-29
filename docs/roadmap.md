@@ -23,6 +23,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 27/10/2026, depois da Projetos-4.1, Marcelo pediu a foto do Microsoft 365 no avatar, a princípio sem o contorno na cor do papel (M365-5, `foto-da-pessoa`, ADR-0124).
 - Em 28/10/2026, depois da Operação-5, Marcelo perguntou se uma mudança no calendário vale para todos os cronogramas e pediu, ao salvar o calendário, ver quantas tarefas mudam e recalcular as datas (Projetos-1.1, `recalculo-do-calendario`, ADR-0126), antes da Operação-6.
 - Em 29/10/2026, Marcelo perguntou como quem vende software instala na nuvem do cliente e escolheu que a Operação-6 parta do pacote de uma versão publicada, instalado pelo fornecedor (padrão) ou pela TI da empresa, e não de uma cópia do repositório (ADR-0127).
+- Em 29/10/2026, com a v1 concluída, Marcelo pediu duas novidades, que formam os grupos 11 e 12, fora do roadmap aprovado em 17/10/2026: as horas do projeto, só em horas, com a visão gerencial só do administrador (ADR-0128), e a assinatura dos termos de aceite por um provedor de assinatura eletrônica trocável, começando pela Autentique, com os termos só do gerente e do administrador.
 
 ## Marcos
 
@@ -38,7 +39,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
-| **Total** | **91** | **91** |
+| 11. Horas do projeto | 2 | 0 |
+| 12. Assinatura dos termos de aceite | 2 | 0 |
+| **Total** | **95** | **91** |
 
 ## 1. Fundação
 
@@ -182,3 +185,21 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | Operação-4 | `backup-e-restauracao` | Roteiro de restauração e teste trimestral; as definições dos backups ficam na Fundação-6 | 0059 | Concluída em 21/10/2026 ([#78](https://github.com/MarceloMLR/fisco-projects/pull/78)) |
 | Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | Concluída em 28/10/2026 ([#103](https://github.com/MarceloMLR/fisco-projects/pull/103)) |
 | Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint, a partir do pacote de cada versão | 0030, 0036, 0053, 0127 | Concluída em 29/10/2026 ([#105](https://github.com/MarceloMLR/fisco-projects/pull/105)) |
+
+## Depois da v1
+
+Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele antes da implementação.
+
+## 11. Horas do projeto
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Horas-1 | `apontamento-de-horas` | Cada pessoa aponta as próprias horas no projeto, com a tarefa ou o chamado opcional, em Minhas horas | 0020, 0128 | Em andamento |
+| Horas-2 | `saldo-de-horas` | Horas contratadas e adicionais de cada projeto e a visão gerencial do administrador, com o saldo e o estouro | 0016, 0128 | Planejada |
+
+## 12. Assinatura dos termos de aceite
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095 | Planejada |
+| Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127 | Planejada |

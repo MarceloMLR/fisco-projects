@@ -14,7 +14,7 @@ Fronteiras que não se cruzam sem um ADR novo:
 - Só pessoas da empresa entram na v1; convidados são recusados (ADR-0007).
 - Só os times Funcional e Desenvolvimento recebem chamados; não há filas (ADR-0068).
 - Todo aceite é por PDF assinado fora do sistema (ADR-0035).
-- Sem horas trabalhadas, orçamento, custos ou campos personalizados (ADR-0016, ADR-0020).
+- Horas do projeto só em horas, sem valores em reais; sem orçamento, custos ou campos personalizados (ADR-0016, ADR-0128).
 
 O escopo completo, com o que fica para depois, está em `docs/discovery.md`.
 
