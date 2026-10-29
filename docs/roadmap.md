@@ -30,15 +30,15 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | --- | --- | --- |
 | 1. Fundação | 16 | 16 |
 | 2. Acesso e administração | 18 | 18 |
-| 3. Projetos | 4 | 4 |
+| 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
 | 6. Avisos | 3 | 3 |
 | 7. Documentos, links, acessos e termos | 5 | 5 |
 | 8. Telas de síntese | 2 | 2 |
-| 9. Microsoft 365 real | 6 | 4 |
-| 10. Governança e operação | 6 | 4 |
-| **Total** | **88** | **84** |
+| 9. Microsoft 365 real | 7 | 7 |
+| 10. Governança e operação | 6 | 6 |
+| **Total** | **91** | **91** |
 
 ## 1. Fundação
 
