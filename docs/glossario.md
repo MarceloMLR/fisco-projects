@@ -288,6 +288,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Identidade gerenciada | managed identity (App Service) | Como a aplicação entra no banco e no Key Vault, sem senha (ADR-0052) |
 | Identidade do pipeline | módulo `ci` (Terraform), environment do GitHub | Aplicativo do Entra ID que o GitHub Actions alcança por federação para publicar e conferir um ambiente (ADR-0115) |
 | Publicação | `deploy-dev` (workflow), `scripts/cd` | Pacote, publicação no App Service e conferência da infraestrutura a cada merge (ADR-0115) |
+| Pacote da versão | `fiscoprojects-vX.Y.Z.zip`, `release` (workflow) | A aplicação, o Terraform, os scripts de quem opera e os guias, anexados a cada versão publicada no GitHub, de onde as instalações das empresas são feitas e atualizadas (ADR-0127) |
+| Arquivos privados da instalação | `local.auto.tfvars`, `backend.hcl` | Os parâmetros de uma instalação feita pelo pacote, guardados só com quem opera e copiados para cada versão (ADR-0127) |
+| Publicar uma versão à mão | `Publish-Version.ps1` | Migrações e publicação do pacote numa instalação fora do pipeline do repositório (ADR-0127) |
 | Métricas da fila de e-mails | EmailQueueMetrics, EmailQueueState | `fiscoprojects.emails.waiting`, `.oldest_waiting`, `.sent` e `.failed`, para o alerta de fila parada |
 
 ## Telas

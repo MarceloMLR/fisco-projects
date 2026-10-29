@@ -51,7 +51,7 @@ Regras:
 
 ### Confirmação
 
-Testes do pipeline: o workflow `release` só com `contents: write`, chamando os scripts; o pacote de uma versão com a aplicação, o `VERSION`, o Terraform, os scripts e os guias, sem os ambientes, o `local.auto.tfvars` e o estado; nada anexado numa tag que não é de versão. O `Publish-Version.ps1` conferido como os outros scripts PowerShell: a ordem dos passos, a conta do Azure CLI, a regra do firewall apagada no `finally` e a parada sem a identidade da aplicação. O guia conferido contra a pasta `infra/scripts` e pela ordem das partes.
+Testes do pipeline: o workflow `release` só com `contents: write`, chamando os scripts; o pacote de uma versão com a aplicação, o `VERSION`, o Terraform, os scripts e os guias, sem os ambientes, o `local.auto.tfvars` e o estado; nada anexado numa tag que não é de versão. O `Publish-Version.ps1` rodado com o PowerShell 7 e substitutos do Azure CLI e do `dotnet`: a ordem dos passos, a conta do Azure CLI, a regra do firewall apagada mesmo com as migrações falhando e a parada sem a identidade da aplicação. O guia conferido contra a pasta `infra/scripts` e pela ordem das partes.
 
 ## Prós e contras das opções
 
