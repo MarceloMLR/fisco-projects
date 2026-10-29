@@ -27,6 +27,33 @@ internal sealed class ScheduleStore(ProjectsDbContext db) : IScheduleStore
         return created;
     }
 
+    public async Task<IReadOnlyList<OpenSchedule>> OpenSchedulesAsync(CancellationToken cancellationToken)
+    {
+        var open = await db.Projects.AsNoTracking()
+            .Where(project => project.Status != ProjectStatus.Completed
+                && project.Status != ProjectStatus.Cancelled
+                && db.ScheduleItems.Any(item => item.ProjectId == project.Id))
+            .OrderBy(project => project.Code)
+            .Select(project => new { project.Id, project.Code, project.Name })
+            .ToListAsync(cancellationToken);
+        if (open.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = open.Select(project => project.Id).ToList();
+        var found = await db.Schedules.AsNoTracking()
+            .Include(schedule => schedule.Phases)
+            .Include(schedule => schedule.Items)
+            .Include(schedule => schedule.Dependencies)
+            .Where(schedule => ids.Contains(schedule.Id))
+            .AsSplitQuery()
+            .ToDictionaryAsync(schedule => schedule.Id, cancellationToken);
+        return [.. open
+            .Where(project => found.ContainsKey(project.Id))
+            .Select(project => new OpenSchedule(project.Id, project.Code, project.Name, found[project.Id]))];
+    }
+
     public async Task<IReadOnlyDictionary<Guid, ScheduleParts>> OfProjectsAsync(
         IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken)
     {

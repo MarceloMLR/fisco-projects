@@ -596,6 +596,7 @@ public static class ProjectsEndpoints
         api.MapProjectEndpoints();
         api.MapProjectFolderEndpoints();
         api.MapTemplateEndpoints();
+        api.MapScheduleRecalculationEndpoints();
         return api;
     }
 }

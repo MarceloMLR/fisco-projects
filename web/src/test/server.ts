@@ -1475,6 +1475,10 @@ export const handlers = [
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
   ),
+  // The schedules follow the calendar as it is: nothing to recalculate (ADR-0126).
+  http.get('/api/admin/schedule-recalculation', () =>
+    HttpResponse.json({ items: 0, projects: [] }),
+  ),
   http.get('/api/clients', ({ request }) =>
     HttpResponse.json(clientsPage(demoClients(), new URL(request.url))),
   ),

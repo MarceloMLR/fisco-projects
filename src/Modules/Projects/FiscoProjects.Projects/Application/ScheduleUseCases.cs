@@ -51,6 +51,12 @@ public interface IScheduleStore
     Task<IReadOnlyList<UpcomingMilestone>> UpcomingMilestonesAsync(
         Guid userId, DateOnly firstDay, int count, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The schedules with tasks or milestones of the projects not completed nor cancelled, by the code, without tracking
+    /// and without the baseline, for the recalculation by the calendar (ADR-0126).
+    /// </summary>
+    Task<IReadOnlyList<OpenSchedule>> OpenSchedulesAsync(CancellationToken cancellationToken);
+
     /// <summary>The changes a person keeps in the schedule of a project, tracked, in order (ADR-0091).</summary>
     Task<IReadOnlyList<ScheduleChange>> ChangesOfAsync(Guid projectId, Guid actorId, CancellationToken cancellationToken);
 

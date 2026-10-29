@@ -119,6 +119,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Feriado local | LocalHoliday | Da cidade, do estado ou da empresa: nome, data e "Repete todo ano", a partir do ano da data |
 | Considerado, desconsiderado | IsConsidered | Considerado, o feriado deixa de ser dia útil; desconsiderado, continua na lista como dia útil |
 | Marcar todos, Desmarcar todos | ConsiderHolidays | Considera (ou desconsidera) de uma vez as datas da lista mostrada |
+| Recalcular as datas, recálculo pelo calendário | Recalculate, ScheduleRecalculation, RecalculateSchedules | O administrador põe os cronogramas em aberto no calendário atual: cada item não concluído mantém o início e a duração em dias úteis (ADR-0126) |
+| Concluído (tarefa ou marco) | IsDone | Tarefa a 100% ou marco atingido |
 | Meu trabalho | MyWork | Módulo `MyWork`, sem tabelas, e a página inicial: a fila por urgência dos itens da pessoa (ADR-0070, ADR-0096) |
 | Fila por urgência | MyWorkQueue | A regra dos grupos, da ação de cada linha e da ordem, num lugar só |
 | Visões: Para mim, Abertos por mim, Que acompanho | MyWorkView: ForMe, OpenedByMe, Following | |

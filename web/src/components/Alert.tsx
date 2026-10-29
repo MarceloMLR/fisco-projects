@@ -24,15 +24,18 @@ const tones = {
 
 /**
  * Message box of the design system (Alert, fp-alert): icon, color and title together, never color alone
- * (ADR-0065). A danger alert is announced as soon as it appears.
+ * (ADR-0065), and the actions at the right (fp-alert__actions), below the text when it is narrow. A danger alert is
+ * announced as soon as it appears.
  */
 export function Alert({
   tone,
   title,
+  actions,
   children,
 }: {
   tone: keyof typeof tones;
   title?: string;
+  actions?: ReactNode;
   children?: ReactNode;
 }) {
   const { background, accent, Icon } = tones[tone];
@@ -42,6 +45,7 @@ export function Alert({
       role={tone === 'danger' ? 'alert' : 'status'}
       sx={{
         display: 'flex',
+        flexWrap: actions === undefined ? undefined : 'wrap',
         alignItems: 'flex-start',
         gap: 'var(--space-3)',
         boxSizing: 'border-box',
@@ -52,10 +56,23 @@ export function Alert({
       }}
     >
       <Icon aria-hidden sx={{ fontSize: 'var(--icon-md)', color: accent }} />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box sx={{ flex: 1, minWidth: actions === undefined ? 0 : 'min(100%, 200px)' }}>
         {title !== undefined && <Box sx={{ fontWeight: 500, color: accent }}>{title}</Box>}
         {children !== undefined && <Box sx={{ color: 'var(--text)' }}>{children}</Box>}
       </Box>
+      {actions !== undefined && (
+        <Box
+          sx={{
+            flex: 'none',
+            display: 'flex',
+            gap: 'var(--space-2)',
+            marginLeft: 'auto',
+            alignSelf: 'center',
+          }}
+        >
+          {actions}
+        </Box>
+      )}
     </Box>
   );
 }
