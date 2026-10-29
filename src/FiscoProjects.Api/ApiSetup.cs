@@ -20,6 +20,8 @@ using FiscoProjects.Projects.Endpoints;
 using FiscoProjects.Projects.Infrastructure;
 using FiscoProjects.Tickets.Endpoints;
 using FiscoProjects.Tickets.Infrastructure;
+using FiscoProjects.TimeTracking.Endpoints;
+using FiscoProjects.TimeTracking.Infrastructure;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -75,6 +77,7 @@ public static class ApiSetup
         builder.Services.AddCredentialsModule(builder.Configuration);
         builder.Services.AddNotificationsModule(builder.Configuration);
         builder.Services.AddMyWorkModule(builder.Configuration);
+        builder.Services.AddTimeTrackingModule(builder.Configuration);
 
         // The main reads of every module, once after the API starts, in the background (ADR-0106).
         builder.Services.AddHostedService<StartupWarmUp>();
@@ -111,6 +114,7 @@ public static class ApiSetup
             .MapCredentialsEndpoints()
             .MapNotificationsEndpoints()
             .MapMyWorkEndpoints()
+            .MapTimeTrackingEndpoints()
             .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();

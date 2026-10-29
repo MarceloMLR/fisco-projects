@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -49,6 +50,15 @@ public sealed class WarmUpTests(SqlServerFixture sqlServer)
             username = "erp.fin",
             password = "Fict1cia!",
         })).StatusCode.Should().Be(HttpStatusCode.Created);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
+            team.App.Clock.GetUtcNow().UtcDateTime, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")));
+        (await SendAsync(carla, HttpMethod.Post, "/api/time-entries", new
+        {
+            projectId = team.Erp,
+            day = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            hours = 2m,
+            description = "Cadastro de clientes",
+        })).StatusCode.Should().Be(HttpStatusCode.Created);
         var before = await CountsAsync(team.App);
 
         var modules = new List<string>();
@@ -62,7 +72,8 @@ public sealed class WarmUpTests(SqlServerFixture sqlServer)
             }
         }
 
-        modules.Should().BeEquivalentTo("Users", "Administration", "Projects", "Tickets", "Documents", "Credentials", "Notifications");
+        modules.Should().BeEquivalentTo(
+            "Users", "Administration", "Projects", "Tickets", "Documents", "Credentials", "Notifications", "TimeTracking");
         // Only reads: no audit, no folder made, nothing marked as read.
         (await CountsAsync(team.App)).Should().Equal(before);
     }

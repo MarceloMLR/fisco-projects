@@ -156,7 +156,8 @@ public sealed record ProjectDeletionResponse(
     int Credentials,
     int AcceptanceTerms,
     int ScheduleItems,
-    int Members);
+    int Members,
+    int TimeEntries);
 
 /// <summary>The code of the project, typed by the Administrator to confirm the deletion (ADR-0041).</summary>
 public sealed record DeleteProjectRequest(string? Code);
@@ -469,7 +470,8 @@ internal static class ProjectEndpoints
                 summary.CountOf(ProjectItemKind.Credentials),
                 summary.CountOf(ProjectItemKind.AcceptanceTerms),
                 summary.CountOf(ProjectItemKind.ScheduleItems),
-                summary.CountOf(ProjectItemKind.Members))),
+                summary.CountOf(ProjectItemKind.Members),
+                summary.CountOf(ProjectItemKind.TimeEntries))),
             ProjectDeletionOutcome.NotFound => TypedResults.NotFound(),
             _ => TypedResults.Forbid(),
         };

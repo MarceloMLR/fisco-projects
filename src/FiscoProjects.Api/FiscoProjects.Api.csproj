@@ -31,6 +31,7 @@
     <ProjectReference Include="../Modules/Notifications/FiscoProjects.Notifications/FiscoProjects.Notifications.csproj" />
     <ProjectReference Include="../Modules/Projects/FiscoProjects.Projects/FiscoProjects.Projects.csproj" />
     <ProjectReference Include="../Modules/Tickets/FiscoProjects.Tickets/FiscoProjects.Tickets.csproj" />
+    <ProjectReference Include="../Modules/TimeTracking/FiscoProjects.TimeTracking/FiscoProjects.TimeTracking.csproj" />
     <ProjectReference Include="../Modules/Users/FiscoProjects.Users/FiscoProjects.Users.csproj" />
   </ItemGroup>
 

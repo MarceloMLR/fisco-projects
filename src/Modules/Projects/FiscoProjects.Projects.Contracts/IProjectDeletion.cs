@@ -12,6 +12,7 @@ public enum ProjectItemKind
     AcceptanceTerms = 5,
     ScheduleItems = 6,
     Members = 7,
+    TimeEntries = 8,
 }
 
 /// <summary>How many items of a kind a module has, or removed, of a project.</summary>

@@ -4,6 +4,7 @@ using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.SharedKernel;
 using FiscoProjects.Tickets.Application;
+using FiscoProjects.Tickets.Contracts;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Tickets.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
@@ -51,6 +52,8 @@ public static class TicketsModule
         services.AddScoped<IMyWorkSource, TicketWorkSource>();
         // The tickets of a project in its overview (ADR-0073).
         services.AddScoped<IProjectTickets, TicketProjectOverview>();
+        // The tickets of a project for the hours worked on one (ADR-0128).
+        services.AddScoped<IProjectTicketList, TicketList>();
         services.AddScoped<ChangeTicketPriority>();
         services.AddScoped<GetTicketDeadlines>();
         services.AddScoped<ChangeTicketDeadlines>();
