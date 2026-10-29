@@ -4,7 +4,7 @@ A v1 deixou as horas trabalhadas fora (ADR-0016, ADR-0020), e sem elas o adminis
 
 ## What Changes
 
-- Novo módulo `TimeTracking` (schema `time_tracking`), dono dos apontamentos de horas: o dia, as horas (de 0,25 a 24, em quartos de hora), a descrição, o projeto e, opcionalmente, uma tarefa do cronograma do projeto ou um chamado do projeto que a pessoa vê.
+- Novo módulo `TimeTracking` (schema `timetracking`), dono dos apontamentos de horas: o dia, as horas (de 0,25 a 24, em quartos de hora), a descrição, o projeto e, opcionalmente, uma tarefa do cronograma do projeto ou um chamado do projeto que a pessoa vê.
 - Quem aponta: as pessoas do projeto, menos o leitor, e o administrador em qualquer projeto; o projeto encerrado não recebe apontamentos nem correções; o dia não passa de hoje, no fuso da instalação; a soma da pessoa num dia não passa de 24 horas.
 - Cada pessoa vê, corrige e apaga só as próprias horas; o administrador vê, corrige e apaga as de qualquer pessoa, pela API (a tela dele vem na Horas-2). Toda mudança vai para a auditoria.
 - API em `/api/time-entries`: a lista da pessoa por período, com o total; incluir, corrigir e apagar; e as opções para apontar (os projetos em que a pessoa aponta, as tarefas e os chamados de um projeto).
