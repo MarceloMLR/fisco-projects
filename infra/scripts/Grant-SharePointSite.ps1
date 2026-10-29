@@ -12,14 +12,23 @@ and needs the modules Microsoft.Graph.Authentication and Microsoft.Graph.Sites:
 
     Install-Module Microsoft.Graph.Authentication, Microsoft.Graph.Sites -Scope CurrentUser
 
-Running it again keeps the right as it is.
+The site and the application may also come from -SiteUrl and -ClientId, so an administrator of the company may run
+it with only the package of the version and the values given by who operates. Running it again keeps the right as it
+is.
 
 .EXAMPLE
 ./infra/scripts/Grant-SharePointSite.ps1
+
+.EXAMPLE
+./infra/scripts/Grant-SharePointSite.ps1 -ClientId 00000000-0000-0000-0000-000000000000 -SiteUrl https://empresa.sharepoint.com/sites/Projetos
 #>
 [CmdletBinding()]
 param(
-    [string] $ApplicationName = 'FiscoProjects'
+    [string] $ApplicationName = 'FiscoProjects',
+    # The application of the installation in Entra ID; read from terraform output entra_client_id when not given.
+    [string] $ClientId,
+    # The SharePoint site of the files; read from sharepoint_site_url in local.auto.tfvars when not given.
+    [string] $SiteUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,11 +41,15 @@ foreach ($module in 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Sites') {
 }
 
 $terraform = Join-Path $PSScriptRoot '..\terraform'
-$clientId = terraform "-chdir=$terraform" output -raw entra_client_id
-$personal = Get-Content (Join-Path $terraform 'local.auto.tfvars') -Raw
-$siteUrl = [regex]::Match($personal, 'sharepoint_site_url\s*=\s*"([^"]+)"').Groups[1].Value
-if (-not $clientId -or -not $siteUrl) {
-    throw 'Falta o aplicativo do Entra (terraform output entra_client_id) ou o sharepoint_site_url do local.auto.tfvars.'
+if (-not $ClientId) {
+    $ClientId = terraform "-chdir=$terraform" output -raw entra_client_id
+}
+$personal = Join-Path $terraform 'local.auto.tfvars'
+if (-not $SiteUrl -and (Test-Path $personal)) {
+    $SiteUrl = [regex]::Match((Get-Content $personal -Raw), '(?m)^\s*sharepoint_site_url\s*=\s*"([^"]+)"').Groups[1].Value
+}
+if (-not $ClientId -or -not $SiteUrl) {
+    throw 'Falta o aplicativo do Entra (-ClientId ou terraform output entra_client_id) ou o site (-SiteUrl ou sharepoint_site_url do local.auto.tfvars).'
 }
 
 $site = [Uri] $siteUrl

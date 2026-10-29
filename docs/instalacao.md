@@ -2,7 +2,7 @@
 
 Como instalar o FiscoProjects na nuvem de uma empresa e como atualizá-lo. Cada empresa tem a própria instalação, na assinatura do Azure e no tenant do Microsoft 365 dela (ADR-0003), feita a partir do pacote de uma versão publicada, nunca de uma cópia do repositório (ADR-0127). Quem instala é o fornecedor, por padrão, ou a TI da empresa, com os mesmos passos.
 
-As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a passo. A "Referência", no fim, explica cada requisito com o ADR que o decidiu (`docs/adr/`). A instalação de Marcelo, publicada pelo pipeline do repositório, está em "Instalação pelo repositório".
+As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a passo. A "Referência", no fim, explica cada requisito com o ADR que o decidiu (os ADRs ficam no repositório do FiscoProjects, em `docs/adr/`). A instalação de Marcelo, publicada pelo pipeline do repositório, está em "Instalação pelo repositório".
 
 ## Antes de começar
 
@@ -10,7 +10,7 @@ As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a
 
 - O tenant do Microsoft 365, com o Entra ID, o Exchange Online e o SharePoint Online. Só as pessoas da empresa (membros do tenant) entram; convidados são recusados (ADR-0007).
 - Uma assinatura do Azure, de preferência só para o FiscoProjects, para separar custos e acessos. Os recursos ficam na Brazil South (ADR-0052); os valores estão em [custos estimados](custos-estimados.md).
-- O código da instalação, de 2 a 6 letras minúsculas ou números (por exemplo, as iniciais da empresa). Ele entra no nome de todos os recursos e no endereço `https://app-fiscoprojects-<código>-prod.azurewebsites.net`.
+- O código da instalação, de 2 a 6 letras minúsculas ou números (por exemplo, as iniciais da empresa). Ele entra no nome de todos os recursos e no endereço `https://app-fiscoprojects-<código>-prod.azurewebsites.net`, e precisa ser único entre as instalações do FiscoProjects, porque o endereço, o servidor do banco, o Key Vault e a conta do estado têm nomes únicos no Azure inteiro. O nome do Key Vault fica reservado por 90 dias depois de apagada uma instalação.
 - O site do SharePoint dos arquivos e, se quiser, a biblioteca e uma pasta dentro dela (veja SharePoint, na Referência).
 - A caixa dos e-mails do sistema: uma que a empresa já tem, como um projetos@ que a equipe lê, ou uma compartilhada que o script do Exchange cria (veja Exchange Online, na Referência).
 - Quem será o primeiro administrador do FiscoProjects e o e-mail que recebe os alertas da instalação.
@@ -25,6 +25,7 @@ No computador de quem instala (Windows, macOS ou Linux):
 - PowerShell 7.
 - ASP.NET Core Runtime 10, para as migrações do banco (no Windows, `winget install Microsoft.DotNet.AspNetCore.10`).
 - Para os scripts do SharePoint e do Exchange, os módulos do PowerShell `Microsoft.Graph.Authentication`, `Microsoft.Graph.Sites` e `ExchangeOnlineManagement` (o comando de cada um está no passo dele).
+- Uma rede que saia pela porta 1433 até o banco do Azure, para as migrações; redes de empresa costumam bloqueá-la.
 
 ## Quem instala
 
@@ -37,16 +38,20 @@ A empresa cria, no próprio tenant, uma conta para o fornecedor (por exemplo, `f
 | Criar os recursos do Azure e dar acesso à identidade da aplicação | Proprietário da assinatura do FiscoProjects | Na instalação e nas atualizações |
 | Criar o aplicativo e o grupo dos administradores do banco no Entra ID | Administrador de aplicativos e Administrador de grupos | Na instalação |
 | Dar o consentimento às permissões do aplicativo (`User.Read.All`, `Sites.Selected`) | Administrador de função privilegiada | Na instalação |
-| Dar ao aplicativo o site do SharePoint | Administrador do SharePoint | Na instalação |
-| Liberar o envio pela caixa de e-mail | Administrador do Exchange | Na instalação |
+| Dar ao aplicativo o site do SharePoint | Administrador do SharePoint e, se o tenant ainda não consentiu o Microsoft Graph PowerShell com `Sites.FullControl.All`, Administrador de aplicativos | Na instalação |
+| Liberar o envio pela caixa de e-mail | Administrador do Exchange e, para bloquear a entrada da caixa que o script criar, Administrador de usuários | Na instalação |
 
-Depois da instalação, a empresa pode retirar os papéis do Entra ID, do SharePoint e do Exchange: quem opera fica dono do aplicativo e do grupo dos administradores do banco, o que basta para as atualizações. Se uma versão nova pedir outra permissão do aplicativo, o plano do Terraform mostra, e o consentimento volta a pedir o papel. Os scripts do SharePoint e do Exchange também podem ser rodados pelos administradores da empresa, com as contas deles, em vez de a conta do fornecedor ganhar esses papéis.
+Depois da instalação, a empresa pode retirar os papéis do Entra ID, do SharePoint e do Exchange: quem opera fica dono do aplicativo e do grupo dos administradores do banco, o que basta para as atualizações. Se uma versão nova pedir outra permissão do aplicativo, o plano do Terraform mostra, e o consentimento volta a pedir o papel. Os scripts do SharePoint e do Exchange também podem ser rodados pelos administradores da empresa, com as contas deles, em vez de a conta do fornecedor ganhar esses papéis. Eles precisam só do pacote da versão, do Azure CLI no tenant (`az login --tenant <tenant> --allow-no-subscriptions`) e dos valores que quem opera passa: o id do aplicativo (`terraform -chdir=infra/terraform output -raw entra_client_id`), o site e a caixa (veja os passos 6 e 7).
 
 ### A TI da empresa
 
 A TI da empresa faz os mesmos passos com as próprias contas e os mesmos papéis, a partir do pacote da versão. O fornecedor envia o pacote de cada versão e acompanha a instalação.
 
-Em qualquer caso, quem opera a instalação entra em `operator_object_ids`: fica dono dos objetos do Entra ID, administrador do banco e do Key Vault e recebe o acesso ao estado do Terraform.
+Em qualquer caso, quem opera a instalação entra em `operator_object_ids`: fica dono dos objetos do Entra ID e administrador do banco e do Key Vault. O acesso ao estado do Terraform é à parte: o `Prepare-TerraformState.ps1` o dá a quem o roda, e cada pessoa que passar a operar depois ganha o papel na conta do estado, dado por quem já opera:
+
+```powershell
+az role assignment create --assignee <id da pessoa> --role 'Storage Blob Data Contributor' --scope (az storage account show --name stfp<código>tfstate --query id -o tsv)
+```
 
 ## Pacote da versão
 
@@ -58,7 +63,7 @@ Cada versão do FiscoProjects tem um número (`v1.2.0`) e um pacote, `fiscoproje
 - `infra/scripts`: os scripts de quem opera.
 - `docs`: este guia, o [roteiro de restauração](restauracao.md) e os [custos estimados](custos-estimados.md).
 
-Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão para o repositório nem para o pacote: o `local.auto.tfvars`, com todos os valores da instalação, e o `backend.hcl`, que diz onde está o estado do Terraform. Eles trazem o nome do tenant, e-mails e identificadores de pessoas, então ficam numa pasta privada de quem opera, com backup. A cada versão, descompacte o pacote numa pasta nova (por exemplo, `fiscoprojects-v1.2.0`) e copie os dois arquivos para `infra/terraform/` dela. Os comandos deste guia rodam na pasta do pacote.
+Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão para o repositório nem para o pacote: o `local.auto.tfvars`, com todos os valores da instalação, e o `backend.hcl`, que diz onde está o estado do Terraform. Eles trazem o nome do tenant, e-mails e identificadores de pessoas, então ficam numa pasta privada de quem opera, com backup. A cada versão, descompacte o pacote numa pasta nova (por exemplo, `fiscoprojects-v1.2.0`) e copie os dois arquivos para `infra/terraform/` dela. Os comandos deste guia rodam na pasta do pacote, no PowerShell 7. No Windows, desbloqueie antes os scripts baixados da internet, que o PowerShell recusa por não terem assinatura: `Get-ChildItem -Recurse | Unblock-File`, na pasta do pacote.
 
 ## Instalar
 
@@ -73,7 +78,6 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    key                  = "prod.tfstate"
    ```
 
-   Outra pessoa que for operar depois precisa do papel "Colaborador de Dados do Blob de Armazenamento" na conta `stfp<código>tfstate`, que o script dá só a quem o rodou.
 
 3. **Escreva os parâmetros** em `infra/terraform/local.auto.tfvars`. Os valores que não aparecem aqui ficam nos padrões da produção (`infra/terraform/variables.tf`):
 
@@ -92,8 +96,12 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    # sharepoint_library     = "<biblioteca>"
    # sharepoint_root_folder = "Sistemas/FiscoProjects"
 
-   # E-mails pela caixa da empresa (veja o passo 7); sem ela, deixe para depois do script do Exchange.
+   # E-mails pela caixa da empresa (veja o passo 7); sem ela, apague a linha até o script do Exchange criar uma.
    email_mailbox = "<caixa>@<domínio>"
+
+   # O teste de disponibilidade e os alertas ligam no passo 9, depois da publicação; antes, avisariam que o sistema
+   # está fora do ar.
+   alerts_enabled = false
    ```
 
 4. **Aplique o Terraform**, conferindo o plano antes. A primeira vez pede os papéis do Entra ID de "Quem instala":
@@ -104,6 +112,8 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    terraform -chdir=infra/terraform apply instalacao.tfplan
    ```
 
+   Depois do `apply`, apague o `infra/terraform/instalacao.tfplan`: ele guarda valores sensíveis da instalação.
+
 5. **Guarde a chave do Syncfusion** no Key Vault (o nome sai em `terraform -chdir=infra/terraform output key_vault_name`), sem deixá-la no histórico do terminal:
 
    ```powershell
@@ -113,12 +123,14 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 
    Depois, ponha `syncfusion_license_in_key_vault = true` no `local.auto.tfvars` e aplique de novo (passo 4).
 
-6. **Dê o site do SharePoint ao aplicativo**, com uma conta de Administrador do SharePoint ou Administrador global:
+6. **Dê o site do SharePoint ao aplicativo**, com uma conta de Administrador do SharePoint ou Administrador global. Na primeira vez no tenant, o Microsoft Graph PowerShell pede o consentimento para `Sites.FullControl.All`, que só um Administrador de aplicativos ou global dá:
 
    ```powershell
    Install-Module Microsoft.Graph.Authentication, Microsoft.Graph.Sites -Scope CurrentUser   # uma vez por computador
    ./infra/scripts/Grant-SharePointSite.ps1
    ```
+
+   Um administrador da empresa sem o Terraform da instalação roda `./infra/scripts/Grant-SharePointSite.ps1 -ClientId <id do aplicativo> -SiteUrl <site>`.
 
 7. **Prepare a caixa dos e-mails**, com uma conta de Administrador do Exchange ou Administrador global:
 
@@ -127,24 +139,26 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    ./infra/scripts/Grant-ExchangeMailbox.ps1                     # -DisableWAM se a entrada do Windows falhar
    ```
 
-   Se a caixa foi criada pelo script, ponha o endereço dela em `email_mailbox` e aplique de novo (passo 4). A permissão do Exchange leva de 30 minutos a 2 horas para valer; até lá, os e-mails esperam na fila.
+   Um administrador da empresa sem o Terraform da instalação passa `-ClientId <id do aplicativo> -Mailbox <caixa>`. Quando o script cria a caixa, ele bloqueia a entrada da conta dela, o que pede também o papel de Administrador de usuários; sem ele, o script avisa, e a entrada é bloqueada à mão no centro de administração do Microsoft 365 (Usuários ativos, Bloquear entrada). Se a caixa foi criada pelo script, ponha o endereço dela em `email_mailbox` e aplique de novo (passo 4). A permissão do Exchange leva de 30 minutos a 2 horas para valer; até lá, os e-mails esperam na fila.
 
-8. **Publique a versão**: `./infra/scripts/Publish-Version.ps1`. O script aplica as migrações do banco com a sua conta do Azure CLI, abrindo o firewall do banco só para o seu endereço e só enquanto elas rodam, publica o `app.zip` e espera a aplicação responder em `/health`. Se a sua rede sai por outro endereço, passe-o em `-ClientAddress`.
+8. **Publique a versão**: `./infra/scripts/Publish-Version.ps1`. O script aplica as migrações do banco com a sua conta do Azure CLI, abrindo o firewall do banco só para o seu endereço e só enquanto elas rodam, publica o `app.zip` e espera a aplicação responder em `/health`. A sua rede precisa sair pela porta 1433 até o banco; se ela sai por outro endereço público, passe-o em `-ClientAddress`.
 
-9. **Libere a entrada das pessoas**: no Microsoft Entra, em Aplicativos empresariais → FiscoProjects → Usuários e grupos, atribua o primeiro administrador e as pessoas que vão usar o sistema (veja Entra ID, na Referência).
+9. **Ligue os alertas**: apague a linha `alerts_enabled = false` do `local.auto.tfvars` (o padrão é ligado) e aplique de novo (passo 4).
 
-10. **Configure o FiscoProjects**: o primeiro administrador entra no endereço da instalação e, na Administração, revê:
+10. **Libere a entrada das pessoas**: no Microsoft Entra, em Aplicativos empresariais → FiscoProjects (<código> prod) → Usuários e grupos, atribua o primeiro administrador e as pessoas que vão usar o sistema (veja Entra ID, na Referência).
+
+11. **Configure o FiscoProjects**: o primeiro administrador entra no endereço da instalação e, na Administração, revê:
     - Configurações gerais: nome, logos, cor principal, fuso, pasta dos projetos, horário do resumo diário e prazos de guarda das notificações e da auditoria; na seção Microsoft 365, "Enviar teste".
     - Calendário e feriados (os feriados locais e os pontos facultativos da empresa), Prazos dos chamados, Pastas padrão, Categorias de links, Fornecedores e Clientes.
     - Usuários: quem é gerente de projeto ou líder técnico, depois que as pessoas entram pela primeira vez.
 
-11. **Combine a rotina**: o backup dos dois arquivos privados, o teste de restauração a cada 3 meses ([roteiro de restauração](restauracao.md)) e quem recebe os alertas.
+12. **Combine a rotina**: o backup dos dois arquivos privados, o teste de restauração a cada 3 meses ([roteiro de restauração](restauracao.md)) e quem recebe os alertas.
 
 ## Atualizar para uma versão nova
 
 1. Leia as notas da versão no GitHub, principalmente o que muda na infraestrutura ou nas permissões.
 2. Descompacte o pacote da versão nova numa pasta nova e copie para `infra/terraform/` dela o `local.auto.tfvars` e o `backend.hcl` da instalação.
-3. Entre na assinatura (`az login` e `az account set`), inicie o Terraform e confira o plano. Se houver mudanças, revise e aplique:
+3. Entre na assinatura (`az login` e `az account set`), inicie o Terraform e confira o plano. Se houver mudanças, revise e aplique, e apague o plano depois:
 
    ```bash
    terraform -chdir=infra/terraform init -backend-config=backend.hcl
@@ -154,11 +168,20 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 
 4. Publique: `./infra/scripts/Publish-Version.ps1`. A aplicação reinicia com a versão nova e fica alguns minutos fora do ar: prefira um horário sem uso.
 
-Para voltar a uma versão anterior, rode o `Publish-Version.ps1` na pasta do pacote dela: as migrações só acrescentam, e a versão anterior roda no banco novo (ADR-0125). Não aplique o Terraform da versão anterior sem conferir o plano.
+Para voltar a uma versão anterior, rode o `Publish-Version.ps1` na pasta do pacote dela, com o `local.auto.tfvars` da instalação em `infra/terraform/`: as migrações só acrescentam, e a versão anterior roda no banco novo (ADR-0125). Não aplique o Terraform da versão anterior sem conferir o plano.
 
 ## Apagar uma instalação
 
-Na pasta do pacote, com os arquivos da instalação: `terraform -chdir=infra/terraform destroy`. O Key Vault fica recuperável pelo prazo da exclusão reversível (90 dias na produção), sem custo parado, e os backups mensais do banco continuam cobrados até vencerem. A conta do estado sobra e custa centavos por mês; apagada a última instalação da assinatura, saia com `az group delete --name rg-fiscoprojects-<código>-tfstate`.
+Na pasta do pacote, com os arquivos da instalação e os papéis do Entra ID de "Quem instala" de volta (apagar as permissões do aplicativo pede o Administrador de aplicativos e o de função privilegiada):
+
+```bash
+terraform -chdir=infra/terraform init -backend-config=backend.hcl
+terraform -chdir=infra/terraform destroy
+```
+
+O Key Vault fica recuperável pelo prazo da exclusão reversível (90 dias na produção), sem custo parado, e os backups mensais do banco continuam cobrados até vencerem. A conta do estado sobra e custa centavos por mês; apagado o último ambiente desta instalação, saia com `az group delete --name rg-fiscoprojects-<código>-tfstate`.
+
+O `destroy` não alcança o que os scripts fizeram fora do Azure, que os administradores da empresa apagam: no Exchange Online, a atribuição do papel "Application Mail.Send", o escopo `FiscoProjects - caixa de envio` e a entidade de serviço do aplicativo (`Remove-ManagementRoleAssignment`, `Remove-ManagementScope` e `Remove-ServicePrincipal`) e a caixa, se foi criada pelo script; no SharePoint, a permissão do aplicativo no site, que deixa de valer com o aplicativo apagado, e os arquivos, que ficam no site.
 
 ## Instalação pelo repositório
 

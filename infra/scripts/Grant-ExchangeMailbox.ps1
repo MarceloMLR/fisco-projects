@@ -16,7 +16,8 @@ which would let it send as anyone. This script, in Exchange Online:
    of the person who runs it.
 
 The address comes from -Mailbox or from email_mailbox in local.auto.tfvars; without either, it is fiscoprojects@ the
-default domain of the tenant. It signs in to Exchange Online as an Exchange Administrator or a Global Administrator,
+default domain of the tenant. The application comes from -ClientId or from terraform output entra_client_id, so an
+administrator of the company may run it with only the package of the version and the id given by who operates. It signs in to Exchange Online as an Exchange Administrator or a Global Administrator,
 needs the module ExchangeOnlineManagement and the Azure CLI signed in to the same tenant:
 
     Install-Module ExchangeOnlineManagement -Scope CurrentUser
@@ -26,10 +27,15 @@ Running it again keeps everything as it is. Changes of the permissions of an app
 
 .EXAMPLE
 ./infra/scripts/Grant-ExchangeMailbox.ps1
+
+.EXAMPLE
+./infra/scripts/Grant-ExchangeMailbox.ps1 -ClientId 00000000-0000-0000-0000-000000000000 -Mailbox projetos@empresa.com.br
 #>
 [CmdletBinding()]
 param(
     [string] $Mailbox,
+    # The application of the installation in Entra ID; read from terraform output entra_client_id when not given.
+    [string] $ClientId,
     [string] $DisplayName = 'FiscoProjects',
     [string] $ApplicationName = 'FiscoProjects',
     # WAM, the sign-in broker of Windows, fails on some computers; the sign-in then opens in the browser.
@@ -44,15 +50,17 @@ if (-not (Get-Module -ListAvailable -Name 'ExchangeOnlineManagement')) {
 }
 
 $terraform = Join-Path $PSScriptRoot '..\terraform'
-$clientId = terraform "-chdir=$terraform" output -raw entra_client_id
-if (-not $clientId) {
-    throw 'Falta o aplicativo do Entra (terraform output entra_client_id).'
+if (-not $ClientId) {
+    $ClientId = terraform "-chdir=$terraform" output -raw entra_client_id
+}
+if (-not $ClientId) {
+    throw 'Falta o aplicativo do Entra: passe -ClientId ou rode na pasta do Terraform da instalação (terraform output entra_client_id).'
 }
 
 if (-not $Mailbox) {
     $personal = Join-Path $terraform 'local.auto.tfvars'
     if (Test-Path $personal) {
-        $Mailbox = [regex]::Match((Get-Content $personal -Raw), 'email_mailbox\s*=\s*"([^"]+)"').Groups[1].Value
+        $Mailbox = [regex]::Match((Get-Content $personal -Raw), '(?m)^\s*email_mailbox\s*=\s*"([^"]+)"').Groups[1].Value
     }
 }
 
