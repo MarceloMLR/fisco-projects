@@ -24,6 +24,7 @@ describe('Barra lateral no computador', () => {
         ptBR.nav.home,
         ptBR.nav.projects,
         ptBR.nav.tickets,
+        ptBR.nav.hours,
         ptBR.nav.admin,
       ]);
     });

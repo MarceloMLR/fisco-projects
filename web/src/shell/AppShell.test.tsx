@@ -27,6 +27,7 @@ describe('Barra lateral no computador', () => {
       ptBR.nav.home,
       ptBR.nav.projects,
       ptBR.nav.tickets,
+      ptBR.nav.hours,
     ]);
   });
 
@@ -35,6 +36,7 @@ describe('Barra lateral no computador', () => {
       ['/', ptBR.nav.home],
       ['/projects', ptBR.nav.projects],
       ['/tickets', ptBR.nav.tickets],
+      ['/hours', ptBR.nav.hours],
     ] as const) {
       const { unmount } = await renderApp(path);
 
@@ -94,6 +96,7 @@ describe('Estrutura no celular', () => {
       ptBR.nav.home,
       ptBR.nav.projects,
       ptBR.nav.tickets,
+      ptBR.nav.hours,
       ptBR.pages.profile.title,
     ]);
 

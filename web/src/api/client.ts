@@ -88,6 +88,10 @@ export type MyWorkAction = components['schemas']['MyWorkAction'];
 export type UpcomingMilestone = components['schemas']['UpcomingMilestoneResponse'];
 export type ProjectOverview = components['schemas']['ProjectOverviewResponse'];
 export type OverviewRow = components['schemas']['OverviewRowResponse'];
+export type TimeEntry = components['schemas']['TimeEntryResponse'];
+export type TimeEntryList = components['schemas']['TimeEntryListResponse'];
+export type TimeEntryProject = components['schemas']['TimeEntryProjectResponse'];
+export type TimeEntryWork = components['schemas']['TimeEntryWorkResponse'];
 export type OverviewTimeline = components['schemas']['OverviewTimelineResponse'];
 export type OverviewTeam = components['schemas']['OverviewTeamResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
@@ -169,6 +173,7 @@ export const auditItemTypes = [
   'ProjectLink',
   'PortalCredential',
   'AcceptanceTerm',
+  'TimeEntry',
   'AuditExport',
   'AuditCleanup',
 ] as const;
@@ -274,6 +279,11 @@ export const documentProblems = {
 
 /** Problem types of the credentials (CredentialProblems in the Credentials module). */
 export const credentialProblems = {
+  projectClosed: 'urn:fiscoprojects:problem:project-closed',
+} as const;
+
+/** Problem types of the hours (TimeEntryProblems in the TimeTracking module). */
+export const timeEntryProblems = {
   projectClosed: 'urn:fiscoprojects:problem:project-closed',
 } as const;
 

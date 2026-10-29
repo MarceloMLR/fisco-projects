@@ -72,6 +72,7 @@ export const queryKeys = {
   credentials: ['credentials'],
   acceptances: ['acceptances'],
   myWork: ['my-work'],
+  timeEntries: ['time-entries'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -614,5 +615,36 @@ export function upcomingMilestonesQuery() {
   return queryOptions({
     queryKey: [...queryKeys.projects, 'upcoming-milestones'] as const,
     queryFn: ({ signal }) => dataOf(api.GET('/api/projects/upcoming-milestones', { signal })),
+  });
+}
+
+/** The hours of the person in a period, from a day to another, both included (ADR-0128). */
+export function timeEntriesQuery(from: string, to: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.timeEntries, 'list', from, to] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/time-entries', { params: { query: { from, to } }, signal })),
+  });
+}
+
+/** The projects where the person logs hours. */
+export function timeEntryProjectsQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.timeEntries, 'projects'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/time-entries/projects', { signal })),
+  });
+}
+
+/** The tasks and the tickets of a project, for an entry of hours. */
+export function timeEntryWorkQuery(projectId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.timeEntries, 'work', projectId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/time-entries/projects/{projectId}/work', {
+          params: { path: { projectId } },
+          signal,
+        }),
+      ),
   });
 }

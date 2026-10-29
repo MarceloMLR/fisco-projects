@@ -2,6 +2,7 @@ import AdminPanelSettingsOutlined from '@mui/icons-material/AdminPanelSettingsOu
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import HomeOutlined from '@mui/icons-material/HomeOutlined';
+import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import { useMatches } from 'react-router';
 import { useSession } from '../session/SessionContext';
 
@@ -22,6 +23,14 @@ export const mainNavigation = [
     icon: ConfirmationNumberOutlined,
     administratorOnly: false,
   },
+  // The hours the person worked on the projects (ADR-0128).
+  {
+    key: 'hours',
+    path: '/hours',
+    labelKey: 'nav.hours',
+    icon: ScheduleOutlined,
+    administratorOnly: false,
+  },
   // The Administration belongs to the Administrator only (ADR-0046).
   {
     key: 'admin',
@@ -38,6 +47,7 @@ export type PageTitleKey =
   | 'pages.home.title'
   | 'pages.projects.title'
   | 'pages.tickets.title'
+  | 'pages.hours.title'
   | 'pages.admin.title'
   | 'pages.users.title'
   | 'pages.audit.title'

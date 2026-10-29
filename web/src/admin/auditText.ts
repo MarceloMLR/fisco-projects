@@ -26,6 +26,7 @@ import {
 } from '../api/client';
 import { formatCnpj } from '../format/cnpj';
 import { formatDayText } from '../format/dates';
+import { formatHours } from '../hours/hours';
 import { calculatedHolidayName } from './calendarText';
 
 /** How the Audit screen tells a record (canvas AdminAuditoria). */
@@ -111,7 +112,8 @@ type ProjectField =
   | 'Credentials'
   | 'AcceptanceTerms'
   | 'ScheduleItems'
-  | 'Members';
+  | 'Members'
+  | 'TimeEntries';
 const projectFields: readonly string[] = [
   'Code',
   'Name',
@@ -128,6 +130,7 @@ const projectFields: readonly string[] = [
   'AcceptanceTerms',
   'ScheduleItems',
   'Members',
+  'TimeEntries',
 ] satisfies ProjectField[];
 
 const isProjectField = (field: string): field is ProjectField => projectFields.includes(field);
@@ -324,6 +327,21 @@ const portalCredentialFields: readonly string[] = [
 const isPortalCredentialField = (field: string): field is PortalCredentialField =>
   portalCredentialFields.includes(field);
 
+// The hours a person worked on a project (ADR-0128).
+type TimeEntryField =
+  'ProjectId' | 'UserId' | 'Day' | 'Hours' | 'Description' | 'ScheduleItemId' | 'TicketId';
+const timeEntryFields: readonly string[] = [
+  'ProjectId',
+  'UserId',
+  'Day',
+  'Hours',
+  'Description',
+  'ScheduleItemId',
+  'TicketId',
+] satisfies TimeEntryField[];
+const isTimeEntryField = (field: string): field is TimeEntryField =>
+  timeEntryFields.includes(field);
+
 type AcceptanceTermField =
   | 'ProjectId'
   | 'MilestoneId'
@@ -402,6 +420,13 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   }
   if (isHoliday(entry) && field === 'Date') {
     return formatDayText(value);
+  }
+  // The day and the hours of an entry, as Minhas horas shows them (ADR-0128).
+  if (entry.itemType === 'TimeEntry' && field === 'Day') {
+    return formatDayText(value);
+  }
+  if (entry.itemType === 'TimeEntry' && field === 'Hours' && Number.isFinite(Number(value))) {
+    return formatHours(Number(value));
   }
   if (entry.itemType === 'Client' && field === 'Cnpj') {
     return formatCnpj(value);
@@ -566,6 +591,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'AcceptanceTerm' && isAcceptanceTermField(field)) {
     return t(`audit.fields.AcceptanceTerm.${field}`);
   }
+  if (entry.itemType === 'TimeEntry' && isTimeEntryField(field)) {
+    return t(`audit.fields.TimeEntry.${field}`);
+  }
   return field;
 }
 
@@ -694,6 +722,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'PortalCredential') {
     return t(
       `audit.actions.PortalCredential.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // Hours logged, corrected and removed (ADR-0128).
+  if (entry.itemType === 'TimeEntry') {
+    return t(
+      `audit.actions.TimeEntry.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
   }
   // A term of acceptance asked for, attached, signed, refused and cancelled (ADR-0035, ADR-0095).
@@ -932,7 +966,8 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (
     (entry.itemType === 'ProjectLink' ||
       entry.itemType === 'PortalCredential' ||
-      entry.itemType === 'AcceptanceTerm') &&
+      entry.itemType === 'AcceptanceTerm' ||
+      entry.itemType === 'TimeEntry') &&
     entry.action !== 'Updated'
   ) {
     return join(label, projectOfMember(entry));
@@ -1108,6 +1143,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'AcceptanceTerm') {
     return [
       { label: t('audit.details.item.AcceptanceTerm'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'TimeEntry') {
+    return [
+      { label: t('audit.details.item.TimeEntry'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }
