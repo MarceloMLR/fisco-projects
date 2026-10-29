@@ -464,6 +464,28 @@ public sealed class Schedule : Entity
         }
     }
 
+    /// <summary>
+    /// Places again, in the calendar as it is now, each task and milestone with dates of its own that is not done
+    /// (ADR-0126): in the order of the dependencies, it keeps its start, moved to the next business day when it is no
+    /// longer one, and its duration in business days, and starts after the items it depends on, as any change places it.
+    /// An item that now ends earlier pulls nobody (ADR-0019). A task at 100% and a milestone reached keep their dates,
+    /// and the tasks with subtasks take theirs from them again (ADR-0088). A schedule made in the calendar as it is now
+    /// does not change.
+    /// </summary>
+    /// <returns>How many tasks and milestones changed the start, the end or the duration.</returns>
+    public int Recalculate(IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        var before = _items.ToDictionary(item => item.Id, item => (item.Start, item.End, item.Duration));
+        foreach (var item in InDependencyOrder().Where(item => !item.IsDone))
+        {
+            item.Place(EarliestStart(item, item.Start, days), days);
+        }
+
+        Summarize(days);
+        return _items.Count(item => before[item.Id] != (item.Start, item.End, item.Duration));
+    }
+
     /// <summary>The dates, the progress and the delays of the schedule on a day (<see cref="ScheduleFigures"/>).</summary>
     public ScheduleFigures Figures(DateOnly today) => ScheduleFigures.Of(_phases, _items, today);
 
@@ -821,6 +843,30 @@ public sealed class Schedule : Entity
         return pushed;
     }
 
+    /// <summary>The tasks and milestones with dates of their own, each one after every item it depends on.</summary>
+    private List<ScheduleItem> InDependencyOrder()
+    {
+        var waiting = _items.Where(item => !IsSummary(item.Id)).ToDictionary(
+            item => item.Id,
+            item => _dependencies.Count(dependency => dependency.SuccessorId == item.Id));
+        var ready = new Queue<ScheduleItem>(_items.Where(item => waiting.TryGetValue(item.Id, out var count) && count == 0).OrderBy(item => item.Start));
+        var ordered = new List<ScheduleItem>();
+        while (ready.TryDequeue(out var item))
+        {
+            ordered.Add(item);
+            foreach (var successor in SuccessorIdsOf(item.Id).Where(waiting.ContainsKey))
+            {
+                waiting[successor]--;
+                if (waiting[successor] == 0)
+                {
+                    ready.Enqueue(Item(successor));
+                }
+            }
+        }
+
+        return ordered;
+    }
+
     private IEnumerable<Guid> SuccessorIdsOf(Guid itemId) =>
         _dependencies.Where(dependency => dependency.PredecessorId == itemId).Select(dependency => dependency.SuccessorId);
 
@@ -934,8 +980,10 @@ public sealed class ScheduleItem : Entity
     /// A task is late when its end passed and it has not reached 100% (ADR-0020); a milestone, when its day passed and it
     /// was not reached (ADR-0086).
     /// </summary>
-    public bool IsLate(DateOnly today) =>
-        End < today && (Kind == ScheduleItemKind.Task ? Progress < 100 : ReachedOn is null);
+    public bool IsLate(DateOnly today) => End < today && !IsDone;
+
+    /// <summary>A task at 100%, or a milestone reached.</summary>
+    public bool IsDone => Kind == ScheduleItemKind.Task ? Progress == 100 : ReachedOn is not null;
 
     /// <summary>
     /// The business days of delay on a day: from the day after the end up to the day, both included, in the calendar of

@@ -1054,6 +1054,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/schedule-recalculation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetScheduleRecalculation"];
+        put?: never;
+        post: operations["RecalculateSchedules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets": {
         parameters: {
             query?: never;
@@ -3224,6 +3240,14 @@ export interface components {
          * @enum {unknown}
          */
         ProjectTicketTeam: "Functional" | "Development";
+        RecalculatedScheduleResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            /** Format: int32 */
+            items: number;
+        };
         /**
          * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
          * @enum {unknown}
@@ -3388,6 +3412,15 @@ export interface components {
         ScheduleProgressRequest: {
             /** Format: int32 */
             progress: number;
+        };
+        /**
+         * @description The tasks and milestones of open projects that change with the calendar as it is now: how many in all, and each
+         *     project, by the code, with how many of its own.
+         */
+        ScheduleRecalculationResponse: {
+            /** Format: int32 */
+            items: number;
+            projects: components["schemas"]["RecalculatedScheduleResponse"][];
         };
         /**
          * @description The schedule of a project on the day `today` of the installation: its dates (none without items), its progress,
@@ -7981,6 +8014,64 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GetScheduleRecalculation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleRecalculationResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RecalculateSchedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleRecalculationResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };

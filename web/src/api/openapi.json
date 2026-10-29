@@ -4637,6 +4637,64 @@
         }
       }
     },
+    "/api/admin/schedule-recalculation": {
+      "get": {
+        "tags": [
+          "Schedule"
+        ],
+        "operationId": "GetScheduleRecalculation",
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRecalculationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Schedule"
+        ],
+        "operationId": "RecalculateSchedules",
+        "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRecalculationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tickets": {
       "get": {
         "tags": [
@@ -13371,6 +13429,31 @@
         ],
         "description": "The team of a ticket (ADR-0068), as the overview of a project shows it."
       },
+      "RecalculatedScheduleResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ScheduleAction": {
         "enum": [
           "PhaseAdded",
@@ -13812,6 +13895,26 @@
           }
         },
         "description": "The progress of a task, from 0 to 100."
+      },
+      "ScheduleRecalculationResponse": {
+        "required": [
+          "items",
+          "projects"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecalculatedScheduleResponse"
+            }
+          }
+        },
+        "description": "The tasks and milestones of open projects that change with the calendar as it is now: how many in all, and each\nproject, by the code, with how many of its own."
       },
       "ScheduleResponse": {
         "required": [
@@ -15909,6 +16012,9 @@
     },
     {
       "name": "Projects"
+    },
+    {
+      "name": "Schedule"
     },
     {
       "name": "Tickets"
