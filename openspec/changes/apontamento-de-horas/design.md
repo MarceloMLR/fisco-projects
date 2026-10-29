@@ -65,7 +65,7 @@ Rota `/hours`, no `mainNavigation` entre Chamados e Administração, com o ícon
 
 O diálogo (`TimeEntryDialog`, React Hook Form com Zod) tem o dia (`TextField` de data, hoje de início), o projeto (`Select`), a tarefa ou o chamado (`Select` com os grupos Tarefas e Chamados, opcional, recarregado ao trocar o projeto), as horas (texto que aceita "1,5", "1.5" e "1:30", convertido por `parseHours` em `hours.ts`, que também formata "1,5 h") e a descrição (`TextArea`). Apagar pede confirmação pelo `Dialog`. Depois de cada mudança, a tela invalida `queryKeys.timeEntries`.
 
-O canvas não tem esta tela: ela é montada só com os componentes e os tokens do design system, como as páginas da Administração feitas depois do canvas, e as capturas de computador e celular, claro e escuro, vão no PR.
+A tela segue o canvas "Horas do projeto" (https://claude.ai/artifact/4w44gN26rJ2XMec6pUga3y), aprovado por Marcelo em 29/10/2026: os dias do mais recente para o mais antigo, "Só o projeto" quando o apontamento não tem tarefa nem chamado, a próxima semana desabilitada na semana atual e, no celular, um cartão por dia. As capturas de computador e celular, claro e escuro, vão no PR.
 
 ### Demonstração
 

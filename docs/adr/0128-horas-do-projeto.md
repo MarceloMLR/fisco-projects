@@ -49,7 +49,8 @@ Regras:
 - **Quem vê e corrige.** Cada pessoa vê, corrige e apaga só as próprias horas. O administrador vê, corrige e apaga as de qualquer pessoa. O gerente e o líder técnico não veem as horas das outras pessoas. Toda mudança vai para a auditoria (ADR-0039).
 - **Projeto encerrado.** Concluído ou cancelado, o projeto não recebe apontamentos nem correções, como os demais módulos (ADR-0016).
 - **Horas contratadas e adicionais.** Só o administrador cadastra as horas contratadas do projeto (sem elas, o projeto não tem saldo) e as horas adicionais, cada uma com o dia, as horas e o motivo (o pedido fora do escopo). As adicionais se corrigem e se apagam, com a auditoria.
-- **Visão gerencial.** Só do administrador, na Administração: por projeto, as contratadas, as adicionais, o total, as apontadas, o saldo (o total menos as apontadas) e a parte consumida, com o estouro destacado por ícone, cor e texto (ADR-0065); por pessoa, as horas de cada uma no projeto. Baixa em planilha, como a auditoria.
+- **Visão gerencial.** Só do administrador, na tela Horas dos projetos, na seção nova Acompanhamento da Administração: por projeto, as contratadas, as adicionais, as apontadas, o saldo (as contratadas e as adicionais menos as apontadas) e a parte consumida. O saldo tem quatro estados, por ícone, cor e texto (ADR-0065): acima do contratado (perigo), perto do limite, a partir de 90% num projeto em aberto (atenção), dentro (sucesso) e sem horas contratadas (neutro). O detalhe de um projeto abre numa gaveta, com as horas de cada pessoa e a parte delas. Baixa em planilha, como a auditoria.
+- **Telas.** Minhas horas, o apontamento e a visão gerencial seguem o canvas "Horas do projeto", aprovado por Marcelo em 29/10/2026.
 - **Pessoa que sai.** As horas de quem saiu do projeto ou foi desativado continuam no projeto, com o nome atual (o anonimizado aparece pelo identificador, ADR-0110).
 - **Exclusão do projeto.** As horas saem com ele (ADR-0111).
 

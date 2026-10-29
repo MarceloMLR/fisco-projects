@@ -24,6 +24,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 28/10/2026, depois da Operação-5, Marcelo perguntou se uma mudança no calendário vale para todos os cronogramas e pediu, ao salvar o calendário, ver quantas tarefas mudam e recalcular as datas (Projetos-1.1, `recalculo-do-calendario`, ADR-0126), antes da Operação-6.
 - Em 29/10/2026, Marcelo perguntou como quem vende software instala na nuvem do cliente e escolheu que a Operação-6 parta do pacote de uma versão publicada, instalado pelo fornecedor (padrão) ou pela TI da empresa, e não de uma cópia do repositório (ADR-0127).
 - Em 29/10/2026, com a v1 concluída, Marcelo pediu duas novidades, que formam os grupos 11 e 12, fora do roadmap aprovado em 17/10/2026: as horas do projeto, só em horas, com a visão gerencial só do administrador (ADR-0128), e a assinatura dos termos de aceite por um provedor de assinatura eletrônica trocável, começando pela Autentique, com os termos só do gerente e do administrador.
+- Em 29/10/2026, para a assinatura dos termos, Marcelo aprovou que o e-mail de cada signatário fique guardado só enquanto o pedido está aberto: com o termo assinado, recusado ou cancelado, o e-mail é apagado e o nome fica no histórico; os dados completos ficam no PDF assinado que o provedor devolve, e tudo sai com o projeto excluído. Aprovou também as telas da Horas-1 e da Horas-2 no canvas "Horas do projeto".
 
 ## Marcos
 
