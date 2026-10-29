@@ -6,4 +6,4 @@ A carga de demonstração MUST incluir horas apontadas nas duas últimas semanas
 
 #### Scenario: Horas na demonstração
 - **WHEN** o comando carrega os dados de demonstração e a gerente do projeto principal abre Minhas horas
-- **THEN** a semana atual mostra horas dela no projeto principal e em outro projeto, com tarefas e chamados
+- **THEN** a semana atual e a anterior mostram horas dela no projeto principal e em outro projeto, com tarefas e chamados

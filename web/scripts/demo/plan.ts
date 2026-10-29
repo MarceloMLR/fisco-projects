@@ -272,6 +272,21 @@ export interface DemoAcceptance {
   answer?: { signed: string; lines: readonly string[] } | { refused: string };
 }
 
+/**
+ * Hours a person of the project worked (ADR-0128), on a working day before today (0 is today), on the project only or
+ * on a task of its schedule or a ticket of it, by the name of the task or the title of the ticket; never by a viewer,
+ * and never more than 24 hours of a person in a day.
+ */
+export interface DemoTimeEntry {
+  by: DemoPerson;
+  /** Working days (Monday to Friday) before today. */
+  daysAgo: number;
+  hours: number;
+  description: string;
+  task?: string;
+  ticket?: string;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -302,6 +317,8 @@ export interface DemoProject {
   credentials?: readonly DemoCredential[];
   /** The acceptance terms asked for, answered and attached once the schedule is built, before the status. */
   acceptances?: readonly DemoAcceptance[];
+  /** The hours logged by the people of the project, before it gets its status (ADR-0128). */
+  hours?: readonly DemoTimeEntry[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -340,6 +357,104 @@ export const demoProjects: readonly DemoProject[] = [
       ['beatriz', 'Viewer'],
     ],
     status: 'InProgress',
+    // Hours of the people of the project in the last two weeks (ADR-0128).
+    hours: [
+      {
+        by: 'marina',
+        daysAgo: 0,
+        hours: 2,
+        description: 'Reunião de acompanhamento com o cliente',
+        task: 'Revisar parâmetros com o cliente',
+      },
+      { by: 'marina', daysAgo: 1, hours: 3, description: 'Revisão do cronograma e dos riscos' },
+      {
+        by: 'marina',
+        daysAgo: 3,
+        hours: 4,
+        description: 'Alinhamento do escopo com o cliente',
+        task: 'Aprovar o escopo com o cliente',
+      },
+      { by: 'marina', daysAgo: 6, hours: 2.5, description: 'Reunião semanal com o cliente' },
+      {
+        by: 'carla',
+        daysAgo: 0,
+        hours: 3.5,
+        description: 'Roteiro dos testes de emissão de NF-e',
+        task: 'Roteiro de testes',
+      },
+      { by: 'carla', daysAgo: 1, hours: 3, description: 'Treinamento dos usuários-chave' },
+      {
+        by: 'carla',
+        daysAgo: 2,
+        hours: 6,
+        description: 'Ajustes depois da revisão da contabilidade',
+        task: 'Configurar plano de contas',
+      },
+      {
+        by: 'carla',
+        daysAgo: 2,
+        hours: 1.5,
+        description: 'Teste da correção em homologação',
+        ticket: 'Erro ao importar XML de entrada',
+      },
+      {
+        by: 'carla',
+        daysAgo: 3,
+        hours: 4,
+        description: 'Cadastro das contas de resultado',
+        task: 'Configurar plano de contas',
+      },
+      {
+        by: 'carla',
+        daysAgo: 3,
+        hours: 1.5,
+        description: 'Análise da rejeição com o time técnico',
+        ticket: 'Rejeição 539 ao emitir nota de devolução',
+      },
+      {
+        by: 'carla',
+        daysAgo: 5,
+        hours: 6,
+        description: 'Parametrização das regras de SP e RS',
+        task: 'Parametrizar regras de ICMS',
+      },
+      {
+        by: 'carla',
+        daysAgo: 7,
+        hours: 8,
+        description: 'Entrevistas com a área fiscal',
+        task: 'Mapear processos fiscais',
+      },
+      {
+        by: 'diego',
+        daysAgo: 0,
+        hours: 5,
+        description: 'Integração com o emissor',
+        task: 'Integrar emissão de NF-e',
+      },
+      {
+        by: 'diego',
+        daysAgo: 1,
+        hours: 6,
+        description: 'Análise dos tempos da integração',
+        ticket: 'Integração com o banco retorna tempo esgotado',
+      },
+      {
+        by: 'diego',
+        daysAgo: 4,
+        hours: 7.5,
+        description: 'Montagem do XML de envio',
+        task: 'Integrar emissão de NF-e',
+      },
+      {
+        by: 'rafael',
+        daysAgo: 2,
+        hours: 2,
+        description: 'Revisão da correção da rejeição',
+        ticket: 'Rejeição 539 ao emitir nota de devolução',
+      },
+      { by: 'rafael', daysAgo: 5, hours: 3, description: 'Revisão técnica da integração bancária' },
+    ],
     baseline: true,
     template: {
       name: 'Implantação de ERP',
@@ -900,6 +1015,32 @@ export const demoProjects: readonly DemoProject[] = [
     name: 'Adequação do SPED Fiscal 2027',
     client: 'Gama Têxtil',
     status: 'InProgress',
+    // Hours of the people of the project in the last two weeks (ADR-0128).
+    hours: [
+      { by: 'marina', daysAgo: 0, hours: 1.5, description: 'Planejamento da entrega de outubro' },
+      {
+        by: 'marina',
+        daysAgo: 2,
+        hours: 2,
+        description: 'Conferência do arquivo com o cliente',
+        ticket: 'Validar o arquivo no PVA antes da entrega',
+      },
+      { by: 'carla', daysAgo: 1, hours: 2.5, description: 'Reunião semanal com o cliente' },
+      {
+        by: 'carla',
+        daysAgo: 4,
+        hours: 5,
+        description: 'Comparação dos leiautes de 2026 e 2027',
+        task: 'Levantar mudanças do leiaute',
+      },
+      {
+        by: 'diego',
+        daysAgo: 2,
+        hours: 4,
+        description: 'Correção do registro K200',
+        task: 'Ajustar registros do bloco K',
+      },
+    ],
     members: [
       ['carla', 'Contributor'],
       ['diego', 'Developer'],
@@ -1099,6 +1240,23 @@ export const demoProjects: readonly DemoProject[] = [
       ['marina', 'Viewer'],
     ],
     status: 'InProgress',
+    // Hours of the people of the project in the last two weeks (ADR-0128).
+    hours: [
+      {
+        by: 'carla',
+        daysAgo: 6,
+        hours: 4,
+        description: 'Revisão das tabelas de frete',
+        task: 'Mapear rotas e tabelas de frete',
+      },
+      {
+        by: 'diego',
+        daysAgo: 3,
+        hours: 6,
+        description: 'Integração do CT-e',
+        task: 'Integrar CT-e com o TMS',
+      },
+    ],
     baseline: true,
     phases: [
       {
@@ -1860,4 +2018,18 @@ export function firstDayFor(today: string): string {
 /** The day some days after (or before) the first day. */
 export function dayFrom(first: string, days: number): string {
   return dayText(utcOf(first) + days * dayInMilliseconds);
+}
+
+/** The day some working days (Monday to Friday) before today, today itself for 0, as the hours of the plan say it. */
+export function workDaysBefore(today: string, days: number): string {
+  let time = utcOf(today);
+  let left = days;
+  while (left > 0) {
+    time -= dayInMilliseconds;
+    const weekday = new Date(time).getUTCDay();
+    if (weekday !== 0 && weekday !== 6) {
+      left -= 1;
+    }
+  }
+  return dayText(time);
 }
