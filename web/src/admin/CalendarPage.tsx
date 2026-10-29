@@ -31,6 +31,7 @@ import { Alert } from '../components/Alert';
 import { CodeChip } from '../components/Card';
 import { Checkbox } from '../components/Checkbox';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
+import { detailLineSx } from '../components/detailLineSx';
 import { Dialog } from '../components/Dialog';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Select } from '../components/Select';
@@ -866,25 +867,17 @@ export function CalendarPage() {
                 <CodeChip code={project.code} />
                 <Box
                   component="span"
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                  sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}
                 >
-                  {project.name}
-                </Box>
-                <Box
-                  component="span"
-                  sx={{
-                    flex: 'none',
-                    color: 'var(--text-secondary)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {t('calendar.recalculation.dialog.items', { count: project.items })}
+                  <Box
+                    component="span"
+                    sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {project.name}
+                  </Box>
+                  <Box component="span" sx={detailLineSx}>
+                    {t('calendar.recalculation.dialog.items', { count: project.items })}
+                  </Box>
                 </Box>
               </Box>
             ))}
