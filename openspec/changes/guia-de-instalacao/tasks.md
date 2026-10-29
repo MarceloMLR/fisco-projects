@@ -12,7 +12,7 @@
 
 - [x] 3.1 `docs/instalacao.md` como guia de instalação, com os testes "Cada script no guia" e "Guia do começo ao fim"
 - [x] 3.2 ADR-0127, `CLAUDE.md`, roadmap (Operação-6) e glossário
-- [ ] 3.3 Build sem avisos, testes do pipeline, `dotnet format` e `openspec validate --all --strict`
+- [x] 3.3 Build sem avisos, testes do pipeline, `dotnet format` e `openspec validate --all --strict`
 
 ## Workflow follow-up
 
