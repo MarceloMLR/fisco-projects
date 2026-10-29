@@ -33,7 +33,7 @@ A v1 deixou as horas trabalhadas fora (ADR-0016, ADR-0020), e sem elas o adminis
 
 ## Impact
 
-- Novo módulo `src/Modules/TimeTracking` (`FiscoProjects.TimeTracking` e `FiscoProjects.TimeTracking.Contracts`), com migração própria, aquecimento (`IWarmUp`), exclusão do projeto (`IProjectDeletion`) e testes de arquitetura, unidade, API e permissões.
+- Novo módulo `src/Modules/TimeTracking` (`FiscoProjects.TimeTracking`), com migração própria, aquecimento (`IWarmUp`), exclusão do projeto (`IProjectDeletion`) e testes de arquitetura, unidade, API e permissões.
 - `Tickets.Contracts`: contrato novo com os chamados de um projeto que a pessoa vê; `Tickets` o implementa.
 - Telas: `web/src/hours` (página, diálogo e regras), item na barra lateral e no menu do celular, rota, consultas, textos em `pt-BR.json` e tipos da API.
 - `web/scripts/demo/plan.ts`: horas na demonstração.

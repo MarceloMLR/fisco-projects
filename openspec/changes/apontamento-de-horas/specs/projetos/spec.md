@@ -25,5 +25,5 @@ Só o administrador MUST poder excluir um projeto, de qualquer status, digitando
 Antes de excluir, o administrador MUST poder ver quantos chamados, documentos, links, acessos, termos de aceite, tarefas e marcos, pessoas e horas apontadas o projeto tem (ADR-0041, ADR-0128).
 
 #### Scenario: Resumo da exclusão
-- **WHEN** o administrador pede o resumo de um projeto com dois chamados, um documento, três tarefas e quatro apontamentos de horas
+- **WHEN** o administrador pede o resumo de um projeto com dois chamados, um documento, três tarefas e horas apontadas
 - **THEN** a API responde com o código e o nome do projeto e essas quantidades

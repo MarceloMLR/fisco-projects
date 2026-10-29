@@ -293,6 +293,19 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Publicar uma versão à mão | `Publish-Version.ps1` | Migrações e publicação do pacote numa instalação fora do pipeline do repositório (ADR-0127) |
 | Métricas da fila de e-mails | EmailQueueMetrics, EmailQueueState | `fiscoprojects.emails.waiting`, `.oldest_waiting`, `.sent` e `.failed`, para o alerta de fila parada |
 
+## Horas do projeto
+
+| Português | Código | Observação |
+| --- | --- | --- |
+| Horas do projeto | TimeTracking | Módulo `TimeTracking` (schema `timetracking`): o apontamento e, depois, as horas contratadas e adicionais, só em horas (ADR-0128) |
+| Apontamento de horas; Apontar horas | TimeEntry, AddTimeEntry | As horas de uma pessoa num dia de um projeto, com a descrição e, opcional, a tarefa ou o chamado |
+| Minhas horas | `/hours`, MyHoursPage | A semana da pessoa, de segunda a domingo, com os apontamentos por dia |
+| Corrigir, Apagar (horas) | ChangeTimeEntry, DeleteTimeEntry | A pessoa nos próprios apontamentos, e o administrador em qualquer um |
+| Só o projeto | `scheduleItemId` e `ticketId` vazios | Apontamento sem tarefa nem chamado |
+| Tarefa excluída | `task.name` vazio | Apontamento cuja tarefa saiu do cronograma; as horas continuam no projeto |
+| Quem aponta, vê e corrige | TimeEntryAccess | As regras das horas num lugar só (ADR-0128) |
+| Chamados de um projeto | IProjectTicketList | Contrato do `Tickets.Contracts`, que o `Tickets` implementa (`TicketList`) |
+
 ## Telas
 
 | Português | Código | Observação |
