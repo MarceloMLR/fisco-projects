@@ -196,7 +196,7 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Horas-1 | `apontamento-de-horas` | Cada pessoa aponta as próprias horas no projeto, com a tarefa ou o chamado opcional, em Minhas horas | 0020, 0128 | Concluída em 29/10/2026 ([#107](https://github.com/MarceloMLR/fisco-projects/pull/107)) |
-| Horas-2 | `saldo-de-horas` | Horas contratadas e adicionais de cada projeto e a visão gerencial do administrador, com o saldo e o estouro | 0016, 0128 | Planejada |
+| Horas-2 | `saldo-de-horas` | Horas contratadas e adicionais de cada projeto e a visão gerencial do administrador, com o saldo e o estouro | 0016, 0128 | Em andamento |
 
 ## 12. Assinatura dos termos de aceite
 
