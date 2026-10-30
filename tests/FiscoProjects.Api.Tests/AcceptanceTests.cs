@@ -444,8 +444,10 @@ public sealed class AcceptanceTests(SqlServerFixture sqlServer)
         details.GetProperty("term").GetProperty("status").GetString().Should().Be("Signed");
         KindsOf(details).Should().Equal("Requested", "Signed", "Signed");
         (await team.App.CountAsync("SELECT COUNT(*) FROM [documents].[documents]")).Should().Be(1);
+        // The way that saved second gave up and forgot its copy of the PDF, which may have taken the name "(1)" meanwhile.
         (await DocumentsAsync(marina, team.Erp, (await TermsFolderAsync(marina, team.Erp))!.Value))
-            .Select(document => document.GetProperty("name").GetString()).Should().Equal("termo-homologacao-assinado.pdf");
+            .Should().ContainSingle().Which.GetProperty("name").GetString().Should().StartWith("termo-homologacao-assinado");
+        Directory.GetFiles(team.Files, "termo-homologacao-assinado*", SearchOption.AllDirectories).Should().ContainSingle();
         (await team.App.CountAsync("SELECT COUNT(*) FROM [notifications].[notifications] WHERE [Kind] = 'AcceptanceSigned'")).Should().Be(1);
     }
 
