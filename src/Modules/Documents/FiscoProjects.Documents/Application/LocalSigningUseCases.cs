@@ -50,7 +50,8 @@ public sealed class AnswerLocalSigning(ILocalSigningPage page, SignatureProvider
 
     private async Task ApplyAsync(string documentId, CancellationToken cancellationToken)
     {
-        if (providers.Current is { } provider)
+        // The local provider of the installation, or the one of the signers of the demonstration (ADR-0130).
+        foreach (var provider in providers.All.Where(provider => provider is ILocalSigningPage))
         {
             await apply.ForDocumentAsync(provider.Name, documentId, cancellationToken);
         }

@@ -24,19 +24,6 @@ public sealed class AcceptanceTests(SqlServerFixture sqlServer)
     private static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpMethod method, string path, object? body = null) =>
         ProjectTeam.SendAsync(client, method, path, body);
 
-    /// <summary>The phase "Homologação" with the milestones "Homologação concluída" and "Escopo aprovado", made by the Administrator.</summary>
-    private static async Task<(Guid Homologation, Guid Scope)> MilestonesAsync(ProjectTeam team, Guid project)
-    {
-        var path = $"/api/projects/{project}/schedule";
-        var phase = await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, $"{path}/phases", new { name = "Homologação" }));
-        var homologation = await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, $"{path}/items", Milestone(phase, "Homologação concluída", "2026-11-03")));
-        var scope = await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, $"{path}/items", Milestone(phase, "Escopo aprovado", "2026-10-21")));
-        return (homologation, scope);
-    }
-
-    private static object Milestone(Guid phase, string name, string start) =>
-        new { kind = "Milestone", phaseId = phase, name, start, duration = 0, ownerId = (Guid?)null, progress = 0, predecessorIds = Array.Empty<Guid>() };
-
     /// <summary>The team with a provider in memory in place of the local one.</summary>
     private static async Task<(ProjectTeam Team, FakeSignatureProvider Provider)> WithFakeProviderAsync(SqlServerFixture sqlServer)
     {
@@ -52,25 +39,6 @@ public sealed class AcceptanceTests(SqlServerFixture sqlServer)
         {
             builder.Services.AddSingleton(provider);
         }
-    }
-
-    /// <summary>One round of the check in the background: each open request, in a scope of its own.</summary>
-    private static async Task<int> CheckAsync(ProjectTeam team)
-    {
-        IReadOnlyList<Guid> open;
-        await using (var scope = team.App.Services.CreateAsyncScope())
-        {
-            open = await scope.ServiceProvider.GetRequiredService<ListOpenSignatureRequests>().ExecuteAsync(Cancellation);
-        }
-
-        var changed = 0;
-        foreach (var term in open)
-        {
-            await using var scope = team.App.Services.CreateAsyncScope();
-            changed += await scope.ServiceProvider.GetRequiredService<ApplySignatureStatus>().ExecuteAsync(term, Cancellation) ? 1 : 0;
-        }
-
-        return changed;
     }
 
     private static async Task<JsonElement> ListAsync(HttpClient client, Guid project, string query = "") =>

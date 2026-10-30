@@ -86,9 +86,11 @@ public static class DocumentsModule
         return services;
     }
 
-    // The provider of signatures of Signature:Provider, none when it is empty (ADR-0129); the application does not
-    // start with one it does not know, nor with the local one in production. The requests at it are checked in the
-    // background.
+    // The provider of signatures of Signature:Provider, none when it is empty (ADR-0129, ADR-0130): the local one or the
+    // Autentique, with its notices when the secret of the notice is set and, outside production, the local provider for
+    // the signers of the demonstration. The application does not start with one it does not know, nor with the local
+    // one, the sandbox or the domains of the demonstration in production. The requests at the provider are checked in
+    // the background, and at once when the provider tells.
     private static void AddSignatureProvider(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<SignatureOptions>()
@@ -97,22 +99,50 @@ public static class DocumentsModule
         services.AddSingleton<IValidateOptions<SignatureOptions>, SignatureOptionsValidation>();
         services.AddScoped<SignatureProviders>();
         var options = configuration.GetSection(SignatureOptions.Section).Get<SignatureOptions>() ?? new SignatureOptions();
-        if (!options.IsLocal)
+        if (options.IsLocal)
+        {
+            services.AddLocalSignatureProvider(options);
+            services.AddSingleton<ISignatureProvider>(provider => provider.GetRequiredService<LocalSignatureProvider>());
+        }
+        else if (options.IsAutentique)
+        {
+            services.AddHttpClient(AutentiqueSignatureProvider.ClientName, client => client.Timeout = TimeSpan.FromSeconds(100));
+            services.AddSingleton<AutentiqueSignatureProvider>();
+            services.AddSingleton<ISignatureProvider>(provider => provider.GetRequiredService<AutentiqueSignatureProvider>());
+            if (!string.IsNullOrWhiteSpace(options.Autentique.WebhookSecret))
+            {
+                services.AddSingleton<ISignatureNotices>(provider => provider.GetRequiredService<AutentiqueSignatureProvider>());
+            }
+
+            if (options.DemonstrationDomains.Count > 0)
+            {
+                services.AddLocalSignatureProvider(options);
+                services.AddSingleton(provider => new SignatureDemonstration(
+                    provider.GetRequiredService<LocalSignatureProvider>(), options.DemonstrationDomains));
+            }
+        }
+        else
         {
             return;
         }
 
-        services.AddSingleton(provider => new LocalSignatureProvider(
-            Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, options.Local.Folder),
-            provider.GetRequiredService<TimeProvider>(),
-            provider.GetRequiredService<ILogger<LocalSignatureProvider>>()));
-        services.AddSingleton<ISignatureProvider>(provider => provider.GetRequiredService<LocalSignatureProvider>());
-        services.AddSingleton<ILocalSigningPage>(provider => provider.GetRequiredService<LocalSignatureProvider>());
-        services.AddScoped<AnswerLocalSigning>();
+        services.AddSingleton<SignatureNoticeQueue>();
         services.AddHostedService(provider => new SignatureCheck(
             provider.GetRequiredService<IServiceScopeFactory>(),
             provider.GetRequiredService<TimeProvider>(),
             TimeSpan.FromMinutes(Math.Max(1, options.CheckMinutes)),
+            provider.GetRequiredService<SignatureNoticeQueue>(),
             provider.GetRequiredService<ILogger<SignatureCheck>>()));
+    }
+
+    // The local provider, of the installation or of the signers of the demonstration, with its page (ADR-0129).
+    private static void AddLocalSignatureProvider(this IServiceCollection services, SignatureOptions options)
+    {
+        services.AddSingleton(provider => new LocalSignatureProvider(
+            Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, options.Local.Folder),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ILogger<LocalSignatureProvider>>()));
+        services.AddSingleton<ILocalSigningPage>(provider => provider.GetRequiredService<LocalSignatureProvider>());
+        services.AddScoped<AnswerLocalSigning>();
     }
 }

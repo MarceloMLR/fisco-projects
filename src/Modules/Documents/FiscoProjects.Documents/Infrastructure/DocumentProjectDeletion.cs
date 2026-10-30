@@ -76,36 +76,35 @@ internal sealed partial class DocumentProjectDeletion(
     // signs them, and every one is deleted when the provider lets. The deletion of the project never waits for it.
     private async Task ForgetAtProviderAsync(Guid projectId, CancellationToken cancellationToken)
     {
-        if (providers.Current is not { } provider)
+        // The provider of the installation and, outside production, the one of the signers of the demonstration.
+        foreach (var provider in providers.All)
         {
-            return;
-        }
-
-        var requests = await db.AcceptanceTerms.AsNoTracking()
-            .Where(term => term.ProjectId == projectId && term.SignatureProvider == provider.Name && term.ProviderDocumentId != null)
-            .Select(term => new { term.ProviderDocumentId, term.Status })
-            .ToListAsync(cancellationToken);
-        var failed = 0;
-        foreach (var request in requests)
-        {
-            try
+            var requests = await db.AcceptanceTerms.AsNoTracking()
+                .Where(term => term.ProjectId == projectId && term.SignatureProvider == provider.Name && term.ProviderDocumentId != null)
+                .Select(term => new { term.ProviderDocumentId, term.Status })
+                .ToListAsync(cancellationToken);
+            var failed = 0;
+            foreach (var request in requests)
             {
-                if (request.Status == AcceptanceStatus.Pending)
+                try
                 {
-                    await provider.CancelAsync(request.ProviderDocumentId!, cancellationToken);
+                    if (request.Status == AcceptanceStatus.Pending)
+                    {
+                        await provider.CancelAsync(request.ProviderDocumentId!, cancellationToken);
+                    }
+
+                    await provider.DeleteAsync(request.ProviderDocumentId!, cancellationToken);
                 }
-
-                await provider.DeleteAsync(request.ProviderDocumentId!, cancellationToken);
+                catch (SignatureProviderException)
+                {
+                    failed++;
+                }
             }
-            catch (SignatureProviderException)
+
+            if (failed > 0)
             {
-                failed++;
+                LogNotForgotten(logger, failed, provider.Name);
             }
-        }
-
-        if (failed > 0)
-        {
-            LogNotForgotten(logger, failed, provider.Name);
         }
     }
 
