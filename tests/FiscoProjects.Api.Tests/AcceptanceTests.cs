@@ -170,6 +170,8 @@ public sealed class AcceptanceTests(SqlServerFixture sqlServer)
         var list = await ListAsync(marina, team.Erp);
         (list.GetProperty("canRequest").GetBoolean(), list.GetProperty("canAttach").GetBoolean()).Should().Be((false, true));
         await IdOfAsync(await AttachAsync(marina, team.Erp, scope));
+        using var anonymous = team.App.NewClient();
+        (await anonymous.GetAsync($"/api/local-signatures/{new string('x', 43)}", Cancellation)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact(DisplayName = "Pedido sem marco do projeto")]

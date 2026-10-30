@@ -165,7 +165,8 @@ describe('Precisa de atenção', () => {
     const requested = {
       id: demoOverviewTermId,
       title: 'Aceite da homologação',
-      recipient: { id: '0199f5a2-7c1e-7d40-9a1b-000000000005', name: 'Carla Mendes' },
+      recipient: null,
+      signers: ['Ana Souza', 'Bruno Lima'],
       requestedAt: '2026-10-15T13:00:00Z',
       milestone: 'Aceite da homologação',
       milestoneDay: '2026-11-03',
@@ -182,7 +183,7 @@ describe('Precisa de atenção', () => {
       kind: 'acceptance',
       title: 'Aceite da homologação',
       path: `/projects/${projectId}/acceptances?term=${demoOverviewTermId}`,
-      meta: 'Termo pedido a Carla Mendes em 15/10',
+      meta: 'Termo pedido a Ana Souza e Bruno Lima em 15/10',
       due: { state: 'onTrack', text: 'Marco em 03/11' },
     });
     expect(vendor).toEqual({

@@ -83,6 +83,13 @@ describe('Texto das notificações', () => {
     expect(noticeText(notification('AcceptanceRefused', values, 'Carla Mendes'), t)).toBe(
       'Carla Mendes recusou o termo: Aceite da homologação',
     );
+    // The signers at the provider, outside the system (ADR-0129): no person, and no name of a signer.
+    expect(noticeText(notification('AcceptanceSigned', values, null), t)).toBe(
+      'Termo assinado por todos os signatários: Aceite da homologação',
+    );
+    expect(noticeText(notification('AcceptanceRefused', values, null), t)).toBe(
+      'Um signatário recusou o termo: Aceite da homologação',
+    );
   });
 
   it('Inclusão no projeto, com o papel', () => {

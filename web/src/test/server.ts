@@ -1541,13 +1541,13 @@ export const handlers = [
     HttpResponse.json(demoLinkCategories().filter((category) => category.isActive)),
   ),
   http.get('/api/admin/link-categories', () => HttpResponse.json(demoLinkCategories())),
-  // The acceptance terms of a project: none, and the person does not manage them (ADR-0045).
+  // The acceptance terms of a project, for who manages them: none yet (ADR-0129).
   http.get('/api/projects/:id/acceptances', () =>
     HttpResponse.json({
       items: [],
       counts: { all: 0, pending: 0, signed: 0, refused: 0 },
-      canManage: false,
-      canRequest: false,
+      canRequest: true,
+      canAttach: true,
     }),
   ),
   // The credentials of a project, without the passwords (ADR-0034).

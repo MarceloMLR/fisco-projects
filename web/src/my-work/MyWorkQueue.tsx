@@ -186,13 +186,7 @@ export function MyWorkQueue({
                   dates={dates}
                 />
               ) : (
-                <PhoneRow
-                  key={item.id}
-                  item={item}
-                  group={group.group}
-                  today={work.today}
-                  dates={dates}
-                />
+                <PhoneRow key={item.id} item={item} group={group.group} today={work.today} />
               ),
             )}
           </Box>
@@ -220,7 +214,7 @@ function QueueRow({
   dates: ReturnType<typeof useDates>;
 }) {
   const { t } = useTranslation();
-  const due = dueOf(item, group, today, dates, t);
+  const due = dueOf(item, group, today, t);
   const title = itemTitle(item);
   const action = t(`myWork.actions.${item.action}`);
   const label = t('myWork.actionLabel', { action, title });
@@ -305,19 +299,9 @@ function QueueRow({
   );
 }
 
-function PhoneRow({
-  item,
-  group,
-  today,
-  dates,
-}: {
-  item: MyWorkItem;
-  group: MyWorkGroup;
-  today: string;
-  dates: ReturnType<typeof useDates>;
-}) {
+function PhoneRow({ item, group, today }: { item: MyWorkItem; group: MyWorkGroup; today: string }) {
   const { t } = useTranslation();
-  const due = dueOf(item, group, today, dates, t);
+  const due = dueOf(item, group, today, t);
   return (
     <Box
       sx={{

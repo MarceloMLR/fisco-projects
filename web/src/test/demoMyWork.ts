@@ -70,21 +70,6 @@ export const demoMyWorkItems = {
       deadline: null,
     },
   }),
-  waitingAcceptance: item(4, {
-    kind: 'Acceptance',
-    title: 'Aceite do plano de testes',
-    action: 'Reply',
-    project: fisc,
-    dueOn: '2026-11-18',
-    waitingSince: '2026-10-15T13:00:00Z',
-    acceptance: {
-      forYou: true,
-      recipient: marina,
-      requestedBy: beatriz,
-      requestedAt: '2026-10-15T13:00:00Z',
-      milestone: 'Plano de testes aprovado',
-    },
-  }),
   unassignedTicket: item(5, {
     kind: 'Ticket',
     title: 'Relatório de ICMS-ST sem as notas de devolução',
@@ -121,8 +106,8 @@ export const demoMyWorkItems = {
     action: 'Remind',
     dueOn: '2026-10-22',
     acceptance: {
-      forYou: false,
-      recipient: carla,
+      recipient: null,
+      signers: ['Ana Souza', 'Bruno Lima'],
       requestedBy: marina,
       requestedAt: '2026-10-15T13:00:00Z',
       milestone: 'Homologação',
@@ -170,10 +155,10 @@ export function demoMyWork(): MyWork {
     views: [
       {
         view: 'ForMe',
-        count: 9,
+        count: 8,
         groups: [
           { group: 'Late', items: [items.lateTask, items.lateTicket] },
-          { group: 'Waiting', items: [items.waitingTicket, items.waitingAcceptance] },
+          { group: 'Waiting', items: [items.waitingTicket] },
           { group: 'Soon', items: [items.unassignedTicket, items.todayTask] },
           { group: 'Week', items: [items.weekTask, items.askedAcceptance, items.weekTicket] },
         ],

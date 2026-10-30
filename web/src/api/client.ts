@@ -72,6 +72,9 @@ export type AcceptanceDetails = components['schemas']['AcceptanceDetailsResponse
 export type AcceptanceStatus = components['schemas']['AcceptanceStatus'];
 export type AcceptanceEventKind = components['schemas']['AcceptanceEventKind'];
 export type AcceptanceMilestone = components['schemas']['AcceptanceMilestoneResponse'];
+export type AcceptanceSigner = components['schemas']['AcceptanceSignerResponse'];
+export type AcceptanceSignerStatus = components['schemas']['AcceptanceSignerStatus'];
+export type LocalSigning = components['schemas']['LocalSigningResponse'];
 export type ScheduleItemType = components['schemas']['ScheduleItemType'];
 export type LinkCategory = components['schemas']['LinkCategoryResponse'];
 export type LinkList = components['schemas']['LinkListResponse'];
@@ -179,6 +182,7 @@ export const auditItemTypes = [
   'ProjectLink',
   'PortalCredential',
   'AcceptanceTerm',
+  'AcceptanceSigner',
   'TimeEntry',
   'ContractedHours',
   'AdditionalHours',
@@ -300,6 +304,8 @@ export const acceptanceProblems = {
   projectClosed: 'urn:fiscoprojects:problem:project-closed',
   answered: 'urn:fiscoprojects:problem:acceptance-answered',
   fileRefused: 'urn:fiscoprojects:problem:acceptance-file-refused',
+  noProvider: 'urn:fiscoprojects:problem:signature-provider-missing',
+  providerFailed: 'urn:fiscoprojects:problem:signature-provider-failed',
 } as const;
 
 /** Problem types of the links (LinkProblems in the Documents module). */

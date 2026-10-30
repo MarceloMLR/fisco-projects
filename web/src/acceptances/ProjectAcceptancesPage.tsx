@@ -20,6 +20,8 @@ import { useProjectOutlet } from '../projects/projectOutlet';
 import { theme } from '../theme/theme';
 import { AcceptanceDialog } from './AcceptanceDialog';
 import { AcceptanceDrawer } from './AcceptanceDrawer';
+import { useSession } from '../session/SessionContext';
+import { managesTerms, signersSummary } from './acceptances';
 import { AcceptanceStatusBadge } from './AcceptanceStatusBadge';
 
 /** A project has a few dozen terms: they all fit in one page of the free Data Grid (ADR-0050). */
@@ -43,10 +45,10 @@ const getRowId = (row: Acceptance) => row.id;
 const noPaging = () => undefined;
 
 /**
- * The tab Termos de aceite of a project (canvas ProjetoTermos, ADR-0035): the terms the person sees, newest first, with
- * the term and its milestone, for whom, when it was asked for and the situation; the situations with their counts,
- * "Anexar termo assinado" and "Pedir aceite" for who manages the terms (ADR-0045). A term opens in the drawer (ADR-0081),
- * also from the address of a notice (?term=).
+ * The tab Termos de aceite of a project (canvas ProjetoTermos, ADR-0129), only for the Administrator and the manager:
+ * the terms, newest first, with the term and its milestone, the signers ("2 de 3 assinaram"), when it was asked for and
+ * the situation; the situations with their counts, "Anexar termo assinado" and, with a provider of signatures,
+ * "Pedir assinatura". A term opens in the drawer (ADR-0081), also from the address of a notice (?term=).
  */
 export function ProjectAcceptancesPage() {
   const { t } = useTranslation();
@@ -57,9 +59,12 @@ export function ProjectAcceptancesPage() {
   const [params, setParams] = useSearchParams();
   const [filter, setFilter] = useState<Filter>(all);
   const [dialog, setDialog] = useState<'request' | 'attach'>();
+  const { session } = useSession();
+  const manages = managesTerms(project, session.status === 'signed-in' ? session.user : undefined);
   const { data, isFetching, error } = useQuery({
     ...acceptancesQuery(project.id, filter === all ? {} : { status: filter }),
     placeholderData: keepPreviousData,
+    enabled: manages,
   });
   const chosen = params.get('term') ?? undefined;
 
@@ -140,14 +145,23 @@ export function ProjectAcceptancesPage() {
     return [
       term,
       {
-        field: 'recipient',
-        headerName: t('acceptances.columns.recipient'),
-        width: 190,
-        renderCell: ({ row }) => (
-          <Box component="span" sx={ellipsisSx}>
-            {row.recipient.name}
-          </Box>
-        ),
+        field: 'signers',
+        headerName: t('acceptances.columns.signers'),
+        flex: 1,
+        minWidth: 190,
+        renderCell: ({ row }) => {
+          const summary = signersSummary(row, t);
+          return (
+            <Box sx={{ minWidth: 0 }}>
+              <Box component="span" sx={{ ...ellipsisSx, display: 'block' }}>
+                {summary.main}
+              </Box>
+              <Box component="span" sx={{ ...subSx, display: 'block' }}>
+                {summary.detail}
+              </Box>
+            </Box>
+          );
+        },
       },
       {
         field: 'requested',
@@ -167,6 +181,9 @@ export function ProjectAcceptancesPage() {
       : `${total} · ${t('acceptances.pending', { count: counts.pending })}`;
   }, [counts, t]);
 
+  if (!manages) {
+    return <Alert tone="info">{t('acceptances.onlyManagement')}</Alert>;
+  }
   if (error !== null) {
     return <Alert tone="danger">{t('acceptances.loadFailed')}</Alert>;
   }
@@ -187,16 +204,18 @@ export function ProjectAcceptancesPage() {
     count: countOf(value),
   }));
   const canRequest = data?.canRequest === true;
+  const canAttach = data?.canAttach === true;
   const emptyLabel =
     filter !== all
       ? t('acceptances.emptyStatus')
-      : data?.canManage === true
+      : canRequest || !canAttach
         ? t('acceptances.empty')
-        : t('acceptances.emptyOwn');
+        : t('acceptances.emptyNoProvider');
 
-  const buttons = (block: boolean) =>
-    canRequest && (
-      <>
+  // Without a provider of signatures, the terms are only attached (ADR-0129).
+  const buttons = (block: boolean) => (
+    <>
+      {canAttach && (
         <Button
           variant="outlined"
           size="small"
@@ -208,6 +227,8 @@ export function ProjectAcceptancesPage() {
         >
           {t('acceptances.attach')}
         </Button>
+      )}
+      {canRequest && (
         <Button
           variant="contained"
           size="small"
@@ -219,8 +240,9 @@ export function ProjectAcceptancesPage() {
         >
           {t('acceptances.request')}
         </Button>
-      </>
-    );
+      )}
+    </>
+  );
 
   return (
     <Box
@@ -281,7 +303,6 @@ export function ProjectAcceptancesPage() {
         <AcceptanceDialog
           projectId={project.id}
           mode={dialog}
-          members={project.members}
           onClose={() => {
             setDialog(undefined);
           }}

@@ -61,9 +61,16 @@ export function noticeText(notification: BellNotification, t: TFunction): string
   if (notification.kind === 'TicketStatusChanged' && 'closedWithProject' in notification.values) {
     return t('notifications.kinds.ticketClosedWithProject', values);
   }
-  // A signed term the Administrator or the manager attached in the name of the person (ADR-0095).
+  // A signed term the Administrator or the manager attached, received outside the system (ADR-0129).
   if (notification.kind === 'AcceptanceSigned' && 'attached' in notification.values) {
     return t('notifications.kinds.acceptanceAttached', values);
+  }
+  // The signers signed or refused at the provider, without anyone in the system (ADR-0129).
+  if (notification.kind === 'AcceptanceSigned' && notification.actor === null) {
+    return t('notifications.kinds.acceptanceSignedBySigners', values);
+  }
+  if (notification.kind === 'AcceptanceRefused' && notification.actor === null) {
+    return t('notifications.kinds.acceptanceRefusedBySigner', values);
   }
   return t(`notifications.kinds.${keyOf(notification.kind)}`, values);
 }

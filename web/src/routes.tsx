@@ -14,6 +14,7 @@ import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
 import { MyHoursPage } from './hours/MyHoursPage';
 import { MyWorkPage } from './my-work/MyWorkPage';
+import { LocalSigningPage } from './acceptances/LocalSigningPage';
 import { ProjectAcceptancesPage } from './acceptances/ProjectAcceptancesPage';
 import { ProjectCredentialsPage } from './credentials/ProjectCredentialsPage';
 import { LinkCategoriesPage } from './admin/LinkCategoriesPage';
@@ -46,6 +47,8 @@ export const routes: RouteObject[] = [
     children: [
       // The sign-in page is outside the shell; every other screen needs a session (ADR-0009).
       { path: 'sign-in', element: <SignInPage /> },
+      // The page of the local provider of signatures, where a signer signs by the link, without a session (ADR-0129).
+      { path: 'sign/:token', element: <LocalSigningPage /> },
       // The print page of a schedule, for paper, outside the shell (ADR-0021).
       {
         path: 'projects/:projectId/schedule/print',

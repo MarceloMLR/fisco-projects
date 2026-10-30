@@ -144,7 +144,8 @@ export function demoOverview(): ProjectOverview {
         {
           id: demoOverviewTermId,
           title: 'Aceite da homologação',
-          recipient: carla,
+          recipient: null,
+          signers: ['Ana Souza', 'Bruno Lima'],
           requestedAt: '2026-10-15T13:00:00Z',
           milestone: 'Aceite da homologação',
           milestoneDay: '2026-11-03',

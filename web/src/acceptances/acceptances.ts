@@ -1,23 +1,48 @@
 import type { TFunction } from 'i18next';
 import { z } from 'zod';
-import { acceptanceProblems, api } from '../api/client';
+import {
+  acceptanceProblems,
+  api,
+  type Acceptance,
+  type AcceptanceSignerStatus,
+  type Project,
+  type SessionUser,
+} from '../api/client';
 import { problemType } from '../projects/projectForm';
 
 /** The messages of the fields of a term, as keys of the translations. */
 export const acceptanceErrors = {
   milestoneRequired: 'acceptances.errors.milestoneRequired',
-  recipientRequired: 'acceptances.errors.recipientRequired',
   titleRequired: 'acceptances.errors.titleRequired',
   messageTooLong: 'acceptances.errors.messageTooLong',
   fileRequired: 'acceptances.errors.fileRequired',
   fileNotPdf: 'acceptances.errors.fileNotPdf',
   reasonRequired: 'acceptances.errors.reasonRequired',
+  signersRequired: 'acceptances.errors.signersRequired',
+  signerNameRequired: 'acceptances.errors.signerNameRequired',
+  signerEmailInvalid: 'acceptances.errors.signerEmailInvalid',
+  signerEmailRepeated: 'acceptances.errors.signerEmailRepeated',
 } as const;
 
 export type AcceptanceError = (typeof acceptanceErrors)[keyof typeof acceptanceErrors];
 
 export const isAcceptanceError = (message: string | undefined): message is AcceptanceError =>
   Object.values(acceptanceErrors).some((error) => error === message);
+
+/** At most 10 signers in a request, all signing at the same time (AcceptanceSignerForm in the Documents module, ADR-0129). */
+export const maxSigners = 10;
+
+/**
+ * Whether the person manages the terms of the project, the only one who sees them (ADR-0129): the Administrator, and
+ * the manager of the project. The API decides; this only keeps the tab away from who would get 403.
+ */
+export function managesTerms(project: Project, user: SessionUser | undefined): boolean {
+  return (
+    user !== undefined &&
+    (user.role === 'Administrator' ||
+      project.members.some((member) => member.id === user.id && member.role === 'Manager'))
+  );
+}
 
 /** Whether the file is named as a PDF; the API also looks at its start (ADR-0035). */
 export const isPdfName = (name: string) => name.toLowerCase().endsWith('.pdf');
@@ -30,37 +55,81 @@ const pdf = z.custom<File | null>().superRefine((file, context) => {
   }
 });
 
+/** An e-mail as the API takes it: a name, "@" and a domain with a dot, without spaces. */
+const emailPattern = /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>().]+$/;
+
+const signer = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, acceptanceErrors.signerNameRequired)
+    .max(120, acceptanceErrors.signerNameRequired),
+  email: z
+    .string()
+    .trim()
+    .max(254, acceptanceErrors.signerEmailInvalid)
+    .regex(emailPattern, acceptanceErrors.signerEmailInvalid),
+});
+
+/** The signers of a request: 1 to 10, each with the name and the e-mail, without the same e-mail twice. */
+const signers = z
+  .array(signer)
+  .min(1, acceptanceErrors.signersRequired)
+  .max(maxSigners, acceptanceErrors.signersRequired)
+  .superRefine((list, context) => {
+    const seen = new Set<string>();
+    list.forEach((item, index) => {
+      const email = item.email.trim().toLowerCase();
+      if (email !== '' && seen.has(email)) {
+        context.addIssue({
+          code: 'custom',
+          message: acceptanceErrors.signerEmailRepeated,
+          path: [index, 'email'],
+        });
+      }
+      seen.add(email);
+    });
+  });
+
+const milestoneId = z.string().min(1, acceptanceErrors.milestoneRequired);
+const title = z
+  .string()
+  .trim()
+  .min(1, acceptanceErrors.titleRequired)
+  .max(120, acceptanceErrors.titleRequired);
+
 /**
- * The rules of the fields of a request, the same as the API's (AcceptanceForm in the Documents module): the milestone,
- * the person, the title up to 120 characters, the message up to 2,000 and the term in PDF. A term attached in the name
- * of the person of a request has only the PDF.
+ * The rules of the fields of a term, the same as the API's (AcceptanceForm and AcceptanceSignerForm in the Documents
+ * module): a request has the milestone, the title up to 120 characters, the message up to 2,000, the term in PDF and
+ * the signers; a term attached without a request, the milestone, the title and the PDF; and a term attached to a
+ * request, only the PDF.
  */
-export const acceptanceSchema = (onlyTheFile: boolean) =>
-  onlyTheFile
+export const acceptanceSchema = (mode: AcceptanceMode) =>
+  mode === 'onBehalf'
     ? z.object({
         milestoneId: z.string(),
-        recipientId: z.string(),
         title: z.string(),
         message: z.string(),
+        signers: z.array(z.object({ name: z.string(), email: z.string() })),
         file: pdf,
       })
     : z.object({
-        milestoneId: z.string().min(1, acceptanceErrors.milestoneRequired),
-        recipientId: z.string().min(1, acceptanceErrors.recipientRequired),
-        title: z
-          .string()
-          .trim()
-          .min(1, acceptanceErrors.titleRequired)
-          .max(120, acceptanceErrors.titleRequired),
+        milestoneId,
+        title,
         message: z.string().trim().max(2000, acceptanceErrors.messageTooLong),
+        signers:
+          mode === 'request' ? signers : z.array(z.object({ name: z.string(), email: z.string() })),
         file: pdf,
       });
 
+/** A request to the provider, a term attached without a request, or a signed term attached to a pending request. */
+export type AcceptanceMode = 'request' | 'attach' | 'onBehalf';
+
 export interface AcceptanceValues {
   milestoneId: string;
-  recipientId: string;
   title: string;
   message: string;
+  signers: { name: string; email: string }[];
   file: File | null;
 }
 
@@ -77,8 +146,33 @@ export const refusalSchema = z.object({
 export const acceptanceFileUrl = (projectId: string, termId: string) =>
   `/api/projects/${projectId}/acceptances/${termId}/file`;
 
-/** The first name of a person, as "Lembrar Carla". */
-export const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
+/** The names joined as the language says them: "Ana Souza", "Ana Souza e Bruno Lima", "A, B e C". */
+export const namesText = (names: readonly string[]) =>
+  new Intl.ListFormat('pt-BR', { style: 'long', type: 'conjunction' }).format(names);
+
+/** How many signers of the list signed. */
+export const signedCount = (list: readonly { status: AcceptanceSignerStatus }[]) =>
+  list.filter((item) => item.status === 'Signed').length;
+
+/**
+ * Who a term was asked of, as the list and the drawer tell it: "2 de 3 assinaram" with the names of the signers; the
+ * person of a request asked before the provider (ADR-0129); or a term signed outside the system.
+ */
+export function signersSummary(term: Acceptance, t: TFunction): { main: string; detail: string } {
+  if (term.signers.length > 0) {
+    return {
+      main: t('acceptances.signers.count', {
+        count: signedCount(term.signers),
+        total: term.signers.length,
+      }),
+      detail: namesText(term.signers.map((item) => item.name)),
+    };
+  }
+  if (term.recipient !== null) {
+    return { main: term.recipient.name, detail: t('acceptances.signers.before') };
+  }
+  return { main: t('acceptances.signers.outside'), detail: t('acceptances.signers.outsideDetail') };
+}
 
 /** What the API answered to a change of a term: done, the fields it refused, or the message of the refusal. */
 export type AcceptanceAnswer =
@@ -104,7 +198,10 @@ function fieldsOf(problem: unknown): string[] {
     : [];
 }
 
-/** The answer of the API in words: the fields refused, or why it was refused (closed project, answered, the file). */
+/**
+ * The answer of the API in words: the fields refused, or why it was refused (closed project, answered, the file, no
+ * provider of signatures, the provider failing).
+ */
 export function answerOf(
   response: Response,
   problem: unknown,
@@ -128,15 +225,14 @@ export function answerOf(
   if (response.status === 400) {
     return { kind: 'fields', fields: fieldsOf(problem) };
   }
-  return {
-    kind: 'refused',
-    message:
-      type === acceptanceProblems.projectClosed
-        ? t('acceptances.messages.closed')
-        : type === acceptanceProblems.answered
-          ? t('acceptances.messages.answered')
-          : t('acceptances.messages.failed'),
-  };
+  const messages = {
+    [acceptanceProblems.projectClosed]: 'acceptances.messages.closed',
+    [acceptanceProblems.answered]: 'acceptances.messages.answered',
+    [acceptanceProblems.noProvider]: 'acceptances.messages.noProvider',
+    [acceptanceProblems.providerFailed]: 'acceptances.messages.providerFailed',
+  } as const;
+  const key = type === undefined ? undefined : messages[type as keyof typeof messages];
+  return { kind: 'refused', message: t(key ?? 'acceptances.messages.failed') };
 }
 
 /** A form with the fields given and the file, as the API takes a term (multipart). */
@@ -150,12 +246,12 @@ function formOf(fields: Record<string, string>, file: File): FormData {
 }
 
 /**
- * Sends a term: a request (with the message), a term attached without a request, the signed term of the person of a
- * request, or the signed term attached in the name of the person.
+ * Sends a term: a request of signature to the provider (with the message and the signers), a term attached without
+ * a request, or the signed term attached to a pending request.
  */
 export async function sendAcceptance(
   projectId: string,
-  kind: 'request' | 'attach' | 'sign' | 'onBehalf',
+  mode: AcceptanceMode,
   values: AcceptanceValues & { termId?: string },
   t: TFunction,
 ): Promise<AcceptanceAnswer> {
@@ -164,45 +260,46 @@ export async function sendAcceptance(
     return { kind: 'fields', fields: ['file'] };
   }
   try {
-    if (kind === 'request' || kind === 'attach') {
-      const fields: Record<string, string> = {
-        milestoneId: values.milestoneId,
-        recipientId: values.recipientId,
-        title: values.title.trim(),
-      };
-      if (kind === 'request' && values.message.trim() !== '') {
-        fields.message = values.message.trim();
-      }
-      const form = formOf(fields, file);
-      const { data, error, response } =
-        kind === 'request'
-          ? await api.POST('/api/projects/{projectId}/acceptances', {
-              params: { path: { projectId } },
-              body: {},
-              bodySerializer: () => form,
-            })
-          : await api.POST('/api/projects/{projectId}/acceptances/attached', {
-              params: { path: { projectId } },
-              body: {},
-              bodySerializer: () => form,
-            });
+    if (mode === 'onBehalf') {
+      const termId = values.termId ?? '';
+      const { error, response } = await api.POST(
+        '/api/projects/{projectId}/acceptances/{termId}/attached',
+        {
+          params: { path: { projectId, termId } },
+          body: {},
+          bodySerializer: () => formOf({}, file),
+        },
+      );
+      return answerOf(response, error, t, termId);
+    }
+    const fields: Record<string, string> = {
+      milestoneId: values.milestoneId,
+      title: values.title.trim(),
+    };
+    if (mode === 'attach') {
+      const { data, error, response } = await api.POST(
+        '/api/projects/{projectId}/acceptances/attached',
+        {
+          params: { path: { projectId } },
+          body: {},
+          bodySerializer: () => formOf(fields, file),
+        },
+      );
       return answerOf(response, error, t, data?.id);
     }
-    const termId = values.termId ?? '';
-    const form = formOf({}, file);
-    const { error, response } =
-      kind === 'sign'
-        ? await api.POST('/api/projects/{projectId}/acceptances/{termId}/signed', {
-            params: { path: { projectId, termId } },
-            body: {},
-            bodySerializer: () => form,
-          })
-        : await api.POST('/api/projects/{projectId}/acceptances/{termId}/attached', {
-            params: { path: { projectId, termId } },
-            body: {},
-            bodySerializer: () => form,
-          });
-    return answerOf(response, error, t, termId);
+    if (values.message.trim() !== '') {
+      fields.message = values.message.trim();
+    }
+    values.signers.forEach((item, index) => {
+      fields[`signers[${String(index)}].name`] = item.name.trim();
+      fields[`signers[${String(index)}].email`] = item.email.trim();
+    });
+    const { data, error, response } = await api.POST('/api/projects/{projectId}/acceptances', {
+      params: { path: { projectId } },
+      body: {},
+      bodySerializer: () => formOf(fields, file),
+    });
+    return answerOf(response, error, t, data?.id);
   } catch {
     return { kind: 'refused', message: t('acceptances.messages.failed') };
   }

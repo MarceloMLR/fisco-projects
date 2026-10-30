@@ -1714,22 +1714,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{projectId}/acceptances/{termId}/signed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["SignAcceptance"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects/{projectId}/acceptances/{termId}/attached": {
         parameters: {
             query?: never;
@@ -1746,22 +1730,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{projectId}/acceptances/{termId}/refusal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["RefuseAcceptance"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/projects/{projectId}/acceptances/{termId}/reminder": {
         parameters: {
             query?: never;
@@ -1772,6 +1740,70 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["RemindAcceptance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/local-signatures/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetLocalSigning"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/local-signatures/{token}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OpenLocalSigningDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/local-signatures/{token}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SignLocally"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/local-signatures/{token}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RefuseLocally"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2106,12 +2138,11 @@ export interface components {
     schemas: {
         /** @description What the person may do with the term now. */
         AcceptanceActionsResponse: {
-            canAnswer: boolean;
             canAttach: boolean;
             canRemind: boolean;
             canCancel: boolean;
         };
-        /** @description How many terms of each status the person sees. */
+        /** @description How many terms of each status the project has. */
         AcceptanceCountsResponse: {
             /** Format: int32 */
             all: number;
@@ -2126,25 +2157,27 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
-        /** @description A term with the message, the term to sign, the signed term, the reason of the refusal and the history. */
+        /** @description A term with the message, the term to sign, the signers, the signed term, the reason of the refusal and the history. */
         AcceptanceDetailsResponse: {
             term: components["schemas"]["AcceptanceResponse"];
             message: null | string;
             toSign: null | components["schemas"]["AcceptanceFileResponse"];
+            signers: components["schemas"]["AcceptanceSignerResponse"][];
             signed: null | components["schemas"]["AcceptanceSignedResponse"];
             refusalReason: null | string;
             events: components["schemas"]["AcceptanceEventResponse"][];
             actions: components["schemas"]["AcceptanceActionsResponse"];
         };
         /**
-         * @description What happened to a term, for its history (ADR-0095).
+         * @description What happened to a term, for its history (ADR-0095, ADR-0129).
          * @enum {unknown}
          */
         AcceptanceEventKind: "Requested" | "Reminded" | "Signed" | "Attached" | "Refused";
-        /** @description An event of the history: what happened, who did it and when. */
+        /** @description An event of the history: what happened, who did it (the person, or the signer) and when. */
         AcceptanceEventResponse: {
             kind: components["schemas"]["AcceptanceEventKind"];
-            actor: components["schemas"]["AcceptancePersonResponse"];
+            actor: null | components["schemas"]["AcceptancePersonResponse"];
+            signer: null | string;
             /** Format: date-time */
             at: string;
         };
@@ -2155,14 +2188,14 @@ export interface components {
             size: number;
         };
         /**
-         * @description The terms the person sees, the counts, whether the person sees every term of the project (who manages them) and
-         *     whether the person asks for and attaches terms now, which a closed project does not let.
+         * @description The terms of the project, for who manages them (ADR-0129): the counts, whether a signature can be asked for now (the
+         *     installation has a provider and the project is open) and whether a signed term can be attached (the project open).
          */
         AcceptanceListResponse: {
             items: components["schemas"]["AcceptanceResponse"][];
             counts: components["schemas"]["AcceptanceCountsResponse"];
-            canManage: boolean;
             canRequest: boolean;
+            canAttach: boolean;
         };
         /** @description A milestone of the schedule with its current name, its day and the day it was reached. */
         AcceptanceMilestoneResponse: {
@@ -2180,14 +2213,10 @@ export interface components {
             id: string;
             name: string;
         };
-        /** @description The reason why the person refuses the term. */
-        AcceptanceRefusalRequest: {
-            reason: null | string;
-        };
         /**
-         * @description A term of a list: the title, the status, the milestone (null when it left the schedule), the person of the term, who
-         *     asked and when (who attached it, for a term without a request), who answered and when, and whether it was asked for
-         *     in the system.
+         * @description A term of a list: the title, the status, the milestone (null when it left the schedule), the signers at the
+         *     provider, the person of a request asked before (ADR-0129), who asked and when (who attached it, for a term without a
+         *     request), who answered in the system and when, and whether it was asked for in the system.
          */
         AcceptanceResponse: {
             /** Format: uuid */
@@ -2197,9 +2226,12 @@ export interface components {
             /** Format: uuid */
             milestoneId: string;
             milestone: null | components["schemas"]["AcceptanceMilestoneResponse"];
-            recipient: components["schemas"]["AcceptancePersonResponse"];
+            signers: components["schemas"]["AcceptanceSignerSummaryResponse"][];
+            recipient: null | components["schemas"]["AcceptancePersonResponse"];
             requested: components["schemas"]["DocumentActionResponse"];
             answered: null | components["schemas"]["DocumentActionResponse"];
+            /** Format: date-time */
+            closedAt: null | string;
             isRequest: boolean;
         };
         /** @description The document of the signed term in the folder of the terms, opened by the documents. */
@@ -2211,7 +2243,32 @@ export interface components {
             size: number;
         };
         /**
-         * @description Where a term stands (ADR-0035): waiting for the answer, signed, or refused with a reason.
+         * @description A signer of a request: the name, the e-mail only while the request is open (ADR-0129), where the signer stands, when
+         *     the signer signed or refused, the reason of a refusal and, from the local provider, the link to sign.
+         */
+        AcceptanceSignerResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: null | string;
+            status: components["schemas"]["AcceptanceSignerStatus"];
+            /** Format: date-time */
+            respondedAt: null | string;
+            refusalReason: null | string;
+            signingLink: null | string;
+        };
+        /**
+         * @description Where a signer of a request stands at the provider of signatures (ADR-0129).
+         * @enum {unknown}
+         */
+        AcceptanceSignerStatus: "Pending" | "Signed" | "Refused";
+        /** @description A signer of a request in a list: the name and where the signer stands. */
+        AcceptanceSignerSummaryResponse: {
+            name: string;
+            status: components["schemas"]["AcceptanceSignerStatus"];
+        };
+        /**
+         * @description Where a term stands (ADR-0129): waiting for the signatures, signed, or refused with a reason.
          * @enum {unknown}
          */
         AcceptanceStatus: "Pending" | "Signed" | "Refused";
@@ -2757,6 +2814,17 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        /** @description The reason why the signer refuses the term. */
+        LocalRefusalRequest: {
+            reason: null | string;
+        };
+        /** @description A request as the local page of a signer shows it: the title, the message, the name of the signer and the PDF. */
+        LocalSigningResponse: {
+            title: string;
+            message: null | string;
+            signer: string;
+            fileName: string;
+        };
         LocalSignInRequest: {
             email: string;
         };
@@ -2764,10 +2832,13 @@ export interface components {
         MilestoneReachedRequest: {
             reached: boolean;
         };
-        /** @description A request of acceptance of the queue: whether it is for the person, for whom, who asked, when and the milestone. */
+        /**
+         * @description A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the
+         *     project; who asked, when and the milestone (ADR-0129).
+         */
         MyWorkAcceptanceResponse: {
-            forYou: boolean;
-            recipient: components["schemas"]["MyWorkPersonResponse"];
+            recipient: null | components["schemas"]["MyWorkPersonResponse"];
+            signers: string[];
             requestedBy: components["schemas"]["MyWorkPersonResponse"];
             /** Format: date-time */
             requestedAt: string;
@@ -3003,12 +3074,16 @@ export interface components {
          * @enum {unknown}
          */
         OutboxEmailStatus: "Pending" | "Sent" | "Failed";
-        /** @description A pending request of acceptance the person sees. */
+        /**
+         * @description A pending request of acceptance, for who manages the terms: the names of the signers or, in a request asked before,
+         *     the person of the project (ADR-0129).
+         */
         OverviewAcceptanceResponse: {
             /** Format: uuid */
             id: string;
             title: string;
-            recipient: components["schemas"]["OverviewPersonResponse"];
+            recipient: null | components["schemas"]["OverviewPersonResponse"];
+            signers: string[];
             /** Format: date-time */
             requestedAt: string;
             milestone: null | string;
@@ -10816,6 +10891,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -10839,9 +10923,6 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: uuid */
                     milestoneId?: string;
-                } & {
-                    /** Format: uuid */
-                    recipientId?: string;
                 } & {
                     title?: string;
                 } & {
@@ -10897,6 +10978,15 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10983,6 +11073,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -11054,6 +11153,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     OpenAcceptanceFile: {
@@ -11077,6 +11185,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11108,9 +11225,6 @@ export interface operations {
                     /** Format: uuid */
                     milestoneId?: string;
                 } & {
-                    /** Format: uuid */
-                    recipientId?: string;
-                } & {
                     title?: string;
                 } & {
                     file?: components["schemas"]["IFormFile"];
@@ -11126,76 +11240,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AcceptanceCreatedResponse"];
                 };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    SignAcceptance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectId: string;
-                termId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    file?: components["schemas"]["IFormFile"];
-                };
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -11312,74 +11356,6 @@ export interface operations {
             };
         };
     };
-    RefuseAcceptance: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                projectId: string;
-                termId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcceptanceRefusalRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
     RemindAcceptance: {
         parameters: {
             query?: never;
@@ -11441,6 +11417,138 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetLocalSigning: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalSigningResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    OpenLocalSigningDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    SignLocally: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RefuseLocally: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalRefusalRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

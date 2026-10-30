@@ -1,42 +1,30 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import BlockOutlined from '@mui/icons-material/BlockOutlined';
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import SendOutlined from '@mui/icons-material/SendOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
-import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import type SvgIcon from '@mui/material/SvgIcon';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type AcceptanceDetails, type AcceptanceEventKind, type Project } from '../api/client';
+import { api, type AcceptanceDetails, type AcceptanceSigner, type Project } from '../api/client';
 import { acceptanceQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Dialog } from '../components/Dialog';
-import { TextArea } from '../components/TextArea';
 import { documentFileUrl } from '../documents/documents';
 import { formatDayText } from '../format/dates';
 import { sizeText } from '../format/size';
 import { useDates } from '../format/useDates';
 import { theme } from '../theme/theme';
 import { AcceptanceDialog } from './AcceptanceDialog';
-import {
-  acceptanceFileUrl,
-  answerOf,
-  firstName,
-  isAcceptanceError,
-  isPdfName,
-  refusalSchema,
-  sendAcceptance,
-} from './acceptances';
-import { AcceptanceStatusBadge } from './AcceptanceStatusBadge';
+import { acceptanceFileUrl, answerOf, namesText, signedCount } from './acceptances';
+import { AcceptanceStatusBadge, SignerStatusBadge } from './AcceptanceStatusBadge';
 
 const section = {
   display: 'flex',
@@ -62,7 +50,9 @@ const metaSx = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 
-const eventIcons: Record<AcceptanceEventKind, typeof SvgIcon> = {
+type AcceptanceEvent = AcceptanceDetails['events'][number];
+
+const eventIcons: Record<AcceptanceEvent['kind'], typeof SvgIcon> = {
   Requested: SendOutlined,
   Reminded: ScheduleOutlined,
   Signed: TaskAltOutlined,
@@ -108,9 +98,10 @@ function PdfTile({ name, size, href }: { name: string; size: number; href: strin
 
 /**
  * The details of a term (canvas ProjetoTermos in the drawer of ADR-0081, and CelularTermo on the phone): the situation,
- * the title, the milestone, for whom and the request; the message, the term to sign, the signed term and the reason of
- * a refusal; the answer of the person of a pending request, with the signed PDF or the refusal; the history; and, for
- * who manages the terms, "Lembrar", "Anexar termo assinado" and "Cancelar pedido" (ADR-0095).
+ * the title, the milestone and the request; the message, the term to sign, each signer with the situation, the e-mail
+ * while the request is open and, from the local provider, the link to sign; the signed term, the reason of a refusal
+ * and the history; and "Lembrar signatários", "Anexar termo assinado" and "Cancelar pedido" in a pending request
+ * (ADR-0129).
  */
 export function AcceptanceDrawer({
   project,
@@ -164,41 +155,13 @@ function AcceptanceContent({
   const { t } = useTranslation();
   const { formatDate, formatDateTime } = useDates();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
-  const input = useRef<HTMLInputElement>(null);
-  const { term, message, toSign, signed, refusalReason, events, actions } = details;
-  const [file, setFile] = useState<File>();
-  const [fileError, setFileError] = useState<string>();
+  const { term, message, toSign, signers, signed, refusalReason, events, actions } = details;
   const [failure, setFailure] = useState<string>();
-  const [sending, setSending] = useState(false);
-  const [refusing, setRefusing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [attaching, setAttaching] = useState(false);
-  const recipient = term.recipient.name;
-
-  const send = async () => {
-    if (file === undefined) {
-      setFileError(t('acceptances.errors.fileRequired'));
-      return;
-    }
-    setSending(true);
-    const answer = await sendAcceptance(
-      project.id,
-      'sign',
-      { milestoneId: '', recipientId: '', title: '', message: '', file, termId: term.id },
-      t,
-    );
-    setSending(false);
-    if (answer.kind === 'done') {
-      setFile(undefined);
-      onChanged(t('acceptances.messages.signed'));
-      return;
-    }
-    if (answer.kind === 'fields') {
-      setFileError(t('acceptances.errors.fileNotPdf'));
-      return;
-    }
-    setFailure(answer.message);
-  };
+  // A request asked of a person of the project before the provider of signatures keeps the person (ADR-0129).
+  const recipient = term.recipient?.name ?? null;
+  const names = namesText(signers.map((item) => item.name));
 
   const remind = async () => {
     try {
@@ -208,7 +171,7 @@ function AcceptanceContent({
       );
       const answer = answerOf(response, error, t);
       if (answer.kind === 'done') {
-        onChanged(t('acceptances.messages.reminded', { name: recipient }));
+        onChanged(t('acceptances.messages.reminded'));
         return;
       }
       setFailure(answer.kind === 'refused' ? answer.message : t('acceptances.messages.failed'));
@@ -236,22 +199,49 @@ function AcceptanceContent({
     }
   };
 
-  const eventText = (kind: AcceptanceEventKind, actor: string) =>
-    kind === 'Requested'
-      ? t('acceptances.history.Requested', { recipient })
-      : kind === 'Reminded'
-        ? t('acceptances.history.Reminded')
-        : kind === 'Attached'
-          ? t('acceptances.history.Attached', { actor, recipient })
-          : t(`acceptances.history.${kind}`, { actor });
-  const eventMeta = (kind: AcceptanceEventKind, actor: string, at: string) =>
-    kind === 'Requested'
-      ? t('acceptances.history.RequestedMeta', { when: formatDateTime(at) })
-      : kind === 'Reminded'
-        ? t('acceptances.history.RemindedMeta', { when: formatDateTime(at), actor })
-        : t('acceptances.history.Meta', { when: formatDateTime(at) });
+  const eventText = (item: AcceptanceEvent) => {
+    const actor = item.actor?.name ?? '';
+    const signer = item.signer ?? '';
+    switch (item.kind) {
+      case 'Requested':
+        return recipient === null
+          ? t('acceptances.history.RequestedSigners', { names })
+          : t('acceptances.history.Requested', { recipient });
+      case 'Reminded':
+        return t(
+          recipient === null
+            ? 'acceptances.history.RemindedSigners'
+            : 'acceptances.history.Reminded',
+        );
+      case 'Attached':
+        return recipient === null
+          ? t('acceptances.history.AttachedByActor', { actor })
+          : t('acceptances.history.Attached', { actor, recipient });
+      case 'Signed':
+        return item.signer === null
+          ? t('acceptances.history.Signed', { actor })
+          : t('acceptances.history.SignedBySigner', { signer });
+      case 'Refused':
+        return item.signer === null
+          ? t('acceptances.history.Refused', { actor })
+          : t('acceptances.history.RefusedBySigner', { signer });
+    }
+  };
+  const eventMeta = (item: AcceptanceEvent) => {
+    const when = formatDateTime(item.at);
+    const actor = item.actor?.name ?? '';
+    if (item.kind === 'Requested') {
+      return recipient === null
+        ? t('acceptances.history.RequestedSignersMeta', { when, actor })
+        : t('acceptances.history.RequestedMeta', { when });
+    }
+    return item.kind === 'Reminded'
+      ? t('acceptances.history.RemindedMeta', { when, actor })
+      : t('acceptances.history.Meta', { when });
+  };
 
   const manages = actions.canRemind || actions.canAttach || actions.canCancel;
+  const hasLinks = signers.some((item) => item.signingLink !== null);
 
   return (
     <>
@@ -295,8 +285,12 @@ function AcceptanceContent({
                     day: formatDayText(term.milestone.day),
                   })}
           </dd>
-          <dt>{t('acceptances.details.recipient')}</dt>
-          <dd>{recipient}</dd>
+          {recipient !== null && (
+            <>
+              <dt>{t('acceptances.details.recipient')}</dt>
+              <dd>{recipient}</dd>
+            </>
+          )}
           <dt>
             {t(term.isRequest ? 'acceptances.details.requested' : 'acceptances.details.attached')}
           </dt>
@@ -341,10 +335,52 @@ function AcceptanceContent({
           </Box>
         </Box>
       )}
+      {signers.length > 0 && (
+        <Box component="section" sx={section} aria-labelledby={`signers-${term.id}`}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 'var(--space-2)',
+            }}
+          >
+            <Box component="h3" id={`signers-${term.id}`} sx={labelSx}>
+              {t('acceptances.details.signers')}
+            </Box>
+            <Box component="span" sx={metaSx}>
+              {t('acceptances.signers.count', {
+                count: signedCount(signers),
+                total: signers.length,
+              })}
+            </Box>
+          </Box>
+          <Box
+            component="ul"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-2)',
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+            }}
+          >
+            {signers.map((item) => (
+              <SignerRow key={item.id} signer={item} />
+            ))}
+          </Box>
+          {hasLinks && (
+            <Box component="p" sx={{ ...metaSx, margin: 0 }}>
+              {t('acceptances.details.localLink')}
+            </Box>
+          )}
+        </Box>
+      )}
       {toSign !== null && (
         <Box component="section" sx={section}>
           <Box component="h3" sx={labelSx}>
-            {t(actions.canAnswer ? 'acceptances.details.toSign' : 'acceptances.details.sent')}
+            {t('acceptances.details.toSign')}
           </Box>
           <PdfTile
             name={toSign.name}
@@ -365,78 +401,12 @@ function AcceptanceContent({
           />
         </Box>
       )}
-      {refusalReason !== null && (
+      {refusalReason !== null && signers.length === 0 && (
         <Box component="section" sx={section}>
           <Box component="h3" sx={labelSx}>
             {t('acceptances.details.refusal')}
           </Box>
           <Box sx={{ whiteSpace: 'pre-wrap' }}>{refusalReason}</Box>
-        </Box>
-      )}
-      {actions.canAnswer && (
-        <Box component="section" sx={section} aria-label={t('acceptances.details.signed')}>
-          <Box component="h3" sx={labelSx}>
-            {t('acceptances.details.signed')}
-          </Box>
-          <Box component="p" sx={{ margin: 0, color: 'var(--text-secondary)' }}>
-            {t('acceptances.details.answer')}
-          </Box>
-          <Button
-            variant="outlined"
-            size={desktop ? 'small' : 'large'}
-            startIcon={<UploadFileOutlined />}
-            onClick={() => input.current?.click()}
-            sx={desktop ? { alignSelf: 'flex-start' } : { width: '100%' }}
-          >
-            {t(file === undefined ? 'acceptances.actions.choose' : 'acceptances.actions.change')}
-          </Button>
-          {file !== undefined && (
-            <Box data-testid="acceptance-signed-name" sx={{ overflowWrap: 'anywhere' }}>
-              {`${file.name} · ${sizeText(file.size)}`}
-            </Box>
-          )}
-          {fileError !== undefined && <Alert tone="danger">{fileError}</Alert>}
-          <input
-            ref={input}
-            type="file"
-            accept=".pdf,application/pdf"
-            hidden
-            aria-hidden
-            tabIndex={-1}
-            data-testid="acceptance-signed-file"
-            onChange={(event) => {
-              const picked = event.target.files?.[0];
-              event.target.value = '';
-              if (picked === undefined) {
-                return;
-              }
-              setFileError(isPdfName(picked.name) ? undefined : t('acceptances.errors.fileNotPdf'));
-              setFile(isPdfName(picked.name) ? picked : undefined);
-            }}
-          />
-          <Box sx={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button
-              variant="outlined"
-              size={desktop ? 'small' : 'large'}
-              onClick={() => {
-                setRefusing(true);
-              }}
-              sx={desktop ? undefined : { flex: 1 }}
-            >
-              {t('acceptances.actions.refuse')}
-            </Button>
-            <Button
-              variant="contained"
-              size={desktop ? 'small' : 'large'}
-              disabled={file === undefined || sending}
-              onClick={() => {
-                void send();
-              }}
-              sx={desktop ? undefined : { flex: 1 }}
-            >
-              {t('acceptances.actions.send')}
-            </Button>
-          </Box>
         </Box>
       )}
       <Box component="section" sx={section} aria-labelledby={`history-${term.id}`}>
@@ -454,12 +424,12 @@ function AcceptanceContent({
             listStyle: 'none',
           }}
         >
-          {events.map((item) => {
+          {events.map((item, index) => {
             const Icon = eventIcons[item.kind];
             return (
               <Box
                 component="li"
-                key={`${item.kind}-${item.at}`}
+                key={`${item.kind}-${item.at}-${String(index)}`}
                 sx={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}
               >
                 <Icon
@@ -467,8 +437,8 @@ function AcceptanceContent({
                   sx={{ flex: 'none', fontSize: 18, color: 'var(--text-secondary)' }}
                 />
                 <Box sx={{ minWidth: 0 }}>
-                  <Box>{eventText(item.kind, item.actor.name)}</Box>
-                  <Box sx={metaSx}>{eventMeta(item.kind, item.actor.name, item.at)}</Box>
+                  <Box>{eventText(item)}</Box>
+                  <Box sx={metaSx}>{eventMeta(item)}</Box>
                 </Box>
               </Box>
             );
@@ -489,7 +459,7 @@ function AcceptanceContent({
                 void remind();
               }}
             >
-              {t('acceptances.actions.remind', { name: firstName(recipient) })}
+              {t('acceptances.actions.remind')}
             </Button>
           )}
           {actions.canAttach && (
@@ -517,25 +487,10 @@ function AcceptanceContent({
           )}
         </Box>
       )}
-      {refusing && (
-        <RefuseDialog
-          projectId={project.id}
-          termId={term.id}
-          title={term.title}
-          onClose={() => {
-            setRefusing(false);
-          }}
-          onRefused={() => {
-            setRefusing(false);
-            onChanged(t('acceptances.messages.refused'));
-          }}
-        />
-      )}
       {attaching && (
         <AcceptanceDialog
           projectId={project.id}
           mode="onBehalf"
-          members={project.members}
           term={{ id: term.id, title: term.title, recipient }}
           onClose={() => {
             setAttaching(false);
@@ -575,90 +530,81 @@ function AcceptanceContent({
           </>
         }
       >
-        {t('acceptances.cancelRequest.text', { title: term.title, name: recipient })}
+        {recipient === null
+          ? t('acceptances.cancelRequest.textSigners', { title: term.title })
+          : t('acceptances.cancelRequest.text', { title: term.title, name: recipient })}
       </Dialog>
     </>
   );
 }
 
-/** "Recusar termo": the reason, which who asked hears about; the milestone stays open (ADR-0035). */
-function RefuseDialog({
-  projectId,
-  termId,
-  title,
-  onClose,
-  onRefused,
-}: {
-  projectId: string;
-  termId: string;
-  title: string;
-  onClose: () => void;
-  onRefused: () => void;
-}) {
+/**
+ * A signer of a request: the name, the situation by icon, color and text, when the signer signed or refused and the
+ * reason, the e-mail while the request is open and, from the local provider, "Abrir assinatura".
+ */
+function SignerRow({ signer }: { signer: AcceptanceSigner }) {
   const { t } = useTranslation();
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<{ reason: string }>({
-    resolver: zodResolver(refusalSchema),
-    defaultValues: { reason: '' },
-  });
-
-  const refuse = handleSubmit(async ({ reason }) => {
-    try {
-      const { error, response } = await api.POST(
-        '/api/projects/{projectId}/acceptances/{termId}/refusal',
-        { params: { path: { projectId, termId } }, body: { reason: reason.trim() } },
-      );
-      const answer = answerOf(response, error, t);
-      if (answer.kind === 'done') {
-        onRefused();
-        return;
-      }
-      if (answer.kind === 'fields') {
-        setError('reason', { message: 'acceptances.errors.reasonRequired' });
-        return;
-      }
-      setError('root', { message: answer.message });
-    } catch {
-      setError('root', { message: t('acceptances.messages.failed') });
-    }
-  });
-
+  const { formatDateTime } = useDates();
   return (
-    <Dialog
-      open
-      title={t('acceptances.refuse.title')}
-      onClose={onClose}
-      onSubmit={(event) => {
-        void refuse(event);
+    <Box
+      component="li"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-1)',
+        padding: 'var(--space-3)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--bg-surface)',
       }}
-      actions={
-        <>
-          <Button variant="outlined" onClick={onClose}>
-            {t('acceptances.refuse.cancel')}
-          </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {t('acceptances.refuse.submit')}
-          </Button>
-        </>
-      }
     >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
-        <Box component="p" sx={{ margin: 0, color: 'var(--text-secondary)' }}>
-          {t('acceptances.refuse.text', { title })}
-        </Box>
-        <TextArea
-          label={t('acceptances.refuse.reason')}
-          rows={4}
-          maxLength={1010}
-          error={isAcceptanceError(errors.reason?.message) ? t(errors.reason.message) : undefined}
-          {...register('reason')}
-        />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--space-2)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box sx={{ minWidth: 0, fontWeight: 500, overflowWrap: 'anywhere' }}>{signer.name}</Box>
+        <SignerStatusBadge status={signer.status} />
       </Box>
-    </Dialog>
+      {signer.email !== null && (
+        <Box sx={{ ...metaSx, overflowWrap: 'anywhere' }}>{signer.email}</Box>
+      )}
+      {signer.respondedAt !== null && (
+        <Box sx={metaSx}>
+          {t(
+            signer.status === 'Refused'
+              ? 'acceptances.details.refusedAt'
+              : 'acceptances.details.signedAt',
+            { when: formatDateTime(signer.respondedAt) },
+          )}
+        </Box>
+      )}
+      {signer.refusalReason !== null && (
+        <Box sx={{ whiteSpace: 'pre-wrap' }}>
+          <Box component="span" sx={labelSx}>
+            {t('acceptances.details.refusalOf', { name: signer.name })}
+          </Box>
+          <Box>{signer.refusalReason}</Box>
+        </Box>
+      )}
+      {signer.signingLink !== null && (
+        <Button
+          variant="text"
+          size="small"
+          startIcon={<OpenInNewOutlined />}
+          href={signer.signingLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('acceptances.details.openSigningOf', { name: signer.name })}
+          sx={{ alignSelf: 'flex-start' }}
+        >
+          {t('acceptances.details.openSigning')}
+        </Button>
+      )}
+    </Box>
   );
 }

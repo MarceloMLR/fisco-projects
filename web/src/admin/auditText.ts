@@ -374,7 +374,8 @@ type AcceptanceTermField =
   | 'RecipientId'
   | 'Status'
   | 'FileName'
-  | 'RefusalReason';
+  | 'RefusalReason'
+  | 'SignatureProvider';
 const acceptanceTermFields: readonly string[] = [
   'ProjectId',
   'MilestoneId',
@@ -384,11 +385,24 @@ const acceptanceTermFields: readonly string[] = [
   'Status',
   'FileName',
   'RefusalReason',
+  'SignatureProvider',
 ] satisfies AcceptanceTermField[];
 const isAcceptanceTermField = (field: string): field is AcceptanceTermField =>
   acceptanceTermFields.includes(field);
 const isAcceptanceStatus = (value: string | null | undefined): value is AcceptanceStatus =>
   value === 'Pending' || value === 'Signed' || value === 'Refused';
+
+/** The fields of a signer of a request (ADR-0129); the e-mail comes only as changed. */
+type AcceptanceSignerField = 'TermId' | 'Name' | 'Email' | 'Status' | 'RefusalReason';
+const acceptanceSignerFields: readonly string[] = [
+  'TermId',
+  'Name',
+  'Email',
+  'Status',
+  'RefusalReason',
+] satisfies AcceptanceSignerField[];
+const isAcceptanceSignerField = (field: string): field is AcceptanceSignerField =>
+  acceptanceSignerFields.includes(field);
 
 const scheduleTypes = ['SchedulePhase', 'ScheduleItem', 'ScheduleDependency'] as const;
 
@@ -511,6 +525,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'AcceptanceTerm' && field === 'Status' && isAcceptanceStatus(value)) {
     return t(`acceptances.statuses.${value}`);
   }
+  if (entry.itemType === 'AcceptanceSigner' && field === 'Status' && isAcceptanceStatus(value)) {
+    return t(`acceptances.signerStatuses.${value}`);
+  }
   if (entry.itemType === 'LinkCategory' && field === 'IsActive') {
     return t(
       value === 'true' ? 'linkCategories.statuses.Active' : 'linkCategories.statuses.Inactive',
@@ -614,6 +631,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   }
   if (entry.itemType === 'AcceptanceTerm' && isAcceptanceTermField(field)) {
     return t(`audit.fields.AcceptanceTerm.${field}`);
+  }
+  if (entry.itemType === 'AcceptanceSigner' && isAcceptanceSignerField(field)) {
+    return t(`audit.fields.AcceptanceSigner.${field}`);
   }
   if (entry.itemType === 'TimeEntry' && isTimeEntryField(field)) {
     return t(`audit.fields.TimeEntry.${field}`);
@@ -770,6 +790,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'AcceptanceTerm') {
     return t(`audit.actions.AcceptanceTerm.${acceptanceActionOf(entry)}`);
   }
+  // A signer of a request, asked, answering at the provider and removed with the request (ADR-0129).
+  if (entry.itemType === 'AcceptanceSigner') {
+    return t(
+      `audit.actions.AcceptanceSigner.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
   if (isSchedule(entry)) {
     return scheduleTitleOf(entry, t);
   }
@@ -890,6 +916,12 @@ function projectOfMember(entry: AuditEntry): string {
   return project?.after ?? project?.before ?? '';
 }
 
+/** The term of a signer, by its title (IsAuditContext in the API). */
+function termOf(entry: AuditEntry): string {
+  const term = changeOf(entry, 'TermId');
+  return term?.after ?? term?.before ?? '';
+}
+
 /** The ticket of a registration at a vendor, by number and title (IsAuditContext in the API). */
 function ticketOf(entry: AuditEntry): string {
   const ticket = changeOf(entry, 'TicketId');
@@ -1008,6 +1040,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
     entry.action !== 'Updated'
   ) {
     return join(label, projectOfMember(entry));
+  }
+  // A signer says the term.
+  if (entry.itemType === 'AcceptanceSigner') {
+    return join(label, termOf(entry));
   }
   // A document sent or removed says the folder and the project.
   if (entry.itemType === 'Document' && entry.action !== 'Updated') {
@@ -1181,6 +1217,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
     return [
       { label: t('audit.details.item.AcceptanceTerm'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'AcceptanceSigner') {
+    return [
+      { label: t('audit.details.item.AcceptanceSigner'), value: label },
+      { label: t('audit.fields.AcceptanceSigner.TermId'), value: termOf(entry) },
     ];
   }
   if (entry.itemType === 'TimeEntry') {

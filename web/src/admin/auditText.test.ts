@@ -1286,6 +1286,40 @@ describe('Mudanças do cronograma na auditoria', () => {
     ]);
   });
 
+  // Spec: termos-de-aceite, requirement "Dados dos signatários" (ADR-0129).
+  it('E-mail fora da auditoria', () => {
+    const asked = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'AcceptanceSigner',
+        itemLabel: 'Ana Souza',
+        changes: [
+          {
+            field: 'TermId',
+            before: null,
+            after: 'Aceite da homologação',
+            secret: false,
+            reference: 'AcceptanceTerm',
+          },
+          { field: 'Name', before: null, after: 'Ana Souza', secret: false, reference: null },
+          { field: 'Email', before: null, after: null, secret: true, reference: null },
+          { field: 'Status', before: null, after: 'Pending', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(asked.title).toBe('Incluiu um signatário');
+    expect(asked.summary).toBe('Ana Souza · Aceite da homologação');
+    expect(asked.properties).toEqual([
+      { label: 'Signatário', value: 'Ana Souza' },
+      { label: 'Termo', value: 'Aceite da homologação' },
+    ]);
+    expect(asked.changes).toContainEqual({ field: 'E-mail', before: '—', after: 'Alterado' });
+    expect(asked.changes).toContainEqual({ field: 'Situação', before: '—', after: 'Pendente' });
+    expect(JSON.stringify(asked)).not.toContain('@');
+  });
+
   // Spec: horas-do-projeto, requirement "Horas na auditoria" (ADR-0128).
   it('Horas na auditoria', () => {
     const project = {

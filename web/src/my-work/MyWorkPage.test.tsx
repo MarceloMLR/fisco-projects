@@ -81,12 +81,12 @@ describe('Meu trabalho na tela inicial', () => {
       within(views)
         .getAllByRole('radio')
         .map((radio) => radio.textContent),
-    ).toEqual(['Para mim9', 'Abertos por mim2', 'Que acompanho1']);
+    ).toEqual(['Para mim8', 'Abertos por mim2', 'Que acompanho1']);
     expect(
       within(queue())
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['Atrasado2', 'Aguardando você2', 'Hoje e segunda2', 'Próximos 7 dias3']);
+    ).toEqual(['Atrasado2', 'Aguardando você1', 'Hoje e segunda2', 'Próximos 7 dias3']);
 
     const late = group('Atrasado');
     expect(
@@ -107,16 +107,6 @@ describe('Meu trabalho na tela inicial', () => {
     const waiting = group('Aguardando você');
     expect(within(waiting).getByText(/^Diego Torres aguarda sua resposta/)).toBeInTheDocument();
     expect(within(waiting).getByText('Prazo pausado')).toBeInTheDocument();
-    expect(
-      within(waiting).getByText('Termo de aceite pedido por Beatriz Lima'),
-    ).toBeInTheDocument();
-    expect(within(waiting).getByText('Pedido em 15/10')).toBeInTheDocument();
-    expect(
-      within(waiting).getByRole('link', { name: 'Responder: Aceite do plano de testes' }),
-    ).toHaveAttribute(
-      'href',
-      `/projects/${demoMyWorkItems.waitingAcceptance.project.id}/acceptances?term=${demoMyWorkItems.waitingAcceptance.id}`,
-    );
 
     const soon = group('Hoje e segunda');
     expect(within(soon).getByText('Desenvolvimento · ninguém assumiu ainda')).toBeInTheDocument();
@@ -126,7 +116,9 @@ describe('Meu trabalho na tela inicial', () => {
 
     const week = group('Próximos 7 dias');
     expect(within(week).getByText('Vence quarta')).toBeInTheDocument();
-    expect(within(week).getByText('Você pediu a Carla Mendes em 15/10')).toBeInTheDocument();
+    expect(
+      within(week).getByText('Você pediu a Ana Souza e Bruno Lima em 15/10'),
+    ).toBeInTheDocument();
     expect(within(week).getByText('Marco em 22/10')).toBeInTheDocument();
     expect(
       within(week).getByRole('link', { name: 'Lembrar: Aceite da homologação' }),
@@ -369,7 +361,7 @@ describe('Meu trabalho no celular', () => {
     await openMyWork(phoneWidth);
 
     expect(screen.getByRole('combobox', { name: text.views.label })).toHaveTextContent(
-      'Para mim (9)',
+      'Para mim (8)',
     );
     const late = group('Atrasado');
     expect(

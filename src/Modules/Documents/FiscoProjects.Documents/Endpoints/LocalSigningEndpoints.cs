@@ -3,8 +3,8 @@ using FiscoProjects.Documents.Domain;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FiscoProjects.Documents.Endpoints;
 
@@ -16,19 +16,14 @@ public sealed record LocalRefusalRequest(string? Reason);
 
 /// <summary>
 /// The page of the local provider of signatures (ADR-0129), without a session: the signer opens the link, reads the
-/// term and signs or refuses it. Mapped only with the local provider, which does not start in production; each link is
-/// of one signer of one open request, and is no longer valid after the answer.
+/// term and signs or refuses it. Without the local provider, which does not start in production, every link answers
+/// 404; each link is of one signer of one open request, and is no longer valid after the answer.
 /// </summary>
 public static class LocalSigningEndpoints
 {
     public static RouteGroupBuilder MapLocalSigningEndpoints(this RouteGroupBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        if (((IEndpointRouteBuilder)api).ServiceProvider.GetService<ILocalSigningPage>() is null)
-        {
-            return api;
-        }
-
         var signing = api.MapGroup("/local-signatures/{token}")
             .AllowAnonymous()
             .WithTags("LocalSignatures");
@@ -42,27 +37,29 @@ public static class LocalSigningEndpoints
     }
 
     private static async Task<Results<Ok<LocalSigningResponse>, NotFound>> GetAsync(
-        string token, HttpContext http, ILocalSigningPage page, CancellationToken cancellationToken)
+        string token, HttpContext http, [FromServices] ILocalSigningPage? page, CancellationToken cancellationToken)
     {
         http.Response.Headers.CacheControl = "no-store";
-        return await page.FindAsync(token, cancellationToken) is { } signing
+        return page is not null && await page.FindAsync(token, cancellationToken) is { } signing
             ? TypedResults.Ok(new LocalSigningResponse(signing.Title, signing.Message, signing.SignerName, signing.FileName))
             : TypedResults.NotFound();
     }
 
     private static async Task<Results<FileStreamHttpResult, NotFound>> DocumentAsync(
-        string token, HttpContext http, ILocalSigningPage page, CancellationToken cancellationToken) =>
-        await page.OpenAsync(token, cancellationToken) is { } content
+        string token, HttpContext http, [FromServices] ILocalSigningPage? page, CancellationToken cancellationToken) =>
+        page is not null && await page.OpenAsync(token, cancellationToken) is { } content
             ? AcceptanceEndpoints.PdfOf(http, content, "application/pdf")
             : TypedResults.NotFound();
 
     private static async Task<Results<NoContent, NotFound>> SignAsync(
-        string token, AnswerLocalSigning answer, CancellationToken cancellationToken) =>
-        await answer.SignAsync(token, cancellationToken) == LocalSigningOutcome.Done ? TypedResults.NoContent() : TypedResults.NotFound();
+        string token, [FromServices] AnswerLocalSigning? answer, CancellationToken cancellationToken) =>
+        answer is not null && await answer.SignAsync(token, cancellationToken) == LocalSigningOutcome.Done
+            ? TypedResults.NoContent()
+            : TypedResults.NotFound();
 
     private static async Task<Results<NoContent, NotFound, ValidationProblem>> RefuseAsync(
-        string token, LocalRefusalRequest request, AnswerLocalSigning answer, CancellationToken cancellationToken) =>
-        await answer.RefuseAsync(token, request.Reason, cancellationToken) switch
+        string token, LocalRefusalRequest request, [FromServices] AnswerLocalSigning? answer, CancellationToken cancellationToken) =>
+        answer is null ? TypedResults.NotFound() : await answer.RefuseAsync(token, request.Reason, cancellationToken) switch
         {
             LocalSigningOutcome.Done => TypedResults.NoContent(),
             LocalSigningOutcome.Invalid => TypedResults.ValidationProblem(new Dictionary<string, string[]>

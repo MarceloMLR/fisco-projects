@@ -296,6 +296,7 @@
       "ProjectLink": "Links",
       "PortalCredential": "Acessos",
       "AcceptanceTerm": "Termos de aceite",
+      "AcceptanceSigner": "Signatários dos termos",
       "TimeEntry": "Horas",
       "ContractedHours": "Horas contratadas",
       "AdditionalHours": "Horas adicionais",
@@ -443,12 +444,17 @@
         "Deleted": "Excluiu um acesso"
       },
       "AcceptanceTerm": {
-        "Created": "Pediu um aceite",
+        "Created": "Pediu uma assinatura",
         "Attached": "Anexou um termo assinado",
         "Signed": "Registrou um termo assinado",
         "Refused": "Recusou um termo de aceite",
         "Updated": "Alterou um termo de aceite",
-        "Deleted": "Cancelou um pedido de aceite"
+        "Deleted": "Cancelou um pedido de assinatura"
+      },
+      "AcceptanceSigner": {
+        "Created": "Incluiu um signatário",
+        "Updated": "Registrou a resposta de um signatário",
+        "Deleted": "Tirou um signatário"
       },
       "TimeEntry": {
         "Created": "Apontou horas",
@@ -514,6 +520,7 @@
         "ProjectLink": "Link",
         "PortalCredential": "Acesso",
         "AcceptanceTerm": "Termo",
+        "AcceptanceSigner": "Signatário",
         "TimeEntry": "Apontamento",
         "AdditionalHours": "Motivo"
       },
@@ -683,6 +690,14 @@
         "RecipientId": "Para",
         "Status": "Situação",
         "FileName": "Termo para assinar",
+        "RefusalReason": "Motivo da recusa",
+        "SignatureProvider": "Provedor de assinatura"
+      },
+      "AcceptanceSigner": {
+        "TermId": "Termo",
+        "Name": "Nome",
+        "Email": "E-mail",
+        "Status": "Situação",
         "RefusalReason": "Motivo da recusa"
       },
       "TimeEntry": {
@@ -2598,7 +2613,9 @@
       "acceptanceReminded": "{{actor}} lembrou o pedido de aceite: {{title}}",
       "acceptanceSigned": "{{actor}} enviou o termo assinado: {{title}}",
       "acceptanceAttached": "{{actor}} anexou o termo assinado: {{title}}",
-      "acceptanceRefused": "{{actor}} recusou o termo: {{title}}"
+      "acceptanceSignedBySigners": "Termo assinado por todos os signatários: {{title}}",
+      "acceptanceRefused": "{{actor}} recusou o termo: {{title}}",
+      "acceptanceRefusedBySigner": "Um signatário recusou o termo: {{title}}"
     }
   },
   "documents": {
@@ -3011,11 +3028,11 @@
       "Signed": "Termo assinado",
       "Refused": "Recusado"
     },
-    "request": "Pedir aceite",
+    "request": "Pedir assinatura",
     "attach": "Anexar termo assinado",
     "columns": {
       "term": "Termo e marco",
-      "recipient": "Para",
+      "signers": "Signatários",
       "requestedAt": "Pedido em",
       "status": "Situação"
     },
@@ -3025,9 +3042,8 @@
     "total_other": "{{count}} termos",
     "pending_one": "{{count}} pendente",
     "pending_other": "{{count}} pendentes",
-    "empty": "Nenhum termo de aceite ainda. Peça o aceite de um marco do cronograma ou anexe um termo assinado.",
+    "empty": "Nenhum termo de aceite ainda. Peça a assinatura do termo de um marco do cronograma ou anexe um termo assinado.",
     "emptyStatus": "Nenhum termo nesta situação.",
-    "emptyOwn": "Nenhum termo de aceite para você neste projeto.",
     "loadFailed": "Não foi possível carregar os termos de aceite. Tente de novo.",
     "details": {
       "label": "Termo selecionado",
@@ -3037,14 +3053,20 @@
       "attached": "Anexado",
       "byOn": "{{date}} por {{name}}",
       "message": "Mensagem",
-      "toSign": "Termo para assinar",
-      "sent": "Termo enviado",
+      "toSign": "Termo enviado para assinar",
       "signed": "Termo assinado",
       "refusal": "Motivo da recusa",
       "history": "Histórico",
       "open": "Abrir {{name}}",
-      "answer": "Assine o termo fora do sistema e envie aqui o PDF assinado, ou recuse dizendo o motivo.",
-      "notLoaded": "Não foi possível carregar o termo. Tente de novo."
+      "notLoaded": "Não foi possível carregar o termo. Tente de novo.",
+      "signers": "Signatários",
+      "signedAt": "Assinou em {{when}}",
+      "refusedAt": "Recusou em {{when}}",
+      "pendingSigner": "Pendente",
+      "openSigning": "Abrir assinatura",
+      "openSigningOf": "Abrir a assinatura de {{name}}",
+      "localLink": "Provedor local: sem e-mail, abra o link de cada signatário para assinar.",
+      "refusalOf": "Motivo de {{name}}"
     },
     "history": {
       "Requested": "Pedido enviado a {{recipient}}",
@@ -3054,80 +3076,103 @@
       "Signed": "Termo assinado enviado por {{actor}}",
       "Attached": "Termo assinado anexado por {{actor}} em nome de {{recipient}}",
       "Refused": "Recusado por {{actor}}",
-      "Meta": "{{when}}"
+      "Meta": "{{when}}",
+      "RequestedSigners": "Assinatura pedida a {{names}}",
+      "RequestedSignersMeta": "{{when}} · por {{actor}}, pelo provedor de assinatura",
+      "RemindedSigners": "Lembrete enviado a quem não assinou",
+      "SignedBySigner": "Assinado por {{signer}}",
+      "AttachedByActor": "Termo assinado anexado por {{actor}}",
+      "RefusedBySigner": "Recusado por {{signer}}"
     },
     "actions": {
-      "remind": "Lembrar {{name}}",
+      "remind": "Lembrar signatários",
       "cancel": "Cancelar pedido",
       "attach": "Anexar termo assinado",
       "choose": "Escolher PDF",
-      "change": "Trocar PDF",
-      "send": "Enviar termo",
-      "refuse": "Recusar"
+      "change": "Trocar PDF"
     },
     "dialog": {
-      "requestTitle": "Pedir aceite",
+      "requestTitle": "Pedir assinatura",
       "attachTitle": "Anexar termo assinado",
       "onBehalfSubtitle": "Em nome de {{name}}",
       "onBehalfHelp": "Use quando {{name}} assinou o termo e mandou por fora, por e-mail ou em papel. O termo fica assinado em nome de {{name}}, com você como quem anexou.",
-      "attachHelp": "Use para um termo assinado recebido por fora, sem pedido no sistema. O termo fica em nome da pessoa escolhida, e o marco, atingido.",
+      "attachHelp": "Use para um termo assinado recebido por fora, sem pedido no sistema. Quem assinou está no próprio PDF, e o marco fica atingido.",
       "milestone": "Marco",
       "chooseMilestone": "Escolha o marco",
       "noMilestones": "O cronograma não tem marcos. Inclua um marco antes de pedir o aceite.",
-      "recipient": "Para",
-      "recipientAttached": "Em nome de",
-      "chooseRecipient": "Escolha a pessoa",
-      "recipientHelp": "Qualquer pessoa do projeto, em qualquer papel.",
       "title": "Título",
       "titleHelp": "Como o termo aparece na lista, por exemplo Aceite da homologação.",
       "message": "Mensagem",
-      "messageHelp": "O que a pessoa precisa saber para assinar. Vai no termo, não no e-mail.",
+      "messageHelp": "O que os signatários precisam saber para assinar. Vai com o termo, pelo provedor de assinatura.",
       "file": "Termo em PDF",
       "signedFile": "Termo assinado em PDF",
       "fileHelp": "Só PDF.",
       "noFile": "Nenhum arquivo escolhido",
       "cancel": "Cancelar",
-      "submitRequest": "Pedir aceite",
-      "submitAttach": "Anexar termo"
-    },
-    "refuse": {
-      "title": "Recusar termo",
-      "text": "Diga o que falta para assinar {{title}}. Quem pediu recebe o aviso, e o marco continua em aberto.",
-      "reason": "Motivo",
-      "cancel": "Voltar",
-      "submit": "Recusar"
+      "submitRequest": "Pedir assinatura",
+      "submitAttach": "Anexar termo",
+      "onBehalfRequestSubtitle": "Pedido {{title}}",
+      "onBehalfRequestHelp": "Use quando o termo foi assinado e chegou por fora, por e-mail ou em papel. O pedido fica assinado, com você como quem anexou, e o documento no provedor de assinatura é cancelado.",
+      "signers": "Signatários",
+      "signersHelp": "De 1 a 10 pessoas, de dentro ou de fora da empresa. Cada uma recebe o link do provedor por e-mail e assina ao mesmo tempo que as outras.",
+      "signerName": "Nome do signatário {{index}}",
+      "signerEmail": "E-mail do signatário {{index}}",
+      "name": "Nome",
+      "email": "E-mail",
+      "addSigner": "Incluir signatário",
+      "removeSigner": "Tirar o signatário {{index}}"
     },
     "cancelRequest": {
       "title": "Cancelar pedido?",
       "text": "O pedido {{title}} sai da lista com o termo enviado, e {{name}} não poderá mais responder. A auditoria guarda o cancelamento.",
       "back": "Voltar",
-      "confirm": "Cancelar pedido"
+      "confirm": "Cancelar pedido",
+      "textSigners": "O pedido {{title}} sai da lista com o termo enviado, e o documento é cancelado no provedor de assinatura: os signatários não poderão mais assinar. A auditoria guarda o cancelamento."
     },
     "errors": {
       "milestoneRequired": "Escolha o marco.",
-      "recipientRequired": "Escolha a pessoa.",
       "titleRequired": "Digite o título, com até 120 caracteres.",
       "messageTooLong": "A mensagem tem até 2.000 caracteres.",
       "fileRequired": "Escolha o termo em PDF.",
       "fileNotPdf": "Escolha um arquivo PDF.",
-      "reasonRequired": "Digite o motivo, com até 1.000 caracteres."
+      "reasonRequired": "Digite o motivo, com até 1.000 caracteres.",
+      "signersRequired": "Inclua de 1 a 10 signatários.",
+      "signerNameRequired": "Digite o nome, com até 120 caracteres.",
+      "signerEmailInvalid": "Digite um e-mail válido, como nome@empresa.com.br.",
+      "signerEmailRepeated": "Este e-mail já está em outro signatário."
     },
     "messages": {
-      "requested": "Aceite pedido a {{name}}.",
       "attached": "Termo assinado anexado.",
-      "signed": "Termo assinado enviado.",
-      "refused": "Termo recusado.",
-      "reminded": "Lembrete enviado a {{name}}.",
+      "reminded": "Lembrete enviado aos signatários que não assinaram.",
       "cancelled": "Pedido cancelado.",
       "closed": "O projeto está encerrado e só pode ser consultado.",
       "answered": "Este pedido já foi respondido ou cancelado.",
-      "failed": "Não foi possível concluir. Tente de novo."
+      "failed": "Não foi possível concluir. Tente de novo.",
+      "requested_one": "Assinatura pedida a {{count}} signatário.",
+      "requested_other": "Assinatura pedida a {{count}} signatários.",
+      "noProvider": "A instalação não tem provedor de assinatura para este pedido. Anexe o termo assinado.",
+      "providerFailed": "O provedor de assinatura não respondeu, e nada foi gravado. Tente de novo."
     },
     "fileRefused": {
       "Empty": "O arquivo está vazio.",
       "TooLarge": "O arquivo passa do tamanho que o termo aceita.",
       "NotPdf": "O termo precisa ser um PDF."
-    }
+    },
+    "emptyNoProvider": "Nenhum termo de aceite ainda. Anexe o termo assinado de um marco do cronograma.",
+    "signerStatuses": {
+      "Pending": "Pendente",
+      "Signed": "Assinou",
+      "Refused": "Recusou"
+    },
+    "signers": {
+      "count_zero": "0 de {{total}} assinaram",
+      "count_one": "{{count}} de {{total}} assinou",
+      "count_other": "{{count}} de {{total}} assinaram",
+      "before": "Pedido anterior, à pessoa do projeto",
+      "outside": "Assinado fora do sistema",
+      "outsideDetail": "Quem assinou está no PDF"
+    },
+    "onlyManagement": "Só o administrador e o gerente do projeto veem os termos de aceite."
   },
   "myWork": {
     "views": {
@@ -3176,7 +3221,6 @@
       "waiting": "{{name}} aguarda sua resposta {{when}}",
       "attendant": "Quem atende",
       "unassigned": "{{team}} · ninguém assumiu ainda",
-      "acceptanceFor": "Termo de aceite pedido por {{name}}",
       "acceptanceAsked": "Você pediu a {{name}} em {{day}}"
     },
     "waiting": {
@@ -3196,7 +3240,6 @@
       "firstResponseLate_other": "1ª resposta venceu há {{count}} dias úteis",
       "firstResponseLateOn": "1ª resposta venceu {{day}}",
       "paused": "Prazo pausado",
-      "requested": "Pedido em {{day}}",
       "milestone": "Marco em {{day}}",
       "milestoneToday": "Marco hoje",
       "milestoneTomorrow": "Marco amanhã"
@@ -3228,5 +3271,27 @@
       "today": "hoje",
       "tomorrow": "amanhã"
     }
+  },
+  "localSigning": {
+    "title": "Assinatura do termo",
+    "greeting": "Olá, {{name}}.",
+    "intro": "Leia o termo e escolha Assinar ou Recusar. Esta página é do provedor local de assinatura, usado só fora da produção.",
+    "message": "Mensagem de quem pediu",
+    "document": "Termo para assinar",
+    "open": "Abrir o termo",
+    "sign": "Assinar",
+    "refuse": "Recusar",
+    "reason": "Motivo da recusa",
+    "reasonHelp": "Diga o que falta para assinar. Quem pediu recebe o aviso.",
+    "back": "Voltar",
+    "confirmRefusal": "Recusar o termo",
+    "signed": "Termo assinado. Obrigado, {{name}}.",
+    "signedDetail": "Quem pediu recebe o termo assinado quando todos os signatários assinarem.",
+    "refused": "Recusa registrada.",
+    "refusedDetail": "Quem pediu recebe o aviso com o motivo.",
+    "invalid": "Este link não vale mais",
+    "invalidDetail": "O pedido foi respondido, cancelado ou não existe. Se precisar, peça um link novo a quem pediu a assinatura.",
+    "failed": "Não foi possível concluir. Tente de novo.",
+    "loading": "Carregando o termo"
   }
 }
