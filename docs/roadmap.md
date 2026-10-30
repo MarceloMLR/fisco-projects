@@ -40,9 +40,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
-| 11. Horas do projeto | 2 | 1 |
+| 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 2 | 0 |
-| **Total** | **95** | **92** |
+| **Total** | **95** | **93** |
 
 ## 1. Fundação
 
@@ -196,7 +196,7 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Horas-1 | `apontamento-de-horas` | Cada pessoa aponta as próprias horas no projeto, com a tarefa ou o chamado opcional, em Minhas horas | 0020, 0128 | Concluída em 29/10/2026 ([#107](https://github.com/MarceloMLR/fisco-projects/pull/107)) |
-| Horas-2 | `saldo-de-horas` | Horas contratadas e adicionais de cada projeto e a visão gerencial do administrador, com o saldo e o estouro | 0016, 0128 | Planejada |
+| Horas-2 | `saldo-de-horas` | Horas contratadas e adicionais de cada projeto e a visão gerencial do administrador, com o saldo e o estouro | 0016, 0128 | Concluída em 29/10/2026 ([#108](https://github.com/MarceloMLR/fisco-projects/pull/108)) |
 
 ## 12. Assinatura dos termos de aceite
 

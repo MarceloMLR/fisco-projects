@@ -20,6 +20,9 @@ export const hoursProjects = [
 
 const [erp, sped] = hoursProjects;
 
+/** Carla Mendes, who logged the hours of the week. */
+export const hoursPerson = { id: '0199f5a2-7c1e-7d40-9a1b-e00000000031', name: 'Carla Mendes' };
+
 export const hoursWork = {
   tasks: [
     { id: '0199f5a2-7c1e-7d40-9a1b-e00000000011', name: 'Configurar plano de contas' },
@@ -49,7 +52,16 @@ function entry(
   project: { id: string; code: string; name: string },
   work: Pick<TimeEntry, 'task' | 'ticket'> = { task: null, ticket: null },
 ): TimeEntry {
-  return { id, day, hours, description, project: { ...project }, canChange: true, ...work };
+  return {
+    id,
+    day,
+    hours,
+    description,
+    person: { ...hoursPerson },
+    project: { ...project },
+    canChange: true,
+    ...work,
+  };
 }
 
 /** The entries of the week, the newest day first, as the API sends them. */

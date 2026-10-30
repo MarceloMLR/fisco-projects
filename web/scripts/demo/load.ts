@@ -251,7 +251,7 @@ export async function loadDemo(
     missing.reduce((total, project) => total + (of(project)?.length ?? 0), 0);
   if (missing.length > 0) {
     log(
-      `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos, ${String(count((project) => project.acceptances))} termos de aceite e ${String(count((project) => project.hours))} apontamentos de horas.`,
+      `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos, ${String(count((project) => project.acceptances))} termos de aceite, ${String(count((project) => project.hours))} apontamentos de horas e ${String(missing.filter((project) => project.contractedHours !== undefined).length)} com horas contratadas.`,
     );
   }
   log(screensLine);
@@ -670,6 +670,8 @@ async function loadProject(
     await loadHours(project, id, today, ids, ticketIds, personOf);
   }
 
+  await loadBalance(project, id, today, admin);
+
   if (project.status !== undefined) {
     done(
       await builder.PUT('/api/projects/{id}/status', {
@@ -895,6 +897,40 @@ async function loadHours(
         },
       }),
       `Horas de ${entry.by} em ${project.code}`,
+    );
+  }
+}
+
+/**
+ * The contracted and the additional hours of the project, registered by the Administrator after the hours logged
+ * (ADR-0128), so the hours of the projects show each state of the balance.
+ */
+async function loadBalance(
+  project: DemoProject,
+  projectId: string,
+  today: string,
+  admin: Api,
+): Promise<void> {
+  if (project.contractedHours !== undefined) {
+    done(
+      await admin.PUT('/api/admin/project-hours/{projectId}/contracted', {
+        params: { path: { projectId } },
+        body: { hours: project.contractedHours },
+      }),
+      `Horas contratadas de ${project.code}`,
+    );
+  }
+  for (const additional of project.additionalHours ?? []) {
+    must(
+      await admin.POST('/api/admin/project-hours/{projectId}/additional', {
+        params: { path: { projectId } },
+        body: {
+          day: workDaysBefore(today, additional.daysAgo),
+          hours: additional.hours,
+          reason: additional.reason,
+        },
+      }),
+      `Horas adicionais de ${project.code}`,
     );
   }
 }

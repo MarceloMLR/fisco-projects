@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.TimeTracking.Infrastructure;
 
-/// <summary>The hours of a project being deleted (ADR-0111, ADR-0128).</summary>
+/// <summary>The logged, contracted and additional hours of a project being deleted (ADR-0111, ADR-0128).</summary>
 internal sealed class TimeEntryProjectDeletion(TimeTrackingDbContext db) : IProjectDeletion
 {
     public async Task<IReadOnlyList<ProjectItemCount>> CountAsync(Guid projectId, CancellationToken cancellationToken) =>
@@ -21,6 +21,9 @@ internal sealed class TimeEntryProjectDeletion(TimeTrackingDbContext db) : IProj
         await using var hours = new TimeTrackingDbContext(options);
         await hours.Database.UseTransactionAsync(transaction, cancellationToken);
         var removed = await hours.TimeEntries.Where(entry => entry.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
+        // The contracted and additional hours go with the project; the summary counts only the logged hours.
+        await hours.ContractedHours.Where(contracted => contracted.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
+        await hours.AdditionalHours.Where(additional => additional.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
         return [new(ProjectItemKind.TimeEntries, removed)];
     }
 }

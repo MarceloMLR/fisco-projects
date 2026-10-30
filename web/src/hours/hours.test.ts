@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { demoTimeEntries } from '../test/demoTimeEntries';
+import { formatMonthText } from '../format/dates';
 import {
   addDays,
+  addMonths,
   formatHours,
   hoursFieldText,
   hoursRows,
+  monthEnd,
+  monthStart,
   parseHours,
+  parseHoursUpTo,
+  plainHoursText,
   weekEnd,
   weekStart,
   workOf,
@@ -80,5 +86,31 @@ describe('Semana de Minhas horas', () => {
       { kind: 'project' },
       { kind: 'ticket', text: `${ticketNumber(101)} Erro ao importar XML de entrada` },
     ]);
+  });
+});
+
+// Spec: horas-do-projeto, "Horas contratadas", "Horas adicionais" and "Ver apontamentos pela tela" (ADR-0128).
+describe('Horas dos projetos', () => {
+  it('Muitas horas digitadas', () => {
+    expect(
+      ['400', '12,5', '12.25', ' 99999 ', '0,25'].map((text) => parseHoursUpTo(text, 99_999)),
+    ).toEqual([400, 12.5, 12.25, 99_999, 0.25]);
+    expect(
+      ['0', '10,1', '1.000', '100000', '1:30', '', '-4'].map((text) =>
+        parseHoursUpTo(text, 99_999),
+      ),
+    ).toEqual(Array.from({ length: 7 }, () => undefined));
+    expect(parseHoursUpTo('10000', 9_999)).toBeUndefined();
+    expect([1200, 12.5, 400.25].map(plainHoursText)).toEqual(['1200', '12,5', '400,25']);
+  });
+
+  it('Mês dos apontamentos', () => {
+    expect(monthStart('2026-10-29')).toBe('2026-10-01');
+    expect(monthEnd('2026-10-29')).toBe('2026-10-31');
+    expect(monthEnd('2028-02-10')).toBe('2028-02-29');
+    expect(addMonths('2026-10-01', -1)).toBe('2026-09-01');
+    expect(addMonths('2026-01-01', -1)).toBe('2025-12-01');
+    expect(addMonths('2026-12-01', 1)).toBe('2027-01-01');
+    expect(formatMonthText('2026-10-01')).toBe('Outubro de 2026');
   });
 });

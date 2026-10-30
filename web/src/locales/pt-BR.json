@@ -35,6 +35,9 @@
     "admin": {
       "title": "Administração"
     },
+    "projectHours": {
+      "title": "Horas dos projetos"
+    },
     "users": {
       "title": "Usuários"
     },
@@ -138,6 +141,7 @@
   "admin": {
     "sections": {
       "label": "Seções da administração",
+      "monitoring": "Acompanhamento",
       "people": "Pessoas e segurança",
       "installation": "Instalação",
       "records": "Cadastros"
@@ -293,6 +297,8 @@
       "PortalCredential": "Acessos",
       "AcceptanceTerm": "Termos de aceite",
       "TimeEntry": "Horas",
+      "ContractedHours": "Horas contratadas",
+      "AdditionalHours": "Horas adicionais",
       "AuditExport": "Exportação da auditoria",
       "AuditCleanup": "Limpeza da auditoria"
     },
@@ -449,6 +455,16 @@
         "Updated": "Corrigiu horas",
         "Deleted": "Apagou horas"
       },
+      "ContractedHours": {
+        "Created": "Cadastrou as horas contratadas",
+        "Updated": "Alterou as horas contratadas",
+        "Deleted": "Tirou as horas contratadas"
+      },
+      "AdditionalHours": {
+        "Created": "Incluiu horas adicionais",
+        "Updated": "Corrigiu horas adicionais",
+        "Deleted": "Apagou horas adicionais"
+      },
       "AuditExport": {
         "Exported": "Exportou a auditoria"
       },
@@ -498,7 +514,8 @@
         "ProjectLink": "Link",
         "PortalCredential": "Acesso",
         "AcceptanceTerm": "Termo",
-        "TimeEntry": "Apontamento"
+        "TimeEntry": "Apontamento",
+        "AdditionalHours": "Motivo"
       },
       "secret": "Alterado",
       "none": "—",
@@ -676,6 +693,17 @@
         "Description": "Descrição",
         "ScheduleItemId": "Tarefa",
         "TicketId": "Chamado"
+      },
+      "ContractedHours": {
+        "ProjectId": "Projeto",
+        "Hours": "Horas"
+      },
+      "AdditionalHours": {
+        "ProjectId": "Projeto",
+        "Day": "Dia",
+        "Hours": "Horas",
+        "Reason": "Motivo",
+        "CreatedBy": "Incluídas por"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -2316,6 +2344,173 @@
       "closed": "O projeto foi encerrado e não recebe mais horas.",
       "failed": "Não foi possível salvar. Tente de novo.",
       "noProjects": "Você não está em nenhum projeto em aberto para apontar horas."
+    }
+  },
+  "projectHours": {
+    "table": "Horas por projeto",
+    "search": "Buscar por código ou nome",
+    "viewsLabel": "Projetos",
+    "views": {
+      "Open": "Em aberto",
+      "Closed": "Encerrados",
+      "All": "Todos"
+    },
+    "meta": {
+      "Open_zero": "{{count}} projetos em aberto",
+      "Open_one": "{{count}} projeto em aberto",
+      "Open_other": "{{count}} projetos em aberto",
+      "Closed_zero": "{{count}} projetos encerrados",
+      "Closed_one": "{{count}} projeto encerrado",
+      "Closed_other": "{{count}} projetos encerrados",
+      "All_zero": "{{count}} projetos",
+      "All_one": "{{count}} projeto",
+      "All_other": "{{count}} projetos",
+      "over_one": "{{count}} acima das horas contratadas",
+      "over_other": "{{count}} acima das horas contratadas",
+      "joined": "{{projects}} · {{over}}"
+    },
+    "columns": {
+      "project": "Projeto",
+      "status": "Situação",
+      "contracted": "Contratadas",
+      "additional": "Adicionais",
+      "logged": "Apontadas",
+      "balance": "Saldo",
+      "consumption": "Consumo"
+    },
+    "none": "—",
+    "internal": "Interno",
+    "clientSuffix": " · {{client}}",
+    "consumptionLabel": "Consumo das horas",
+    "balance": {
+      "noContract": "Sem horas contratadas",
+      "over": "{{hours}} acima",
+      "left": "Restam {{hours}}"
+    },
+    "empty": "Nenhum projeto nesta visão.",
+    "loadFailed": "Não foi possível carregar as horas dos projetos. Tente de novo.",
+    "download": "Baixar planilha",
+    "downloadFailed": "Não foi possível montar a planilha. Tente de novo.",
+    "details": {
+      "label": "Horas do projeto",
+      "notLoaded": "Não foi possível carregar as horas do projeto. Tente de novo.",
+      "contracted": "Contratadas",
+      "additional": "Adicionais",
+      "logged": "Apontadas",
+      "balance": "Saldo",
+      "change": "Alterar",
+      "changeLabel": "Alterar as horas contratadas",
+      "total": "Total de {{hours}}",
+      "since": "Desde {{day}}",
+      "consumption": "Consumo",
+      "consumptionDetail": "{{logged}} de {{total}} ({{share}}%)",
+      "additionalTitle": "Horas adicionais",
+      "addAdditional": "Incluir horas adicionais",
+      "noAdditional": "Nenhuma hora adicional neste projeto.",
+      "viewAll": "Ver todas ({{count}})",
+      "createdBy": "Incluídas por {{name}}",
+      "people": "Por pessoa",
+      "viewEntries": "Ver apontamentos",
+      "noPeople": "Ninguém apontou horas neste projeto.",
+      "leftProject": "Saiu do projeto",
+      "columns": {
+        "day": "Dia",
+        "hours": "Horas",
+        "reason": "Motivo",
+        "actions": "Ações",
+        "person": "Pessoa",
+        "role": "Papel",
+        "share": "Parte"
+      }
+    },
+    "additionalMenu": {
+      "button": "Ações das horas adicionais de {{day}}",
+      "edit": "Corrigir",
+      "remove": "Apagar"
+    },
+    "allAdditional": {
+      "title": "Horas adicionais",
+      "table": "Todas as horas adicionais",
+      "range": "{{from}}–{{to}} de {{count}}",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "close": "Fechar"
+    },
+    "removeAdditional": {
+      "title": "Apagar as horas adicionais?",
+      "text": "As {{hours}} de {{day}} saem do projeto {{code}}, e o saldo é recalculado.",
+      "confirm": "Apagar",
+      "cancel": "Cancelar"
+    },
+    "contractedDialog": {
+      "title": "Horas contratadas",
+      "hours": "Horas contratadas",
+      "help": "Vazio, o projeto fica sem horas contratadas e sem saldo.",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "additionalDialog": {
+      "newTitle": "Incluir horas adicionais",
+      "editTitle": "Corrigir horas adicionais",
+      "day": "Dia",
+      "hours": "Horas",
+      "reason": "Motivo",
+      "add": "Incluir horas",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "contractedInvalid": "Use de 0,25 a 99.999 horas, em quartos de hora.",
+      "dayInvalid": "Digite o dia como dd/mm/aaaa.",
+      "dayFuture": "O dia não pode ser depois de hoje.",
+      "hoursInvalid": "Use de 0,25 a 9.999 horas, em quartos de hora.",
+      "reasonRequired": "Informe o motivo, em até 500 caracteres."
+    },
+    "messages": {
+      "contractedSaved": "Horas contratadas salvas.",
+      "contractedRemoved": "O projeto ficou sem horas contratadas.",
+      "added": "Horas adicionais incluídas.",
+      "saved": "Horas adicionais corrigidas.",
+      "removed": "Horas adicionais apagadas.",
+      "failed": "Não foi possível salvar. Tente de novo."
+    },
+    "entries": {
+      "title": "Apontamentos",
+      "subtitle": "{{code}} · {{name}}",
+      "previousMonth": "Mês anterior",
+      "nextMonth": "Próximo mês",
+      "thisMonth": "Este mês",
+      "table": "Apontamentos do projeto",
+      "empty": "Nenhuma hora apontada neste mês.",
+      "total": "Total do mês: {{hours}}",
+      "loadFailed": "Não foi possível carregar os apontamentos. Tente de novo.",
+      "person": "Pessoa"
+    },
+    "report": {
+      "fileName": "horas-dos-projetos-{{day}}.xlsx",
+      "sheet": "Horas dos projetos",
+      "filtersSheet": "Filtros",
+      "columns": {
+        "code": "Código",
+        "project": "Projeto",
+        "client": "Cliente",
+        "status": "Situação",
+        "contracted": "Contratadas (h)",
+        "additional": "Adicionais (h)",
+        "logged": "Apontadas (h)",
+        "balance": "Saldo (h)",
+        "consumption": "Consumo (%)",
+        "state": "Estado do saldo"
+      },
+      "filters": {
+        "view": "Visão",
+        "search": "Busca",
+        "noSearch": "Nenhuma",
+        "rows": "Projetos",
+        "timeZone": "Fuso horário",
+        "generatedAt": "Gerada em",
+        "generatedBy": "Gerada por"
+      }
     }
   },
   "editor": {

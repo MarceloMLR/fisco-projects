@@ -9295,6 +9295,14 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -9320,6 +9328,16 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9627,6 +9645,393 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "ListProjectHours",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "description": "Open (the default: planning, in progress or paused), Closed (completed or cancelled) or All.",
+            "schema": {
+              "default": "Open",
+              "$ref": "#/components/schemas/ProjectHoursView"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Part of the code or of the name, without telling case or accents apart.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectHoursResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours/{projectId}": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "GetProjectHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectHoursDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours/{projectId}/contracted": {
+      "put": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "ChangeContractedHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractedHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours/{projectId}/additional": {
+      "post": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "AddAdditionalHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdditionalHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdditionalHoursCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours/{projectId}/additional/{id}": {
+      "put": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "ChangeAdditionalHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdditionalHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "DeleteAdditionalHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -9986,6 +10391,80 @@
           "Refused"
         ],
         "description": "Where a term stands (ADR-0035): waiting for the answer, signed, or refused with a reason."
+      },
+      "AdditionalHoursCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AdditionalHoursRequest": {
+        "required": [
+          "day",
+          "hours",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "hours": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Additional hours as the Administrator fills them in."
+      },
+      "AdditionalHoursResponse": {
+        "required": [
+          "id",
+          "day",
+          "hours",
+          "reason",
+          "createdBy"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "hours": {
+            "type": "number",
+            "format": "double"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/TimeEntryPersonResponse"
+          }
+        },
+        "description": "Additional hours: the day, the hours, the reason and who registered them, by the current name."
       },
       "AddLocalHolidayRequest": {
         "required": [
@@ -10552,6 +11031,22 @@
           }
         },
         "description": "Many dates considered or disregarded at once: the keys of calculated holidays and the ids of local ones."
+      },
+      "ContractedHoursRequest": {
+        "required": [
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "hours": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "The contracted hours of a project, or null to take them out."
       },
       "CredentialCreatedResponse": {
         "required": [
@@ -11283,6 +11778,69 @@
           }
         },
         "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how\nmany years the audit is kept (ADR-0110) and the folder of the projects in the file storage (ADR-0121)."
+      },
+      "HoursBalanceResponse": {
+        "required": [
+          "contracted",
+          "additional",
+          "logged",
+          "total",
+          "balance",
+          "consumption",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "contracted": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "additional": {
+            "type": "number",
+            "format": "double"
+          },
+          "logged": {
+            "type": "number",
+            "format": "double"
+          },
+          "total": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "balance": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "consumption": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "state": {
+            "$ref": "#/components/schemas/HoursBalanceState"
+          }
+        },
+        "description": "The balance of the hours of a project (ADR-0128): the contracted hours (null without them), the sum of the additional\nones, the logged ones, the total, the balance (negative when over), the share used in whole percentage and the state."
+      },
+      "HoursBalanceState": {
+        "enum": [
+          "Over",
+          "NearLimit",
+          "Within",
+          "NoContract"
+        ],
+        "description": "The state of the balance of a project (ADR-0128), shown by icon, color and text (ADR-0065)."
       },
       "HttpValidationProblemDetails": {
         "type": "object",
@@ -12936,6 +13494,39 @@
         },
         "description": "The name and the e-mail of a user, for the card of the person (ADR-0118); the anonymized has no e-mail."
       },
+      "PersonHoursResponse": {
+        "required": [
+          "person",
+          "role",
+          "hours",
+          "share"
+        ],
+        "type": "object",
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/TimeEntryPersonResponse"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectMemberRole"
+              }
+            ]
+          },
+          "hours": {
+            "type": "number",
+            "format": "double"
+          },
+          "share": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The hours a person logged in the project, the share of them, in whole percentage, and the current role in the\nproject; null when the person left it."
+      },
       "PersonResponse": {
         "required": [
           "id",
@@ -13055,6 +13646,16 @@
           }
         },
         "description": "My profile: who the person is, how they sign in, the theme they chose and whether they receive the daily summary of\ne-mails. Sign-in providers come as their codes (\"local\", and \"entra\" later); the screen says them in words."
+      },
+      "ProjectCardStatus": {
+        "enum": [
+          "Planning",
+          "InProgress",
+          "Paused",
+          "Completed",
+          "Cancelled"
+        ],
+        "description": "The status of a project (ADR-0016), as the other modules see it, with the names of the module's own."
       },
       "ProjectClientResponse": {
         "required": [
@@ -13286,6 +13887,84 @@
         },
         "description": "The folder of the project in the file storage (ADR-0122): its name, whether someone chose it among the ones that\nalready existed, whether a module stored files of the project (then it stays) and whether the person may change it."
       },
+      "ProjectHoursDetailResponse": {
+        "required": [
+          "project",
+          "firstDay",
+          "additional",
+          "people"
+        ],
+        "type": "object",
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/ProjectHoursResponse"
+          },
+          "firstDay": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "additional": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdditionalHoursResponse"
+            }
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonHoursResponse"
+            }
+          }
+        },
+        "description": "The hours of a project: the project with the balance, the first day with hours logged (null when none), the\nadditional hours, the newest day first, and the hours of each person, the most first."
+      },
+      "ProjectHoursResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "status",
+          "clientName",
+          "balance"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectCardStatus"
+          },
+          "clientName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "balance": {
+            "$ref": "#/components/schemas/HoursBalanceResponse"
+          }
+        },
+        "description": "A project in the hours of the projects: the code, the name, the status, the client (null when internal) and the balance."
+      },
+      "ProjectHoursView": {
+        "enum": [
+          "Open",
+          "Closed",
+          "All"
+        ],
+        "description": "Which projects the list of the hours shows."
+      },
       "ProjectListItemResponse": {
         "required": [
           "id",
@@ -13398,6 +14077,16 @@
           }
         },
         "description": "A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in\n(null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) of a project."
+      },
+      "ProjectMemberRole": {
+        "enum": [
+          "Manager",
+          "TechLead",
+          "Contributor",
+          "Developer",
+          "Viewer",
+          null
+        ]
       },
       "ProjectMemberRoleRequest": {
         "required": [
@@ -15916,6 +16605,23 @@
         },
         "description": "The entries of the period, the newest day first, and their total in hours."
       },
+      "TimeEntryPersonResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "Who logged a time entry, by the current name."
+      },
       "TimeEntryProjectResponse": {
         "required": [
           "id",
@@ -15998,6 +16704,7 @@
           "day",
           "hours",
           "description",
+          "person",
           "project",
           "task",
           "ticket",
@@ -16019,6 +16726,9 @@
           },
           "description": {
             "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/TimeEntryPersonResponse"
           },
           "project": {
             "$ref": "#/components/schemas/TimeEntryProjectResponse"
@@ -16047,7 +16757,7 @@
             "type": "boolean"
           }
         },
-        "description": "A time entry: the day, the hours, what was done, the project, the task or the ticket, and whether the person may change it."
+        "description": "A time entry: the day, the hours, what was done, who logged it, the project, the task or the ticket, and whether the\nperson of the session may change it."
       },
       "TimeEntryTaskOptionResponse": {
         "required": [

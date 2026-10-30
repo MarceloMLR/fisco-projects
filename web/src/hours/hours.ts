@@ -44,6 +44,31 @@ export function formatHours(hours: number): string {
   return `${number.format(hours)} h`;
 }
 
+const largeHours = /^(\d{1,5})(?:[.,](\d{1,2}))?$/;
+
+/**
+ * Hours typed as "400", "12,5" or "12.25", without thousands separators, or undefined when they are not hours from
+ * 0,25 up to the most, in quarters of an hour: the contracted and the additional hours of a project (ADR-0128).
+ */
+export function parseHoursUpTo(text: string, most: number): number | undefined {
+  const typed = largeHours.exec(text.trim());
+  if (typed === null) {
+    return undefined;
+  }
+  const hours = Number(`${typed[1] ?? '0'}.${typed[2] ?? '0'}`);
+  return hours >= quarter && hours <= most && Number.isInteger(hours / quarter) ? hours : undefined;
+}
+
+const plainNumber = new Intl.NumberFormat('pt-BR', {
+  maximumFractionDigits: 2,
+  useGrouping: false,
+});
+
+/** Many hours as a field starts with them, without thousands separators: "1200", "12,5". */
+export function plainHoursText(hours: number): string {
+  return plainNumber.format(hours);
+}
+
 /** The hours as the field of an entry starts with them: "1,5", "8". */
 export function hoursFieldText(hours: number): string {
   return number.format(hours);
@@ -61,6 +86,23 @@ function dayOfNumber(value: number): DayValue {
 /** The day some days after (or before) another. */
 export function addDays(day: DayValue, days: number): DayValue {
   return dayOfNumber(dayNumber(day) + days);
+}
+
+/** The first day of the month of a day. */
+export function monthStart(day: DayValue): DayValue {
+  return `${day.slice(0, 8)}01`;
+}
+
+/** The last day of the month of a day. */
+export function monthEnd(day: DayValue): DayValue {
+  return addDays(addMonths(monthStart(day), 1), -1);
+}
+
+/** The first day of the month some months before or after the month of a day. */
+export function addMonths(day: DayValue, months: number): DayValue {
+  const [year = 0, month = 1] = day.split('-').map(Number);
+  const index = year * 12 + (month - 1) + months;
+  return `${String(Math.floor(index / 12))}-${String((index % 12) + 1).padStart(2, '0')}-01`;
 }
 
 /** The Monday of the week of the day, which starts the week of Minhas horas. */

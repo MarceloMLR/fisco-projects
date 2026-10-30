@@ -121,3 +121,43 @@ describe('Horas na demonstração', () => {
     expect(ofManager.some(({ entry }) => entry.ticket !== undefined)).toBe(true);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Saldo na demonstração" (ADR-0128).
+describe('Saldo na demonstração', () => {
+  it('Saldo na demonstração', () => {
+    const open = demoProjects.filter(
+      (project) => !['Completed', 'Cancelled'].includes(project.status ?? 'Planning'),
+    );
+    // The state of the balance, as the TimeTracking module computes it.
+    const stateOf = (project: (typeof demoProjects)[number]) => {
+      if (project.contractedHours === undefined) {
+        return 'NoContract';
+      }
+      const total =
+        project.contractedHours +
+        (project.additionalHours ?? []).reduce((sum, item) => sum + item.hours, 0);
+      const logged = (project.hours ?? []).reduce((sum, entry) => sum + entry.hours, 0);
+      return logged > total ? 'Over' : logged * 100 >= total * 90 ? 'NearLimit' : 'Within';
+    };
+    expect(new Set(open.map(stateOf))).toEqual(
+      new Set(['Over', 'NearLimit', 'Within', 'NoContract']),
+    );
+    const main = demoProjects.find((project) => project.code === mainProject);
+    expect(main === undefined ? undefined : stateOf(main)).toBe('Over');
+    for (const project of demoProjects) {
+      if (project.contractedHours !== undefined) {
+        expect(Number.isInteger(project.contractedHours * 4) && project.contractedHours > 0).toBe(
+          true,
+        );
+      }
+      for (const additional of project.additionalHours ?? []) {
+        expect(additional.reason.length).toBeGreaterThan(0);
+        expect(additional.reason.length).toBeLessThanOrEqual(500);
+        expect(Number.isInteger(additional.hours * 4) && additional.hours > 0).toBe(true);
+      }
+    }
+    expect(
+      demoProjects.find((project) => project.code === mainProject)?.additionalHours?.length,
+    ).toBeGreaterThan(0);
+  });
+});

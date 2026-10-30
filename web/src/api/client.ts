@@ -92,6 +92,12 @@ export type TimeEntry = components['schemas']['TimeEntryResponse'];
 export type TimeEntryList = components['schemas']['TimeEntryListResponse'];
 export type TimeEntryProject = components['schemas']['TimeEntryProjectResponse'];
 export type TimeEntryWork = components['schemas']['TimeEntryWorkResponse'];
+export type ProjectHours = components['schemas']['ProjectHoursResponse'];
+export type ProjectHoursDetail = components['schemas']['ProjectHoursDetailResponse'];
+export type HoursBalance = components['schemas']['HoursBalanceResponse'];
+export type HoursBalanceState = components['schemas']['HoursBalanceState'];
+export type ProjectHoursView = components['schemas']['ProjectHoursView'];
+export type AdditionalHours = components['schemas']['AdditionalHoursResponse'];
 export type OverviewTimeline = components['schemas']['OverviewTimelineResponse'];
 export type OverviewTeam = components['schemas']['OverviewTeamResponse'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
@@ -174,6 +180,8 @@ export const auditItemTypes = [
   'PortalCredential',
   'AcceptanceTerm',
   'TimeEntry',
+  'ContractedHours',
+  'AdditionalHours',
   'AuditExport',
   'AuditCleanup',
 ] as const;

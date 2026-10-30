@@ -342,6 +342,30 @@ const timeEntryFields: readonly string[] = [
 const isTimeEntryField = (field: string): field is TimeEntryField =>
   timeEntryFields.includes(field);
 
+// The contracted and the additional hours of a project, by the Administrator (ADR-0128).
+type ContractedHoursField = 'ProjectId' | 'Hours';
+const contractedHoursFields: readonly string[] = [
+  'ProjectId',
+  'Hours',
+] satisfies ContractedHoursField[];
+const isContractedHoursField = (field: string): field is ContractedHoursField =>
+  contractedHoursFields.includes(field);
+type AdditionalHoursField = 'ProjectId' | 'Day' | 'Hours' | 'Reason' | 'CreatedBy';
+const additionalHoursFields: readonly string[] = [
+  'ProjectId',
+  'Day',
+  'Hours',
+  'Reason',
+  'CreatedBy',
+] satisfies AdditionalHoursField[];
+const isAdditionalHoursField = (field: string): field is AdditionalHoursField =>
+  additionalHoursFields.includes(field);
+/** The items of the module of the hours whose days and hours show as Minhas horas does. */
+const isHoursItem = (entry: AuditEntry) =>
+  entry.itemType === 'TimeEntry' ||
+  entry.itemType === 'ContractedHours' ||
+  entry.itemType === 'AdditionalHours';
+
 type AcceptanceTermField =
   | 'ProjectId'
   | 'MilestoneId'
@@ -422,10 +446,10 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
     return formatDayText(value);
   }
   // The day and the hours of an entry, as Minhas horas shows them (ADR-0128).
-  if (entry.itemType === 'TimeEntry' && field === 'Day') {
+  if (isHoursItem(entry) && field === 'Day') {
     return formatDayText(value);
   }
-  if (entry.itemType === 'TimeEntry' && field === 'Hours' && Number.isFinite(Number(value))) {
+  if (isHoursItem(entry) && field === 'Hours' && Number.isFinite(Number(value))) {
     return formatHours(Number(value));
   }
   if (entry.itemType === 'Client' && field === 'Cnpj') {
@@ -594,6 +618,12 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'TimeEntry' && isTimeEntryField(field)) {
     return t(`audit.fields.TimeEntry.${field}`);
   }
+  if (entry.itemType === 'ContractedHours' && isContractedHoursField(field)) {
+    return t(`audit.fields.ContractedHours.${field}`);
+  }
+  if (entry.itemType === 'AdditionalHours' && isAdditionalHoursField(field)) {
+    return t(`audit.fields.AdditionalHours.${field}`);
+  }
   return field;
 }
 
@@ -728,6 +758,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'TimeEntry') {
     return t(
       `audit.actions.TimeEntry.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // The contracted and the additional hours of a project, by the Administrator (ADR-0128).
+  if (entry.itemType === 'ContractedHours' || entry.itemType === 'AdditionalHours') {
+    return t(
+      `audit.actions.${entry.itemType}.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
   }
   // A term of acceptance asked for, attached, signed, refused and cancelled (ADR-0035, ADR-0095).
@@ -967,7 +1003,8 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
     (entry.itemType === 'ProjectLink' ||
       entry.itemType === 'PortalCredential' ||
       entry.itemType === 'AcceptanceTerm' ||
-      entry.itemType === 'TimeEntry') &&
+      entry.itemType === 'TimeEntry' ||
+      entry.itemType === 'AdditionalHours') &&
     entry.action !== 'Updated'
   ) {
     return join(label, projectOfMember(entry));
@@ -1149,6 +1186,16 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'TimeEntry') {
     return [
       { label: t('audit.details.item.TimeEntry'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  // The contracted hours are of the project, which is their label.
+  if (entry.itemType === 'ContractedHours') {
+    return [{ label: t('audit.fields.ContractedHours.ProjectId'), value: label }];
+  }
+  if (entry.itemType === 'AdditionalHours') {
+    return [
+      { label: t('audit.details.item.AdditionalHours'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

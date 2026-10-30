@@ -2020,6 +2020,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/project-hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListProjectHours"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/project-hours/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetProjectHours"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/project-hours/{projectId}/contracted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeContractedHours"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/project-hours/{projectId}/additional": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AddAdditionalHours"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/project-hours/{projectId}/additional/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeAdditionalHours"];
+        post?: never;
+        delete: operations["DeleteAdditionalHours"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2135,6 +2215,29 @@ export interface components {
          * @enum {unknown}
          */
         AcceptanceStatus: "Pending" | "Signed" | "Refused";
+        AdditionalHoursCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description Additional hours as the Administrator fills them in. */
+        AdditionalHoursRequest: {
+            /** Format: date */
+            day: null | string;
+            /** Format: double */
+            hours: null | number;
+            reason: null | string;
+        };
+        /** @description Additional hours: the day, the hours, the reason and who registered them, by the current name. */
+        AdditionalHoursResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            day: string;
+            /** Format: double */
+            hours: number;
+            reason: string;
+            createdBy: components["schemas"]["TimeEntryPersonResponse"];
+        };
         /** @description A new local holiday: the name, the date and whether it repeats every year. */
         AddLocalHolidayRequest: {
             name: null | string;
@@ -2302,6 +2405,11 @@ export interface components {
             isConsidered: boolean;
             calculatedHolidays: null | string[];
             localHolidays: null | string[];
+        };
+        /** @description The contracted hours of a project, or null to take them out. */
+        ContractedHoursRequest: {
+            /** Format: double */
+            hours: null | number;
         };
         CredentialCreatedResponse: {
             /** Format: uuid */
@@ -2527,6 +2635,30 @@ export interface components {
             auditRetentionYears: number;
             projectsFolder: string;
         };
+        /**
+         * @description The balance of the hours of a project (ADR-0128): the contracted hours (null without them), the sum of the additional
+         *     ones, the logged ones, the total, the balance (negative when over), the share used in whole percentage and the state.
+         */
+        HoursBalanceResponse: {
+            /** Format: double */
+            contracted: null | number;
+            /** Format: double */
+            additional: number;
+            /** Format: double */
+            logged: number;
+            /** Format: double */
+            total: null | number;
+            /** Format: double */
+            balance: null | number;
+            /** Format: int32 */
+            consumption: null | number;
+            state: components["schemas"]["HoursBalanceState"];
+        };
+        /**
+         * @description The state of the balance of a project (ADR-0128), shown by icon, color and text (ADR-0065).
+         * @enum {unknown}
+         */
+        HoursBalanceState: "Over" | "NearLimit" | "Within" | "NoContract";
         HttpValidationProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -3029,6 +3161,18 @@ export interface components {
             email: null | string;
         };
         /**
+         * @description The hours a person logged in the project, the share of them, in whole percentage, and the current role in the
+         *     project; null when the person left it.
+         */
+        PersonHoursResponse: {
+            person: components["schemas"]["TimeEntryPersonResponse"];
+            role: null | components["schemas"]["ProjectMemberRole"];
+            /** Format: double */
+            hours: number;
+            /** Format: int32 */
+            share: number;
+        };
+        /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
          *     active Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a
@@ -3067,6 +3211,11 @@ export interface components {
             signInMethods: string[];
             receivesDailySummary: boolean;
         };
+        /**
+         * @description The status of a project (ADR-0016), as the other modules see it, with the names of the module's own.
+         * @enum {unknown}
+         */
+        ProjectCardStatus: "Planning" | "InProgress" | "Paused" | "Completed" | "Cancelled";
         /** @description The client of a project, with the address of its current logo (null without one). */
         ProjectClientResponse: {
             /** Format: uuid */
@@ -3145,6 +3294,32 @@ export interface components {
             hasFiles: boolean;
             canChange: boolean;
         };
+        /**
+         * @description The hours of a project: the project with the balance, the first day with hours logged (null when none), the
+         *     additional hours, the newest day first, and the hours of each person, the most first.
+         */
+        ProjectHoursDetailResponse: {
+            project: components["schemas"]["ProjectHoursResponse"];
+            /** Format: date */
+            firstDay: null | string;
+            additional: components["schemas"]["AdditionalHoursResponse"][];
+            people: components["schemas"]["PersonHoursResponse"][];
+        };
+        /** @description A project in the hours of the projects: the code, the name, the status, the client (null when internal) and the balance. */
+        ProjectHoursResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            status: components["schemas"]["ProjectCardStatus"];
+            clientName: null | string;
+            balance: components["schemas"]["HoursBalanceResponse"];
+        };
+        /**
+         * @description Which projects the list of the hours shows.
+         * @enum {unknown}
+         */
+        ProjectHoursView: "Open" | "Closed" | "All";
         /** @description One project of the list; without a client, it is an internal project; without tasks and milestones, no schedule. */
         ProjectListItemResponse: {
             /** Format: uuid */
@@ -3178,6 +3353,8 @@ export interface components {
             canBeManager: boolean;
             canBeTechLead: boolean;
         };
+        /** @enum {unknown} */
+        ProjectMemberRole: "Manager" | "TechLead" | "Contributor" | "Developer" | "Viewer" | null;
         ProjectMemberRoleRequest: {
             role: components["schemas"]["ProjectRole"];
         };
@@ -3987,6 +4164,12 @@ export interface components {
             /** Format: double */
             total: number;
         };
+        /** @description Who logged a time entry, by the current name. */
+        TimeEntryPersonResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         /** @description A project as a time entry shows it: its code and name. */
         TimeEntryProjectResponse: {
             /** Format: uuid */
@@ -4008,7 +4191,10 @@ export interface components {
             /** Format: uuid */
             ticketId: null | string;
         };
-        /** @description A time entry: the day, the hours, what was done, the project, the task or the ticket, and whether the person may change it. */
+        /**
+         * @description A time entry: the day, the hours, what was done, who logged it, the project, the task or the ticket, and whether the
+         *     person of the session may change it.
+         */
         TimeEntryResponse: {
             /** Format: uuid */
             id: string;
@@ -4017,6 +4203,7 @@ export interface components {
             /** Format: double */
             hours: number;
             description: string;
+            person: components["schemas"]["TimeEntryPersonResponse"];
             project: components["schemas"]["TimeEntryProjectResponse"];
             task: null | components["schemas"]["TimeEntryTaskResponse"];
             ticket: null | components["schemas"]["TimeEntryTicketResponse"];
@@ -11898,6 +12085,7 @@ export interface operations {
                 from: string;
                 to: string;
                 personId?: string;
+                projectId?: string;
             };
             header?: never;
             path?: never;
@@ -11934,6 +12122,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12204,6 +12401,319 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
+            };
+        };
+    };
+    ListProjectHours: {
+        parameters: {
+            query?: {
+                /** @description Open (the default: planning, in progress or paused), Closed (completed or cancelled) or All. */
+                view?: components["schemas"]["ProjectHoursView"];
+                /** @description Part of the code or of the name, without telling case or accents apart. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHoursResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetProjectHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectHoursDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChangeContractedHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractedHoursRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddAdditionalHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdditionalHoursRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdditionalHoursCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChangeAdditionalHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdditionalHoursRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteAdditionalHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
