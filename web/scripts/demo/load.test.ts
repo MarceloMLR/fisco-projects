@@ -940,6 +940,24 @@ describe('Horas na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Saldo na demonstração" (ADR-0128).
+describe('Saldo na demonstração', () => {
+  it('Saldo na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The Administrator registers the contracted and the additional hours of the plan.
+    const contracted = demoProjects.filter((project) => project.contractedHours !== undefined);
+    const additional = demoProjects.flatMap((project) => project.additionalHours ?? []);
+    expect(callsBy(/ PUT \/api\/admin\/project-hours\/[^/]+\/contracted$/)).toHaveLength(
+      contracted.length,
+    );
+    expect(callsBy(/ POST \/api\/admin\/project-hours\/[^/]+\/additional$/)).toHaveLength(
+      additional.length,
+    );
+    expect(people(/ \/api\/admin\/project-hours\//)).toEqual(['paulo']);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Termos na demonstração".
 describe('Termos na demonstração', () => {
   it('Termos na demonstração', async () => {

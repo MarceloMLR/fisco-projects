@@ -287,6 +287,14 @@ export interface DemoTimeEntry {
   ticket?: string;
 }
 
+/** Hours added to a project for a request out of the scope, registered by the Administrator (ADR-0128). */
+export interface DemoAdditionalHours {
+  /** Working days (Monday to Friday) before today. */
+  daysAgo: number;
+  hours: number;
+  reason: string;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -319,6 +327,10 @@ export interface DemoProject {
   acceptances?: readonly DemoAcceptance[];
   /** The hours logged by the people of the project, before it gets its status (ADR-0128). */
   hours?: readonly DemoTimeEntry[];
+  /** The hours sold with the project, registered by the Administrator; none leaves it without a balance (ADR-0128). */
+  contractedHours?: number;
+  /** The hours added for requests out of the scope, registered by the Administrator (ADR-0128). */
+  additionalHours?: readonly DemoAdditionalHours[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -358,6 +370,15 @@ export const demoProjects: readonly DemoProject[] = [
     ],
     status: 'InProgress',
     // Hours of the people of the project in the last two weeks (ADR-0128).
+    // Past the hours: 68,5 logged of 56 contracted and 8 additional (ADR-0128).
+    contractedHours: 56,
+    additionalHours: [
+      {
+        daysAgo: 6,
+        hours: 8,
+        reason: 'Relatório de comissões, fora do escopo inicial, pedido pelo cliente',
+      },
+    ],
     hours: [
       {
         by: 'marina',
@@ -1016,6 +1037,8 @@ export const demoProjects: readonly DemoProject[] = [
     client: 'Gama Têxtil',
     status: 'InProgress',
     // Hours of the people of the project in the last two weeks (ADR-0128).
+    // Near the limit: 15 logged of 16 contracted.
+    contractedHours: 16,
     hours: [
       { by: 'marina', daysAgo: 0, hours: 1.5, description: 'Planejamento da entrega de outubro' },
       {
@@ -1182,6 +1205,8 @@ export const demoProjects: readonly DemoProject[] = [
     name: 'Implantação do WMS',
     client: 'Alfa Distribuidora',
     status: 'Completed',
+    // A closed project within its hours, in the view Encerrados.
+    contractedHours: 80,
     members: [
       ['carla', 'Contributor'],
       ['diego', 'Developer'],
@@ -1241,6 +1266,11 @@ export const demoProjects: readonly DemoProject[] = [
     ],
     status: 'InProgress',
     // Hours of the people of the project in the last two weeks (ADR-0128).
+    // Within: 10 logged of 120 contracted and 16 additional.
+    contractedHours: 120,
+    additionalHours: [
+      { daysAgo: 3, hours: 16, reason: 'Integração com a transportadora parceira, fora do escopo' },
+    ],
     hours: [
       {
         by: 'carla',
