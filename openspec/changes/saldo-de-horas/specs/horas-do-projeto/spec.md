@@ -118,11 +118,15 @@ A Administração MUST ter a seção Acompanhamento, a primeira da coluna, com H
 
 ### Requirement: Detalhe das horas pela tela
 
-Escolher um projeto em Horas dos projetos MUST abrir o detalhe numa gaveta (ADR-0081): os quatro números com "Alterar" nas contratadas, a barra do consumo, as horas adicionais com "Incluir horas adicionais" e o "⋮" de corrigir e apagar, e "Por pessoa" com "Ver apontamentos", que abre os apontamentos do projeto por mês, com o "⋮" de corrigir e apagar.
+Escolher um projeto em Horas dos projetos MUST abrir o detalhe numa gaveta (ADR-0081): os quatro números com "Alterar" nas contratadas, a barra do consumo, as três horas adicionais mais recentes, com "Incluir horas adicionais", o "⋮" de corrigir e apagar e "Ver todas", que abre todas num diálogo, dez por página, e "Por pessoa" com "Ver apontamentos", que abre os apontamentos do projeto por mês, com o "⋮" de corrigir e apagar.
 
 #### Scenario: Incluir horas adicionais pela tela
 - **WHEN** o administrador abre o detalhe, escolhe "Incluir horas adicionais", preenche o dia, 12 horas e o motivo e confirma
 - **THEN** a adicional aparece na lista do detalhe, os números do projeto mudam, e a tela confirma a inclusão
+
+#### Scenario: Muitas horas adicionais pela tela
+- **WHEN** o administrador abre o detalhe de um projeto com 23 horas adicionais e escolhe "Ver todas"
+- **THEN** a gaveta mostra só as três mais recentes, e o diálogo mostra as 23, dez por página, com o "⋮" de corrigir e apagar
 
 #### Scenario: Alterar as horas contratadas pela tela
 - **WHEN** o administrador escolhe "Alterar", informa 420 e salva
