@@ -30,4 +30,4 @@
 ## 6. Documentação e verificação
 
 - [x] 6.1 `CLAUDE.md`, glossário e roadmap
-- [ ] 6.2 Build sem avisos, testes, formatação, lint, specs e `infra.sh`
+- [x] 6.2 Build sem avisos, testes, formatação, lint, specs e `infra.sh`

@@ -24,8 +24,10 @@ internal sealed partial class SignatureCheck(
         base.Dispose();
     }
 
+    // An array, not the span of params: the inline array the compiler makes for it has no namespace for the tests of
+    // the architecture.
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
-        Task.WhenAll(PeriodicAsync(stoppingToken), NoticesAsync(stoppingToken));
+        Task.WhenAll(new Task[] { PeriodicAsync(stoppingToken), NoticesAsync(stoppingToken) });
 
     /// <summary>One round: how many requests changed.</summary>
     internal async Task<int> RunAsync(CancellationToken cancellationToken)
