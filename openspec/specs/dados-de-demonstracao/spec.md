@@ -193,3 +193,11 @@ Um Codespace criado do repositório MUST se preparar sozinho, com o SDK do .NET 
 #### Scenario: Versões do Codespace
 - **WHEN** a versão do SDK do .NET, a do Node ou a porta da API mudam
 - **THEN** o Codespace usa as mesmas do `global.json`, do `.nvmrc` e do `launchSettings.json`, e a verificação reprova a configuração que ficar diferente
+
+### Requirement: Horas na demonstração
+
+A carga de demonstração MUST incluir horas apontadas nas duas últimas semanas, cada apontamento pela pessoa que o fez, em mais de um projeto, com apontamentos só no projeto, em tarefas e em chamados, sem passar de 24 horas por pessoa num dia (ADR-0089, ADR-0128).
+
+#### Scenario: Horas na demonstração
+- **WHEN** o comando carrega os dados de demonstração e a gerente do projeto principal abre Minhas horas
+- **THEN** a semana atual e a anterior mostram horas dela no projeto principal e em outro projeto, com tarefas e chamados
