@@ -192,3 +192,4 @@ Regras:
 | [0127](0127-instalacao-a-partir-do-pacote-da-versao.md) | Instalação na nuvem do cliente a partir do pacote da versão | aceita | 2026-10-29 |
 | [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita | 2026-10-29 |
 | [0129](0129-assinatura-eletronica-dos-termos.md) | Termos de aceite assinados por um provedor de assinatura eletrônica trocável, só da gestão | aceita | 2026-10-30 |
+| [0130](0130-assinatura-pela-autentique-na-pratica.md) | Como os termos são assinados pela Autentique | aceita | 2026-10-30 |
