@@ -57,7 +57,7 @@ Alternativa descartada: aplicar o conteúdo do aviso do provedor direto. O aviso
 
 ### Provedor local
 
-O `LocalSignatureProvider` guarda cada documento numa pasta (`Signature:Local:Folder`, `App_Data/signatures`, fora do Git), como os e-mails locais: o PDF e um JSON com os signatários, a situação e um código aleatório de cada um (32 bytes, base64url). A página `/sign/:token` (fora da estrutura das telas, sem sessão) mostra o título, o nome do signatário, o termo e "Assinar" e "Recusar" com o motivo, pelas rotas `GET /api/local-signatures/{token}`, `GET .../document`, `POST .../sign` e `POST .../refuse`, sem sessão e registradas só com o provedor local. O PDF "assinado" é o próprio termo. A aplicação não sobe em produção com o provedor local (como o `EmailOptionsValidation`).
+O `LocalSignatureProvider` guarda cada documento numa pasta (`Signature:Local:Folder`, `App_Data/signatures`, fora do Git), como os e-mails locais: o PDF e um JSON com os signatários, a situação e um código aleatório de cada um (32 bytes, base64url). A página `/sign/:token` (fora da estrutura das telas, sem sessão) mostra o título, o nome do signatário, o termo e "Assinar" e "Recusar" com o motivo, pelas rotas `GET /api/local-signatures/{token}`, `GET .../document`, `POST .../sign` e `POST .../refuse`, sem sessão; sem o provedor local, elas respondem 404 (ficam no contrato da API, que é gerado sem ele). O PDF "assinado" é o próprio termo. A aplicação não sobe em produção com o provedor local (como o `EmailOptionsValidation`).
 
 O provedor local não manda e-mail: a gaveta mostra o link de cada signatário pendente (`signingLink`, só com o provedor local), para a demonstração e os testes. O provedor de verdade manda o e-mail ele mesmo.
 
@@ -85,7 +85,7 @@ O `DocumentProjectDeletion` cancela no provedor os documentos dos pedidos aberto
 
 ### Telas
 
-- `AcceptanceDialog`: "Pedir assinatura" com o marco, o título, a mensagem, o PDF e os signatários em linhas de nome e e-mail (React Hook Form com `useFieldArray`, de 1 a 10, "Incluir signatário" e o botão de tirar), e "Anexar termo assinado" sem a pessoa. Sem provedor (`GET /api/client-settings` diz se há), a aba mostra só "Anexar termo assinado".
+- `AcceptanceDialog`: "Pedir assinatura" com o marco, o título, a mensagem, o PDF e os signatários em linhas de nome e e-mail (React Hook Form com `useFieldArray`, de 1 a 10, "Incluir signatário" e o botão de tirar), e "Anexar termo assinado" sem a pessoa. Sem provedor (a lista diz pelo `canRequest`), a aba mostra só "Anexar termo assinado".
 - A lista troca "Para" por "Signatários" ("2 de 3 assinaram", com os nomes na linha de baixo), e a aba aparece só para a gestão.
 - A gaveta (`AcceptanceDrawer`) ganha a seção Signatários, cada um com a situação por ícone, cor e texto, o e-mail enquanto o pedido está aberto e, com o provedor local, o link "Abrir assinatura"; sai a resposta da pessoa.
 - `LocalSigningPage` (`/sign/:token`), fora da estrutura, sempre clara, como a página de impressão.
@@ -100,7 +100,7 @@ O plano troca a pessoa do pedido por signatários fictícios do cliente (`@clien
 - [Os termos passam a depender de um serviço externo] → O contrato isola o provedor; sem provedor, a gestão anexa o termo recebido por fora, como hoje.
 - [A conferência em segundo plano faz chamadas ao provedor] → Só os pedidos abertos de projetos em aberto, a cada 15 minutos; o aviso do provedor (Assinatura-2) deixa a conferência só de garantia.
 - [Duas vias aplicando a mesma assinatura] → Cada mudança só acontece a partir de Pendente, com o token de concorrência no termo.
-- [Rotas sem sessão do provedor local] → Só registradas com o provedor local, que não sobe em produção; cada link vale para um signatário e um pedido aberto.
+- [Rotas sem sessão do provedor local] → Respondem 404 sem o provedor local, que não sobe em produção; cada link vale para um signatário e um pedido aberto.
 - [A pessoa do projeto perde o termo que via] → Decisão de Marcelo (ADR-0129); os termos anteriores continuam na pasta de termos, para a gestão.
 
 ## Migration Plan
