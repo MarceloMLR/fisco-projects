@@ -24,7 +24,11 @@ const longDay = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 });
 const shortMonth = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
-const longMonth = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const longMonth = new Intl.DateTimeFormat('pt-BR', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
