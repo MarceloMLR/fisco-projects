@@ -1,4 +1,3 @@
-using FiscoProjects.Documents.Contracts;
 using FiscoProjects.Documents.Domain;
 using FiscoProjects.Files.Contracts;
 using FiscoProjects.Notifications.Contracts;
@@ -13,22 +12,25 @@ public sealed class AcceptanceChangedException(Exception inner) : InvalidOperati
 /// <summary>Where the acceptance terms are kept, with the documents of the module, saved together.</summary>
 public interface IAcceptanceStore
 {
-    /// <summary>The terms of the project, of one person or of all, newest first, without the history.</summary>
-    Task<IReadOnlyList<AcceptanceTerm>> ListAsync(Guid projectId, Guid? recipientId, CancellationToken cancellationToken);
+    /// <summary>The terms of the project, newest first, with the signers and without the history.</summary>
+    Task<IReadOnlyList<AcceptanceTerm>> ListAsync(Guid projectId, CancellationToken cancellationToken);
 
-    /// <summary>The term of the project, tracked, with its history when asked.</summary>
+    /// <summary>The term of the project, tracked, with the signers and, when asked, the history.</summary>
     Task<AcceptanceTerm?> FindAsync(Guid projectId, Guid id, bool withEvents, CancellationToken cancellationToken);
 
-    /// <summary>The documents of the signed terms of the person in the project, which the person sees in the folder of the terms.</summary>
-    Task<IReadOnlySet<Guid>> SignedDocumentsOfAsync(Guid projectId, Guid recipientId, CancellationToken cancellationToken);
+    /// <summary>The term, of any project, tracked, with the signers.</summary>
+    Task<AcceptanceTerm?> FindAsync(Guid id, CancellationToken cancellationToken);
+
+    /// <summary>The term of a document at the provider.</summary>
+    Task<Guid?> TermOfDocumentAsync(string provider, string documentId, CancellationToken cancellationToken);
+
+    /// <summary>The requests at the provider waiting for the signatures, of every project, oldest first.</summary>
+    Task<IReadOnlyList<(Guid Id, Guid ProjectId)>> OpenRequestsAsync(string provider, CancellationToken cancellationToken);
 
     /// <summary>How many requests of the project wait for the answer.</summary>
     Task<int> PendingCountAsync(Guid projectId, CancellationToken cancellationToken);
 
-    /// <summary>Every request waiting for the answer, oldest first, for the daily summary.</summary>
-    Task<IReadOnlyList<AcceptanceTerm>> PendingAsync(CancellationToken cancellationToken);
-
-    /// <summary>The requests waiting for the answer for the person or made by the person, oldest first, for Meu trabalho.</summary>
+    /// <summary>The requests waiting for the answer made by the person, oldest first, with the signers, for Meu trabalho.</summary>
     Task<IReadOnlyList<AcceptanceTerm>> PendingOfAsync(Guid userId, CancellationToken cancellationToken);
 
     /// <summary>The milestones of the projects with a request waiting for the answer.</summary>
@@ -51,6 +53,12 @@ public enum AcceptanceOutcome
     Invalid = 5,
     Refused = 6,
     Answered = 7,
+
+    /// <summary>The installation has no provider of signatures, or the request is not at it (ADR-0129); 409.</summary>
+    NoProvider = 8,
+
+    /// <summary>The provider of signatures failed or refused; nothing was saved; 502.</summary>
+    ProviderFailed = 9,
 }
 
 /// <summary>Why the file of a term is refused: empty, larger than the documents take, or not a PDF (ADR-0035).</summary>
@@ -89,21 +97,36 @@ public sealed class AcceptanceAreas(IProjectAccess projects)
             ? new AcceptanceArea(project, AcceptanceAccess.Manages(viewer, project))
             : null;
     }
+
+    /// <summary>The area of who manages the terms, or the refusal: 404 out of the project, 403 for the others (ADR-0129).</summary>
+    public async Task<(AcceptanceOutcome Outcome, AcceptanceArea? Area)> OfManagerAsync(
+        Guid projectId, DocumentViewer viewer, CancellationToken cancellationToken)
+    {
+        if (await OfAsync(projectId, viewer, cancellationToken) is not { } area)
+        {
+            return (AcceptanceOutcome.NotFound, null);
+        }
+
+        return area.Manages ? (AcceptanceOutcome.Done, area) : (AcceptanceOutcome.Forbidden, null);
+    }
 }
 
 /// <summary>A term as the screens show it: the milestone by its current name and day, and the names of the people.</summary>
 public sealed record AcceptanceView(
     AcceptanceTerm Term,
     ScheduleItemInfo? Milestone,
-    string Recipient,
+    string? Recipient,
     string RequestedBy,
     string? AnsweredBy);
 
-/// <summary>How many terms of each status the person sees.</summary>
+/// <summary>How many terms of each status the project has.</summary>
 public sealed record AcceptanceCounts(int All, int Pending, int Signed, int Refused);
 
-/// <summary>The terms the person sees, the counts, whether the person manages them and whether the project is closed.</summary>
-public sealed record AcceptanceList(IReadOnlyList<AcceptanceView> Items, AcceptanceCounts Counts, bool CanManage, bool IsClosed);
+/// <summary>
+/// The terms of the project, the counts, whether a signature can be asked for now (a provider and the project open) and
+/// whether a signed term can be attached (the project open).
+/// </summary>
+public sealed record AcceptanceList(IReadOnlyList<AcceptanceView> Items, AcceptanceCounts Counts, bool CanRequest, bool CanAttach);
 
 /// <summary>Reads the names the terms show, in one call to each source.</summary>
 public sealed class AcceptanceViews(IUserDirectory users, IScheduleItems schedule)
@@ -118,7 +141,7 @@ public sealed class AcceptanceViews(IUserDirectory users, IScheduleItems schedul
             return ([], new Dictionary<Guid, string>());
         }
 
-        var people = terms.SelectMany(term => new[] { term.RecipientId, term.RequestedById, term.AnsweredById ?? Guid.Empty })
+        var people = terms.SelectMany(term => new[] { term.RecipientId ?? Guid.Empty, term.RequestedById, term.AnsweredById ?? Guid.Empty })
             .Concat(morePeople)
             .Where(id => id != Guid.Empty)
             .ToHashSet();
@@ -131,7 +154,7 @@ public sealed class AcceptanceViews(IUserDirectory users, IScheduleItems schedul
             .. terms.Select(term => new AcceptanceView(
                 term,
                 milestones.GetValueOrDefault(term.MilestoneId),
-                names.GetValueOrDefault(term.RecipientId, string.Empty),
+                term.RecipientId is { } recipient ? names.GetValueOrDefault(recipient, string.Empty) : null,
                 names.GetValueOrDefault(term.RequestedById, string.Empty),
                 term.AnsweredById is { } answered ? names.GetValueOrDefault(answered, string.Empty) : null)),
         ];
@@ -140,77 +163,116 @@ public sealed class AcceptanceViews(IUserDirectory users, IScheduleItems schedul
 }
 
 /// <summary>
-/// The terms of a project (ADR-0035, ADR-0045): every term for the Administrator and the manager, only the own ones for
-/// the others, newest first, and of one status when asked; the counts are of all the terms the person sees.
+/// The terms of a project (ADR-0129), only for the Administrator and the manager, newest first, and of one status when
+/// asked; the counts are of all the terms.
 /// </summary>
-public sealed class ListAcceptances(AcceptanceAreas areas, IAcceptanceStore acceptances, AcceptanceViews views)
+public sealed class ListAcceptances(AcceptanceAreas areas, IAcceptanceStore acceptances, AcceptanceViews views, SignatureProviders providers)
 {
-    public async Task<AcceptanceList?> ExecuteAsync(
+    public async Task<(AcceptanceOutcome Outcome, AcceptanceList? List)> ExecuteAsync(
         Guid projectId, AcceptanceStatus? status, DocumentViewer viewer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(viewer);
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area)
+        var (outcome, area) = await areas.OfManagerAsync(projectId, viewer, cancellationToken);
+        if (area is null)
         {
-            return null;
+            return (outcome, null);
         }
 
-        var all = await acceptances.ListAsync(projectId, area.Manages ? null : viewer.UserId, cancellationToken);
+        var all = await acceptances.ListAsync(projectId, cancellationToken);
         var chosen = all.Where(term => status is null || term.Status == status).ToList();
         var counts = new AcceptanceCounts(
             all.Count,
             all.Count(term => term.Status == AcceptanceStatus.Pending),
             all.Count(term => term.Status == AcceptanceStatus.Signed),
             all.Count(term => term.Status == AcceptanceStatus.Refused));
-        return new((await views.OfAsync(projectId, chosen, [], cancellationToken)).Views, counts, area.Manages, area.Project.IsClosed);
+        var open = !area.Project.IsClosed;
+        return (AcceptanceOutcome.Done, new(
+            (await views.OfAsync(projectId, chosen, [], cancellationToken)).Views,
+            counts,
+            CanRequest: open && providers.Current is not null,
+            CanAttach: open));
     }
 }
 
-/// <summary>An event of the history with the name of who did it.</summary>
+/// <summary>An event of the history with the name of who did it: the person in the system, or the signer.</summary>
 public sealed record AcceptanceEventView(AcceptanceEvent Event, string Actor);
 
-/// <summary>A term with its history, the signed document and what the person may do with it.</summary>
-public sealed record AcceptanceDetails(
-    AcceptanceView View, IReadOnlyList<AcceptanceEventView> Events, Document? Signed, AcceptanceActions Actions);
+/// <summary>A signer as the drawer shows it, with the link to sign while pending, from a provider that gives it.</summary>
+public sealed record AcceptanceSignerView(AcceptanceSigner Signer, string? SigningLink);
 
-/// <summary>A term the person sees, with its history (ADR-0095).</summary>
-public sealed class GetAcceptance(AcceptanceAreas areas, IAcceptanceStore acceptances, IDocumentStore documents, AcceptanceViews views)
+/// <summary>A term with the signers, its history, the signed document and what the person may do with it.</summary>
+public sealed record AcceptanceDetails(
+    AcceptanceView View,
+    IReadOnlyList<AcceptanceSignerView> Signers,
+    IReadOnlyList<AcceptanceEventView> Events,
+    Document? Signed,
+    AcceptanceActions Actions);
+
+/// <summary>A term of the project with its signers and history, for who manages the terms (ADR-0129).</summary>
+public sealed class GetAcceptance(
+    AcceptanceAreas areas, IAcceptanceStore acceptances, IDocumentStore documents, AcceptanceViews views, SignatureProviders providers)
 {
-    public async Task<AcceptanceDetails?> ExecuteAsync(
+    public async Task<(AcceptanceOutcome Outcome, AcceptanceDetails? Details)> ExecuteAsync(
         Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
-            || await acceptances.FindAsync(projectId, termId, withEvents: true, cancellationToken) is not { } term
-            || !AcceptanceAccess.Sees(viewer, area.Project, term))
+        var (outcome, area) = await areas.OfManagerAsync(projectId, viewer, cancellationToken);
+        if (area is null)
         {
-            return null;
+            return (outcome, null);
         }
 
-        var (found, names) = await views.OfAsync(projectId, [term], term.Events.Select(item => item.ActorId), cancellationToken);
+        if (await acceptances.FindAsync(projectId, termId, withEvents: true, cancellationToken) is not { } term)
+        {
+            return (AcceptanceOutcome.NotFound, null);
+        }
+
+        var (found, names) = await views.OfAsync(
+            projectId, [term], term.Events.Where(item => item.ActorId is not null).Select(item => item.ActorId!.Value), cancellationToken);
         var signed = term.DocumentId is { } documentId
             ? await documents.FindAsync(projectId, documentId, withVersions: false, cancellationToken)
             : null;
-        // At the same moment, the request comes before the reminders, and the answer last.
+        var provider = providers.Of(term);
+        var signers = new List<AcceptanceSignerView>();
+        foreach (var signer in term.Signers.OrderBy(item => item.Position))
+        {
+            var link = term.Status == AcceptanceStatus.Pending && signer.Status == AcceptanceSignerStatus.Pending && provider is ISigningLinks links
+                ? await links.LinkOfAsync(term.ProviderDocumentId!, signer.ProviderSignerId, cancellationToken)
+                : null;
+            signers.Add(new AcceptanceSignerView(signer, link));
+        }
+
+        var signerNames = term.Signers.ToDictionary(signer => signer.Id, signer => signer.Name);
+        // At the same moment, the request comes before the reminders and the signatures, and the answer last.
         var events = term.Events.OrderBy(item => item.At).ThenBy(item => item.Kind)
-            .Select(item => new AcceptanceEventView(item, names.GetValueOrDefault(item.ActorId, string.Empty)))
+            .Select(item => new AcceptanceEventView(
+                item,
+                item.ActorId is { } actor
+                    ? names.GetValueOrDefault(actor, string.Empty)
+                    : item.SignerId is { } signerId ? signerNames.GetValueOrDefault(signerId, string.Empty) : string.Empty))
             .ToList();
-        return new(found[0], events, signed, AcceptanceAccess.ActionsOf(viewer, area.Project, term));
+        return (AcceptanceOutcome.Done, new(found[0], signers, events, signed, AcceptanceAccess.ActionsOf(viewer, area.Project, term, provider is not null)));
     }
 }
 
-/// <summary>The term to sign of a request, for the person of the request and who manages the terms.</summary>
+/// <summary>The term to sign of a request, for who manages the terms.</summary>
 public sealed class OpenAcceptanceFile(AcceptanceAreas areas, IAcceptanceStore acceptances, IFileStorage files)
 {
-    public async Task<OpenedDocument?> ExecuteAsync(Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
+    public async Task<(AcceptanceOutcome Outcome, OpenedDocument? File)> ExecuteAsync(
+        Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
-            || await acceptances.FindAsync(projectId, termId, withEvents: false, cancellationToken) is not { FileId: { } fileId } term
-            || !AcceptanceAccess.Sees(viewer, area.Project, term)
-            || await files.OpenAsync(fileId, null, cancellationToken) is not { } file)
+        var (outcome, area) = await areas.OfManagerAsync(projectId, viewer, cancellationToken);
+        if (area is null)
         {
-            return null;
+            return (outcome, null);
         }
 
-        return new(file, term.FileName ?? file.Name, FileTypes.ContentTypeOf(term.FileName ?? file.Name));
+        if (await acceptances.FindAsync(projectId, termId, withEvents: false, cancellationToken) is not { FileId: { } fileId } term
+            || await files.OpenAsync(fileId, null, cancellationToken) is not { } file)
+        {
+            return (AcceptanceOutcome.NotFound, null);
+        }
+
+        return (AcceptanceOutcome.Done, new(file, term.FileName ?? file.Name, FileTypes.ContentTypeOf(term.FileName ?? file.Name)));
     }
 }
 
@@ -220,14 +282,10 @@ public sealed class ListAcceptanceMilestones(AcceptanceAreas areas, IScheduleIte
     public async Task<(AcceptanceOutcome Outcome, IReadOnlyList<ScheduleItemInfo> Milestones)> ExecuteAsync(
         Guid projectId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area)
+        var (outcome, area) = await areas.OfManagerAsync(projectId, viewer, cancellationToken);
+        if (area is null)
         {
-            return (AcceptanceOutcome.NotFound, []);
-        }
-
-        if (!area.Manages)
-        {
-            return (AcceptanceOutcome.Forbidden, []);
+            return (outcome, []);
         }
 
         var items = await schedule.ItemsAsync(projectId, cancellationToken);
@@ -235,19 +293,19 @@ public sealed class ListAcceptanceMilestones(AcceptanceAreas areas, IScheduleIte
     }
 }
 
-/// <summary>What a request or a term attached without one says: the milestone, the person, the title and the message.</summary>
-public sealed record AcceptanceRequest(Guid? MilestoneId, Guid? RecipientId, string? Title, string? Message);
+/// <summary>What a request or a term attached without one says: the milestone, the title, the message and the signers.</summary>
+public sealed record AcceptanceRequest(
+    Guid? MilestoneId, string? Title, string? Message, IReadOnlyList<(string? Name, string? Email)>? Signers = null);
 
 /// <summary>
-/// The rules the requests and the signed terms share: the milestone and the person of the project, the PDF, the folder
-/// of the terms to sign, and the signed term kept as an approved document of the folder of the terms (ADR-0093).
+/// The rules the requests and the signed terms share: the milestone of the project, the PDF, the folder of the terms to
+/// sign, and the signed term kept as an approved document of the folder of the terms (ADR-0093).
 /// </summary>
 public sealed class AcceptanceFiles(
     ProjectFolders folders,
     IDocumentStore documents,
     IFileStorage files,
     IScheduleItems schedule,
-    IProjectAccess projects,
     DocumentSettings settings,
     IProjectStorage storage)
 {
@@ -255,8 +313,8 @@ public sealed class AcceptanceFiles(
     public const string RequestsFolder = "Pedidos de aceite";
 
     /// <summary>
-    /// The fields not valid of a request: a milestone of the schedule of the project, a person of the project, the
-    /// title and the message, and a file with a name; the form when all are valid.
+    /// The fields not valid of a request: a milestone of the schedule of the project, the title, the message and a file
+    /// with a name; the form when all are valid.
     /// </summary>
     public async Task<(AcceptanceForm? Form, ScheduleItemInfo? Milestone, string? FileName, IReadOnlyList<AcceptanceField> Invalid)> CheckAsync(
         ProjectAccess project, AcceptanceRequest request, DocumentFile? file, CancellationToken cancellationToken)
@@ -272,12 +330,6 @@ public sealed class AcceptanceFiles(
         if (milestone is null)
         {
             fields.Add(AcceptanceField.Milestone);
-        }
-
-        var members = await projects.MembersAsync([project.Id], cancellationToken);
-        if (request.RecipientId is not { } recipientId || !members.Any(member => member.UserId == recipientId))
-        {
-            fields.Add(AcceptanceField.Recipient);
         }
 
         var name = Document.NameOf(file?.Name);
@@ -316,7 +368,7 @@ public sealed class AcceptanceFiles(
 
     /// <summary>
     /// Keeps the signed term in the folder of the terms, beside a file with the same name, as an approved document linked
-    /// to the milestone, sent by the person (ADR-0093); the caller saves it with the term.
+    /// to the milestone, sent by <paramref name="userId"/> (ADR-0093); the caller saves it with the term.
     /// </summary>
     public async Task<(Document Document, StoredFile Stored)> KeepSignedAsync(
         ProjectAccess project, Guid milestoneId, string name, Stream content, Guid userId, DateTime now, CancellationToken cancellationToken)
@@ -334,30 +386,45 @@ public sealed class AcceptanceFiles(
 
     /// <summary>Removes a file kept for a change that was not saved, so nobody's file is left in the storage.</summary>
     public Task ForgetAsync(StoredFile stored) => files.DeleteFileAsync(stored.Id, CancellationToken.None);
+
+    /// <summary>The name of the milestone of a term in the schedule now; empty when it left the schedule.</summary>
+    public async Task<string> MilestoneNameAsync(AcceptanceTerm term, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(term);
+        return (await schedule.ItemsAsync(term.ProjectId, cancellationToken)).FirstOrDefault(item => item.Id == term.MilestoneId)?.Name
+            ?? string.Empty;
+    }
 }
 
 /// <summary>
-/// The Administrator or the manager asks for the acceptance of a milestone of the schedule (ADR-0035, ADR-0045): of a
-/// person of the project in any role, with the title, the message and the term to sign in PDF; the person hears about
-/// it by e-mail now (ADR-0037).
+/// The Administrator or the manager asks for the signature of the term of a milestone (ADR-0129): the title, the
+/// message, the term to sign in PDF and 1 to 10 signers by name and e-mail, inside or outside the company, at the
+/// provider of the installation, which sends them the link. Nothing is saved when the provider fails.
 /// </summary>
 public sealed class RequestAcceptance(
-    AcceptanceAreas areas, IAcceptanceStore acceptances, AcceptanceFiles rules, AcceptanceNotices notices, TimeProvider clock)
+    AcceptanceAreas areas, IAcceptanceStore acceptances, AcceptanceFiles rules, SignatureProviders providers, TimeProvider clock)
 {
     public async Task<AcceptanceResult> ExecuteAsync(
         Guid projectId, AcceptanceRequest request, DocumentFile? file, DocumentViewer viewer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(viewer);
+        ArgumentNullException.ThrowIfNull(request);
         var (refused, area) = await AcceptanceRefusals.OfManagerAsync(areas, projectId, viewer, cancellationToken);
         if (refused is not null)
         {
             return refused;
         }
 
-        var (form, milestone, name, invalid) = await rules.CheckAsync(area!.Project, request, file, cancellationToken);
-        if (invalid.Count > 0)
+        if (providers.Current is not { } provider)
         {
-            return AcceptanceResult.InvalidFields(invalid);
+            return AcceptanceResult.Of(AcceptanceOutcome.NoProvider);
+        }
+
+        var (form, milestone, name, invalid) = await rules.CheckAsync(area!.Project, request, file, cancellationToken);
+        var signers = AcceptanceSignerForm.Of(request.Signers ?? []);
+        if (invalid.Count > 0 || signers is null)
+        {
+            return AcceptanceResult.InvalidFields([.. invalid.Concat(signers is null ? [AcceptanceField.Signers] : []).Order()]);
         }
 
         var refusal = await rules.RefusalOfAsync(file!, cancellationToken);
@@ -367,12 +434,27 @@ public sealed class RequestAcceptance(
         }
 
         var stored = await rules.KeepToSignAsync(area.Project, name!, file!.Content, cancellationToken);
+        SentSignature sent;
+        try
+        {
+            file.Content.Position = 0;
+            sent = await provider.SendAsync(
+                new SignatureRequest(form!.Title, form.Message, stored.Name, file.Content, [.. signers.Select(signer => new SignatureSigner(signer.Name, signer.Email))]),
+                cancellationToken);
+        }
+        catch (SignatureProviderException)
+        {
+            await rules.ForgetAsync(stored);
+            return AcceptanceResult.Of(AcceptanceOutcome.ProviderFailed);
+        }
+
         var term = AcceptanceTerm.Request(
             projectId,
             milestone!.Id,
-            form!,
-            request.RecipientId!.Value,
+            form,
+            signers,
             new AcceptanceFile(stored.Id, stored.Name, stored.Size),
+            new AcceptanceDelivery(provider.Name, sent.DocumentId, sent.SignerIds),
             viewer.UserId,
             clock.GetUtcNow().UtcDateTime);
         acceptances.Add(term);
@@ -383,18 +465,18 @@ public sealed class RequestAcceptance(
         catch
         {
             await rules.ForgetAsync(stored);
+            await AcceptanceProviderCalls.TryAsync(() => provider.CancelAsync(sent.DocumentId, CancellationToken.None));
             throw;
         }
 
-        await notices.RequestedAsync(term, area.Project, milestone.Name, viewer.UserId, reminder: false, cancellationToken);
         return AcceptanceResult.Of(AcceptanceOutcome.Done, term.Id);
     }
 }
 
 /// <summary>
-/// The Administrator or the manager attaches a term signed outside the system without a request (ADR-0035, ADR-0095):
-/// the milestone, the title and the person of the project in whose name it is. The term is signed at once: the document
-/// in the folder of the terms and the milestone reached.
+/// The Administrator or the manager attaches a term signed outside the system without a request (ADR-0129): the
+/// milestone, the title and the PDF; who signed is in the PDF. The term is signed at once: the document in the folder
+/// of the terms and the milestone reached.
 /// </summary>
 public sealed class AttachAcceptance(
     AcceptanceAreas areas,
@@ -429,7 +511,7 @@ public sealed class AttachAcceptance(
 
         var now = clock.GetUtcNow().UtcDateTime;
         var (document, stored) = await rules.KeepSignedAsync(area.Project, milestone!.Id, name!, file!.Content, viewer.UserId, now, cancellationToken);
-        var term = AcceptanceTerm.Attach(projectId, milestone.Id, form!.Title, request.RecipientId!.Value, document.Id, viewer.UserId, now);
+        var term = AcceptanceTerm.Attach(projectId, milestone.Id, form!.Title, document.Id, viewer.UserId, now);
         acceptances.Add(term);
         try
         {
@@ -448,30 +530,25 @@ public sealed class AttachAcceptance(
 }
 
 /// <summary>
-/// The signed term of a pending request (ADR-0035, ADR-0095): sent by the person of the request, in any role, or attached
-/// by the Administrator or the manager in the name of the person. It becomes an approved document of the folder of the
-/// terms, linked to the milestone, and the milestone is reached; who asked and the manager hear about it.
+/// The Administrator or the manager attaches the signed term received outside the system to a pending request
+/// (ADR-0129): at the provider, or asked of a person before. It becomes an approved document of the folder of the terms,
+/// linked to the milestone, the milestone is reached and the document at the provider is cancelled; who asked and the
+/// manager hear about it.
 /// </summary>
-public sealed class SignAcceptance(
+public sealed class AttachSignedTerm(
     AcceptanceAreas areas,
     IAcceptanceStore acceptances,
     AcceptanceFiles rules,
     IScheduleMilestones milestones,
-    IScheduleItems schedule,
+    SignatureProviders providers,
     AcceptanceNotices notices,
     TimeProvider clock)
 {
-    /// <param name="projectId">The project.</param>
-    /// <param name="termId">The request.</param>
-    /// <param name="file">The signed PDF.</param>
-    /// <param name="onBehalf">Whether who manages the terms attaches it in the name of the person; otherwise the person sends it.</param>
-    /// <param name="viewer">Who does it.</param>
-    /// <param name="cancellationToken">Stops the work.</param>
     public async Task<AcceptanceResult> ExecuteAsync(
-        Guid projectId, Guid termId, DocumentFile? file, bool onBehalf, DocumentViewer viewer, CancellationToken cancellationToken)
+        Guid projectId, Guid termId, DocumentFile? file, DocumentViewer viewer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(viewer);
-        var (refusal, area, term) = await AcceptanceRefusals.OfAnswerAsync(areas, acceptances, projectId, termId, onBehalf, viewer, cancellationToken);
+        var (refusal, area, term) = await AcceptanceRefusals.OfManagedTermAsync(areas, acceptances, projectId, termId, viewer, cancellationToken);
         if (refusal is not null)
         {
             return refusal;
@@ -506,90 +583,25 @@ public sealed class SignAcceptance(
             throw;
         }
 
+        // The term is signed: the document left at the provider only closes, and a failure there changes nothing here.
+        if (providers.Of(term) is { } provider)
+        {
+            await AcceptanceProviderCalls.TryAsync(() => provider.CancelAsync(term.ProviderDocumentId!, CancellationToken.None));
+        }
+
         // A milestone removed from the schedule does not keep the term from being signed.
         await milestones.ReachAsync(projectId, term.MilestoneId, cancellationToken);
-        await notices.AnsweredAsync(term, area.Project, await MilestoneNameAsync(schedule, term, cancellationToken), viewer.UserId, cancellationToken);
-        return AcceptanceResult.Of(AcceptanceOutcome.Done, term.Id);
-    }
-
-    internal static async Task<string> MilestoneNameAsync(IScheduleItems schedule, AcceptanceTerm term, CancellationToken cancellationToken) =>
-        (await schedule.ItemsAsync(term.ProjectId, cancellationToken)).FirstOrDefault(item => item.Id == term.MilestoneId)?.Name ?? string.Empty;
-}
-
-/// <summary>
-/// The person of a pending request refuses it, with the reason (ADR-0035): the milestone stays open, and who asked and
-/// the manager hear about it.
-/// </summary>
-public sealed class RefuseAcceptance(
-    AcceptanceAreas areas, IAcceptanceStore acceptances, IScheduleItems schedule, AcceptanceNotices notices, TimeProvider clock)
-{
-    public async Task<AcceptanceResult> ExecuteAsync(
-        Guid projectId, Guid termId, string? reason, DocumentViewer viewer, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(viewer);
-        var (refusal, area, term) = await AcceptanceRefusals.OfAnswerAsync(areas, acceptances, projectId, termId, onBehalf: false, viewer, cancellationToken);
-        if (refusal is not null)
-        {
-            return refusal;
-        }
-
-        if (AcceptanceTerm.ReasonOf(reason) is not { } valid)
-        {
-            return AcceptanceResult.InvalidFields([AcceptanceField.Reason]);
-        }
-
-        term!.Refuse(valid, viewer.UserId, clock.GetUtcNow().UtcDateTime);
-        try
-        {
-            await acceptances.SaveChangesAsync(cancellationToken);
-        }
-        catch (AcceptanceChangedException)
-        {
-            return AcceptanceResult.Of(AcceptanceOutcome.Answered);
-        }
-
-        await notices.AnsweredAsync(term, area!.Project, await SignAcceptance.MilestoneNameAsync(schedule, term, cancellationToken), viewer.UserId, cancellationToken);
+        await notices.AnsweredAsync(term, area.Project, await rules.MilestoneNameAsync(term, cancellationToken), viewer.UserId, cancellationToken);
         return AcceptanceResult.Of(AcceptanceOutcome.Done, term.Id);
     }
 }
 
 /// <summary>
-/// The Administrator or the manager reminds the person of a pending request (ADR-0095): the e-mail of the request goes
-/// again, and the history keeps the reminder.
+/// The Administrator or the manager reminds the signers of a pending request (ADR-0129): the provider sends the link
+/// again to who did not sign, and the history keeps the reminder. A request asked of a person before has no reminder.
 /// </summary>
 public sealed class RemindAcceptance(
-    AcceptanceAreas areas, IAcceptanceStore acceptances, IScheduleItems schedule, AcceptanceNotices notices, TimeProvider clock)
-{
-    public async Task<AcceptanceResult> ExecuteAsync(Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(viewer);
-        var (refusal, area, term) = await AcceptanceRefusals.OfManagedTermAsync(areas, acceptances, projectId, termId, viewer, cancellationToken);
-        if (refusal is not null)
-        {
-            return refusal;
-        }
-
-        term!.Remind(viewer.UserId, clock.GetUtcNow().UtcDateTime);
-        try
-        {
-            await acceptances.SaveChangesAsync(cancellationToken);
-        }
-        catch (AcceptanceChangedException)
-        {
-            return AcceptanceResult.Of(AcceptanceOutcome.Answered);
-        }
-
-        var milestone = await SignAcceptance.MilestoneNameAsync(schedule, term, cancellationToken);
-        await notices.RequestedAsync(term, area!.Project, milestone, viewer.UserId, reminder: true, cancellationToken);
-        return AcceptanceResult.Of(AcceptanceOutcome.Done, term.Id);
-    }
-}
-
-/// <summary>
-/// The Administrator or the manager cancels a pending request (ADR-0095): it leaves the list with its history and the
-/// term to sign, and stays only in the audit.
-/// </summary>
-public sealed class CancelAcceptance(AcceptanceAreas areas, IAcceptanceStore acceptances, IFileStorage files)
+    AcceptanceAreas areas, IAcceptanceStore acceptances, SignatureProviders providers, TimeProvider clock)
 {
     public async Task<AcceptanceResult> ExecuteAsync(Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
@@ -598,6 +610,62 @@ public sealed class CancelAcceptance(AcceptanceAreas areas, IAcceptanceStore acc
         if (refusal is not null)
         {
             return refusal;
+        }
+
+        if (providers.Of(term!) is not { } provider)
+        {
+            return AcceptanceResult.Of(AcceptanceOutcome.NoProvider);
+        }
+
+        try
+        {
+            await provider.RemindAsync(term!.ProviderDocumentId!, cancellationToken);
+        }
+        catch (SignatureProviderException)
+        {
+            return AcceptanceResult.Of(AcceptanceOutcome.ProviderFailed);
+        }
+
+        term.Remind(viewer.UserId, clock.GetUtcNow().UtcDateTime);
+        try
+        {
+            await acceptances.SaveChangesAsync(cancellationToken);
+        }
+        catch (AcceptanceChangedException)
+        {
+            return AcceptanceResult.Of(AcceptanceOutcome.Answered);
+        }
+
+        return AcceptanceResult.Of(AcceptanceOutcome.Done, term.Id);
+    }
+}
+
+/// <summary>
+/// The Administrator or the manager cancels a pending request (ADR-0095, ADR-0129): the document is cancelled at the
+/// provider first, and the request leaves the list with its signers, its history and the term to sign, staying only in
+/// the audit.
+/// </summary>
+public sealed class CancelAcceptance(AcceptanceAreas areas, IAcceptanceStore acceptances, SignatureProviders providers, IFileStorage files)
+{
+    public async Task<AcceptanceResult> ExecuteAsync(Guid projectId, Guid termId, DocumentViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var (refusal, _, term) = await AcceptanceRefusals.OfManagedTermAsync(areas, acceptances, projectId, termId, viewer, cancellationToken);
+        if (refusal is not null)
+        {
+            return refusal;
+        }
+
+        if (providers.Of(term!) is { } provider)
+        {
+            try
+            {
+                await provider.CancelAsync(term!.ProviderDocumentId!, cancellationToken);
+            }
+            catch (SignatureProviderException)
+            {
+                return AcceptanceResult.Of(AcceptanceOutcome.ProviderFailed);
+            }
         }
 
         acceptances.Remove(term!);
@@ -619,6 +687,203 @@ public sealed class CancelAcceptance(AcceptanceAreas areas, IAcceptanceStore acc
     }
 }
 
+/// <summary>
+/// Applies what the provider tells of a request at it (ADR-0129), the same for the check in the background, the local
+/// page and the notice of the provider: each signer who signed or refused, once; a refusal refuses the term and closes
+/// the document at the provider; with every signer signed, the signed PDF of the provider becomes an approved document
+/// of the folder of the terms, the milestone is reached, and who asked and the manager hear about it. A failure of the
+/// provider leaves the request as it was, for the next check; a change saved at the same time by another way wins.
+/// </summary>
+public sealed class ApplySignatureStatus(
+    IAcceptanceStore acceptances,
+    SignatureProviders providers,
+    AcceptanceFiles rules,
+    IProjectAccess projects,
+    IScheduleMilestones milestones,
+    AcceptanceNotices notices,
+    TimeProvider clock)
+{
+    /// <summary>Whether anything changed in the request.</summary>
+    public async Task<bool> ExecuteAsync(Guid termId, CancellationToken cancellationToken)
+    {
+        if (await acceptances.FindAsync(termId, cancellationToken) is not { Status: AcceptanceStatus.Pending } term
+            || providers.Of(term) is not { } provider
+            || await projects.FindAsync(term.ProjectId, Guid.Empty, isAdministrator: true, cancellationToken) is not { IsClosed: false } project)
+        {
+            return false;
+        }
+
+        IReadOnlyList<SignerState> states;
+        try
+        {
+            states = await provider.StatusAsync(term.ProviderDocumentId!, cancellationToken);
+        }
+        catch (SignatureProviderException)
+        {
+            return false;
+        }
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        var changed = Apply(term, states, now);
+        StoredFile? stored = null;
+        if (term.Status == AcceptanceStatus.Pending && term.AllSigned)
+        {
+            stored = await KeepSignedAsync(term, project, provider, now, cancellationToken);
+        }
+
+        if (!changed && stored is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            await acceptances.SaveChangesAsync(cancellationToken);
+        }
+        catch (AcceptanceChangedException)
+        {
+            if (stored is not null)
+            {
+                await rules.ForgetAsync(stored);
+            }
+
+            return false;
+        }
+        catch
+        {
+            if (stored is not null)
+            {
+                await rules.ForgetAsync(stored);
+            }
+
+            throw;
+        }
+
+        if (term.Status == AcceptanceStatus.Refused)
+        {
+            await AcceptanceProviderCalls.TryAsync(() => provider.CancelAsync(term.ProviderDocumentId!, CancellationToken.None));
+        }
+
+        if (term.Status == AcceptanceStatus.Signed)
+        {
+            await milestones.ReachAsync(term.ProjectId, term.MilestoneId, cancellationToken);
+        }
+
+        if (term.Status != AcceptanceStatus.Pending)
+        {
+            await notices.AnsweredAsync(term, project, await rules.MilestoneNameAsync(term, cancellationToken), null, cancellationToken);
+        }
+
+        return true;
+    }
+
+    /// <summary>The term of a document at the provider, for the local page and the notice of the provider.</summary>
+    public async Task<bool> ForDocumentAsync(string provider, string documentId, CancellationToken cancellationToken) =>
+        await acceptances.TermOfDocumentAsync(provider, documentId, cancellationToken) is { } termId
+        && await ExecuteAsync(termId, cancellationToken);
+
+    // The signatures first, then the first refusal: a term refused keeps who had signed.
+    private static bool Apply(AcceptanceTerm term, IReadOnlyList<SignerState> states, DateTime now)
+    {
+        var changed = false;
+        var signers = term.Signers.ToDictionary(signer => signer.ProviderSignerId, StringComparer.Ordinal);
+        foreach (var state in states.Where(item => item.Status == AcceptanceSignerStatus.Signed))
+        {
+            if (signers.TryGetValue(state.SignerId, out var signer))
+            {
+                changed |= term.SignerSigned(signer.Id, state.At ?? now);
+            }
+        }
+
+        foreach (var state in states.Where(item => item.Status == AcceptanceSignerStatus.Refused))
+        {
+            if (term.Status == AcceptanceStatus.Pending && signers.TryGetValue(state.SignerId, out var signer))
+            {
+                changed |= term.SignerRefused(signer.Id, state.Reason, state.At ?? now);
+            }
+        }
+
+        return changed;
+    }
+
+    // The signed PDF of the provider as the document of the term, sent by who asked; null while the provider fails.
+    private async Task<StoredFile?> KeepSignedAsync(
+        AcceptanceTerm term, ProjectAccess project, ISignatureProvider provider, DateTime now, CancellationToken cancellationToken)
+    {
+        SignedFile signed;
+        try
+        {
+            signed = await provider.SignedFileAsync(term.ProviderDocumentId!, cancellationToken);
+        }
+        catch (SignatureProviderException)
+        {
+            return null;
+        }
+
+        await using var content = new MemoryStream();
+        await using (signed.Content)
+        {
+            await signed.Content.CopyToAsync(content, cancellationToken);
+        }
+
+        content.Position = 0;
+        var name = Document.NameOf(signed.Name) ?? Document.NameOf(term.FileName) ?? "Termo assinado.pdf";
+        var (document, stored) = await rules.KeepSignedAsync(project, term.MilestoneId, name, content, term.RequestedById, now, cancellationToken);
+        term.CompleteSigning(document.Id, now);
+        return stored;
+    }
+}
+
+/// <summary>
+/// The requests at the provider waiting for the signatures, in the projects not completed nor cancelled, checked one by
+/// one (ADR-0129); <see cref="ApplySignatureStatus"/> applies each in a scope of its own.
+/// </summary>
+public sealed class ListOpenSignatureRequests(IAcceptanceStore acceptances, SignatureProviders providers, IProjectAccess projects)
+{
+    public async Task<IReadOnlyList<Guid>> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        if (providers.Current is not { } provider)
+        {
+            return [];
+        }
+
+        var requests = await acceptances.OpenRequestsAsync(provider.Name, cancellationToken);
+        var open = new Dictionary<Guid, bool>();
+        var ids = new List<Guid>();
+        foreach (var (id, projectId) in requests)
+        {
+            if (!open.TryGetValue(projectId, out var isOpen))
+            {
+                isOpen = await projects.FindAsync(projectId, Guid.Empty, isAdministrator: true, cancellationToken) is { IsClosed: false };
+                open[projectId] = isOpen;
+            }
+
+            if (isOpen)
+            {
+                ids.Add(id);
+            }
+        }
+
+        return ids;
+    }
+}
+
+/// <summary>A call to the provider that may fail without changing what was saved, as closing a document no longer needed.</summary>
+internal static class AcceptanceProviderCalls
+{
+    public static async Task TryAsync(Func<Task> call)
+    {
+        try
+        {
+            await call();
+        }
+        catch (SignatureProviderException)
+        {
+            // The document stays at the provider; nothing of the term depends on it.
+        }
+    }
+}
+
 /// <summary>The checks the actions on the terms share, in the order of the answers: 404, 403, 409 of the project, 409 of the term.</summary>
 internal static class AcceptanceRefusals
 {
@@ -626,14 +891,10 @@ internal static class AcceptanceRefusals
     public static async Task<(AcceptanceResult? Refusal, AcceptanceArea? Area)> OfManagerAsync(
         AcceptanceAreas areas, Guid projectId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area)
+        var (outcome, area) = await areas.OfManagerAsync(projectId, viewer, cancellationToken);
+        if (area is null)
         {
-            return (AcceptanceResult.Of(AcceptanceOutcome.NotFound), null);
-        }
-
-        if (!area.Manages)
-        {
-            return (AcceptanceResult.Of(AcceptanceOutcome.Forbidden), null);
+            return (AcceptanceResult.Of(outcome), null);
         }
 
         return area.Project.IsClosed ? (AcceptanceResult.Of(AcceptanceOutcome.ProjectClosed), null) : (null, area);
@@ -656,75 +917,38 @@ internal static class AcceptanceRefusals
 
         return term.Status == AcceptanceStatus.Pending ? (null, area, term) : (AcceptanceResult.Of(AcceptanceOutcome.Answered), null, null);
     }
-
-    /// <summary>
-    /// A pending term the person answers, or the refusal: the person of the request answers it; with
-    /// <paramref name="onBehalf"/>, who manages the terms attaches the signed term in the name of the person.
-    /// </summary>
-    public static async Task<(AcceptanceResult? Refusal, AcceptanceArea? Area, AcceptanceTerm? Term)> OfAnswerAsync(
-        AcceptanceAreas areas,
-        IAcceptanceStore acceptances,
-        Guid projectId,
-        Guid termId,
-        bool onBehalf,
-        DocumentViewer viewer,
-        CancellationToken cancellationToken)
-    {
-        if (onBehalf)
-        {
-            return await OfManagedTermAsync(areas, acceptances, projectId, termId, viewer, cancellationToken);
-        }
-
-        if (await areas.OfAsync(projectId, viewer, cancellationToken) is not { } area
-            || await acceptances.FindAsync(projectId, termId, withEvents: false, cancellationToken) is not { } term)
-        {
-            return (AcceptanceResult.Of(AcceptanceOutcome.NotFound), null, null);
-        }
-
-        if (term.RecipientId != viewer.UserId)
-        {
-            return (AcceptanceResult.Of(AcceptanceOutcome.Forbidden), null, null);
-        }
-
-        if (area.Project.IsClosed)
-        {
-            return (AcceptanceResult.Of(AcceptanceOutcome.ProjectClosed), null, null);
-        }
-
-        return term.Status == AcceptanceStatus.Pending ? (null, area, term) : (AcceptanceResult.Of(AcceptanceOutcome.Answered), null, null);
-    }
 }
 
 /// <summary>
-/// The notices of the terms (ADR-0037, ADR-0038), after saving: the request and the reminder to the person of the
-/// request, by e-mail now; the signed term and the refusal to who asked and to the manager of the project, in the bell
-/// and in the daily summary. The notice leads to the term, never with the file or the reason.
+/// The notices of the terms (ADR-0037, ADR-0038, ADR-0129), after saving: the signed term, also the attached one, and the
+/// refusal, to who asked and to the manager of the project, in the bell and in the daily summary. The request and the
+/// reminder have none: the provider sends the link. The notice leads to the term, never with the file, the e-mails of
+/// the signers or the reason.
 /// </summary>
 public sealed class AcceptanceNotices(IEnumerable<INoticeBoard> boards, IProjectAccess projects)
 {
     /// <summary>The address of a term in the screens: the tab of the terms with its drawer open.</summary>
     public static string PathOf(Guid projectId, Guid termId) => $"/projects/{projectId}/acceptances?term={termId}";
 
-    public Task RequestedAsync(
-        AcceptanceTerm term, ProjectAccess project, string milestone, Guid actorId, bool reminder, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(term);
-        ArgumentNullException.ThrowIfNull(project);
-        var kind = reminder ? NoticeKind.AcceptanceReminded : NoticeKind.AcceptanceRequested;
-        return boards.PostAsync(
-            [new Notice(kind, [term.RecipientId], actorId, project.Id, PathOf(project.Id, term.Id), ValuesOf(term, project, milestone))],
-            cancellationToken);
-    }
-
-    public async Task AnsweredAsync(AcceptanceTerm term, ProjectAccess project, string milestone, Guid actorId, CancellationToken cancellationToken)
+    /// <param name="term">The term signed or refused.</param>
+    /// <param name="project">Its project.</param>
+    /// <param name="milestone">The name of the milestone.</param>
+    /// <param name="actorId">Who attached the term; null when the signers signed or refused at the provider.</param>
+    /// <param name="cancellationToken">Stops the work.</param>
+    public async Task AnsweredAsync(AcceptanceTerm term, ProjectAccess project, string milestone, Guid? actorId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(term);
         ArgumentNullException.ThrowIfNull(project);
         var managers = (await projects.MembersAsync([project.Id], cancellationToken))
             .Where(member => member.Role == ProjectMemberRole.Manager)
             .Select(member => member.UserId);
-        var values = ValuesOf(term, project, milestone);
-        if (term.Status == AcceptanceStatus.Signed && term.AnsweredById != term.RecipientId)
+        var values = new Dictionary<string, string>
+        {
+            [NoticeValues.Project] = project.Code,
+            [NoticeValues.Title] = term.Title,
+            [NoticeValues.Item] = milestone,
+        };
+        if (term.Status == AcceptanceStatus.Signed && actorId is not null)
         {
             values[NoticeValues.Attached] = "true";
         }
@@ -734,19 +958,11 @@ public sealed class AcceptanceNotices(IEnumerable<INoticeBoard> boards, IProject
             [new Notice(kind, [.. managers.Prepend(term.RequestedById).Distinct()], actorId, project.Id, PathOf(project.Id, term.Id), values)],
             cancellationToken);
     }
-
-    private static Dictionary<string, string> ValuesOf(AcceptanceTerm term, ProjectAccess project, string milestone) =>
-        new()
-        {
-            [NoticeValues.Project] = project.Code,
-            [NoticeValues.Title] = term.Title,
-            [NoticeValues.Item] = milestone,
-        };
 }
 
 /// <summary>
 /// The requests pending in the projects, for the summary of the closing (ADR-0043), the next milestones of Meu trabalho
-/// (ADR-0096) and the overview of the project, where the person sees only the terms of the matrix (ADR-0045, ADR-0073).
+/// (ADR-0096) and the overview of the project, where only who manages the terms sees them (ADR-0073, ADR-0129).
 /// </summary>
 public sealed class ProjectAcceptances(IAcceptanceStore acceptances, IProjectAccess projects) : IProjectAcceptances
 {
@@ -754,20 +970,24 @@ public sealed class ProjectAcceptances(IAcceptanceStore acceptances, IProjectAcc
         Guid projectId, Guid userId, bool isAdministrator, CancellationToken cancellationToken)
     {
         var project = await projects.FindAsync(projectId, userId, isAdministrator, cancellationToken);
-        if (project is null)
+        if (project is null || !AcceptanceAccess.Manages(new DocumentViewer(userId, isAdministrator), project))
         {
             return [];
         }
 
-        var viewer = new DocumentViewer(userId, isAdministrator);
-        var terms = await acceptances.ListAsync(
-            projectId, AcceptanceAccess.Manages(viewer, project) ? null : userId, cancellationToken);
+        var terms = await acceptances.ListAsync(projectId, cancellationToken);
         return
         [
             .. terms
-                .Where(term => term.Status == AcceptanceStatus.Pending && AcceptanceAccess.Sees(viewer, project, term))
+                .Where(term => term.Status == AcceptanceStatus.Pending)
                 .OrderBy(term => term.RequestedAt)
-                .Select(term => new PendingProjectAcceptance(term.Id, term.Title, term.MilestoneId, term.RecipientId, term.RequestedAt)),
+                .Select(term => new PendingProjectAcceptance(
+                    term.Id,
+                    term.Title,
+                    term.MilestoneId,
+                    term.RecipientId,
+                    [.. term.Signers.OrderBy(signer => signer.Position).Select(signer => signer.Name)],
+                    term.RequestedAt)),
         ];
     }
 
@@ -778,40 +998,4 @@ public sealed class ProjectAcceptances(IAcceptanceStore acceptances, IProjectAcc
         projectIds.Count == 0
             ? Task.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>())
             : acceptances.PendingMilestonesAsync(projectIds, cancellationToken);
-}
-
-/// <summary>
-/// The requests waiting for the answer, for the daily summary (ADR-0037): only in projects not completed nor cancelled
-/// (ADR-0095), and of the people still in the project.
-/// </summary>
-public sealed class PendingAcceptanceDirectory(IAcceptanceStore acceptances, IProjectAccess projects) : IPendingAcceptances
-{
-    public async Task<IReadOnlyList<PendingAcceptance>> PendingAsync(CancellationToken cancellationToken)
-    {
-        var pending = await acceptances.PendingAsync(cancellationToken);
-        if (pending.Count == 0)
-        {
-            return [];
-        }
-
-        var open = new Dictionary<Guid, ProjectAccess>();
-        foreach (var projectId in pending.Select(term => term.ProjectId).Distinct())
-        {
-            if (await projects.FindAsync(projectId, Guid.Empty, isAdministrator: true, cancellationToken) is { IsClosed: false } project)
-            {
-                open[projectId] = project;
-            }
-        }
-
-        var members = (await projects.MembersAsync(open.Keys, cancellationToken))
-            .Select(member => (member.ProjectId, member.UserId))
-            .ToHashSet();
-        return
-        [
-            .. pending
-                .Where(term => open.ContainsKey(term.ProjectId) && members.Contains((term.ProjectId, term.RecipientId)))
-                .Select(term => new PendingAcceptance(
-                    term.RecipientId, term.ProjectId, open[term.ProjectId].Code, term.Id, term.Title, term.RequestedAt)),
-        ];
-    }
 }

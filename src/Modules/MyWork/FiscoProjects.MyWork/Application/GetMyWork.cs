@@ -63,7 +63,11 @@ public sealed class GetMyWork(
 
         if (item.Acceptance is { } acceptance)
         {
-            yield return acceptance.RecipientId;
+            if (acceptance.RecipientId is { } recipient)
+            {
+                yield return recipient;
+            }
+
             yield return acceptance.RequestedById;
         }
     }

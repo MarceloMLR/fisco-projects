@@ -174,7 +174,7 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 
     /// <summary>
     /// ERP-FIN with a phase, a task and a milestone with a dependency and the baseline; a ticket with an attachment, a
-    /// message and a follower; a document; a link; a credential; a request of acceptance to Carla, with its PDF; and hours
+    /// message and a follower; a document; a link; a credential; a request of signature to a signer of the client, with its PDF; and hours
     /// Carla logged on the task.
     /// </summary>
     private static async Task<Scene> SceneAsync(ProjectTeam team)
@@ -240,7 +240,8 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
         var term = await IdOfAsync(await PostFormAsync(team.Admin, $"{project}/acceptances", new Dictionary<string, string?>
         {
             ["milestoneId"] = milestone.ToString(),
-            ["recipientId"] = team.Carla.ToString(),
+            ["signers[0].name"] = "Ana Souza",
+            ["signers[0].email"] = "ana.souza@cliente.example",
             ["title"] = "Aceite da homologação",
             ["message"] = "Assine o termo, por favor.",
         }, "termo.pdf", Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")));

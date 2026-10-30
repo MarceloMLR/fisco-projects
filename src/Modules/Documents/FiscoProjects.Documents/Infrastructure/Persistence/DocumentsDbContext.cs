@@ -23,6 +23,8 @@ internal sealed class DocumentsDbContext(DbContextOptions<DocumentsDbContext> op
 
     public DbSet<AcceptanceTerm> AcceptanceTerms => Set<AcceptanceTerm>();
 
+    public DbSet<AcceptanceSigner> AcceptanceSigners => Set<AcceptanceSigner>();
+
     public DbSet<AcceptanceEvent> AcceptanceEvents => Set<AcceptanceEvent>();
 
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>

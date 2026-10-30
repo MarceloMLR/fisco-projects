@@ -29,11 +29,6 @@ internal sealed class DocumentStores(DocumentsDbContext db) : IFolderStore, IDoc
         ArgumentNullException.ThrowIfNull(query);
         var documents = db.Documents.AsNoTracking()
             .Where(document => document.ProjectId == query.ProjectId && query.FolderIds.Contains(document.FolderId));
-        if (query.LimitedFolderId is { } limited)
-        {
-            var own = query.LimitedTo ?? [];
-            documents = documents.Where(document => document.FolderId != limited || own.Contains(document.Id));
-        }
         if (!query.WithObsolete)
         {
             documents = documents.Where(document => document.Status != DocumentStatus.Obsolete);

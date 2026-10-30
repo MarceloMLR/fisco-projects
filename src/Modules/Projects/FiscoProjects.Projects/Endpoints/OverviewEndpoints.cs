@@ -57,9 +57,18 @@ public sealed record OverviewTicketResponse(
     DateOnly? DueOn,
     int? DaysLate);
 
-/// <summary>A pending request of acceptance the person sees.</summary>
+/// <summary>
+/// A pending request of acceptance, for who manages the terms: the names of the signers or, in a request asked before,
+/// the person of the project (ADR-0129).
+/// </summary>
 public sealed record OverviewAcceptanceResponse(
-    Guid Id, string Title, OverviewPersonResponse Recipient, DateTime RequestedAt, string? Milestone, DateOnly? MilestoneDay);
+    Guid Id,
+    string Title,
+    OverviewPersonResponse? Recipient,
+    IReadOnlyList<string> Signers,
+    DateTime RequestedAt,
+    string? Milestone,
+    DateOnly? MilestoneDay);
 
 /// <summary>A ticket at a vendor without an update for the business days of the setting (ADR-0028).</summary>
 public sealed record OverviewVendorTicketResponse(int TicketNumber, string Vendor, string Code, int StaleDays);
@@ -145,7 +154,13 @@ internal static class OverviewEndpoints
                     ticket.DueOn,
                     ticket.DaysLate))],
                 [.. result.Acceptances.Select(term => new OverviewAcceptanceResponse(
-                    term.Id, term.Title, Person(term.RecipientId), term.RequestedAt, term.Milestone, term.MilestoneDay))],
+                    term.Id,
+                    term.Title,
+                    term.RecipientId is { } recipient ? Person(recipient) : null,
+                    term.Signers,
+                    term.RequestedAt,
+                    term.Milestone,
+                    term.MilestoneDay))],
                 [.. tickets.Vendors.Select(vendor => new OverviewVendorTicketResponse(
                     vendor.TicketNumber, vendor.Vendor, vendor.Code, vendor.StaleDays))]),
             [.. result.Teams.Select(team => new OverviewTeamResponse(

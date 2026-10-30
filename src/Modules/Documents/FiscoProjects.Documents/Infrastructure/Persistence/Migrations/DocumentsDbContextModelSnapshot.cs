@@ -28,7 +28,7 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ActorId")
+                    b.Property<Guid?>("ActorId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("At")
@@ -38,6 +38,9 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid?>("SignerId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TermId")
                         .HasColumnType("uniqueidentifier");
@@ -49,6 +52,65 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.ToTable("acceptance_events", "documents");
 
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceSigner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)")
+                        .HasAnnotation("FiscoProjects:Audit:Secret", true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("ProviderSignerId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("RefusalReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("TermId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "AcceptanceTerm");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TermId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("acceptance_signers", "documents");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
                 });
 
             modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
@@ -94,7 +156,12 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:Context", true)
                         .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
 
-                    b.Property<Guid>("RecipientId")
+                    b.Property<string>("ProviderDocumentId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid?>("RecipientId")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "User");
 
@@ -109,6 +176,10 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("RequestedById")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<string>("SignatureProvider")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -133,6 +204,8 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("ProjectId", "RecipientId");
+
+                    b.HasIndex("SignatureProvider", "ProviderDocumentId");
 
                     b.ToTable("acceptance_terms", "documents");
 
@@ -476,6 +549,15 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceSigner", b =>
+                {
+                    b.HasOne("FiscoProjects.Documents.Domain.AcceptanceTerm", null)
+                        .WithMany("Signers")
+                        .HasForeignKey("TermId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
                 {
                     b.HasOne("FiscoProjects.Documents.Domain.Document", null)
@@ -514,6 +596,8 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FiscoProjects.Documents.Domain.AcceptanceTerm", b =>
                 {
                     b.Navigation("Events");
+
+                    b.Navigation("Signers");
                 });
 
             modelBuilder.Entity("FiscoProjects.Documents.Domain.Document", b =>

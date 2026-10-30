@@ -80,7 +80,6 @@
     "note": "Para não receber mais o resumo, desligue em Meu perfil. Os avisos que pedem a sua ação continuam chegando na hora.",
     "sections": {
       "tasks": "Tarefas que vencem nos próximos dias",
-      "pendingAcceptances": "Termos de aceite esperando a sua resposta",
       "tickets": "Chamados que você acompanha",
       "schedule": "Datas alteradas no cronograma",
       "acceptances": "Termos de aceite",
@@ -88,7 +87,6 @@
     },
     "lines": {
       "task": "{{item}}, do projeto {{project}}, termina em {{end}}",
-      "pendingAcceptance": "{{title}}, do projeto {{project}}, pedido em {{requestedOn}}",
       "ticketStatusChanged": "#{{number}} {{title}}: {{from}} → {{to}}, por {{actor}}",
       "ticketStatusChangedBySystem": "#{{number}} {{title}}: {{from}} → {{to}}, fechado automaticamente",
       "ticketClosedWithProject": "#{{number}} {{title}}: fechado com o cancelamento do projeto {{project}}, por {{actor}}",
@@ -96,7 +94,9 @@
       "scheduleDatesChanged": "{{item}}, do projeto {{project}}: agora de {{start}} a {{end}}",
       "acceptanceSigned": "{{title}}, do projeto {{project}}: termo assinado enviado por {{actor}}",
       "acceptanceAttached": "{{title}}, do projeto {{project}}: termo assinado anexado por {{actor}}",
+      "acceptanceSignedBySigners": "{{title}}, do projeto {{project}}: assinado por todos os signatários",
       "acceptanceRefused": "{{title}}, do projeto {{project}}: recusado por {{actor}}",
+      "acceptanceRefusedBySigner": "{{title}}, do projeto {{project}}: recusado por um signatário",
       "projectMemberAdded": "{{actor}} incluiu você no projeto {{project}} como {{role}}",
       "projectRoleChanged": "{{actor}} mudou o seu papel no projeto {{project}} para {{role}}",
       "projectStatusChanged": "{{actor}} mudou o status do projeto {{project}} para {{status}}"

@@ -64,8 +64,12 @@ public sealed record MyWorkTicket(
 /// <summary>A task in the queue: the name of its phase and its progress, from 0 to 99%.</summary>
 public sealed record MyWorkTask(string Phase, int Progress);
 
-/// <summary>A pending request of acceptance in the queue: for whom, who asked and when, and the milestone.</summary>
-public sealed record MyWorkAcceptance(Guid RecipientId, Guid RequestedById, DateTime RequestedAt, string? Milestone);
+/// <summary>
+/// A pending request of acceptance in the queue: the signers (ADR-0129), or the person a request was asked of before,
+/// who asked and when, and the milestone.
+/// </summary>
+public sealed record MyWorkAcceptance(
+    Guid? RecipientId, IReadOnlyList<string> Signers, Guid RequestedById, DateTime RequestedAt, string? Milestone);
 
 /// <summary>
 /// An item of a person for Meu trabalho (ADR-0070, ADR-0096): what it is, its project, the title, the views it is in,
@@ -78,7 +82,7 @@ public sealed record MyWorkItem(MyWorkKind Kind, Guid Id, Guid ProjectId, string
 
     public int? DaysLate { get; init; }
 
-    /// <summary>The item waits for the answer of the person: a ticket the person opened, or a request for the person.</summary>
+    /// <summary>The item waits for the answer of the person: a ticket the person opened.</summary>
     public bool WaitsForYou { get; init; }
 
     public DateTime? WaitingSince { get; init; }

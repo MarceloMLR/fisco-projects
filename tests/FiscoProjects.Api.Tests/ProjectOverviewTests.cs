@@ -77,20 +77,6 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         taken.StatusCode.Should().Be(HttpStatusCode.NoContent, await taken.Content.ReadAsStringAsync(Cancellation));
     }
 
-    private static async Task RequestAcceptanceAsync(HttpClient client, Guid project, Guid milestone, Guid recipient, string title)
-    {
-        using var form = new MultipartFormDataContent
-        {
-            { new StringContent(milestone.ToString()), "milestoneId" },
-            { new StringContent(recipient.ToString()), "recipientId" },
-            { new StringContent(title, Encoding.UTF8), "title" },
-            { new ByteArrayContent(Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")), "file", "termo.pdf" },
-        };
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/projects/{project}/acceptances") { Content = form };
-        request.Headers.Add("X-CSRF", "1");
-        await IdOfAsync(await client.SendAsync(request, Cancellation));
-    }
-
     [Fact(DisplayName = "Visão geral pela API")]
     public async Task Overview_HasTheNumbers_TheTimeline_TheAttention_AndTheTeam()
     {
@@ -278,7 +264,7 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         await using var team = await ProjectTeam.StartAsync(sqlServer);
         var phase = await PhaseAsync(team, team.Erp, "Homologação");
         var milestone = await ItemAsync(team, team.Erp, phase, "Milestone", "Homologação", "2026-11-03");
-        await RequestAcceptanceAsync(await team.ClientOfAsync(team.Marina), team.Erp, milestone, team.Carla, "Aceite da homologação");
+        await AcceptanceRequests.RequestedAsync(await team.ClientOfAsync(team.Marina), team.Erp, milestone, "Aceite da homologação");
         var vendor = await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, "/api/admin/vendors", new { name = "Emissor Exemplo", portalUrl = (string?)null }));
         var number = await OpenTicketAsync(await team.ClientOfAsync(team.Carla), team.Erp, "Rejeição 539");
         var diego = await team.ClientOfAsync(team.Diego);
@@ -299,8 +285,9 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         var developed = (await OverviewAsync(developer, team.Erp)).GetProperty("attention");
 
         var term = managed.GetProperty("acceptances").EnumerateArray().Single();
-        (term.GetProperty("title").GetString(), term.GetProperty("recipient").GetProperty("name").GetString(),
-            term.GetProperty("milestoneDay").GetString()).Should().Be(("Aceite da homologação", "Carla Mendes", "2026-11-03"));
+        (term.GetProperty("title").GetString(), term.GetProperty("recipient").ValueKind, term.GetProperty("milestoneDay").GetString())
+            .Should().Be(("Aceite da homologação", JsonValueKind.Null, "2026-11-03"));
+        term.GetProperty("signers").EnumerateArray().Select(signer => signer.GetString()).Should().Equal("Ana Souza", "Bruno Lima");
         var stale = managed.GetProperty("vendors").EnumerateArray().Single();
         (stale.GetProperty("ticketNumber").GetInt32(), stale.GetProperty("vendor").GetString(), stale.GetProperty("code").GetString(),
             stale.GetProperty("staleDays").GetInt32()).Should().Be((number, "Emissor Exemplo", "FX-20931", 6));

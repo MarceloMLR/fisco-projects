@@ -102,20 +102,6 @@ public sealed class MyWorkTests(SqlServerFixture sqlServer)
         taken.StatusCode.Should().Be(HttpStatusCode.NoContent, await taken.Content.ReadAsStringAsync(Cancellation));
     }
 
-    private static Task<HttpResponseMessage> RequestAcceptanceAsync(HttpClient client, Guid project, Guid milestone, Guid recipient, string title)
-    {
-        var form = new MultipartFormDataContent
-        {
-            { new StringContent(milestone.ToString()), "milestoneId" },
-            { new StringContent(recipient.ToString()), "recipientId" },
-            { new StringContent(title, Encoding.UTF8), "title" },
-            { new ByteArrayContent(Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")), "file", "termo.pdf" },
-        };
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/projects/{project}/acceptances") { Content = form };
-        request.Headers.Add("X-CSRF", "1");
-        return client.SendAsync(request, Cancellation);
-    }
-
     [Fact(DisplayName = "Fila pela API")]
     public async Task Queue_HasTheViews_TheGroupsInOrder_AndTheItems()
     {
@@ -186,22 +172,22 @@ public sealed class MyWorkTests(SqlServerFixture sqlServer)
     }
 
     [Fact(DisplayName = "Pedido de aceite para a pessoa")]
-    public async Task RequestForThePerson_WaitsForThePerson()
+    public async Task RequestOfBefore_DoesNotWaitForThePerson()
     {
         await using var team = await ProjectTeam.StartAsync(sqlServer);
         var phase = await PhaseAsync(team, team.Erp, "Homologação");
-        var milestone = await MilestoneAsync(team, team.Erp, phase, "Homologação concluída", "2026-11-18");
-        var marina = await team.ClientOfAsync(team.Marina);
-        await IdOfAsync(await RequestAcceptanceAsync(marina, team.Erp, milestone, team.Carla, "Aceite da homologação"));
+        var milestone = await MilestoneAsync(team, team.Erp, phase, "Homologação concluída", "2026-10-20");
+        await AcceptanceRequests.RequestedBeforeAsync(team, team.Erp, milestone, team.Carla, "Aceite da homologação");
 
         var carla = await MyWorkAsync(await team.ClientOfAsync(team.Carla));
 
-        LinesOf(carla, "ForMe").Should().Equal(("Waiting", "Aceite da homologação", "Reply"));
-        var acceptance = ViewOf(carla, "ForMe").GetProperty("groups")[0].GetProperty("items")[0].GetProperty("acceptance");
-        (acceptance.GetProperty("forYou").GetBoolean(), acceptance.GetProperty("requestedBy").GetProperty("name").GetString(),
-            acceptance.GetProperty("milestone").GetString()).Should().Be((true, "Marina Costa", "Homologação concluída"));
-        // Far from the milestone, the request Marina made is out of her queue.
-        LinesOf(await MyWorkAsync(marina), "ForMe").Should().BeEmpty();
+        LinesOf(carla, "ForMe").Should().BeEmpty("the signers sign at the provider (ADR-0129)");
+        // The request asked of Carla before is still of Marina, who made it.
+        var marina = await MyWorkAsync(await team.ClientOfAsync(team.Marina));
+        LinesOf(marina, "ForMe").Should().Equal(("Soon", "Aceite da homologação", "Remind"));
+        var acceptance = ViewOf(marina, "ForMe").GetProperty("groups")[0].GetProperty("items")[0].GetProperty("acceptance");
+        (acceptance.GetProperty("recipient").GetProperty("name").GetString(), acceptance.GetProperty("signers").GetArrayLength())
+            .Should().Be(("Carla Mendes", 0));
     }
 
     [Fact(DisplayName = "Pedido feito pela pessoa")]
@@ -211,15 +197,18 @@ public sealed class MyWorkTests(SqlServerFixture sqlServer)
         var phase = await PhaseAsync(team, team.Erp, "Homologação");
         var milestone = await MilestoneAsync(team, team.Erp, phase, "Plano de testes aprovado", "2026-10-20");
         var marina = await team.ClientOfAsync(team.Marina);
-        await IdOfAsync(await RequestAcceptanceAsync(marina, team.Erp, milestone, team.Carla, "Aceite do plano de testes"));
+        await AcceptanceRequests.RequestedAsync(marina, team.Erp, milestone, "Aceite do plano de testes");
 
         var work = await MyWorkAsync(marina);
 
         LinesOf(work, "ForMe").Should().Equal(("Soon", "Aceite do plano de testes", "Remind"));
         LinesOf(work, "OpenedByMe").Should().Equal(("Soon", "Aceite do plano de testes", "Remind"));
         var acceptance = ViewOf(work, "ForMe").GetProperty("groups")[0].GetProperty("items")[0].GetProperty("acceptance");
-        (acceptance.GetProperty("forYou").GetBoolean(), acceptance.GetProperty("recipient").GetProperty("name").GetString())
-            .Should().Be((false, "Carla Mendes"));
+        (acceptance.GetProperty("recipient").ValueKind, acceptance.GetProperty("requestedBy").GetProperty("name").GetString(),
+            acceptance.GetProperty("milestone").GetString()).Should().Be((JsonValueKind.Null, "Marina Costa", "Plano de testes aprovado"));
+        acceptance.GetProperty("signers").EnumerateArray().Select(signer => signer.GetString()).Should().Equal("Ana Souza", "Bruno Lima");
+        // The others of the project do not see the requests of the terms (ADR-0129).
+        LinesOf(await MyWorkAsync(await team.ClientOfAsync(team.Carla)), "ForMe").Should().BeEmpty();
     }
 
     [Fact(DisplayName = "Chamado do responsável")]

@@ -2,14 +2,13 @@ using FiscoProjects.Projects.Contracts;
 
 namespace FiscoProjects.Documents.Domain;
 
-/// <summary>What a person may do with a term, as the drawer of the term shows it.</summary>
-public sealed record AcceptanceActions(bool CanAnswer, bool CanAttach, bool CanRemind, bool CanCancel);
+/// <summary>What the person may do with a term, as the drawer of the term shows it.</summary>
+public sealed record AcceptanceActions(bool CanAttach, bool CanRemind, bool CanCancel);
 
 /// <summary>
-/// The matrix of the acceptance terms (ADR-0045, ADR-0095) in one place: the Administrator and the manager see every
-/// term of the project, ask for terms, attach signed terms, remind and cancel; the person of a term sees it and
-/// answers it while it is pending, in any role; the others see none. A completed or cancelled project is read-only
-/// (ADR-0016).
+/// The matrix of the acceptance terms (ADR-0129) in one place: only the Administrator and the manager see the terms,
+/// ask for signatures, attach signed terms, remind and cancel; the others of the project see none. A completed or
+/// cancelled project is read-only (ADR-0016).
 /// </summary>
 public static class AcceptanceAccess
 {
@@ -21,23 +20,18 @@ public static class AcceptanceAccess
         return viewer.IsAdministrator || project.Role == ProjectMemberRole.Manager;
     }
 
-    /// <summary>Whether the person sees the term: who manages the terms, and the person of the term.</summary>
-    public static bool Sees(DocumentViewer viewer, ProjectAccess project, AcceptanceTerm term)
+    /// <summary>
+    /// What who manages the terms may do with a term now: a pending request takes the signed term and the cancellation;
+    /// the reminder only at the provider that has it (<paramref name="providerReached"/>), never in a request asked of a
+    /// person before (ADR-0129).
+    /// </summary>
+    public static AcceptanceActions ActionsOf(DocumentViewer viewer, ProjectAccess project, AcceptanceTerm term, bool providerReached)
     {
         ArgumentNullException.ThrowIfNull(term);
-        return Manages(viewer, project) || term.RecipientId == viewer.UserId;
-    }
-
-    /// <summary>What the person may do with a term the person sees, now.</summary>
-    public static AcceptanceActions ActionsOf(DocumentViewer viewer, ProjectAccess project, AcceptanceTerm term)
-    {
-        ArgumentNullException.ThrowIfNull(term);
-        var open = !project.IsClosed && term.Status == AcceptanceStatus.Pending;
-        var manages = Manages(viewer, project) && open;
+        var open = Manages(viewer, project) && !project.IsClosed && term.Status == AcceptanceStatus.Pending;
         return new(
-            CanAnswer: open && term.RecipientId == viewer.UserId,
-            CanAttach: manages && term.RecipientId != viewer.UserId,
-            CanRemind: manages,
-            CanCancel: manages);
+            CanAttach: open,
+            CanRemind: open && term.IsSignatureRequest && providerReached,
+            CanCancel: open);
     }
 }
