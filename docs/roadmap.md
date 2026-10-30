@@ -202,5 +202,5 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Em andamento |
+| Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Em andamento ([#109](https://github.com/MarceloMLR/fisco-projects/pull/109), proposta) |
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127 | Planejada |
