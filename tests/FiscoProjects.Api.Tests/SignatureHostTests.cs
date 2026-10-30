@@ -5,7 +5,8 @@ using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Api.Tests;
 
-// Spec: termos-de-aceite, requirements "Provedor de assinatura" and "Provedor local" (ADR-0129).
+// Spec: termos-de-aceite, requirements "Provedor de assinatura", "Provedor local", "Sandbox da Autentique" and
+// "Signatários da demonstração no provedor local" (ADR-0129, ADR-0130).
 public sealed class SignatureHostTests
 {
     [Fact(DisplayName = "Provedor local em produção")]
@@ -42,6 +43,54 @@ public sealed class SignatureHostTests
 
         using var scope = app.Services.CreateScope();
         scope.ServiceProvider.GetRequiredService<SignatureProviders>().Current.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Autentique em produção")]
+    public async Task Production_WithTheKey_HasTheAutentique()
+    {
+        await using var app = await StartAsync(TestApp.Production, ("Signature:Provider", "Autentique"), ("Signature:Autentique:ApiKey", "chave"));
+
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<SignatureProviders>().All.Select(provider => provider.Name).Should().Equal("Autentique");
+    }
+
+    [Fact(DisplayName = "Sandbox em produção")]
+    public async Task SandboxInProduction_StopsTheApplication()
+    {
+        var start = () => StartAsync(
+            TestApp.Production, ("Signature:Provider", "Autentique"), ("Signature:Autentique:ApiKey", "chave"), ("Signature:Autentique:Sandbox", "true"));
+
+        (await start.Should().ThrowAsync<OptionsValidationException>())
+            .Which.Message.Should().Contain("Signature:Autentique:Sandbox").And.Contain("only for outside production");
+    }
+
+    [Fact(DisplayName = "Autentique sem a chave")]
+    public async Task AutentiqueWithoutTheKey_StopsTheApplication()
+    {
+        var start = () => StartAsync(TestApp.Development, ("Signature:Provider", "Autentique"));
+
+        (await start.Should().ThrowAsync<OptionsValidationException>())
+            .Which.Message.Should().Contain("Signature:Autentique:ApiKey");
+    }
+
+    [Fact(DisplayName = "Domínios da demonstração em produção")]
+    public async Task DemonstrationDomainsInProduction_StopTheApplication()
+    {
+        var start = () => StartAsync(
+            TestApp.Production, ("Signature:Provider", "Autentique"), ("Signature:Autentique:ApiKey", "chave"), ("Signature:LocalDomains:0", "cliente.example"));
+
+        (await start.Should().ThrowAsync<OptionsValidationException>())
+            .Which.Message.Should().Contain("Signature:LocalDomains").And.Contain("only for outside production");
+    }
+
+    [Fact(DisplayName = "Domínios da demonstração ao lado da Autentique")]
+    public async Task Development_WithTheDomains_HasTheLocalProviderBesideTheAutentique()
+    {
+        await using var app = await StartAsync(
+            TestApp.Development, ("Signature:Provider", "Autentique"), ("Signature:Autentique:ApiKey", "chave"), ("Signature:LocalDomains:0", "cliente.example"));
+
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<SignatureProviders>().All.Select(provider => provider.Name).Should().Equal("Autentique", "Local");
     }
 
     private static Task<WebApplication> StartAsync(string environment, params (string Key, string Value)[] settings) =>

@@ -135,6 +135,15 @@ variable "email_mailbox" {
   }
 }
 
+variable "autentique" {
+  description = "The Autentique as the provider of signatures (ADR-0129, ADR-0130); null keeps the provider of app_settings. The secret Signature--Autentique--ApiKey must already exist in the Key Vault and, with webhook, Signature--Autentique--WebhookSecret too, both created by hand (docs/instalacao.md). The sandbox is only for outside production."
+  type = object({
+    sandbox = optional(bool, false)
+    webhook = optional(bool, false)
+  })
+  default = null
+}
+
 variable "syncfusion_license_in_key_vault" {
   description = "Whether the secret Syncfusion--LicenseKey already exists in the Key Vault; when true, the application reads it from there (ADR-0051, ADR-0087)."
   type        = bool

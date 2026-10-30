@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using FiscoProjects.Documents.Domain;
 
 namespace FiscoProjects.Documents.Application;
@@ -79,19 +82,114 @@ public interface ISigningLinks
     Task<string?> LinkOfAsync(string documentId, string signerId, CancellationToken cancellationToken);
 }
 
-/// <summary>The provider of signatures the installation chose, if any, and whether it is the one of a request.</summary>
-public sealed class SignatureProviders(IEnumerable<ISignatureProvider> providers)
+/// <summary>
+/// Outside production, the local provider that keeps the requests whose signers are all of the domains of the
+/// demonstration, beside the provider of the installation, as the e-mails of the demonstration stay in the local folder
+/// (ADR-0123, ADR-0130).
+/// </summary>
+public sealed class SignatureDemonstration(ISignatureProvider provider, IEnumerable<string> domains)
+{
+    private readonly HashSet<string> _domains = new(domains, StringComparer.OrdinalIgnoreCase);
+
+    public ISignatureProvider Provider { get; } = provider;
+
+    /// <summary>Whether every signer is of a domain of the demonstration.</summary>
+    public bool Takes(IEnumerable<string> emails)
+    {
+        ArgumentNullException.ThrowIfNull(emails);
+        var all = emails.ToList();
+        return all.Count > 0 && all.TrueForAll(email => email.LastIndexOf('@') is var at and >= 0 && _domains.Contains(email[(at + 1)..].Trim()));
+    }
+}
+
+/// <summary>
+/// The provider of signatures the installation chose, if any, the one of each new request and the one of a request
+/// (ADR-0129, ADR-0130): outside production, the requests of the signers of the demonstration go to the local provider.
+/// </summary>
+public sealed class SignatureProviders(IEnumerable<ISignatureProvider> providers, SignatureDemonstration? demonstration = null)
 {
     /// <summary>The provider chosen in the configuration; null when the installation has none (ADR-0129).</summary>
     public ISignatureProvider? Current { get; } = providers.FirstOrDefault();
+
+    /// <summary>Every provider that may have a request: the one of the installation and the one of the demonstration.</summary>
+    public IReadOnlyList<ISignatureProvider> All =>
+        Current is not { } current ? [] : demonstration is null || demonstration.Provider == current ? [current] : [current, demonstration.Provider];
+
+    /// <summary>The provider of a new request to these signers; null when the installation has none.</summary>
+    public ISignatureProvider? For(IEnumerable<string> emails) =>
+        Current is null ? null : demonstration is not null && demonstration.Takes(emails) ? demonstration.Provider : Current;
 
     /// <summary>The provider that has the request; null for a request asked before, or at a provider no longer chosen.</summary>
     public ISignatureProvider? Of(AcceptanceTerm term)
     {
         ArgumentNullException.ThrowIfNull(term);
-        return Current is { } current && term.IsSignatureRequest && string.Equals(term.SignatureProvider, current.Name, StringComparison.Ordinal)
-            ? current
+        return term.IsSignatureRequest
+            ? All.FirstOrDefault(provider => string.Equals(term.SignatureProvider, provider.Name, StringComparison.Ordinal))
             : null;
+    }
+}
+
+/// <summary>A notice of the provider, read: whether its signature is right, and the document it is about, if any.</summary>
+public sealed record SignatureNotice(bool IsValid, string? DocumentId)
+{
+    /// <summary>A notice without the signature of the secret of the installation.</summary>
+    public static SignatureNotice Forged { get; } = new(false, null);
+}
+
+/// <summary>
+/// A provider that tells the changes of its documents by notices to the installation (webhooks), checked by the
+/// signature of the notice with the secret of the installation (ADR-0130). The notice only names the document: what
+/// changed always comes from the provider.
+/// </summary>
+public interface ISignatureNotices
+{
+    /// <summary>The name of the provider of the notices.</summary>
+    string Provider { get; }
+
+    /// <summary>Reads a notice by its raw body and its headers; never throws for a malformed one.</summary>
+    SignatureNotice Read(byte[] body, Func<string, string?> header);
+}
+
+/// <summary>
+/// The documents whose notice arrived, waiting for the check in the background (ADR-0130): in memory, up to
+/// <see cref="Capacity"/>, each once while it waits. A notice lost, when the queue is full or the application restarts,
+/// is left to the periodic check.
+/// </summary>
+public sealed class SignatureNoticeQueue
+{
+    public const int Capacity = 500;
+
+    private readonly Channel<(string Provider, string DocumentId)> _channel =
+        Channel.CreateBounded<(string Provider, string DocumentId)>(new BoundedChannelOptions(Capacity) { SingleReader = true });
+
+    private readonly ConcurrentDictionary<(string Provider, string DocumentId), byte> _waiting = new();
+
+    /// <summary>Puts the check of the document in the queue; false when it already waits there, or the queue is full.</summary>
+    public bool Add(string provider, string documentId)
+    {
+        var item = (provider, documentId);
+        if (!_waiting.TryAdd(item, 0))
+        {
+            return false;
+        }
+
+        if (_channel.Writer.TryWrite(item))
+        {
+            return true;
+        }
+
+        _waiting.TryRemove(item, out _);
+        return false;
+    }
+
+    /// <summary>The documents in the order they arrived, as long as the application runs.</summary>
+    public async IAsyncEnumerable<(string Provider, string DocumentId)> ReadAllAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (var item in _channel.Reader.ReadAllAsync(cancellationToken))
+        {
+            _waiting.TryRemove(item, out _);
+            yield return item;
+        }
     }
 }
 

@@ -118,6 +118,9 @@ public static class ApiSetup
             .MapProjectHoursEndpoints()
             .MapClientSettingsEndpoints();
 
+        // The notices of the provider of signatures, outside /api: no session nor X-CSRF (ADR-0130).
+        app.MapSignatureNoticeEndpoints();
+
         app.MapFrontendFallback();
 
         return app;

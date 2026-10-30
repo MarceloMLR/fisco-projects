@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Modules/Documents/FiscoProjects.Documents/FiscoProjects.Documents.csproj" />
+    <ProjectReference Include="../FiscoProjects.Testing/FiscoProjects.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

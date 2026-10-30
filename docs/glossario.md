@@ -228,6 +228,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Provedor de assinatura | ISignatureProvider, SignatureProviders (`Signature:Provider`) | Manda, lembra, cancela, diz a situação e devolve o PDF assinado; a Autentique e o local (ADR-0129) |
 | Provedor local, página de assinatura | LocalSignatureProvider, ILocalSigningPage (`/sign/:token`, `/api/local-signatures/{token}`) | Só fora da produção; o link de cada signatário aparece na gaveta |
 | Conferência das assinaturas | SignatureCheck, ApplySignatureStatus (`Signature:CheckMinutes`) | Em segundo plano, aplica cada mudança do provedor uma vez só |
+| Autentique | AutentiqueSignatureProvider (`Signature:Autentique:*`) | O primeiro provedor real, pela API GraphQL dela, com a chave e o segredo do aviso no Key Vault (ADR-0130) |
+| Aviso do provedor | ISignatureNotices, SignatureNoticeQueue (`POST /signature-notices`) | O webhook do provedor, conferido pela assinatura do aviso; só põe a conferência do documento na fila (ADR-0130) |
+| Sandbox da Autentique | `Signature:Autentique:Sandbox` | Documentos de teste, sem custo e sem validade; só fora da produção |
+| Signatários da demonstração | SignatureDemonstration (`Signature:LocalDomains`) | Fora da produção, o pedido a signatários só desses domínios fica no provedor local (ADR-0130) |
 | Termo para assinar | `FileId`, `FileName` | O PDF do pedido, em `{código} - {nome}/Pedidos de aceite` |
 | Anexar termo assinado | AttachSignedTerm (num pedido), AttachAcceptance (sem pedido) | Termo assinado recebido por fora; o documento no provedor é cancelado |
 | Pessoa do pedido anterior | `RecipientId` | Os pedidos feitos a uma pessoa do projeto antes do provedor (ADR-0095) |

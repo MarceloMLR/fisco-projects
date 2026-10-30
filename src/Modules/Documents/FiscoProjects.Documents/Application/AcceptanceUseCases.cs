@@ -415,7 +415,7 @@ public sealed class RequestAcceptance(
             return refused;
         }
 
-        if (providers.Current is not { } provider)
+        if (providers.Current is null)
         {
             return AcceptanceResult.Of(AcceptanceOutcome.NoProvider);
         }
@@ -426,6 +426,9 @@ public sealed class RequestAcceptance(
         {
             return AcceptanceResult.InvalidFields([.. invalid.Concat(signers is null ? [AcceptanceField.Signers] : []).Order()]);
         }
+
+        // Outside production, the signers of the demonstration sign at the local provider (ADR-0130).
+        var provider = providers.For(signers.Select(signer => signer.Email))!;
 
         var refusal = await rules.RefusalOfAsync(file!, cancellationToken);
         if (refusal != AcceptanceFileRefusal.None)
@@ -842,12 +845,12 @@ public sealed class ListOpenSignatureRequests(IAcceptanceStore acceptances, Sign
 {
     public async Task<IReadOnlyList<Guid>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        if (providers.Current is not { } provider)
+        var requests = new List<(Guid Id, Guid ProjectId)>();
+        foreach (var provider in providers.All)
         {
-            return [];
+            requests.AddRange(await acceptances.OpenRequestsAsync(provider.Name, cancellationToken));
         }
 
-        var requests = await acceptances.OpenRequestsAsync(provider.Name, cancellationToken);
         var open = new Dictionary<Guid, bool>();
         var ids = new List<Guid>();
         foreach (var (id, projectId) in requests)

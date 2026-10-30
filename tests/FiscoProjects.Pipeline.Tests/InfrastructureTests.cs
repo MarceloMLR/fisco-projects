@@ -168,7 +168,7 @@ public sealed partial class InfrastructureTests
             .And.Contain("app_identity_principal_id = module.app.principal_id")
             .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
             .And.Contain("EntraSignIn__ClientId = module.entra.client_id")
-            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)");
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)");
         Read("modules", "app", "main.tf").Should().Contain("ASPNETCORE_FORWARDEDHEADERS_ENABLED = \"true\"");
         var variables = Read("variables.tf");
         Default(variables, "entra_sign_in").Should().Be("true");
@@ -204,7 +204,7 @@ public sealed partial class InfrastructureTests
 
         main.Should().Contain("FileStorage__Provider            = \"SharePoint\"")
             .And.Contain("FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url")
-            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)");
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)");
         Default(variables, "sharepoint_site_url").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
         Default(variables, "sharepoint_root_folder").Should().Be("null", "the library itself, in a site only for the system");
         Read("environments", "dev.tfvars").Should().NotContain("sharepoint_site_url");
@@ -282,6 +282,47 @@ public sealed partial class InfrastructureTests
 
         dev.Should().Contain("Email__Graph__LocalDomains__0 = \"empresa.example\"")
             .And.Contain("Email__Local__Folder         = \"/home/data/emails\"");
+    }
+
+    // Spec: infraestrutura, requirement "Assinatura pela Autentique na instalação" (ADR-0130).
+    [Fact(DisplayName = "Autentique pelo Terraform")]
+    public void Autentique_ReadsItsSecrets_OnlyFromTheKeyVault()
+    {
+        var main = Read("main.tf");
+
+        Default(Read("variables.tf"), "autentique").Should().Be("null", "without the Autentique, the terms are only attached");
+        main.Should().Contain("Signature__Provider            = \"Autentique\"")
+            .And.Contain("Signature__Autentique__Sandbox = tostring(var.autentique.sandbox)")
+            .And.Contain("{ Signature__Autentique__ApiKey = \"Signature--Autentique--ApiKey\" }")
+            .And.Contain("{ Signature__Autentique__WebhookSecret = \"Signature--Autentique--WebhookSecret\" }")
+            .And.Contain("{ Signature__CheckMinutes = \"60\" }")
+            .And.Contain("vault_settings         = local.signature_secrets");
+        Read("modules", "app", "main.tf").Should().Contain(
+            "for setting, secret in var.vault_settings : setting => \"@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})\"");
+        AllCode().Should().NotContain("Signature__Autentique__ApiKey = var.").And.NotContain("Signature__Autentique__WebhookSecret = var.");
+    }
+
+    [Fact(DisplayName = "Sandbox no ambiente dev")]
+    public void DevEnvironment_UsesTheSandbox_AndKeepsTheSignersOfTheDemonstrationLocal()
+    {
+        var dev = Read("environments", "dev.tfvars");
+
+        dev.Should().Contain("autentique = {\n  sandbox = true\n  webhook = true\n}")
+            .And.Contain("Signature__LocalDomains__0 = \"cliente.example\"")
+            .And.Contain("Signature__Local__Folder   = \"/home/data/signatures\"");
+        Read("environments", "prod.tfvars").Should().NotContain("sandbox");
+    }
+
+    [Fact(DisplayName = "Autentique no guia")]
+    public void Guide_TeachesTheSecretsAndTheNoticeOfTheAutentique()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+
+        guide.Should().Contain("--name Signature--Autentique--ApiKey")
+            .And.Contain("--name Signature--Autentique--WebhookSecret")
+            .And.Contain("https://<endereço da instalação>/signature-notices")
+            .And.Contain("do tipo Assinatura, com os eventos `signature.accepted` e `signature.rejected`")
+            .And.Contain("autentique = { webhook = true }");
     }
 
     [Fact(DisplayName = "Aplicativo do Entra sem segredo")]
