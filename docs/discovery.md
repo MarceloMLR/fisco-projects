@@ -42,7 +42,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 | Documentos | Pastas padrão configuráveis, versões, status manual, vínculo com o cronograma, visualização no navegador | Módulo Documentos, arquivos no SharePoint atrás de `IFileStorage` | 0030, 0031 |
 | Links | Links do projeto por categoria | Módulo Documentos ou Projetos (definir na change) | 0032 |
 | Acessos | Login e senha de portais por projeto, senha cifrada e mascarada, importação de planilha | Módulo Acessos | 0033, 0034 |
-| Termos de aceite | Pedido de aceite de um marco, resposta com PDF assinado fora do sistema, recusa com motivo | Módulo Documentos ou Projetos (definir na change) | 0035 |
+| Termos de aceite | Pedido de assinatura do termo de um marco a signatários digitados, por um provedor de assinatura eletrônica trocável, ou termo assinado anexado pela gestão | Módulo Documentos | 0035, 0129 |
 | Membros e permissões | Papéis no sistema e no projeto, membros geridos pelo gerente e pelo líder técnico, matrizes de permissão | Módulo Projetos e regra de autorização compartilhada | 0006, 0040, 0042 a 0046 |
 | Avisos | E-mails imediatos para o que pede ação, resumo diário, sino de notificações | Módulo Notificações, e-mail atrás de `IEmailSender` com fila no banco | 0036, 0037, 0038 |
 | Auditoria e dados pessoais | Registro automático de todas as alterações e eventos de segurança, anonimização a pedido, retenção | Módulo Auditoria, ponto único na camada de dados | 0039, 0058 |
@@ -57,7 +57,7 @@ Fora do produto:
 
 - Service desk geral: catálogo de serviços, base de conhecimento, chamado sem projeto (ADR-0022).
 - Integração automática com o sistema de chamados de fornecedores (ADR-0028).
-- Aceite eletrônico por clique; todo aceite é por PDF assinado (ADR-0035).
+- Aceite eletrônico por clique; todo aceite é por PDF assinado (ADR-0035, ADR-0129).
 - Orçamento, custos, horas em reais e campos personalizados (ADR-0016, ADR-0128).
 - Dependências entre projetos diferentes (ADR-0019).
 - Gerar arquivo `.mpp` nativo (ADR-0021).
@@ -155,7 +155,7 @@ Uso esperado: 5 a 6 pessoas por instalação, não simultâneas, em horário com
 | Responsável | Quem atende o chamado; definido pela primeira resposta de alguém do time, se ainda não houver (ADR-0068) |
 | Gestores | Gerente e líder técnico do projeto (ADR-0044) |
 | Chamado de fornecedor | Registro, dentro do nosso chamado, do chamado aberto num fornecedor (ADR-0028) |
-| Termo de aceite | Pedido de aceite de um marco, respondido com PDF assinado fora do sistema (ADR-0035) |
+| Termo de aceite | Pedido de assinatura do termo de um marco, assinado pelo provedor de assinatura eletrônica ou anexado pela gestão (ADR-0129) |
 | Acesso | Login e senha de um portal, guardados por projeto com a senha cifrada (ADR-0034) |
 | Modelo de projeto | Estrutura de cronograma salva a partir de um projeto, para criar outros (ADR-0017) |
 | Meu trabalho | Tela inicial: o que pede ação da pessoa, por urgência (ADR-0070) |
@@ -196,7 +196,7 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 
 - LGPD: dados pessoais com anonimização a pedido e prazos de retenção configuráveis (ADR-0058). Os prazos padrão precisam ser validados por cada empresa com a assessoria jurídica.
 - Lei do Software (Lei nº 9.609/1998): o FiscoProjects é projeto pessoal, sem recursos do empregador (ADR-0002). Antes de oferecer o código a qualquer empresa, um advogado analisa o contrato de trabalho.
-- Validade jurídica das assinaturas dos termos de aceite: a confirmar com advogado (ADR-0035).
+- Validade jurídica das assinaturas dos termos de aceite: a confirmar com advogado (ADR-0035, ADR-0129).
 
 ### Dados sensíveis e retenção
 
@@ -207,7 +207,7 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 | Auditoria | 5 anos (configurável), limpeza automática mensal | 0058 |
 | Conteúdo dos e-mails enviados | Apagado da fila depois de 30 dias | 0058 |
 | Notificações do sino | 90 dias (configurável) | 0038 |
-| Termos de aceite | Visíveis só ao gerente, aos administradores e a quem assinou; termo assinado nunca é excluído | 0031, 0045 |
+| Termos de aceite | Visíveis só ao gerente e aos administradores; termo assinado nunca é excluído | 0031, 0045, 0129 |
 | Dados no Brasil | Aplicação, banco e backups em Brazil South | 0052, 0059 |
 
 ### Auditoria e rastreabilidade

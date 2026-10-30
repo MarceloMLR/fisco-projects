@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (termos de aceite substituídos pelo ADR-0129)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
