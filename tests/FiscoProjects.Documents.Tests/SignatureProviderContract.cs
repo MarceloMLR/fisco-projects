@@ -36,7 +36,7 @@ public abstract class SignatureProviderContract
             Cancellation);
     }
 
-    [Fact(DisplayName = "Mandar o termo aos signatários")]
+    [Fact(DisplayName = "Mesmas regras em cada provedor")]
     public async Task Send_GivesTheDocument_AndEachSigner()
     {
         var sent = await SendAsync();

@@ -7,8 +7,7 @@ import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import type SvgIcon from '@mui/material/SvgIcon';
-import { useQuery } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
@@ -40,6 +39,34 @@ async function signingOf(token: string, signal: AbortSignal): Promise<LocalSigni
 
 type Outcome = 'signed' | 'refused';
 
+type Loaded =
+  { state: 'loading' } | { state: 'failed' } | { state: 'loaded'; signing: LocalSigning | null };
+
+/**
+ * The request of the link, read once, outside the cache of the queries: the page has no session, and the cache is
+ * emptied when the application learns nobody is in one (ADR-0080).
+ */
+function useLocalSigning(token: string): Loaded {
+  const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' });
+  useEffect(() => {
+    const abort = new AbortController();
+    signingOf(token, abort.signal).then(
+      (signing) => {
+        setLoaded({ state: 'loaded', signing });
+      },
+      () => {
+        if (!abort.signal.aborted) {
+          setLoaded({ state: 'failed' });
+        }
+      },
+    );
+    return () => {
+      abort.abort();
+    };
+  }, [token]);
+  return loaded;
+}
+
 /**
  * The page of the local provider of signatures (ADR-0129), outside the structure of the screens and without a
  * session, always light: the signer opens the link the drawer of the term shows, reads the term and signs or refuses
@@ -53,12 +80,10 @@ export function LocalSigningPage() {
   const [refusing, setRefusing] = useState(false);
   const [failure, setFailure] = useState<string>();
   const [signing, setSigning] = useState(false);
-  const { data, isPending, isError } = useQuery({
-    queryKey: ['local-signing', token],
-    queryFn: ({ signal }) => signingOf(token, signal),
-    retry: false,
-    staleTime: Infinity,
-  });
+  const loaded = useLocalSigning(token);
+  const isPending = loaded.state === 'loading';
+  const isError = loaded.state === 'failed';
+  const data = loaded.state === 'loaded' ? loaded.signing : null;
 
   const sign = async () => {
     setSigning(true);

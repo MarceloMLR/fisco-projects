@@ -3168,6 +3168,7 @@
       "count_zero": "0 de {{total}} assinaram",
       "count_one": "{{count}} de {{total}} assinou",
       "count_other": "{{count}} de {{total}} assinaram",
+      "refused": "{{name}} recusou",
       "before": "Pedido anterior, à pessoa do projeto",
       "outside": "Assinado fora do sistema",
       "outsideDetail": "Quem assinou está no PDF"

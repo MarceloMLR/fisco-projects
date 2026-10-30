@@ -160,6 +160,7 @@ describe('Aba dos termos da gestão', () => {
     expect(rows()[0]).toContain('Homologação concluída · 03/11');
     expect(rows()[0]).toContain('1 de 2 assinou');
     expect(rows()[0]).toContain('Ana Souza e Bruno Lima');
+    expect(rows()[1]).toContain('Ana Souza recusou');
     expect(rows()[2]).toContain('2 de 2 assinaram');
     expect(rows()[3]).toContain('Carla Mendes');
     expect(rows()[3]).toContain(text.signers.before);

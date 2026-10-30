@@ -121,6 +121,8 @@ export function AcceptanceDialog({
   return (
     <Dialog
       open
+      // The signers go in lines of name and e-mail, which need the wider dialog.
+      size={mode === 'request' ? 'lg' : undefined}
       title={t(
         mode === 'request' ? 'acceptances.dialog.requestTitle' : 'acceptances.dialog.attachTitle',
       )}

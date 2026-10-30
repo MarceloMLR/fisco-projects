@@ -155,10 +155,18 @@ export const signedCount = (list: readonly { status: AcceptanceSignerStatus }[])
   list.filter((item) => item.status === 'Signed').length;
 
 /**
- * Who a term was asked of, as the list and the drawer tell it: "2 de 3 assinaram" with the names of the signers; the
+ * Who a term was asked of, as the list tells it: "2 de 3 assinaram", or who refused, with the names of the signers; the
  * person of a request asked before the provider (ADR-0129); or a term signed outside the system.
  */
 export function signersSummary(term: Acceptance, t: TFunction): { main: string; detail: string } {
+  // A refusal of one signer refuses the term, and says who (ADR-0129).
+  const refusal = term.signers.find((item) => item.status === 'Refused');
+  if (refusal !== undefined) {
+    return {
+      main: t('acceptances.signers.refused', { name: refusal.name }),
+      detail: namesText(term.signers.map((item) => item.name)),
+    };
+  }
   if (term.signers.length > 0) {
     return {
       main: t('acceptances.signers.count', {
