@@ -7,39 +7,54 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence;
 /// <summary>The acceptance terms, in the tables of the module, saved with the documents and the folders.</summary>
 internal sealed class AcceptanceStore(DocumentsDbContext db) : IAcceptanceStore
 {
-    public async Task<IReadOnlyList<AcceptanceTerm>> ListAsync(Guid projectId, Guid? recipientId, CancellationToken cancellationToken) =>
+    public async Task<IReadOnlyList<AcceptanceTerm>> ListAsync(Guid projectId, CancellationToken cancellationToken) =>
         await db.AcceptanceTerms.AsNoTracking()
-            .Where(term => term.ProjectId == projectId && (recipientId == null || term.RecipientId == recipientId))
+            .Include(term => term.Signers)
+            .Where(term => term.ProjectId == projectId)
             .OrderByDescending(term => term.RequestedAt)
             .ThenByDescending(term => term.Id)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
     public Task<AcceptanceTerm?> FindAsync(Guid projectId, Guid id, bool withEvents, CancellationToken cancellationToken)
     {
-        IQueryable<AcceptanceTerm> terms = withEvents ? db.AcceptanceTerms.Include(term => term.Events) : db.AcceptanceTerms;
-        return terms.SingleOrDefaultAsync(term => term.Id == id && term.ProjectId == projectId, cancellationToken);
+        IQueryable<AcceptanceTerm> terms = db.AcceptanceTerms.Include(term => term.Signers);
+        if (withEvents)
+        {
+            terms = terms.Include(term => term.Events);
+        }
+
+        return terms.AsSplitQuery().SingleOrDefaultAsync(term => term.Id == id && term.ProjectId == projectId, cancellationToken);
     }
 
-    public async Task<IReadOnlySet<Guid>> SignedDocumentsOfAsync(Guid projectId, Guid recipientId, CancellationToken cancellationToken) =>
-        (await db.AcceptanceTerms.AsNoTracking()
-            .Where(term => term.ProjectId == projectId && term.RecipientId == recipientId && term.DocumentId != null)
-            .Select(term => term.DocumentId!.Value)
-            .ToListAsync(cancellationToken))
-        .ToHashSet();
+    public Task<AcceptanceTerm?> FindAsync(Guid id, CancellationToken cancellationToken) =>
+        db.AcceptanceTerms.Include(term => term.Signers).SingleOrDefaultAsync(term => term.Id == id, cancellationToken);
+
+    public async Task<Guid?> TermOfDocumentAsync(string provider, string documentId, CancellationToken cancellationToken) =>
+        await db.AcceptanceTerms.AsNoTracking()
+            .Where(term => term.SignatureProvider == provider && term.ProviderDocumentId == documentId)
+            .Select(term => (Guid?)term.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<(Guid Id, Guid ProjectId)>> OpenRequestsAsync(string provider, CancellationToken cancellationToken) =>
+        [
+            .. (await db.AcceptanceTerms.AsNoTracking()
+                .Where(term => term.Status == AcceptanceStatus.Pending && term.SignatureProvider == provider)
+                .OrderBy(term => term.RequestedAt)
+                .Select(term => new { term.Id, term.ProjectId })
+                .ToListAsync(cancellationToken))
+            .Select(term => (term.Id, term.ProjectId)),
+        ];
 
     public Task<int> PendingCountAsync(Guid projectId, CancellationToken cancellationToken) =>
         db.AcceptanceTerms.CountAsync(term => term.ProjectId == projectId && term.Status == AcceptanceStatus.Pending, cancellationToken);
 
-    public async Task<IReadOnlyList<AcceptanceTerm>> PendingAsync(CancellationToken cancellationToken) =>
-        await db.AcceptanceTerms.AsNoTracking()
-            .Where(term => term.Status == AcceptanceStatus.Pending)
-            .OrderBy(term => term.RequestedAt)
-            .ToListAsync(cancellationToken);
-
     public async Task<IReadOnlyList<AcceptanceTerm>> PendingOfAsync(Guid userId, CancellationToken cancellationToken) =>
         await db.AcceptanceTerms.AsNoTracking()
-            .Where(term => term.Status == AcceptanceStatus.Pending && (term.RecipientId == userId || term.RequestedById == userId))
+            .Include(term => term.Signers)
+            .Where(term => term.Status == AcceptanceStatus.Pending && term.RequestedById == userId)
             .OrderBy(term => term.RequestedAt)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlySet<Guid>> PendingMilestonesAsync(

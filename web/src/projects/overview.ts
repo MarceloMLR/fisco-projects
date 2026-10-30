@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { ProjectOverview } from '../api/client';
+import { namesText } from '../acceptances/acceptances';
 import type { DueState } from '../components/DueDate';
 import {
   type Dates,
@@ -136,7 +137,7 @@ export function attentionLines(
     title: term.title,
     path: `/projects/${projectId}/acceptances?term=${term.id}`,
     meta: t('projects.overview.attention.acceptance', {
-      name: term.recipient.name,
+      name: term.recipient?.name ?? namesText(term.signers),
       day: dates.formatDayMonth(term.requestedAt),
     }),
     due:

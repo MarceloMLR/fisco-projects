@@ -11,7 +11,7 @@ context: |
   chamados (sempre num projeto, times Funcional e Desenvolvimento, fluxo de status em tabela, prazos em
   dias úteis com pausa, conversa com anexos e menções, troca de responsável e solicitante, chamados em
   fornecedores); documentos (SharePoint, versões, status manual); links; acessos (senha cifrada);
-  termos de aceite (PDF assinado fora do sistema); membros e permissões; avisos (e-mail e sino);
+  termos de aceite (assinados por um provedor trocável ou anexados, só da gestão); membros e permissões; avisos (e-mail e sino);
   auditoria e LGPD; administração; perfil e tema.
   Depois da v1: horas do projeto (apontamento de cada pessoa e saldo em horas, só para o administrador).
   NÃO faz: service desk geral nem chamado sem projeto; usuários externos (v1); filas compartilhadas;

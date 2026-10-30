@@ -45,9 +45,12 @@ public sealed record OverviewTimeline(DateOnly Start, DateOnly End, IReadOnlyLis
 public sealed record OverviewLateTask(
     Guid Id, string Name, Guid? OwnerId, int Progress, DateOnly End, int DaysLate, IReadOnlyList<string> Blocks);
 
-/// <summary>A pending request of acceptance the person sees, with the milestone and its day.</summary>
+/// <summary>
+/// A pending request of acceptance, for who manages the terms (ADR-0129): the signers, or the person a request was asked
+/// of before, with the milestone and its day.
+/// </summary>
 public sealed record OverviewAcceptance(
-    Guid Id, string Title, Guid RecipientId, DateTime RequestedAt, string? Milestone, DateOnly? MilestoneDay);
+    Guid Id, string Title, Guid? RecipientId, IReadOnlyList<string> Signers, DateTime RequestedAt, string? Milestone, DateOnly? MilestoneDay);
 
 /// <summary>The teams of a project (ADR-0040, ADR-0068).</summary>
 public enum OverviewTeam
@@ -125,7 +128,7 @@ public sealed class GetProjectOverview(
         var teams = TeamsOf(project, ticketOverview);
         var people = lateTasks.Where(task => task.OwnerId is not null).Select(task => task.OwnerId!.Value)
             .Concat(ticketOverview.Attention.Where(ticket => ticket.AssigneeId is not null).Select(ticket => ticket.AssigneeId!.Value))
-            .Concat(pending.Select(term => term.RecipientId))
+            .Concat(pending.Where(term => term.RecipientId is not null).Select(term => term.RecipientId!.Value))
             .Concat(teams.SelectMany(team => team.People).Select(person => person.Id));
         var names = await PeopleNames.OfAsync(users, people, cancellationToken);
 
@@ -150,7 +153,8 @@ public sealed class GetProjectOverview(
             [.. pending.Select(term =>
             {
                 var milestone = items.GetValueOrDefault(term.MilestoneId);
-                return new OverviewAcceptance(term.Id, term.Title, term.RecipientId, term.RequestedAt, milestone?.Name, milestone?.Start);
+                return new OverviewAcceptance(
+                    term.Id, term.Title, term.RecipientId, term.Signers, term.RequestedAt, milestone?.Name, milestone?.Start);
             })],
             [.. teams.Select(team => team with
             {

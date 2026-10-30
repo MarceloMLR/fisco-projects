@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (resposta da pessoa e termo anexado substituídos pelo ADR-0129)
 date: 2026-10-20
 decision-makers: Marcelo Ribeiro
 ---

@@ -28,9 +28,16 @@ public sealed record MyWorkTicketResponse(
 /// <summary>A task of the queue: the phase and the progress.</summary>
 public sealed record MyWorkTaskResponse(string Phase, int Progress);
 
-/// <summary>A request of acceptance of the queue: whether it is for the person, for whom, who asked, when and the milestone.</summary>
+/// <summary>
+/// A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the
+/// project; who asked, when and the milestone (ADR-0129).
+/// </summary>
 public sealed record MyWorkAcceptanceResponse(
-    bool ForYou, MyWorkPersonResponse Recipient, MyWorkPersonResponse RequestedBy, DateTime RequestedAt, string? Milestone);
+    MyWorkPersonResponse? Recipient,
+    IReadOnlyList<string> Signers,
+    MyWorkPersonResponse RequestedBy,
+    DateTime RequestedAt,
+    string? Milestone);
 
 /// <summary>
 /// An item of the queue: the kind, the project, the title, the action of the line, the day it is due (none while it
@@ -88,10 +95,10 @@ public static class MyWorkEndpoints
                 view.View,
                 view.Count,
                 [.. view.Groups.Select(group => new MyWorkGroupResponse(
-                    group.Group, [.. group.Entries.Select(entry => ItemOf(entry, result, userId))]))]))]));
+                    group.Group, [.. group.Entries.Select(entry => ItemOf(entry, result))]))]))]));
     }
 
-    private static MyWorkItemResponse ItemOf(MyWorkEntry entry, MyWorkResult result, Guid userId)
+    private static MyWorkItemResponse ItemOf(MyWorkEntry entry, MyWorkResult result)
     {
         var item = entry.Item;
         MyWorkPersonResponse Person(Guid id) => new(id, result.NameOf(id));
@@ -117,8 +124,8 @@ public static class MyWorkEndpoints
             item.Task is { } task ? new MyWorkTaskResponse(task.Phase, task.Progress) : null,
             item.Acceptance is { } acceptance
                 ? new MyWorkAcceptanceResponse(
-                    acceptance.RecipientId == userId,
-                    Person(acceptance.RecipientId),
+                    acceptance.RecipientId is { } recipient ? Person(recipient) : null,
+                    acceptance.Signers,
                     Person(acceptance.RequestedById),
                     acceptance.RequestedAt,
                     acceptance.Milestone)

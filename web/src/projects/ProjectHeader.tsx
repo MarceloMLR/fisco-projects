@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { managesTerms } from '../acceptances/acceptances';
 import type { Project } from '../api/client';
 import {
   acceptancesQuery,
@@ -16,6 +17,7 @@ import {
 } from '../api/queries';
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
+import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import type { ProjectTab } from './projectTabs';
@@ -100,10 +102,13 @@ export function ProjectHeader({
   const links = useQuery(linksQuery(project.id)).data?.total;
   // The count of the tab Acessos: all the credentials of the project.
   const credentials = useQuery(credentialsQuery(project.id)).data?.total;
-  // The tab Termos de aceite, for who manages the terms and who has one (ADR-0045), with all the terms the person sees.
-  const acceptances = useQuery(acceptancesQuery(project.id)).data;
-  const seesAcceptances =
-    acceptances !== undefined && (acceptances.canManage || acceptances.counts.all > 0);
+  // The tab Termos de aceite, only for who manages the terms (ADR-0129), with all the terms of the project.
+  const { session } = useSession();
+  const seesAcceptances = managesTerms(
+    project,
+    session.status === 'signed-in' ? session.user : undefined,
+  );
+  const acceptances = useQuery({ ...acceptancesQuery(project.id), enabled: seesAcceptances }).data;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');

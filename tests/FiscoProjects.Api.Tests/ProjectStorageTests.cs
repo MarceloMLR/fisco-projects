@@ -257,7 +257,7 @@ public sealed class ProjectStorageTests(SqlServerFixture sqlServer)
         return number;
     }
 
-    /// <summary>The Administrator asks Carla to accept a milestone, with the term to sign.</summary>
+    /// <summary>The Administrator asks a signer of the client to sign the term of a milestone.</summary>
     private static async Task RequestAcceptanceAsync(ProjectTeam team, Guid project)
     {
         var schedule = $"/api/projects/{project}/schedule";
@@ -276,7 +276,8 @@ public sealed class ProjectStorageTests(SqlServerFixture sqlServer)
         await IdOfAsync(await PostFormAsync(team.Admin, $"/api/projects/{project}/acceptances", new Dictionary<string, string?>
         {
             ["milestoneId"] = milestone.ToString(),
-            ["recipientId"] = team.Carla.ToString(),
+            ["signers[0].name"] = "Ana Souza",
+            ["signers[0].email"] = "ana.souza@cliente.example",
             ["title"] = "Aceite da homologação",
             ["message"] = "Assine o termo, por favor.",
         }, "termo.pdf", Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")));

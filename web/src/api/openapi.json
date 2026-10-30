@@ -7648,6 +7648,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7697,15 +7707,6 @@
                   {
                     "type": "object",
                     "properties": {
-                      "recipientId": {
-                        "type": "string",
-                        "format": "uuid"
-                      }
-                    }
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
                       "title": {
                         "type": "string"
                       }
@@ -7744,6 +7745,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -7767,8 +7778,8 @@
           "404": {
             "description": "Not Found"
           },
-          "403": {
-            "description": "Forbidden",
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7777,8 +7788,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflict",
+          "502": {
+            "description": "Bad Gateway",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7818,6 +7829,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -7833,16 +7854,6 @@
           },
           "404": {
             "description": "Not Found"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         }
       }
@@ -7876,6 +7887,16 @@
         "responses": {
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7935,6 +7956,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "204": {
             "description": "No Content"
           },
@@ -7951,8 +7982,8 @@
           "404": {
             "description": "Not Found"
           },
-          "403": {
-            "description": "Forbidden",
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7961,8 +7992,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflict",
+          "502": {
+            "description": "Bad Gateway",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8003,6 +8034,16 @@
         "responses": {
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8055,15 +8096,6 @@
                   {
                     "type": "object",
                     "properties": {
-                      "recipientId": {
-                        "type": "string",
-                        "format": "uuid"
-                      }
-                    }
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
                       "title": {
                         "type": "string"
                       }
@@ -8094,6 +8126,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created",
             "content": {
@@ -8116,107 +8158,6 @@
           },
           "404": {
             "description": "Not Found"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/projects/{projectId}/acceptances/{termId}/signed": {
-      "post": {
-        "tags": [
-          "Acceptances"
-        ],
-        "operationId": "SignAcceptance",
-        "parameters": [
-          {
-            "name": "projectId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "termId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "$ref": "#/components/schemas/IFormFile"
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           },
           "409": {
             "description": "Conflict",
@@ -8283,84 +8224,8 @@
               }
             }
           },
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found"
-          },
           "403": {
             "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/projects/{projectId}/acceptances/{termId}/refusal": {
-      "post": {
-        "tags": [
-          "Acceptances"
-        ],
-        "operationId": "RefuseAcceptance",
-        "parameters": [
-          {
-            "name": "projectId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "termId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AcceptanceRefusalRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8384,16 +8249,6 @@
           },
           "404": {
             "description": "Not Found"
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           },
           "409": {
             "description": "Conflict",
@@ -8445,6 +8300,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "204": {
             "description": "No Content"
           },
@@ -8461,8 +8326,8 @@
           "404": {
             "description": "Not Found"
           },
-          "403": {
-            "description": "Forbidden",
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8471,12 +8336,143 @@
               }
             }
           },
-          "409": {
-            "description": "Conflict",
+          "502": {
+            "description": "Bad Gateway",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/local-signatures/{token}": {
+      "get": {
+        "tags": [
+          "LocalSignatures"
+        ],
+        "operationId": "GetLocalSigning",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSigningResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/local-signatures/{token}/document": {
+      "get": {
+        "tags": [
+          "LocalSignatures"
+        ],
+        "operationId": "OpenLocalSigningDocument",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/local-signatures/{token}/sign": {
+      "post": {
+        "tags": [
+          "LocalSignatures"
+        ],
+        "operationId": "SignLocally",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/local-signatures/{token}/refuse": {
+      "post": {
+        "tags": [
+          "LocalSignatures"
+        ],
+        "operationId": "RefuseLocally",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalRefusalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 }
               }
             }
@@ -10041,16 +10037,12 @@
     "schemas": {
       "AcceptanceActionsResponse": {
         "required": [
-          "canAnswer",
           "canAttach",
           "canRemind",
           "canCancel"
         ],
         "type": "object",
         "properties": {
-          "canAnswer": {
-            "type": "boolean"
-          },
           "canAttach": {
             "type": "boolean"
           },
@@ -10089,7 +10081,7 @@
             "format": "int32"
           }
         },
-        "description": "How many terms of each status the person sees."
+        "description": "How many terms of each status the project has."
       },
       "AcceptanceCreatedResponse": {
         "required": [
@@ -10108,6 +10100,7 @@
           "term",
           "message",
           "toSign",
+          "signers",
           "signed",
           "refusalReason",
           "events",
@@ -10133,6 +10126,12 @@
                 "$ref": "#/components/schemas/AcceptanceFileResponse"
               }
             ]
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcceptanceSignerResponse"
+            }
           },
           "signed": {
             "oneOf": [
@@ -10160,7 +10159,7 @@
             "$ref": "#/components/schemas/AcceptanceActionsResponse"
           }
         },
-        "description": "A term with the message, the term to sign, the signed term, the reason of the refusal and the history."
+        "description": "A term with the message, the term to sign, the signers, the signed term, the reason of the refusal and the history."
       },
       "AcceptanceEventKind": {
         "enum": [
@@ -10170,12 +10169,13 @@
           "Attached",
           "Refused"
         ],
-        "description": "What happened to a term, for its history (ADR-0095)."
+        "description": "What happened to a term, for its history (ADR-0095, ADR-0129)."
       },
       "AcceptanceEventResponse": {
         "required": [
           "kind",
           "actor",
+          "signer",
           "at"
         ],
         "type": "object",
@@ -10184,14 +10184,27 @@
             "$ref": "#/components/schemas/AcceptanceEventKind"
           },
           "actor": {
-            "$ref": "#/components/schemas/AcceptancePersonResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AcceptancePersonResponse"
+              }
+            ]
+          },
+          "signer": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "at": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "description": "An event of the history: what happened, who did it and when."
+        "description": "An event of the history: what happened, who did it (the person, or the signer) and when."
       },
       "AcceptanceFileResponse": {
         "required": [
@@ -10214,8 +10227,8 @@
         "required": [
           "items",
           "counts",
-          "canManage",
-          "canRequest"
+          "canRequest",
+          "canAttach"
         ],
         "type": "object",
         "properties": {
@@ -10228,14 +10241,14 @@
           "counts": {
             "$ref": "#/components/schemas/AcceptanceCountsResponse"
           },
-          "canManage": {
+          "canRequest": {
             "type": "boolean"
           },
-          "canRequest": {
+          "canAttach": {
             "type": "boolean"
           }
         },
-        "description": "The terms the person sees, the counts, whether the person sees every term of the project (who manages them) and\nwhether the person asks for and attaches terms now, which a closed project does not let."
+        "description": "The terms of the project, for who manages them (ADR-0129): the counts, whether a signature can be asked for now (the\ninstallation has a provider and the project is open) and whether a signed term can be attached (the project open)."
       },
       "AcceptanceMilestoneResponse": {
         "required": [
@@ -10287,21 +10300,6 @@
         },
         "description": "A person and the name."
       },
-      "AcceptanceRefusalRequest": {
-        "required": [
-          "reason"
-        ],
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "description": "The reason why the person refuses the term."
-      },
       "AcceptanceResponse": {
         "required": [
           "id",
@@ -10309,9 +10307,11 @@
           "status",
           "milestoneId",
           "milestone",
+          "signers",
           "recipient",
           "requested",
           "answered",
+          "closedAt",
           "isRequest"
         ],
         "type": "object",
@@ -10340,8 +10340,21 @@
               }
             ]
           },
+          "signers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcceptanceSignerSummaryResponse"
+            }
+          },
           "recipient": {
-            "$ref": "#/components/schemas/AcceptancePersonResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AcceptancePersonResponse"
+              }
+            ]
           },
           "requested": {
             "$ref": "#/components/schemas/DocumentActionResponse"
@@ -10356,11 +10369,18 @@
               }
             ]
           },
+          "closedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "isRequest": {
             "type": "boolean"
           }
         },
-        "description": "A term of a list: the title, the status, the milestone (null when it left the schedule), the person of the term, who\nasked and when (who attached it, for a term without a request), who answered and when, and whether it was asked for\nin the system."
+        "description": "A term of a list: the title, the status, the milestone (null when it left the schedule), the signers at the\nprovider, the person of a request asked before (ADR-0129), who asked and when (who attached it, for a term without a\nrequest), who answered in the system and when, and whether it was asked for in the system."
       },
       "AcceptanceSignedResponse": {
         "required": [
@@ -10384,13 +10404,87 @@
         },
         "description": "The document of the signed term in the folder of the terms, opened by the documents."
       },
+      "AcceptanceSignerResponse": {
+        "required": [
+          "id",
+          "name",
+          "email",
+          "status",
+          "respondedAt",
+          "refusalReason",
+          "signingLink"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/AcceptanceSignerStatus"
+          },
+          "respondedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "refusalReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "signingLink": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A signer of a request: the name, the e-mail only while the request is open (ADR-0129), where the signer stands, when\nthe signer signed or refused, the reason of a refusal and, from the local provider, the link to sign."
+      },
+      "AcceptanceSignerStatus": {
+        "enum": [
+          "Pending",
+          "Signed",
+          "Refused"
+        ],
+        "description": "Where a signer of a request stands at the provider of signatures (ADR-0129)."
+      },
+      "AcceptanceSignerSummaryResponse": {
+        "required": [
+          "name",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AcceptanceSignerStatus"
+          }
+        },
+        "description": "A signer of a request in a list: the name and where the signer stands."
+      },
       "AcceptanceStatus": {
         "enum": [
           "Pending",
           "Signed",
           "Refused"
         ],
-        "description": "Where a term stands (ADR-0035): waiting for the answer, signed, or refused with a reason."
+        "description": "Where a term stands (ADR-0129): waiting for the signatures, signed, or refused with a reason."
       },
       "AdditionalHoursCreatedResponse": {
         "required": [
@@ -12191,6 +12285,48 @@
           }
         }
       },
+      "LocalRefusalRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The reason why the signer refuses the term."
+      },
+      "LocalSigningResponse": {
+        "required": [
+          "title",
+          "message",
+          "signer",
+          "fileName"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "signer": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          }
+        },
+        "description": "A request as the local page of a signer shows it: the title, the message, the name of the signer and the PDF."
+      },
       "LocalSignInRequest": {
         "required": [
           "email"
@@ -12216,19 +12352,29 @@
       },
       "MyWorkAcceptanceResponse": {
         "required": [
-          "forYou",
           "recipient",
+          "signers",
           "requestedBy",
           "requestedAt",
           "milestone"
         ],
         "type": "object",
         "properties": {
-          "forYou": {
-            "type": "boolean"
-          },
           "recipient": {
-            "$ref": "#/components/schemas/MyWorkPersonResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MyWorkPersonResponse"
+              }
+            ]
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "requestedBy": {
             "$ref": "#/components/schemas/MyWorkPersonResponse"
@@ -12244,7 +12390,7 @@
             ]
           }
         },
-        "description": "A request of acceptance of the queue: whether it is for the person, for whom, who asked, when and the milestone."
+        "description": "A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the\nproject; who asked, when and the milestone (ADR-0129)."
       },
       "MyWorkAction": {
         "enum": [
@@ -12974,6 +13120,7 @@
           "id",
           "title",
           "recipient",
+          "signers",
           "requestedAt",
           "milestone",
           "milestoneDay"
@@ -12988,7 +13135,20 @@
             "type": "string"
           },
           "recipient": {
-            "$ref": "#/components/schemas/OverviewPersonResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OverviewPersonResponse"
+              }
+            ]
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "requestedAt": {
             "type": "string",
@@ -13008,7 +13168,7 @@
             "format": "date"
           }
         },
-        "description": "A pending request of acceptance the person sees."
+        "description": "A pending request of acceptance, for who manages the terms: the names of the signers or, in a request asked before,\nthe person of the project (ADR-0129)."
       },
       "OverviewAttentionResponse": {
         "required": [
@@ -17379,6 +17539,9 @@
     },
     {
       "name": "Acceptances"
+    },
+    {
+      "name": "LocalSignatures"
     },
     {
       "name": "Credentials"

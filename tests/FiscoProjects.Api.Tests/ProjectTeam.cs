@@ -33,6 +33,9 @@ internal sealed class ProjectTeam : IAsyncDisposable
     /// <summary>The folder of the files of the test.</summary>
     public string Files { get; }
 
+    /// <summary>The folder of the requests of the local provider of signatures.</summary>
+    public string Signatures => $"{Files}-signatures";
+
     public Guid Paulo { get; private set; }
 
     public Guid Marina { get; private set; }
@@ -56,6 +59,9 @@ internal sealed class ProjectTeam : IAsyncDisposable
         {
             builder.Configuration["FileStorage:Provider"] = "Local";
             builder.Configuration["FileStorage:Local:RootPath"] = files;
+            // The local provider of signatures, in a folder of the team, so each test has its own requests (ADR-0129).
+            builder.Configuration["Signature:Provider"] = "Local";
+            builder.Configuration["Signature:Local:Folder"] = $"{files}-signatures";
             configure?.Invoke(builder);
         });
         var (admin, paulo) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
@@ -137,9 +143,12 @@ internal sealed class ProjectTeam : IAsyncDisposable
 
         Admin.Dispose();
         await App.DisposeAsync();
-        if (Directory.Exists(Files))
+        foreach (var folder in new[] { Files, Signatures })
         {
-            Directory.Delete(Files, recursive: true);
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
         }
     }
 }

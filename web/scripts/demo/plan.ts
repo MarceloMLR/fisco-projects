@@ -28,6 +28,17 @@ export const demoPeople = {
   diego: 'diego.torres@empresa.example',
 } as const;
 
+/**
+ * The signers of the terms, people of the clients outside the company and the system, with fictitious e-mails
+ * (ADR-0002, ADR-0129).
+ */
+export const clientSigners = {
+  ana: { name: 'Ana Souza', email: 'ana.souza@cliente.example' },
+  bruno: { name: 'Bruno Lima', email: 'bruno.lima@cliente.example' },
+  otavio: { name: 'Otávio Ramos', email: 'otavio.ramos@cliente.example' },
+  paula: { name: 'Paula Freitas', email: 'paula.freitas@cliente.example' },
+} satisfies Record<string, DemoSigner>;
+
 export type DemoPerson = keyof typeof demoPeople;
 
 /** The names of the people, as the demo directory has them, for the mentions. */
@@ -250,26 +261,36 @@ export interface DemoCredential {
   by: DemoPerson;
 }
 
+/** A signer of a request of signature, outside the company and the system, with a fictitious e-mail (ADR-0129). */
+export interface DemoSigner {
+  name: string;
+  email: `${string}@cliente.example`;
+}
+
+/** What a signer does on the page of the local provider: sign, or refuse with the reason. */
+export type DemoSignerAnswer =
+  { signer: number; signs: true } | { signer: number; refuses: string };
+
 /**
- * An acceptance term of a milestone (ADR-0035, ADR-0095), with PDFs made by the command: a request of the manager to a
- * person of the project, then the answer of the person, the signed term or the refusal; or, without a request, a term
- * signed outside the system that the manager attaches in the name of the person.
+ * An acceptance term of a milestone (ADR-0129), with the PDF made by the command: a request of signature by the
+ * manager to signers of the client, at the local provider, then what each signer does on the local page, in order;
+ * or, without a request, a term signed outside the system that the manager attaches.
  */
 export interface DemoAcceptance {
   milestone: string;
   title: string;
-  /** The person of the term, of any role in the project. */
-  to: DemoPerson;
   /** Who asks for it, or attaches it: the manager. */
   by: DemoPerson;
   message?: string;
   /** The PDF to sign of a request, or the signed term attached without one. */
   file: string;
   lines: readonly string[];
-  /** Without a request: the signed term attached by the manager in the name of the person. */
+  /** The signers of a request, in order. */
+  signers?: readonly DemoSigner[];
+  /** Without a request: the signed term attached by the manager. */
   attached?: boolean;
-  /** The answer of the person: the signed PDF, or the reason of the refusal. */
-  answer?: { signed: string; lines: readonly string[] } | { refused: string };
+  /** What the signers do, in order; the term is signed when all sign, and refused by one refusal. */
+  answers?: readonly DemoSignerAnswer[];
 }
 
 /**
@@ -967,10 +988,8 @@ export const demoProjects: readonly DemoProject[] = [
       {
         milestone: 'Processos mapeados',
         title: 'Aceite do mapa de processos',
-        to: 'carla',
         by: 'marina',
-        message:
-          'Carla, o mapa de processos fiscais está fechado. Assine o termo e envie por aqui.',
+        message: 'O mapa de processos fiscais está fechado. Por favor, assinem o termo.',
         file: 'termo-mapa-de-processos.pdf',
         lines: [
           'Termo de aceite - Mapa de processos fiscais',
@@ -978,19 +997,15 @@ export const demoProjects: readonly DemoProject[] = [
           'Declaro que o mapa de processos fiscais foi revisado e aprovado.',
           'Assinatura: ____________________',
         ],
-        answer: {
-          signed: 'termo-mapa-de-processos-assinado.pdf',
-          lines: [
-            'Termo de aceite - Mapa de processos fiscais',
-            'Declaro que o mapa de processos fiscais foi revisado e aprovado.',
-            'Assinado por Carla Mendes (assinatura fictícia de demonstração).',
-          ],
-        },
+        signers: [clientSigners.ana, clientSigners.bruno],
+        answers: [
+          { signer: 0, signs: true },
+          { signer: 1, signs: true },
+        ],
       },
       {
         milestone: 'Processos mapeados',
         title: 'Aceite do levantamento',
-        to: 'beatriz',
         by: 'marina',
         file: 'termo-levantamento-assinado.pdf',
         lines: [
@@ -1003,24 +1018,24 @@ export const demoProjects: readonly DemoProject[] = [
       {
         milestone: 'Roteiro aprovado',
         title: 'Aceite do roteiro de testes',
-        to: 'carla',
         by: 'marina',
-        message: 'Carla, segue o roteiro dos testes integrados para o seu aceite.',
+        message: 'Segue o roteiro dos testes integrados para o aceite de vocês.',
         file: 'termo-roteiro-de-testes.pdf',
         lines: [
           'Termo de aceite - Roteiro de testes integrados',
           'Projeto ERP-FIN - Implantação do ERP financeiro',
           'Assinatura: ____________________',
         ],
-        answer: { refused: 'Falta incluir os testes de nota de devolução no roteiro.' },
+        signers: [clientSigners.ana],
+        answers: [
+          { signer: 0, refuses: 'Falta incluir os testes de nota de devolução no roteiro.' },
+        ],
       },
       {
         milestone: 'Aceite da homologação',
         title: 'Aceite da homologação',
-        to: 'carla',
         by: 'marina',
-        message:
-          'Carla, quando os testes de homologação terminarem, assine o termo e envie por aqui.',
+        message: 'Os testes de homologação terminaram sem pendências. Por favor, assinem o termo.',
         file: 'termo-homologacao-erp-fin.pdf',
         lines: [
           'Termo de aceite - Homologação',
@@ -1028,6 +1043,8 @@ export const demoProjects: readonly DemoProject[] = [
           'Declaro que a homologação foi concluída sem pendências.',
           'Assinatura: ____________________',
         ],
+        signers: [clientSigners.ana, clientSigners.bruno],
+        answers: [{ signer: 0, signs: true }],
       },
     ],
   },
@@ -1572,35 +1589,29 @@ export const demoProjects: readonly DemoProject[] = [
       {
         milestone: 'Rotas mapeadas',
         title: 'Aceite do mapeamento de rotas',
-        to: 'carla',
         by: 'beatriz',
-        message: 'Carla, o mapeamento das rotas está fechado. Assine o termo e envie por aqui.',
+        message: 'O mapeamento das rotas está fechado. Por favor, assine o termo.',
         file: 'termo-rotas.pdf',
         lines: [
           'Termo de aceite - Mapeamento de rotas',
           'Projeto TMS-DELTA - Implantação do TMS',
           'Assinatura: ____________________',
         ],
-        answer: {
-          signed: 'termo-rotas-assinado.pdf',
-          lines: [
-            'Termo de aceite - Mapeamento de rotas',
-            'Assinado por Carla Mendes (assinatura fictícia de demonstração).',
-          ],
-        },
+        signers: [clientSigners.otavio],
+        answers: [{ signer: 0, signs: true }],
       },
       {
         milestone: 'Homologação aprovada',
         title: 'Aceite da homologação do TMS',
-        to: 'marina',
         by: 'beatriz',
-        message: 'Marina, quando os testes da homologação terminarem, assine o termo por aqui.',
+        message: 'Quando os testes da homologação terminarem, assinem o termo, por favor.',
         file: 'termo-homologacao-tms.pdf',
         lines: [
           'Termo de aceite - Homologação do TMS',
           'Projeto TMS-DELTA - Implantação do TMS',
           'Assinatura: ____________________',
         ],
+        signers: [clientSigners.otavio, clientSigners.paula],
       },
     ],
   },

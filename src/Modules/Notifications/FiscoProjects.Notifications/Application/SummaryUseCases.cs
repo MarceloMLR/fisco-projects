@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.Json;
 using FiscoProjects.Administration.Contracts;
 using FiscoProjects.Calendar.Contracts;
-using FiscoProjects.Documents.Contracts;
 using FiscoProjects.Notifications.Contracts;
 using FiscoProjects.Notifications.Domain;
 using FiscoProjects.Projects.Contracts;
@@ -19,15 +18,14 @@ public static class SummaryKinds
 
 /// <summary>
 /// The daily summary (ADR-0037): once the time of the installation comes, in its time zone, and only once a day, each
-/// active person who did not turn it off gets one e-mail with the news since the last summary, the own tasks that end
-/// from today to the second business day after and the own requests of acceptance waiting for the answer (ADR-0035). A
-/// summary without news is not sent. The items are removed afterwards, also of who turned the summary off, so they
+/// active person who did not turn it off gets one e-mail with the news since the last summary and the own tasks that end
+/// from today to the second business day after; the requests of acceptance are signed at the provider, and none waits
+/// for the person (ADR-0129). A summary without news is not sent. The items are removed afterwards, also of who turned the summary off, so they
 /// never pile up.
 /// </summary>
 public sealed class SendDailySummaries(
     IDigestStore digest,
     IEnumerable<IUpcomingTasks> upcoming,
-    IEnumerable<IPendingAcceptances> acceptances,
     IUserDirectory users,
     IInstallationSettings installation,
     IWorkCalendar calendar,
@@ -77,15 +75,8 @@ public sealed class SendDailySummaries(
             tasks.AddRange(await source.EndingAsync(today, days.AddBusinessDays(today, TaskBusinessDays), cancellationToken));
         }
 
-        var pending = new List<PendingAcceptance>();
-        foreach (var source in acceptances)
-        {
-            pending.AddRange(await source.PendingAsync(cancellationToken));
-        }
-
         var userIds = items.Select(item => item.UserId)
             .Concat(tasks.Select(task => task.OwnerId))
-            .Concat(pending.Select(term => term.RecipientId))
             .Distinct()
             .ToList();
         var actorIds = items.Where(item => item.ActorId is not null).Select(item => item.ActorId!.Value).Distinct().ToList();
@@ -97,10 +88,8 @@ public sealed class SendDailySummaries(
             var content = ContentOf(
                 person,
                 [.. tasks.Where(task => task.OwnerId == person.Id).OrderBy(task => task.End).ThenBy(task => task.ProjectCode)],
-                [.. pending.Where(term => term.RecipientId == person.Id).OrderBy(term => term.RequestedAt)],
                 [.. items.Where(item => item.UserId == person.Id).OrderBy(item => item.CreatedAt)],
-                actors,
-                zone);
+                actors);
             if (content is null)
             {
                 continue;
@@ -120,12 +109,10 @@ public sealed class SendDailySummaries(
     private static EmailContent? ContentOf(
         PersonInfo person,
         IReadOnlyList<UpcomingTask> tasks,
-        IReadOnlyList<PendingAcceptance> pending,
         IReadOnlyList<DigestItem> items,
-        IReadOnlyDictionary<Guid, string> actors,
-        TimeZoneInfo zone)
+        IReadOnlyDictionary<Guid, string> actors)
     {
-        if (tasks.Count == 0 && pending.Count == 0 && items.Count == 0)
+        if (tasks.Count == 0 && items.Count == 0)
         {
             return null;
         }
@@ -142,21 +129,6 @@ public sealed class SendDailySummaries(
                     ["end"] = task.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 },
                 $"/projects/{task.ProjectId}/schedule"))]));
-        }
-
-        if (pending.Count > 0)
-        {
-            // The day of the request in the time zone of the installation (ADR-0013).
-            sections.Add(new EmailSection("summary.sections.pendingAcceptances", [.. pending.Select(term => new EmailLine(
-                "summary.lines.pendingAcceptance",
-                new Dictionary<string, string>
-                {
-                    ["title"] = term.Title,
-                    ["project"] = term.ProjectCode,
-                    ["requestedOn"] = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(term.RequestedAt, zone))
-                        .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                },
-                $"/projects/{term.ProjectId}/acceptances?term={term.TermId}"))]));
         }
 
         foreach (var section in new[] { "tickets", "schedule", "acceptances", "projects" })
@@ -191,6 +163,8 @@ public sealed class SendDailySummaries(
             NoticeKind.TicketStatusChanged when values.ContainsKey(NoticeValues.ClosedWithProject) => "ticketClosedWithProject",
             NoticeKind.TicketStatusChanged when item.ActorId is null => "ticketStatusChangedBySystem",
             NoticeKind.AcceptanceSigned when values.ContainsKey(NoticeValues.Attached) => "acceptanceAttached",
+            NoticeKind.AcceptanceSigned when item.ActorId is null => "acceptanceSignedBySigners",
+            NoticeKind.AcceptanceRefused when item.ActorId is null => "acceptanceRefusedBySigner",
             _ => NoticeEmails.KeyOf(item.Kind),
         };
         return new EmailLine($"summary.lines.{key}", values, item.Path);

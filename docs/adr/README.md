@@ -67,7 +67,7 @@ Regras:
 | [0032](0032-links-do-projeto.md) | Links do projeto com categorias de uma lista configurável | aceita | 2026-10-14 |
 | [0033](0033-senhas-dos-acessos-cifradas-com-data-protection.md) | Senhas dos acessos cifradas com o Data Protection, com proteção das chaves opcional por certificado | aceita | 2026-10-14 |
 | [0034](0034-modulo-de-acessos-na-v1.md) | Módulo de acessos com senha mascarada, visibilidade pelo projeto e importação de planilha | aceita | 2026-10-14 |
-| [0035](0035-termos-de-aceite-com-pdf-assinado.md) | Termos de aceite sempre por PDF assinado eletronicamente fora do sistema | aceita | 2026-10-14 |
+| [0035](0035-termos-de-aceite-com-pdf-assinado.md) | Termos de aceite sempre por PDF assinado eletronicamente fora do sistema | substituída pelo ADR-0129 | 2026-10-14 |
 
 ## Avisos e auditoria
 
@@ -87,7 +87,7 @@ Regras:
 | [0042](0042-membros-do-projeto.md) | Membros do projeto geridos pelo gerente e pelo líder técnico, com ao menos um gerente | aceita | 2026-10-15 |
 | [0043](0043-permissoes-no-projeto-e-no-cronograma.md) | Permissões no projeto e no cronograma | aceita | 2026-10-15 |
 | [0044](0044-permissoes-nos-chamados.md) | Permissões nos chamados, com todos os membros do projeto vendo todos os chamados | aceita (filas, "Assumir" e troca do responsável por quem atende substituídos pelo ADR-0068) | 2026-10-15 |
-| [0045](0045-permissoes-em-documentos-links-acessos-e-termos.md) | Permissões em documentos, links, acessos e termos de aceite | aceita | 2026-10-15 |
+| [0045](0045-permissoes-em-documentos-links-acessos-e-termos.md) | Permissões em documentos, links, acessos e termos de aceite | aceita (termos de aceite substituídos pelo ADR-0129) | 2026-10-15 |
 | [0046](0046-administracao-so-do-administrador.md) | Administração só do administrador, com cadastro de cliente na criação do projeto | aceita | 2026-10-15 |
 
 ## Arquitetura, infraestrutura e qualidade
@@ -157,7 +157,7 @@ Regras:
 | [0092](0092-modulo-documents-com-links-e-termos.md) | Documentos, links e termos de aceite no módulo `Documents`, e os acessos no `Credentials` | aceita | 2026-10-20 |
 | [0093](0093-nova-versao-de-aprovado-e-pasta-de-termos.md) | Nova versão de um documento aprovado volta para revisão, e a pasta de termos recebe só os termos assinados | aceita | 2026-10-20 |
 | [0094](0094-leitura-de-planilhas-com-open-xml-sdk.md) | Leitura das planilhas de acessos com o Open XML SDK e o CSV por um leitor próprio | aceita | 2026-10-20 |
-| [0095](0095-pedidos-de-aceite.md) | Pedido de aceite cancelado sai da lista, recusa encerra o pedido e termo anexado sempre de uma pessoa do projeto | aceita | 2026-10-20 |
+| [0095](0095-pedidos-de-aceite.md) | Pedido de aceite cancelado sai da lista, recusa encerra o pedido e termo anexado sempre de uma pessoa do projeto | aceita (resposta da pessoa e termo anexado substituídos pelo ADR-0129) | 2026-10-20 |
 | [0096](0096-meu-trabalho-montado-no-servidor.md) | Meu trabalho montado no servidor por um módulo próprio, com a janela de 7 dias e o atraso do item mais atrasado | aceita | 2026-10-20 |
 | [0097](0097-lider-tecnico-como-papel-no-sistema.md) | Líder técnico também como papel no sistema, exigido para liderar tecnicamente um projeto | aceita | 2026-10-20 |
 | [0098](0098-iniciar-atendimento-assume-o-chamado.md) | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável | aceita | 2026-10-20 |
@@ -191,3 +191,4 @@ Regras:
 | [0126](0126-recalculo-das-datas-pelo-calendario.md) | Recálculo das datas dos cronogramas pelo calendário, pedido pelo administrador | aceita | 2026-10-28 |
 | [0127](0127-instalacao-a-partir-do-pacote-da-versao.md) | Instalação na nuvem do cliente a partir do pacote da versão | aceita | 2026-10-29 |
 | [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita | 2026-10-29 |
+| [0129](0129-assinatura-eletronica-dos-termos.md) | Termos de aceite assinados por um provedor de assinatura eletrônica trocável, só da gestão | aceita | 2026-10-30 |

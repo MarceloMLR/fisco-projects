@@ -5,9 +5,9 @@ using FiscoProjects.Projects.Contracts;
 namespace FiscoProjects.Documents.Application;
 
 /// <summary>
-/// The requests of acceptance of the person in Meu trabalho (ADR-0070, ADR-0096), in the open projects the person sees:
-/// the pending ones for the person, waiting for the answer since they were asked; and the pending ones the person made
-/// while managing the terms of the project (ADR-0045), due on the day of the milestone.
+/// The requests of acceptance of the person in Meu trabalho (ADR-0070, ADR-0096, ADR-0129), in the open projects the
+/// person sees: the pending ones the person made while managing the terms of the project, due on the day of the
+/// milestone. No request waits for the person: the signers sign at the provider.
 /// </summary>
 public sealed class AcceptanceWorkSource(IAcceptanceStore acceptances, IProjectAccess projects, IScheduleItems schedules)
     : IMyWorkSource
@@ -41,25 +41,22 @@ public sealed class AcceptanceWorkSource(IAcceptanceStore acceptances, IProjectA
                 continue;
             }
 
-            var forYou = term.RecipientId == query.UserId;
-            if (!forYou && !AcceptanceAccess.Manages(viewer, project))
+            if (!AcceptanceAccess.Manages(viewer, project))
             {
                 continue;
             }
 
             var milestone = milestones[term.ProjectId].GetValueOrDefault(term.MilestoneId);
             items.Add(new MyWorkItem(
-                MyWorkKind.Acceptance,
-                term.Id,
-                project.Id,
-                project.Code,
-                term.Title,
-                forYou ? MyWorkViews.ForMe : MyWorkViews.ForMe | MyWorkViews.OpenedByMe)
+                MyWorkKind.Acceptance, term.Id, project.Id, project.Code, term.Title, MyWorkViews.ForMe | MyWorkViews.OpenedByMe)
             {
                 DueOn = milestone?.Day,
-                WaitsForYou = forYou,
-                WaitingSince = forYou ? term.RequestedAt : null,
-                Acceptance = new MyWorkAcceptance(term.RecipientId, term.RequestedById, term.RequestedAt, milestone?.Name),
+                Acceptance = new MyWorkAcceptance(
+                    term.RecipientId,
+                    [.. term.Signers.OrderBy(signer => signer.Position).Select(signer => signer.Name)],
+                    term.RequestedById,
+                    term.RequestedAt,
+                    milestone?.Name),
             });
         }
 

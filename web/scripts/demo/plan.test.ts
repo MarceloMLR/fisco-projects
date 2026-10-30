@@ -51,7 +51,7 @@ describe('Meu trabalho na demonstração', () => {
       );
     expect(tasks.some((item) => item.day + item.duration < 14)).toBe(true);
     expect(tasks.some((item) => item.day >= 14 && item.day <= 21)).toBe(true);
-    // A ticket of the manager waits for her answer, and a request of acceptance waits for its answer.
+    // A ticket of the manager waits for her answer, and a request of signature waits for its signers.
     const tickets = demoProjects.flatMap((project) => project.tickets ?? []);
     expect(
       tickets.some((ticket) => {
@@ -62,9 +62,12 @@ describe('Meu trabalho na demonstração', () => {
       }),
     ).toBe(true);
     const acceptances = demoProjects.flatMap((project) => project.acceptances ?? []);
-    expect(acceptances.some((term) => term.answer === undefined && term.attached !== true)).toBe(
-      true,
-    );
+    expect(
+      acceptances.some(
+        (term) =>
+          term.attached !== true && (term.answers ?? []).length < (term.signers ?? []).length,
+      ),
+    ).toBe(true);
   });
 });
 

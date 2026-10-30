@@ -41,8 +41,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
-| 12. Assinatura dos termos de aceite | 2 | 0 |
-| **Total** | **95** | **93** |
+| 12. Assinatura dos termos de aceite | 2 | 1 |
+| **Total** | **95** | **94** |
 
 ## 1. Fundação
 
@@ -202,5 +202,5 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095 | Planejada |
+| Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Concluída ([#109](https://github.com/MarceloMLR/fisco-projects/pull/109)) |
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127 | Planejada |

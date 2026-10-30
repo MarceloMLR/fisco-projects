@@ -241,6 +241,7 @@ export async function loadDemo(
       clients,
       vendors,
       personOf,
+      anonymous,
       log,
     );
   }
@@ -400,6 +401,7 @@ async function loadProject(
   clients: ReadonlyMap<string, string>,
   vendors: ReadonlyMap<string, string>,
   personOf: (person: DemoPerson) => { api: Api; id: string },
+  anonymous: Api,
   log: (line: string) => void,
 ): Promise<number> {
   const leader = project.manager ?? manager;
@@ -663,7 +665,7 @@ async function loadProject(
   }
 
   if ((project.acceptances ?? []).length > 0) {
-    await loadAcceptances(project, id, ids, personOf);
+    await loadAcceptances(project, id, ids, personOf, anonymous);
   }
 
   if ((project.hours ?? []).length > 0) {
@@ -950,21 +952,23 @@ function termForm(
 }
 
 /**
- * The acceptance terms of the project (ADR-0035, ADR-0095): each request by the manager to its person, then the answer
- * of the person, signed or refused; and the terms signed outside the system, attached by the manager.
+ * The acceptance terms of the project (ADR-0129): each request of signature by the manager to the signers of the
+ * client, at the local provider, then what each signer does on the local page, by the link the drawer of the term
+ * shows, without a session; and the terms signed outside the system, attached by the manager.
  */
 async function loadAcceptances(
   project: DemoProject,
   projectId: string,
   items: ReadonlyMap<string, string>,
   personOf: (person: DemoPerson) => { api: Api; id: string },
+  anonymous: Api,
 ): Promise<void> {
   for (const term of project.acceptances ?? []) {
     const milestoneId = items.get(term.milestone);
     if (milestoneId === undefined) {
       throw new Error(`${term.title} aceita ${term.milestone}, que ${project.code} não tem.`);
     }
-    const fields = { milestoneId, recipientId: personOf(term.to).id, title: term.title };
+    const fields: Record<string, string> = { milestoneId, title: term.title };
     const by = personOf(term.by).api;
     if (term.attached === true) {
       const form = termForm(fields, term.file, term.lines);
@@ -978,43 +982,50 @@ async function loadAcceptances(
       );
       continue;
     }
-    const request = termForm(
-      term.message === undefined ? fields : { ...fields, message: term.message },
-      term.file,
-      term.lines,
-    );
+    if (term.message !== undefined) {
+      fields.message = term.message;
+    }
+    (term.signers ?? []).forEach((signer, index) => {
+      fields[`signers[${String(index)}].name`] = signer.name;
+      fields[`signers[${String(index)}].email`] = signer.email;
+    });
+    const request = termForm(fields, term.file, term.lines);
     const termId = must(
       await by.POST('/api/projects/{projectId}/acceptances', {
         params: { path: { projectId } },
         body: {},
         bodySerializer: () => request,
       }),
-      `Pedido de aceite ${term.title}`,
+      `Pedido de assinatura ${term.title}`,
     ).id;
-    const answer = term.answer;
-    if (answer === undefined) {
+    const answers = term.answers ?? [];
+    if (answers.length === 0) {
       continue;
     }
-    const path = { params: { path: { projectId, termId } } };
-    const person = personOf(term.to).api;
-    if ('refused' in answer) {
-      done(
-        await person.POST('/api/projects/{projectId}/acceptances/{termId}/refusal', {
-          ...path,
-          body: { reason: answer.refused },
-        }),
-        `Recusa de ${term.title}`,
-      );
-      continue;
-    }
-    const signed = termForm({}, answer.signed, answer.lines);
-    done(
-      await person.POST('/api/projects/{projectId}/acceptances/{termId}/signed', {
-        ...path,
-        body: {},
-        bodySerializer: () => signed,
+    // The links of the signers, which only the local provider gives (Signature:Provider = Local).
+    const details = must(
+      await by.GET('/api/projects/{projectId}/acceptances/{termId}', {
+        params: { path: { projectId, termId } },
       }),
-      `Termo assinado ${term.title}`,
+      `Termo ${term.title}`,
     );
+    for (const answer of answers) {
+      const link = details.signers[answer.signer]?.signingLink;
+      if (link === null || link === undefined) {
+        throw new Error(
+          `${term.title}: a API não deu o link do signatário ${String(answer.signer + 1)}; confira o provedor local de assinatura (Signature:Provider).`,
+        );
+      }
+      const path = { params: { path: { token: link.slice('/sign/'.length) } } };
+      done(
+        'refuses' in answer
+          ? await anonymous.POST('/api/local-signatures/{token}/refuse', {
+              ...path,
+              body: { reason: answer.refuses },
+            })
+          : await anonymous.POST('/api/local-signatures/{token}/sign', path),
+        `Resposta do signatário de ${term.title}`,
+      );
+    }
   }
 }

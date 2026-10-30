@@ -220,18 +220,22 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Importar planilha | PreviewCredentialImport, ImportCredentials | Lê o `.xlsx` ou `.csv` sem guardar e inclui as linhas marcadas, todas ou nenhuma (ADR-0094) |
 | Leitor de planilhas | SpreadsheetReader, CsvText | Open XML SDK para o `.xlsx`; leitor próprio para o `.csv` |
 | Mapeamento das colunas | ImportMapping | De que coluna vem cada campo; o ambiente também "Mesmo para todas" |
-| Termo de aceite | AcceptanceTerm (`documents.acceptance_terms`) | Pedido de aceite de um marco, respondido com PDF assinado, ou termo assinado anexado pela gestão (ADR-0035, ADR-0095) |
+| Termo de aceite | AcceptanceTerm (`documents.acceptance_terms`) | Pedido de assinatura de um marco a signatários, pelo provedor de assinatura, ou termo assinado anexado pela gestão; só do administrador e do gerente (ADR-0129) |
 | Situação do termo: pendente, assinado, recusado | AcceptanceStatus: Pending, Signed, Refused | |
-| Pedir aceite | RequestAcceptance | O administrador e o gerente, de um marco, para uma pessoa do projeto, com o termo em PDF |
+| Pedir assinatura | RequestAcceptance | O administrador e o gerente, de um marco, a 1 a 10 signatários, com o termo em PDF |
+| Signatário | AcceptanceSigner (`documents.acceptance_signers`) | Nome e e-mail digitados, de dentro ou de fora da empresa, sem vínculo com usuário; o e-mail só enquanto o pedido está aberto (ADR-0129) |
+| Situação do signatário: pendente, assinou, recusou | AcceptanceSignerStatus: Pending, Signed, Refused | |
+| Provedor de assinatura | ISignatureProvider, SignatureProviders (`Signature:Provider`) | Manda, lembra, cancela, diz a situação e devolve o PDF assinado; a Autentique e o local (ADR-0129) |
+| Provedor local, página de assinatura | LocalSignatureProvider, ILocalSigningPage (`/sign/:token`, `/api/local-signatures/{token}`) | Só fora da produção; o link de cada signatário aparece na gaveta |
+| Conferência das assinaturas | SignatureCheck, ApplySignatureStatus (`Signature:CheckMinutes`) | Em segundo plano, aplica cada mudança do provedor uma vez só |
 | Termo para assinar | `FileId`, `FileName` | O PDF do pedido, em `{código} - {nome}/Pedidos de aceite` |
-| Enviar o termo assinado | SignAcceptance | A pessoa do pedido, em qualquer papel; vira documento Aprovado na pasta de termos e o marco fica atingido |
-| Anexar termo assinado | SignAcceptance (em nome), AttachAcceptance (sem pedido) | Termo assinado recebido por fora, em nome de uma pessoa do projeto |
-| Recusar o termo, motivo da recusa | RefuseAcceptance, `RefusalReason` | Encerra o pedido; o marco continua em aberto |
-| Lembrar | RemindAcceptance | Manda de novo o e-mail do pedido e entra no histórico |
-| Cancelar pedido | CancelAcceptance | O pedido pendente sai da lista e fica só na auditoria |
-| Histórico do termo | AcceptanceEvent (`documents.acceptance_events`) | Pedido, lembrete, assinado, anexado e recusado, fora da auditoria |
+| Anexar termo assinado | AttachSignedTerm (num pedido), AttachAcceptance (sem pedido) | Termo assinado recebido por fora; o documento no provedor é cancelado |
+| Pessoa do pedido anterior | `RecipientId` | Os pedidos feitos a uma pessoa do projeto antes do provedor (ADR-0095) |
+| Lembrar signatários | RemindAcceptance | O provedor manda o link de novo a quem não assinou, e o lembrete entra no histórico |
+| Cancelar pedido | CancelAcceptance | Cancela no provedor; o pedido pendente sai da lista e fica só na auditoria |
+| Histórico do termo | AcceptanceEvent (`documents.acceptance_events`) | Pedido, lembrete, assinatura e recusa de cada signatário e anexado, fora da auditoria |
 | Marco atingido por outro módulo (contrato) | IScheduleMilestones | O `Projects` marca o marco no dia da instalação, fora do desfazer |
-| Aceites pendentes (contratos) | IProjectAcceptances, IPendingAcceptances | No resumo do encerramento e no resumo diário |
+| Aceites pendentes (contrato) | IProjectAcceptances | No resumo do encerramento, nos próximos marcos e na visão geral |
 
 ## Avisos e auditoria
 

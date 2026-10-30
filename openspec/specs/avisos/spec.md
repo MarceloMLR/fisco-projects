@@ -236,27 +236,27 @@ As notificações mais antigas que o prazo da instalação MUST ser apagadas, li
 
 ### Requirement: Avisos dos termos de aceite
 
-O pedido de aceite e o lembrete MUST gerar e-mail na hora para a pessoa do pedido (ADR-0037). O termo assinado, inclusive o anexado pela gestão, e a recusa MUST avisar quem pediu e o gerente do projeto pelo sino e pelo resumo diário. O resumo diário MUST trazer os pedidos de aceite pendentes da pessoa nos projetos em aberto, com o projeto e o dia do pedido. Nenhum aviso MUST levar o termo nem o motivo da recusa por e-mail; o aviso leva ao termo no FiscoProjects (ADR-0035, ADR-0037, ADR-0038).
+O pedido de assinatura e o lembrete MUST NOT gerar e-mail do FiscoProjects: o provedor manda o link a cada signatário. O resumo diário MUST NOT trazer pedidos de aceite para a pessoa responder. O termo assinado, inclusive o anexado pela gestão, e a recusa MUST avisar quem pediu e o gerente do projeto pelo sino e pelo resumo diário. Nenhum aviso MUST levar o termo, o e-mail dos signatários nem o motivo da recusa por e-mail; o aviso leva ao termo no FiscoProjects (ADR-0037, ADR-0038, ADR-0129).
 
 #### Scenario: Pedido de aceite por e-mail
-- **WHEN** a gerente pede o aceite a Carla
-- **THEN** Carla recebe o e-mail na hora, com o botão que abre o termo
+- **WHEN** a gerente pede a assinatura a dois signatários
+- **THEN** nenhum e-mail sai da fila do FiscoProjects para eles, e o provedor recebe o termo com os dois
 
 #### Scenario: Lembrete do pedido
-- **WHEN** a gerente lembra Carla de um pedido pendente
-- **THEN** Carla recebe o e-mail do pedido de novo, na hora
+- **WHEN** a gerente lembra os signatários de um pedido pendente
+- **THEN** nenhum e-mail sai da fila do FiscoProjects, e o provedor manda o link de novo a quem não assinou
 
 #### Scenario: Termo assinado avisa a gestão
-- **WHEN** Carla envia o termo assinado
+- **WHEN** o último signatário assina o termo
 - **THEN** quem pediu e o gerente têm a notificação no sino, e o aviso entra no próximo resumo diário deles
 
 #### Scenario: Recusa avisa a gestão
-- **WHEN** Carla recusa o pedido
+- **WHEN** um signatário recusa o termo
 - **THEN** quem pediu e o gerente têm a notificação da recusa no sino e no resumo
 
 #### Scenario: Aceites pendentes no resumo
-- **WHEN** chega o horário do resumo e Carla tem um pedido de aceite pendente
-- **THEN** o resumo dela traz o pedido, com o projeto e o dia do pedido
+- **WHEN** chega o horário do resumo e Carla é a pessoa de um pedido pendente do fluxo anterior
+- **THEN** o resumo de Carla não traz o pedido
 
 ### Requirement: Envio pelo Microsoft Graph
 

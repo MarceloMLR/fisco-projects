@@ -1,7 +1,11 @@
 namespace FiscoProjects.Projects.Contracts;
 
-/// <summary>A request of acceptance waiting for the answer, for the overview of the project (ADR-0073).</summary>
-public sealed record PendingProjectAcceptance(Guid Id, string Title, Guid MilestoneId, Guid RecipientId, DateTime RequestedAt);
+/// <summary>
+/// A request of acceptance waiting for the answer, for the overview of the project (ADR-0073): the names of the signers
+/// at the provider of signatures (ADR-0129), or the person of the project a request was asked of before.
+/// </summary>
+public sealed record PendingProjectAcceptance(
+    Guid Id, string Title, Guid MilestoneId, Guid? RecipientId, IReadOnlyList<string> Signers, DateTime RequestedAt);
 
 /// <summary>
 /// The acceptance terms of the projects: for the summary of the closing (ADR-0043), where a pending request warns
@@ -21,8 +25,8 @@ public interface IProjectAcceptances
     Task<IReadOnlySet<Guid>> RequestedMilestonesAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The requests of the project waiting for the answer that the person sees (ADR-0045), the oldest first, for the
-    /// overview of the project.
+    /// The requests of the project waiting for the answer, the oldest first, for the overview of the project; only who
+    /// manages the terms sees them (ADR-0129), and the others get none.
     /// </summary>
     /// <param name="projectId">The project.</param>
     /// <param name="userId">The person.</param>

@@ -197,6 +197,18 @@ beforeEach(() => {
           .filter((category) => !inactiveCategories.includes(category.name)),
       ),
     ),
+    // A request of signature at the local provider: two signers, each with the link of the local page (ADR-0129).
+    http.get(`${base}/api/projects/:id/acceptances/:termId`, ({ params }) =>
+      HttpResponse.json({
+        signers: [0, 1].map((index) => ({
+          signingLink: `/sign/token-${String(params.termId)}-${String(index)}`,
+        })),
+      }),
+    ),
+    http.post(
+      `${base}/api/local-signatures/:token/*`,
+      () => new HttpResponse(null, { status: 204 }),
+    ),
     http.post(`${base}/api/tickets`, () =>
       HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
     ),
@@ -965,26 +977,39 @@ describe('Termos na demonstração', () => {
 
     const main = demoProjects.find((project) => project.code === 'ERP-FIN');
     const terms = main?.acceptances ?? [];
-    const requests = demoProjects
-      .flatMap((project) => project.acceptances ?? [])
-      .filter((term) => term.attached !== true);
-    // The requests and the attached term by the managers; the answers by the person of each request (ADR-0045).
+    const all = demoProjects.flatMap((project) => project.acceptances ?? []);
+    const requests = all.filter((term) => term.attached !== true);
+    // The requests and the attached term by the managers; the signers answer on the local page, without a session.
     expect(callsBy(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toHaveLength(requests.length);
     expect(people(/ POST \/api\/projects\/[^/]+\/acceptances$/)).toEqual(['beatriz', 'marina']);
     expect(people(/ POST \/api\/projects\/[^/]+\/acceptances\/attached$/)).toEqual(['marina']);
-    expect(people(/ POST .*\/acceptances\/[^/]+\/signed$/)).toEqual(['carla']);
-    expect(people(/ POST .*\/acceptances\/[^/]+\/refusal$/)).toEqual(['carla']);
-    // Signed, attached, refused and pending, each with a PDF made by the command.
-    expect(terms.some((term) => term.attached === true)).toBe(true);
-    expect(terms.some((term) => term.answer !== undefined && 'signed' in term.answer)).toBe(true);
-    expect(terms.some((term) => term.answer !== undefined && 'refused' in term.answer)).toBe(true);
-    expect(terms.some((term) => term.attached !== true && term.answer === undefined)).toBe(true);
+    const answers = all.flatMap((term) => term.answers ?? []);
+    expect(callsBy(/ POST \/api\/local-signatures\/[^/]+\/(sign|refuse)$/)).toHaveLength(
+      answers.length,
+    );
+    expect(people(/ \/api\/local-signatures\//)).toEqual(['anonymous']);
+    // The signers are of the clients, outside the company, with fictitious e-mails.
+    const signers = requests.flatMap((term) => term.signers ?? []);
+    expect(signers.length).toBeGreaterThan(0);
+    expect(signers.every((signer) => signer.email.endsWith('@cliente.example'))).toBe(true);
     const forms = [...bodies.entries()]
-      .filter(([path]) => /\/acceptances(\/attached|\/[^/]+\/signed)?$/.test(path))
+      .filter(([path]) => /\/acceptances(\/attached)?$/.test(path))
       .flatMap(([, saved]) => saved) as string[];
     expect(forms.every((form) => form.includes('%PDF-1.4'))).toBe(true);
+    expect(forms.some((form) => form.includes('signers[1].email'))).toBe(true);
+    // Signed by two signers, attached, refused, and pending with one of two signed.
+    const signs = (term: (typeof terms)[number]) =>
+      (term.answers ?? []).filter((answer) => 'signs' in answer).length;
+    expect(terms.some((term) => (term.signers ?? []).length === 2 && signs(term) === 2)).toBe(true);
+    expect(terms.some((term) => term.attached === true)).toBe(true);
+    expect(terms.some((term) => (term.answers ?? []).some((answer) => 'refuses' in answer))).toBe(
+      true,
+    );
+    expect(terms.some((term) => (term.signers ?? []).length === 2 && signs(term) === 1)).toBe(true);
     // Before the project gets its status.
-    const lastTerm = calls.findLastIndex((call) => call.includes('/acceptances'));
+    const lastTerm = calls.findLastIndex(
+      (call) => call.includes('/acceptances') || call.includes('/local-signatures'),
+    );
     const status = calls.findLastIndex((call) => /PUT \/api\/projects\/[^/]+\/status$/.test(call));
     expect(lastTerm).toBeLessThan(status);
   });

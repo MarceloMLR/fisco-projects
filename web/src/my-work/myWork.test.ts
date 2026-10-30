@@ -21,36 +21,36 @@ describe('Textos da fila', () => {
 
   it('Prazo de cada linha', () => {
     const items = demoMyWorkItems;
-    expect(dueOf(items.lateTask, 'Late', '2026-10-16', dates, t)).toEqual({
+    expect(dueOf(items.lateTask, 'Late', '2026-10-16', t)).toEqual({
       state: 'overdue',
       text: 'Venceu há 1 dia útil',
     });
-    expect(dueOf({ ...items.lateTask, daysLate: 0 }, 'Late', '2026-10-17', dates, t)).toEqual({
+    expect(dueOf({ ...items.lateTask, daysLate: 0 }, 'Late', '2026-10-17', t)).toEqual({
       state: 'overdue',
       text: 'Venceu quinta',
     });
-    expect(dueOf(items.waitingTicket, 'Waiting', '2026-10-16', dates, t)).toEqual({
+    expect(dueOf(items.waitingTicket, 'Waiting', '2026-10-16', t)).toEqual({
       state: 'paused',
       text: 'Prazo pausado',
     });
-    expect(dueOf(items.unassignedTicket, 'Soon', '2026-10-19', dates, t).text).toBe(
+    expect(dueOf(items.unassignedTicket, 'Soon', '2026-10-19', t).text).toBe(
       '1ª resposta até hoje',
     );
-    expect(
-      dueOf({ ...items.unassignedTicket, daysLate: 2 }, 'Late', '2026-10-21', dates, t).text,
-    ).toBe('1ª resposta venceu há 2 dias úteis');
-    expect(dueOf(items.todayTask, 'Soon', '2026-10-16', dates, t)).toEqual({
+    expect(dueOf({ ...items.unassignedTicket, daysLate: 2 }, 'Late', '2026-10-21', t).text).toBe(
+      '1ª resposta venceu há 2 dias úteis',
+    );
+    expect(dueOf(items.todayTask, 'Soon', '2026-10-16', t)).toEqual({
       state: 'soon',
       text: 'Vence hoje',
     });
-    expect(dueOf(items.askedAcceptance, 'Week', '2026-10-16', dates, t)).toEqual({
+    expect(dueOf(items.askedAcceptance, 'Week', '2026-10-16', t)).toEqual({
       state: 'onTrack',
       text: 'Marco em 22/10',
     });
-    expect(dueOf(items.askedAcceptance, 'Soon', '2026-10-21', dates, t).text).toBe('Marco amanhã');
-    expect(dueOf(items.weekTask, 'Soon', '2026-10-20', dates, t).text).toBe('Vence amanhã');
-    expect(dueOf(items.weekTask, 'Week', '2026-10-16', dates, t).text).toBe('Vence quarta');
-    expect(dueOf(items.weekTask, 'Week', '2026-10-14', dates, t).text).toBe('Vence 21/10');
+    expect(dueOf(items.askedAcceptance, 'Soon', '2026-10-21', t).text).toBe('Marco amanhã');
+    expect(dueOf(items.weekTask, 'Soon', '2026-10-20', t).text).toBe('Vence amanhã');
+    expect(dueOf(items.weekTask, 'Week', '2026-10-16', t).text).toBe('Vence quarta');
+    expect(dueOf(items.weekTask, 'Week', '2026-10-14', t).text).toBe('Vence 21/10');
   });
 
   it('Detalhe de cada linha', () => {

@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { MyWorkGroup, MyWorkItem, ProjectScheduleSummary } from '../api/client';
+import { namesText } from '../acceptances/acceptances';
 import type { DueState } from '../components/DueDate';
 import {
   type Dates,
@@ -66,29 +67,21 @@ export function dayWord(day: DayValue, today: DayValue, t: TFunction): string {
 
 /**
  * The deadline of a line, with the state of its icon and color (ADR-0065): late by business days, due on a day, the
- * first answer of a ticket, the paused deadline of a ticket waiting for the person, the day a request was made for the
- * person, and the milestone of a request the person made.
+ * first answer of a ticket, the paused deadline of a ticket waiting for the person, and the milestone of a request of
+ * signature the person made.
  */
 export function dueOf(
   item: MyWorkItem,
   group: MyWorkGroup,
   today: DayValue,
-  dates: Dates,
   t: TFunction,
 ): { state: DueState; text: string } {
-  const acceptance = item.acceptance;
-  if (acceptance?.forYou === true) {
-    return {
-      state: 'onTrack',
-      text: t('myWork.due.requested', { day: dates.formatDayMonth(acceptance.requestedAt) }),
-    };
-  }
   if (group === 'Waiting' || item.dueOn === null) {
     return { state: 'paused', text: t('myWork.due.paused') };
   }
   const state = looks[group];
   const due = item.dueOn;
-  if (acceptance !== null) {
+  if (item.acceptance !== null) {
     const days = daysBetween(today, due);
     return {
       state,
@@ -164,13 +157,12 @@ export function metaText(
       ? t('myWork.meta.yours', { count: interactions })
       : t('myWork.meta.assignee', { name: assignee.name, count: interactions });
   }
+  // The signers of the request at the provider, or the person of a request asked before (ADR-0129).
   if (item.acceptance !== null) {
-    return item.acceptance.forYou
-      ? t('myWork.meta.acceptanceFor', { name: item.acceptance.requestedBy.name })
-      : t('myWork.meta.acceptanceAsked', {
-          name: item.acceptance.recipient.name,
-          day: dates.formatDayMonth(item.acceptance.requestedAt),
-        });
+    return t('myWork.meta.acceptanceAsked', {
+      name: item.acceptance.recipient?.name ?? namesText(item.acceptance.signers),
+      day: dates.formatDayMonth(item.acceptance.requestedAt),
+    });
   }
   return '';
 }

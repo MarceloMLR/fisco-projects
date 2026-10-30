@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using FiscoProjects.Testing;
 
@@ -79,16 +78,7 @@ public sealed class UpcomingMilestoneTests(SqlServerFixture sqlServer)
         var production = await ItemAsync(team, team.Erp, phase, "Milestone", "Entrada em produção", "2026-11-13");
         var homologation = await ItemAsync(team, team.Erp, phase, "Milestone", "Homologação", "2026-11-03");
         var marina = await team.ClientOfAsync(team.Marina);
-        using var form = new MultipartFormDataContent
-        {
-            { new StringContent(homologation.ToString()), "milestoneId" },
-            { new StringContent(team.Carla.ToString()), "recipientId" },
-            { new StringContent("Aceite da homologação", Encoding.UTF8), "title" },
-            { new ByteArrayContent(Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")), "file", "termo.pdf" },
-        };
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/api/projects/{team.Erp}/acceptances") { Content = form };
-        request.Headers.Add("X-CSRF", "1");
-        await IdOfAsync(await marina.SendAsync(request, Cancellation));
+        await AcceptanceRequests.RequestedAsync(marina, team.Erp, homologation, "Aceite da homologação");
 
         var upcoming = await UpcomingAsync(await team.ClientOfAsync(team.Diego));
 
