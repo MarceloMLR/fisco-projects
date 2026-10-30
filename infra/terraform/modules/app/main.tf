@@ -59,6 +59,12 @@ variable "app_settings" {
   type = map(string)
 }
 
+variable "vault_settings" {
+  description = "Settings read from secrets the operator created by hand in the Key Vault: the name of the setting and the name of the secret (ADR-0053)."
+  type        = map(string)
+  default     = {}
+}
+
 variable "database_admin" {
   description = "Whether the identity joins the group of database administrators (ADR-0114)."
   type        = bool
@@ -76,9 +82,11 @@ variable "tags" {
 locals {
   free_plan = contains(["F1", "FREE"], upper(var.sku))
   # The secret names use "--" for the ":" of the setting (ADR-0087).
-  secret_settings = var.syncfusion_in_vault ? {
+  secret_settings = merge(var.syncfusion_in_vault ? {
     Syncfusion__LicenseKey = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=Syncfusion--LicenseKey)"
-  } : {}
+    } : {}, {
+    for setting, secret in var.vault_settings : setting => "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})"
+  })
 }
 
 resource "azurerm_service_plan" "main" {

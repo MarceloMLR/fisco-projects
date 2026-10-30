@@ -17,6 +17,11 @@ app_settings = {
   Email__Local__Folder         = "/home/data/emails"
   # With the shared mailbox, the e-mails to the people of the demonstration stay in the folder (ADR-0123).
   Email__Graph__LocalDomains__0 = "empresa.example"
+  # The requests of the local provider in the persistent folder, and those of the signers of the demonstration stay in
+  # it beside the Autentique (ADR-0130).
+  Signature__Local__Folder   = "/home/data/signatures"
+  Signature__LocalDomains__0 = "cliente.example"
+  Signature__LocalDomains__1 = "empresa.example"
   # The first start applies every migration on the Basic plan, which takes a few minutes.
   WEBSITES_CONTAINER_START_TIME_LIMIT = "600"
 }
@@ -32,6 +37,13 @@ database_backup_redundancy     = "Local"
 key_vault_soft_delete_days = 7
 # The secret Syncfusion--LicenseKey was created by hand in the Key Vault (docs/instalacao.md, step 5).
 syncfusion_license_in_key_vault = true
+
+# The sandbox of the Autentique, with its notice: the secrets Signature--Autentique--ApiKey and
+# Signature--Autentique--WebhookSecret are created by hand in the Key Vault (docs/instalacao.md, ADR-0130).
+autentique = {
+  sandbox = true
+  webhook = true
+}
 
 # Fewer runs of the availability test: each one is billed.
 availability_test_frequency = 900

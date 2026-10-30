@@ -15,6 +15,7 @@ As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a
 - A caixa dos e-mails do sistema: uma que a empresa já tem, como um projetos@ que a equipe lê, ou uma compartilhada que o script do Exchange cria (veja Exchange Online, na Referência).
 - Quem será o primeiro administrador do FiscoProjects e o e-mail que recebe os alertas da instalação.
 - A chave de licença do Syncfusion, do titular da instalação (veja Licenças de terceiros, na Referência).
+- Se os termos de aceite forem assinados pelo sistema, a conta da Autentique, com o plano que couber no volume de termos (veja Assinatura dos termos de aceite, na Referência). Sem ela, a gestão só anexa os termos assinados por fora.
 
 ### Ferramentas de quem instala
 
@@ -99,6 +100,9 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    # E-mails pela caixa da empresa (veja o passo 7); sem ela, apague a linha até o script do Exchange criar uma.
    email_mailbox = "<caixa>@<domínio>"
 
+   # Termos de aceite pela Autentique: a linha entra no passo 5, depois dos segredos no Key Vault.
+   # autentique = { webhook = true }
+
    # O teste de disponibilidade e os alertas ligam no passo 9, depois da publicação; antes, avisariam que o sistema
    # está fora do ar.
    alerts_enabled = false
@@ -114,14 +118,20 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 
    Depois do `apply`, apague o `infra/terraform/instalacao.tfplan`: ele guarda valores sensíveis da instalação.
 
-5. **Guarde a chave do Syncfusion** no Key Vault (o nome sai em `terraform -chdir=infra/terraform output key_vault_name`), sem deixá-la no histórico do terminal:
+5. **Guarde os segredos no Key Vault** (o nome sai em `terraform -chdir=infra/terraform output key_vault_name`), sem deixá-los no histórico do terminal: a chave do Syncfusion e, se os termos forem assinados pela Autentique, a chave da API e o segredo do aviso dela (veja Assinatura dos termos de aceite, na Referência, para gerá-los):
 
    ```powershell
    $chave = Read-Host 'Chave do Syncfusion'
    az keyvault secret set --vault-name <cofre> --name Syncfusion--LicenseKey --value $chave --output none
+
+   # Só com a Autentique:
+   $chave = Read-Host 'Chave da API da Autentique'
+   az keyvault secret set --vault-name <cofre> --name Signature--Autentique--ApiKey --value $chave --output none
+   $segredo = Read-Host 'Segredo do aviso da Autentique'
+   az keyvault secret set --vault-name <cofre> --name Signature--Autentique--WebhookSecret --value $segredo --output none
    ```
 
-   Depois, ponha `syncfusion_license_in_key_vault = true` no `local.auto.tfvars` e aplique de novo (passo 4).
+   Depois, ponha `syncfusion_license_in_key_vault = true` e, com a Autentique, `autentique = { webhook = true }` no `local.auto.tfvars` e aplique de novo (passo 4).
 
 6. **Dê o site do SharePoint ao aplicativo**, com uma conta de Administrador do SharePoint ou Administrador global. Na primeira vez no tenant, o Microsoft Graph PowerShell pede o consentimento para `Sites.FullControl.All`, que só um Administrador de aplicativos ou global dá:
 
@@ -215,6 +225,7 @@ Com as ferramentas de "Antes de começar" (ADR-0053, ADR-0114):
    ```
 
 5. Crie a chave do Syncfusion no Key Vault, como no passo 5 de "Instalar", ponha `syncfusion_license_in_key_vault = true` no `.tfvars` do ambiente e aplique de novo.
+6. A Autentique: o `dev.tfvars` já a liga, com o sandbox e o aviso (ADR-0130). Antes de aplicá-lo, crie os dois segredos dela no Key Vault, como no passo 5 de "Instalar", com o aviso cadastrado no endereço do `dev`, e confira que a versão publicada no `dev` já conhece a Autentique: a anterior não sobe com `Signature:Provider` = `Autentique`. Num ambiente sem a Autentique, tire o bloco `autentique` do `.tfvars`.
 
 Para apagar um ambiente: `terraform -chdir=infra/terraform destroy -var-file=environments/<ambiente>.tfvars`. O Key Vault fica recuperável pelo prazo da exclusão reversível (7 dias no `dev`).
 
@@ -263,6 +274,15 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Com a caixa em `email_mailbox`, o Terraform liga o envio pelo Graph (`Email:Provider` = `Graph`, `Email:Mailbox`). A permissão do Exchange leva de 30 minutos a 2 horas para valer; até lá, os e-mails falham e voltam para a fila. Depois, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
 - No ambiente de demonstração, os e-mails para o domínio das pessoas fictícias ficam na pasta local do App Service (`Email:Graph:LocalDomains`, no `.tfvars` do ambiente), e só os das pessoas do tenant saem; a aplicação não sobe em produção com domínios locais (ADR-0123).
 
+### Assinatura dos termos de aceite
+
+- Os termos de aceite são assinados pela Autentique, com a conta da empresa (ADR-0129, ADR-0130). Em 30/10/2026, o plano gratuito tinha 10 documentos por mês pela API, 10 chamadas por minuto e arquivos de até 5 MB, e o Profissional, cerca de US$ 19 por mês, com 60 chamadas por minuto e arquivos de até 20 MB; confira os valores atuais. Sem a Autentique, a gestão só anexa os termos assinados recebidos por fora.
+- A chave da API é gerada no painel da Autentique, em Chaves de API (`https://painel.autentique.com.br/perfil/api`). Ela e o segredo do aviso ficam no Key Vault, como `Signature--Autentique--ApiKey` e `Signature--Autentique--WebhookSecret`, criados à mão (passo 5 de "Instalar"), nunca pelo Terraform nem nos arquivos da instalação. Com `autentique` no `local.auto.tfvars`, o Terraform liga o provedor na aplicação (`Signature:Provider` = `Autentique`) com as referências aos dois segredos.
+- O aviso (webhook) é cadastrado no painel de desenvolvedor da Autentique, em formato JSON, com o endereço `https://<endereço da instalação>/signature-notices` (o `app_url` do `terraform output`) e os eventos `signature.accepted`, `signature.rejected` e `document.finished`; o segredo que o painel mostra vai para o Key Vault. Com o aviso (`webhook = true`), a situação de cada pedido chega na hora, e a conferência em segundo plano roda a cada hora, só como garantia; sem ele, a conferência roda a cada 15 minutos (`Signature:CheckMinutes`). Cada leitura de documento conta no plano da Autentique.
+- O sandbox (`sandbox = true` no bloco `autentique`) cria documentos de teste, sem custo e sem validade, que a Autentique apaga em poucos dias; a aplicação não sobe em produção com ele.
+- Cada signatário recebe o link por e-mail da Autentique; o FiscoProjects não manda e-mail a eles. O documento também fica na conta da Autentique, e a exclusão de um projeto pede a exclusão dos documentos dele lá (ADR-0111).
+- No ambiente de demonstração, os pedidos com todos os signatários nos domínios fictícios ficam no provedor local, com o link de cada um na gaveta do termo (`Signature:LocalDomains`, no `.tfvars` do ambiente), e só os outros vão à Autentique; a aplicação não sobe em produção com eles (ADR-0130).
+
 ### Azure
 
 - Toda a infraestrutura criada pelo Terraform, a partir de `infra/terraform/` e dos parâmetros da instalação (ADR-0053).
@@ -271,7 +291,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Produção: App Service Linux B1 com Always On e Azure SQL provisionado (S0, ou Basic para começar) (ADR-0048, ADR-0052, [custos estimados](custos-estimados.md)).
 - Desenvolvimento e demonstração (opcional): App Service B1 e Azure SQL Basic, sem backups mensais; a oferta gratuita do Azure SQL acabaria em poucos dias com os processos em segundo plano (ADR-0052, ADR-0114). Uma assinatura de avaliação pode não ter cota de App Service na Brazil South: aí `app_location` leva a aplicação e o banco para uma região com cota, só nesse ambiente, que tem só dados fictícios (ADR-0114).
 - Identidade gerenciada do App Service com acesso ao Azure SQL e ao Key Vault (ADR-0052).
-- Key Vault com a chave de licença do Syncfusion, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059). O aplicativo no Entra não tem certificado: ele confia na identidade gerenciada (ADR-0117).
+- Key Vault com a chave de licença do Syncfusion e, com a Autentique, a chave e o segredo do aviso dela, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059). O aplicativo no Entra não tem certificado: ele confia na identidade gerenciada (ADR-0117).
 - Só HTTPS; domínio próprio opcional com certificado gerenciado (ADR-0052).
 - Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING`, posta pelo Terraform nas configurações do App Service (ADR-0114); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
 - Backups do Azure SQL: restauração a qualquer ponto em 14 dias (Basic: 7), um backup mensal guardado por 12 meses e redundância por zona dentro da Brazil South (parâmetro da instalação) (ADR-0059).
@@ -298,6 +318,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
 - Local dos arquivos no SharePoint (ADR-0030, ADR-0120), com o armazenamento escolhido em `FileStorage:Provider` (`SharePoint`) e o site, a biblioteca e a pasta raiz em `FileStorage:SharePoint:*`, postos pelo Terraform. O armazenamento do SharePoint usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
 - O envio dos e-mails, em `Email:Provider` (`Graph`), e o endereço da caixa de envio, em `Email:Mailbox`, postos pelo Terraform a partir do `email_mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036, ADR-0123). O envio pelo Graph usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
+- O provedor de assinatura dos termos de aceite, em `Signature:Provider` (`Autentique`), com a chave, o segredo do aviso e o sandbox em `Signature:Autentique:*`, postos pelo Terraform a partir do bloco `autentique` (ADR-0129, ADR-0130). Sem provedor, os termos só são anexados. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela.
 - Tamanho máximo de cada documento enviado, em `Documents:MaxMegabytes`, padrão 25 MB (ADR-0031). As pastas padrão dos projetos novos ficam em "Pastas padrão" na Administração; a migração cria as seis do MVP (ADR-0031, ADR-0093). O mesmo limite vale para os termos de aceite em PDF; os termos para assinar ficam na pasta `{código} - {nome}/Pedidos de aceite` de cada projeto, e os assinados, na pasta de termos dos documentos (ADR-0035, ADR-0095).
 - Horário do resumo diário de e-mails, padrão 07:30 no fuso da instalação, em "Horário do resumo diário" das Configurações gerais (ADR-0037).
 - Prazo de guarda das notificações do sino, padrão 90 dias (de 1 a 365), em "Guardar notificações por" das Configurações gerais (ADR-0038).
@@ -308,6 +329,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Usar um tenant Microsoft próprio, nunca o da empresa; sem tenant licenciado, usar as implementações locais de e-mail e arquivos (ADR-0002, ADR-0004).
 - Dados de demonstração: com a API rodando, `npm run demo:data` em `web/` (ou `npm run demo:data -- <endereço da API>`) carrega pessoas, clientes, projetos e cronogramas fictícios pela própria API. Só funciona com a entrada local ligada, portanto nunca em produção (ADR-0078, ADR-0089).
 - E-mails locais: `Email:Provider` = `Local` e a pasta em `Email:Local:Folder` (no `appsettings.Development.json`, `App_Data/emails`, dentro da pasta da API e fora do Git); cada e-mail vira um `.eml`, que abre no programa de e-mail (ADR-0036).
+- Assinatura local dos termos: `Signature:Provider` = `Local` e a pasta em `Signature:Local:Folder` (no `appsettings.Development.json`, `App_Data/signatures`); o link de cada signatário aparece na gaveta do termo e abre a página local de assinatura (ADR-0129). Para testar a Autentique na máquina, use o sandbox, com a chave nos segredos do usuário (`dotnet user-secrets set "Signature:Autentique:ApiKey" "<chave>" --project src/FiscoProjects.Api`), `Signature:Provider` = `Autentique` e `Signature:Autentique:Sandbox` = `true`; o aviso só chega a um endereço público, e a conferência em segundo plano traz a situação (ADR-0130).
 - Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).

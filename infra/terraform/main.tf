@@ -71,6 +71,17 @@ locals {
     Email__Provider = "Graph"
     Email__Mailbox  = var.email_mailbox
   }
+  # The terms signed at the Autentique (ADR-0129, ADR-0130), with the key and the secret of the notice read from the
+  # Key Vault; with the notice, the check in the background is only a guarantee, every hour.
+  signature_settings = var.autentique == null ? {} : merge(
+    {
+      Signature__Provider            = "Autentique"
+      Signature__Autentique__Sandbox = tostring(var.autentique.sandbox)
+    },
+  var.autentique.webhook ? { Signature__CheckMinutes = "60" } : {})
+  signature_secrets = var.autentique == null ? {} : merge(
+    { Signature__Autentique__ApiKey = "Signature--Autentique--ApiKey" },
+  var.autentique.webhook ? { Signature__Autentique__WebhookSecret = "Signature--Autentique--WebhookSecret" } : {})
 }
 
 module "database" {
@@ -152,7 +163,8 @@ module "app" {
   key_vault_id           = module.key_vault.id
   key_vault_name         = module.key_vault.name
   syncfusion_in_vault    = var.syncfusion_license_in_key_vault
-  app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings)
+  app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)
+  vault_settings         = local.signature_secrets
   database_admin         = var.app_is_database_admin
   database_admins_group  = module.database.admins_group_object_id
   tags                   = local.tags
