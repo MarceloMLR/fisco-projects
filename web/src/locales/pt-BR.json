@@ -16,6 +16,7 @@
     "home": "Início",
     "projects": "Projetos",
     "tickets": "Chamados",
+    "hours": "Minhas horas",
     "admin": "Administração"
   },
   "pages": {
@@ -27,6 +28,9 @@
     },
     "tickets": {
       "title": "Chamados"
+    },
+    "hours": {
+      "title": "Minhas horas"
     },
     "admin": {
       "title": "Administração"
@@ -288,6 +292,7 @@
       "ProjectLink": "Links",
       "PortalCredential": "Acessos",
       "AcceptanceTerm": "Termos de aceite",
+      "TimeEntry": "Horas",
       "AuditExport": "Exportação da auditoria",
       "AuditCleanup": "Limpeza da auditoria"
     },
@@ -439,6 +444,11 @@
         "Updated": "Alterou um termo de aceite",
         "Deleted": "Cancelou um pedido de aceite"
       },
+      "TimeEntry": {
+        "Created": "Apontou horas",
+        "Updated": "Corrigiu horas",
+        "Deleted": "Apagou horas"
+      },
       "AuditExport": {
         "Exported": "Exportou a auditoria"
       },
@@ -487,7 +497,8 @@
         "LinkCategory": "Categoria",
         "ProjectLink": "Link",
         "PortalCredential": "Acesso",
-        "AcceptanceTerm": "Termo"
+        "AcceptanceTerm": "Termo",
+        "TimeEntry": "Apontamento"
       },
       "secret": "Alterado",
       "none": "—",
@@ -542,7 +553,8 @@
         "Credentials": "Acessos apagados",
         "AcceptanceTerms": "Termos de aceite apagados",
         "ScheduleItems": "Tarefas e marcos apagados",
-        "Members": "Pessoas tiradas do projeto"
+        "Members": "Pessoas tiradas do projeto",
+        "TimeEntries": "Horas apagadas"
       },
       "ProjectMember": {
         "ProjectId": "Projeto",
@@ -655,6 +667,15 @@
         "Status": "Situação",
         "FileName": "Termo para assinar",
         "RefusalReason": "Motivo da recusa"
+      },
+      "TimeEntry": {
+        "ProjectId": "Projeto",
+        "UserId": "Pessoa",
+        "Day": "Dia",
+        "Hours": "Horas",
+        "Description": "Descrição",
+        "ScheduleItemId": "Tarefa",
+        "TicketId": "Chamado"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -1118,7 +1139,9 @@
         "scheduleItems_one": "{{count}} tarefa ou marco do cronograma",
         "scheduleItems_other": "{{count}} tarefas e marcos do cronograma",
         "members_one": "{{count}} pessoa no projeto",
-        "members_other": "{{count}} pessoas no projeto"
+        "members_other": "{{count}} pessoas no projeto",
+        "timeEntries_one": "{{count}} apontamento de horas",
+        "timeEntries_other": "{{count}} apontamentos de horas"
       }
     },
     "confirm": {
@@ -2226,6 +2249,73 @@
         "failed": "Não foi possível salvar. Tente de novo.",
         "loadFailed": "Não foi possível carregar os fornecedores. Tente de novo."
       }
+    }
+  },
+  "hours": {
+    "subtitle": "Semana de {{from}} a {{to}} · {{hours}} na semana",
+    "weekShort": "{{from}} a {{to}}",
+    "weekTotal": "{{hours}} na semana",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "thisWeek": "Esta semana",
+    "log": "Apontar horas",
+    "table": "Horas da semana",
+    "today": "Hoje",
+    "columns": {
+      "project": "Projeto",
+      "work": "Tarefa ou chamado",
+      "description": "Descrição",
+      "hours": "Horas",
+      "actions": "Ações"
+    },
+    "onlyProject": "Só o projeto",
+    "deletedTask": "Tarefa excluída",
+    "empty": "Nenhuma hora apontada nesta semana.",
+    "total": "Total da semana: {{hours}}",
+    "loadFailed": "Não foi possível carregar as horas.",
+    "menu": {
+      "button": "Ações do apontamento de {{day}}",
+      "edit": "Corrigir",
+      "remove": "Apagar"
+    },
+    "remove": {
+      "title": "Apagar apontamento",
+      "text": "Apagar {{hours}} de {{day}} em {{project}}? Não dá para desfazer.",
+      "cancel": "Cancelar",
+      "confirm": "Apagar"
+    },
+    "dialog": {
+      "newTitle": "Apontar horas",
+      "editTitle": "Corrigir horas",
+      "day": "Dia",
+      "hours": "Horas",
+      "hoursHelp": "Ex.: 1,5 ou 1:30",
+      "project": "Projeto",
+      "chooseProject": "Escolha o projeto",
+      "work": "Tarefa ou chamado",
+      "task": "Tarefa",
+      "ticket": "Chamado",
+      "closedTicket": "Chamado fechado",
+      "description": "Descrição",
+      "cancel": "Cancelar",
+      "add": "Apontar horas",
+      "save": "Salvar"
+    },
+    "errors": {
+      "dayInvalid": "Digite o dia como dd/mm/aaaa.",
+      "dayFuture": "O dia não pode ser depois de hoje.",
+      "hoursInvalid": "Use de 0,25 a 24 horas, em quartos de hora, e até 24 horas no dia.",
+      "projectRequired": "Escolha o projeto.",
+      "descriptionRequired": "Descreva o que foi feito, em até 500 caracteres.",
+      "workInvalid": "Escolha uma tarefa ou um chamado do projeto."
+    },
+    "messages": {
+      "added": "Horas apontadas.",
+      "saved": "Apontamento corrigido.",
+      "removed": "Apontamento apagado.",
+      "closed": "O projeto foi encerrado e não recebe mais horas.",
+      "failed": "Não foi possível salvar. Tente de novo.",
+      "noProjects": "Você não está em nenhum projeto em aberto para apontar horas."
     }
   },
   "editor": {

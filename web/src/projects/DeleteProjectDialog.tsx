@@ -19,6 +19,7 @@ const kinds = [
   'acceptanceTerms',
   'scheduleItems',
   'members',
+  'timeEntries',
 ] as const;
 
 /** Whether the code typed is the code of the project, as the API checks it: without spaces around, in any case. */

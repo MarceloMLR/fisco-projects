@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---

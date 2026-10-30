@@ -1489,6 +1489,12 @@ export const handlers = [
     HttpResponse.json({ items: [], today: demoToday }),
   ),
   http.get('/api/my-work', () => HttpResponse.json(emptyMyWork)),
+  // Minhas horas without hours and without projects to log in (ADR-0128).
+  http.get('/api/time-entries', () => HttpResponse.json({ items: [], total: 0 })),
+  http.get('/api/time-entries/projects', () => HttpResponse.json([])),
+  http.get('/api/time-entries/projects/:projectId/work', () =>
+    HttpResponse.json({ tasks: [], tickets: [] }),
+  ),
   http.get('/api/people', () => HttpResponse.json([])),
   // The card of a person (ADR-0118): the users of the Users screen and the people of the tickets and projects.
   http.get('/api/people/:id', ({ params }) => {

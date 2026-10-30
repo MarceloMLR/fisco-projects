@@ -463,6 +463,7 @@ describe('Exclusão pela tela', () => {
           acceptanceTerms: 1,
           scheduleItems: 12,
           members: 5,
+          timeEntries: 40,
         }),
       ),
       http.post('/api/projects/:id/deletion', async ({ request, params }) => {
@@ -498,6 +499,7 @@ describe('Exclusão pela tela', () => {
       deletion.counts.acceptanceTerms_one.replace('{{count}}', '1'),
       deletion.counts.scheduleItems_other.replace('{{count}}', '12'),
       deletion.counts.members_other.replace('{{count}}', '5'),
+      deletion.counts.timeEntries_other.replace('{{count}}', '40'),
     ]);
     expect(dialog).toHaveTextContent(deletion.forGood);
     const confirm = within(dialog).getByRole('button', { name: deletion.confirm });

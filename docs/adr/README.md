@@ -42,7 +42,7 @@ Regras:
 | --- | --- | --- | --- |
 | [0018](0018-cronograma-em-dias-uteis-com-feriados.md) | Cronograma em dias úteis, com feriados nacionais calculados e feriados locais cadastrados | aceita | 2026-10-13 |
 | [0019](0019-estrutura-do-cronograma-e-dependencias.md) | Cronograma em dois níveis, com dependências que empurram as tarefas seguintes | aceita (item "Subtarefas" substituído pelo ADR-0088) | 2026-10-13 |
-| [0020](0020-progresso-e-atraso-das-tarefas.md) | Progresso das tarefas em percentual com atalhos, ponderado pela duração | aceita | 2026-10-13 |
+| [0020](0020-progresso-e-atraso-das-tarefas.md) | Progresso das tarefas em percentual com atalhos, ponderado pela duração | aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128) | 2026-10-13 |
 | [0021](0021-recursos-do-gantt-na-v1.md) | Recursos do Gantt na v1, com linha de base, caminho crítico, desfazer e exportação | aceita (apresentação na tela definida pelo ADR-0071) | 2026-10-13 |
 
 ## Chamados
@@ -188,3 +188,6 @@ Regras:
 | [0123](0123-emails-pelo-graph-na-pratica.md) | Como os e-mails saem pelo Microsoft Graph | aceita | 2026-10-27 |
 | [0124](0124-foto-da-pessoa-pelo-microsoft-365.md) | Foto da pessoa no avatar, lida do Microsoft 365 | aceita | 2026-10-27 |
 | [0125](0125-publicacao-em-producao.md) | Publicação em produção por versão, com aprovação e migrações pelo pipeline | aceita | 2026-10-28 |
+| [0126](0126-recalculo-das-datas-pelo-calendario.md) | Recálculo das datas dos cronogramas pelo calendário, pedido pelo administrador | aceita | 2026-10-28 |
+| [0127](0127-instalacao-a-partir-do-pacote-da-versao.md) | Instalação na nuvem do cliente a partir do pacote da versão | aceita | 2026-10-29 |
+| [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita | 2026-10-29 |

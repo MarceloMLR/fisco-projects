@@ -44,6 +44,9 @@
     <Project Path="src/Modules/Tickets/FiscoProjects.Tickets.Contracts/FiscoProjects.Tickets.Contracts.csproj" />
     <Project Path="src/Modules/Tickets/FiscoProjects.Tickets/FiscoProjects.Tickets.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/TimeTracking/">
+    <Project Path="src/Modules/TimeTracking/FiscoProjects.TimeTracking/FiscoProjects.TimeTracking.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Users/">
     <Project Path="src/Modules/Users/FiscoProjects.Users.Contracts/FiscoProjects.Users.Contracts.csproj" />
     <Project Path="src/Modules/Users/FiscoProjects.Users/FiscoProjects.Users.csproj" />
@@ -65,6 +68,7 @@
     <Project Path="tests/FiscoProjects.SharedKernel.Tests/FiscoProjects.SharedKernel.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Testing/FiscoProjects.Testing.csproj" />
     <Project Path="tests/FiscoProjects.Tickets.Tests/FiscoProjects.Tickets.Tests.csproj" />
+    <Project Path="tests/FiscoProjects.TimeTracking.Tests/FiscoProjects.TimeTracking.Tests.csproj" />
     <Project Path="tests/FiscoProjects.Users.Tests/FiscoProjects.Users.Tests.csproj" />
   </Folder>
 </Solution>

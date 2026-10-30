@@ -11,6 +11,7 @@ import { SettingsPage } from './admin/SettingsPage';
 import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
+import { MyHoursPage } from './hours/MyHoursPage';
 import { MyWorkPage } from './my-work/MyWorkPage';
 import { ProjectAcceptancesPage } from './acceptances/ProjectAcceptancesPage';
 import { ProjectCredentialsPage } from './credentials/ProjectCredentialsPage';
@@ -229,6 +230,11 @@ export const routes: RouteObject[] = [
               titleKey: 'pages.ticket.title',
               trail: [{ titleKey: 'pages.tickets.title', path: '/tickets' }],
             } satisfies PageHandle,
+          },
+          {
+            path: 'hours',
+            element: <MyHoursPage />,
+            handle: { navigation: 'hours', titleKey: 'pages.hours.title' } satisfies PageHandle,
           },
           // My profile is reached from the account menu (and the phone menu); it is no item of the sidebar.
           {

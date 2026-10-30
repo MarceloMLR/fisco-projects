@@ -22,6 +22,7 @@ import {
   manager,
   projectManagers,
   techLeads,
+  workDaysBefore,
 } from './plan.ts';
 
 /**
@@ -250,7 +251,7 @@ export async function loadDemo(
     missing.reduce((total, project) => total + (of(project)?.length ?? 0), 0);
   if (missing.length > 0) {
     log(
-      `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos e ${String(count((project) => project.acceptances))} termos de aceite.`,
+      `Projetos novos: ${String(missing.length)} (${missing.map((project) => project.code).join(', ')}), com ${String(items)} tarefas e marcos, a partir de ${firstDay}, ${String(count((project) => project.tickets))} chamados, ${String(count((project) => project.documents))} documentos, ${String(count((project) => project.links))} links, ${String(count((project) => project.credentials))} acessos, ${String(count((project) => project.acceptances))} termos de aceite e ${String(count((project) => project.hours))} apontamentos de horas.`,
     );
   }
   log(screensLine);
@@ -517,6 +518,8 @@ async function loadProject(
     );
   }
 
+  // The ids of the tickets by title, for the hours worked on them (ADR-0128).
+  const ticketIds = new Map<string, string>();
   // Each ticket opened by its person, while the project is open (ADR-0022), then what happens to it, in order.
   for (const ticket of project.tickets ?? []) {
     const opened = must(
@@ -531,6 +534,7 @@ async function loadProject(
       }),
       `Chamado ${ticket.title}`,
     );
+    ticketIds.set(ticket.title, opened.id);
     const path = { params: { path: { number: opened.number } } };
     // The files of the description, by who opened it, before any message (ADR-0026).
     if ((ticket.files ?? []).length > 0) {
@@ -660,6 +664,10 @@ async function loadProject(
 
   if ((project.acceptances ?? []).length > 0) {
     await loadAcceptances(project, id, ids, personOf);
+  }
+
+  if ((project.hours ?? []).length > 0) {
+    await loadHours(project, id, today, ids, ticketIds, personOf);
   }
 
   if (project.status !== undefined) {
@@ -858,6 +866,35 @@ async function loadCredentials(
         },
       }),
       `Acesso ${credential.portal} de ${credential.environment}`,
+    );
+  }
+}
+
+/**
+ * The hours of the project (ADR-0128), each logged by its person on its working day, on the project only or on the
+ * task or the ticket of the plan.
+ */
+async function loadHours(
+  project: DemoProject,
+  projectId: string,
+  today: string,
+  items: ReadonlyMap<string, string>,
+  tickets: ReadonlyMap<string, string>,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+): Promise<void> {
+  for (const entry of project.hours ?? []) {
+    must(
+      await personOf(entry.by).api.POST('/api/time-entries', {
+        body: {
+          projectId,
+          day: workDaysBefore(today, entry.daysAgo),
+          hours: entry.hours,
+          description: entry.description,
+          scheduleItemId: entry.task === undefined ? null : (items.get(entry.task) ?? null),
+          ticketId: entry.ticket === undefined ? null : (tickets.get(entry.ticket) ?? null),
+        },
+      }),
+      `Horas de ${entry.by} em ${project.code}`,
     );
   }
 }

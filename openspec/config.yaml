@@ -13,8 +13,9 @@ context: |
   fornecedores); documentos (SharePoint, versões, status manual); links; acessos (senha cifrada);
   termos de aceite (PDF assinado fora do sistema); membros e permissões; avisos (e-mail e sino);
   auditoria e LGPD; administração; perfil e tema.
+  Depois da v1: horas do projeto (apontamento de cada pessoa e saldo em horas, só para o administrador).
   NÃO faz: service desk geral nem chamado sem projeto; usuários externos (v1); filas compartilhadas;
-  aceite por clique; horas, orçamento, custos; integração com sistemas de fornecedores; dependências
+  aceite por clique; horas em reais, orçamento, custos; integração com sistemas de fornecedores; dependências
   entre projetos; importação do MS Project; .mpp nativo; Teams; busca global; senha Microsoft no sistema.
 
   Stack: .NET 10 (LTS) ASP.NET Core, EF Core com SQL Server; React + TypeScript estrito, MUI só gratuito

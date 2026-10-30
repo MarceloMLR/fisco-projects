@@ -916,6 +916,30 @@ describe('Acessos na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Horas na demonstração" (ADR-0128).
+describe('Horas na demonstração', () => {
+  it('Horas na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each entry logged by its person, with the task or the ticket of the plan by its id.
+    const planned = demoProjects.flatMap((project) => project.hours ?? []);
+    expect(callsBy(/ POST \/api\/time-entries$/)).toHaveLength(planned.length);
+    expect(people(/ POST \/api\/time-entries$/)).toEqual(['carla', 'diego', 'marina', 'rafael']);
+    const sent = (bodies.get('/api/time-entries') ?? []) as {
+      day: string;
+      scheduleItemId: string | null;
+      ticketId: string | null;
+    }[];
+    expect(sent.filter((entry) => entry.scheduleItemId !== null)).toHaveLength(
+      planned.filter((entry) => entry.task !== undefined).length,
+    );
+    expect(sent.filter((entry) => entry.ticketId !== null)).toHaveLength(
+      planned.filter((entry) => entry.ticket !== undefined).length,
+    );
+    expect(sent.every((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.day))).toBe(true);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Termos na demonstração".
 describe('Termos na demonstração', () => {
   it('Termos na demonstração', async () => {

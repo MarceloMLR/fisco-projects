@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -121,9 +122,9 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 
         summary.GetProperty("code").GetString().Should().Be("ERP-FIN");
         summary.GetProperty("name").GetString().Should().Be("Implantação do ERP financeiro");
-        new[] { "tickets", "documents", "links", "credentials", "acceptanceTerms", "scheduleItems", "members" }
+        new[] { "tickets", "documents", "links", "credentials", "acceptanceTerms", "scheduleItems", "members", "timeEntries" }
             .Select(kind => summary.GetProperty(kind).GetInt32())
-            .Should().Equal(2, 1, 1, 1, 1, 2, 5);
+            .Should().Equal(2, 1, 1, 1, 1, 2, 5, 1);
     }
 
     [Fact(DisplayName = "Número de chamado não reaproveitado")]
@@ -173,7 +174,8 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 
     /// <summary>
     /// ERP-FIN with a phase, a task and a milestone with a dependency and the baseline; a ticket with an attachment, a
-    /// message and a follower; a document; a link; a credential; and a request of acceptance to Carla, with its PDF.
+    /// message and a follower; a document; a link; a credential; a request of acceptance to Carla, with its PDF; and hours
+    /// Carla logged on the task.
     /// </summary>
     private static async Task<Scene> SceneAsync(ProjectTeam team)
     {
@@ -243,7 +245,19 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
             ["message"] = "Assine o termo, por favor.",
         }, "termo.pdf", Encoding.ASCII.GetBytes("%PDF-1.7\ntermo\n%%EOF")));
 
-        return new Scene(ticket, [team.Erp, phase, task, milestone, ticket, document, link, credential, term]);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(
+            team.App.Clock.GetUtcNow().UtcDateTime, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")));
+        var hours = await IdOfAsync(await SendAsync(await team.ClientOfAsync(team.Carla), HttpMethod.Post, "/api/time-entries", new
+        {
+            projectId = team.Erp,
+            day = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            hours = 2m,
+            description = "Testes com o cliente",
+            scheduleItemId = task,
+            ticketId = (Guid?)null,
+        }));
+
+        return new Scene(ticket, [team.Erp, phase, task, milestone, ticket, document, link, credential, term, hours]);
     }
 
     private static async Task<int> OpenTicketAsync(ProjectTeam team, Guid projectId, string title)

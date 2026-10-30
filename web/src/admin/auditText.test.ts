@@ -1285,6 +1285,52 @@ describe('Mudanças do cronograma na auditoria', () => {
       { label: 'Projeto', value: 'Implantação do ERP financeiro' },
     ]);
   });
+
+  // Spec: horas-do-projeto, requirement "Horas na auditoria" (ADR-0128).
+  it('Horas na auditoria', () => {
+    const project = {
+      field: 'ProjectId',
+      before: 'Implantação do ERP financeiro',
+      after: 'Implantação do ERP financeiro',
+      secret: false,
+      reference: 'Project',
+    };
+    const logged = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'TimeEntry',
+        itemLabel: 'Reunião de levantamento',
+        changes: [
+          { ...project, before: null },
+          { field: 'Day', before: null, after: '2026-10-28', secret: false, reference: null },
+          { field: 'Hours', before: null, after: '2.50', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+    const corrected = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'TimeEntry',
+        itemLabel: 'Reunião de levantamento',
+        changes: [
+          project,
+          { field: 'Hours', before: '2.50', after: '2.00', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(logged.title).toBe('Apontou horas');
+    expect(logged.summary).toBe('Reunião de levantamento · Implantação do ERP financeiro');
+    expect(logged.changes).toContainEqual({ field: 'Dia', before: '—', after: '28/10/2026' });
+    expect(corrected.title).toBe('Corrigiu horas');
+    expect(corrected.summary).toBe('Reunião de levantamento · horas 2,5 h → 2 h');
+    expect(corrected.properties).toEqual([
+      { label: 'Apontamento', value: 'Reunião de levantamento' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+  });
 });
 
 // Spec: dados-pessoais, requirements "Registro da anonimização" and "Limpeza mensal da auditoria" (ADR-0110).

@@ -58,7 +58,7 @@ Fora do produto:
 - Service desk geral: catálogo de serviços, base de conhecimento, chamado sem projeto (ADR-0022).
 - Integração automática com o sistema de chamados de fornecedores (ADR-0028).
 - Aceite eletrônico por clique; todo aceite é por PDF assinado (ADR-0035).
-- Apontamento de horas, orçamento, custos e campos personalizados (ADR-0016, ADR-0020).
+- Orçamento, custos, horas em reais e campos personalizados (ADR-0016, ADR-0128).
 - Dependências entre projetos diferentes (ADR-0019).
 - Gerar arquivo `.mpp` nativo (ADR-0021).
 - Senha da conta Microsoft digitada no FiscoProjects (ADR-0009).

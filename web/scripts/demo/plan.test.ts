@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { dayFrom, demoProjects, firstDayFor, mainProject } from './plan.ts';
+import {
+  dayFrom,
+  demoProjects,
+  firstDayFor,
+  mainProject,
+  manager,
+  workDaysBefore,
+} from './plan.ts';
 
 // Spec: dados-de-demonstracao, requirement "Datas da demonstração".
 describe('Datas da demonstração', () => {
@@ -58,5 +65,59 @@ describe('Meu trabalho na demonstração', () => {
     expect(acceptances.some((term) => term.answer === undefined && term.attached !== true)).toBe(
       true,
     );
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Horas na demonstração" (ADR-0128).
+describe('Horas na demonstração', () => {
+  it('Dias úteis antes de hoje', () => {
+    // Thursday 29/10/2026: the day before is Wednesday, and five working days before is the Thursday before.
+    expect(workDaysBefore('2026-10-29', 0)).toBe('2026-10-29');
+    expect(workDaysBefore('2026-10-29', 1)).toBe('2026-10-28');
+    expect(workDaysBefore('2026-10-29', 5)).toBe('2026-10-22');
+    // From a Monday, the working day before is the Friday.
+    expect(workDaysBefore('2026-10-26', 1)).toBe('2026-10-23');
+  });
+
+  it('Horas na demonstração', () => {
+    const daily = new Map<string, number>();
+    for (const project of demoProjects) {
+      const leader = project.manager ?? manager;
+      const roles = new Map<string, string>([
+        [leader, 'Manager'],
+        ...(project.techLead === undefined ? [] : [[project.techLead, 'TechLead'] as const]),
+        ...(project.members ?? []),
+      ]);
+      const tasks = new Set(
+        project.phases
+          .flatMap((phase) => phase.items)
+          .filter((item) => item.kind === 'Task')
+          .map((item) => item.name),
+      );
+      const tickets = new Set((project.tickets ?? []).map((ticket) => ticket.title));
+      for (const entry of project.hours ?? []) {
+        // Only people of the project log hours, never a viewer, on a task or a ticket of the project.
+        expect(roles.get(entry.by), `${project.code} ${entry.description}`).toBeDefined();
+        expect(roles.get(entry.by)).not.toBe('Viewer');
+        expect(entry.task === undefined || tasks.has(entry.task), entry.task).toBe(true);
+        expect(entry.ticket === undefined || tickets.has(entry.ticket), entry.ticket).toBe(true);
+        expect(entry.task !== undefined && entry.ticket !== undefined).toBe(false);
+        expect(Number.isInteger(entry.hours * 4) && entry.hours > 0).toBe(true);
+        const day = `${entry.by} ${String(entry.daysAgo)}`;
+        daily.set(day, (daily.get(day) ?? 0) + entry.hours);
+      }
+    }
+    expect(Math.max(...daily.values())).toBeLessThanOrEqual(24);
+
+    // The manager of the main project has hours in it and in another project, on tasks and on tickets.
+    const ofManager = demoProjects.flatMap((project) =>
+      (project.hours ?? [])
+        .filter((entry) => entry.by === manager)
+        .map((entry) => ({ project, entry })),
+    );
+    expect(new Set(ofManager.map(({ project }) => project.code)).size).toBeGreaterThan(1);
+    expect(ofManager.some(({ project }) => project.code === mainProject)).toBe(true);
+    expect(ofManager.some(({ entry }) => entry.task !== undefined)).toBe(true);
+    expect(ofManager.some(({ entry }) => entry.ticket !== undefined)).toBe(true);
   });
 });
