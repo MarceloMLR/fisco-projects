@@ -105,7 +105,7 @@ export function hoursRows(entries: readonly TimeEntry[]): HoursRow[] {
   return rows;
 }
 
-/** What an entry was worked on, as the list says it: the task, "#104 Título" of the ticket, or none. */
+/** What an entry was worked on, as the list says it: the task, the number and the title of the ticket, or none. */
 export type EntryWork =
   { kind: 'task'; name: string | null } | { kind: 'ticket'; text: string } | { kind: 'project' };
 

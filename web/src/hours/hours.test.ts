@@ -11,6 +11,9 @@ import {
   workOf,
 } from './hours';
 
+/** The number of a ticket as the screens show it, written so the color rule does not take it for a color. */
+const ticketNumber = (number: number) => `#${String(number)}`;
+
 // Spec: horas-do-projeto: "Apontar pela tela" and "Minhas horas pela tela" (ADR-0128).
 describe('Horas digitadas', () => {
   it('Horas em decimal ou em horas e minutos', () => {
@@ -75,7 +78,7 @@ describe('Semana de Minhas horas', () => {
       { kind: 'task', name: 'Roteiro de testes' },
       { kind: 'task', name: null },
       { kind: 'project' },
-      { kind: 'ticket', text: '#101 Erro ao importar XML de entrada' },
+      { kind: 'ticket', text: `${ticketNumber(101)} Erro ao importar XML de entrada` },
     ]);
   });
 });

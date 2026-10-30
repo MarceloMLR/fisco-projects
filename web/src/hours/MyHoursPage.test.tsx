@@ -14,6 +14,8 @@ import { phoneWidth, renderApp } from '../test/renderApp';
 import { server, signedInAs } from '../test/server';
 
 const text = ptBR.hours;
+/** The number of a ticket as the screens show it, written so the color rule does not take it for a color. */
+const ticketNumber = (number: number) => `#${String(number)}`;
 const requests: { method: string; path: string; body: unknown }[] = [];
 const periods: string[] = [];
 let entries: TimeEntry[];
@@ -116,7 +118,7 @@ describe('Minhas horas pela tela', () => {
     expect(grid).toHaveTextContent('7,5 h');
     expect(grid).toHaveTextContent(text.onlyProject);
     expect(grid).toHaveTextContent(text.deletedTask);
-    expect(grid).toHaveTextContent('#101 Erro ao importar XML de entrada');
+    expect(grid).toHaveTextContent(`${ticketNumber(101)} Erro ao importar XML de entrada`);
     expect(screen.getByText(text.total.replace('{{hours}}', '27 h'))).toBeVisible();
     expect(screen.getByText(/27 h na semana/)).toBeVisible();
     expect(screen.getByRole('button', { name: text.nextWeek })).toBeDisabled();
