@@ -115,6 +115,7 @@ public static class ApiSetup
             .MapNotificationsEndpoints()
             .MapMyWorkEndpoints()
             .MapTimeTrackingEndpoints()
+            .MapProjectHoursEndpoints()
             .MapClientSettingsEndpoints();
 
         app.MapFrontendFallback();

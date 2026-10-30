@@ -257,7 +257,16 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
             ticketId = (Guid?)null,
         }));
 
-        return new Scene(ticket, [team.Erp, phase, task, milestone, ticket, document, link, credential, term, hours]);
+        (await SendAsync(team.Admin, HttpMethod.Put, $"/api/admin/project-hours/{team.Erp}/contracted", new { hours = 400m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var additional = await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, $"/api/admin/project-hours/{team.Erp}/additional", new
+        {
+            day = today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            hours = 16m,
+            reason = "Integração com um segundo banco",
+        }));
+
+        return new Scene(ticket, [team.Erp, phase, task, milestone, ticket, document, link, credential, term, hours, additional]);
     }
 
     private static async Task<int> OpenTicketAsync(ProjectTeam team, Guid projectId, string title)

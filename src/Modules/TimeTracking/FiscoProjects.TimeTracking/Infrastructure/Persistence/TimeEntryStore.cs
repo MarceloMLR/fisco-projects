@@ -7,10 +7,22 @@ namespace FiscoProjects.TimeTracking.Infrastructure.Persistence;
 /// <summary>The time entries, in the table of the module.</summary>
 internal sealed class TimeEntryStore(TimeTrackingDbContext db) : ITimeEntryStore
 {
-    public async Task<IReadOnlyList<TimeEntry>> OfPersonAsync(Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken) =>
-        await db.TimeEntries.AsNoTracking()
-            .Where(entry => entry.UserId == userId && entry.Day >= from && entry.Day <= to)
-            .ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<TimeEntry>> InPeriodAsync(
+        Guid? userId, Guid? projectId, DateOnly from, DateOnly to, CancellationToken cancellationToken)
+    {
+        var entries = db.TimeEntries.AsNoTracking().Where(entry => entry.Day >= from && entry.Day <= to);
+        if (userId is { } person)
+        {
+            entries = entries.Where(entry => entry.UserId == person);
+        }
+
+        if (projectId is { } project)
+        {
+            entries = entries.Where(entry => entry.ProjectId == project);
+        }
+
+        return await entries.ToListAsync(cancellationToken);
+    }
 
     public async Task<decimal> HoursOfDayAsync(Guid userId, DateOnly day, Guid? except, CancellationToken cancellationToken) =>
         await db.TimeEntries.AsNoTracking()

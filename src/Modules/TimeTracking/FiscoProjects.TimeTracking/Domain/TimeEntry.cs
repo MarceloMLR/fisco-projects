@@ -125,8 +125,7 @@ public sealed record TimeEntryForm(Guid ProjectId, DateOnly Day, decimal Hours, 
     }
 
     /// <summary>From a quarter of an hour to 24 hours, in quarters of an hour.</summary>
-    public static bool IsValidHours(decimal hours) =>
-        hours >= Quarter && hours <= MaxHours && decimal.Remainder(hours, Quarter) == 0;
+    public static bool IsValidHours(decimal hours) => Quarters.IsValid(hours, Quarter, MaxHours);
 
     /// <summary>Whether the entry still fits in the day of the person, with the other entries of that day.</summary>
     public static bool FitsInDay(decimal hours, decimal otherHoursOfTheDay) => otherHoursOfTheDay + hours <= MaxHours;

@@ -17,12 +17,19 @@ public sealed record TimeEntryTaskResponse(Guid Id, string? Name);
 /// <summary>The ticket of a time entry, by its number and current title.</summary>
 public sealed record TimeEntryTicketResponse(Guid Id, int Number, string Title);
 
-/// <summary>A time entry: the day, the hours, what was done, the project, the task or the ticket, and whether the person may change it.</summary>
+/// <summary>Who logged a time entry, by the current name.</summary>
+public sealed record TimeEntryPersonResponse(Guid Id, string Name);
+
+/// <summary>
+/// A time entry: the day, the hours, what was done, who logged it, the project, the task or the ticket, and whether the
+/// person of the session may change it.
+/// </summary>
 public sealed record TimeEntryResponse(
     Guid Id,
     DateOnly Day,
     decimal Hours,
     string Description,
+    TimeEntryPersonResponse Person,
     TimeEntryProjectResponse Project,
     TimeEntryTaskResponse? Task,
     TimeEntryTicketResponse? Ticket,
@@ -63,7 +70,8 @@ public static class TimeEntryEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized);
         hours.MapGet("/", ListAsync).WithName("ListTimeEntries")
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden);
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
         hours.MapGet("/projects", ProjectsAsync).WithName("ListTimeEntryProjects");
         hours.MapGet("/projects/{projectId:guid}/work", WorkAsync).WithName("ListTimeEntryWork");
         hours.MapPost("/", AddAsync).WithName("AddTimeEntry")
@@ -80,20 +88,22 @@ public static class TimeEntryEndpoints
         return api;
     }
 
-    private static async Task<Results<Ok<TimeEntryListResponse>, ValidationProblem, ForbidHttpResult>> ListAsync(
+    private static async Task<Results<Ok<TimeEntryListResponse>, ValidationProblem, ForbidHttpResult, NotFound>> ListAsync(
         DateOnly from,
         DateOnly to,
         Guid? personId,
+        Guid? projectId,
         HttpContext http,
         IUserAccess access,
         ListTimeEntries list,
         CancellationToken cancellationToken)
     {
         var viewer = await ViewerOfAsync(http, access, cancellationToken);
-        var (entries, outcome) = await list.ExecuteAsync(from, to, personId, viewer, cancellationToken);
+        var (entries, outcome) = await list.ExecuteAsync(from, to, personId, projectId, viewer, cancellationToken);
         return outcome switch
         {
             TimeEntryOutcome.Forbidden => TypedResults.Forbid(),
+            TimeEntryOutcome.NotFound => TypedResults.NotFound(),
             TimeEntryOutcome.Invalid => TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
                 ["to"] = [$"The period goes from the first day to the last, with up to {ListTimeEntries.MaxDays} days."],
@@ -156,6 +166,7 @@ public static class TimeEntryEndpoints
         row.Entry.Day,
         row.Entry.Hours,
         row.Entry.Description,
+        new TimeEntryPersonResponse(row.Person.Id, row.Person.Name),
         new TimeEntryProjectResponse(row.Project.Id, row.Project.Code, row.Project.Name),
         row.Task is { } task ? new TimeEntryTaskResponse(task.Id, task.Name) : null,
         row.Ticket is { } ticket ? new TimeEntryTicketResponse(ticket.Id, ticket.Number, ticket.Title) : null,

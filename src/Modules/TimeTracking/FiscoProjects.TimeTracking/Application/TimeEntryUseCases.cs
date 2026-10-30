@@ -2,14 +2,18 @@ using FiscoProjects.Administration.Contracts;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Tickets.Contracts;
 using FiscoProjects.TimeTracking.Domain;
+using FiscoProjects.Users.Contracts;
 
 namespace FiscoProjects.TimeTracking.Application;
 
 /// <summary>Where the time entries are kept.</summary>
 public interface ITimeEntryStore
 {
-    /// <summary>The entries of the person from a day to another, both included, not tracked.</summary>
-    Task<IReadOnlyList<TimeEntry>> OfPersonAsync(Guid userId, DateOnly from, DateOnly to, CancellationToken cancellationToken);
+    /// <summary>
+    /// The entries from a day to another, both included, not tracked: of the person, of the project or of the person in
+    /// the project.
+    /// </summary>
+    Task<IReadOnlyList<TimeEntry>> InPeriodAsync(Guid? userId, Guid? projectId, DateOnly from, DateOnly to, CancellationToken cancellationToken);
 
     /// <summary>The hours of the person on the day, in every project, without the entry being changed.</summary>
     Task<decimal> HoursOfDayAsync(Guid userId, DateOnly day, Guid? except, CancellationToken cancellationToken);
@@ -58,8 +62,12 @@ public sealed record TimeEntryTask(Guid Id, string? Name);
 /// <summary>The ticket of a time entry.</summary>
 public sealed record TimeEntryTicket(Guid Id, int Number, string Title);
 
-/// <summary>A time entry with its project, its task or ticket and whether the person may change it.</summary>
-public sealed record TimeEntryRow(TimeEntry Entry, TimeEntryProject Project, TimeEntryTask? Task, TimeEntryTicket? Ticket, bool CanChange);
+/// <summary>Who logged a time entry, by the current name (the identifier of an anonymized person, ADR-0110).</summary>
+public sealed record TimeEntryPerson(Guid Id, string Name);
+
+/// <summary>A time entry with who logged it, its project, its task or ticket and whether the viewer may change it.</summary>
+public sealed record TimeEntryRow(
+    TimeEntry Entry, TimeEntryPerson Person, TimeEntryProject Project, TimeEntryTask? Task, TimeEntryTicket? Ticket, bool CanChange);
 
 /// <summary>The entries of a period, the newest day first, and their total.</summary>
 public sealed record TimeEntryList(IReadOnlyList<TimeEntryRow> Items, decimal Total);
@@ -131,16 +139,18 @@ public sealed class TimeEntryTargets(IScheduleItems schedule, IProjectTicketList
 }
 
 /// <summary>
-/// The entries of a person in a period of up to 93 days, the newest day first, with the total (ADR-0128): the person
-/// sees only the own entries; the Administrator, the entries of anyone.
+/// The entries of a person or of a project in a period of up to 93 days, the newest day first, with the total
+/// (ADR-0128): the person sees only the own entries; the Administrator, the entries of anyone and of every person of a
+/// project.
 /// </summary>
-public sealed class ListTimeEntries(ITimeEntryStore store, TimeEntryProjects projects, IScheduleItems schedule, IProjectTicketList tickets)
+public sealed class ListTimeEntries(
+    ITimeEntryStore store, TimeEntryProjects projects, IScheduleItems schedule, IProjectTicketList tickets, IUserDirectory people)
 {
     /// <summary>The longest period a list takes, in days.</summary>
     public const int MaxDays = 93;
 
     public async Task<(TimeEntryList? List, TimeEntryOutcome Outcome)> ExecuteAsync(
-        DateOnly from, DateOnly to, Guid? personId, TimeEntryViewer viewer, CancellationToken cancellationToken)
+        DateOnly from, DateOnly to, Guid? personId, Guid? projectId, TimeEntryViewer viewer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(viewer);
         if (to < from || to.DayNumber - from.DayNumber + 1 > MaxDays)
@@ -148,18 +158,25 @@ public sealed class ListTimeEntries(ITimeEntryStore store, TimeEntryProjects pro
             return (null, TimeEntryOutcome.Invalid);
         }
 
-        var person = personId ?? viewer.UserId;
-        if (person != viewer.UserId && !viewer.IsAdministrator)
+        // The entries of another person, or of every person of a project, are only for the Administrator.
+        var person = projectId is null ? personId ?? viewer.UserId : personId;
+        if ((person != viewer.UserId || projectId is not null) && !viewer.IsAdministrator)
         {
             return (null, TimeEntryOutcome.Forbidden);
         }
 
-        var entries = await store.OfPersonAsync(person, from, to, cancellationToken);
         var all = (await projects.AllAsync(viewer, cancellationToken)).ToDictionary(project => project.Id);
-        var tasks = new Dictionary<Guid, string>();
-        foreach (var projectId in entries.Where(entry => entry.ScheduleItemId is not null).Select(entry => entry.ProjectId).Distinct())
+        if (projectId is { } chosen && !all.ContainsKey(chosen))
         {
-            foreach (var item in await schedule.ItemsAsync(projectId, cancellationToken))
+            return (null, TimeEntryOutcome.NotFound);
+        }
+
+        var entries = await store.InPeriodAsync(person, projectId, from, to, cancellationToken);
+        var names = await people.NamesAsync([.. entries.Select(entry => entry.UserId).Distinct()], cancellationToken);
+        var tasks = new Dictionary<Guid, string>();
+        foreach (var withTasks in entries.Where(entry => entry.ScheduleItemId is not null).Select(entry => entry.ProjectId).Distinct())
+        {
+            foreach (var item in await schedule.ItemsAsync(withTasks, cancellationToken))
             {
                 tasks[item.Id] = item.Name;
             }
@@ -181,6 +198,7 @@ public sealed class ListTimeEntries(ITimeEntryStore store, TimeEntryProjects pro
                     : null;
                 return new TimeEntryRow(
                     entry,
+                    new TimeEntryPerson(entry.UserId, names.GetValueOrDefault(entry.UserId) ?? string.Empty),
                     new TimeEntryProject(project.Id, project.Code, project.Name),
                     task,
                     ticket,

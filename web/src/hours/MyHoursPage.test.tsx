@@ -6,6 +6,7 @@ import ptBR from '../locales/pt-BR.json';
 import {
   demoTimeEntries,
   hoursNow,
+  hoursPerson,
   hoursProjects,
   hoursWork,
   timeEntryListOf,
@@ -37,7 +38,7 @@ beforeEach(() => {
     http.post('/api/time-entries', async ({ request }) => {
       const body = (await request.json()) as Omit<
         TimeEntry,
-        'id' | 'project' | 'task' | 'ticket' | 'canChange'
+        'id' | 'person' | 'project' | 'task' | 'ticket' | 'canChange'
       > & {
         projectId: string;
         scheduleItemId: string | null;
@@ -51,6 +52,7 @@ beforeEach(() => {
           day: body.day,
           hours: body.hours,
           description: body.description,
+          person: { ...hoursPerson },
           project: { ...project },
           task,
           ticket: null,

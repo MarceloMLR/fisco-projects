@@ -9,7 +9,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FiscoProjects.TimeTracking.Infrastructure;
 
-/// <summary>Services of the TimeTracking module: the hours each person works on the projects (ADR-0128).</summary>
+/// <summary>
+/// Services of the TimeTracking module: the hours each person works on the projects and the contracted and additional
+/// hours of each project, with the balance (ADR-0128).
+/// </summary>
 public static class TimeTrackingModule
 {
     public static IServiceCollection AddTimeTrackingModule(this IServiceCollection services, IConfiguration configuration)
@@ -27,6 +30,13 @@ public static class TimeTrackingModule
         services.AddScoped<AddTimeEntry>();
         services.AddScoped<ChangeTimeEntry>();
         services.AddScoped<DeleteTimeEntry>();
+        services.AddScoped<IProjectHoursStore, ProjectHoursStore>();
+        services.AddScoped<ListProjectHours>();
+        services.AddScoped<GetProjectHours>();
+        services.AddScoped<ChangeContractedHours>();
+        services.AddScoped<AddAdditionalHours>();
+        services.AddScoped<ChangeAdditionalHours>();
+        services.AddScoped<DeleteAdditionalHours>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, TimeTrackingWarmUp>();
         return services;

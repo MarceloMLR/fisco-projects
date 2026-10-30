@@ -25,6 +25,7 @@ public static class ProjectsModule
         services.AddScoped<IProjectStore, ProjectStore>();
         services.AddScoped<IScheduleStore, ScheduleStore>();
         services.AddScoped<IProjectAccess, ProjectAccessDirectory>();
+        services.AddScoped<IProjectCatalog, ProjectCatalog>();
         services.AddScoped<IAuditReferenceNames, ProjectReferenceNames>();
         services.AddScoped<IAuditReferenceNames, ClientReferenceNames>();
         services.AddScoped<IAuditReferenceNames, SchedulePhaseReferenceNames>();
