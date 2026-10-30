@@ -321,7 +321,7 @@ public sealed partial class InfrastructureTests
         guide.Should().Contain("--name Signature--Autentique--ApiKey")
             .And.Contain("--name Signature--Autentique--WebhookSecret")
             .And.Contain("https://<endereço da instalação>/signature-notices")
-            .And.Contain("`signature.accepted`, `signature.rejected` e `document.finished`")
+            .And.Contain("do tipo Assinatura, com os eventos `signature.accepted` e `signature.rejected`")
             .And.Contain("autentique = { webhook = true }");
     }
 
