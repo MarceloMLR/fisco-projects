@@ -33,8 +33,8 @@
 ## 6. Documentação e conferência
 
 - [x] 6.1 `CLAUDE.md` (o módulo `TimeTracking` na seção 3 e a tela na seção 6), glossário e roadmap
-- [ ] 6.2 Capturas de Minhas horas no computador e no celular, claro e escuro, para o PR
-- [ ] 6.3 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
+- [x] 6.2 Capturas de Minhas horas no computador e no celular, claro e escuro, para o PR
+- [x] 6.3 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
 
 ## Workflow follow-up
 
