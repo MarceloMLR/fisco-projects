@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * Dialog of the design system (Dialog, fp-dialog, size sm): the title and a close button at the top, the content and
- * the actions at the bottom. With onSubmit, the dialog is a form, so Enter in a field submits it. An alert asks for a
+ * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With onSubmit, the dialog is a form, so Enter in a field submits it. An alert asks for a
  * confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
  * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges.
  */
@@ -30,7 +30,7 @@ export function Dialog({
   actions?: ReactNode;
   onSubmit?: (event: SubmitEvent<HTMLFormElement>) => void;
   alert?: boolean;
-  size?: 'sm' | 'full';
+  size?: 'sm' | 'lg' | 'full';
   subtitle?: ReactNode;
   /** In the header, after the title; the full size closes by them (its "Recolher"). */
   headerTools?: ReactNode;
@@ -141,7 +141,11 @@ export function Dialog({
                 height: 'calc(100% - 2 * var(--space-6))',
                 margin: 'var(--space-6)',
               }
-            : { maxWidth: 'var(--dialog-sm)', margin: 'var(--space-4)', width: '100%' },
+            : {
+                maxWidth: size === 'lg' ? 'var(--dialog-lg)' : 'var(--dialog-sm)',
+                margin: 'var(--space-4)',
+                width: '100%',
+              },
         },
       }}
     >

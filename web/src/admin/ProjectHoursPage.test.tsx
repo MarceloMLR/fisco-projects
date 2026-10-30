@@ -378,4 +378,49 @@ describe('Horas dos projetos pela tela', () => {
     expect(periods.at(-1)?.searchParams.get('to')).toBe('2026-09-30');
     expect(await within(dialog).findByText(text.entries.empty)).toBeVisible();
   });
+
+  it('Muitas horas adicionais pela tela', async () => {
+    const many = Array.from({ length: 23 }, (_, index) => ({
+      id: `0199f5a2-7c1e-7d40-9a1b-f00000000${String(300 + index)}`,
+      day: `2026-10-${String(23 - index).padStart(2, '0')}`,
+      hours: 2,
+      reason: `Pedido fora do escopo ${String(index + 1)}`,
+      createdBy: demoPeople.paulo,
+    }));
+    withBalance(400, many);
+    const drawer = await openErp();
+
+    // The drawer shows the three newest, and the others are in "Ver todas".
+    const additional = within(drawer).getByRole('region', { name: text.details.additionalTitle });
+    expect(within(additional).getAllByRole('row')).toHaveLength(4);
+    expect(within(additional).getByText('Pedido fora do escopo 3')).toBeVisible();
+    expect(within(additional).queryByText('Pedido fora do escopo 4')).toBeNull();
+    fireEvent.click(within(additional).getByRole('button', { name: 'Ver todas (23)' }));
+
+    const dialog = await screen.findByRole('dialog', { name: text.allAdditional.title });
+    const table = within(dialog).getByRole('table', { name: text.allAdditional.table });
+    expect(within(table).getAllByRole('row')).toHaveLength(11);
+    expect(within(dialog).getByText('1–10 de 23')).toBeVisible();
+    expect(
+      within(dialog).getByRole('button', { name: text.allAdditional.previous }),
+    ).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('button', { name: text.allAdditional.next }));
+    expect(within(dialog).getByText('11–20 de 23')).toBeVisible();
+    fireEvent.click(within(dialog).getByRole('button', { name: text.allAdditional.next }));
+    expect(within(dialog).getByText('21–23 de 23')).toBeVisible();
+    expect(within(table).getAllByRole('row')).toHaveLength(4);
+    expect(within(dialog).getByRole('button', { name: text.allAdditional.next })).toBeDisabled();
+
+    // The "⋮" of the dialog corrects the additional hours, as the drawer does.
+    fireEvent.click(
+      within(table).getByRole('button', {
+        name: text.additionalMenu.button.replace('{{day}}', '01/10/2026'),
+      }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.additionalMenu.edit }));
+    const edit = await screen.findByRole('dialog', { name: text.additionalDialog.editTitle });
+    expect(within(edit).getByLabelText(text.additionalDialog.reason)).toHaveValue(
+      'Pedido fora do escopo 23',
+    );
+  });
 });

@@ -1,16 +1,13 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
-import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { visuallyHidden } from '@mui/utils';
 import { useQuery } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
+import { type MouseEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type AdditionalHours, api, type ProjectHoursDetail } from '../api/client';
 import { projectHoursDetailQuery } from '../api/queries';
@@ -24,6 +21,12 @@ import { useDates } from '../format/useDates';
 import { formatHours } from '../hours/hours';
 import { memberToneOf } from '../projects/memberTone';
 import { ProjectStatusBadge } from '../projects/ProjectStatusBadge';
+import {
+  AdditionalHoursListDialog,
+  AdditionalHoursTable,
+  shownAdditional,
+} from './AdditionalHoursList';
+import { hoursTableSx } from './hoursTable';
 import { ProjectEntriesDialog } from './ProjectEntriesDialog';
 import { AdditionalHoursDialog, ContractedHoursDialog } from './ProjectHoursDialogs';
 import { HoursBalanceBadge } from './HoursBalanceBadge';
@@ -38,50 +41,6 @@ const statValueSx = {
   fontVariantNumeric: 'tabular-nums',
 } as const;
 const statDetailSx = { fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' } as const;
-const subSx = {
-  display: 'block',
-  fontSize: 12,
-  lineHeight: '16px',
-  color: 'var(--text-secondary)',
-} as const;
-
-const cell = {
-  boxSizing: 'border-box',
-  height: 'var(--row-height)',
-  padding: '10px var(--space-3)',
-  borderBottom: '1px solid var(--border)',
-  textAlign: 'left',
-  verticalAlign: 'middle',
-} as const;
-
-/** A small table of the drawer (fp-table in a bordered box), without choosing rows. */
-const tableSx = {
-  width: '100%',
-  borderCollapse: 'separate',
-  borderSpacing: 0,
-  backgroundColor: 'var(--bg-surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  overflow: 'hidden',
-  fontSize: 14,
-  lineHeight: '20px',
-  fontVariantNumeric: 'tabular-nums',
-  '& th': {
-    ...cell,
-    padding: '0 var(--space-3)',
-    backgroundColor: 'var(--bg-subtle)',
-    color: 'var(--text-secondary)',
-    fontSize: 13,
-    lineHeight: '18px',
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
-  },
-  '& td': { ...cell, color: 'var(--text)' },
-  '& tbody tr:last-of-type td': { borderBottom: 0 },
-  '& .fp-right': { textAlign: 'right' },
-  '& td.fp-muted': { color: 'var(--text-secondary)' },
-} as const;
-
 const sectionHeadSx = {
   display: 'flex',
   alignItems: 'center',
@@ -185,6 +144,7 @@ function ProjectHoursContent({
   const [removing, setRemoving] = useState<AdditionalHours>();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; additional: AdditionalHours }>();
   const [entries, setEntries] = useState(false);
+  const [allAdditional, setAllAdditional] = useState(false);
   const [failure, setFailure] = useState<string>();
 
   const remove = async (item: AdditionalHours) => {
@@ -205,6 +165,9 @@ function ProjectHoursContent({
   };
 
   const detailText = consumptionDetail(balance, t);
+  const openMenu = (event: MouseEvent<HTMLElement>, item: AdditionalHours) => {
+    setMenu({ anchor: event.currentTarget, additional: item });
+  };
 
   return (
     <>
@@ -326,53 +289,25 @@ function ProjectHoursContent({
         {additional.length === 0 ? (
           <Box sx={emptySx}>{t('projectHours.details.noAdditional')}</Box>
         ) : (
-          <Box component="table" sx={tableSx}>
-            <thead>
-              <tr>
-                <Box component="th" scope="col" sx={{ width: 104 }}>
-                  {t('projectHours.details.columns.day')}
-                </Box>
-                <Box component="th" scope="col" className="fp-right" sx={{ width: 72 }}>
-                  {t('projectHours.details.columns.hours')}
-                </Box>
-                <th scope="col">{t('projectHours.details.columns.reason')}</th>
-                <Box component="th" scope="col" sx={{ width: 52 }}>
-                  <Box component="span" sx={visuallyHidden}>
-                    {t('projectHours.details.columns.actions')}
-                  </Box>
-                </Box>
-              </tr>
-            </thead>
-            <tbody>
-              {additional.map((item) => (
-                <tr key={item.id}>
-                  <td>{formatDayText(item.day)}</td>
-                  <td className="fp-right">{formatHours(item.hours)}</td>
-                  <Box component="td" sx={{ overflowWrap: 'anywhere' }}>
-                    {item.reason}
-                    <Box component="span" sx={subSx}>
-                      {t('projectHours.details.createdBy', { name: item.createdBy.name })}
-                    </Box>
-                  </Box>
-                  <td className="fp-right">
-                    <IconButton
-                      size="small"
-                      aria-label={t('projectHours.additionalMenu.button', {
-                        day: formatDayText(item.day),
-                      })}
-                      aria-haspopup="menu"
-                      onClick={(event) => {
-                        setMenu({ anchor: event.currentTarget, additional: item });
-                      }}
-                      sx={{ color: 'var(--text-secondary)' }}
-                    >
-                      <MoreVertOutlined sx={{ fontSize: 'var(--icon-md)' }} />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Box>
+          <>
+            <AdditionalHoursTable
+              items={additional.slice(0, shownAdditional)}
+              onActions={openMenu}
+            />
+            {additional.length > shownAdditional && (
+              <Box>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => {
+                    setAllAdditional(true);
+                  }}
+                >
+                  {t('projectHours.details.viewAll', { count: additional.length })}
+                </Button>
+              </Box>
+            )}
+          </>
         )}
       </Box>
       <Box
@@ -398,7 +333,7 @@ function ProjectHoursContent({
         {people.length === 0 ? (
           <Box sx={emptySx}>{t('projectHours.details.noPeople')}</Box>
         ) : (
-          <Box component="table" sx={tableSx}>
+          <Box component="table" sx={hoursTableSx}>
             <thead>
               <tr>
                 <th scope="col">{t('projectHours.details.columns.person')}</th>
@@ -503,6 +438,16 @@ function ProjectHoursContent({
           onSaved={(message) => {
             setEditing(undefined);
             onChanged(message);
+          }}
+        />
+      )}
+      {allAdditional && (
+        <AdditionalHoursListDialog
+          project={project}
+          items={additional}
+          onActions={openMenu}
+          onClose={() => {
+            setAllAdditional(false);
           }}
         />
       )}

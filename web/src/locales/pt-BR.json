@@ -2407,6 +2407,7 @@
       "additionalTitle": "Horas adicionais",
       "addAdditional": "Incluir horas adicionais",
       "noAdditional": "Nenhuma hora adicional neste projeto.",
+      "viewAll": "Ver todas ({{count}})",
       "createdBy": "Incluídas por {{name}}",
       "people": "Por pessoa",
       "viewEntries": "Ver apontamentos",
@@ -2426,6 +2427,14 @@
       "button": "Ações das horas adicionais de {{day}}",
       "edit": "Corrigir",
       "remove": "Apagar"
+    },
+    "allAdditional": {
+      "title": "Horas adicionais",
+      "table": "Todas as horas adicionais",
+      "range": "{{from}}–{{to}} de {{count}}",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "close": "Fechar"
     },
     "removeAdditional": {
       "title": "Apagar as horas adicionais?",
