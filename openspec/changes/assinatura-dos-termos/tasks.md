@@ -39,5 +39,5 @@
 ## 7. Documentação e conferência
 
 - [x] 7.1 `CLAUDE.md` (seções 3 e 6), glossário e roadmap
-- [ ] 7.2 Capturas do pedido, da lista, da gaveta e da página local, claro e escuro, para o PR
-- [ ] 7.3 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
+- [x] 7.2 Capturas do pedido, da lista, da gaveta e da página local, claro e escuro, para o PR
+- [x] 7.3 Build sem avisos, testes, `dotnet format`, lint, typecheck e `openspec validate --all --strict`
