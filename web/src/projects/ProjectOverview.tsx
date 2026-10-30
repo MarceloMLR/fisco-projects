@@ -22,6 +22,7 @@ import { theme } from '../theme/theme';
 import { type AttentionLine, attentionLines, deviationDue, milestoneText } from './overview';
 import { OverviewTimeline } from './OverviewTimeline';
 import { useProjectOutlet } from './projectOutlet';
+import { memberToneOf } from './memberTone';
 
 const listSx = { margin: 0, padding: 0, listStyle: 'none' } as const;
 
@@ -350,15 +351,6 @@ function AttentionCard({ overview, fill }: { overview: Overview; fill: boolean }
   );
 }
 
-/** The color of a person in the team, by the role in the project (avatar-*, ADR-0069). */
-const toneOf = {
-  Manager: 'manager',
-  TechLead: 'techlead',
-  Developer: 'dev',
-  Contributor: 'functional',
-  Viewer: undefined,
-} as const;
-
 const teamKeys = {
   Management: 'management',
   Functional: 'functional',
@@ -426,7 +418,7 @@ function TeamCard({ teams, fill }: { teams: OverviewTeam[]; fill: boolean }) {
                       person={person}
                       role={t(`projects.roles.${person.role}`)}
                       size="sm"
-                      tone={toneOf[person.role]}
+                      tone={memberToneOf[person.role]}
                     />
                   </Box>
                 ))}

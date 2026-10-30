@@ -6,6 +6,7 @@ import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import HourglassEmptyOutlined from '@mui/icons-material/HourglassEmptyOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
+import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import Box from '@mui/material/Box';
@@ -25,6 +26,17 @@ import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
 
 const sections = [
+  {
+    labelKey: 'admin.sections.monitoring',
+    items: [
+      {
+        path: '/admin/project-hours',
+        labelKey: 'pages.projectHours.title',
+        icon: ScheduleOutlined,
+        count: null,
+      },
+    ],
+  },
   {
     labelKey: 'admin.sections.people',
     items: [

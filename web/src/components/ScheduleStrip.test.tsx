@@ -101,6 +101,28 @@ describe('Barra de progresso', () => {
       '100',
     );
   });
+
+  it('Tom e rótulo da barra', () => {
+    render(
+      <AppThemeProvider>
+        <ProgressBar
+          value={106}
+          label="Consumo das horas"
+          tone="danger"
+          caption="Consumo"
+          detail="468 de 440 h (106%)"
+        />
+      </AppThemeProvider>,
+    );
+
+    const bar = screen.getByRole('progressbar', { name: 'Consumo das horas' });
+    expect(bar.firstElementChild).toHaveStyle({ backgroundColor: 'var(--danger)' });
+    expect(screen.getByText('Consumo')).toBeVisible();
+    expect(screen.getByText('468 de 440 h (106%)')).toBeVisible();
+    // The detail tells the number: the bar goes without the percentage beside it.
+    expect(screen.queryByText('100%')).toBeNull();
+    expect(bar).toHaveAttribute('aria-valuetext', '468 de 440 h (106%)');
+  });
 });
 
 describe('Prazo', () => {

@@ -3,6 +3,7 @@ import { AdminLayout } from './admin/AdminLayout';
 import { AuditPage } from './admin/AuditPage';
 import { CalendarPage } from './admin/CalendarPage';
 import { DefaultFoldersPage } from './admin/DefaultFoldersPage';
+import { ProjectHoursPage } from './admin/ProjectHoursPage';
 import { ClientsPage } from './admin/ClientsPage';
 import { TemplatesPage } from './admin/TemplatesPage';
 import { VendorsPage } from './admin/VendorsPage';
@@ -252,6 +253,15 @@ export const routes: RouteObject[] = [
             handle: { navigation: 'admin', titleKey: 'pages.admin.title' } satisfies PageHandle,
             children: [
               { index: true, element: <Navigate to="users" replace /> },
+              {
+                path: 'project-hours',
+                element: <ProjectHoursPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.projectHours.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
               {
                 path: 'users',
                 element: <UsersPage />,

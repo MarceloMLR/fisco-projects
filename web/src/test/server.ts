@@ -1495,6 +1495,8 @@ export const handlers = [
   http.get('/api/time-entries/projects/:projectId/work', () =>
     HttpResponse.json({ tasks: [], tickets: [] }),
   ),
+  // Horas dos projetos without projects by default (ADR-0128).
+  http.get('/api/admin/project-hours', () => HttpResponse.json([])),
   http.get('/api/people', () => HttpResponse.json([])),
   // The card of a person (ADR-0118): the users of the Users screen and the people of the tickets and projects.
   http.get('/api/people/:id', ({ params }) => {

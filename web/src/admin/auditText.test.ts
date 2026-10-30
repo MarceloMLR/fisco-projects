@@ -1501,4 +1501,76 @@ describe('Exclusão de projeto na auditoria', () => {
       { field: 'Pessoas tiradas do projeto', before: '—', after: '5' },
     ]);
   });
+
+  // Spec: horas-do-projeto, requirement "Saldo na auditoria" (ADR-0128).
+  it('Horas contratadas e adicionais na auditoria', () => {
+    const project = {
+      field: 'ProjectId',
+      before: null,
+      after: 'Implantação do ERP financeiro',
+      secret: false,
+      reference: 'Project',
+    };
+    const contracted = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'ContractedHours',
+        itemLabel: 'Implantação do ERP financeiro',
+        changes: [
+          { ...project, before: 'Implantação do ERP financeiro' },
+          { field: 'Hours', before: '400.00', after: '420.00', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+    const additional = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'AdditionalHours',
+        itemLabel: 'Integração com um segundo banco',
+        changes: [
+          project,
+          { field: 'Day', before: null, after: '2026-09-30', secret: false, reference: null },
+          { field: 'Hours', before: null, after: '16.00', secret: false, reference: null },
+          {
+            field: 'Reason',
+            before: null,
+            after: 'Integração com um segundo banco',
+            secret: false,
+            reference: null,
+          },
+          {
+            field: 'CreatedBy',
+            before: null,
+            after: 'Paulo Nogueira',
+            secret: false,
+            reference: 'User',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(contracted.title).toBe('Alterou as horas contratadas');
+    expect(contracted.summary).toBe('Implantação do ERP financeiro · horas 400 h → 420 h');
+    expect(contracted.properties).toEqual([
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(contracted.changes).toEqual([{ field: 'Horas', before: '400 h', after: '420 h' }]);
+    expect(additional.title).toBe('Incluiu horas adicionais');
+    expect(additional.summary).toBe(
+      'Integração com um segundo banco · Implantação do ERP financeiro',
+    );
+    expect(additional.properties).toEqual([
+      { label: 'Motivo', value: 'Integração com um segundo banco' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(additional.changes).toContainEqual({ field: 'Dia', before: '—', after: '30/09/2026' });
+    expect(additional.changes).toContainEqual({ field: 'Horas', before: '—', after: '16 h' });
+    expect(additional.changes).toContainEqual({
+      field: 'Incluídas por',
+      before: '—',
+      after: 'Paulo Nogueira',
+    });
+  });
 });

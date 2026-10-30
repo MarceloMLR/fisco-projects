@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
-import { api } from './client';
+import { api, type ProjectHoursView } from './client';
 import type { operations } from './schema';
 
 /** Filters of the list of users, as the contract has them. */
@@ -73,6 +73,7 @@ export const queryKeys = {
   acceptances: ['acceptances'],
   myWork: ['my-work'],
   timeEntries: ['time-entries'],
+  projectHours: ['project-hours'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -624,6 +625,43 @@ export function timeEntriesQuery(from: string, to: string) {
     queryKey: [...queryKeys.timeEntries, 'list', from, to] as const,
     queryFn: ({ signal }) =>
       dataOf(api.GET('/api/time-entries', { params: { query: { from, to } }, signal })),
+  });
+}
+
+/** The entries of every person of a project in a period, only for the Administrator (ADR-0128). */
+export function projectEntriesQuery(projectId: string, from: string, to: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.timeEntries, 'project', projectId, from, to] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/time-entries', { params: { query: { from, to, projectId } }, signal })),
+  });
+}
+
+/** The hours of the projects of a view and a search, with the balance, for the Administrator (ADR-0128). */
+export function projectHoursQuery(view: ProjectHoursView, search: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projectHours, 'list', view, search] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/admin/project-hours', {
+          params: { query: { view, search: search === '' ? undefined : search } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** The hours of a project: the balance, the additional hours and the hours of each person (ADR-0128). */
+export function projectHoursDetailQuery(projectId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projectHours, 'detail', projectId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/admin/project-hours/{projectId}', {
+          params: { path: { projectId } },
+          signal,
+        }),
+      ),
   });
 }
 

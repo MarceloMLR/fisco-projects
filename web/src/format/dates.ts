@@ -24,6 +24,7 @@ const longDay = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'UTC',
 });
 const shortMonth = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
+const longMonth = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -264,6 +265,12 @@ export function formatLongDayText(day: DayValue): string {
 /** The short name of the month of a day (out, nov), as the box of a date shows it. */
 export function formatShortMonthText(day: DayValue): string {
   return shortMonth.format(new Date(dayNumber(day) * dayLength)).replace('.', '');
+}
+
+/** The month and the year of a day of the calendar, in full: Outubro de 2026. */
+export function formatMonthText(day: DayValue): string {
+  const text = longMonth.format(new Date(dayNumber(day) * dayLength));
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** The number of the day of the month, with two digits (03), as the box of a date shows it. */

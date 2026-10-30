@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import {
+  projectHoursDetailQuery,
   projectMembersQuery,
   projectOverviewQuery,
   projectQuery,
@@ -42,4 +43,9 @@ export function prefetchProject(
 /** The ticket a person is about to open, as the page of the ticket reads it. */
 export function prefetchTicket(queryClient: QueryClient, number: number): void {
   ahead(queryClient.query({ ...ticketQuery(number), staleTime: 'static' }));
+}
+
+/** The hours of a project the Administrator is about to open in Horas dos projetos (ADR-0128). */
+export function prefetchProjectHours(queryClient: QueryClient, projectId: string): void {
+  ahead(queryClient.query({ ...projectHoursDetailQuery(projectId), staleTime: 'static' }));
 }
