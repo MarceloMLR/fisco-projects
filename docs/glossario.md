@@ -305,6 +305,14 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Tarefa excluída | `task.name` vazio | Apontamento cuja tarefa saiu do cronograma; as horas continuam no projeto |
 | Quem aponta, vê e corrige | TimeEntryAccess | As regras das horas num lugar só (ADR-0128) |
 | Chamados de um projeto | IProjectTicketList | Contrato do `Tickets.Contracts`, que o `Tickets` implementa (`TicketList`) |
+| Horas contratadas | ContractedHours | As horas vendidas com o projeto, só do administrador; sem elas, o projeto fica sem saldo |
+| Horas adicionais | AdditionalHours | Horas acrescentadas por um pedido fora do escopo, com o dia, as horas e o motivo, só do administrador |
+| Saldo; consumo | HoursBalance, `balance`, `consumption` | As contratadas e as adicionais menos as apontadas, e as apontadas sobre elas, em porcentagem (ADR-0128) |
+| Acima, perto do limite, dentro, sem horas contratadas | HoursBalanceState: Over, NearLimit, Within, NoContract | Os estados do saldo; perto do limite a partir de 90% num projeto em aberto |
+| Acompanhamento | `admin.sections.monitoring` | A primeira seção da coluna da Administração |
+| Horas dos projetos | `/admin/project-hours`, ProjectHoursPage | A visão gerencial do administrador, com o saldo de cada projeto e a planilha |
+| Ver apontamentos | ProjectEntriesDialog | Os apontamentos de todas as pessoas de um projeto, por mês, para o administrador corrigir |
+| Projetos para os outros módulos | IProjectCatalog | Contrato do `Projects.Contracts` com o código, o nome, a situação e o cliente de cada projeto |
 
 ## Telas
 
