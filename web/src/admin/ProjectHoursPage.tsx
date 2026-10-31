@@ -244,7 +244,8 @@ export function ProjectHoursPage() {
         <Button
           variant="outlined"
           startIcon={<DownloadOutlined />}
-          disabled={exporting || rows.length === 0}
+          disabled={rows.length === 0}
+          loading={exporting}
           onClick={() => download()}
         >
           {t('projectHours.download')}

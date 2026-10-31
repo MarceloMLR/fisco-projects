@@ -6,7 +6,7 @@ import MuiIconButton, {
 } from '@mui/material/IconButton';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { type ElementType, type MouseEvent, useContext } from 'react';
-import { FormPending, usePendingAction } from './pending';
+import { FormPending, useFormSending, useMinimumBusy, usePendingAction } from './pending';
 
 type Click = (event: MouseEvent<HTMLButtonElement>) => unknown;
 
@@ -72,15 +72,25 @@ function ignore(event: MouseEvent<HTMLButtonElement>) {
 /**
  * Button of the design system (fp-btn), for every button of the screens (ADR-0131): while the promise its click gives
  * runs, or while the form around sends (a submit button), or with loading, the loading icon takes the place of the
- * icon at the start (or comes before the text), the label stays, and the button takes no new click.
+ * icon at the start (or comes before the text), the label stays, and the button takes no new click. It stays busy at
+ * least half a second (ADR-0132), and not grey meanwhile, even when it becomes disabled with the answer.
  */
-export function Button({ onClick, loading, startIcon, type, sx, ...props }: ButtonProps) {
-  const sending = useContext(FormPending);
-  const [pending, run] = usePendingAction(onClick);
-  const busy = Boolean(loading) || pending || (type === 'submit' && sending);
+export function Button({ onClick, loading, startIcon, type, sx, disabled, ...props }: ButtonProps) {
+  const around = useContext(FormPending);
+  const submit = type === 'submit';
+  // A submit button outside its form, tied by the attribute form, as a Salvar in the header of a page.
+  const tied = useFormSending(submit ? props.form : undefined);
+  const form = props.form === undefined ? around : tied;
+  const [pending, run, waited] = usePendingAction(onClick);
+  // What the screen passes in loading is taken as waiting for the server, as a mutation.
+  const busy = useMinimumBusy(
+    Boolean(loading) || pending || (submit && form.sending),
+    Boolean(loading) || waited || (submit && form.waited),
+  );
   return (
     <MuiButton
       {...props}
+      disabled={busy ? false : disabled}
       type={type}
       startIcon={busy ? <Spinner /> : startIcon}
       aria-busy={busy || undefined}
@@ -92,12 +102,20 @@ export function Button({ onClick, loading, startIcon, type, sx, ...props }: Butt
 }
 
 /** Icon button of the design system (fp-btn--icon): busy as the Button, with the loading icon in the place of the icon. */
-export function IconButton({ onClick, loading, children, sx, ...props }: IconButtonProps) {
-  const [pending, run] = usePendingAction(onClick);
-  const busy = Boolean(loading) || pending;
+export function IconButton({
+  onClick,
+  loading,
+  children,
+  sx,
+  disabled,
+  ...props
+}: IconButtonProps) {
+  const [pending, run, waited] = usePendingAction(onClick);
+  const busy = useMinimumBusy(Boolean(loading) || pending, Boolean(loading) || waited);
   return (
     <MuiIconButton
       {...props}
+      disabled={busy ? false : disabled}
       aria-busy={busy || undefined}
       aria-disabled={busy ? true : props['aria-disabled']}
       onClick={busy ? ignore : run}

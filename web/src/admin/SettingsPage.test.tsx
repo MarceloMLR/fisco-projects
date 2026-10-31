@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AuditEntry, type Installation, installationProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { expectBusy, heldAnswer } from '../test/busy';
+import { expectBusy, heldAnswer, untilIdle } from '../test/busy';
 import { renderApp } from '../test/renderApp';
 import { auditPage, marina, problem, server, signedInAs } from '../test/server';
 
@@ -248,7 +248,9 @@ describe('Nome e logo nas Configurações gerais', () => {
     await waitFor(() => {
       expect(document.title).toBe('Consultoria Fictícia');
     });
-    expect(saveButton()).toBeDisabled();
+    await waitFor(() => {
+      expect(saveButton()).toBeDisabled();
+    });
   });
 
   it('Nome inválido', async () => {
@@ -419,7 +421,9 @@ describe('Fuso nas Configurações gerais', () => {
     await waitFor(() => {
       expect(timeZoneField()).toHaveValue(timeZoneLabel('Asia/Tokyo'));
     });
-    expect(saveButton()).toBeDisabled();
+    await waitFor(() => {
+      expect(saveButton()).toBeDisabled();
+    });
   });
 
   it('Descartar o fuso', async () => {
@@ -429,7 +433,9 @@ describe('Fuso nas Configurações gerais', () => {
     fireEvent.click(discardButton());
 
     expect(timeZoneField()).toHaveValue(timeZoneLabel('America/Sao_Paulo'));
-    expect(saveButton()).toBeDisabled();
+    await waitFor(() => {
+      expect(saveButton()).toBeDisabled();
+    });
   });
 
   it('Fuso recusado pela API', async () => {
@@ -580,7 +586,9 @@ describe('Cor principal nas Configurações gerais', () => {
     fireEvent.click(discardButton());
 
     expect(colorField()).toHaveValue('');
-    expect(saveButton()).toBeDisabled();
+    await waitFor(() => {
+      expect(saveButton()).toBeDisabled();
+    });
   });
 });
 
@@ -805,6 +813,7 @@ describe('Logo escuro e seletor de cores nas Configurações gerais', () => {
     expect(screen.getByRole('button', { name: text.replaceDarkLogo })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: text.removeDarkLogo }));
+    await untilIdle(saveButton());
     fireEvent.click(saveButton());
     await waitFor(() => {
       expect(requests).toEqual(['PUT dark logo', 'DELETE dark logo']);

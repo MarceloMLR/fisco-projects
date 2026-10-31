@@ -1,6 +1,6 @@
 import Box, { type BoxProps } from '@mui/material/Box';
-import type { ReactNode, SubmitEvent } from 'react';
-import { FormPending, usePendingAction } from './pending';
+import { type ReactNode, type SubmitEvent, useEffect, useMemo } from 'react';
+import { FormPending, publishFormSending, usePendingAction } from './pending';
 
 export type FormSubmit = (event: SubmitEvent<HTMLFormElement>) => unknown;
 
@@ -17,9 +17,21 @@ export function Form({
   onSubmit: FormSubmit;
   children: ReactNode;
 }) {
-  const [sending, run] = usePendingAction(onSubmit);
+  const [sending, run, waited] = usePendingAction(onSubmit);
+  const state = useMemo(() => ({ sending, waited }), [sending, waited]);
+  const { id } = props;
+  // A submit button outside the form, tied by its id, is busy with it too.
+  useEffect(() => {
+    if (id === undefined) {
+      return undefined;
+    }
+    publishFormSending(id, state);
+    return () => {
+      publishFormSending(id, undefined);
+    };
+  }, [id, state]);
   return (
-    <FormPending.Provider value={sending}>
+    <FormPending.Provider value={state}>
       <Box component="form" noValidate {...props} onSubmit={run}>
         {children}
       </Box>

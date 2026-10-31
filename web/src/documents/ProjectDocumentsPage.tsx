@@ -217,7 +217,7 @@ export function ProjectDocumentsPage() {
       <Button
         variant="contained"
         startIcon={<UploadOutlined />}
-        disabled={progress !== undefined}
+        loading={progress !== undefined}
         fullWidth={!desktop}
         onClick={() => input.current?.click()}
         sx={{ flex: 'none' }}

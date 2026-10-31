@@ -9,7 +9,7 @@ import {
   demoAcceptances,
   demoMilestones,
 } from '../test/demoAcceptances';
-import { expectBusy, expectIdle, heldAnswer } from '../test/busy';
+import { expectBusy, heldAnswer, untilIdle } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoPeople, demoProjects, membersOf, problem, server, signedInAs } from '../test/server';
 
@@ -585,7 +585,7 @@ describe('Botões em andamento nos termos', () => {
     fireEvent.click(remind);
     held.release();
     expect(await screen.findByText(text.messages.reminded)).toBeVisible();
-    expectIdle(remind);
+    await untilIdle(remind);
     expect(requests.map((request) => `${request.method} ${request.path}`)).toEqual([
       `POST reminder ${pendingId}`,
     ]);

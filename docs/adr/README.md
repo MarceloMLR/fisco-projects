@@ -194,3 +194,4 @@ Regras:
 | [0129](0129-assinatura-eletronica-dos-termos.md) | Termos de aceite assinados por um provedor de assinatura eletrônica trocável, só da gestão | aceita | 2026-10-30 |
 | [0130](0130-assinatura-pela-autentique-na-pratica.md) | Como os termos são assinados pela Autentique | aceita | 2026-10-30 |
 | [0131](0131-botoes-em-andamento.md) | Botões em andamento, com o ícone de carregamento no lugar do ícone | aceita | 2026-10-30 |
+| [0132](0132-tempo-minimo-do-botao-em-andamento.md) | Tempo mínimo do botão em andamento | aceita | 2026-10-30 |

@@ -118,7 +118,7 @@ export function NewProjectPage() {
     setError,
     setValue,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: {
@@ -480,7 +480,7 @@ export function NewProjectPage() {
         >
           {t('projects.form.cancel')}
         </Button>
-        <Button variant="contained" type="submit" form="new-project" loading={isSubmitting}>
+        <Button variant="contained" type="submit" form="new-project">
           {t('projects.form.create')}
         </Button>
       </Box>

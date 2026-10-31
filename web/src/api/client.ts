@@ -1,4 +1,5 @@
 import createClient, { type Middleware } from 'openapi-fetch';
+import { noteRequest } from './activity';
 import type { components, paths } from './schema';
 
 export type SessionUser = components['schemas']['SessionUserResponse'];
@@ -350,6 +351,9 @@ export const api = createClient<paths>({
   baseUrl: window.location.origin,
   headers: { 'X-CSRF': '1' },
   // Looked up on each call, not kept from when the module loaded, so the tests' simulated API sees it.
-  fetch: (request) => globalThis.fetch(request),
+  fetch: (request) => {
+    noteRequest();
+    return globalThis.fetch(request);
+  },
 });
 api.use(sessionEnded);
