@@ -26,7 +26,7 @@ Quem cria projetos MUST poder ler um arquivo XML do MS Project numa prévia, sem
 
 #### Scenario: Ida e volta pelo MS Project
 - **WHEN** a gerente exporta o XML de um cronograma e o manda na prévia
-- **THEN** a prévia traz as mesmas fases, tarefas, subtarefas, marcos, durações, progresso e dependências do cronograma exportado, e um recurso para cada responsável
+- **THEN** a prévia traz as mesmas fases, tarefas, subtarefas, marcos, durações, progresso e dependências do cronograma exportado, e um recurso para cada responsável, com a pessoa dele sugerida pelo e-mail
 
 ### Requirement: Progresso e responsáveis do MS Project
 
@@ -51,3 +51,45 @@ O "Novo projeto" MUST oferecer "A partir do MS Project", além de "Em branco" e 
 #### Scenario: Arquivo recusado pela tela
 - **WHEN** a gerente escolhe um .mpp em "A partir do MS Project"
 - **THEN** o campo do arquivo diz que o arquivo precisa ser salvo como XML no MS Project, e o projeto não é criado
+
+## MODIFIED Requirements
+
+### Requirement: Exportar para o MS Project
+
+O administrador e o gerente do projeto MUST poder baixar o cronograma no formato XML do MS Project, também com o projeto encerrado. O arquivo leva as fases, as tarefas, as subtarefas e os marcos em níveis, com as datas, a duração em dias úteis, o progresso, o responsável como recurso com o nome e o e-mail (sem o e-mail da pessoa anonimizada), as dependências "termina, então começa", a linha de base e o calendário da instalação. As outras pessoas do projeto recebem 403, e quem não está no projeto, 404 (ADR-0021, ADR-0043, ADR-0051, ADR-0136).
+
+#### Scenario: XML do cronograma
+- **WHEN** a gerente baixa o XML de um cronograma com uma fase, uma tarefa de 3 dias úteis do Rafael e um marco depois dela
+- **THEN** o arquivo tem a fase no nível 1, a tarefa no nível 2, de 13/10/2026 às 08:00 a 15/10/2026 às 17:00, com 24 horas de duração, o marco com duração zero, ligado à tarefa, e o Rafael como recurso da tarefa, com o nome e o e-mail
+
+#### Scenario: Calendário no XML
+- **WHEN** o cronograma passa pelo feriado de 12/10/2026, uma segunda-feira
+- **THEN** o calendário do arquivo tem segunda a sexta como dias de trabalho e o dia 12/10/2026 como exceção sem trabalho
+
+#### Scenario: Linha de base no XML
+- **WHEN** o cronograma tem a linha de base salva
+- **THEN** cada tarefa e marco dela leva no arquivo o início e o fim da linha de base
+
+#### Scenario: XML só da gestão
+- **WHEN** o líder técnico, uma colaboradora e um leitor do projeto pedem o XML do cronograma
+- **THEN** a API responde 403 a cada um, e o gerente de um projeto concluído baixa o arquivo
+
+### Requirement: Exportar em PDF pela impressão
+
+Todas as pessoas do projeto MUST poder abrir a página de impressão do cronograma, com o período e a escala que escolherem. A página mostra o cabeçalho do projeto, a tabela com a linha do tempo de cada linha e a legenda, em A4 paisagem, e o botão "Imprimir" abre a impressão do navegador, que salva em PDF. "Exportar para o MS Project (XML)" MUST aparecer no menu "⋮" só para o administrador e o gerente do projeto (ADR-0021, ADR-0071, ADR-0136).
+
+#### Scenario: Escolher o período e a escala
+- **WHEN** uma pessoa do projeto escolhe "Exportar em PDF" no menu "⋮", troca o período e a escala e confirma
+- **THEN** a página de impressão abre numa aba nova com esse período e essa escala
+
+#### Scenario: Página de impressão
+- **WHEN** a página de impressão abre com o período de 05/10/2026 a 31/10/2026, em dias
+- **THEN** ela mostra o código e o nome do projeto, o período, uma linha por fase e item com início, fim e progresso, a barra de cada tarefa dentro do período, e a legenda
+
+#### Scenario: Exportar sem editar
+- **WHEN** quem não é o administrador nem o gerente do projeto abre o menu "⋮"
+- **THEN** o menu tem só "Exportar em PDF", sem o XML, sem refazer e sem a linha de base
+
+#### Scenario: XML no menu da gestão
+- **WHEN** o gerente de um projeto concluído abre o menu "⋮"
+- **THEN** o menu tem "Exportar em PDF" e "Exportar para o MS Project (XML)"

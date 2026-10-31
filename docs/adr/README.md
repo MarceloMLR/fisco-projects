@@ -43,7 +43,7 @@ Regras:
 | [0018](0018-cronograma-em-dias-uteis-com-feriados.md) | Cronograma em dias úteis, com feriados nacionais calculados e feriados locais cadastrados | aceita | 2026-10-13 |
 | [0019](0019-estrutura-do-cronograma-e-dependencias.md) | Cronograma em dois níveis, com dependências que empurram as tarefas seguintes | aceita (item "Subtarefas" substituído pelo ADR-0088) | 2026-10-13 |
 | [0020](0020-progresso-e-atraso-das-tarefas.md) | Progresso das tarefas em percentual com atalhos, ponderado pela duração | aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128) | 2026-10-13 |
-| [0021](0021-recursos-do-gantt-na-v1.md) | Recursos do Gantt na v1, com linha de base, caminho crítico, desfazer e exportação | aceita (apresentação na tela definida pelo ADR-0071) | 2026-10-13 |
+| [0021](0021-recursos-do-gantt-na-v1.md) | Recursos do Gantt na v1, com linha de base, caminho crítico, desfazer e exportação | aceita (apresentação na tela definida pelo ADR-0071; quem baixa o XML e o e-mail nele, pelo ADR-0136) | 2026-10-13 |
 
 ## Chamados
 
@@ -198,3 +198,4 @@ Regras:
 | [0133](0133-avisos-e-movimento-das-telas.md) | Avisos e movimento das telas: um aviso só, no alto, e janelas e páginas que entram e saem suaves | aceita | 2026-10-31 |
 | [0134](0134-linha-do-tempo-propria.md) | Linha do tempo própria no lugar do Syncfusion | aceita | 2026-10-31 |
 | [0135](0135-importar-do-ms-project.md) | Importar o cronograma do XML do MS Project no Novo projeto | aceita | 2026-10-31 |
+| [0136](0136-email-dos-responsaveis-no-xml-exportado.md) | E-mail dos responsáveis no XML do MS Project, exportado só pela gestão | aceita | 2026-10-31 |

@@ -66,6 +66,10 @@ O modelo de projeto (ADR-0017) já faz quase todo o caminho:
   - Trocar o início pede a prévia de novo.
   - O erro do arquivo volta ao campo, com o texto da recusa.
 - **Auditoria e avisos.** O projeto criado e cada pessoa incluída entram na auditoria como na criação e na inclusão de pessoas, e o cronograma não entra item por item, como no modelo. Cada pessoa incluída recebe o aviso de inclusão no projeto, como na inclusão de pessoas; as tarefas assumidas não geram um aviso por tarefa.
+- **O e-mail no XML exportado (ADR-0136).**
+  - O `MsProjectExport` grava o `EmailAddress` do recurso de cada pessoa responsável, lido pelo `IUserDirectory` com o nome; a pessoa anonimizada vai sem e-mail, e o cliente continua só com o nome.
+  - Quem baixa sai de um lugar só, `ProjectPermissions.CanExportSchedule` (o administrador e o gerente, também com o projeto encerrado), devolvido na resposta do projeto como `canExportSchedule`; as outras pessoas do projeto recebem 403.
+  - O "⋮" da aba Cronograma mostra o XML só com `canExportSchedule`; o PDF continua para todos.
 - **Demonstração.** O plano baixa o XML de um projeto da demonstração pela exportação e cria, pela prévia e pela criação, um projeto novo a partir dele. Isso exercita a ida e a volta pela própria API.
 
 ## Risks / Trade-offs

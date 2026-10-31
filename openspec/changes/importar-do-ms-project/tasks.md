@@ -24,6 +24,13 @@
 - [x] 5.1 O projeto importado no plano de `web/scripts/demo`, com os responsáveis ligados às pessoas da demonstração, e o teste "Projeto importado na demonstração"
 - [x] 5.2 `CLAUDE.md`, `docs/glossario.md`, `docs/discovery.md` e o contexto do OpenSpec com a importação
 
-## 6. Verificação
+## 6. E-mail no XML exportado (ADR-0136)
 
-- [ ] 6.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh` passando
+- [x] 6.1 ADR-0136 aceito no índice dos ADRs, a pedido de Marcelo, e o ADR-0021 apontando para ele
+- [x] 6.2 `ProjectPermissions.CanExportSchedule` (administrador e gerente) e o `canExportSchedule` da resposta; o `ExportScheduleToMsProject` responde 403 às outras pessoas do projeto, e o `MsProjectExport` leva o e-mail de cada responsável (sem o da pessoa anonimizada); testes "XML do cronograma", "XML só da gestão" e a ida e volta com a pessoa sugerida
+- [x] 6.3 O "⋮" mostra "Exportar para o MS Project (XML)" só com `canExportSchedule`; testes de tela "Exportar sem editar" e "XML no menu da gestão"
+- [x] 6.4 `CLAUDE.md` e o glossário com quem baixa o XML
+
+## 7. Verificação
+
+- [ ] 7.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh` passando

@@ -24,6 +24,7 @@ Quem chega ao FiscoProjects costuma ter o cronograma no MS Project e hoje precis
 - Arquivo que não é XML do MS Project, com DTD, acima de 5 MB, com mais de 2.000 tarefas ou sem tarefas é recusado com a mensagem de salvar como XML.
 - As pessoas ligadas aos recursos entram no projeto com o papel escolhido, como na inclusão de pessoas, e assumem as tarefas dos recursos delas. O e-mail dos recursos só serve para achar a pessoa e não é guardado.
 - A demonstração ganha um projeto importado do XML que a própria exportação grava.
+- A exportação para o MS Project passa a levar o e-mail de cada responsável, para a ida e volta sugerir as pessoas, e fica só com o administrador e o gerente do projeto; o PDF continua para todos (ADR-0136, a pedido de Marcelo).
 
 ## Capabilities
 
@@ -56,4 +57,5 @@ Quem chega ao FiscoProjects costuma ter o cronograma no MS Project e hoje precis
 - `web/src/projects`: a terceira origem no `NewProjectPage` e no `ScheduleOriginChoice`, o arquivo, a prévia com os avisos, os responsáveis do arquivo (pessoa e papel) e os textos em `pt-BR.json`; o contrato e os tipos gerados de novo.
 - `web/scripts/demo`: o projeto importado do MS Project no plano.
 - Documentação: `CLAUDE.md`, `docs/glossario.md`, o `discovery.md` e o contexto do OpenSpec (a importação sai do "não faz").
-- ADRs: 0135 (novo), 0005, 0017, 0019, 0021, 0042, 0088, 0102 e 0119.
+- `src/Modules/Projects`, na exportação: o e-mail dos responsáveis no XML e a permissão de baixá-lo (`ProjectPermissions`); `web/src/projects`, o XML no "⋮" só para quem pode.
+- ADRs: 0135 e 0136 (novos), 0005, 0017, 0019, 0021, 0042, 0043, 0088, 0102 e 0119.
