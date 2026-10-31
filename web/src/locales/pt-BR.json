@@ -1586,6 +1586,15 @@
       "collapse": "Recolher",
       "expandedTitle": "Cronograma",
       "label": "Linha do tempo do cronograma",
+      "table": "Tarefas da linha do tempo",
+      "divider": "Largura da tabela da linha do tempo",
+      "collapseRow": "Recolher {{name}}",
+      "expandRow": "Mostrar {{name}}",
+      "bars": {
+        "phase": "Fase {{name}}, {{start}} a {{end}}, {{progress}}%",
+        "task": "Tarefa {{name}}, {{start}} a {{end}}, {{progress}}%",
+        "milestone": "Marco {{name}}, {{day}}"
+      },
       "loading": "Carregando a linha do tempo…",
       "noItems": "A linha do tempo aparece quando o cronograma tiver tarefas ou marcos.",
       "columns": {

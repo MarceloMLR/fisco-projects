@@ -8,7 +8,8 @@ import tseslint from 'typescript-eslint';
 
 const syncfusionImports = {
   group: ['@syncfusion/*'],
-  message: 'Syncfusion only inside src/schedule-gantt (ADR-0051); use the ScheduleGantt component.',
+  message:
+    'The timeline is our own (ADR-0134): use the ScheduleGantt component, without Syncfusion.',
 };
 
 const buttonMessage =
@@ -45,22 +46,16 @@ export default defineConfig([
     },
   },
   {
-    // ADR-0051: only the timeline component imports Syncfusion, so it can give way to a timeline of our own. ADR-0131:
-    // every button comes from src/components/Button, busy while what it sends runs. ADR-0133: one notice for all the
-    // screens, the one of src/notices.
+    // ADR-0134: the timeline is our own, with no Syncfusion anywhere. ADR-0131: every button comes from
+    // src/components/Button, busy while what it sends runs. ADR-0133: one notice for all the screens, the one of
+    // src/notices.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/schedule-gantt/**', 'src/components/Button.tsx'],
+    ignores: ['src/components/Button.tsx'],
     rules: {
       'no-restricted-imports': [
         'error',
         { patterns: [syncfusionImports], paths: [...muiButtonImports, ...muiSnackbarImports] },
       ],
-    },
-  },
-  {
-    files: ['src/schedule-gantt/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': ['error', { paths: [...muiButtonImports, ...muiSnackbarImports] }],
     },
   },
   {

@@ -267,8 +267,7 @@ const timelineSx = {
  * system draws it in the canvas ProjetoVisaoGeral: the names and the progress at the left and, beside them, the period
  * of the schedule in the width there is, with the months and the days, today, the days off shaded, the bars of the
  * phases with the part done, the critical path, the baseline under the bar and the milestones as diamonds. It only
- * shows: the Cronograma tab edits. Drawn here with the tokens of the Gantt, without the Syncfusion, as the print page
- * (ADR-0051).
+ * shows: the Cronograma tab edits. Drawn here with the tokens of the Gantt, in SVG, as the print page (ADR-0134).
  */
 export function OverviewTimeline({
   timeline,

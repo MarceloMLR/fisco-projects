@@ -1,9 +1,9 @@
 import Box from '@mui/material/Box';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { lazy, type ReactNode, type Ref, Suspense, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Project, projectProblems, type Schedule } from '../api/client';
-import { clientSettingsQuery, queryKeys } from '../api/queries';
+import { queryKeys } from '../api/queries';
 import type { DayValue } from '../format/dates';
 import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import type { GanttTarget } from '../schedule-gantt/ganttRows';
@@ -13,15 +13,15 @@ import { findItem, type ScheduleDisplay } from './schedule';
 import { failureOf } from './scheduleItemValues';
 import { useNotify } from '../notices/notify';
 
-// The Syncfusion Gantt is large: it comes only when the Linha do tempo opens (ADR-0051).
+// The timeline comes only when it opens, loaded ahead when a project opens on a computer (ADR-0106).
 const ScheduleGantt = lazy(() => import('../schedule-gantt/ScheduleGantt'));
 
 const quietSx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 
 /**
- * The Linha do tempo of the tab Cronograma (ADR-0071): the ScheduleGantt with what it needs from the API, the license
- * of the installation (ADR-0087) and the moves of the bars, saved by the API, which pushes the items after them
- * (ADR-0019). The legend says what each color is.
+ * The Linha do tempo of the tab Cronograma (ADR-0071): the ScheduleGantt with what it needs from the API and the moves
+ * of the bars, saved by the API, which pushes the items after them (ADR-0019). Each move answers once the schedule
+ * came back, so the bar stays where it was dropped until then (ADR-0134). The legend says what each color is.
  */
 export function ScheduleTimeline({
   project,
@@ -51,12 +51,15 @@ export function ScheduleTimeline({
   const { t } = useTranslation();
   const notify = useNotify();
   const queryClient = useQueryClient();
-  const settings = useQuery(clientSettingsQuery());
-
-  const refresh = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
-  }, [queryClient]);
+  /** The schedule and what depends on it asked again; done when they came back. */
+  const refresh = useCallback(
+    () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
+      ]),
+    [queryClient],
+  );
 
   /** Saves new dates of an item and says how many items after it were pushed. */
   const reschedule = useCallback(
@@ -73,36 +76,34 @@ export function ScheduleTimeline({
             body: { start, end },
           },
         );
+        const refreshed = refresh();
         if (!response.ok) {
-          refresh();
           notify(failureOf(error, response.status, t), { tone: 'error' });
-          return;
+        } else {
+          const saved = t(`projects.schedule.messages.itemSaved.${item.kind}`, {
+            name: item.name,
+          });
+          const pushed = data?.pushed ?? 0;
+          notify(
+            pushed === 0 ? saved : t('projects.schedule.messages.pushed', { saved, count: pushed }),
+          );
         }
-        refresh();
-        const saved = t(`projects.schedule.messages.itemSaved.${item.kind}`, { name: item.name });
-        const pushed = data?.pushed ?? 0;
-        notify(
-          pushed === 0 ? saved : t('projects.schedule.messages.pushed', { saved, count: pushed }),
-        );
+        await refreshed;
       } catch {
-        refresh();
         notify(t('projects.schedule.messages.failed'), { tone: 'error' });
+        await refresh();
       }
     },
     [schedule, project.id, refresh, notify, t],
   );
 
   const move = useCallback(
-    (itemId: string, start: DayValue) => {
-      void reschedule(itemId, start, null);
-    },
+    (itemId: string, start: DayValue) => reschedule(itemId, start, null),
     [reschedule],
   );
 
   const resize = useCallback(
-    (itemId: string, start: DayValue, end: DayValue) => {
-      void reschedule(itemId, start, end);
-    },
+    (itemId: string, start: DayValue, end: DayValue) => reschedule(itemId, start, end),
     [reschedule],
   );
 
@@ -121,7 +122,6 @@ export function ScheduleTimeline({
       // Only the items with dates of their own have dependencies (ADR-0088).
       const summary = [predecessor, successor].find((item) => item.hasSubtasks);
       if (summary !== undefined) {
-        refresh();
         notify(t('projects.timeline.messages.summaryLink', { name: summary.name }), {
           tone: 'error',
         });
@@ -143,7 +143,7 @@ export function ScheduleTimeline({
             parentId: successor.parentId,
           },
         });
-        refresh();
+        const refreshed = refresh();
         if (response.ok) {
           notify(t('projects.timeline.messages.linked', names));
         } else if (problemType(error) === projectProblems.scheduleCycle) {
@@ -151,19 +151,13 @@ export function ScheduleTimeline({
         } else {
           notify(failureOf(error, response.status, t), { tone: 'error' });
         }
+        await refreshed;
       } catch {
-        refresh();
         notify(t('projects.schedule.messages.failed'), { tone: 'error' });
+        await refresh();
       }
     },
     [schedule, project.id, refresh, notify, t],
-  );
-
-  const linkLater = useCallback(
-    (predecessorId: string, successorId: string) => {
-      void link(predecessorId, successorId);
-    },
-    [link],
   );
 
   const loading = (
@@ -197,8 +191,6 @@ export function ScheduleTimeline({
             schedule.phases.length === 0 ? 'projects.schedule.empty' : 'projects.timeline.noItems',
           )}
         </Box>
-      ) : settings.isPending ? (
-        loading
       ) : (
         <Suspense fallback={loading}>
           <ScheduleGantt
@@ -210,12 +202,11 @@ export function ScheduleTimeline({
             selectedId={selectedId}
             showBaseline={display.baseline}
             showCritical={display.critical}
-            license={settings.data?.timelineLicense ?? null}
             clientName={project.client?.name ?? null}
             onChoose={onChoose}
             onMove={move}
             onResize={resize}
-            onLink={linkLater}
+            onLink={link}
           />
         </Suspense>
       )}

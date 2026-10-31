@@ -196,3 +196,4 @@ Regras:
 | [0131](0131-botoes-em-andamento.md) | Botões em andamento, com o ícone de carregamento no lugar do ícone | aceita | 2026-10-30 |
 | [0132](0132-tempo-minimo-do-botao-em-andamento.md) | Tempo mínimo do botão em andamento | aceita | 2026-10-30 |
 | [0133](0133-avisos-e-movimento-das-telas.md) | Avisos e movimento das telas: um aviso só, no alto, e janelas e páginas que entram e saem suaves | aceita | 2026-10-31 |
+| [0134](0134-linha-do-tempo-propria.md) | Linha do tempo própria no lugar do Syncfusion | aceita | 2026-10-31 |

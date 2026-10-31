@@ -7,119 +7,100 @@ export type GanttTarget =
   | { kind: 'item'; item: ScheduleItem; phase: SchedulePhase };
 
 /**
- * A line of the timeline as the Syncfusion Gantt takes it. The Gantt names the lines by numbers, and its
- * dependencies are texts such as "2FS,5FS", so each line gets a number of its own.
+ * How a line is drawn (Gantt of the design system): a phase or a task with subtasks as a summary (g-summary), a task
+ * as a bar with the part done (g-bar), a milestone as a lozenge (g-milestone).
  */
+export type GanttShape = 'summary' | 'bar' | 'milestone';
+
+/** A line of the timeline: what the table and the chart draw of a phase, a task or a milestone. */
 export interface GanttRow {
-  key: number;
+  /** The id of the phase or of the item. */
+  key: string;
   name: string;
-  /** Midnight, in the time of the browser, of the first day; none for a phase without items. */
-  start?: Date;
-  /** Midnight after the last day (the Gantt draws up to it); a milestone ends on its own day. */
-  end?: Date;
+  /** 0 for a phase, 1 for its tasks and milestones, 2 for the subtasks (ADR-0088). */
+  level: number;
+  parentKey?: string;
+  shape: GanttShape;
+  /** The first and the last day; none for a phase without tasks and milestones. */
+  start?: DayValue;
+  end?: DayValue;
   progress: number;
-  parentKey?: number;
-  predecessor?: string;
-  milestone: boolean;
-  /** The dates of a task in the baseline (ADR-0021), drawn as a thin bar under its own; none for the others. */
-  baselineStart?: Date;
-  baselineEnd?: Date;
-  cssClass: string;
+  late: boolean;
+  /** On the critical path, when it is shown (ADR-0021). */
+  critical: boolean;
+  /** It has lines inside it, which it can hide. */
+  hasChildren: boolean;
+  /** A task or milestone with dates of its own: it moves, has an edge pulled and links (ADR-0088). */
+  ownDates: boolean;
+  /** The dates of a task in the baseline (ADR-0021), drawn as a thin bar under its own. */
+  baseline?: { start: DayValue; end: DayValue };
+  /** The keys of the lines it depends on: they end before it starts (ADR-0019). */
+  predecessors: string[];
   target: GanttTarget;
-}
-
-/** Midnight of a day of the calendar, in the time of the browser: the Gantt draws days without time zones. */
-export function dateOfDay(day: DayValue): Date {
-  const [year = 0, month = 1, dayOfMonth = 1] = day.split('-').map(Number);
-  return new Date(year, month - 1, dayOfMonth);
-}
-
-/** The day of the calendar a moment of the Gantt falls on, in the time of the browser. */
-export function dayOfDate(moment: Date): DayValue {
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${String(moment.getFullYear())}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`;
-}
-
-/** Midnight after a day: where the bar of a task that ends on it stops. */
-export function endOfDay(day: DayValue): Date {
-  const moment = dateOfDay(day);
-  moment.setDate(moment.getDate() + 1);
-  return moment;
-}
-
-/** The last day of a bar that stops at a moment: a bar that stops at midnight ends the day before. */
-export function lastDayOf(end: Date): DayValue {
-  return dayOfDate(new Date(end.getTime() - 1));
 }
 
 /**
  * The lines of the timeline: each phase in the order of the API with its items below it, and each subtask below its
- * task, which the Gantt then draws as a summary, as a phase (ADR-0088); the classes say what each one is, for the colors
- * of the design system (fp-gantt), with the critical path when it is shown (ADR-0021), and the dependencies point to
- * the numbers of the lines. A task with dates of its own takes its dates in the baseline, as the design system draws
- * them only under tasks.
+ * task, which is then drawn as a summary, as a phase (ADR-0088), with the critical path when it is shown (ADR-0021).
+ * Only a task with dates of its own has its dates in the baseline drawn, as the design system draws them.
  */
 export function ganttRowsOf(schedule: Schedule, { critical = false } = {}): GanttRow[] {
   const rows: GanttRow[] = [];
-  const keys = new Map<string, number>();
-  let next = 1;
+  const known = new Set(schedule.phases.flatMap((phase) => phase.items.map((item) => item.id)));
   for (const phase of schedule.phases) {
-    const phaseKey = next++;
     rows.push({
-      key: phaseKey,
+      key: phase.id,
       name: phase.name,
-      ...(phase.start === null || phase.end === null
-        ? {}
-        : { start: dateOfDay(phase.start), end: endOfDay(phase.end) }),
+      level: 0,
+      shape: 'summary',
+      ...(phase.start === null || phase.end === null ? {} : { start: phase.start, end: phase.end }),
       progress: phase.progress,
-      milestone: false,
-      cssClass: phase.late ? 'fp-gantt-phase fp-gantt-late' : 'fp-gantt-phase',
+      late: phase.late,
+      critical: false,
+      hasChildren: phase.items.length > 0,
+      ownDates: false,
+      predecessors: [],
       target: { kind: 'phase', phase },
     });
     for (const item of phase.items) {
-      const key = next++;
-      keys.set(item.id, key);
       const milestone = item.kind === 'Milestone';
-      const ownDates = !milestone && !item.hasSubtasks;
+      const ownDates = !item.hasSubtasks;
       rows.push({
-        key,
+        key: item.id,
         name: item.name,
-        start: dateOfDay(item.start),
-        end: milestone ? dateOfDay(item.start) : endOfDay(item.end),
-        progress: milestone ? 0 : item.progress,
         // The API sends each task before its subtasks.
-        parentKey: (item.parentId === null ? undefined : keys.get(item.parentId)) ?? phaseKey,
-        milestone,
-        ...(ownDates && item.baselineStart !== null && item.baselineEnd !== null
-          ? {
-              baselineStart: dateOfDay(item.baselineStart),
-              baselineEnd: endOfDay(item.baselineEnd),
-            }
+        level: item.parentId === null ? 1 : 2,
+        parentKey: item.parentId ?? phase.id,
+        shape: milestone ? 'milestone' : item.hasSubtasks ? 'summary' : 'bar',
+        start: item.start,
+        end: milestone ? item.start : item.end,
+        progress: milestone ? 0 : item.progress,
+        late: item.late,
+        critical: critical && item.critical,
+        hasChildren: item.hasSubtasks,
+        ownDates,
+        ...(ownDates && !milestone && item.baselineStart !== null && item.baselineEnd !== null
+          ? { baseline: { start: item.baselineStart, end: item.baselineEnd } }
           : {}),
-        cssClass: [
-          milestone
-            ? 'fp-gantt-milestone'
-            : item.hasSubtasks
-              ? 'fp-gantt-summary'
-              : 'fp-gantt-task',
-          item.late ? 'fp-gantt-late' : '',
-          critical && item.critical ? 'fp-gantt-critical' : '',
-        ]
-          .filter((name) => name !== '')
-          .join(' '),
+        predecessors: item.predecessorIds.filter((id) => known.has(id)),
         target: { kind: 'item', item, phase },
       });
     }
   }
-  for (const row of rows) {
-    if (row.target.kind === 'item' && row.target.item.predecessorIds.length > 0) {
-      row.predecessor = row.target.item.predecessorIds
-        .flatMap((id) => {
-          const key = keys.get(id);
-          return key === undefined ? [] : [`${String(key)}FS`];
-        })
-        .join(',');
-    }
-  }
   return rows;
+}
+
+/** The lines on the screen: none inside a phase or a task that is hidden, nor inside one whose lines are hidden. */
+export function shownRows(rows: readonly GanttRow[], collapsed: ReadonlySet<string>): GanttRow[] {
+  const hidden = new Set<string>();
+  return rows.filter((row) => {
+    if (
+      row.parentKey !== undefined &&
+      (collapsed.has(row.parentKey) || hidden.has(row.parentKey))
+    ) {
+      hidden.add(row.key);
+      return false;
+    }
+    return true;
+  });
 }

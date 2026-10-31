@@ -1,70 +1,35 @@
-import FlagOutlined from '@mui/icons-material/FlagOutlined';
-import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
-import { registerLicense, Telemetry } from '@syncfusion/ej2-base';
-import {
-  type ActionBeginArgs,
-  ColumnDirective,
-  ColumnsDirective,
-  DayMarkers,
-  Edit,
-  GanttComponent,
-  type IGanttData,
-  Inject,
-  type ITaskbarEditedEventArgs,
-  type RowSelectEventArgs,
-  Selection,
-} from '@syncfusion/ej2-react-gantt';
-import '@syncfusion/ej2-material3-theme/styles/gantt/index.css';
 import {
   forwardRef,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
+  useId,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Schedule } from '../api/client';
-import { type DayValue, formatDayMonthText } from '../format/dates';
-import { DueDate } from '../components/DueDate';
-import { lateText, milestoneStatus, ownerText } from '../projects/schedule';
+import type { DayValue } from '../format/dates';
 import { ganttPeriod, type GanttScale, ganttUnitWidth } from './ganttLayout';
-import {
-  dateOfDay,
-  dayOfDate,
-  type GanttRow,
-  ganttRowsOf,
-  type GanttTarget,
-  lastDayOf,
-} from './ganttRows';
-import { colorSchemeAttribute } from '../theme/theme';
+import { type GanttRow, ganttRowsOf, type GanttTarget, shownRows } from './ganttRows';
+import { type TimelineAnswer, TimelineChart } from './TimelineChart';
+import { type TimelineColumns, TimelineTable } from './TimelineTable';
+import { timelineGeometry, timelineSizes } from './timelineGeometry';
 import './ScheduleGantt.css';
-import { applySyncfusionPalette } from './syncfusionPalette';
 
-// Syncfusion would send the use of its components to a service of its own; nothing about the people of the
-// installation leaves it (ADR-0058).
-Telemetry.disable();
+export type { TimelineAnswer } from './TimelineChart';
 
-/** The license is registered once, before the first timeline is drawn (ADR-0087). */
-let registered: string | undefined;
-
-function register(license: string | null) {
-  if (license !== null && license !== registered) {
-    registerLicense(license);
-    registered = license;
-  }
-}
-
+/** The width of the table beside the timeline, before the person drags the divider (ADR-0071). */
 const listWidth = { compact: 320, detailed: 560 } as const;
-const columnWidth = { progress: 96, day: 64, owner: 136 } as const;
-const splitterWidth = 4;
-/** What a bar may do in the timeline: move, or have an edge pulled; never its progress (ADR-0086). */
-const barActions = new Set(['ChildDrag', 'MilestoneDrag', 'LeftResizing', 'RightResizing']);
 /** Below this width (a phone), the table keeps only the names, in less than half of the space. */
 const narrowWidth = 640;
 const narrowShare = 0.45;
+/** The divider goes from this width of the table to half of the timeline, by the pointer or by the keyboard. */
+const minListWidth = 160;
+const dividerStep = 16;
 
 export interface ScheduleGanttProps {
   schedule: Schedule;
@@ -78,14 +43,13 @@ export interface ScheduleGanttProps {
   showBaseline?: boolean;
   /** The tasks and milestones of the critical path in red, with the part done in green (ADR-0021, ADR-0067). */
   showCritical?: boolean;
-  /** The Syncfusion license of the installation (ADR-0087); none shows the notice of the trial. */
-  license: string | null;
   /** The name of the client of the project, for the tasks in its charge (ADR-0102). */
   clientName?: string | null;
   onChoose: (target: GanttTarget) => void;
-  onMove: (itemId: string, start: DayValue) => void;
-  onResize: (itemId: string, start: DayValue, end: DayValue) => void;
-  onLink: (predecessorId: string, successorId: string) => void;
+  /** The promise of the API's answer keeps the bar where it was dropped until the schedule comes back. */
+  onMove: (itemId: string, start: DayValue) => TimelineAnswer;
+  onResize: (itemId: string, start: DayValue, end: DayValue) => TimelineAnswer;
+  onLink: (predecessorId: string, successorId: string) => TimelineAnswer;
 }
 
 export interface ScheduleGanttHandle {
@@ -93,42 +57,11 @@ export interface ScheduleGanttHandle {
   goToToday: () => void;
 }
 
-const monthFormat = new Intl.DateTimeFormat('pt-BR', { month: 'short' });
-
-/** "Out", from "out.": the month as the scale of the design system writes it. */
-function monthText(date: Date): string {
-  const text = monthFormat.format(date).replace('.', '');
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-/** The texts of the scale: "Out 2026" over the days or the weeks, the year over the months, and each unit below. */
-function scaleText(date?: Date, _format?: string, tier?: string, mode?: string): string {
-  if (date === undefined) {
-    return '';
-  }
-  if (tier === 'topTier') {
-    return mode === 'Year'
-      ? String(date.getFullYear())
-      : `${monthText(date)} ${String(date.getFullYear())}`;
-  }
-  if (mode === 'Month') {
-    return monthText(date);
-  }
-  return mode === 'Week' ? formatDayMonthText(dayOfDate(date)) : String(date.getDate());
-}
-
-/** The line of FiscoProjects behind a record of the Gantt, which keeps it as its task data. */
-function lineOf(data: unknown): GanttRow | undefined {
-  const record = data as { taskData?: GanttRow; target?: GanttTarget } | undefined;
-  return record?.taskData ?? (record?.target === undefined ? undefined : (record as GanttRow));
-}
-
-const rowOf = (data: unknown) => lineOf(data)?.target;
-
 /**
- * The Linha do tempo of a schedule (ADR-0051, ADR-0071): the only component that uses the Syncfusion Gantt, with the
- * properties and events of FiscoProjects. It draws the dates the API computed and never moves anything itself: a
- * drag, a stretch or a link becomes an event, and the schedule that comes back from the API is drawn again.
+ * The Linha do tempo of a schedule (ADR-0071, ADR-0134), drawn by FiscoProjects from the Gantt of the design system:
+ * the table as a tree on the left, the chart on the right, scrolling together up and down, and only the chart sideways.
+ * It draws the dates the API computed and never moves anything itself: a drag, a pulled edge or a link becomes an
+ * event, and the schedule that comes back from the API is drawn again.
  */
 export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>(
   function ScheduleGantt(
@@ -140,7 +73,6 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       selectedId,
       showBaseline = false,
       showCritical = false,
-      license,
       clientName = null,
       onChoose,
       onMove,
@@ -150,390 +82,233 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
     ref,
   ) {
     const { t } = useTranslation();
-    register(license);
-    const gantt = useRef<GanttComponent>(null);
-    const area = useRef<HTMLDivElement>(null);
-    const [width, setWidth] = useState(0);
-    const narrow = !detailed && width > 0 && width < narrowWidth;
-    const list = detailed
-      ? listWidth.detailed
-      : narrow
-        ? Math.round(width * narrowShare)
-        : listWidth.compact;
+    const idPrefix = useId();
+    const scroller = useRef<HTMLDivElement>(null);
+    const [size, setSize] = useState({ width: 0, height: 0 });
+    const columns: TimelineColumns = detailed
+      ? 'detailed'
+      : size.width > 0 && size.width < narrowWidth
+        ? 'narrow'
+        : 'compact';
+    const defaultList =
+      columns === 'narrow' ? Math.round(size.width * narrowShare) : listWidth[columns];
+    const [draggedList, setDraggedList] = useState<{ columns: TimelineColumns; width: number }>();
+    const maxList = Math.max(defaultList, Math.floor(size.width / 2));
+    const list = draggedList?.columns === columns ? draggedList.width : defaultList;
+
+    const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+    const [active, setActive] = useState<string>();
     const rows = useMemo(
       () => ganttRowsOf(schedule, { critical: showCritical }),
       [schedule, showCritical],
     );
-    const period = useMemo(
-      () =>
-        schedule.start === null || schedule.end === null
-          ? undefined
-          : ganttPeriod(schedule.start, schedule.end, scale),
-      [schedule.start, schedule.end, scale],
-    );
-    const unit = ganttUnitWidth(scale, period?.units ?? 0, width - list - splitterWidth);
+    const shown = useMemo(() => shownRows(rows, collapsed), [rows, collapsed]);
+    const geometry = useMemo(() => {
+      if (schedule.start === null || schedule.end === null) {
+        return undefined;
+      }
+      const period = ganttPeriod(schedule.start, schedule.end, scale);
+      return timelineGeometry(
+        period,
+        scale,
+        ganttUnitWidth(scale, period.units, size.width - list),
+      );
+    }, [schedule.start, schedule.end, scale, size.width, list]);
 
-    // The colors follow the theme of the screens: again whenever the person switches between light and dark.
-    useLayoutEffect(() => {
-      const element = area.current;
+    useEffect(() => {
+      const element = scroller.current;
       if (element === null) {
         return undefined;
       }
-      applySyncfusionPalette(element);
-      const observer = new MutationObserver(() => {
-        applySyncfusionPalette(element);
-      });
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: [colorSchemeAttribute],
-      });
-      return () => {
-        observer.disconnect();
+      const measure = () => {
+        setSize((current) =>
+          current.width === element.clientWidth && current.height === element.clientHeight
+            ? current
+            : { width: element.clientWidth, height: element.clientHeight },
+        );
       };
-    }, []);
-
-    useEffect(() => {
-      const element = area.current;
-      if (element === null || typeof ResizeObserver === 'undefined') {
+      measure();
+      if (typeof ResizeObserver === 'undefined') {
         return undefined;
       }
-      const observer = new ResizeObserver(() => {
-        setWidth(element.clientWidth);
-      });
+      const observer = new ResizeObserver(measure);
       observer.observe(element);
-      setWidth(element.clientWidth);
       return () => {
         observer.disconnect();
       };
     }, []);
 
-    useImperativeHandle(ref, () => ({
-      goToToday: () => {
-        gantt.current?.scrollToDate(dateOfDay(schedule.today).toString());
-      },
-    }));
-
-    const timelineSettings = useMemo(
+    useImperativeHandle(
+      ref,
       () => ({
-        timelineUnitSize: unit,
-        showTooltip: false,
-        weekStartDay: 1,
-        topTier:
-          scale === 'months'
-            ? { unit: 'Year' as const, formatter: scaleText }
-            : { unit: 'Month' as const, formatter: scaleText },
-        bottomTier: {
-          unit:
-            scale === 'days'
-              ? ('Day' as const)
-              : scale === 'weeks'
-                ? ('Week' as const)
-                : ('Month' as const),
-          formatter: scaleText,
+        goToToday: () => {
+          const element = scroller.current;
+          if (element === null || geometry === undefined) {
+            return;
+          }
+          // Today in the middle of the part of the chart in view, beside the table that stays on the left.
+          const x = geometry.xOf(schedule.today) + geometry.dayWidth(schedule.today) / 2;
+          element.scrollLeft = Math.max(0, Math.round(x - (element.clientWidth - list) / 2));
         },
       }),
-      [unit, scale],
-    );
-    const holidays = useMemo(
-      () =>
-        schedule.nonWorkingDays.map((day) => ({
-          from: dateOfDay(day),
-          to: dateOfDay(day),
-          cssClass: 'fp-gantt-nonworking',
-        })),
-      [schedule.nonWorkingDays],
-    );
-    const markers = useMemo(
-      () => [
-        {
-          day: dateOfDay(schedule.today),
-          label: t('projects.timeline.today'),
-          cssClass: 'fp-gantt-today',
-          top: '4px',
-        },
-      ],
-      [schedule.today, t],
+      [geometry, schedule.today, list],
     );
 
-    const choose = useCallback(
-      (args: RowSelectEventArgs) => {
-        const target = rowOf(args.data);
-        if (target !== undefined) {
-          onChoose(target);
+    const toggle = useCallback((key: string) => {
+      setCollapsed((current) => {
+        const next = new Set(current);
+        if (!next.delete(key)) {
+          next.add(key);
         }
+        return next;
+      });
+    }, []);
+
+    const choose = useCallback(
+      (row: GanttRow) => {
+        setActive(row.key);
+        onChoose(row.target);
       },
       [onChoose],
     );
 
-    /** What the bar being edited does: moves, or has an edge pulled. */
-    const editAction = useRef<string | undefined>(undefined);
-
-    // Only the bars of tasks and milestones move; the phases follow them, and the progress changes in the details
-    // (ADR-0086).
-    const editing = useCallback((args: ITaskbarEditedEventArgs) => {
-      const target = rowOf(args.data);
-      if (target?.kind !== 'item' || !barActions.has(args.taskBarEditAction ?? '')) {
-        args.cancel = true;
-        editAction.current = undefined;
-        return;
-      }
-      editAction.current = args.taskBarEditAction;
-    }, []);
-
-    const beforeChange = useCallback(
-      (args: ActionBeginArgs) => {
-        const request = args as ActionBeginArgs & {
-          requestType?: string;
-          action?: string;
-          data?: IGanttData;
-        };
-        // The Gantt never edits nor saves anything itself (ADR-0051): the details open in the drawer (ADR-0081), and
-        // a moved bar or a new dependency becomes an event, saved by the API, which sends the schedule again.
-        if (
-          request.requestType === 'beforeOpenEditDialog' ||
-          request.requestType === 'beforeOpenAddDialog'
-        ) {
-          args.cancel = true;
-          return;
-        }
-        if (request.requestType !== 'beforeSave') {
-          return;
-        }
-        args.cancel = true;
-        const action = editAction.current;
-        editAction.current = undefined;
-        const line = lineOf(request.data);
-        if (line?.target.kind !== 'item') {
-          return;
-        }
-        const id = line.target.item.id;
-        const properties = request.data?.ganttProperties;
-        if (request.action !== 'DrawConnectorLine' && action !== undefined) {
-          if (properties?.startDate === undefined) {
-            return;
-          }
-          const start = dayOfDate(properties.startDate);
-          if (action === 'LeftResizing' || action === 'RightResizing') {
-            if (properties.endDate !== undefined) {
-              onResize(id, start, lastDayOf(properties.endDate));
-            }
-          } else {
-            onMove(id, start);
-          }
-          return;
-        }
-        const known = new Set(line.target.item.predecessorIds);
-        const added = (properties?.predecessor ?? [])
-          .filter((predecessor) => predecessor.to === String(line.key))
-          .map((predecessor) => rows.find((row) => String(row.key) === predecessor.from)?.target)
-          .find((target) => target?.kind === 'item' && !known.has(target.item.id));
-        if (added?.kind === 'item') {
-          onLink(added.item.id, id);
-        }
-      },
-      [rows, onMove, onResize, onLink],
-    );
-
-    const selectedIndex = rows.findIndex(
-      (row) =>
-        (row.target.kind === 'item' ? row.target.item.id : row.target.phase.id) === selectedId,
-    );
-
-    // With the details closed, no line stays chosen: Syncfusion keeps it otherwise, and choosing the bar of a chosen
-    // line again would not open the details (ADR-0081).
-    useEffect(() => {
-      if (selectedId === undefined) {
-        gantt.current?.clearSelection();
-      }
-    }, [selectedId]);
+    const resizeList = (width: number) => {
+      setDraggedList({
+        columns,
+        width: Math.round(Math.min(Math.max(width, minListWidth), maxList)),
+      });
+    };
 
     return (
       <div
-        ref={area}
-        className={detailed ? 'fp-schedule-gantt fp-schedule-gantt--detailed' : 'fp-schedule-gantt'}
+        className={detailed ? 'fp-gantt fp-gantt--detailed' : 'fp-gantt'}
+        data-scale={scale}
+        data-editable={String(editable)}
+        data-detailed={String(detailed)}
+        data-baseline={String(showBaseline)}
+        data-critical={String(showCritical)}
       >
-        {width > 0 && period !== undefined && (
-          <GanttComponent
-            // The columns are read once: a phone turned sideways draws the timeline again.
-            key={narrow ? 'narrow' : 'wide'}
-            ref={gantt}
-            dataSource={rows}
-            height="100%"
-            width="100%"
-            taskFields={{
-              id: 'key',
-              name: 'name',
-              startDate: 'start',
-              endDate: 'end',
-              progress: 'progress',
-              parentID: 'parentKey',
-              dependency: 'predecessor',
-              milestone: 'milestone',
-              baselineStartDate: 'baselineStart',
-              baselineEndDate: 'baselineEnd',
-              cssClass: 'cssClass',
-            }}
-            renderBaseline={showBaseline && schedule.baseline !== null}
-            // Manual: the bars stay in the dates of the API. Its own computing stays on, or the bars of the phases
-            // lose their place.
-            taskMode="Manual"
-            autoCalculateDateScheduling
-            includeWeekend
-            dayWorkingTime={[{ from: 0, to: 24 }]}
-            holidays={holidays}
-            eventMarkers={markers}
-            projectStartDate={dateOfDay(period.start)}
-            projectEndDate={dateOfDay(period.end)}
-            timelineSettings={timelineSettings}
-            splitterSettings={{ position: `${String(list)}px` }}
-            rowHeight={40}
-            taskbarHeight={18}
-            allowUnscheduledTasks
-            allowSelection
-            selectedRowIndex={selectedIndex}
-            tooltipSettings={{ showTooltip: false }}
-            editSettings={{ allowTaskbarEditing: editable, allowEditing: editable, mode: 'Dialog' }}
-            readOnly={!editable}
-            rowSelected={choose}
-            taskbarEditing={editing}
-            actionBegin={beforeChange}
-            gridLines="Horizontal"
-          >
-            <ColumnsDirective>
-              <ColumnDirective
-                field="name"
-                headerText={t('projects.timeline.columns.name')}
-                template={(data: unknown) => <NameCell row={lineOf(data)} withDelay={narrow} />}
+        <div ref={scroller} className="fp-gantt__scroller">
+          {geometry !== undefined && (
+            <div
+              className="fp-gantt__grid"
+              style={{
+                gridTemplateColumns: `${String(list)}px minmax(${String(geometry.width)}px, 1fr)`,
+              }}
+            >
+              <div className="fp-gantt__list">
+                <TimelineTable
+                  rows={shown}
+                  collapsed={collapsed}
+                  columns={columns}
+                  clientName={clientName}
+                  selectedId={selectedId}
+                  active={active}
+                  idPrefix={idPrefix}
+                  onActivate={setActive}
+                  onToggle={toggle}
+                  onChoose={choose}
+                />
+                <Divider
+                  label={t('projects.timeline.divider')}
+                  width={list}
+                  min={minListWidth}
+                  max={maxList}
+                  onChange={resizeList}
+                />
+              </div>
+              <TimelineChart
+                rows={shown}
+                geometry={geometry}
+                minHeight={size.height - timelineSizes.head}
+                today={schedule.today}
+                nonWorkingDays={schedule.nonWorkingDays}
+                editable={editable}
+                selectedId={selectedId}
+                showBaseline={showBaseline && schedule.baseline !== null}
+                onChoose={choose}
+                onMove={onMove}
+                onResize={onResize}
+                onLink={onLink}
               />
-              {detailed && (
-                <ColumnDirective
-                  field="start"
-                  headerText={t('projects.timeline.columns.start')}
-                  width={columnWidth.day}
-                  template={(data: unknown) => {
-                    const target = rowOf(data);
-                    return target?.kind === 'item' ? formatDayMonthText(target.item.start) : '';
-                  }}
-                />
-              )}
-              {detailed && (
-                <ColumnDirective
-                  field="end"
-                  headerText={t('projects.timeline.columns.end')}
-                  width={columnWidth.day}
-                  template={(data: unknown) => {
-                    const target = rowOf(data);
-                    return target?.kind === 'item' && target.item.kind === 'Task'
-                      ? formatDayMonthText(target.item.end)
-                      : '';
-                  }}
-                />
-              )}
-              {detailed && (
-                <ColumnDirective
-                  field="owner"
-                  headerText={t('projects.timeline.columns.owner')}
-                  width={columnWidth.owner}
-                  template={(data: unknown) => {
-                    const target = rowOf(data);
-                    return target?.kind === 'item'
-                      ? (ownerText(target.item, clientName, t) ?? '')
-                      : '';
-                  }}
-                />
-              )}
-              {!narrow && (
-                <ColumnDirective
-                  field="progress"
-                  headerText={t('projects.timeline.columns.progress')}
-                  width={columnWidth.progress}
-                  textAlign="Right"
-                  template={(data: unknown) => <ProgressCell row={lineOf(data)} />}
-                />
-              )}
-            </ColumnsDirective>
-            <Inject services={[Edit, Selection, DayMarkers]} />
-          </GanttComponent>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     );
   },
 );
 
 /**
- * The name of a line, with a flag on a milestone. Without the column of the progress (a phone), a late task or
- * milestone says so beside the name (ADR-0065).
+ * The line between the table and the chart, which a person drags to give the table more or less room, or moves by the
+ * arrows of the keyboard.
  */
-function NameCell({ row, withDelay }: { row: GanttRow | undefined; withDelay: boolean }) {
-  const { t } = useTranslation();
-  if (row === undefined) {
-    return null;
-  }
-  const target = row.target;
-  const late =
-    withDelay &&
-    target.kind === 'item' &&
-    (target.item.kind === 'Milestone' ? milestoneStatus(target.item) === 'late' : target.item.late);
-  return (
-    <span
-      className={
-        target.kind === 'phase' || target.item.hasSubtasks
-          ? 'fp-gantt-name fp-gantt-name--phase'
-          : 'fp-gantt-name'
-      }
-    >
-      {target.kind === 'item' && target.item.kind === 'Milestone' && (
-        <FlagOutlined
-          titleAccess={t('projects.schedule.kinds.Milestone')}
-          className="fp-gantt-name__icon"
-        />
-      )}
-      <span className="fp-gantt-name__text" title={row.name}>
-        {row.name}
-      </span>
-      {late && (
-        <WarningAmberOutlined
-          titleAccess={lateText(target.item, t)}
-          className="fp-gantt-progress__icon fp-gantt-name__late"
-        />
-      )}
-    </span>
-  );
-}
+function Divider({
+  label,
+  width,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  width: number;
+  min: number;
+  max: number;
+  onChange: (width: number) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
 
-/**
- * The progress of a line, or the state of a milestone; a late task says so by icon, color and text, and the icon says
- * by how many business days, as the state of a late milestone does.
- */
-function ProgressCell({ row }: { row: GanttRow | undefined }) {
-  const { t } = useTranslation();
-  if (row === undefined) {
-    return null;
-  }
-  const target = row.target;
-  if (target.kind === 'item' && target.item.kind === 'Milestone') {
-    const status = milestoneStatus(target.item);
-    return (
-      <span title={status === 'late' ? lateText(target.item, t) : undefined}>
-        <DueDate state={status === 'reached' ? 'met' : status === 'late' ? 'overdue' : 'onTrack'}>
-          {t(`projects.timeline.milestone.${status}`)}
-        </DueDate>
-      </span>
-    );
-  }
-  const late = target.kind === 'item' && target.item.late;
-  const progress = target.kind === 'item' ? target.item.progress : target.phase.progress;
-  const empty = target.kind === 'phase' && target.phase.start === null;
+  const press = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    const origin = event.clientX;
+    const move = (moving: PointerEvent) => {
+      onChange(width + moving.clientX - origin);
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      setDragging(false);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    setDragging(true);
+  };
+
+  const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const next =
+      event.key === 'ArrowLeft'
+        ? width - dividerStep
+        : event.key === 'ArrowRight'
+          ? width + dividerStep
+          : event.key === 'Home'
+            ? min
+            : event.key === 'End'
+              ? max
+              : undefined;
+    if (next !== undefined) {
+      event.preventDefault();
+      onChange(next);
+    }
+  };
+
   return (
-    <span className={late ? 'fp-gantt-progress fp-gantt-progress--late' : 'fp-gantt-progress'}>
-      {late && (
-        <WarningAmberOutlined
-          titleAccess={lateText(target.item, t)}
-          className="fp-gantt-progress__icon"
-        />
-      )}
-      {empty ? '' : `${String(progress)}%`}
-    </span>
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={width}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      tabIndex={0}
+      className={dragging ? 'fp-gantt__divider fp-gantt__divider--dragging' : 'fp-gantt__divider'}
+      onPointerDown={press}
+      onKeyDown={keyDown}
+    />
   );
 }
 

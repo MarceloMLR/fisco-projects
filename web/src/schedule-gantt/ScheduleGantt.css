@@ -1,327 +1,417 @@
 /*
- * The Linha do tempo with the look of the design system (fp-gantt, ADR-0067, ADR-0071) over the Material 3 theme of
- * Syncfusion (ADR-0051). Every color is a token, so the light and the dark themes follow the screens.
+ * The Linha do tempo (ADR-0071, ADR-0134), as the Gantt of the design system draws it (fp-gantt): the table on the left,
+ * the chart on the right, in one area that scrolls up and down; the table stays on the left as the chart scrolls
+ * sideways, and both headers stay on top. Only the tokens of the design system.
  */
-
-.fp-schedule-gantt {
-  /* The font of the design system (ADR-0064); the colors of the theme come from syncfusionPalette.ts. */
-  --e-font-family: var(--font-sans);
-
+.fp-gantt {
   position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  min-width: 0;
   box-sizing: border-box;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text);
 }
 
-.fp-schedule-gantt--detailed {
+.fp-gantt--detailed {
   border: 0;
   border-radius: 0;
 }
 
-.fp-schedule-gantt .e-gantt {
-  border: 0;
-  background: var(--bg-surface);
-}
-
-.fp-schedule-gantt .e-gantt .e-gantt-splitter,
-.fp-schedule-gantt .e-gantt .e-gantt-chart,
-.fp-schedule-gantt .e-gantt .e-gantt-tree-grid-pane .e-grid,
-.fp-schedule-gantt .e-gantt .e-gantt-tree-grid-pane .e-content,
-.fp-schedule-gantt .e-gantt .e-chart-root-container {
-  border: 0;
-  background: var(--bg-surface);
-}
-
-/* The table beside the timeline (fp-gantt__head and fp-gantt__row). */
-.fp-schedule-gantt .e-gantt .e-grid .e-headercell,
-.fp-schedule-gantt .e-gantt .e-grid .e-gridheader,
-.fp-schedule-gantt .e-gantt .e-timeline-header-container {
-  background: var(--bg-subtle);
-  border-color: var(--border);
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-headercell .e-headertext {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-rowcell {
-  font-size: 13px;
-  color: var(--text);
-  border-color: var(--border);
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-row:hover .e-rowcell,
-.fp-schedule-gantt .e-gantt .e-chart-row:hover .e-chart-row-cell {
-  background: var(--bg-hover);
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-row[aria-selected='true'] .e-rowcell,
-.fp-schedule-gantt .e-gantt .e-grid td.e-active,
-.fp-schedule-gantt .e-gantt .e-chart-row.e-active-row .e-chart-row-cell,
-.fp-schedule-gantt .e-gantt .e-active {
-  background: var(--bg-selected);
-  color: var(--text);
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-row,
-.fp-schedule-gantt .e-gantt .e-chart-row {
-  cursor: pointer;
-}
-
-.fp-schedule-gantt .e-gantt .e-grid .e-treegridexpand,
-.fp-schedule-gantt .e-gantt .e-grid .e-treegridcollapse {
-  color: var(--text-secondary);
-}
-
-/*
- * The table scrolls with the timeline, so its own scroll bars stay hidden. The theme hides them by making the table
- * 17 px wider than its pane, which cuts the last column where scroll bars take no room (macOS, phones).
- */
-.fp-schedule-gantt .e-gantt .e-gantt-tree-grid-pane .e-gridcontent .e-content {
-  width: 100% !important;
-  scrollbar-width: none;
-}
-
-.fp-schedule-gantt .e-gantt .e-gantt-tree-grid-pane .e-gridcontent .e-content::-webkit-scrollbar {
-  display: none;
-}
-
-.fp-schedule-gantt .e-gantt .e-treegrid .e-rowcell .e-treecolumn-container {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-}
-
-.fp-schedule-gantt .e-treecolumn-container .fp-gantt-name {
-  display: flex;
+.fp-gantt__scroller {
   flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.fp-gantt__grid {
+  display: grid;
+  align-items: stretch;
+  min-height: 100%;
+}
+
+/* The table (fp-gantt__grid of the design system). */
+.fp-gantt__list {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  min-width: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+}
+
+/* The table keeps the focus and outlines its active line instead (aria-activedescendant). */
+.fp-gantt .fp-gantt__table:focus-visible {
+  outline: 0;
+}
+
+.fp-gantt__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-width: 0;
-}
-
-.fp-gantt-name--phase {
-  font-weight: 500;
-}
-
-.fp-gantt-name__icon,
-.fp-gantt-progress__icon {
-  flex: none;
-  font-size: 16px !important;
-}
-
-.fp-gantt-name__icon {
+  box-sizing: border-box;
+  height: 48px;
+  padding: 0 var(--space-3);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
   color: var(--text-secondary);
-}
-
-.fp-gantt-name__late {
-  color: var(--status-danger-text);
-}
-
-.fp-gantt-name__text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-.fp-gantt-progress {
-  display: inline-flex;
+.fp-gantt__row {
+  display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
+  /* Brought into view by the keyboard, the line does not hide under the header. */
+  scroll-margin-top: 48px;
+}
+
+.fp-gantt__row:hover {
+  background: var(--bg-hover);
+}
+
+.fp-gantt__row[aria-selected='true'] {
+  background: var(--bg-selected);
+}
+
+.fp-gantt__table:focus-visible .fp-gantt__row--active {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.fp-gantt__row--phase {
+  font-weight: 500;
+}
+
+.fp-gantt__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.fp-gantt__head .fp-gantt__name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-gantt__toggle.MuiIconButton-root {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--text-secondary);
+}
+
+.fp-gantt__toggle .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.fp-gantt__spacer {
+  flex: none;
+  width: 20px;
+}
+
+.fp-gantt__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-gantt__icon.MuiSvgIcon-root {
+  flex: none;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.fp-gantt__icon--late.MuiSvgIcon-root,
+.fp-gantt__progress--late .fp-gantt__icon.MuiSvgIcon-root {
+  color: var(--status-danger-text);
+}
+
+.fp-gantt__col {
+  flex: none;
+  width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
-.fp-gantt-progress--late {
+.fp-gantt__col--who {
+  width: 112px;
+}
+
+.fp-gantt__pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  width: 88px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-gantt__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fp-gantt__progress--late {
   color: var(--status-danger-text);
   font-weight: 500;
 }
 
-/* The scale (fp-gantt__scale): the months over the days. */
-.fp-schedule-gantt .e-gantt .e-timeline-header-container,
-.fp-schedule-gantt .e-gantt .e-timeline-header-table-body td {
-  background: var(--bg-subtle);
+/* The divider, on the right edge of the table. */
+.fp-gantt__divider {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 3;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none;
 }
 
-.fp-schedule-gantt .e-gantt .e-timeline-top-header-cell,
-.fp-schedule-gantt .e-gantt .e-timeline-single-header-cell,
-.fp-schedule-gantt .e-gantt .e-timeline-header-table-body td {
-  border-color: var(--border);
+.fp-gantt .fp-gantt__divider:focus-visible {
+  outline: 0;
 }
 
-.fp-schedule-gantt .e-gantt .e-timeline-top-header-cell .e-header-cell-label {
+.fp-gantt__divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 1px;
+}
+
+.fp-gantt__divider:hover::after,
+.fp-gantt__divider:focus-visible::after,
+.fp-gantt__divider--dragging::after {
+  left: 2px;
+  width: 3px;
+  background: var(--focus-ring);
+}
+
+/* The chart (fp-gantt__chart). */
+.fp-gantt__chart {
+  position: relative;
+  min-width: 0;
+  user-select: none;
+}
+
+.fp-gantt__chart svg {
+  display: block;
+  overflow: hidden;
+}
+
+.fp-gantt__scale {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.fp-gantt .g-scale {
+  fill: var(--bg-subtle);
+}
+
+.fp-gantt .g-scale-line,
+.fp-gantt .g-row-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.fp-gantt .g-scale-text {
+  fill: var(--text-secondary);
+  font-family: var(--font-sans);
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text);
-}
-
-.fp-schedule-gantt .e-gantt .e-timeline-single-header-cell .e-header-cell-label,
-.fp-schedule-gantt .e-gantt .e-header-cell-label {
-  font-size: 12px;
-  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
-.fp-schedule-gantt .e-gantt .e-weekend-header-cell {
-  background: var(--bg-subtle);
+.fp-gantt .g-scale-month {
+  fill: var(--text);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
 }
 
-/* The rows of the timeline: lines between them, the weekends and holidays shaded. */
-.fp-schedule-gantt .e-gantt .e-chart-row .e-chart-row-cell {
-  border-color: var(--border);
+.fp-gantt .g-scale-today {
+  fill: var(--action-text);
+  font-weight: 500;
 }
 
-.fp-schedule-gantt .e-gantt .e-holiday,
-.fp-schedule-gantt .e-gantt .e-weekend {
-  background: var(--gantt-nonworking);
+.fp-gantt .g-nonworking {
+  fill: var(--gantt-nonworking);
 }
 
-.fp-schedule-gantt .e-gantt .e-holiday .e-span {
-  display: none;
+.fp-gantt .g-hit {
+  fill: transparent;
+  cursor: pointer;
 }
 
-/* The bars (g-bar, g-progress): the part done in green, the rest in the color of the bar (ADR-0067). */
-.fp-schedule-gantt .e-gantt .e-gantt-child-taskbar-inner-div,
-.fp-schedule-gantt .e-gantt .e-gantt-child-manualtaskbar {
-  background: var(--gantt-bar);
-  border: 1px solid var(--gantt-bar-border);
-  border-radius: 3px;
-  box-shadow: none;
+.fp-gantt .g-selected {
+  fill: var(--bg-selected);
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-child-progressbar-inner-div,
-.fp-schedule-gantt .e-gantt .e-gantt-child-progressbar,
-.fp-schedule-gantt .e-gantt .e-gantt-child-manualprogressbar {
-  background: var(--gantt-progress);
-  border: 0;
-  border-radius: 2px;
+.fp-gantt .g-item {
+  cursor: pointer;
 }
 
-.fp-schedule-gantt .e-gantt .e-task-label {
-  display: none;
+.fp-gantt .g-item--draggable {
+  cursor: move;
 }
 
-/* The critical path (g-bar--critical): the bar in red, the part done still in green (ADR-0067). */
-.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-child-taskbar-inner-div,
-.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-child-manualtaskbar {
-  background: var(--gantt-critical-bar);
-  border-color: var(--gantt-critical-border);
+.fp-gantt .g-item--dragging {
+  filter: drop-shadow(var(--shadow-drag));
 }
 
-.fp-schedule-gantt .e-gantt .fp-gantt-critical .e-gantt-milestone {
-  background: var(--gantt-critical-bar);
-  box-shadow: inset 0 0 0 1px var(--gantt-critical-border);
+.fp-gantt .g-bar {
+  fill: var(--gantt-bar);
+  stroke: var(--gantt-bar-border);
+  stroke-width: 1;
 }
 
-/* The baseline (g-baseline): a thin bar under the bar of the task, at its dates in the baseline. */
-.fp-schedule-gantt .e-gantt .e-baseline-bar {
-  height: 4px !important;
-  background: var(--gantt-baseline);
-  border: 0;
-  border-radius: 1px;
+.fp-gantt .g-bar--selected {
+  stroke-width: 2;
 }
 
-/* The phases (g-summary): a bar with the ends pointing down, in the color of the summary. */
-.fp-schedule-gantt .e-gantt .e-gantt-parent-taskbar-inner-div {
-  display: none;
+.fp-gantt .g-progress {
+  fill: var(--gantt-progress);
 }
 
-.fp-schedule-gantt .e-gantt .e-manualparent-main-container {
-  top: 4px;
-  background: transparent;
-  border: 0;
+.fp-gantt .g-bar--critical {
+  fill: var(--gantt-critical-bar);
+  stroke: var(--gantt-critical-border);
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-manualparenttaskbar {
-  height: 6px !important;
-  background: var(--gantt-summary);
-  border: 0 !important;
+.fp-gantt .g-progress--critical {
+  fill: var(--gantt-progress);
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-manualparenttaskbar-left,
-.fp-schedule-gantt .e-gantt .e-gantt-manualparenttaskbar-right {
-  top: 6px;
-  width: 0 !important;
-  height: 0 !important;
-  background: transparent;
-  border-top: 5px solid var(--gantt-summary) !important;
-  border-bottom: 0 !important;
+.fp-gantt .g-summary {
+  fill: var(--gantt-summary);
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-manualparenttaskbar-left {
-  border-left: 0 !important;
-  border-right: 6px solid transparent !important;
+.fp-gantt .g-baseline {
+  fill: var(--gantt-baseline);
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-manualparenttaskbar-right {
-  margin-left: -5px;
-  border-left: 6px solid transparent !important;
-  border-right: 0 !important;
+.fp-gantt .g-milestone {
+  fill: var(--gantt-milestone);
 }
 
-/* The milestones (g-milestone): a lozenge in the color of the milestone. */
-.fp-schedule-gantt .e-gantt .e-gantt-milestone {
-  background: var(--gantt-milestone);
-  border: 0;
+.fp-gantt .g-milestone--critical {
+  fill: var(--gantt-critical-bar);
+  stroke: var(--gantt-critical-border);
 }
 
-/* The dependencies (g-dep), drawn in SVG. */
-.fp-schedule-gantt .e-gantt .e-connector-line {
+.fp-gantt .g-handle {
+  fill: transparent;
+  cursor: ew-resize;
+}
+
+.fp-gantt .g-connector {
+  fill: var(--bg-surface);
   stroke: var(--gantt-dependency);
-  stroke-width: 1.5px;
+  stroke-width: 1.5;
+  cursor: crosshair;
+  opacity: 0;
 }
 
-.fp-schedule-gantt .e-gantt .e-connector-line-arrow {
+.fp-gantt .g-item:hover .g-connector {
+  opacity: 1;
+}
+
+.fp-gantt .g-dep,
+.fp-gantt .g-link {
+  fill: none;
+  stroke: var(--gantt-dependency);
+  stroke-width: 1.5;
+}
+
+.fp-gantt .g-link {
+  stroke-dasharray: 4 3;
+}
+
+.fp-gantt .g-dep-head {
   fill: var(--gantt-dependency);
-  stroke: none;
 }
 
-/* Today (g-today, g-today-flag): a dashed line with "Hoje" on top. */
-.fp-schedule-gantt .e-gantt .e-event-markers {
-  border-left: 1.5px dashed var(--gantt-today);
+.fp-gantt .g-today {
+  stroke: var(--gantt-today);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
 }
 
-.fp-schedule-gantt .e-gantt .e-event-markers .e-span-label {
-  left: -18px !important;
-  width: 36px;
-  height: 17px;
-  padding: 0;
-  border-radius: var(--radius-sm);
-  background: var(--gantt-today);
-  color: var(--bg-surface);
+.fp-gantt .g-today-flag {
+  fill: var(--gantt-today);
+}
+
+.fp-gantt .g-today-label {
+  fill: var(--bg-surface);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 500;
-  line-height: 17px;
-  text-align: center;
-  box-shadow: none;
 }
 
-.fp-schedule-gantt .e-gantt .e-event-markers .e-gantt-right-arrow {
-  display: none;
+.fp-gantt .g-label {
+  fill: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
 }
 
-/* While a bar is dragged or stretched, it floats (shadow-drag). */
-.fp-schedule-gantt .e-gantt .e-gantt-dependency-view-container,
-.fp-schedule-gantt .e-gantt .e-active-child-task .e-gantt-child-taskbar-inner-div {
-  box-shadow: var(--shadow-drag);
+/* What only draws: the click goes to the line under it. */
+.fp-gantt .g-nonworking,
+.fp-gantt .g-selected,
+.fp-gantt .g-row-line,
+.fp-gantt .g-baseline,
+.fp-gantt .g-dep,
+.fp-gantt .g-dep-head,
+.fp-gantt .g-label,
+.fp-gantt .g-today,
+.fp-gantt .g-link {
+  pointer-events: none;
 }
 
-.fp-schedule-gantt .e-gantt .e-gantt-splitter .e-split-bar {
-  background: var(--border);
+/* While a bar is dragged or linked, the pointer keeps what it does wherever it goes. */
+.fp-gantt__chart[data-pressing='move'],
+.fp-gantt__chart[data-pressing='move'] * {
+  cursor: move;
 }
 
-/* The progress changes in the details of the task, never by pulling the bar (ADR-0086). */
-.fp-schedule-gantt .e-gantt .e-child-progress-resizer {
-  display: none;
+.fp-gantt__chart[data-pressing='start'],
+.fp-gantt__chart[data-pressing='start'] *,
+.fp-gantt__chart[data-pressing='end'],
+.fp-gantt__chart[data-pressing='end'] * {
+  cursor: ew-resize;
+}
+
+.fp-gantt__chart[data-pressing='link'],
+.fp-gantt__chart[data-pressing='link'] * {
+  cursor: crosshair;
 }
