@@ -6,4 +6,4 @@ A carga de demonstração MUST criar um projeto fictício a partir do XML do MS 
 
 #### Scenario: Projeto importado na demonstração
 - **WHEN** o comando carrega os dados de demonstração
-- **THEN** a gerente exporta o cronograma de um projeto, cria um projeto novo a partir do arquivo, e ele nasce com as mesmas fases e itens, sem responsáveis nem progresso
+- **THEN** a gerente exporta o cronograma de um projeto, cria um projeto novo a partir do arquivo, ligando os recursos às pessoas da demonstração, e ele nasce com as mesmas fases, itens, progresso e responsáveis

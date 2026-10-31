@@ -1,5 +1,5 @@
 ---
-status: proposta
+status: aceita
 date: 2026-10-31
 decision-makers: Marcelo Ribeiro
 ---
@@ -55,15 +55,24 @@ Opções escolhidas: **F1** e **L1**.
 - **Lugar.** "A partir do MS Project" no "Novo projeto", com o arquivo, o início e a prévia das fases e dos itens, como o modelo.
   - O início vem preenchido com o primeiro dia do arquivo e pode ser trocado, para usar um cronograma antigo como base.
   - A API lê o arquivo na prévia, sem guardar nada, e o projeto é criado com o cronograma convertido, na mesma transação, como o modelo.
-- **O que vem do arquivo:** as fases, as tarefas, as subtarefas, os marcos, a ordem, as durações e as dependências "termina, então começa".
+- **O que vem do arquivo:** as fases, as tarefas, as subtarefas, os marcos, a ordem, as durações, as dependências "termina, então começa", o progresso e os responsáveis, a pedido de Marcelo, para trazer também projetos em andamento.
 - **O que não vem:**
-  - os responsáveis e os recursos;
-  - o progresso;
   - a linha de base;
   - os calendários e as restrições;
+  - os recursos que não são pessoas (material e custo);
   - as notas.
-
-  O projeto nasce como um plano, como o modelo, e quem edita completa o resto.
+- **Responsáveis.**
+  - Cada recurso de trabalho do arquivo aparece na prévia, com o nome, o e-mail e quantas tarefas tem.
+  - A prévia sugere a pessoa achada pelo e-mail do recurso no diretório da empresa, a mesma busca de pessoas do sistema (ADR-0119). Quem cria pode trocar a pessoa, deixar sem pessoa ou, num projeto com cliente, escolher o cliente (ADR-0102). Esta última é a sugestão quando o recurso tem o nome do cliente, como a exportação grava.
+  - Para cada pessoa que ainda não está no projeto, quem cria escolhe o papel, Colaborador de início ou Desenvolvedor (ADR-0042). O gerente e o líder técnico do formulário mantêm o papel deles.
+  - Na criação, essas pessoas entram no projeto com o papel escolhido, como na inclusão de pessoas (ADR-0005), e ficam responsáveis pelas tarefas dos seus recursos.
+  - A tarefa com mais de um recurso fica com o primeiro (aviso). O recurso sem pessoa deixa as tarefas dele sem responsável (aviso). O marco não tem responsável (ADR-0021).
+  - O e-mail dos recursos só serve para achar a pessoa e não é guardado.
+- **Progresso.**
+  - Cada tarefa com datas próprias leva o percentual concluído do arquivo.
+  - A tarefa a 100% fica concluída no fim dela, nunca depois de hoje.
+  - O marco a 100% fica atingido no dia dele, nunca depois de hoje.
+  - A tarefa-resumo calcula o dela das subtarefas, como sempre (ADR-0088).
 - **Níveis.**
   - As tarefas-resumo do nível 1 viram fases.
   - O nível 2 vira tarefa ou marco; uma tarefa-resumo do nível 2 vira tarefa com subtarefas.
@@ -89,11 +98,12 @@ Opções escolhidas: **F1** e **L1**.
 
 ### Consequências
 
-- Bom, porque quem vem do MS Project começa no FiscoProjects sem redigitar o cronograma, com os avisos do que mudou.
+- Bom, porque quem vem do MS Project começa no FiscoProjects sem redigitar o cronograma, inclusive um projeto em andamento, com o progresso e os responsáveis, e com os avisos do que mudou.
 - Bom, porque nenhuma dependência nova entra, e o leitor é testado como a exportação.
 - Bom, porque as datas são as do calendário da instalação, como as de qualquer cronograma, e o projeto importado é editado como qualquer outro.
 - Ruim, porque o .mpp precisa ser salvo como XML antes.
-- Ruim, porque os responsáveis, o progresso e a linha de base ficam de fora: um projeto em andamento chega como plano, e quem edita completa. Se fizer falta, um ADR novo os traz.
+- Ruim, porque a linha de base fica de fora: quem edita a salva de novo no FiscoProjects.
+- Ruim, porque ligar os recursos às pessoas e escolher os papéis é um passo a mais na prévia, quando o arquivo não tem os e-mails.
 - Ruim, porque níveis, tipos de dependência e intervalos do MS Project se perdem; a prévia diz quais.
 
 ### Confirmação
