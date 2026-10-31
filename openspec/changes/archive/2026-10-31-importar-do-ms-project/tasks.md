@@ -33,4 +33,4 @@
 
 ## 7. Verificação
 
-- [ ] 7.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh` passando
+- [x] 7.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh` e `specs.sh` passando
