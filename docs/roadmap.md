@@ -219,6 +219,6 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Gantt-1 | `linha-do-tempo-propria` | A Linha do tempo desenhada pelo próprio FiscoProjects, com o mesmo comportamento e o mesmo visual, sem o Syncfusion, e navegável pelo teclado | 0051, 0071, 0134 | Em andamento |
+| Gantt-1 | `linha-do-tempo-propria` | A Linha do tempo desenhada pelo próprio FiscoProjects, com o mesmo comportamento e o mesmo visual, sem o Syncfusion, e navegável pelo teclado | 0051, 0071, 0134 | PR aberto |
 | Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Planejada |
 | Gantt-3 | `importar-do-ms-project` | O "Novo projeto" a partir do XML do MS Project, com as fases, as tarefas, os marcos e as dependências | 0017, 0021, 0134 | Planejada |
