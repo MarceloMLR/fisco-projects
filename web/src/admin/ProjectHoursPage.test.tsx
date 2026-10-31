@@ -11,6 +11,7 @@ import {
   openProjectHours,
 } from '../test/demoProjectHours';
 import { demoTimeEntries, hoursNow, timeEntryListOf } from '../test/demoTimeEntries';
+import { expectBusy, expectIdle } from '../test/busy';
 import { renderApp } from '../test/renderApp';
 import { demoPeople, server, signedInAs } from '../test/server';
 import { unzip } from '../test/unzip';
@@ -422,5 +423,25 @@ describe('Horas dos projetos pela tela', () => {
     expect(within(edit).getByLabelText(text.additionalDialog.reason)).toHaveValue(
       'Pedido fora do escopo 23',
     );
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131, ADR-0132).
+describe('Botões em andamento nas horas dos projetos', () => {
+  it('Planilha das horas em andamento', async () => {
+    await showProjectHours();
+    const download = screen.getByRole('button', { name: text.download });
+
+    fireEvent.click(download);
+
+    // Busy, not grey, while the spreadsheet is put together, and at least half a second.
+    expectBusy(download, text.download);
+    expect(download).not.toBeDisabled();
+    await waitFor(() => {
+      expect(saved.files).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expectIdle(download);
+    });
   });
 });

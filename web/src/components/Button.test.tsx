@@ -1,10 +1,12 @@
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { Button, IconButton } from './Button';
 import { Form } from './Form';
+import { minimumBusyMs } from './pending';
 
 /** An answer of the server held until the test lets it go, with success or error. */
 function heldAnswer() {
@@ -25,7 +27,11 @@ function themed(children: React.ReactNode) {
 
 const spinnerOf = (button: HTMLElement) => within(button).queryByTestId('button-spinner');
 
-// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131, ADR-0132).
 describe('Botões em andamento', () => {
   it('Botão em andamento', async () => {
     const answer = heldAnswer();
@@ -48,7 +54,9 @@ describe('Botões em andamento', () => {
       answer.resolve();
       await answer.promise;
     });
-    expect(spinnerOf(button)).toBeNull();
+    await waitFor(() => {
+      expect(spinnerOf(button)).toBeNull();
+    });
     expect(within(button).getByTestId('icon')).toBeInTheDocument();
     expect(button).not.toHaveAttribute('aria-busy');
   });
@@ -90,7 +98,7 @@ describe('Botões em andamento', () => {
       answer.resolve();
       await answer.promise;
     });
-    expect(within(button).getByTestId('icon')).toBeInTheDocument();
+    expect(await within(button).findByTestId('icon')).toBeInTheDocument();
   });
 
   it('Clique repetido durante o andamento', async () => {
@@ -116,6 +124,9 @@ describe('Botões em andamento', () => {
     await act(async () => {
       answer.resolve();
       await answer.promise;
+    });
+    await waitFor(() => {
+      expect(button).not.toHaveAttribute('aria-busy');
     });
     fireEvent.click(button);
     expect(calls).toBe(2);
@@ -151,7 +162,9 @@ describe('Botões em andamento', () => {
       answer.resolve();
       await answer.promise;
     });
-    expect(spinnerOf(save)).toBeNull();
+    await waitFor(() => {
+      expect(spinnerOf(save)).toBeNull();
+    });
   });
 
   it('Fim do andamento com erro', async () => {
@@ -169,7 +182,9 @@ describe('Botões em andamento', () => {
       await answer.promise.catch(() => undefined);
     });
 
-    expect(spinnerOf(button)).toBeNull();
+    await waitFor(() => {
+      expect(spinnerOf(button)).toBeNull();
+    });
     expect(within(button).getByTestId('icon')).toBeInTheDocument();
     expect(button).not.toHaveAttribute('aria-busy');
   });
@@ -202,6 +217,73 @@ describe('Botões em andamento', () => {
     fireEvent.click(button);
 
     expect(opened).toBe(true);
+    expect(spinnerOf(button)).toBeNull();
+  });
+
+  it('Resposta rápida', async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    themed(
+      <Button
+        startIcon={<CheckOutlined data-testid="icon" />}
+        onClick={() => {
+          calls += 1;
+          return Promise.resolve();
+        }}
+      >
+        Salvar
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Salvar' });
+
+    fireEvent.click(button);
+    // The answer comes at once, but the button stays busy until half a second from the click.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(minimumBusyMs - 100);
+    });
+    expect(spinnerOf(button)).not.toBeNull();
+    fireEvent.click(button);
+    expect(calls).toBe(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    expect(spinnerOf(button)).toBeNull();
+    expect(within(button).getByTestId('icon')).toBeInTheDocument();
+    expect(button).not.toHaveAttribute('aria-busy');
+  });
+
+  it('Botão desabilitado pela resposta fica em andamento antes', async () => {
+    vi.useFakeTimers();
+    function Saving() {
+      const [changed, setChanged] = useState(true);
+      return (
+        <Button
+          disabled={!changed}
+          onClick={() => {
+            setChanged(false);
+            return Promise.resolve();
+          }}
+        >
+          Salvar
+        </Button>
+      );
+    }
+    themed(<Saving />);
+    const button = screen.getByRole('button', { name: 'Salvar' });
+
+    fireEvent.click(button);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+
+    // Busy, not grey, while the half second lasts; then disabled.
+    expect(button).not.toBeDisabled();
+    expect(spinnerOf(button)).not.toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(minimumBusyMs);
+    });
+    expect(button).toBeDisabled();
     expect(spinnerOf(button)).toBeNull();
   });
 });

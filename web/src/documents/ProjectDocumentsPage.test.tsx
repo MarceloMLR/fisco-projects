@@ -434,6 +434,39 @@ describe('Documentos', () => {
 
 // Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
 describe('Botões em andamento nos documentos', () => {
+  it('Envio de arquivos em andamento', async () => {
+    const held = heldAnswer();
+    // Held first, then the upload of the simulated API.
+    server.use(
+      http.post('/api/projects/:id/documents', async () => {
+        await held.until;
+      }),
+    );
+    await openDocuments();
+    fireEvent.click(screen.getByRole('button', { name: /03 Requisitos/ }));
+    await waitFor(() => {
+      expect(names()).toHaveLength(3);
+    });
+    const upload = screen.getByRole('button', { name: text.upload });
+    const files = [
+      new File(['CFOP;Descrição'], 'Regras de CFOP.csv', { type: 'text/csv' }),
+      new File(['ata'], 'Ata de kickoff.docx'),
+    ];
+
+    fireEvent.drop(screen.getByTestId('documents-drop'), {
+      dataTransfer: { types: ['Files'], files },
+    });
+
+    // Busy, not grey, saying how many files went.
+    const sending = text.uploading.replace('{{current}}', '1').replace('{{total}}', '2');
+    await waitFor(() => {
+      expectBusy(upload, sending);
+    });
+    expect(upload).not.toBeDisabled();
+    held.release();
+    expect(await screen.findByText(text.uploaded_other.replace('{{count}}', '2'))).toBeVisible();
+  });
+
   async function chooseMap() {
     await openDocuments();
     fireEvent.click(screen.getByRole('button', { name: /03 Requisitos/ }));

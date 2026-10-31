@@ -1,5 +1,8 @@
 import { createContext, useEffect, useRef, useState } from 'react';
 
+/** The shortest time a button shows it is busy, so the loading icon is seen even with a quick answer (ADR-0132). */
+export const minimumBusyMs = 500;
+
 /** Whether the form around is sending, for its submit buttons (Form, ADR-0131). */
 export const FormPending = createContext(false);
 
@@ -50,4 +53,39 @@ export function usePendingAction<Event extends { preventDefault: () => void }>(
   };
 
   return [pending, run];
+}
+
+/**
+ * The busy state as the button shows it (ADR-0132): it starts with the busy state and, when this ends before
+ * minimumBusyMs from its start, lasts until then. A new start while it lasts goes on as one.
+ */
+export function useMinimumBusy(busy: boolean): boolean {
+  const [wasBusy, setWasBusy] = useState(busy);
+  // The end of a busy state still shown, a new object at each end; null when none.
+  const [ending, setEnding] = useState<object | null>(null);
+  const started = useRef(0);
+  if (busy !== wasBusy) {
+    setWasBusy(busy);
+    setEnding(busy ? null : {});
+  }
+  useEffect(() => {
+    if (busy) {
+      started.current = Date.now();
+    }
+  }, [busy]);
+  useEffect(() => {
+    if (ending === null) {
+      return undefined;
+    }
+    const timer = setTimeout(
+      () => {
+        setEnding(null);
+      },
+      Math.max(0, minimumBusyMs - (Date.now() - started.current)),
+    );
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [ending]);
+  return busy || ending !== null;
 }
