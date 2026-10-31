@@ -716,7 +716,7 @@ Para quem edita, a aba Cronograma e o Expandir MUST ter o botão "Desfazer", com
 
 ### Requirement: Exportar para o MS Project
 
-O administrador e o gerente do projeto MUST poder baixar o cronograma no formato XML do MS Project, também com o projeto encerrado. O arquivo leva as fases, as tarefas, as subtarefas e os marcos em níveis, com as datas, a duração em dias úteis, o progresso, o responsável como recurso com o nome e o e-mail (sem o e-mail da pessoa anonimizada), as dependências "termina, então começa", a linha de base e o calendário da instalação. As outras pessoas do projeto recebem 403, e quem não está no projeto, 404 (ADR-0021, ADR-0043, ADR-0051, ADR-0136).
+O administrador e o gerente do projeto MUST poder baixar o cronograma no XML do MS Project, também com o projeto encerrado: as fases, as tarefas, as subtarefas e os marcos em níveis, com as datas, a duração em dias úteis, o progresso, cada responsável como recurso com o nome e o e-mail, as dependências "termina, então começa", a linha de base e o calendário da instalação. As outras pessoas do projeto recebem 403, e quem está fora dele, 404 (ADR-0021, ADR-0043, ADR-0051, ADR-0136).
 
 #### Scenario: XML do cronograma
 - **WHEN** a gerente baixa o XML de um cronograma com uma fase, uma tarefa de 3 dias úteis do Rafael e um marco depois dela
@@ -729,6 +729,10 @@ O administrador e o gerente do projeto MUST poder baixar o cronograma no formato
 #### Scenario: Linha de base no XML
 - **WHEN** o cronograma tem a linha de base salva
 - **THEN** cada tarefa e marco dela leva no arquivo o início e o fim da linha de base
+
+#### Scenario: Responsável anonimizado no XML
+- **WHEN** a gerente baixa o XML de um cronograma com uma tarefa de uma pessoa anonimizada
+- **THEN** o recurso da tarefa tem o identificador da pessoa anonimizada, sem o e-mail
 
 #### Scenario: XML só da gestão
 - **WHEN** o líder técnico, uma colaboradora e um leitor do projeto pedem o XML do cronograma
