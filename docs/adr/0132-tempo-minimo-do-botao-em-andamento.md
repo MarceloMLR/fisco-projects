@@ -29,7 +29,7 @@ Pergunta: o ícone fica só enquanto a resposta não chega, ou por um tempo mín
 
 Opção escolhida: **E2**, por decisão de Marcelo em 30/10/2026.
 
-- O botão em andamento mostra o ícone de carregamento por pelo menos meio segundo a partir do clique; se a resposta chega antes, continua em andamento até completar, sem aceitar novo clique.
+- O botão em andamento mostra o ícone de carregamento por pelo menos meio segundo a partir do clique quando a ação vai ao servidor; se a resposta chega antes, continua em andamento até completar, sem aceitar novo clique. A ação que não vai ao servidor, como o formulário recusado pelas próprias regras da tela, termina na hora, para os erros aparecerem e o novo clique funcionar.
 - A ação não espera: a resposta é aplicada na hora, e o diálogo que fecha com ela fecha na hora; o tempo mínimo vale para o botão que continua na tela.
 - A regra fica no `Button` e no `IconButton` de `web/src/components`, sobre todas as fontes do andamento (a promessa do clique, o envio do formulário e o `loading`).
 
@@ -41,7 +41,7 @@ Opção escolhida: **E2**, por decisão de Marcelo em 30/10/2026.
 
 ### Confirmação
 
-Testes cobrindo: a resposta rápida mantém o botão em andamento até meio segundo do clique, sem aceitar novo clique, e o botão volta ao normal depois.
+Testes cobrindo: a resposta rápida mantém o botão em andamento até meio segundo do clique, sem aceitar novo clique, e o botão volta ao normal depois; o formulário recusado sem ir ao servidor não fica em andamento.
 
 ## Prós e contras das opções
 
