@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -13,6 +12,8 @@ import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
 import { Page } from '../shell/Page';
 import { PriorityTag } from '../tickets/TicketTags';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 const days = z.number().int().min(1).max(365);
 
@@ -110,14 +111,7 @@ export function TicketDeadlinesPage() {
           {isError && settings === undefined ? (
             <Alert tone="danger">{t('ticketDeadlines.loadFailed')}</Alert>
           ) : (
-            <Box
-              component="form"
-              id="ticket-deadlines-form"
-              noValidate
-              onSubmit={(event) => {
-                void save(event);
-              }}
-            >
+            <Form id="ticket-deadlines-form" onSubmit={(event) => save(event)}>
               <Box component="section" aria-labelledby="ticket-deadlines-title" sx={sectionSx}>
                 <Box
                   component="h2"
@@ -199,7 +193,7 @@ export function TicketDeadlinesPage() {
                 })}
                 <Alert tone="info">{t('ticketDeadlines.help')}</Alert>
               </Box>
-            </Box>
+            </Form>
           )}
         </Box>
       </Page>
@@ -230,7 +224,8 @@ export function TicketDeadlinesPage() {
           variant="contained"
           type="submit"
           form="ticket-deadlines-form"
-          disabled={!isDirty || isSubmitting}
+          disabled={!isDirty}
+          loading={isSubmitting}
         >
           {t('ticketDeadlines.save')}
         </Button>

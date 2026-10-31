@@ -6,9 +6,7 @@ import DoneAllOutlined from '@mui/icons-material/DoneAllOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
@@ -40,6 +38,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { calendarDayId, holidayName } from './calendarText';
 import { HolidayDialog } from './HolidayDialog';
+import { Button, IconButton } from '../components/Button';
 
 type KindFilter = 'all' | CalendarDayKind;
 
@@ -788,7 +787,7 @@ export function CalendarPage() {
             <Button
               variant="contained"
               color="error"
-              disabled={remove.isPending}
+              loading={remove.isPending}
               onClick={() => {
                 if (removing !== undefined) {
                   remove.mutate(removing);
@@ -824,7 +823,7 @@ export function CalendarPage() {
             </Button>
             <Button
               variant="contained"
-              disabled={recalculate.isPending}
+              loading={recalculate.isPending}
               onClick={() => {
                 recalculate.mutate();
               }}

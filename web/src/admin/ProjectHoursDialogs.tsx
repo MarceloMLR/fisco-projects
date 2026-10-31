@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -11,6 +10,7 @@ import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { type DayValue, formatDayText, maskTypedDay, parseTypedDay } from '../format/dates';
 import { parseHoursUpTo, plainHoursText } from '../hours/hours';
+import { Button } from '../components/Button';
 
 /** The most contracted hours of a project and the most of one addition, as the API has them (ADR-0128). */
 const mostContracted = 99_999;
@@ -76,7 +76,7 @@ export function ContractedHoursDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<z.input<typeof contractedSchema>>({
     resolver: zodResolver(contractedSchema),
     defaultValues: { hours: contracted === null ? '' : plainHoursText(contracted) },
@@ -116,15 +116,13 @@ export function ContractedHoursDialog({
       title={t('projectHours.contractedDialog.title')}
       subtitle={t('projectHours.entries.subtitle', { code: project.code, name: project.name })}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projectHours.contractedDialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projectHours.contractedDialog.save')}
           </Button>
         </>
@@ -186,7 +184,7 @@ export function AdditionalHoursDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<AdditionalValues>({
     resolver: zodResolver(additionalSchema(today)),
     defaultValues: {
@@ -255,15 +253,13 @@ export function AdditionalHoursDialog({
       )}
       subtitle={t('projectHours.entries.subtitle', { code: project.code, name: project.name })}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projectHours.additionalDialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(
               additional === undefined
                 ? 'projectHours.additionalDialog.add'

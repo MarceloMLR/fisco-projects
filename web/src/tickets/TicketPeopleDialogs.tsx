@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +13,7 @@ import {
   problemField,
   ticketChangeProblemText,
 } from './ticketChanges';
+import { Button } from '../components/Button';
 
 /**
  * A new assignee or requester for one ticket or many (ADR-0027, ADR-0068): the choices come from the API, already
@@ -35,7 +35,6 @@ export function PeopleChangeDialog({
   const queryClient = useQueryClient();
   const { data: people, isError } = useQuery(ticketPeopleChoicesQuery(kind, numbers));
   const [personId, setPersonId] = useState('');
-  const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<string>();
   const count = numbers.length;
   const chosen = people?.find((person) => person.id === personId);
@@ -44,7 +43,6 @@ export function PeopleChangeDialog({
     if (chosen === undefined) {
       return;
     }
-    setBusy(true);
     setRefusal(undefined);
     try {
       const result = await changePeople(kind, numbers, chosen.id);
@@ -60,8 +58,6 @@ export function PeopleChangeDialog({
       }
     } catch {
       setRefusal(t('tickets.people.failed'));
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -76,14 +72,14 @@ export function PeopleChangeDialog({
       onClose={onClose}
       onSubmit={(event) => {
         event.preventDefault();
-        void save();
+        return save();
       }}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.people.back')}
           </Button>
-          <Button type="submit" variant="contained" disabled={busy || chosen === undefined}>
+          <Button type="submit" variant="contained" disabled={chosen === undefined}>
             {t('tickets.people.save')}
           </Button>
         </>
@@ -136,12 +132,10 @@ export function TransferDialog({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<string>();
   const name = t(`tickets.teams.${team}`);
 
   const transfer = async () => {
-    setBusy(true);
     setRefusal(undefined);
     try {
       const { response, error } = await api.PUT('/api/tickets/{number}/team', {
@@ -160,8 +154,6 @@ export function TransferDialog({
       }
     } catch {
       setRefusal(t('tickets.transfer.failed'));
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -175,13 +167,7 @@ export function TransferDialog({
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.transfer.back')}
           </Button>
-          <Button
-            variant="contained"
-            disabled={busy}
-            onClick={() => {
-              void transfer();
-            }}
-          >
+          <Button variant="contained" onClick={() => transfer()}>
             {t('tickets.transfer.confirm')}
           </Button>
         </>

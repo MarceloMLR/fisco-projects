@@ -8,8 +8,6 @@ import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -32,6 +30,7 @@ import { theme } from '../theme/theme';
 import { CredentialDialog } from './CredentialDialog';
 import { CredentialImportDialog } from './CredentialImportDialog';
 import { credentialRows, type CredentialRow, isGroupRow } from './credentials';
+import { Button, IconButton } from '../components/Button';
 
 /** A project has a few dozen credentials: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -214,10 +213,10 @@ export function ProjectCredentialsPage() {
               })}
               onClick={() => {
                 if (visible === undefined) {
-                  void show(row.credential);
-                } else {
-                  hide(row.credential);
+                  return show(row.credential);
                 }
+                hide(row.credential);
+                return undefined;
               }}
               sx={iconButtonSx}
             >
@@ -226,9 +225,7 @@ export function ProjectCredentialsPage() {
             <IconButton
               size="small"
               aria-label={t('credentials.copyPassword', { portal: row.credential.portal })}
-              onClick={() => {
-                void copyPassword(row.credential);
-              }}
+              onClick={() => copyPassword(row.credential)}
               sx={iconButtonSx}
             >
               <ContentCopyOutlined sx={{ fontSize: 'var(--icon-sm)' }} />
@@ -339,6 +336,7 @@ export function ProjectCredentialsPage() {
               <IconButton
                 size="small"
                 aria-label={t('credentials.copyUsername', { portal: row.credential.portal })}
+                // Copying sends nothing to the server, so the button is never busy (ADR-0131).
                 onClick={() => {
                   void copy(row.credential.username, t('credentials.usernameCopied'));
                 }}
@@ -589,11 +587,7 @@ export function ProjectCredentialsPage() {
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                if (removing !== undefined) {
-                  void remove(removing);
-                }
-              }}
+              onClick={() => (removing === undefined ? undefined : remove(removing))}
             >
               {t('credentials.remove.confirm')}
             </Button>

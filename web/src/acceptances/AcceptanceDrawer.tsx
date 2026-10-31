@@ -6,7 +6,6 @@ import SendOutlined from '@mui/icons-material/SendOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import type SvgIcon from '@mui/material/SvgIcon';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +24,7 @@ import { theme } from '../theme/theme';
 import { AcceptanceDialog } from './AcceptanceDialog';
 import { acceptanceFileUrl, answerOf, namesText, signedCount } from './acceptances';
 import { AcceptanceStatusBadge, SignerStatusBadge } from './AcceptanceStatusBadge';
+import { Button } from '../components/Button';
 
 const section = {
   display: 'flex',
@@ -455,9 +455,7 @@ function AcceptanceContent({
               variant="outlined"
               size="small"
               startIcon={<SendOutlined />}
-              onClick={() => {
-                void remind();
-              }}
+              onClick={() => remind()}
             >
               {t('acceptances.actions.remind')}
             </Button>
@@ -518,13 +516,7 @@ function AcceptanceContent({
             >
               {t('acceptances.cancelRequest.back')}
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => {
-                void cancel();
-              }}
-            >
+            <Button variant="contained" color="error" onClick={() => cancel()}>
               {t('acceptances.cancelRequest.confirm')}
             </Button>
           </>

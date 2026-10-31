@@ -7,7 +7,6 @@ import TodayOutlined from '@mui/icons-material/TodayOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import type SvgIcon from '@mui/material/SvgIcon';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -18,6 +17,7 @@ import { DueDate } from '../components/DueDate';
 import { useDates } from '../format/useDates';
 import { TicketStatusBadge } from '../tickets/TicketTags';
 import { dueOf, groupLabel, itemPath, itemTitle, metaText } from './myWork';
+import { Button } from '../components/Button';
 
 const groupLooks: Record<MyWorkGroup, { icon: typeof SvgIcon; color: string }> = {
   Late: { icon: WarningAmberOutlined, color: 'var(--status-danger-text)' },
@@ -276,7 +276,7 @@ function QueueRow({
             variant="outlined"
             size="small"
             aria-label={label}
-            disabled={busy}
+            loading={busy}
             onClick={() => {
               onAction(item);
             }}

@@ -8,8 +8,9 @@ import { Form, type FormSubmit } from './Form';
 
 /**
  * Dialog of the design system (Dialog, fp-dialog, size sm): the title and a close button at the top, the content and
- * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With onSubmit, the dialog is a form (Form), so Enter in a field submits it, and its submit button is busy while it sends (ADR-0131). An alert asks for a
- * confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
+ * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With
+ * onSubmit, the dialog is a form (Form), so Enter in a field submits it, and its submit button is busy while it sends
+ * (ADR-0131). An alert asks for a confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
  * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges.
  */
 export function Dialog({

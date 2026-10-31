@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import {
   type CredentialValues as Values,
   isCredentialError,
 } from './credentialForm';
+import { Button } from '../components/Button';
 
 const fieldErrors = {
   portal: errors.portalRequired,
@@ -66,7 +66,7 @@ export function CredentialDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: invalid, isSubmitting },
+    formState: { errors: invalid },
   } = useForm<Values>({
     resolver: zodResolver(credentialSchema(isNew)),
     defaultValues: {
@@ -133,15 +133,13 @@ export function CredentialDialog({
       open
       title={t(isNew ? 'credentials.dialog.newTitle' : 'credentials.dialog.editTitle')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('credentials.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(isNew ? 'credentials.dialog.add' : 'credentials.dialog.save')}
           </Button>
         </>

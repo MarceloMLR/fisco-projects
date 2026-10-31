@@ -13,7 +13,10 @@ export function Form({
   onSubmit,
   children,
   ...props
-}: Omit<BoxProps<'form'>, 'onSubmit' | 'component'> & { onSubmit: FormSubmit; children: ReactNode }) {
+}: Omit<BoxProps<'form'>, 'onSubmit' | 'component'> & {
+  onSubmit: FormSubmit;
+  children: ReactNode;
+}) {
   const [sending, run] = usePendingAction(onSubmit);
   return (
     <FormPending.Provider value={sending}>

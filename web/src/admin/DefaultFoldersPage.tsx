@@ -5,8 +5,6 @@ import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
@@ -22,6 +20,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { DefaultFolderDialog } from './DefaultFolderDialog';
+import { Button, IconButton } from '../components/Button';
 
 /** The default folders fit in one page: an installation keeps a few of them. */
 const pageSize = 100;

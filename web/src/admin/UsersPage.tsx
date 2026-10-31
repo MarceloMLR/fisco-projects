@@ -5,9 +5,7 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import PersonOffOutlined from '@mui/icons-material/PersonOffOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -28,6 +26,7 @@ import { useDebounced } from '../hooks/useDebounced';
 import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
 import { useAdminContext } from './adminContext';
+import { Button, IconButton } from '../components/Button';
 
 const pageSize = 25;
 const searchDelay = 300;
@@ -408,11 +407,9 @@ export function UsersPage() {
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                if (anonymizing !== undefined) {
-                  void act(anonymizing, 'anonymize');
-                }
-              }}
+              onClick={() =>
+                anonymizing === undefined ? undefined : act(anonymizing, 'anonymize')
+              }
             >
               {t('users.anonymize.confirm')}
             </Button>

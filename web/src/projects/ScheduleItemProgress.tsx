@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useId, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -24,6 +23,7 @@ import {
 } from './scheduleItemValues';
 import { completeTask } from './scheduleProgress';
 import { MilestoneStatus } from './ScheduleStatus';
+import { Button } from '../components/Button';
 
 /** A part of the details of a task or milestone, with its heading. */
 export function DetailsSection({ title, children }: { title: string; children: ReactNode }) {
@@ -144,10 +144,8 @@ export function TaskProgress({
               variant="outlined"
               size="small"
               startIcon={<CheckOutlined />}
-              disabled={pending}
-              onClick={() => {
-                void complete();
-              }}
+              loading={pending}
+              onClick={() => complete()}
             >
               {t('projects.schedule.progressActions.complete')}
             </Button>
@@ -194,7 +192,7 @@ export function ProgressDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ProgressValues>({
     resolver: zodResolver(progressSchema),
     defaultValues: { progress: starting ? '' : String(item.progress) },
@@ -232,15 +230,13 @@ export function ProgressDialog({
           : 'projects.schedule.progressDialog.updateTitle',
       )}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projects.schedule.form.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projects.schedule.form.save')}
           </Button>
         </>
@@ -324,10 +320,8 @@ export function MilestoneState({
           variant="outlined"
           size="small"
           startIcon={reached ? undefined : <CheckOutlined />}
-          disabled={pending}
-          onClick={() => {
-            void toggle();
-          }}
+          loading={pending}
+          onClick={() => toggle()}
         >
           {t(
             reached

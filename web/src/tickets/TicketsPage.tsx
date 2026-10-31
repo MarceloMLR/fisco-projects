@@ -9,7 +9,6 @@ import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import type SvgIcon from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -30,6 +29,7 @@ import { useDebounced } from '../hooks/useDebounced';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { TicketTable, ticketPageSize } from './TicketTable';
+import { Button } from '../components/Button';
 
 type PageView = Exclude<TicketView, 'Unassigned'>;
 

@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { useId } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -14,6 +13,7 @@ import { FormField } from '../components/FormField';
 import { PersonField, type PersonChoice } from '../components/PersonField';
 import { Select } from '../components/Select';
 import { invalidFields, problemType } from './projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   personRequired: 'projects.members.errors.personRequired',
@@ -61,7 +61,7 @@ export function IncludePersonDialog({
     handleSubmit,
     setError,
     setValue,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: { person: null, role: 'Viewer' },
@@ -120,15 +120,13 @@ export function IncludePersonDialog({
       open
       title={t('projects.members.dialog.title')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void include(event);
-      }}
+      onSubmit={(event) => include(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projects.members.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projects.members.dialog.submit')}
           </Button>
         </>

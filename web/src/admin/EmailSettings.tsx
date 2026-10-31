@@ -3,7 +3,6 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { visuallyHidden } from '@mui/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +11,7 @@ import { ApiError, emailStatusQuery, queryKeys } from '../api/queries';
 import { StatusBadge, type StatusTone } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
 import { useDates } from '../format/useDates';
+import { Button } from '../components/Button';
 
 const looks = {
   Sent: { tone: 'success', icon: CheckCircleOutlined },
@@ -104,7 +104,7 @@ export function EmailSettings({ onMessage }: { onMessage: (message: string) => v
           type="button"
           variant="outlined"
           size="small"
-          disabled={sendTest.isPending}
+          loading={sendTest.isPending}
           onClick={() => {
             sendTest.mutate();
           }}

@@ -2,8 +2,6 @@ import AttachFileOutlined from '@mui/icons-material/AttachFileOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import SendOutlined from '@mui/icons-material/SendOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import { useQueryClient } from '@tanstack/react-query';
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +11,7 @@ import { Alert } from '../components/Alert';
 import type { MentionChoice } from '../components/RichTextEditor';
 import { sizeText } from '../format/size';
 import { ticketProblemText } from './ticketProblems';
+import { Button, IconButton } from '../components/Button';
 
 // The editor only loads on the screens of the tickets.
 const RichTextEditor = lazy(async () => ({
@@ -227,10 +226,8 @@ export function TicketReply({ ticket, me }: { ticket: Ticket; me: string }) {
               <Button
                 variant="contained"
                 startIcon={<SendOutlined />}
-                disabled={sending}
-                onClick={() => {
-                  void send();
-                }}
+                loading={sending}
+                onClick={() => send()}
               >
                 {t('tickets.reply.send')}
               </Button>

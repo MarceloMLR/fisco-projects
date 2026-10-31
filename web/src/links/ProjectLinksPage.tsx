@@ -6,8 +6,6 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -29,6 +27,7 @@ import { useProjectOutlet } from '../projects/projectOutlet';
 import { theme } from '../theme/theme';
 import { LinkDialog } from './LinkDialog';
 import { initialOf, isGroupRow, type LinkRow, linkRows, shownAddress } from './links';
+import { Button, IconButton } from '../components/Button';
 
 /** A project has a few links: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -215,6 +214,7 @@ export function ProjectLinksPage() {
             <IconButton
               size="small"
               aria-label={t('links.copy', { title: row.link.title })}
+              // Copying sends nothing to the server, so the button is never busy (ADR-0131).
               onClick={() => {
                 void copy(row.link);
               }}
@@ -491,11 +491,7 @@ export function ProjectLinksPage() {
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                if (removing !== undefined) {
-                  void remove(removing);
-                }
-              }}
+              onClick={() => (removing === undefined ? undefined : remove(removing))}
             >
               {t('links.remove.confirm')}
             </Button>

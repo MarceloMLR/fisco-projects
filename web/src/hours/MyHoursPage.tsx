@@ -2,8 +2,6 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +16,7 @@ import { theme } from '../theme/theme';
 import { addDays, formatHours, weekEnd, weekStart } from './hours';
 import { TimeEntryDialog } from './TimeEntryDialog';
 import { TimeEntryTable } from './TimeEntryTable';
+import { Button, IconButton } from '../components/Button';
 
 const secondarySx = { color: 'var(--text-secondary)' } as const;
 const noEntries: never[] = [];

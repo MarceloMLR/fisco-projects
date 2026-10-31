@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -9,6 +8,7 @@ import { DueDate } from '../components/DueDate';
 import { ScheduleStrip } from '../components/ScheduleStrip';
 import { formatDayOfMonthText, formatDayText, formatShortMonthText } from '../format/dates';
 import { projectDue } from './myWork';
+import { Button } from '../components/Button';
 
 const listSx = { margin: 0, padding: 0, listStyle: 'none' } as const;
 

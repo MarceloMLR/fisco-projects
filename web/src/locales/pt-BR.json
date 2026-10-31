@@ -735,7 +735,6 @@
     },
     "export": {
       "button": "Baixar planilha",
-      "preparing": "Preparando…",
       "tooMany": "O período tem {{total}} registros, mais que os {{limit}} de uma planilha. Escolha um período menor.",
       "failed": "Não foi possível baixar a planilha. Tente de novo.",
       "rows_one": "{{rows}} registro",
@@ -2949,7 +2948,6 @@
       "subtitle": "Um arquivo .xlsx ou .csv, com uma linha de cabeçalho.",
       "pick": "Escolha ou arraste até aqui a planilha .xlsx ou .csv. Ela é lida sem ficar guardada.",
       "choose": "Escolher planilha",
-      "reading": "Lendo a planilha…",
       "change": "Trocar planilha",
       "sheet": "Aba",
       "mapping": "De onde vem cada campo",

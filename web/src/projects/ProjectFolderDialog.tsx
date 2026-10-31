@@ -1,7 +1,6 @@
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
 import { useId, useState } from 'react';
@@ -11,6 +10,7 @@ import { projectFoldersQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { CodeChip } from '../components/Card';
 import { Dialog } from '../components/Dialog';
+import { Button } from '../components/Button';
 
 /** A folder chosen in the dialog: its id and the path of names from the root, as "Clientes / Alfa". */
 export interface ChosenFolder {

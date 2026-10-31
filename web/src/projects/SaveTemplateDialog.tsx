@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +11,7 @@ import { Dialog } from '../components/Dialog';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { invalidFields, problemType } from './projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   nameRequired: 'projects.templates.errors.nameRequired',
@@ -49,7 +49,7 @@ export function SaveTemplateDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: project.name, description: '' },
@@ -94,15 +94,13 @@ export function SaveTemplateDialog({
       open
       title={t('projects.templates.saveDialog.title')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projects.templates.saveDialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projects.templates.saveDialog.save')}
           </Button>
         </>

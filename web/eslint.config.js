@@ -41,7 +41,12 @@ export default defineConfig([
     // every button comes from src/components/Button, busy while what it sends runs.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/schedule-gantt/**', 'src/components/Button.tsx'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [syncfusionImports], paths: muiButtonImports }] },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [syncfusionImports], paths: muiButtonImports },
+      ],
+    },
   },
   {
     files: ['src/schedule-gantt/**/*.{ts,tsx}'],

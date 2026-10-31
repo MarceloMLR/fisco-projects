@@ -1,11 +1,11 @@
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TextField } from '../components/TextField';
 import { defaultMainColor, hasContrast, normalizeHex } from '../theme/brandColors';
+import { Button } from '../components/Button';
 
 /**
  * Main color of General settings, as in the canvas (ADR-0082): the swatch (fp-swatch), which opens the color picker of

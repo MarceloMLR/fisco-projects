@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type SvgIcon from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { visuallyHidden } from '@mui/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,6 +28,8 @@ import { ChooseFiles, ChosenFiles } from './TicketReply';
 import { PriorityTag } from './TicketTags';
 import { ticketProblemText } from './ticketProblems';
 import { teamIcons } from './tickets';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 // The editor only loads on the screens of the tickets.
 const RichTextEditor = lazy(async () => ({
@@ -280,13 +281,9 @@ export function OpenTicketPage() {
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <Page>
-        <Box
-          component="form"
+        <Form
           id="open-ticket"
-          noValidate
-          onSubmit={(event) => {
-            void open(event);
-          }}
+          onSubmit={(event) => open(event)}
           sx={{
             flex: 1,
             minHeight: 0,
@@ -447,7 +444,7 @@ export function OpenTicketPage() {
           {fieldErrors.root?.message !== undefined && (
             <Alert tone="danger">{fieldErrors.root.message}</Alert>
           )}
-        </Box>
+        </Form>
       </Page>
       <Box
         sx={{
@@ -469,7 +466,7 @@ export function OpenTicketPage() {
         >
           {t('tickets.form.cancel')}
         </Button>
-        <Button variant="contained" type="submit" form="open-ticket" disabled={isSubmitting}>
+        <Button variant="contained" type="submit" form="open-ticket" loading={isSubmitting}>
           {t('tickets.form.submit')}
         </Button>
       </Box>

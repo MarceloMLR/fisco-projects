@@ -1,6 +1,5 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -29,6 +28,7 @@ import { auditReport, type AuditReportFilters, auditReportName } from './auditRe
 import { describeAuditEntry } from './auditText';
 import { type Period, PeriodFilter } from './PeriodFilter';
 import { type PersonOption, PersonFilter } from './PersonFilter';
+import { Button } from '../components/Button';
 
 const pageSize = 25;
 const defaultDays = 30;
@@ -266,12 +266,10 @@ export function AuditPage() {
                 variant="outlined"
                 size="small"
                 startIcon={<DownloadOutlined />}
-                disabled={exporting}
-                onClick={() => {
-                  void download();
-                }}
+                loading={exporting}
+                onClick={() => download()}
               >
-                {t(exporting ? 'audit.export.preparing' : 'audit.export.button')}
+                {t('audit.export.button')}
               </Button>
             </>
           }

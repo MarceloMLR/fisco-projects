@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '../components/Dialog';
@@ -9,6 +8,7 @@ import type { DayValue } from '../format/dates';
 import { type GanttScale, ganttScales } from '../schedule-gantt/ganttLayout';
 import type { ScheduleDisplay } from './schedule';
 import { printAddress } from './schedulePrint';
+import { Button } from '../components/Button';
 
 /**
  * "Exportar em PDF" (ADR-0021): the period, from the start to the end of the schedule at first, and the scale, the one

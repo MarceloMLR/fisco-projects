@@ -2,7 +2,6 @@ import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type DragEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -23,6 +22,7 @@ import { DocumentDrawer } from './DocumentDrawer';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { FileIcon } from './FileIcon';
 import { uploadDocuments, type UploadOutcome } from './uploadDocuments';
+import { Button } from '../components/Button';
 
 const pageSize = 50;
 const searchDelay = 300;

@@ -1,7 +1,6 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,6 +27,7 @@ import { ProjectHoursDrawer } from './ProjectHoursDrawer';
 import { HoursBalanceBadge } from './HoursBalanceBadge';
 import { balanceLook, hoursOrDash, projectHoursMeta } from './projectHours';
 import { projectHoursReport, projectHoursReportName } from './projectHoursReport';
+import { Button } from '../components/Button';
 
 /** A page of the list; an installation has a few dozen projects, so most views fit in one. */
 const pageSize = 50;
@@ -245,9 +245,7 @@ export function ProjectHoursPage() {
           variant="outlined"
           startIcon={<DownloadOutlined />}
           disabled={exporting || rows.length === 0}
-          onClick={() => {
-            void download();
-          }}
+          onClick={() => download()}
         >
           {t('projectHours.download')}
         </Button>

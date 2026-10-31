@@ -1,21 +1,41 @@
 import Box from '@mui/material/Box';
 import MuiButton, { type ButtonProps as MuiButtonProps } from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import MuiIconButton, { type IconButtonProps as MuiIconButtonProps } from '@mui/material/IconButton';
+import MuiIconButton, {
+  type IconButtonProps as MuiIconButtonProps,
+} from '@mui/material/IconButton';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { type MouseEvent, useContext } from 'react';
+import { type ElementType, type MouseEvent, useContext } from 'react';
 import { FormPending, usePendingAction } from './pending';
 
 type Click = (event: MouseEvent<HTMLButtonElement>) => unknown;
 
-/** The props of a button of the system: the ones of MUI, with a click that may give the promise of what it sends. */
-export type ButtonProps = Omit<MuiButtonProps, 'onClick' | 'loadingPosition' | 'loadingIndicator'> & {
-  onClick?: Click;
-};
+/** A button that is a link (href, or a component as the Link of the router with to): it sends nothing, so never busy. */
+interface LinkProps {
+  href?: string;
+  target?: string;
+  rel?: string;
+  download?: string | boolean;
+  component?: ElementType;
+  to?: string;
+}
 
-export type IconButtonProps = Omit<MuiIconButtonProps, 'onClick' | 'loadingIndicator'> & {
-  onClick?: Click;
-};
+/** The props of a button of the system: the ones of MUI, with a click that may give the promise of what it sends. */
+export type ButtonProps = Omit<
+  MuiButtonProps,
+  'onClick' | 'loadingPosition' | 'loadingIndicator' | keyof LinkProps
+> &
+  LinkProps & {
+    onClick?: Click;
+  };
+
+export type IconButtonProps = Omit<
+  MuiIconButtonProps,
+  'onClick' | 'loadingIndicator' | keyof LinkProps
+> &
+  LinkProps & {
+    onClick?: Click;
+  };
 
 /** The loading icon in the place of the icon: 16px in the box of the icon, in the color of the text of the button. */
 function Spinner() {
@@ -64,7 +84,7 @@ export function Button({ onClick, loading, startIcon, type, sx, ...props }: Butt
       type={type}
       startIcon={busy ? <Spinner /> : startIcon}
       aria-busy={busy || undefined}
-      aria-disabled={busy || props['aria-disabled'] || undefined}
+      aria-disabled={busy ? true : props['aria-disabled']}
       onClick={busy ? ignore : run}
       sx={withBusy(sx, busy)}
     />
@@ -79,7 +99,7 @@ export function IconButton({ onClick, loading, children, sx, ...props }: IconBut
     <MuiIconButton
       {...props}
       aria-busy={busy || undefined}
-      aria-disabled={busy || props['aria-disabled'] || undefined}
+      aria-disabled={busy ? true : props['aria-disabled']}
       onClick={busy ? ignore : run}
       sx={withBusy(sx, busy)}
     >

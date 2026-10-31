@@ -1,10 +1,10 @@
 import FolderOpenOutlined from '@mui/icons-material/FolderOpenOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TextField } from '../components/TextField';
 import { type ChosenFolder, ProjectFolderDialog } from './ProjectFolderDialog';
+import { Button } from '../components/Button';
 
 /**
  * "Pasta dos arquivos" of a project (ADR-0122): the folder the files go to, "Escolher pasta…" and, with a folder

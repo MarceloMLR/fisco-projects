@@ -2,7 +2,6 @@ import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TFunction } from 'i18next';
@@ -41,6 +40,7 @@ import {
   teamsOfRole,
 } from './members';
 import { useProjectOutlet } from './projectOutlet';
+import { Button } from '../components/Button';
 
 /** Rows of a page of the list; the free Data Grid shows up to 100 (ADR-0050). */
 const pageSize = 100;
@@ -506,7 +506,7 @@ function MemberDetails({
             <Button
               variant="contained"
               color="error"
-              disabled={remove.isPending}
+              loading={remove.isPending}
               onClick={() => {
                 remove.mutate();
               }}

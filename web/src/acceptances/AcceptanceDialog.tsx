@@ -3,8 +3,6 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import { useQuery } from '@tanstack/react-query';
 import { useId, useRef } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
@@ -26,6 +24,7 @@ import {
   maxSigners,
   sendAcceptance,
 } from './acceptances';
+import { Button, IconButton } from '../components/Button';
 
 /** The fields of the API, as the dialog names them. */
 const apiFields = ['milestoneId', 'title', 'message', 'file'] as const;
@@ -75,7 +74,7 @@ export function AcceptanceDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors: invalid, isSubmitting },
+    formState: { errors: invalid },
   } = useForm<Values>({
     resolver: zodResolver(acceptanceSchema(mode)),
     defaultValues: {
@@ -134,15 +133,13 @@ export function AcceptanceDialog({
             : t('acceptances.dialog.onBehalfSubtitle', { name: term.recipient })
       }
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('acceptances.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting || noMilestones}>
+          <Button type="submit" variant="contained" disabled={noMilestones}>
             {t(
               mode === 'request'
                 ? 'acceptances.dialog.submitRequest'

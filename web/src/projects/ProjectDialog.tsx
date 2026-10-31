@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Button from '@mui/material/Button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -25,6 +24,7 @@ import {
   projectDataSchema,
   projectFieldErrors,
 } from './projectForm';
+import { Button } from '../components/Button';
 
 type FormValues = z.input<typeof projectDataSchema>;
 
@@ -50,7 +50,7 @@ export function ProjectDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(projectDataSchema),
     defaultValues: {
@@ -161,15 +161,13 @@ export function ProjectDialog({
       open
       title={t('projects.form.editTitle')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projects.form.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projects.form.save')}
           </Button>
         </>

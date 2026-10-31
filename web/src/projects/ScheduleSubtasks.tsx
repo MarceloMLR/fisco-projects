@@ -1,12 +1,12 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 import type { Schedule, ScheduleItem } from '../api/client';
 import { DueDate } from '../components/DueDate';
 import { itemsOf, lateText, showsDelay } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
+import { Button } from '../components/Button';
 
 /**
  * The Subtarefas of a task right in the phase, in its details (ADR-0088): each subtask, which opens its own details,

@@ -2,8 +2,6 @@ import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import { visuallyHidden } from '@mui/utils';
 import { type MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +11,7 @@ import { formatDayText } from '../format/dates';
 import { formatHours } from '../hours/hours';
 import { hoursTableSx, subLineSx } from './hoursTable';
 import type { HoursProject } from './ProjectHoursDialogs';
+import { Button, IconButton } from '../components/Button';
 
 /** How many additional hours the drawer shows, the newest; the others are in "Ver todas". */
 export const shownAdditional = 3;

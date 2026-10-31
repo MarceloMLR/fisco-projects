@@ -3,7 +3,6 @@ import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +30,7 @@ import { ProjectEntriesDialog } from './ProjectEntriesDialog';
 import { AdditionalHoursDialog, ContractedHoursDialog } from './ProjectHoursDialogs';
 import { HoursBalanceBadge } from './HoursBalanceBadge';
 import { balanceLook, consumptionDetail, hoursOrDash } from './projectHours';
+import { Button } from '../components/Button';
 
 const statLabelSx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 const statValueSx = {
@@ -480,11 +480,7 @@ function ProjectHoursContent({
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                if (removing !== undefined) {
-                  void remove(removing);
-                }
-              }}
+              onClick={() => (removing === undefined ? undefined : remove(removing))}
             >
               {t('projectHours.removeAdditional.confirm')}
             </Button>

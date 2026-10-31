@@ -2,8 +2,6 @@ import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +13,7 @@ import { useDates } from '../format/useDates';
 import { addMonths, formatHours, monthEnd, monthStart } from '../hours/hours';
 import { TimeEntryTable } from '../hours/TimeEntryTable';
 import type { HoursProject } from './ProjectHoursDialogs';
+import { Button, IconButton } from '../components/Button';
 
 const noEntries: never[] = [];
 

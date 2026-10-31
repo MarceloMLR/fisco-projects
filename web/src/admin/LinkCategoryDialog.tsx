@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -9,6 +8,7 @@ import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { problemType } from '../projects/projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   nameRequired: 'linkCategories.errors.nameRequired',
@@ -44,7 +44,7 @@ export function LinkCategoryDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: category?.name ?? '' },
@@ -98,15 +98,13 @@ export function LinkCategoryDialog({
           : 'linkCategories.dialog.editTitle',
       )}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('linkCategories.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(category === undefined ? 'linkCategories.dialog.add' : 'linkCategories.dialog.save')}
           </Button>
         </>
