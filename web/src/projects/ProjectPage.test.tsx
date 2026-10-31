@@ -1,9 +1,14 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Project, ProjectStatus } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
+import {
+  type SimulatedAnimations,
+  simulateAnimations,
+  stopSimulatingAnimations,
+} from '../test/motion';
 import {
   clientChoicesOf,
   demoClients,
@@ -13,6 +18,9 @@ import {
   server,
   signedInAs,
 } from '../test/server';
+import { pageFrames } from '../theme/motion';
+import { demoDocumentArea } from '../test/demoDocuments';
+import { demoLinks, linksList } from '../test/demoLinks';
 
 const text = ptBR.projects;
 const erpFin = '0199f5a2-7c1e-7d40-9a1b-400000000001';
@@ -531,6 +539,90 @@ describe('Exclusão pela tela', () => {
     expect(
       within(menu).queryByRole('menuitem', { name: text.actions.delete }),
     ).not.toBeInTheDocument();
+  });
+});
+
+// Spec: projetos, requirement "Contagens das abas juntas" (ADR-0133).
+describe('Contagens das abas juntas', () => {
+  const tabText = (name: RegExp) => screen.getByRole('tab', { name }).textContent;
+
+  it('Contagens juntas', async () => {
+    let answerDocuments: () => void = () => undefined;
+    const documentsAnswered = new Promise<void>((resolve) => {
+      answerDocuments = resolve;
+    });
+    let linksAnswered = false;
+    server.use(
+      http.get('/api/projects/:id/documents/folders', async () => {
+        await documentsAnswered;
+        return HttpResponse.json(demoDocumentArea());
+      }),
+      http.get('/api/projects/:id/links', ({ request }) => {
+        linksAnswered = true;
+        return HttpResponse.json(linksList(demoLinks(), new URL(request.url)));
+      }),
+    );
+    await openProject();
+
+    // The links answered, the documents not yet: every count waits, in its place.
+    await waitFor(() => {
+      expect(linksAnswered).toBe(true);
+    });
+    expect(tabText(/Links/)).toBe(ptBR.pages.projectLinks.title);
+    expect(tabText(/Membros/)).toBe(ptBR.pages.projectMembers.title);
+    expect(tabText(/Documentos/)).toBe(ptBR.pages.projectDocuments.title);
+
+    answerDocuments();
+
+    await waitFor(() => {
+      expect(tabText(/Documentos/)).toMatch(/\d+$/);
+    });
+    expect(tabText(/Links/)).toMatch(/\d+$/);
+    expect(tabText(/Chamados/)).toMatch(/\d+$/);
+    expect(tabText(/Membros/)).toMatch(/\d+$/);
+  });
+
+  it('Contagem que falha', async () => {
+    server.use(
+      http.get(
+        '/api/projects/:id/documents/folders',
+        () => new HttpResponse(null, { status: 500 }),
+      ),
+    );
+    await openProject();
+
+    await waitFor(() => {
+      expect(tabText(/Links/)).toMatch(/\d+$/);
+    });
+    expect(tabText(/Documentos/)).toBe(ptBR.pages.projectDocuments.title);
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Movimento da troca de página" (ADR-0133).
+describe('Movimento da troca de página', () => {
+  let animations: SimulatedAnimations;
+
+  beforeEach(() => {
+    animations = simulateAnimations();
+  });
+  afterEach(() => {
+    stopSimulatingAnimations();
+  });
+
+  it('Aba que entra subindo', async () => {
+    await openProject();
+
+    fireEvent.click(screen.getByRole('tab', { name: ptBR.pages.projectSchedule.title }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: ptBR.pages.projectSchedule.title })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+    });
+    // Only the tab comes in; the header of the project and the content of the screen stay.
+    const moves = animations.played.filter(({ frames }) => frames === pageFrames);
+    expect(moves.map(({ element }) => element.getAttribute('role'))).toEqual(['tabpanel']);
   });
 });
 

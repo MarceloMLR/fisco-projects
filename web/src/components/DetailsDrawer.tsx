@@ -1,9 +1,13 @@
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { backdropDuration, motion } from '../theme/motion';
 import { IconButton } from './Button';
+import { useKeptWhileOpen } from './keptWhileOpen';
+import { DrawerMotion, LeavesWithMotion } from './WindowMotion';
 
 /** Widest the drawer gets; on narrower windows, such as the phone, it takes the whole width. */
 const maxWidth = 640;
@@ -19,12 +23,16 @@ const paperSx = {
   boxShadow: 'var(--shadow-dialog)',
 } as const;
 
-const slotProps = { backdrop: { sx: { backgroundColor: 'var(--overlay)' } } } as const;
+const backdrop = {
+  sx: { backgroundColor: 'var(--overlay)' },
+  slotProps: { transition: { easing: { enter: motion.enter, exit: motion.exit } } },
+} as const;
 
 /**
  * Details of an item chosen in a list (ADR-0081): a drawer on the right, over the screen, with the background
  * dimmed, so the list keeps its whole width. It closes by its button, by Esc or by a click outside it, and the focus
- * goes back to where it was, the row of the list. The content scrolls inside (ADR-0066).
+ * goes back to where it was, the row of the list. The content scrolls inside (ADR-0066). It slides in from the right
+ * and back, with its content until its way out ends (ADR-0133).
  */
 export function DetailsDrawer({
   open,
@@ -39,6 +47,9 @@ export function DetailsDrawer({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  const reduced = useMediaQuery('(prefers-reduced-motion: reduce)', { noSsr: true });
+  // What the drawer showed, until its way out ends: the screen clears the item chosen as it closes.
+  const [shownLabel, shownChildren] = useKeptWhileOpen(open, [label, children] as const);
 
   return (
     <Drawer
@@ -48,9 +59,11 @@ export function DetailsDrawer({
       // On the level of the dialogs, so the details of an item chosen in a dialog that covers the screen, as
       // Expandir of the schedule, come over it.
       sx={{ zIndex: (theme) => theme.zIndex.modal }}
+      transitionDuration={backdropDuration('drawer', reduced)}
+      slots={{ transition: DrawerMotion }}
       slotProps={{
-        ...slotProps,
-        paper: { role: 'dialog', 'aria-modal': true, 'aria-label': label, sx: paperSx },
+        backdrop,
+        paper: { role: 'dialog', 'aria-modal': true, 'aria-label': shownLabel, sx: paperSx },
       }}
     >
       <Box
@@ -80,8 +93,9 @@ export function DetailsDrawer({
           padding: '0 var(--space-6) var(--space-6)',
         }}
       >
-        {children}
+        {shownChildren}
       </Box>
+      <LeavesWithMotion kind="drawer" open={open} />
     </Drawer>
   );
 }

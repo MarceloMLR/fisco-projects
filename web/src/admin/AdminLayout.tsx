@@ -24,6 +24,7 @@ import {
 } from '../api/queries';
 import { theme } from '../theme/theme';
 import type { AdminContext } from './adminContext';
+import { structureRoutes, usePageMotion } from '../shell/pageMotion';
 
 const sections = [
   {
@@ -116,6 +117,8 @@ const sections = [
  */
 export function AdminLayout() {
   const { t } = useTranslation();
+  // The section comes in on a change of section; the column of the sections stays (ADR-0133).
+  const section = usePageMotion<HTMLDivElement>(structureRoutes.admin);
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   // Only the counts of the people and of the clients, for their sections and the titles of their pages.
   const usersTotal = useQuery(usersQuery({ pageSize: 1 })).data?.total ?? null;
@@ -245,7 +248,10 @@ export function AdminLayout() {
           </Box>
         </Box>
       )}
-      <Box sx={{ minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        ref={section}
+        sx={{ minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+      >
         <Outlet context={context} />
       </Box>
     </Box>
