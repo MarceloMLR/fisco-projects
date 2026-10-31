@@ -6,7 +6,6 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -19,6 +18,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { VendorDialog } from './VendorDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** The vendors fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
@@ -47,18 +47,18 @@ export function VendorsPage() {
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { data, isFetching } = useQuery(allVendorsQuery());
   const vendors = data ?? noVendors;
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; vendor: Vendor }>();
   // A vendor to edit, or null for a new one.
   const [editing, setEditing] = useState<Vendor | null>();
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       void queryClient.invalidateQueries({ queryKey: queryKeys.vendors });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const setActive = useCallback(
@@ -69,18 +69,20 @@ export function VendorsPage() {
           params: { path: { id: vendor.id } },
           body: { name: vendor.name, portalUrl: vendor.portalUrl, isActive: active },
         });
-        changed(
-          response.ok
-            ? t(active ? 'vendors.messages.reactivated' : 'vendors.messages.deactivated', {
-                name: vendor.name,
-              })
-            : t('vendors.messages.failed'),
-        );
+        if (response.ok) {
+          changed(
+            t(active ? 'vendors.messages.reactivated' : 'vendors.messages.deactivated', {
+              name: vendor.name,
+            }),
+          );
+        } else {
+          notify(t('vendors.messages.failed'), { tone: 'error' });
+        }
       } catch {
-        setMessage(t('vendors.messages.failed'));
+        notify(t('vendors.messages.failed'), { tone: 'error' });
       }
     },
-    [changed, t],
+    [notify, changed, t],
   );
 
   const openMenu = useCallback((event: MouseEvent<HTMLElement>, vendor: Vendor) => {
@@ -258,14 +260,6 @@ export function VendorsPage() {
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

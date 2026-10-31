@@ -9,7 +9,6 @@ import Divider from '@mui/material/Divider';
 import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +26,7 @@ import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
 import { useAdminContext } from './adminContext';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const pageSize = 25;
 const searchDelay = 300;
@@ -59,7 +59,7 @@ export function UsersPage() {
   const [role, setRole] = useState<RoleFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; user: UserRow }>();
   const [anonymizing, setAnonymizing] = useState<UserRow>();
   const debouncedSearch = useDebounced(search, searchDelay).trim();
@@ -96,7 +96,7 @@ export function UsersPage() {
                 ? await api.POST('/api/users/{id}/reactivate', path)
                 : await api.POST('/api/users/{id}/anonymization', path);
         if (response.ok) {
-          setMessage(
+          notify(
             action === 'role'
               ? t('users.messages.roleChanged', {
                   name: user.name,
@@ -114,7 +114,7 @@ export function UsersPage() {
           return;
         }
         const problemType = (error as { type?: string | null } | undefined)?.type;
-        setMessage(
+        notify(
           problemType === userProblems.lastAdministrator
             ? t('users.messages.lastAdministrator')
             : problemType === userProblems.anonymized
@@ -122,14 +122,15 @@ export function UsersPage() {
               : problemType === userProblems.active
                 ? t('users.messages.activeNotAnonymized')
                 : t('users.messages.failed'),
+          { tone: 'error' },
         );
         // Someone else may have changed the person meanwhile.
         void queryClient.invalidateQueries({ queryKey: queryKeys.users });
       } catch {
-        setMessage(t('users.messages.failed'));
+        notify(t('users.messages.failed'), { tone: 'error' });
       }
     },
-    [queryClient, refresh, session, t],
+    [notify, queryClient, refresh, session, t],
   );
 
   const columns = useMemo<DataTableColumn<UserRow>[]>(
@@ -426,14 +427,6 @@ export function UsersPage() {
           {t('users.anonymize.forGood')}
         </Box>
       </Dialog>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

@@ -1,6 +1,5 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
-import Snackbar from '@mui/material/Snackbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 import indexHtml from '../../index.html?raw';
@@ -96,25 +95,6 @@ describe('Botões com ícone', () => {
       throw new Error('No end icon.');
     }
     expect(Number.parseFloat(getComputedStyle(endIcon).marginLeft)).toBe(0);
-  });
-});
-
-// Spec: estrutura-das-telas, requirement "Confirmações no alto da tela" (ADR-0109).
-describe('Confirmações no alto da tela', () => {
-  it('Confirmação no alto, no meio', () => {
-    render(
-      <ThemeProvider theme={theme}>
-        <Snackbar open message={ptBR.settings.saved} />
-      </ThemeProvider>,
-    );
-
-    // With no position of its own, a confirmation goes to the top, in the middle, below the top bar of the phone.
-    const root = screen.getByText(ptBR.settings.saved).closest('.MuiSnackbar-root');
-    if (!(root instanceof HTMLElement)) {
-      throw new Error('No snackbar.');
-    }
-    expect(root).toHaveClass('MuiSnackbar-anchorOriginTopCenter');
-    expect(getComputedStyle(root).top).toBe('calc(var(--topbar-height) + var(--space-2))');
   });
 });
 

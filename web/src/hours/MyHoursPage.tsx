@@ -2,7 +2,6 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import ChevronLeftOutlined from '@mui/icons-material/ChevronLeftOutlined';
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
@@ -17,6 +16,7 @@ import { addDays, formatHours, weekEnd, weekStart } from './hours';
 import { TimeEntryDialog } from './TimeEntryDialog';
 import { TimeEntryTable } from './TimeEntryTable';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const secondarySx = { color: 'var(--text-secondary)' } as const;
 const noEntries: never[] = [];
@@ -36,7 +36,7 @@ export function MyHoursPage() {
   const [start, setStart] = useState<DayValue>(thisWeek);
   const end = weekEnd(start);
   const [logging, setLogging] = useState(false);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const { data, isFetching, error } = useQuery({
     ...timeEntriesQuery(start, end),
     placeholderData: keepPreviousData,
@@ -45,7 +45,7 @@ export function MyHoursPage() {
 
   const changed = useCallback(
     (text: string, day?: DayValue) => {
-      setMessage(text);
+      notify(text);
       if (day !== undefined) {
         setStart(weekStart(day));
       }
@@ -53,7 +53,7 @@ export function MyHoursPage() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projectHours });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient, setMessage, setStart],
+    [queryClient, notify, setStart],
   );
 
   const subtitle = t('hours.subtitle', {
@@ -189,14 +189,6 @@ export function MyHoursPage() {
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

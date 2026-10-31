@@ -9,17 +9,9 @@ import { IconButton } from '../components/Button';
  * "Desfazer" of the bar of the tab and of Expandir (ADR-0071), for who edits the schedule: its tip says what it undoes,
  * and it is off while there is nothing to undo.
  */
-export function UndoButton({
-  project,
-  schedule,
-  notify,
-}: {
-  project: Project;
-  schedule: Schedule;
-  notify: (message: string) => void;
-}) {
+export function UndoButton({ project, schedule }: { project: Project; schedule: Schedule }) {
   const { t } = useTranslation();
-  const { run, pending } = useScheduleStep(project, notify);
+  const { run, pending } = useScheduleStep(project);
   const step = schedule.undo;
   const tip =
     step === null

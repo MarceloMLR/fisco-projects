@@ -9,7 +9,6 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -29,6 +28,7 @@ import { theme } from '../theme/theme';
 import { useAdminContext } from './adminContext';
 import { ClientDialog } from './ClientDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const pageSize = 25;
 const searchDelay = 300;
@@ -63,7 +63,7 @@ export function ClientsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; client: ClientRow }>();
   const [editing, setEditing] = useState<{ client?: ClientRow }>();
   const [removing, setRemoving] = useState<ClientRow>();
@@ -93,12 +93,12 @@ export function ClientsPage() {
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       // The lists that show the client, here and in the Audit, are asked again.
       void queryClient.invalidateQueries({ queryKey: queryKeys.clients });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const changeStatus = useCallback(
@@ -118,12 +118,12 @@ export function ClientsPage() {
           );
           return;
         }
-        setMessage(t('clients.messages.failed'));
+        notify(t('clients.messages.failed'), { tone: 'error' });
       } catch {
-        setMessage(t('clients.messages.failed'));
+        notify(t('clients.messages.failed'), { tone: 'error' });
       }
     },
-    [changed, t],
+    [notify, changed, t],
   );
 
   const remove = useMutation({
@@ -141,13 +141,14 @@ export function ClientsPage() {
     onError: (error, client) => {
       // A client with projects is only made inactive (ADR-0015).
       const problem = error instanceof ApiError ? error.problem : undefined;
-      setMessage(
+      notify(
         typeof problem === 'object' &&
           problem !== null &&
           'type' in problem &&
           problem.type === clientProblems.hasProjects
           ? t('clients.messages.hasProjects', { name: client.name })
           : t('clients.messages.failed'),
+        { tone: 'error' },
       );
     },
     onSettled: () => {
@@ -404,7 +405,7 @@ export function ClientsPage() {
           }}
           onSaved={(saved) => {
             setEditing(undefined);
-            setMessage(saved);
+            notify(saved);
           }}
         />
       )}
@@ -442,14 +443,6 @@ export function ClientsPage() {
       >
         {removing !== undefined && t('clients.remove.text', { name: removing.name })}
       </Dialog>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

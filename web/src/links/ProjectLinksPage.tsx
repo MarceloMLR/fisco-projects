@@ -28,6 +28,7 @@ import { theme } from '../theme/theme';
 import { LinkDialog } from './LinkDialog';
 import { initialOf, isGroupRow, type LinkRow, linkRows, shownAddress } from './links';
 import { Button, IconButton } from '../components/Button';
+import type { NoticeOptions } from '../notices/notify';
 
 /** A project has a few links: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -105,8 +106,8 @@ export function ProjectLinksPage() {
   const rows = useMemo(() => linkRows(data?.items ?? []), [data?.items]);
 
   const changed = useCallback(
-    (message: string) => {
-      notify(message);
+    (message: string, options?: NoticeOptions) => {
+      notify(message, options);
       void queryClient.invalidateQueries({ queryKey: [...queryKeys.links, project.id] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
@@ -119,7 +120,7 @@ export function ProjectLinksPage() {
         await navigator.clipboard.writeText(link.url);
         notify(t('links.copied'));
       } catch {
-        notify(t('links.copyFailed'));
+        notify(t('links.copyFailed'), { tone: 'error' });
       }
     },
     [notify, t],
@@ -136,15 +137,19 @@ export function ProjectLinksPage() {
         '/api/projects/{projectId}/links/{linkId}',
         { params: { path: { projectId: project.id, linkId: link.id } } },
       );
-      changed(
-        response.ok
-          ? t('links.messages.removed', { title: link.title })
-          : response.status === 409 && problemType(problem) === documentProblems.projectClosed
+      if (response.ok) {
+        changed(t('links.messages.removed', { title: link.title }));
+      } else {
+        // The list is asked again: the project may have been closed meanwhile.
+        changed(
+          response.status === 409 && problemType(problem) === documentProblems.projectClosed
             ? t('links.messages.closed')
             : t('links.messages.failed'),
-      );
+          { tone: 'error' },
+        );
+      }
     } catch {
-      notify(t('links.messages.failed'));
+      notify(t('links.messages.failed'), { tone: 'error' });
     }
   };
 

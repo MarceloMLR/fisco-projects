@@ -90,7 +90,7 @@ export function ProjectDocumentsPage() {
   const tell = useCallback(
     (outcome: UploadOutcome) => {
       if (outcome.closed) {
-        notify(t('documents.messages.closed'));
+        notify(t('documents.messages.closed'), { tone: 'error' });
         return;
       }
       const size = sizeText(area?.maxBytes ?? 0);
@@ -100,7 +100,8 @@ export function ProjectDocumentsPage() {
           t(`documents.refused.${reason}`, { name, size }),
         ),
       ];
-      notify(parts.join(' '));
+      // A file refused makes it a notice of failure, even when others were sent.
+      notify(parts.join(' '), outcome.refused.length > 0 ? { tone: 'error' } : undefined);
     },
     [area?.maxBytes, notify, t],
   );

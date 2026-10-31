@@ -1,12 +1,14 @@
-// jsdom has no matchMedia: this stand-in answers the queries MUI uses (width and system theme),
-// from a window size and a system theme each test can set.
+// jsdom has no matchMedia: this stand-in answers the queries MUI uses (width and system theme) and the one of less
+// motion (ADR-0133), from a window size, a system theme and a choice of less motion each test can set.
 
 interface SimulatedDevice {
   width: number;
   systemTheme: 'light' | 'dark';
+  /** Whether the person asked the system for less motion (prefers-reduced-motion). */
+  reducedMotion: boolean;
 }
 
-const desktop: SimulatedDevice = { width: 1440, systemTheme: 'light' };
+const desktop: SimulatedDevice = { width: 1440, systemTheme: 'light', reducedMotion: false };
 let device: SimulatedDevice = { ...desktop };
 
 function matches(query: string): boolean {
@@ -26,6 +28,8 @@ function matches(query: string): boolean {
           return device.width <= Number.parseFloat(value);
         case 'prefers-color-scheme':
           return device.systemTheme === value;
+        case 'prefers-reduced-motion':
+          return (device.reducedMotion ? 'reduce' : 'no-preference') === value;
         default:
           return false;
       }

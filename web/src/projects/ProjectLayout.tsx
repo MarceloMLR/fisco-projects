@@ -6,7 +6,6 @@ import Divider from '@mui/material/Divider';
 import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -33,6 +32,7 @@ import { projectStatusLook } from './projectStatus';
 import { preloadTimeline } from './timelinePreload';
 import { theme } from '../theme/theme';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const openStatuses = [
   'Planning',
@@ -86,15 +86,15 @@ export function ProjectLayout() {
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();
   // The tickets not closed the API found when it refused to complete the project (ADR-0043).
   const [refusedTickets, setRefusedTickets] = useState<number>();
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   // What closing the project would leave behind, read when the confirmation opens (ADR-0043).
   const { data: closing } = useQuery({
     ...projectClosingQuery(projectId),
     enabled: confirming !== undefined,
   });
   const outlet = useMemo<ProjectOutlet | undefined>(
-    () => (project === undefined ? undefined : { project, notify: setMessage }),
-    [project],
+    () => (project === undefined ? undefined : { project, notify }),
+    [project, notify],
   );
 
   const changeStatus = useMutation({
@@ -109,7 +109,7 @@ export function ProjectLayout() {
     },
     onSuccess: (_result, { status, project: changed }) => {
       setConfirming(undefined);
-      setMessage(
+      notify(
         t('projects.messages.status', {
           name: changed.name,
           status: t(`projects.statuses.${status}`),
@@ -132,10 +132,11 @@ export function ProjectLayout() {
         return;
       }
       setConfirming(undefined);
-      setMessage(
+      notify(
         problemField(problem, 'type') === projectProblems.ticketsChanged
           ? t('projects.messages.ticketsChanged')
           : t('projects.messages.failed'),
+        { tone: 'error' },
       );
     },
   });
@@ -320,7 +321,7 @@ export function ProjectLayout() {
           }}
           onSaved={(saved) => {
             setEditing(false);
-            setMessage(saved);
+            notify(saved);
           }}
         />
       )}
@@ -330,7 +331,6 @@ export function ProjectLayout() {
           onClose={() => {
             setDeleting(false);
           }}
-          onFailed={setMessage}
         />
       )}
       <Dialog
@@ -429,14 +429,6 @@ export function ProjectLayout() {
           )}
         </Box>
       </Dialog>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Box>
   );
 }

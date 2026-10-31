@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useParams } from 'react-router';
 import { generalRulesQuery, projectQuery } from '../api/queries';
+import { useNoticesInShell } from '../notices/notify';
 import { SessionPending } from '../session/RequireSession';
 import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
@@ -26,7 +27,8 @@ function useProjectOfTheAddress() {
 
 /**
  * Structure around every screen (ADR-0066): it fills the window, which never scrolls; the content scrolls inside.
- * From 900px, sidebar and invisible header (fp-frame); below it, the phone top bar and menu (ADR-0012).
+ * From 900px, sidebar and invisible header (fp-frame); below it, the phone top bar and menu (ADR-0012). The notices go
+ * to the middle of the content area (ADR-0133).
  */
 export function AppShell() {
   const { t } = useTranslation();
@@ -47,6 +49,7 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   // No screen shows a date before the time zone of the installation is known (ADR-0013).
   const rules = useQuery(generalRulesQuery());
+  useNoticesInShell();
 
   // The shell is only reached through RequireSession.
   if (session.status !== 'signed-in') {

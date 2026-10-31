@@ -6,13 +6,15 @@ import { queryKeys } from '../api/queries';
 import { problemType } from './projectForm';
 import { stepText } from './schedule';
 import { failureOf } from './scheduleItemValues';
+import { useNotify } from '../notices/notify';
 
 /**
  * Undoes the last change of the schedule the person made, or redoes the last one undone (ADR-0091), and says what came
  * back, or why it could not.
  */
-export function useScheduleStep(project: Project, notify: (message: string) => void) {
+export function useScheduleStep(project: Project) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
 
@@ -43,14 +45,15 @@ export function useScheduleStep(project: Project, notify: (message: string) => v
                 : 'projects.steps.messages.redoBlocked',
               { what },
             ),
+            { tone: 'error' },
           );
         } else if (problemType(error) === projectProblems.scheduleNothingToUndo) {
-          notify(t('projects.steps.messages.nothing'));
+          notify(t('projects.steps.messages.nothing'), { tone: 'error' });
         } else {
-          notify(failureOf(error, response.status, t));
+          notify(failureOf(error, response.status, t), { tone: 'error' });
         }
       } catch {
-        notify(t('projects.schedule.messages.failed'));
+        notify(t('projects.schedule.messages.failed'), { tone: 'error' });
       } finally {
         setPending(false);
       }

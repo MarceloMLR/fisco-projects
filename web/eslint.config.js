@@ -19,6 +19,14 @@ const muiButtonImports = [
   { name: '@mui/material', importNames: ['Button', 'IconButton'], message: buttonMessage },
 ];
 
+const noticeMessage =
+  'Use the notice of the structure of the screens, useNotify of src/notices/notify, one for all the screens (ADR-0133).';
+const muiSnackbarImports = [
+  { name: '@mui/material/Snackbar', message: noticeMessage },
+  { name: '@mui/material/SnackbarContent', message: noticeMessage },
+  { name: '@mui/material', importNames: ['Snackbar', 'SnackbarContent'], message: noticeMessage },
+];
+
 export default defineConfig([
   // Generated types, and files that break the rules on purpose for the lint tests.
   globalIgnores(['src/api/schema.ts', 'src/test/fixtures']),
@@ -38,23 +46,31 @@ export default defineConfig([
   },
   {
     // ADR-0051: only the timeline component imports Syncfusion, so it can give way to a timeline of our own. ADR-0131:
-    // every button comes from src/components/Button, busy while what it sends runs.
+    // every button comes from src/components/Button, busy while what it sends runs. ADR-0133: one notice for all the
+    // screens, the one of src/notices.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/schedule-gantt/**', 'src/components/Button.tsx'],
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [syncfusionImports], paths: muiButtonImports },
+        { patterns: [syncfusionImports], paths: [...muiButtonImports, ...muiSnackbarImports] },
       ],
     },
   },
   {
     files: ['src/schedule-gantt/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': ['error', { paths: muiButtonImports }] },
+    rules: {
+      'no-restricted-imports': ['error', { paths: [...muiButtonImports, ...muiSnackbarImports] }],
+    },
   },
   {
     files: ['src/components/Button.tsx'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [syncfusionImports] }] },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [syncfusionImports], paths: muiSnackbarImports },
+      ],
+    },
   },
   {
     // ADR-0013: visible text comes from the translation files, never written in a component.

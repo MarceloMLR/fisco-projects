@@ -10,7 +10,9 @@
     "account": "Conta de {{name}}",
     "accountMenu": "Conta",
     "signOut": "Sair",
-    "myProjects": "Meus projetos"
+    "myProjects": "Meus projetos",
+    "closeNotice": "Fechar aviso",
+    "notices": "Avisos"
   },
   "nav": {
     "home": "Início",

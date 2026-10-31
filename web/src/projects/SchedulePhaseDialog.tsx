@@ -13,6 +13,7 @@ import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { invalidFields, problemType } from './projectForm';
 import { Button } from '../components/Button';
+import type { NoticeOptions } from '../notices/notify';
 
 const errors = {
   nameRequired: 'projects.schedule.phaseDialog.nameRequired',
@@ -49,7 +50,7 @@ export function SchedulePhaseDialog({
   phase?: SchedulePhase;
   onClose: () => void;
   /** The change was saved, or refused, with the message to show. */
-  onDone: (message: string) => void;
+  onDone: (message: string, options?: NoticeOptions) => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -122,9 +123,9 @@ export function SchedulePhaseDialog({
         onDone(t('projects.schedule.messages.phaseRemoved', { name: phase.name }));
         return;
       }
-      onDone(failure(error, response.status));
+      onDone(failure(error, response.status), { tone: 'error' });
     } catch {
-      onDone(t('projects.schedule.messages.failed'));
+      onDone(t('projects.schedule.messages.failed'), { tone: 'error' });
     } finally {
       setRemovingPending(false);
     }

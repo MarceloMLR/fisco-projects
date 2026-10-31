@@ -513,10 +513,13 @@ describe('Exclusão pela tela', () => {
     expect(confirm).toBeEnabled();
     fireEvent.click(confirm);
 
+    // The notice of the structure stays while the screen goes to Projetos (ADR-0133).
     expect(
-      await screen.findByText(text.messages.deleted.replace('{{code}}', 'ERP-FIN')),
+      await screen.findByRole('heading', { level: 1, name: ptBR.pages.projects.title }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(ptBR.pages.projects.title);
+    expect(screen.getByRole('status')).toHaveTextContent(
+      text.messages.deleted.replace('{{code}}', 'ERP-FIN'),
+    );
     expect(requests).toEqual(['POST deletion erp-fin']);
   });
 

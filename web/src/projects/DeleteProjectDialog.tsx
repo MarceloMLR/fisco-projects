@@ -9,6 +9,7 @@ import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** The kinds of items the summary counts, in the order the dialog lists them. */
 const kinds = [
@@ -29,20 +30,19 @@ const typedCodeMatches = (typed: string, code: string) =>
 /**
  * "Excluir projeto", only for the Administrator (ADR-0041, ADR-0111): what the project has, counted when the dialog
  * opens, the warning that it cannot be undone and the code of the project typed to confirm. Once deleted, the screen
- * goes to Projetos with the confirmation, and what was kept of the project is dropped.
+ * goes to Projetos, the notice says it was deleted, and what was kept of the project is dropped.
  */
 export function DeleteProjectDialog({
   project,
   onClose,
-  onFailed,
 }: {
   project: Project;
   onClose: () => void;
-  onFailed: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const notify = useNotify();
   const [typed, setTyped] = useState('');
   const { data: summary, isError } = useQuery(projectDeletionQuery(project.id));
   const matches = typedCodeMatches(typed, project.code);
@@ -73,14 +73,13 @@ export function DeleteProjectDialog({
       ]) {
         void queryClient.invalidateQueries({ queryKey: key });
       }
-      await navigate('/projects', {
-        replace: true,
-        state: { message: t('projects.messages.deleted', { code: project.code }) },
-      });
+      // The notice is of the structure of the screens: it stays while the screen goes to Projetos (ADR-0133).
+      notify(t('projects.messages.deleted', { code: project.code }));
+      await navigate('/projects', { replace: true });
     },
     onError: () => {
       onClose();
-      onFailed(t('projects.messages.deleteFailed'));
+      notify(t('projects.messages.deleteFailed'), { tone: 'error' });
     },
   });
 

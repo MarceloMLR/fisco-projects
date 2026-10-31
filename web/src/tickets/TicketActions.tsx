@@ -28,6 +28,7 @@ import { Select } from '../components/Select';
 import type { PeopleChange } from './ticketChanges';
 import { PeopleChangeDialog, TransferDialog } from './TicketPeopleDialogs';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const RichTextEditor = lazy(async () => ({
   default: (await import('../components/RichTextEditor')).RichTextEditor,
@@ -205,14 +206,9 @@ function PriorityDialog({
  * button, the others go in the "⋮"; the one that asks for a message opens a dialog for the text. Automatic actions, as
  * the first answer and the closing without answer, are never offered.
  */
-export function TicketActions({
-  ticket,
-  onMessage,
-}: {
-  ticket: Ticket;
-  onMessage: (message: string) => void;
-}) {
+export function TicketActions({ ticket }: { ticket: Ticket }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const [anchor, setAnchor] = useState<HTMLElement>();
   const [asking, setAsking] = useState<TicketAction>();
@@ -233,17 +229,19 @@ export function TicketActions({
       });
       if (response.ok) {
         setAsking(undefined);
-        onMessage(t(`tickets.actionDone.${action}`));
+        notify(t(`tickets.actionDone.${action}`));
       } else {
         // Someone changed the status meanwhile: the page shows the ticket as it is now.
-        onMessage(t(response.status === 409 ? 'tickets.actionStale' : 'tickets.actionFailed'));
+        notify(t(response.status === 409 ? 'tickets.actionStale' : 'tickets.actionFailed'), {
+          tone: 'error',
+        });
         if (response.status === 409) {
           setAsking(undefined);
         }
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
     } catch {
-      onMessage(t('tickets.actionFailed'));
+      notify(t('tickets.actionFailed'), { tone: 'error' });
     } finally {
       setRunning(undefined);
     }
@@ -258,13 +256,13 @@ export function TicketActions({
       });
       if (response.ok) {
         setPrioritizing(false);
-        onMessage(t('tickets.priorityChange.done'));
+        notify(t('tickets.priorityChange.done'));
       } else {
-        onMessage(t('tickets.priorityChange.failed'));
+        notify(t('tickets.priorityChange.failed'), { tone: 'error' });
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
     } catch {
-      onMessage(t('tickets.priorityChange.failed'));
+      notify(t('tickets.priorityChange.failed'), { tone: 'error' });
     } finally {
       setRunning(undefined);
     }
@@ -402,7 +400,7 @@ export function TicketActions({
           }}
           onDone={(text) => {
             setChanging(undefined);
-            onMessage(text);
+            notify(text);
           }}
         />
       )}
@@ -415,7 +413,7 @@ export function TicketActions({
           }}
           onDone={(text) => {
             setTransferring(false);
-            onMessage(text);
+            notify(text);
           }}
         />
       )}

@@ -301,11 +301,11 @@ function MemberDetails({
   onDone,
 }: {
   member: ProjectMember;
-  /** A change was saved or refused; left when the person is no longer in the project. */
+  /** A change was saved; left when the person is no longer in the project. */
   onDone: (message: string, left: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { project } = useProjectOutlet();
+  const { project, notify } = useProjectOutlet();
   const { session } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -388,7 +388,7 @@ function MemberDetails({
     },
     onError: (error) => {
       setRemoving(false);
-      onDone(refusal(error), false);
+      notify(refusal(error), { tone: 'error' });
     },
   });
 

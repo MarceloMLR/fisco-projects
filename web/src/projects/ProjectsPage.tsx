@@ -1,12 +1,11 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { ProjectRow, ProjectSituation } from '../api/client';
 import { prefetchProject } from '../api/prefetch';
 import { clientChoicesQuery, projectsQuery } from '../api/queries';
@@ -37,23 +36,12 @@ const secondarySx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secon
  * Projetos (canvas Projetos): the projects the person sees, in alphabetical order, with the search by code or name,
  * the filter of client and the situation, the active ones by default (ADR-0016). Each project shows the strip of
  * phases with its progress and current phase, and the final deadline with the late tasks (ADR-0071); "Sem cronograma"
- * without tasks and milestones. Only the Administrator and the Project manager create projects. It shows the
- * confirmation the page before sent, as the deletion of a project (ADR-0041).
+ * without tasks and milestones. Only the Administrator and the Project manager create projects.
  */
 export function ProjectsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const { session } = useSession();
-  const state: unknown = location.state;
-  const [message, setMessage] = useState<string | undefined>(
-    typeof state === 'object' &&
-      state !== null &&
-      'message' in state &&
-      typeof state.message === 'string'
-      ? state.message
-      : undefined,
-  );
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const [search, setSearch] = useState('');
   const [client, setClient] = useState(allClients);
@@ -338,14 +326,6 @@ export function ProjectsPage() {
         }
       />
       {!desktop && newProject(true)}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

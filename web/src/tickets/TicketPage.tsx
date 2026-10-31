@@ -1,11 +1,10 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { api, type Ticket } from '../api/client';
 import { ApiError, queryKeys, ticketQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
@@ -24,6 +23,7 @@ import { ticketNumberOf } from './tickets';
 import { TicketDue } from './TicketDue';
 import { VendorSection } from './TicketVendors';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const tagSx = {
   display: 'inline-flex',
@@ -156,14 +156,9 @@ function DeadlinesSection({ ticket }: { ticket: Ticket }) {
  * who follows the ticket and "Acompanhar" (ADR-0026, ADR-0069); the attachments of the conversation; the project and
  * the last update.
  */
-function SidePanel({
-  ticket,
-  onMessage,
-}: {
-  ticket: Ticket;
-  onMessage: (message: string) => void;
-}) {
+function SidePanel({ ticket }: { ticket: Ticket }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const { formatDateTime } = useDates();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -216,7 +211,7 @@ function SidePanel({
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
     } catch {
-      onMessage(t('tickets.panel.followFailed'));
+      notify(t('tickets.panel.followFailed'), { tone: 'error' });
     } finally {
       setBusy(false);
     }
@@ -282,7 +277,7 @@ function SidePanel({
         </Button>
       </Box>
       <DeadlinesSection ticket={ticket} />
-      <VendorSection ticket={ticket} onMessage={onMessage} />
+      <VendorSection ticket={ticket} />
       <Box
         component="section"
         aria-labelledby="ticket-attachments"
@@ -377,7 +372,6 @@ function SidePanel({
 export function TicketPage() {
   const { t } = useTranslation();
   const { number: param } = useParams();
-  const location = useLocation();
   const { session } = useSession();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { formatDateTime } = useDates();
@@ -403,15 +397,6 @@ export function TicketPage() {
       area.scrollTop = area.scrollHeight;
     }
   }, [interactions, filter]);
-  const state: unknown = location.state;
-  const [message, setMessage] = useState<string | undefined>(
-    typeof state === 'object' &&
-      state !== null &&
-      'message' in state &&
-      typeof state.message === 'string'
-      ? state.message
-      : undefined,
-  );
 
   if (ticket === undefined) {
     const missing = number === null || (error instanceof ApiError && error.status === 404);
@@ -449,7 +434,7 @@ export function TicketPage() {
           {t(`tickets.teams.${ticket.team}`)}
         </Box>
         <Box sx={{ flex: 1 }} />
-        <TicketActions ticket={ticket} onMessage={setMessage} />
+        <TicketActions ticket={ticket} />
       </Box>
       <Box
         component="h1"
@@ -564,15 +549,7 @@ export function TicketPage() {
       }}
     >
       {conversation}
-      <SidePanel ticket={ticket} onMessage={setMessage} />
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
+      <SidePanel ticket={ticket} />
     </Box>
   );
 }

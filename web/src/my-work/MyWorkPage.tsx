@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -18,6 +17,7 @@ import { theme } from '../theme/theme';
 import { PeopleChangeDialog } from '../tickets/TicketPeopleDialogs';
 import { MyProjectsCard, UpcomingMilestonesCard } from './MyWorkCards';
 import { MyWorkQueue } from './MyWorkQueue';
+import { useNotify } from '../notices/notify';
 
 const views: readonly MyWorkView[] = ['ForMe', 'OpenedByMe', 'Following'];
 
@@ -35,8 +35,7 @@ export function MyWorkPage() {
   const userId = session.status === 'signed-in' ? session.user.id : '';
   const { data: work, isError } = useQuery(myWorkQuery());
   const [view, setView] = useState<MyWorkView>('ForMe');
-  /** What an action of the queue did, at the bottom, as in the tabs of a project. */
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [failure, setFailure] = useState<string>();
   /** The task whose percentage is asked for (Iniciar and Atualizar). */
   const [progressOf, setProgressOf] = useState<{
@@ -52,7 +51,7 @@ export function MyWorkPage() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
   };
   const done = (text: string) => {
-    setMessage(text);
+    notify(text);
     refresh();
   };
 
@@ -189,14 +188,6 @@ export function MyWorkPage() {
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

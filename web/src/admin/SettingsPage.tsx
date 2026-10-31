@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useId, useRef, useState } from 'react';
@@ -27,6 +26,7 @@ import { MainColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
 import { Button } from '../components/Button';
 import { Form } from '../components/Form';
+import { useNotify } from '../notices/notify';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
 const logoMaxBytes = 1024 * 1024;
@@ -303,7 +303,7 @@ export function SettingsPage() {
   const [logoError, setLogoError] = useState<LogoError>();
   const [darkLogo, setDarkLogo] = useState<LogoChoice>({ kind: 'saved' });
   const [darkLogoError, setDarkLogoError] = useState<LogoError>();
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
 
   const {
     register,
@@ -458,9 +458,9 @@ export function SettingsPage() {
             throw new Error(`The API answered ${String(response.status)}.`);
           }
         }
-        setMessage(t('settings.saved'));
+        notify(t('settings.saved'));
       } catch {
-        setMessage(t('settings.saveFailed'));
+        notify(t('settings.saveFailed'), { tone: 'error' });
       } finally {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: queryKeys.installation }),
@@ -660,7 +660,7 @@ export function SettingsPage() {
                   <Box component="h2" id="settings-m365" sx={sectionTitleSx}>
                     {t('settings.m365')}
                   </Box>
-                  <EmailSettings onMessage={setMessage} />
+                  <EmailSettings />
                 </Box>
               </Form>
               <BrandPreview
@@ -692,14 +692,6 @@ export function SettingsPage() {
           {t('settings.save')}
         </Button>
       </Box>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Box>
   );
 }

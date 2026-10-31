@@ -11,6 +11,7 @@ import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { problemType } from './projectForm';
 import { findItem, type ScheduleDisplay } from './schedule';
 import { failureOf } from './scheduleItemValues';
+import { useNotify } from '../notices/notify';
 
 // The Syncfusion Gantt is large: it comes only when the Linha do tempo opens (ADR-0051).
 const ScheduleGantt = lazy(() => import('../schedule-gantt/ScheduleGantt'));
@@ -32,7 +33,6 @@ export function ScheduleTimeline({
   display,
   ganttRef,
   onChoose,
-  notify,
   aside,
 }: {
   project: Project;
@@ -45,11 +45,11 @@ export function ScheduleTimeline({
   display: ScheduleDisplay;
   ganttRef?: Ref<ScheduleGanttHandle>;
   onChoose: (target: GanttTarget) => void;
-  notify: (message: string) => void;
   /** Beside the legend, such as the progress of the project and its delays. */
   aside?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const settings = useQuery(clientSettingsQuery());
 
@@ -75,7 +75,7 @@ export function ScheduleTimeline({
         );
         if (!response.ok) {
           refresh();
-          notify(failureOf(error, response.status, t));
+          notify(failureOf(error, response.status, t), { tone: 'error' });
           return;
         }
         refresh();
@@ -86,7 +86,7 @@ export function ScheduleTimeline({
         );
       } catch {
         refresh();
-        notify(t('projects.schedule.messages.failed'));
+        notify(t('projects.schedule.messages.failed'), { tone: 'error' });
       }
     },
     [schedule, project.id, refresh, notify, t],
@@ -122,7 +122,9 @@ export function ScheduleTimeline({
       const summary = [predecessor, successor].find((item) => item.hasSubtasks);
       if (summary !== undefined) {
         refresh();
-        notify(t('projects.timeline.messages.summaryLink', { name: summary.name }));
+        notify(t('projects.timeline.messages.summaryLink', { name: summary.name }), {
+          tone: 'error',
+        });
         return;
       }
       const names = { predecessor: predecessor.name, successor: successor.name };
@@ -145,13 +147,13 @@ export function ScheduleTimeline({
         if (response.ok) {
           notify(t('projects.timeline.messages.linked', names));
         } else if (problemType(error) === projectProblems.scheduleCycle) {
-          notify(t('projects.timeline.messages.cycle', names));
+          notify(t('projects.timeline.messages.cycle', names), { tone: 'error' });
         } else {
-          notify(failureOf(error, response.status, t));
+          notify(failureOf(error, response.status, t), { tone: 'error' });
         }
       } catch {
         refresh();
-        notify(t('projects.schedule.messages.failed'));
+        notify(t('projects.schedule.messages.failed'), { tone: 'error' });
       }
     },
     [schedule, project.id, refresh, notify, t],

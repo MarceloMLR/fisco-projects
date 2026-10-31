@@ -30,6 +30,7 @@ import { useDates } from '../format/useDates';
 import { problemField } from './ticketChanges';
 import { VendorStatusBadge } from './TicketTags';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const labelSx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 
@@ -580,14 +581,9 @@ function VendorTicketDialog({
  * opens the record, with everything else and its history (Chamados-6.1). Who serves the ticket registers ("Registrar")
  * and, in the record, updates it ("Atualizar"); our deadlines keep running.
  */
-export function VendorSection({
-  ticket,
-  onMessage,
-}: {
-  ticket: Ticket;
-  onMessage: (message: string) => void;
-}) {
+export function VendorSection({ ticket }: { ticket: Ticket }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const [registering, setRegistering] = useState(false);
   const [showing, setShowing] = useState<string>();
   const [updating, setUpdating] = useState<VendorTicket>();
@@ -732,7 +728,7 @@ export function VendorSection({
           }}
           onDone={(message) => {
             setRegistering(false);
-            onMessage(message);
+            notify(message);
           }}
         />
       )}
@@ -745,7 +741,7 @@ export function VendorSection({
           }}
           onDone={(message) => {
             setUpdating(undefined);
-            onMessage(message);
+            notify(message);
           }}
         />
       )}

@@ -1,8 +1,6 @@
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { profileQuery } from '../api/queries';
 import { Avatar } from '../components/Avatar';
@@ -29,8 +27,7 @@ export function ProfilePage() {
   const { t } = useTranslation();
   const { formatLastAccess } = useDates();
   const { session, signOut } = useSession();
-  const { theme, choose, message, dismiss } = useThemeChoice();
-  const [notice, setNotice] = useState<string>();
+  const { theme, choose } = useThemeChoice();
   const profile = useQuery(profileQuery()).data;
   const photoOf = usePersonPhoto();
 
@@ -107,7 +104,7 @@ export function ProfilePage() {
             <ThemeOptions label={t('profile.theme')} value={theme} onChange={choose} />
           </ProfileRow>
         </ProfileCard>
-        <EmailNotices onMessage={setNotice} />
+        <EmailNotices />
       </Box>
       <Box
         component="aside"
@@ -187,15 +184,6 @@ export function ProfilePage() {
           </Button>
         </Box>
       </Box>
-      <Snackbar
-        open={(message ?? notice) !== undefined}
-        message={message ?? notice}
-        autoHideDuration={6000}
-        onClose={() => {
-          dismiss();
-          setNotice(undefined);
-        }}
-      />
     </Box>
   );
 }

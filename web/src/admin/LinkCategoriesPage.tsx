@@ -6,7 +6,6 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -20,6 +19,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { LinkCategoryDialog } from './LinkCategoryDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** The categories fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
@@ -45,18 +45,18 @@ export function LinkCategoriesPage() {
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { data, isFetching } = useQuery(linkCategoriesQuery());
   const categories = data ?? noCategories;
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; category: LinkCategory }>();
   // A category to rename, or null for a new one.
   const [editing, setEditing] = useState<LinkCategory | null>();
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       void queryClient.invalidateQueries({ queryKey: queryKeys.linkCategories });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const setActive = useCallback(
@@ -67,23 +67,25 @@ export function LinkCategoriesPage() {
           params: { path: { id: category.id } },
           body: { name: category.name, isActive: active },
         });
-        changed(
-          response.ok
-            ? t(
-                active
-                  ? 'linkCategories.messages.reactivated'
-                  : 'linkCategories.messages.deactivated',
-                {
-                  name: category.name,
-                },
-              )
-            : t('linkCategories.messages.failed'),
-        );
+        if (response.ok) {
+          changed(
+            t(
+              active
+                ? 'linkCategories.messages.reactivated'
+                : 'linkCategories.messages.deactivated',
+              {
+                name: category.name,
+              },
+            ),
+          );
+        } else {
+          notify(t('linkCategories.messages.failed'), { tone: 'error' });
+        }
       } catch {
-        setMessage(t('linkCategories.messages.failed'));
+        notify(t('linkCategories.messages.failed'), { tone: 'error' });
       }
     },
-    [changed, t],
+    [notify, changed, t],
   );
 
   const openMenu = useCallback((event: MouseEvent<HTMLElement>, category: LinkCategory) => {
@@ -248,14 +250,6 @@ export function LinkCategoriesPage() {
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

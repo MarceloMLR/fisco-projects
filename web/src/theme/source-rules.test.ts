@@ -26,19 +26,3 @@ describe('Cores e fontes do design system', () => {
     expect(offenders, 'colors come only from src/theme/tokens.json').toEqual([]);
   });
 });
-
-// Spec: estrutura-das-telas, requirement "Confirmações no alto da tela" (ADR-0109).
-describe('Confirmações no alto da tela', () => {
-  it('Toda confirmação no mesmo lugar', () => {
-    // Every Snackbar takes the position of the theme: none sets its own.
-    const offenders = Object.entries(sources).flatMap(([path, source]) =>
-      [...source.matchAll(/<Snackbar\b/g)]
-        .map((match) => source.slice(match.index, source.indexOf('<', match.index + 1)))
-        .filter((element) => element.includes('anchorOrigin'))
-        .map(() => path),
-    );
-
-    expect(Object.values(sources).some((source) => source.includes('<Snackbar'))).toBe(true);
-    expect(offenders).toEqual([]);
-  });
-});

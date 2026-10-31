@@ -1,6 +1,5 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +28,7 @@ import { describeAuditEntry } from './auditText';
 import { type Period, PeriodFilter } from './PeriodFilter';
 import { type PersonOption, PersonFilter } from './PersonFilter';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const pageSize = 25;
 const defaultDays = 30;
@@ -69,7 +69,7 @@ export function AuditPage() {
   const [chosen, setChosen] = useState<AuditEntry>();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const { session } = useSession();
   const queryClient = useQueryClient();
 
@@ -194,12 +194,13 @@ export function AuditPage() {
       if (exported === undefined) {
         const total = problemField(error, 'total');
         const limit = problemField(error, 'limit');
-        setMessage(
+        notify(
           problemField(error, 'type') === auditProblems.exportTooLarge &&
             typeof total === 'number' &&
             typeof limit === 'number'
             ? t('audit.export.tooMany', { total: count.format(total), limit: count.format(limit) })
             : t('audit.export.failed'),
+          { tone: 'error' },
         );
         return;
       }
@@ -215,7 +216,7 @@ export function AuditPage() {
       // The export is a record of the audit now.
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     } catch {
-      setMessage(t('audit.export.failed'));
+      notify(t('audit.export.failed'), { tone: 'error' });
     } finally {
       setExporting(false);
     }
@@ -278,14 +279,6 @@ export function AuditPage() {
       <DetailsDrawer open={detailsOpen} onClose={closeDetails} label={t('audit.details.label')}>
         {chosen !== undefined && <AuditDetails entry={chosen} />}
       </DetailsDrawer>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={8000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </>
   );
 }
