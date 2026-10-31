@@ -2,13 +2,7 @@
 
 ### Requirement: Importar do MS Project
 
-Quem cria projetos MUST poder ler um arquivo XML do MS Project numa prévia, sem guardar nada. Com o que a prévia devolve, MUST poder criar um projeto com o cronograma convertido:
-
-- as fases, as tarefas, as subtarefas, os marcos e as dependências "termina, então começa", com as datas em dias úteis do calendário da instalação a partir do início escolhido;
-- o progresso de cada tarefa e marco;
-- os responsáveis, de cada recurso do arquivo ligado a uma pessoa, que entra no projeto com o papel escolhido, ou ao cliente.
-
-A conversão MUST seguir o ADR-0135 e dizer cada ajuste num aviso. A linha de base MUST NOT vir do arquivo (ADR-0005, ADR-0017, ADR-0019, ADR-0088, ADR-0135).
+Quem cria projetos MUST poder ler um arquivo XML do MS Project numa prévia, sem guardar nada, e criar um projeto com o cronograma convertido: as fases, as tarefas, as subtarefas, os marcos e as dependências "termina, então começa", com as datas em dias úteis do calendário da instalação a partir do início escolhido. A conversão MUST seguir o ADR-0135 e dizer cada ajuste num aviso; a linha de base MUST NOT vir do arquivo (ADR-0017, ADR-0019, ADR-0088, ADR-0135).
 
 #### Scenario: Prévia do arquivo do MS Project
 - **WHEN** a gerente manda na prévia o XML de um cronograma com uma fase, uma tarefa de 13/10/2026 a 15/10/2026 a 40% com o recurso Carla e um marco ligado a ela
@@ -17,14 +11,6 @@ A conversão MUST seguir o ADR-0135 e dizer cada ajuste num aviso. A linha de ba
 #### Scenario: Projeto a partir do MS Project
 - **WHEN** a gerente cria um projeto com o cronograma da prévia, o início em 09/10/2026 (uma sexta-feira, antes do feriado de 12/10/2026) e o recurso Carla ligado à Carla como Colaboradora
 - **THEN** o projeto nasce com a fase, a tarefa de 09/10/2026 a 14/10/2026 a 40% com a Carla responsável e o marco no fim dela, e a Carla entra no projeto como Colaboradora
-
-#### Scenario: Responsáveis do arquivo
-- **WHEN** o arquivo tem um recurso com o e-mail de uma pessoa do diretório, outro sem e-mail, outro com o nome do cliente escolhido no formulário e uma tarefa com dois recursos
-- **THEN** a prévia sugere a pessoa para o primeiro, ninguém para o segundo, o cliente para o terceiro, e avisa que a tarefa ficou com o primeiro recurso
-
-#### Scenario: Progresso do arquivo
-- **WHEN** o arquivo tem uma tarefa a 100% que termina antes de hoje e um marco a 100% depois de hoje
-- **THEN** o projeto criado tem a tarefa concluída no fim dela e o marco atingido hoje
 
 #### Scenario: O que não cabe no FiscoProjects
 - **WHEN** o arquivo tem uma tarefa no nível 4, uma tarefa solta no nível 1, uma dependência "começa, então começa", outra com intervalo e outra de uma tarefa-resumo
@@ -41,6 +27,18 @@ A conversão MUST seguir o ADR-0135 e dizer cada ajuste num aviso. A linha de ba
 #### Scenario: Ida e volta pelo MS Project
 - **WHEN** a gerente exporta o XML de um cronograma e o manda na prévia
 - **THEN** a prévia traz as mesmas fases, tarefas, subtarefas, marcos, durações, progresso e dependências do cronograma exportado, e um recurso para cada responsável
+
+### Requirement: Progresso e responsáveis do MS Project
+
+O cronograma importado MUST trazer o progresso de cada tarefa e marco do arquivo. Cada recurso do arquivo MUST poder ser ligado na criação a uma pessoa, sugerida pelo e-mail no diretório, que entra no projeto com o papel escolhido e fica responsável pelas tarefas dele, ao cliente do projeto ou a ninguém, seguindo o ADR-0135 (ADR-0005, ADR-0042, ADR-0102, ADR-0135).
+
+#### Scenario: Responsáveis do arquivo
+- **WHEN** o arquivo tem um recurso com o e-mail de uma pessoa do diretório, outro sem e-mail, outro com o nome do cliente escolhido no formulário e uma tarefa com dois recursos
+- **THEN** a prévia sugere a pessoa para o primeiro, ninguém para o segundo, o cliente para o terceiro, e avisa que a tarefa ficou com o primeiro recurso
+
+#### Scenario: Progresso do arquivo
+- **WHEN** o arquivo tem uma tarefa a 100% que termina antes de hoje e um marco a 100% depois de hoje
+- **THEN** o projeto criado tem a tarefa concluída no fim dela e o marco atingido hoje
 
 ### Requirement: Importar do MS Project pela tela
 
