@@ -1121,6 +1121,8 @@
       "fromTemplate": "A partir de um modelo",
       "fromTemplateHelper": "O cronograma vem do modelo, a partir do início.",
       "noTemplates": "Nenhum modelo ativo. Salve um cronograma como modelo pelo menu ⋮ da aba Cronograma.",
+      "fromMsProject": "A partir do MS Project",
+      "fromMsProjectHelper": "O cronograma vem de um arquivo XML do MS Project, a partir do início.",
       "template": "Modelo",
       "scheduleStart": "Início",
       "preview": "Prévia do cronograma",
@@ -1130,7 +1132,68 @@
       "previewMilestones_one": "{{count}} marco",
       "previewMilestones_other": "{{count}} marcos",
       "previewMilestone": "Marco: {{name}}",
-      "previewDates": "As datas saem do calendário da instalação ao criar o projeto."
+      "previewDates": "As datas saem do calendário da instalação ao criar o projeto.",
+      "msProject": {
+        "file": "Arquivo do MS Project",
+        "fileHelper": "No MS Project, use Arquivo › Salvar como e escolha o tipo XML.",
+        "choose": "Escolher arquivo",
+        "change": "Trocar arquivo",
+        "noFile": "Nenhum arquivo escolhido",
+        "refused": {
+          "NotMsProjectXml": "Esse arquivo não é um XML do MS Project. Abra o cronograma no MS Project e salve como XML em Arquivo › Salvar como.",
+          "TooLarge": "O arquivo passa de 5 MB. Salve como XML só o cronograma do projeto.",
+          "TooManyTasks": "O arquivo tem mais de 2.000 tarefas.",
+          "NoTasks": "O arquivo não tem tarefas para trazer.",
+          "OutOfRange": "O arquivo tem datas fora de 2000 a 2099."
+        },
+        "failed": "Não foi possível ler o arquivo. Tente de novo.",
+        "invalid": "O cronograma do arquivo não pôde ser usado. Escolha o arquivo de novo.",
+        "previewDates": "Datas no calendário da instalação, a partir de {{start}}.",
+        "warnings": "O que mudou na conversão",
+        "namesAndMore": "{{names}} e mais {{count}}",
+        "warning": {
+          "LooseTasks_one": "{{count}} tarefa fora de uma fase entrou na fase {{title}}: {{names}}.",
+          "LooseTasks_other": "{{count}} tarefas fora de uma fase entraram na fase {{title}}: {{names}}.",
+          "DeepTasks_one": "{{count}} tarefa abaixo do terceiro nível virou subtarefa: {{names}}.",
+          "DeepTasks_other": "{{count}} tarefas abaixo do terceiro nível viraram subtarefas: {{names}}.",
+          "DroppedSummaries_one": "{{count}} tarefa-resumo abaixo do segundo nível saiu, e as tarefas dela ficaram: {{names}}.",
+          "DroppedSummaries_other": "{{count}} tarefas-resumo abaixo do segundo nível saíram, e as tarefas delas ficaram: {{names}}.",
+          "OtherDependencies_one": "{{count}} dependência de outro tipo que não \"termina, então começa\" saiu: {{names}}.",
+          "OtherDependencies_other": "{{count}} dependências de outros tipos que não \"termina, então começa\" saíram: {{names}}.",
+          "SummaryDependencies_one": "{{count}} dependência de tarefa-resumo saiu: {{names}}.",
+          "SummaryDependencies_other": "{{count}} dependências de tarefas-resumo saíram: {{names}}.",
+          "DependencyLags_one": "{{count}} dependência ficou sem o intervalo: {{names}}.",
+          "DependencyLags_other": "{{count}} dependências ficaram sem o intervalo: {{names}}.",
+          "DependencyCycles_one": "{{count}} dependência que formaria ciclo saiu: {{names}}.",
+          "DependencyCycles_other": "{{count}} dependências que formariam ciclo saíram: {{names}}.",
+          "LongTasks_one": "{{count}} tarefa com mais de 999 dias úteis ficou com 999: {{names}}.",
+          "LongTasks_other": "{{count}} tarefas com mais de 999 dias úteis ficaram com 999: {{names}}.",
+          "CutNames_one": "{{count}} nome longo foi cortado: {{names}}.",
+          "CutNames_other": "{{count}} nomes longos foram cortados: {{names}}.",
+          "SeveralResources_one": "{{count}} tarefa com mais de um recurso ficou com o primeiro: {{names}}.",
+          "SeveralResources_other": "{{count}} tarefas com mais de um recurso ficaram com o primeiro: {{names}}.",
+          "NoOwner_one": "{{count}} marco com recurso ficou sem responsável, porque marco não tem responsável: {{names}}.",
+          "NoOwner_other": "{{count}} marcos com recurso ficaram sem responsável, porque marco não tem responsável: {{names}}.",
+          "NoDates_one": "{{count}} linha sem datas saiu: {{names}}.",
+          "NoDates_other": "{{count}} linhas sem datas saíram: {{names}}."
+        },
+        "owners": {
+          "title": "Responsáveis do arquivo",
+          "helper": "A pessoa escolhida entra no projeto com o papel e fica com as tarefas do recurso. O e-mail do arquivo só serve para achar a pessoa.",
+          "tasks_one": "{{count}} tarefa",
+          "tasks_other": "{{count}} tarefas",
+          "kind": "Responsável",
+          "kindOf": "Responsável por {{name}}",
+          "person": "Uma pessoa da empresa",
+          "client": "{{name}} (cliente)",
+          "nobody": "Sem responsável",
+          "personField": "Pessoa",
+          "personOf": "Pessoa de {{name}}",
+          "noPerson": "Escolha a pessoa",
+          "role": "Papel no projeto",
+          "roleOf": "Papel de {{name}}"
+        }
+      }
     },
     "errors": {
       "codeInvalid": "Use de 2 a 15 letras, algarismos e hífens, começando por letra, como ERP-FIN.",
@@ -1144,7 +1207,8 @@
       "techLeadInvalid": "Escolha uma pessoa ativa diferente do gerente.",
       "templateRequired": "Escolha um modelo.",
       "scheduleStartRequired": "Informe o início do cronograma.",
-      "templateInvalid": "Esse modelo não está mais ativo. Escolha outro."
+      "templateInvalid": "Esse modelo não está mais ativo. Escolha outro.",
+      "msProjectFileRequired": "Escolha o arquivo XML do MS Project."
     },
     "header": {
       "manager": "Gerente",

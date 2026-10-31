@@ -13,6 +13,7 @@ export const projectFieldErrors = {
   templateRequired: 'projects.errors.templateRequired',
   templateInvalid: 'projects.errors.templateInvalid',
   scheduleStartRequired: 'projects.errors.scheduleStartRequired',
+  msProjectFileRequired: 'projects.errors.msProjectFileRequired',
 } as const;
 
 export type ProjectFieldError = (typeof projectFieldErrors)[keyof typeof projectFieldErrors];

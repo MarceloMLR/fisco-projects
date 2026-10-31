@@ -16,12 +16,12 @@
 
 ## 4. Tela
 
-- [ ] 4.1 `npm run api:update`; a terceira origem no `ScheduleOriginChoice`, o campo do arquivo, o início preenchido, a prévia generalizada com os avisos, os responsáveis do arquivo (pessoa e papel) e o erro no campo; testes de tela "Novo projeto a partir do MS Project" e "Arquivo recusado pela tela", nos temas claro e escuro, no computador e no celular
-- [ ] 4.2 Conferência no navegador contra as telas aprovadas do "Novo projeto"
+- [x] 4.1 `npm run api:update`; a terceira origem no `ScheduleOriginChoice`, o campo do arquivo, o início preenchido, a prévia generalizada com os avisos, os responsáveis do arquivo (pessoa e papel) e o erro no campo; testes de tela "Novo projeto a partir do MS Project" e "Arquivo recusado pela tela", nos temas claro e escuro, no computador e no celular
+- [x] 4.2 Conferência no navegador contra as telas aprovadas do "Novo projeto"
 
 ## 5. Demonstração e documentação
 
-- [ ] 5.1 O projeto importado no plano de `web/scripts/demo`, com os responsáveis ligados às pessoas da demonstração, e o teste "Projeto importado na demonstração"
+- [x] 5.1 O projeto importado no plano de `web/scripts/demo`, com os responsáveis ligados às pessoas da demonstração, e o teste "Projeto importado na demonstração"
 - [ ] 5.2 `CLAUDE.md`, `docs/glossario.md`, `docs/discovery.md` e o contexto do OpenSpec com a importação
 
 ## 6. Verificação

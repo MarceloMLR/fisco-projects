@@ -4,10 +4,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { type ClientRow, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { expectBusy, heldAnswer } from '../test/busy';
+import { demoMsProjectPreview } from '../test/demoMsProject';
+import { simulateDevice } from '../test/media';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   clientChoicesOf,
   demoClients,
+  demoPeople,
   demoPeopleChoices,
   type DemoProject,
   demoProjects,
@@ -572,5 +575,207 @@ describe('Botões em andamento no Novo projeto', () => {
     held.release();
     await screen.findByRole('heading', { level: 1, name: 'Portal do RH' });
     expect(requests).toEqual([`POST PORTAL-RH Portal do RH null ${marina.id} null`]);
+  });
+});
+
+// Spec: cronograma, requirement "Importar do MS Project pela tela" (ADR-0135).
+describe('Novo projeto a partir do MS Project', () => {
+  const msProject = form.msProject;
+  const owners = msProject.owners;
+  const xml = () =>
+    new File(['<Project xmlns="http://schemas.microsoft.com/project" />'], 'cronograma.xml', {
+      type: 'text/xml',
+    });
+
+  /** The start each reading of the file sent, none for the first. */
+  let starts: (string | undefined)[];
+
+  beforeEach(() => {
+    starts = [];
+    server.use(
+      http.post('/api/projects/ms-project-preview', async ({ request }) => {
+        const start = /name="start"\r\n\r\n([\d-]+)/.exec(await request.text())?.[1];
+        starts.push(start);
+        return HttpResponse.json(demoMsProjectPreview(start), {
+          headers: { 'Cache-Control': 'no-store' },
+        });
+      }),
+    );
+  });
+
+  function chooseFile(file: File) {
+    fireEvent.change(screen.getByTestId('ms-project-file'), { target: { files: [file] } });
+  }
+
+  async function chooseOption(label: string, name: string) {
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: label }));
+    fireEvent.click(await screen.findByRole('option', { name }));
+  }
+
+  it('Novo projeto a partir do MS Project', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    const { router } = await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+
+    // The preview, with the dates the server computed, and what changed in the conversion.
+    const preview = await screen.findByRole('complementary', { name: form.preview });
+    expect(within(preview).getByRole('heading', { name: 'Implantação do ERP' })).toBeVisible();
+    expect(preview).toHaveTextContent('2 tarefas · 1 marco');
+    expect(within(preview).getByText('Marco: Aceite da configuração')).toBeVisible();
+    expect(within(preview).getByText('13/10 – 15/10/2026')).toBeVisible();
+    expect(screen.getByLabelText(form.scheduleStart)).toHaveValue('2026-10-13');
+    expect(screen.getByTestId('ms-project-file-name')).toHaveTextContent('cronograma.xml');
+    const warnings = screen.getByRole('status');
+    expect(warnings).toHaveTextContent(msProject.warnings);
+    expect(warnings).toHaveTextContent(
+      '1 tarefa com mais de um recurso ficou com o primeiro: Treinar usuários.',
+    );
+
+    // Carla comes found by her e-mail; the consultant goes to a person of the company, as a developer.
+    const people = screen.getByRole('region', { name: owners.title });
+    const carla = within(people).getByRole('listitem', { name: /Carla Mendes/ });
+    expect(within(carla).getByRole('combobox', { name: 'Pessoa de Carla Mendes' })).toHaveValue(
+      'Carla Mendes',
+    );
+    expect(
+      within(people).queryByRole('combobox', { name: 'Pessoa de Consultor externo' }),
+    ).toBeNull();
+    await chooseOption('Responsável por Consultor externo', owners.person);
+    await choosePerson('Pessoa de Consultor externo', 'Diego', 'Diego Torres');
+    await chooseOption('Papel de Consultor externo', text.roles.Developer);
+
+    // Another start reads the file again.
+    fireEvent.change(screen.getByLabelText(form.scheduleStart), {
+      target: { value: '2026-10-19' },
+    });
+    expect(await within(preview).findByText('19/10 – 21/10/2026')).toBeVisible();
+    expect(starts).toEqual([undefined, '2026-10-19']);
+    create();
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    const sent = demoMsProjectPreview('2026-10-19');
+    expect(bodies[0]).toMatchObject({
+      code: 'ERP-RH',
+      templateId: null,
+      scheduleStart: '2026-10-19',
+      importedSchedule: {
+        phases: sent.plan.phases,
+        items: sent.plan.items,
+        resources: [
+          { userId: demoPeople.carla.id, directoryId: null, client: false, role: 'Contributor' },
+          { userId: demoPeople.diego.id, directoryId: null, client: false, role: 'Developer' },
+        ],
+      },
+    });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/projects/${newId}`);
+    });
+  });
+
+  it('Arquivo recusado pela tela', async () => {
+    const bodies: unknown[] = [];
+    server.use(
+      http.post('/api/projects/ms-project-preview', () =>
+        HttpResponse.json(
+          {
+            status: 400,
+            type: 'urn:fiscoprojects:problem:ms-project-file-refused',
+            reason: 'NotMsProjectXml',
+          },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(new File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0])], 'cronograma.mpp'));
+
+    expect(await screen.findByText(msProject.refused.NotMsProjectXml)).toBeVisible();
+    expect(screen.queryByRole('complementary', { name: form.preview })).not.toBeInTheDocument();
+    create();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: form.create })).not.toHaveAttribute('aria-busy');
+    });
+    expect(bodies).toEqual([]);
+    expect(screen.getByText(msProject.refused.NotMsProjectXml)).toBeVisible();
+  });
+
+  it('Sem arquivo do MS Project pela tela', async () => {
+    await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    create();
+
+    expect(await screen.findByText(text.errors.msProjectFileRequired)).toBeVisible();
+    expect(screen.getByLabelText(form.scheduleStart)).toBeDisabled();
+  });
+
+  it('Cliente como responsável do arquivo', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post('/api/projects', async ({ request }) => {
+        bodies.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: newId }, { status: 201 });
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'erp-rh');
+    fill(form.name, 'Implantação do ERP de RH');
+    const [client] = clients;
+    if (client === undefined) {
+      throw new Error('The simulated API has clients.');
+    }
+    await chooseClient(client.name);
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+    await screen.findByRole('complementary', { name: form.preview });
+
+    await chooseOption('Responsável por Consultor externo', `${client.name} (cliente)`);
+    create();
+
+    await waitFor(() => {
+      expect(bodies).toHaveLength(1);
+    });
+    expect(bodies[0]).toMatchObject({
+      clientId: client.id,
+      importedSchedule: {
+        resources: [
+          { userId: demoPeople.carla.id, client: false },
+          { userId: null, directoryId: null, client: true, role: null },
+        ],
+      },
+    });
+  });
+
+  it('MS Project no celular e no tema escuro', async () => {
+    simulateDevice({ systemTheme: 'dark' });
+    await openNewProject(phoneWidth);
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+
+    // On the phone, the preview comes below the form, after the people of the file.
+    const preview = await screen.findByRole('complementary', { name: form.preview });
+    const people = screen.getByRole('region', { name: owners.title });
+    expect(people.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(people).getAllByRole('listitem')).toHaveLength(2);
   });
 });
