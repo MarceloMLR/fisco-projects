@@ -462,6 +462,22 @@ describe('Gaveta do termo com os signatários', () => {
     expect(router.state.location.pathname).toBe('/');
   });
 
+  // Spec: termos-de-aceite, requirement "Lembrar e cancelar" (Assinatura-2.1).
+  it('Lembrete logo depois do envio', async () => {
+    server.use(
+      http.post('/api/projects/:id/acceptances/:termId/reminder', () =>
+        problem(409, 'urn:fiscoprojects:problem:signature-reminded-recently'),
+      ),
+    );
+    const drawer = await openTerm();
+
+    fireEvent.click(within(drawer).getByRole('button', { name: text.actions.remind }));
+
+    expect(await within(drawer).findByText(text.messages.remindedRecently)).toBeVisible();
+    expect(screen.queryByText(text.messages.providerFailed)).toBeNull();
+    expect(screen.queryByText(text.messages.reminded)).toBeNull();
+  });
+
   it('Lembrar e cancelar pela tela', async () => {
     const drawer = await openTerm();
 

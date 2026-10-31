@@ -84,6 +84,9 @@ public sealed partial class FakeAutentique : HttpMessageHandler
     /// <summary>When on, every request answers 429, as the limit of calls of the plan reached.</summary>
     public bool Limited { get; set; }
 
+    /// <summary>When on, sending the links again is refused, as the Autentique a short while after it sent them.</summary>
+    public bool ResendBlocked { get; set; }
+
     /// <summary>
     /// Where the signed PDFs are, as the Autentique gives their addresses: its API by default, or another host, as a
     /// storage of files.
@@ -234,6 +237,11 @@ public sealed partial class FakeAutentique : HttpMessageHandler
         if (document is null)
         {
             return Error("signature_not_found", "resendSignatures");
+        }
+
+        if (ResendBlocked)
+        {
+            return Error("too_many_resent_emails", "resendSignatures");
         }
 
         document.Resent.AddRange(ids);

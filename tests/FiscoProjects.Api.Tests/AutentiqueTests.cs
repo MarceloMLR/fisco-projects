@@ -9,8 +9,8 @@ using static FiscoProjects.Api.Tests.AcceptanceRequests;
 
 namespace FiscoProjects.Api.Tests;
 
-// Spec: termos-de-aceite, requirements "Assinatura pela Autentique", "Sandbox da Autentique", "Aviso do provedor" and
-// "Signatários da demonstração no provedor local" (ADR-0130). The Autentique is simulated inside the process
+// Spec: termos-de-aceite, requirements "Assinatura pela Autentique", "Sandbox da Autentique", "Aviso do provedor",
+// "Signatários da demonstração no provedor local" and "Lembrar e cancelar" (ADR-0130). The Autentique is simulated inside the process
 // (FakeAutentique).
 public sealed class AutentiqueTests(SqlServerFixture sqlServer) : IDisposable
 {
@@ -85,6 +85,23 @@ public sealed class AutentiqueTests(SqlServerFixture sqlServer) : IDisposable
         cancelled.StatusCode.Should().Be(HttpStatusCode.NoContent);
         _autentique.Documents.Single().DeadlineAt.Should().NotBeNull();
         (await marina.GetFromJsonAsync<JsonElement>(PathOf(team.Erp), Cancellation)).GetProperty("items").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Lembrete logo depois do envio")]
+    public async Task ARemindRefusedForBeingTooSoon_IsAConflict_OutOfTheHistory()
+    {
+        await using var team = await StartAsync();
+        var (homologation, _) = await MilestonesAsync(team, team.Erp);
+        var marina = await team.ClientOfAsync(team.Marina);
+        var id = await RequestedAsync(marina, team.Erp, homologation, Title);
+        _autentique.ResendBlocked = true;
+
+        var remind = await ProjectTeam.SendAsync(marina, HttpMethod.Post, $"{PathOf(team.Erp)}/{id}/reminder");
+
+        remind.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProjectTeam.ProblemTypeAsync(remind)).Should().Be("urn:fiscoprojects:problem:signature-reminded-recently");
+        (await DetailsAsync(marina, team.Erp, id)).GetProperty("events").EnumerateArray()
+            .Select(item => item.GetProperty("kind").GetString()).Should().Equal("Requested");
     }
 
     [Fact(DisplayName = "Falha da Autentique sem dados pessoais")]

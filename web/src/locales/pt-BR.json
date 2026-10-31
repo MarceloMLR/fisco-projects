@@ -3151,7 +3151,8 @@
       "requested_one": "Assinatura pedida a {{count}} signatário.",
       "requested_other": "Assinatura pedida a {{count}} signatários.",
       "noProvider": "A instalação não tem provedor de assinatura para este pedido. Anexe o termo assinado.",
-      "providerFailed": "O provedor de assinatura não respondeu, e nada foi gravado. Tente de novo."
+      "providerFailed": "O provedor de assinatura não respondeu, e nada foi gravado. Tente de novo.",
+      "remindedRecently": "O provedor de assinatura mandou o link há pouco. Tente lembrar os signatários de novo mais tarde."
     },
     "fileRefused": {
       "Empty": "O arquivo está vazio.",
