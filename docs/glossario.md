@@ -108,6 +108,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Caminho crítico | CriticalPath | |
 | Progresso | Progress | De 0 a 100% numa tarefa; o da fase e o do projeto são ponderados pela duração (ADR-0020) |
 | Modelo de projeto | ProjectTemplate | |
+| Exportar para o MS Project (XML) | ExportScheduleToMsProject, MsProjectExport, CanExportSchedule, `canExportSchedule` | O XML do cronograma, com o nome e o e-mail de cada responsável, só para o administrador e o gerente (ADR-0021, ADR-0136) |
+| Plano do cronograma | SchedulePlanOutline | As fases, os itens e as dependências que o `Schedule.ApplyTemplate` aplica num projeto novo, vindos de um modelo ou do MS Project (ADR-0017, ADR-0135) |
+| A partir do MS Project; prévia do arquivo | MsProjectImport, PreviewMsProjectImport, `POST /api/projects/ms-project-preview` | Lê o XML do MS Project sem guardar e devolve o cronograma convertido, com as datas, os recursos e os avisos (ADR-0135) |
+| Avisos da conversão | MsProjectWarning, MsProjectWarningKind | O que mudou do arquivo para o cronograma, com os nomes: níveis, dependências, intervalos, durações, nomes e recursos (ADR-0135) |
+| Recurso do arquivo; responsáveis do arquivo | MsProjectImportedResource, ImportedResourceChoice | O recurso de trabalho do MS Project, ligado na criação a uma pessoa com o papel, ao cliente ou a ninguém (ADR-0135) |
+| Cronograma importado | ImportedSchedule, `importedSchedule` | O cronograma da prévia que a criação do projeto recebe de volta, no lugar do modelo (ADR-0135) |
+| Pessoas pelo e-mail | IPeopleLookup, FoundPerson | Acha no `Users` as pessoas da empresa pelos e-mails, para a sugestão da prévia (ADR-0135) |
 | Calendário e feriados | Calendar | Módulo `Calendar` (schema `calendar`) e tela `/admin/calendar`; os outros módulos contam dias úteis pelo contrato `IWorkCalendar` (ADR-0018, ADR-0083) |
 | Calendário da instalação, dias de trabalho | WorkCalendar, WorkingDays | Os dias da semana em que a instalação trabalha, numa linha só; padrão de segunda a sexta, nunca nenhum |
 | Dia útil | BusinessDay | Dia de trabalho que não é feriado nem ponto facultativo considerado (`IBusinessDays`) |

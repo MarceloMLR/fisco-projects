@@ -3,13 +3,13 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
-import { api, projectProblems } from '../api/client';
-import { generalRulesQuery, queryKeys, templatesQuery } from '../api/queries';
+import { api, type MsProjectPreview, projectProblems } from '../api/client';
+import { clientChoicesQuery, generalRulesQuery, queryKeys, templatesQuery } from '../api/queries';
 import { ClientDialog } from '../admin/ClientDialog';
 import { Alert } from '../components/Alert';
 import { FormField } from '../components/FormField';
@@ -24,7 +24,15 @@ import { ClientSelectField } from './ClientSelectField';
 import type { ChosenFolder } from './ProjectFolderDialog';
 import { ProjectFolderField } from './ProjectFolderField';
 import { systemFolderPath } from './projectFolder';
-import { ScheduleOriginChoice, TemplatePreview } from './TemplateChoice';
+import { MsProjectFileField, MsProjectOwners, MsProjectWarnings } from './MsProjectImportFields';
+import {
+  importedScheduleOf,
+  type MsProjectReading,
+  readMsProject,
+  type ResourceOwner,
+  suggestedOwners,
+} from './msProjectImport';
+import { MsProjectSchedulePreview, ScheduleOriginChoice, TemplatePreview } from './TemplateChoice';
 import {
   invalidFields,
   isProjectFieldError,
@@ -44,11 +52,27 @@ const form = projectDataSchema
       error: projectFieldErrors.managerRequired,
     }),
     techLead: z.custom<PersonChoice | null>(),
-    origin: z.enum(['blank', 'template']),
+    origin: z.enum(['blank', 'template', 'msProject']),
     templateId: z.string(),
     scheduleStart: z.string(),
+    // Read by the server: the form only knows whether there is a preview (ADR-0135).
+    msProjectRead: z.boolean(),
   })
   .superRefine((values, context) => {
+    if (values.origin === 'msProject' && !values.msProjectRead) {
+      context.addIssue({
+        code: 'custom',
+        path: ['msProjectRead'],
+        message: projectFieldErrors.msProjectFileRequired,
+      });
+    }
+    if (values.origin === 'msProject' && values.scheduleStart === '') {
+      context.addIssue({
+        code: 'custom',
+        path: ['scheduleStart'],
+        message: projectFieldErrors.scheduleStartRequired,
+      });
+    }
     // From a model, the model and the start are needed (ADR-0017).
     if (values.origin === 'template' && values.templateId === '') {
       context.addIssue({
@@ -92,8 +116,10 @@ const sectionTitleSx = {
 const narrowForm = '@media (max-width: 700px)';
 
 /**
- * Novo projeto (canvas NovoProjeto): the section "Dados do projeto" and the section "Cronograma", "Em branco" or "A
- * partir de um modelo", with the model, the start and its preview beside the form (ADR-0017). The
+ * Novo projeto (canvas NovoProjeto): the section "Dados do projeto" and the section "Cronograma", "Em branco", "A
+ * partir de um modelo", with the model, the start and its preview beside the form (ADR-0017), or "A partir do MS
+ * Project", with the file, the start, the preview the server converted, what changed and who each resource of the file
+ * becomes (ADR-0135); changing the start reads the file again. The
  * manager comes with the person who creates the project, marked "(você)"; with another manager, the screen says the
  * person does not join it (ADR-0072). "Cadastrar cliente" includes a client and chooses it.
  */
@@ -141,6 +167,7 @@ export function NewProjectPage() {
       origin: 'blank',
       templateId: '',
       scheduleStart: '',
+      msProjectRead: false,
     },
   });
   const templates = useQuery(templatesQuery());
@@ -152,11 +179,81 @@ export function NewProjectPage() {
       ? activeTemplates.find((template) => template.id === templateId)
       : undefined;
 
+  // "A partir do MS Project": the file, what the server read and who each resource becomes (ADR-0135).
+  const [msFile, setMsFile] = useState<File | null>(null);
+  const [msPreview, setMsPreview] = useState<MsProjectPreview | null>(null);
+  const [owners, setOwners] = useState<ResourceOwner[]>([]);
+  const [msReading, setMsReading] = useState(false);
+  const [msError, setMsError] = useState<string>();
+  const readings = useRef(0);
+  const clientId = useWatch({ control, name: 'clientId' });
+  const clientChoices = useQuery(clientChoicesQuery());
+  const clientName =
+    clientId === noClient
+      ? undefined
+      : clientChoices.data?.find((client) => client.id === clientId)?.name;
+
+  const readFile = async (file: File, start: string | undefined, keepOwners: boolean) => {
+    const reading = ++readings.current;
+    setMsReading(true);
+    setMsError(undefined);
+    const result: MsProjectReading = await readMsProject(
+      file,
+      start,
+      clientId === noClient ? undefined : clientId,
+    );
+    // Only the last reading counts, when the start or the client changed meanwhile.
+    if (reading !== readings.current) {
+      return;
+    }
+    setMsReading(false);
+    if ('preview' in result) {
+      setMsFile(file);
+      setMsPreview(result.preview);
+      setOwners((current) =>
+        keepOwners && current.length === result.preview.resources.length
+          ? current
+          : suggestedOwners(result.preview),
+      );
+      setValue('msProjectRead', true, { shouldValidate: errors.msProjectRead !== undefined });
+      setValue('scheduleStart', result.preview.start, {
+        shouldValidate: errors.scheduleStart !== undefined,
+      });
+      return;
+    }
+    setMsError(
+      'refusal' in result
+        ? t(`projects.form.msProject.refused.${result.refusal}`)
+        : t('projects.form.msProject.failed'),
+    );
+    if (!keepOwners) {
+      setMsFile(null);
+      setMsPreview(null);
+      setOwners([]);
+      setValue('msProjectRead', false);
+    }
+  };
+
+  // A new start reads the file again: the server gives the dates from it (ADR-0051).
+  const startChanged = (start: string) => {
+    if (msFile !== null && msPreview !== null && start !== '' && start !== msPreview.start) {
+      void readFile(msFile, start, true);
+    }
+  };
+
   const manager = useWatch({ control, name: 'manager' });
   const otherManager = manager !== null && me !== undefined && manager.id !== me.id;
   const techLead = useWatch({ control, name: 'techLead' });
   const typedCode = useWatch({ control, name: 'code' });
   const typedName = useWatch({ control, name: 'name' });
+  const shownMsPreview = origin === 'msProject' ? msPreview : null;
+  const hasPreview = chosenTemplate !== undefined || shownMsPreview !== null;
+  const preview =
+    chosenTemplate !== undefined ? (
+      <TemplatePreview template={chosenTemplate} />
+    ) : shownMsPreview !== null ? (
+      <MsProjectSchedulePreview preview={shownMsPreview} />
+    ) : null;
   const errorText = (message: string | undefined) =>
     isProjectFieldError(message) ? t(message) : undefined;
   const codeError =
@@ -176,8 +273,12 @@ export function NewProjectPage() {
           // The tech lead may be a person of the directory who never signed in (ADR-0005).
           techLeadId: values.techLead?.id ?? null,
           templateId: values.origin === 'template' ? values.templateId : null,
-          scheduleStart: values.origin === 'template' ? values.scheduleStart : null,
+          scheduleStart: values.origin === 'blank' ? null : values.scheduleStart,
           folderId: folder?.id ?? null,
+          importedSchedule:
+            values.origin === 'msProject' && msPreview !== null
+              ? importedScheduleOf(msPreview, owners, values.clientId !== noClient)
+              : null,
         },
       });
       if (data !== undefined) {
@@ -204,6 +305,10 @@ export function NewProjectPage() {
         scheduleStart: ['scheduleStart', projectFieldErrors.scheduleStartRequired],
       } as const;
       let known = false;
+      if (fields.includes('importedSchedule')) {
+        setMsError(t('projects.form.msProject.invalid'));
+        known = true;
+      }
       if (fields.includes('folderId')) {
         setFolderError(t('projects.folder.invalid'));
         known = true;
@@ -230,8 +335,7 @@ export function NewProjectPage() {
             flex: 1,
             minHeight: 0,
             display: 'grid',
-            gridTemplateColumns:
-              chosenTemplate !== undefined && desktop ? 'minmax(0, 1fr) 400px' : 'minmax(0, 1fr)',
+            gridTemplateColumns: hasPreview && desktop ? 'minmax(0, 1fr) 400px' : 'minmax(0, 1fr)',
             gap: 'var(--space-4)',
           }}
         >
@@ -447,17 +551,68 @@ export function NewProjectPage() {
                   />
                 </Box>
               )}
+              {origin === 'msProject' && (
+                <>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(0, 1fr) 200px',
+                      gap: 'var(--space-4)',
+                      alignItems: 'start',
+                      [narrowForm]: { gridTemplateColumns: 'minmax(0, 1fr)' },
+                    }}
+                  >
+                    <MsProjectFileField
+                      file={msFile}
+                      reading={msReading}
+                      error={msError ?? errorText(errors.msProjectRead?.message)}
+                      onChoose={(file) => {
+                        void readFile(file, undefined, false);
+                      }}
+                    />
+                    <Controller
+                      control={control}
+                      name="scheduleStart"
+                      render={({ field }) => (
+                        <TextField
+                          label={t('projects.form.scheduleStart')}
+                          type="date"
+                          disabled={msPreview === null}
+                          error={errorText(errors.scheduleStart?.message)}
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value}
+                          onBlur={field.onBlur}
+                          onChange={(event) => {
+                            field.onChange(event.target.value);
+                            startChanged(event.target.value);
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                  {msPreview !== null && <MsProjectWarnings preview={msPreview} />}
+                  {msPreview !== null && (
+                    <MsProjectOwners
+                      preview={msPreview}
+                      owners={owners}
+                      clientName={clientName}
+                      managerId={manager?.id ?? null}
+                      techLeadId={techLead?.id ?? null}
+                      onChange={setOwners}
+                    />
+                  )}
+                </>
+              )}
               {errors.root?.message !== undefined && (
                 <Alert tone="danger">{errors.root.message}</Alert>
               )}
             </Box>
-            {chosenTemplate !== undefined && !desktop && (
-              <Box sx={{ marginTop: 'var(--space-4)' }}>
-                <TemplatePreview template={chosenTemplate} />
-              </Box>
+            {preview !== null && !desktop && (
+              <Box sx={{ marginTop: 'var(--space-4)' }}>{preview}</Box>
             )}
           </Form>
-          {chosenTemplate !== undefined && desktop && <TemplatePreview template={chosenTemplate} />}
+          {preview !== null && desktop && preview}
         </Box>
       </Page>
       <Box

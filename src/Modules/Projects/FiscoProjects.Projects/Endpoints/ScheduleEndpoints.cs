@@ -155,7 +155,8 @@ internal static class ScheduleEndpoints
     {
         projects.MapGet("/{id:guid}/schedule", GetAsync).WithName("GetSchedule");
         projects.MapGet("/{id:guid}/schedule/ms-project", ExportToMsProjectAsync).WithName("ExportScheduleToMsProject")
-            .Produces<string>(StatusCodes.Status200OK, "application/xml");
+            .Produces<string>(StatusCodes.Status200OK, "application/xml")
+            .ProducesProblem(StatusCodes.Status403Forbidden);
         projects.MapPost("/{id:guid}/schedule/phases", AddPhaseAsync).WithName("AddSchedulePhase")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -230,16 +231,21 @@ internal static class ScheduleEndpoints
     }
 
     /// <summary>
-    /// The schedule in the XML of the MS Project (ADR-0021, ADR-0051), as a file named after the code of the project, for
-    /// whoever sees it (ADR-0043).
+    /// The schedule in the XML of the MS Project (ADR-0021, ADR-0051), as a file named after the code of the project, with
+    /// the e-mails of the people in charge, for the Administrator and the manager (ADR-0136); 403 for the other people of
+    /// the project.
     /// </summary>
-    private static async Task<Results<FileContentHttpResult, NotFound>> ExportToMsProjectAsync(
+    private static async Task<Results<FileContentHttpResult, NotFound, ForbidHttpResult>> ExportToMsProjectAsync(
         Guid id, HttpContext http, IUserAccess access, ExportScheduleToMsProject export, CancellationToken cancellationToken)
     {
         var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
-        return await export.ExecuteAsync(id, viewer, cancellationToken) is { } file
-            ? TypedResults.File(System.Text.Encoding.UTF8.GetBytes(file.Content), file.MediaType, file.Name)
-            : TypedResults.NotFound();
+        var result = await export.ExecuteAsync(id, viewer, cancellationToken);
+        if (result.File is { } file)
+        {
+            return TypedResults.File(System.Text.Encoding.UTF8.GetBytes(file.Content), file.MediaType, file.Name);
+        }
+
+        return result.Forbidden ? TypedResults.Forbid() : TypedResults.NotFound();
     }
 
     private static ScheduleStepResponse? StepOf(ScheduleChangeLabel? label) =>

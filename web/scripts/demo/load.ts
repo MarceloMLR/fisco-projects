@@ -371,6 +371,79 @@ async function fromTemplate(
   return { templateId: template.id, scheduleStart: dayFrom(firstDay, start) };
 }
 
+/**
+ * The schedule of a project created from the XML of the MS Project that the export gives of an earlier project of the
+ * plan (ADR-0135): the Administrator exports it, reads it in the preview and links each resource to the person of the
+ * demo with its name, with the role of the members of the plan, or to the client; gives the people it put in the
+ * project. Without the earlier project, which the Administrator may have removed, the project is created blank.
+ */
+async function fromMsProject(
+  project: DemoProject,
+  firstDay: string,
+  clientId: string | null,
+  admin: Api,
+  personOf: (person: DemoPerson) => { api: Api; id: string },
+  log: (line: string) => void,
+): Promise<{ body: Record<string, unknown>; people: ReadonlySet<DemoPerson> }> {
+  if (project.fromMsProject === undefined) {
+    return { body: {}, people: new Set() };
+  }
+  const { code, start } = project.fromMsProject;
+  const sourceId = (await existingProjects(admin)).codes.get(code);
+  if (sourceId === undefined) {
+    log(
+      `${project.code} foi criado em branco: ${code} não existe para exportar o XML do MS Project.`,
+    );
+    return { body: {}, people: new Set() };
+  }
+  const xml = must(
+    await admin.GET('/api/projects/{id}/schedule/ms-project', {
+      params: { path: { id: sourceId } },
+      parseAs: 'text',
+    }),
+    `XML do MS Project de ${code}`,
+  );
+  const scheduleStart = dayFrom(firstDay, start);
+  const form = new FormData();
+  form.append('file', new Blob([xml], { type: 'application/xml' }), `${code}.xml`);
+  form.append('start', scheduleStart);
+  if (clientId !== null) {
+    form.append('clientId', clientId);
+  }
+  const preview = must(
+    await admin.POST('/api/projects/ms-project-preview', {
+      body: { file: '', start: scheduleStart, ...(clientId === null ? {} : { clientId }) },
+      bodySerializer: () => form,
+    }),
+    `Prévia do XML de ${code}`,
+  );
+  const roles = new Map(project.members ?? []);
+  const people = new Set<DemoPerson>();
+  const resources = preview.resources.map((resource) => {
+    const person = (Object.keys(demoNames) as DemoPerson[]).find(
+      (candidate) => demoNames[candidate] === resource.name,
+    );
+    if (person === undefined) {
+      return { userId: null, directoryId: null, client: resource.client, role: null };
+    }
+    people.add(person);
+    const role = roles.get(person);
+    return {
+      userId: personOf(person).id,
+      directoryId: null,
+      client: false,
+      role: role === 'Developer' ? 'Developer' : 'Contributor',
+    };
+  });
+  return {
+    body: {
+      scheduleStart,
+      importedSchedule: { phases: preview.plan.phases, items: preview.plan.items, resources },
+    },
+    people,
+  };
+}
+
 /** The text of a message as the editor keeps it: a paragraph, with the mention at the start (ADR-0026). */
 function documentOf(message: DemoMessage, personOf: (person: DemoPerson) => { id: string }) {
   const mention =
@@ -405,22 +478,28 @@ async function loadProject(
   log: (line: string) => void,
 ): Promise<number> {
   const leader = project.manager ?? manager;
+  const clientId = project.client === null ? null : (clients.get(project.client) ?? null);
+  const imported = await fromMsProject(project, firstDay, clientId, admin, personOf, log);
   const created = must(
     await admin.POST('/api/projects', {
       body: {
         code: project.code,
         name: project.name,
         description: null,
-        clientId: project.client === null ? null : (clients.get(project.client) ?? null),
+        clientId,
         managerId: personOf(leader).id,
         techLeadId: project.techLead === undefined ? null : personOf(project.techLead).id,
         ...(await fromTemplate(project, firstDay, admin, log)),
+        ...imported.body,
       },
     }),
     `Projeto ${project.code}`,
   );
   const id = created.id;
-  for (const [person, role] of project.members ?? []) {
+  // The people of the resources of the file are already in the project, with their roles (ADR-0135).
+  for (const [person, role] of (project.members ?? []).filter(
+    ([person]) => !imported.people.has(person),
+  )) {
     done(
       await admin.POST('/api/projects/{id}/members', {
         params: { path: { id } },

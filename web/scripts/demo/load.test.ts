@@ -47,6 +47,38 @@ const listedId = (kind: string, index: number) =>
 /** The model the project made from a model takes, saved from the ERP-FIN earlier in the load. */
 const erpTemplateId = listedId('4444', 0);
 
+/** The preview of the XML of the REFORMA-26: its people by name, and a consultant who is no one of the demo. */
+const msProjectPreview = {
+  title: 'Preparação para a Reforma Tributária',
+  firstDay: '2026-09-30',
+  start: '2026-09-30',
+  plan: {
+    phases: ['Estudo'],
+    items: [
+      {
+        phase: 0,
+        parent: null,
+        kind: 'Task',
+        name: 'Estudar as regras do IBS e da CBS',
+        startOffset: 0,
+        duration: 10,
+        progress: 100,
+        after: [],
+        resource: 0,
+      },
+    ],
+  },
+  phases: [],
+  resources: [
+    'Carla Mendes',
+    'Beatriz Lima',
+    'Diego Torres',
+    'Marina Costa',
+    'Consultoria externa',
+  ].map((name) => ({ name, email: null, tasks: 1, person: null, client: false })),
+  warnings: [],
+};
+
 function whoCalls(request: Request): string {
   const cookie = request.headers.get('cookie') ?? '';
   return new RegExp(`${cookieName}=([a-z]+)`).exec(cookie)?.[1] ?? 'anonymous';
@@ -209,6 +241,13 @@ beforeEach(() => {
       `${base}/api/local-signatures/:token/*`,
       () => new HttpResponse(null, { status: 204 }),
     ),
+    // The XML of the MS Project the export gives, and its preview with the people of the file (ADR-0135).
+    http.get(`${base}/api/projects/:id/schedule/ms-project`, () =>
+      HttpResponse.text('<Project xmlns="http://schemas.microsoft.com/project" />', {
+        headers: { 'Content-Type': 'application/xml' },
+      }),
+    ),
+    http.post(`${base}/api/projects/ms-project-preview`, () => HttpResponse.json(msProjectPreview)),
     http.post(`${base}/api/tickets`, () =>
       HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
     ),
@@ -1069,6 +1108,51 @@ describe('Demonstração mais rica', () => {
     expect(callsBy(/ POST .*\/schedule\/phases$/)).toHaveLength(
       demoProjects.reduce((total, project) => total + project.phases.length, 0),
     );
+  });
+
+  // Spec: dados-de-demonstracao, requirement "Projeto importado na demonstração" (ADR-0135).
+  it('Projeto importado na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    const imported = demoProjects.filter((project) => project.fromMsProject !== undefined);
+    expect(imported.map((project) => project.fromMsProject?.code)).toEqual(['REFORMA-26']);
+    const [project] = imported;
+    const codes = demoProjects.map((one) => one.code);
+    expect(codes.indexOf('REFORMA-26')).toBeLessThan(codes.indexOf(project?.code ?? ''));
+    expect(project?.phases).toEqual([]);
+    // The Administrator exports the REFORMA-26, reads the file in the preview and creates the project from it.
+    const source = created.find((one) => one.code === 'REFORMA-26')?.id ?? '';
+    const exported = calls.indexOf(`paulo GET /api/projects/${source}/schedule/ms-project`);
+    const previewed = calls.indexOf('paulo POST /api/projects/ms-project-preview');
+    expect(exported).toBeGreaterThan(
+      calls.indexOf('marina PUT /api/projects/' + source + '/status'),
+    );
+    expect(previewed).toBeGreaterThan(exported);
+    const form = (bodies.get('/api/projects/ms-project-preview') ?? [])[0] as string;
+    expect(form).toContain('filename="REFORMA-26.xml"');
+    expect(form).toMatch(/name="start"\r\n\r\n2026-09-30/);
+    const body = ((bodies.get('/api/projects') ?? []) as { code: string }[]).find(
+      (one) => one.code === project?.code,
+    );
+    // Each resource goes to the person of the demo with its name, with the role of the plan; the consultant, to no one.
+    expect(body).not.toHaveProperty('templateId');
+    expect(body).toMatchObject({
+      scheduleStart: '2026-09-30',
+      importedSchedule: {
+        phases: msProjectPreview.plan.phases,
+        items: msProjectPreview.plan.items,
+        resources: [
+          { userId: idOf('carla'), directoryId: null, client: false, role: 'Contributor' },
+          { userId: idOf('beatriz'), directoryId: null, client: false, role: 'Contributor' },
+          { userId: idOf('diego'), directoryId: null, client: false, role: 'Developer' },
+          { userId: idOf('marina'), directoryId: null, client: false, role: 'Contributor' },
+          { userId: null, directoryId: null, client: false, role: null },
+        ],
+      },
+    });
+    // The people of the file are already in the project: the command includes none of them again.
+    const id = created.find((one) => one.code === project?.code)?.id ?? '';
+    expect(bodies.get(`/api/projects/${id}/members`)).toBeUndefined();
   });
 
   it('Projeto cancelado com chamados', async () => {

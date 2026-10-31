@@ -42,9 +42,12 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     private sealed record Action(string Name, Func<HttpClient, Scene, Task<HttpResponseMessage>> Run, HttpStatusCode Allowed)
     {
         public bool Changes => !Reads.Contains(Name);
+
+        /// <summary>Only the Administrator and the manager do it: every change, and the XML with the e-mails (ADR-0136).</summary>
+        public bool ManagersOnly => Name != "See the schedule";
     }
 
-    /// <summary>What everyone in the project does with the schedule, without changing it (ADR-0043).</summary>
+    /// <summary>What the people of the project read of the schedule, without changing it (ADR-0043, ADR-0136).</summary>
     private static readonly HashSet<string> Reads = ["See the schedule", "Export to MS Project"];
 
     private static readonly Action[] Actions =
@@ -85,7 +88,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
 
     [Fact(DisplayName = "Líder técnico só vê o cronograma")]
     public Task TechLead_OnlySeesTheSchedule() => AssertRowAsync(
-        scene => scene.App.SignInAsync(scene.Rafael), action => action.Changes ? HttpStatusCode.Forbidden : null);
+        scene => scene.App.SignInAsync(scene.Rafael), action => action.ManagersOnly ? HttpStatusCode.Forbidden : null);
 
     [Theory(DisplayName = "Colaborador, desenvolvedor e leitor só veem o cronograma")]
     [InlineData("Contributor")]
@@ -93,7 +96,7 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     [InlineData("Viewer")]
     public Task OtherRoles_OnlySeeTheSchedule(string role) => AssertRowAsync(
         scene => scene.App.SignInAsync(scene.Carla),
-        action => action.Changes ? HttpStatusCode.Forbidden : null,
+        action => action.ManagersOnly ? HttpStatusCode.Forbidden : null,
         role);
 
     [Fact(DisplayName = "Cronograma de um projeto de fora")]
@@ -810,13 +813,15 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     }
 
     [Fact(DisplayName = "XML do cronograma pela API")]
-    public async Task Export_IsAFileNamedAfterTheProject()
+    public async Task Export_IsAFileNamedAfterTheProject_WithTheEmailOfThePersonInCharge()
     {
-        var scene = await StartAsync();
+        var scene = await StartAsync(carlasRole: "Developer");
         await using var app = scene.App;
-        using var carla = await app.SignInAsync(scene.Carla);
+        using var marina = await app.SignInAsync(scene.Marina);
+        await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, owner: scene.Carla));
 
-        var response = await carla.GetAsync($"{scene.Path}/ms-project", Cancellation);
+        var response = await marina.GetAsync($"{scene.Path}/ms-project", Cancellation);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/xml");
@@ -824,6 +829,35 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         var document = System.Xml.Linq.XDocument.Parse(await response.Content.ReadAsStringAsync(Cancellation));
         document.Descendants().Where(element => element.Name.LocalName == "Name").Select(element => element.Value)
             .Should().Contain(["Configuração", "Parametrizar regras de ICMS", "Aceite da configuração"]);
+        var resource = document.Descendants().Single(element => element.Name.LocalName == "Resource");
+        resource.Elements().Select(element => (element.Name.LocalName, element.Value))
+            .Should().Contain([("Name", "Carla Mendes"), ("EmailAddress", "carla.mendes@empresa.example")]);
+    }
+
+    [Fact(DisplayName = "XML só da gestão")]
+    public async Task OnlyTheManagers_DownloadTheXml_AlsoOfAClosedProject()
+    {
+        var scene = await StartAsync(carlasRole: "Contributor");
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        using var rafael = await app.SignInAsync(scene.Rafael);
+        using var carla = await app.SignInAsync(scene.Carla);
+        var viewer = await app.CreateUserAsync("Lucas Prado", SystemRole.User);
+        await app.AddProjectMemberAsync(scene.ProjectId, viewer, "Viewer");
+        using var lucas = await app.SignInAsync(viewer);
+        await SendAsync(marina, HttpMethod.Put, $"/api/projects/{scene.ProjectId}/status", new { status = "Completed" });
+
+        foreach (var client in new[] { rafael, carla, lucas })
+        {
+            (await client.GetAsync($"{scene.Path}/ms-project", Cancellation)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await marina.GetAsync($"{scene.Path}/ms-project", Cancellation)).StatusCode.Should().Be(HttpStatusCode.OK);
+        var permissions = (await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{scene.ProjectId}", Cancellation))
+            .GetProperty("permissions");
+        permissions.GetProperty("canExportSchedule").GetBoolean().Should().BeTrue();
+        (await carla.GetFromJsonAsync<JsonElement>($"/api/projects/{scene.ProjectId}", Cancellation))
+            .GetProperty("permissions").GetProperty("canExportSchedule").GetBoolean().Should().BeFalse();
     }
 
     [Fact(DisplayName = "Cliente como responsável pela API")]

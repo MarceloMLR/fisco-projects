@@ -327,6 +327,12 @@ export interface DemoProject {
    * the project then has no phases of its own in the plan.
    */
   fromTemplate?: { name: string; start: number };
+  /**
+   * Created from the XML of the MS Project that the export gives of an earlier project of the plan, from this day: the
+   * server converts it, and each resource goes to the person of the demo with its name, with the role of the members
+   * of the plan (ADR-0135); the project then has no phases of its own in the plan.
+   */
+  fromMsProject?: { code: string; start: number };
   techLead?: DemoPerson;
   members?: readonly (readonly [DemoPerson, ProjectRole])[];
   /** The status it ends in; a new project starts in Planning. */
@@ -2002,6 +2008,32 @@ export const demoProjects: readonly DemoProject[] = [
   },
   // A project made in a training, to show the deletion by the Administrator (ADR-0041): "Excluir projeto" in
   // "Ações do projeto", with what it has and the code to confirm.
+  {
+    code: 'REFORMA-RS',
+    name: 'Reforma Tributária na filial RS',
+    client: null,
+    // Planned in the MS Project by the filial: the XML of the REFORMA-26, on the same days, with its progress and the
+    // people of its tasks (ADR-0135).
+    fromMsProject: { code: 'REFORMA-26', start: -5 },
+    members: [
+      ['carla', 'Contributor'],
+      ['diego', 'Developer'],
+      ['beatriz', 'Contributor'],
+    ],
+    status: 'InProgress',
+    phases: [],
+    tickets: [
+      {
+        title: 'Alíquotas da filial RS no cálculo',
+        team: 'Functional',
+        priority: 'Medium',
+        by: 'beatriz',
+        description:
+          'Conferir se o cálculo da filial RS usa as mesmas alíquotas de teste da matriz.',
+        steps: [act('carla', 'StartTriage')],
+      },
+    ],
+  },
   {
     code: 'TESTE-01',
     name: 'Projeto de teste do treinamento',

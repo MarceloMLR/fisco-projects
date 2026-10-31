@@ -138,6 +138,33 @@ public sealed class ProjectTemplate : Entity
 
     public void SetActive(bool active) => IsActive = active;
 
+    /// <summary>
+    /// The outline a new project is made from (ADR-0017): the phases and the items in their order, without progress nor
+    /// owners, each task lasting from 1 to 999 business days.
+    /// </summary>
+    public SchedulePlanOutline ToOutline()
+    {
+        var phases = _phases.OrderBy(phase => phase.Position).ToList();
+        var phaseIndex = phases.Select((phase, index) => (phase.Id, index)).ToDictionary(pair => pair.Id, pair => pair.index);
+        var items = _items.OrderBy(item => item.Position).ToList();
+        var itemIndex = items.Select((item, index) => (item.Id, index)).ToDictionary(pair => pair.Id, pair => pair.index);
+        int? ParentOf(ProjectTemplateItem item, int index) =>
+            item.ParentId is { } parent && itemIndex.TryGetValue(parent, out var position) && position < index ? position : null;
+        return new SchedulePlanOutline(
+            [.. phases.Select(phase => new OutlinePhase(phase.Name))],
+            [.. items.Select((item, index) => new OutlineItem(
+                phaseIndex[item.PhaseId],
+                ParentOf(item, index),
+                item.Kind,
+                item.Name,
+                item.StartOffset,
+                item.Kind == ScheduleItemKind.Milestone ? 0 : Math.Clamp(item.Duration, 1, Schedule.MaxDuration)))],
+            [.. _dependencies
+                .Where(dependency => itemIndex.ContainsKey(dependency.PredecessorId) && itemIndex.ContainsKey(dependency.SuccessorId))
+                .Select(dependency => new OutlineDependency(itemIndex[dependency.PredecessorId], itemIndex[dependency.SuccessorId]))
+                .Where(dependency => dependency.Predecessor < dependency.Successor)]);
+    }
+
     /// <summary>The items of a phase, in order.</summary>
     public IEnumerable<ProjectTemplateItem> ItemsOf(Guid phaseId) =>
         _items.Where(item => item.PhaseId == phaseId).OrderBy(item => item.Position);

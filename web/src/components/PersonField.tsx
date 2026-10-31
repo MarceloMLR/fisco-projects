@@ -42,6 +42,7 @@ const optionsShown = 20;
  */
 export function PersonField({
   label,
+  accessibleLabel,
   optional,
   value,
   onChange,
@@ -54,6 +55,8 @@ export function PersonField({
   helper,
 }: {
   label: string;
+  /** The name of the field for the screen readers, when the label repeats in a list, as "Pessoa de Carla Mendes". */
+  accessibleLabel?: string;
   /** The text that marks the field as optional; an optional field can be emptied. */
   optional?: string;
   value: PersonChoice | null;
@@ -161,7 +164,7 @@ export function PersonField({
             onMouseDown={inputSlot.onMouseDown}
             inputProps={{
               ...htmlInput,
-              'aria-label': label,
+              'aria-label': accessibleLabel ?? label,
               'aria-invalid': error === undefined ? undefined : true,
               'aria-describedby': describedBy,
             }}

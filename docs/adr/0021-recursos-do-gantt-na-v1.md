@@ -1,5 +1,5 @@
 ---
-status: aceita (apresentação na tela definida pelo ADR-0071)
+status: aceita (apresentação na tela definida pelo ADR-0071; quem baixa o XML e o e-mail nele, pelo ADR-0136)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---

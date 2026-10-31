@@ -34,7 +34,7 @@ public sealed class MsProjectExportTests
             schedule,
             schedule.Figures(Today),
             Days,
-            new Dictionary<Guid, string> { [Rafael] = "Rafael Souza" },
+            new Dictionary<Guid, MsProjectOwner> { [Rafael] = new("Rafael Souza", "rafael.souza@empresa.example") },
             new DateTime(2026, 10, 16, 12, 0, 0, DateTimeKind.Utc));
 
     private static XElement TaskNamed(XDocument document, string name) =>
@@ -64,8 +64,28 @@ public sealed class MsProjectExportTests
         (Value(link, "PredecessorUID"), Value(link, "Type")).Should().Be((Value(task, "UID"), "1"));
         // The empty phase has nothing to carry; the owner goes as a resource assigned to the task.
         document.Descendants(Ns + "Task").Select(one => Value(one, "Name")).Should().NotContain("Homologação");
-        Value(document.Descendants(Ns + "Resource").Single(), "Name").Should().Be("Rafael Souza");
+        var resource = document.Descendants(Ns + "Resource").Single();
+        (Value(resource, "Name"), Value(resource, "EmailAddress")).Should().Be(("Rafael Souza", "rafael.souza@empresa.example"));
         Value(document.Descendants(Ns + "Assignment").Single(), "TaskUID").Should().Be(Value(task, "UID"));
+    }
+
+    [Fact(DisplayName = "Responsável anonimizado no XML")]
+    public void AnAnonymizedPersonInCharge_GoesWithoutTheEmail()
+    {
+        var (schedule, _, _) = NewSchedule();
+
+        var document = MsProjectExport.Of(
+            "ERP-FIN",
+            "Implantação do ERP financeiro",
+            schedule,
+            schedule.Figures(Today),
+            Days,
+            new Dictionary<Guid, MsProjectOwner> { [Rafael] = new("Pessoa anonimizada 1", string.Empty) },
+            new DateTime(2026, 10, 16, 12, 0, 0, DateTimeKind.Utc));
+
+        var resource = document.Descendants(Ns + "Resource").Single();
+        Value(resource, "Name").Should().Be("Pessoa anonimizada 1");
+        resource.Element(Ns + "EmailAddress").Should().BeNull();
     }
 
     [Fact(DisplayName = "Calendário no XML")]

@@ -3033,6 +3033,98 @@
         }
       }
     },
+    "/api/projects/ms-project-preview": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "Reads an XML of the MS Project and converts it into the schedule of a new project (ADR-0135), keeping nothing.",
+        "operationId": "PreviewMsProjectImport",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "allOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "file": {
+                        "$ref": "#/components/schemas/IFormFile"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "clientId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MsProjectPreviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/members": {
       "get": {
         "tags": [
@@ -3405,6 +3497,16 @@
               "application/xml": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -12010,6 +12112,230 @@
         },
         "description": "A credential mapped from a line of the spreadsheet, with the number of the line."
       },
+      "ImportedItemRequest": {
+        "required": [
+          "phase",
+          "parent",
+          "kind",
+          "name",
+          "startOffset",
+          "duration",
+          "progress",
+          "after",
+          "resource"
+        ],
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "parent": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startOffset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "after": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "resource": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A task or milestone of the schedule from the MS Project, as the preview gave it (ImportedItemResponse)."
+      },
+      "ImportedItemResponse": {
+        "required": [
+          "phase",
+          "parent",
+          "kind",
+          "name",
+          "startOffset",
+          "duration",
+          "progress",
+          "after",
+          "resource"
+        ],
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "parent": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startOffset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "after": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "resource": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the\nposition of its phase, the position of the task it is in (an item before it), its kind, name, the business days\nafter the start it starts, its duration (zero for a milestone), its progress (100 for a milestone reached), the\npositions of the items it depends on (all before it) and the position of its resource."
+      },
+      "ImportedPlanResponse": {
+        "required": [
+          "phases",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "phases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportedItemResponse"
+            }
+          }
+        },
+        "description": "The schedule converted from the file: the names of the phases and the items in the order they are made."
+      },
+      "ImportedResourceRequest": {
+        "required": [
+          "userId",
+          "directoryId",
+          "client",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "directoryId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "client": {
+            "type": "boolean"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectRole"
+              }
+            ]
+          }
+        },
+        "description": "Who a resource of the file becomes (ADR-0135): a user (`userId`) or a person of the directory who never signed in\n(`directoryId`), with the role in the project (Contributor, the default, or Developer; the manager and the tech\nlead keep theirs), the client of the project (`client`), or nobody."
+      },
+      "ImportedScheduleRequest": {
+        "required": [
+          "phases",
+          "items",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "phases": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ImportedItemRequest"
+            }
+          },
+          "resources": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ImportedResourceRequest"
+            }
+          }
+        },
+        "description": "The schedule converted by the preview, with who each resource is, in the order of the preview."
+      },
       "InstallationResponse": {
         "required": [
           "name",
@@ -12313,6 +12639,231 @@
           }
         },
         "description": "Whether a milestone was reached."
+      },
+      "MsProjectPersonResponse": {
+        "required": [
+          "id",
+          "directoryId",
+          "name",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "directoryId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "description": "The person of the company a resource suggests: a user (`id`) or a person of the directory who never signed in."
+      },
+      "MsProjectPreviewItemResponse": {
+        "required": [
+          "kind",
+          "name",
+          "isSubtask",
+          "start",
+          "end",
+          "duration",
+          "progress",
+          "reached",
+          "resource"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ScheduleItemKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isSubtask": {
+            "type": "boolean"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reached": {
+            "type": "boolean",
+            "description": "A milestone at 100% in the file, reached when the project is created."
+          },
+          "resource": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A task or milestone of the preview, with the dates the schedule is going to have and its resource."
+      },
+      "MsProjectPreviewPhaseResponse": {
+        "required": [
+          "name",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MsProjectPreviewItemResponse"
+            }
+          }
+        },
+        "description": "A phase of the preview with its items in the order of the Lista."
+      },
+      "MsProjectPreviewResponse": {
+        "required": [
+          "title",
+          "firstDay",
+          "start",
+          "plan",
+          "phases",
+          "resources",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "firstDay": {
+            "type": "string",
+            "format": "date"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ImportedPlanResponse"
+          },
+          "phases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MsProjectPreviewPhaseResponse"
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MsProjectResourceResponse"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MsProjectWarningResponse"
+            }
+          }
+        },
+        "description": "The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the\ncreation, its phases and items with the dates it is going to have, the resources and the changes of the conversion."
+      },
+      "MsProjectResourceResponse": {
+        "required": [
+          "name",
+          "email",
+          "tasks",
+          "person",
+          "client"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "person": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MsProjectPersonResponse"
+              }
+            ]
+          },
+          "client": {
+            "type": "boolean"
+          }
+        },
+        "description": "A work resource of the file that is the first of some task: its name, its e-mail (only for the preview, never kept)\nand how many tasks it has, with the person found by the e-mail or the client of the form by the name."
+      },
+      "MsProjectWarningKind": {
+        "enum": [
+          "LooseTasks",
+          "DeepTasks",
+          "DroppedSummaries",
+          "OtherDependencies",
+          "SummaryDependencies",
+          "DependencyLags",
+          "DependencyCycles",
+          "LongTasks",
+          "CutNames",
+          "SeveralResources",
+          "NoOwner",
+          "NoDates"
+        ],
+        "description": "What the conversion changed, for the person to know before creating the project (ADR-0135)."
+      },
+      "MsProjectWarningResponse": {
+        "required": [
+          "kind",
+          "names"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/MsProjectWarningKind"
+          },
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "A change of the conversion, with the names of the lines it touched (\"A → B\" for a dependency)."
       },
       "MyWorkAcceptanceResponse": {
         "required": [
@@ -12803,9 +13354,19 @@
               "null",
               "string"
             ]
+          },
+          "importedSchedule": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImportedScheduleRequest"
+              }
+            ]
           }
         },
-        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the\nschedule is made from it, starting on `scheduleStart` (ADR-0017). With `folderId`, a folder of the file storage\nthat already exists, from `GET /api/project-folders`, holds the files instead of the one the system creates\n(ADR-0122)."
+        "description": "The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal\nproject), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of\nthe company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the\nschedule is made from it, starting on `scheduleStart` (ADR-0017); instead of a model, `importedSchedule` is the\nschedule the preview of the MS Project converted, with who each resource is (ADR-0135). With `folderId`, a folder\nof the file storage that already exists, from `GET /api/project-folders`, holds the files instead of the one the\nsystem creates (ADR-0122)."
       },
       "NewScheduleItemRequest": {
         "required": [
@@ -14328,7 +14889,8 @@
           "canManageManagers",
           "canEditSchedule",
           "canDelete",
-          "canChooseFolder"
+          "canChooseFolder",
+          "canExportSchedule"
         ],
         "type": "object",
         "properties": {
@@ -14354,6 +14916,10 @@
           "canChooseFolder": {
             "type": "boolean",
             "description": "Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122)."
+          },
+          "canExportSchedule": {
+            "type": "boolean",
+            "description": "Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136)."
           }
         },
         "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."
