@@ -25,4 +25,4 @@
 
 - [x] 5.1 Design system (componente Gantt) e `CLAUDE.md`
 - [x] 5.2 Conferência no navegador contra o design system, nos dois temas, no computador e no celular
-- [ ] 5.3 Lint, tipos, testes, build e specs
+- [x] 5.3 Lint, tipos, testes, build e specs
