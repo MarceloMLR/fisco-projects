@@ -16,7 +16,7 @@
 
 ## 4. Verificação
 
-- [ ] 4.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh`, `infra.sh` e `specs.sh` passando
+- [x] 4.1 `scripts/ci/build.sh`, `test.sh`, `format.sh`, `frontend.sh`, `infra.sh` e `specs.sh` passando
 
 ## Workflow follow-up
 
