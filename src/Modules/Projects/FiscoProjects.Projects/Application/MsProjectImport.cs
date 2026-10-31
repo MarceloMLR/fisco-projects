@@ -20,6 +20,9 @@ public enum MsProjectRefusal
 
     /// <summary>No task to bring.</summary>
     NoTasks = 4,
+
+    /// <summary>Dates beyond the days a schedule may use, from 2000 to 2099.</summary>
+    OutOfRange = 5,
 }
 
 /// <summary>The file is not read as a schedule of the MS Project, for the reason given (ADR-0135).</summary>

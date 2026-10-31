@@ -42,6 +42,7 @@ public static class UsersModule
         services.AddScoped<IPeopleDirectory, CompanyDirectory>();
         services.AddHttpClient(MicrosoftGraph.ClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<IUserProvisioning, UserFromDirectory>();
+        services.AddScoped<IPeopleLookup, PeopleLookup>();
         services.AddScoped<GetProfile>();
         services.AddScoped<ChooseTheme>();
         services.AddScoped<ChooseDailySummary>();

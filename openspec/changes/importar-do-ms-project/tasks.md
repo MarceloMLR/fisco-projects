@@ -10,9 +10,9 @@
 
 ## 3. API
 
-- [ ] 3.1 `IPeopleLookup.ByEmailsAsync` no `Users.Contracts`, sobre os usuários ativos e o diretório da empresa, com testes
-- [ ] 3.2 `POST /api/projects/ms-project-preview` (multipart, `ProjectCreators`, `no-store`) com o plano, as datas finais, os recursos com a sugestão e os avisos; testes "Prévia do arquivo do MS Project", "Responsáveis do arquivo", "O que não cabe no FiscoProjects", "Arquivo que não é do MS Project", "Importar sem poder criar projetos" e "Ida e volta pelo MS Project"
-- [ ] 3.3 `CreateProject` com `importedSchedule` validado: as pessoas incluídas com o papel e o cronograma com os responsáveis e o progresso, na transação da criação; testes "Projeto a partir do MS Project", "Progresso do arquivo" e os de plano inválido (400)
+- [x] 3.1 `IPeopleLookup.ByEmailsAsync` no `Users.Contracts`, sobre os usuários ativos e o diretório da empresa, com testes
+- [x] 3.2 `POST /api/projects/ms-project-preview` (multipart, `ProjectCreators`, `no-store`) com o plano, as datas finais, os recursos com a sugestão e os avisos; testes "Prévia do arquivo do MS Project", "Responsáveis do arquivo", "O que não cabe no FiscoProjects", "Arquivo que não é do MS Project", "Importar sem poder criar projetos" e "Ida e volta pelo MS Project"
+- [x] 3.3 `CreateProject` com `importedSchedule` validado: as pessoas incluídas com o papel e o cronograma com os responsáveis e o progresso, na transação da criação; testes "Projeto a partir do MS Project", "Progresso do arquivo" e os de plano inválido (400)
 
 ## 4. Tela
 

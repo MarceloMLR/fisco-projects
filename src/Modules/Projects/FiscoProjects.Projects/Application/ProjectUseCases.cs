@@ -203,6 +203,12 @@ public enum ProjectField
 
     /// <summary>The folder chosen for the files may not be the folder of the project (ADR-0122).</summary>
     Folder = 9,
+
+    /// <summary>
+    /// The schedule converted from the MS Project does not hold together, comes with a model, or names people who may
+    /// not be in the project (ADR-0135).
+    /// </summary>
+    ImportedSchedule = 10,
 }
 
 public enum ProjectSaveOutcome
@@ -302,7 +308,8 @@ public sealed record NewProject(
     string? TechLeadDirectoryId = null,
     Guid? TemplateId = null,
     DateOnly? ScheduleStart = null,
-    string? FolderId = null);
+    string? FolderId = null,
+    ImportedSchedule? ImportedSchedule = null);
 
 /// <summary>
 /// Creates a project in Planning (ADR-0016) with its manager and, optionally, its tech lead (ADR-0072). The manager is
@@ -321,7 +328,8 @@ public sealed class CreateProject(
     InstallationClock installationClock,
     ProjectNotices notices,
     IProjectSetupNotices setup,
-    ProjectFolderChoices folders)
+    ProjectFolderChoices folders,
+    IUserProvisioning provisioning)
 {
     public async Task<ProjectSaveResult> ExecuteAsync(NewProject form, Guid creatorId, CancellationToken cancellationToken)
     {
@@ -355,9 +363,17 @@ public sealed class CreateProject(
             invalid.Add(ProjectField.Template);
         }
 
-        if (form.TemplateId is not null && (form.ScheduleStart is not { } day || !Schedule.IsValidDay(day)))
+        var imported = form.ImportedSchedule;
+        if ((form.TemplateId is not null || imported is not null) && (form.ScheduleStart is not { } day || !Schedule.IsValidDay(day)))
         {
             invalid.Add(ProjectField.ScheduleStart);
+        }
+
+        // From the MS Project, the schedule converted by the preview, instead of a model (ADR-0135).
+        if (imported is not null
+            && (form.TemplateId is not null || !await ImportedScheduleChecks.IsValidAsync(imported, form.ClientId, access, cancellationToken)))
+        {
+            invalid.Add(ProjectField.ImportedSchedule);
         }
 
         // A folder that already exists, instead of the one the system creates (ADR-0122).
@@ -365,6 +381,14 @@ public sealed class CreateProject(
         if (folder is { Refusal: not null })
         {
             invalid.Add(ProjectField.Folder);
+        }
+
+        var days = await calendar.GetAsync(cancellationToken);
+        var today = await installationClock.TodayAsync(cancellationToken);
+        // The outline as the schedule makes it, with someone in the place of each person, before anybody is created.
+        if (imported is not null && invalid.Count == 0 && !Holds(imported, form.ScheduleStart!.Value, days, today))
+        {
+            invalid.Add(ProjectField.ImportedSchedule);
         }
 
         if (invalid.Count > 0)
@@ -377,23 +401,44 @@ public sealed class CreateProject(
             return ProjectSaveResult.CodeInUse(owner);
         }
 
+        var users = imported is null ? [] : await UsersOfAsync(imported, cancellationToken);
+        if (users.Count > 0 && imported!.Resources.Where((resource, index) => PersonOf(resource) && users[index] is null).Any())
+        {
+            return ProjectSaveResult.InvalidFields([ProjectField.ImportedSchedule]);
+        }
+
         var techLead = form.TechLeadId;
-        var project = Project.Create(
-            data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, clock.GetUtcNow().UtcDateTime);
+        var now = clock.GetUtcNow().UtcDateTime;
+        var project = Project.Create(data.Code, data.Name, data.Description, form.ClientId, managerId, techLead, now);
         if (folder is not null)
         {
             project.ChooseFolder(folder.Id, folder.Name);
         }
 
+        if (imported is not null)
+        {
+            // Each person once, with the role of the first resource; the manager and the tech lead keep theirs.
+            foreach (var (resource, userId) in imported.Resources.Zip(users))
+            {
+                if (userId is { } id && project.RoleOf(id) is null)
+                {
+                    project.AddMember(id, resource.Role ?? ProjectRole.Contributor, now);
+                }
+            }
+        }
+
         store.Add(project);
-        if (template is not null)
+        if (template is not null || imported is not null)
         {
             var schedule = await schedules.GetOrAddAsync(project.Id, cancellationToken);
-            schedule.ApplyTemplate(
-                template,
-                form.ScheduleStart!.Value,
-                await calendar.GetAsync(cancellationToken),
-                await installationClock.TodayAsync(cancellationToken));
+            if (template is not null)
+            {
+                schedule.ApplyTemplate(template, form.ScheduleStart!.Value, days, today);
+            }
+            else
+            {
+                schedule.ApplyTemplate(ImportedScheduleChecks.OutlineOf(imported!, users), form.ScheduleStart!.Value, days, today);
+            }
         }
 
         var saved = await ProjectSaving.SaveAsync(store, project, cancellationToken);
@@ -408,6 +453,43 @@ public sealed class CreateProject(
         }
 
         return saved;
+    }
+
+    private static bool PersonOf(ImportedResourceChoice resource) =>
+        resource.UserId is not null || !string.IsNullOrWhiteSpace(resource.DirectoryId);
+
+    /// <summary>Whether the outline makes a schedule, someone standing for each person.</summary>
+    private static bool Holds(ImportedSchedule imported, DateOnly start, IBusinessDays days, DateOnly today)
+    {
+        var someone = Guid.CreateVersion7();
+        try
+        {
+            new Schedule(Guid.CreateVersion7()).ApplyTemplate(
+                ImportedScheduleChecks.OutlineOf(imported, [.. imported.Resources.Select(resource => PersonOf(resource) ? someone : (Guid?)null)]),
+                start,
+                days,
+                today);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>The user of each resource: the one chosen, or the person of the directory, who becomes a user (ADR-0005).</summary>
+    private async Task<List<Guid?>> UsersOfAsync(ImportedSchedule imported, CancellationToken cancellationToken)
+    {
+        var users = new List<Guid?>();
+        foreach (var resource in imported.Resources)
+        {
+            users.Add(resource.UserId
+                ?? (string.IsNullOrWhiteSpace(resource.DirectoryId)
+                    ? null
+                    : await provisioning.UserFromDirectoryAsync(resource.DirectoryId, cancellationToken)));
+        }
+
+        return users;
     }
 }
 

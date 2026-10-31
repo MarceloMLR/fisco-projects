@@ -166,6 +166,25 @@ public sealed class PeopleDirectoryTests(SqlServerFixture sqlServer)
         user.LastSignInAt.Should().Be(database.Clock.GetUtcNow().UtcDateTime);
     }
 
+    [Fact(DisplayName = "Pessoas achadas pelo e-mail")]
+    public async Task People_AreFoundByTheExactEmail_AmongTheUsersAndTheDirectory()
+    {
+        await using var database = await UsersDatabase.CreateAsync(sqlServer, directory: Directory);
+        var marina = await SignInAsync(database, "Marina Costa", "marina.costa@empresa.example");
+        var diego = await SignInAsync(database, "Diego Torres", "diego.torres@empresa.example");
+        await database.DeactivateAsync(diego);
+
+        var found = await database.RunAsync<IPeopleLookup, IReadOnlyDictionary<string, FoundPerson>>(lookup => lookup.ByEmailsAsync(
+            ["MARINA.COSTA@empresa.example", " carla.mendes@empresa.example ", "diego.torres@empresa.example", "prado@empresa.example", "fora@empresa.example", ""],
+            Cancellation));
+
+        // Only the exact e-mail, of an active user or of a person of the directory who never signed in.
+        found.Should().HaveCount(2);
+        found["marina.costa@empresa.example"].Should().Be(new FoundPerson(marina, null, "Marina Costa", "marina.costa@empresa.example"));
+        found["carla.mendes@empresa.example"].Should().Be(
+            new FoundPerson(null, "local:carla.mendes@empresa.example", "Carla Mendes", "Carla.Mendes@empresa.example"));
+    }
+
     private static Task<IReadOnlyList<PersonItem>> ListAsync(UsersDatabase database, PeopleQuery query) =>
         database.RunAsync<ListPeople, IReadOnlyList<PersonItem>>(people => people.ExecuteAsync(query, Cancellation));
 

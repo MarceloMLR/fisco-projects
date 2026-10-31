@@ -732,6 +732,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/ms-project-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Reads an XML of the MS Project and converts it into the schedule of a new project (ADR-0135), keeping nothing. */
+        post: operations["PreviewMsProjectImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/members": {
         parameters: {
             query?: never;
@@ -2720,6 +2737,70 @@ export interface components {
             password: null | string;
             notes: null | string;
         };
+        /** @description A task or milestone of the schedule from the MS Project, as the preview gave it (ImportedItemResponse). */
+        ImportedItemRequest: {
+            /** Format: int32 */
+            phase: number;
+            /** Format: int32 */
+            parent: null | number;
+            kind: components["schemas"]["ScheduleItemKind"];
+            name: null | string;
+            /** Format: int32 */
+            startOffset: number;
+            /** Format: int32 */
+            duration: number;
+            /** Format: int32 */
+            progress: number;
+            after: null | number[];
+            /** Format: int32 */
+            resource: null | number;
+        };
+        /**
+         * @description A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the
+         *     position of its phase, the position of the task it is in (an item before it), its kind, name, the business days
+         *     after the start it starts, its duration (zero for a milestone), its progress (100 for a milestone reached), the
+         *     positions of the items it depends on (all before it) and the position of its resource.
+         */
+        ImportedItemResponse: {
+            /** Format: int32 */
+            phase: number;
+            /** Format: int32 */
+            parent: null | number;
+            kind: components["schemas"]["ScheduleItemKind"];
+            name: string;
+            /** Format: int32 */
+            startOffset: number;
+            /** Format: int32 */
+            duration: number;
+            /** Format: int32 */
+            progress: number;
+            after: number[];
+            /** Format: int32 */
+            resource: null | number;
+        };
+        /** @description The schedule converted from the file: the names of the phases and the items in the order they are made. */
+        ImportedPlanResponse: {
+            phases: string[];
+            items: components["schemas"]["ImportedItemResponse"][];
+        };
+        /**
+         * @description Who a resource of the file becomes (ADR-0135): a user (`userId`) or a person of the directory who never signed in
+         *     (`directoryId`), with the role in the project (Contributor, the default, or Developer; the manager and the tech
+         *     lead keep theirs), the client of the project (`client`), or nobody.
+         */
+        ImportedResourceRequest: {
+            /** Format: uuid */
+            userId: null | string;
+            directoryId: null | string;
+            client: boolean;
+            role: null | components["schemas"]["ProjectRole"];
+        };
+        /** @description The schedule converted by the preview, with who each resource is, in the order of the preview. */
+        ImportedScheduleRequest: {
+            phases: null | string[];
+            items: null | components["schemas"]["ImportedItemRequest"][];
+            resources: null | components["schemas"]["ImportedResourceRequest"][];
+        };
         /**
          * @description The brand of the installation: the name shown, the address of the logo (null without one), the main color as
          *     #RRGGBB (null for the color of the design system) and the address of the logo for the dark theme (null without one,
@@ -2810,6 +2891,74 @@ export interface components {
         /** @description Whether a milestone was reached. */
         MilestoneReachedRequest: {
             reached: boolean;
+        };
+        /** @description The person of the company a resource suggests: a user (`id`) or a person of the directory who never signed in. */
+        MsProjectPersonResponse: {
+            /** Format: uuid */
+            id: null | string;
+            directoryId: null | string;
+            name: string;
+            email: string;
+        };
+        /** @description A task or milestone of the preview, with the dates the schedule is going to have and its resource. */
+        MsProjectPreviewItemResponse: {
+            kind: components["schemas"]["ScheduleItemKind"];
+            name: string;
+            isSubtask: boolean;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            duration: number;
+            /** Format: int32 */
+            progress: number;
+            /** @description A milestone at 100% in the file, reached when the project is created. */
+            reached: boolean;
+            /** Format: int32 */
+            resource: null | number;
+        };
+        /** @description A phase of the preview with its items in the order of the Lista. */
+        MsProjectPreviewPhaseResponse: {
+            name: string;
+            items: components["schemas"]["MsProjectPreviewItemResponse"][];
+        };
+        /**
+         * @description The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the
+         *     creation, its phases and items with the dates it is going to have, the resources and the changes of the conversion.
+         */
+        MsProjectPreviewResponse: {
+            title: string;
+            /** Format: date */
+            firstDay: string;
+            /** Format: date */
+            start: string;
+            plan: components["schemas"]["ImportedPlanResponse"];
+            phases: components["schemas"]["MsProjectPreviewPhaseResponse"][];
+            resources: components["schemas"]["MsProjectResourceResponse"][];
+            warnings: components["schemas"]["MsProjectWarningResponse"][];
+        };
+        /**
+         * @description A work resource of the file that is the first of some task: its name, its e-mail (only for the preview, never kept)
+         *     and how many tasks it has, with the person found by the e-mail or the client of the form by the name.
+         */
+        MsProjectResourceResponse: {
+            name: string;
+            email: null | string;
+            /** Format: int32 */
+            tasks: number;
+            person: null | components["schemas"]["MsProjectPersonResponse"];
+            client: boolean;
+        };
+        /**
+         * @description What the conversion changed, for the person to know before creating the project (ADR-0135).
+         * @enum {unknown}
+         */
+        MsProjectWarningKind: "LooseTasks" | "DeepTasks" | "DroppedSummaries" | "OtherDependencies" | "SummaryDependencies" | "DependencyLags" | "DependencyCycles" | "LongTasks" | "CutNames" | "SeveralResources" | "NoOwner" | "NoDates";
+        /** @description A change of the conversion, with the names of the lines it touched ("A → B" for a dependency). */
+        MsProjectWarningResponse: {
+            kind: components["schemas"]["MsProjectWarningKind"];
+            names: string[];
         };
         /**
          * @description A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the
@@ -2946,9 +3095,10 @@ export interface components {
          * @description The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
          *     project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
          *     the company directory who never signed in, by the `directoryId` of the people search (ADR-0005). With a model, the
-         *     schedule is made from it, starting on `scheduleStart` (ADR-0017). With `folderId`, a folder of the file storage
-         *     that already exists, from `GET /api/project-folders`, holds the files instead of the one the system creates
-         *     (ADR-0122).
+         *     schedule is made from it, starting on `scheduleStart` (ADR-0017); instead of a model, `importedSchedule` is the
+         *     schedule the preview of the MS Project converted, with who each resource is (ADR-0135). With `folderId`, a folder
+         *     of the file storage that already exists, from `GET /api/project-folders`, holds the files instead of the one the
+         *     system creates (ADR-0122).
          */
         NewProjectRequest: {
             code: null | string;
@@ -2966,6 +3116,7 @@ export interface components {
             /** Format: date */
             scheduleStart?: null | string;
             folderId?: null | string;
+            importedSchedule?: null | components["schemas"]["ImportedScheduleRequest"];
         };
         /**
          * @description A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a
@@ -7061,6 +7212,65 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    PreviewMsProjectImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    file: components["schemas"]["IFormFile"];
+                } & {
+                    /** Format: date */
+                    start?: string;
+                } & {
+                    /** Format: uuid */
+                    clientId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MsProjectPreviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -35,6 +35,7 @@ public static class ProjectsModule
         services.AddScoped<ListProjects>();
         services.AddScoped<GetProject>();
         services.AddScoped<CreateProject>();
+        services.AddScoped<PreviewMsProjectImport>();
         services.AddScoped<ChangeProject>();
         services.AddScoped<ChangeProjectStatus>();
         services.AddScoped<GetProjectClosing>();

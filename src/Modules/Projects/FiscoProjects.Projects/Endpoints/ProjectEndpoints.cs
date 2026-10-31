@@ -97,9 +97,10 @@ public sealed record ProjectResponse(
 /// The new project: the code (as ERP-FIN, in any case), the name, the description and the client (none for an internal
 /// project), the manager (the person who creates it, when none) and, optionally, the tech lead: a user or a person of
 /// the company directory who never signed in, by the <c>directoryId</c> of the people search (ADR-0005). With a model, the
-/// schedule is made from it, starting on <c>scheduleStart</c> (ADR-0017). With <c>folderId</c>, a folder of the file storage
-/// that already exists, from <c>GET /api/project-folders</c>, holds the files instead of the one the system creates
-/// (ADR-0122).
+/// schedule is made from it, starting on <c>scheduleStart</c> (ADR-0017); instead of a model, <c>importedSchedule</c> is the
+/// schedule the preview of the MS Project converted, with who each resource is (ADR-0135). With <c>folderId</c>, a folder
+/// of the file storage that already exists, from <c>GET /api/project-folders</c>, holds the files instead of the one the
+/// system creates (ADR-0122).
 /// </summary>
 public sealed record NewProjectRequest(
     string? Code,
@@ -111,7 +112,8 @@ public sealed record NewProjectRequest(
     string? TechLeadDirectoryId = null,
     Guid? TemplateId = null,
     DateOnly? ScheduleStart = null,
-    string? FolderId = null);
+    string? FolderId = null,
+    ImportedScheduleRequest? ImportedSchedule = null);
 
 /// <summary>The data of a project that may change after its creation.</summary>
 public sealed record ProjectRequest(string? Code, string? Name, string? Description, Guid? ClientId);
@@ -243,6 +245,7 @@ internal static class ProjectEndpoints
                 "Changes the folder of the project to one that already exists, or back to the one the system creates, while the project has no files (ADR-0122).")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapMsProjectImportEndpoints();
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
         projects.MapOverviewEndpoints();
@@ -315,10 +318,16 @@ internal static class ProjectEndpoints
     {
         var creatorId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("Projects are created in a session.");
+        var imported = request.ImportedSchedule is { } schedule ? MsProjectImportEndpoints.Of(schedule) : null;
+        if (request.ImportedSchedule is not null && imported is null)
+        {
+            return Invalid([ProjectField.ImportedSchedule]);
+        }
+
         var result = await createProject.ExecuteAsync(
             new NewProject(
                 request.Code, request.Name, request.Description, request.ClientId, request.ManagerId, request.TechLeadId,
-                request.TechLeadDirectoryId, request.TemplateId, request.ScheduleStart, request.FolderId),
+                request.TechLeadDirectoryId, request.TemplateId, request.ScheduleStart, request.FolderId, imported),
             creatorId,
             cancellationToken);
         return result.Outcome switch
@@ -555,6 +564,7 @@ internal static class ProjectEndpoints
                 ProjectField.Template => "templateId",
                 ProjectField.ScheduleStart => "scheduleStart",
                 ProjectField.Folder => "folderId",
+                ProjectField.ImportedSchedule => "importedSchedule",
                 _ => "techLeadId",
             },
             field => new[]
@@ -567,8 +577,9 @@ internal static class ProjectEndpoints
                     ProjectField.Client => "The client is an active client.",
                     ProjectField.Manager => "The manager is an active Project manager or Administrator.",
                     ProjectField.Template => "The model is an active model of project.",
-                    ProjectField.ScheduleStart => "A project made from a model needs the day its schedule starts, from 2000 to 2099.",
+                    ProjectField.ScheduleStart => "A project made from a model or the MS Project needs the day its schedule starts, from 2000 to 2099.",
                     ProjectField.Folder => "The folder exists and is no folder of another project, of the projects or of the system, nor inside or above one.",
+                    ProjectField.ImportedSchedule => "The schedule converted from the MS Project, without a model, holds together and names people who may be in the project.",
                     _ => "The tech lead is an active Tech lead or Administrator other than the manager.",
                 },
             }));
