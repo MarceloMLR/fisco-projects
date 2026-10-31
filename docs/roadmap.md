@@ -1,6 +1,6 @@
-# Roadmap da v1
+# Roadmap
 
-As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -30,6 +30,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 30/10/2026, no teste da Fundação-5.5 no `dev`, o ícone só piscou com o servidor rápido, e dois botões ainda ficavam cinza; Marcelo escolheu o ícone visível por pelo menos meio segundo (Fundação-5.5.1, `botoes-em-andamento-visiveis`, ADR-0132).
 - Em 30/10/2026, Marcelo achou os avisos, os diálogos, as gavetas, a troca de página e as abas do projeto bruscos; comparou as opções numa página de prévia e, em 31/10/2026, escolheu um aviso só, no alto, com fundo de janela, e janelas e páginas que entram e saem suaves, com o movimento reduzido só esmaecendo (Fundação-5.6, `avisos-refinados`, e Fundação-5.7, `janelas-e-paginas-suaves`, ADR-0133).
 - Em 31/10/2026, com a v1 e os refinamentos concluídos, Marcelo pediu a Linha do tempo própria, prevista no ADR-0051 como evolução, para tirar a dependência da licença do Syncfusion antes de vender e depois importar do MS Project: forma o grupo 13, com a proposta aprovada por ele antes de cada implementação (ADR-0134).
+- Em 31/10/2026, Marcelo definiu que a v1 fecha com a Assinatura dos termos (grupo 12) e os refinamentos do design (até a Fundação-5.7), e que da Linha do tempo própria (grupo 13) em diante é a v2.
 
 ## Marcos
 
@@ -47,7 +48,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
-| **Total** | **97** | **96** |
+| 13. Linha do tempo própria (v2) | 3 | 2 |
+| **Total** | **100** | **98** |
 
 ## 1. Fundação
 
@@ -196,9 +198,9 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | Concluída em 28/10/2026 ([#103](https://github.com/MarceloMLR/fisco-projects/pull/103)) |
 | Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint, a partir do pacote de cada versão | 0030, 0036, 0053, 0127 | Concluída em 29/10/2026 ([#105](https://github.com/MarceloMLR/fisco-projects/pull/105)) |
 
-## Depois da v1
+## Acréscimos da v1
 
-Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele antes da implementação.
+Changes pedidas por Marcelo depois do roadmap aprovado em 17/10/2026, que fecham a v1, com as propostas aprovadas por ele antes da implementação.
 
 ## 11. Horas do projeto
 
@@ -215,10 +217,14 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127, 0129, 0130 | Concluída em 30/10/2026 ([#110](https://github.com/MarceloMLR/fisco-projects/pull/110)) |
 | Assinatura-2.1 | `lembrete-logo-depois-do-envio` | O lembrete recusado pelo provedor por ter mandado o link há pouco diz isso, no lugar de "não respondeu", a pedido de Marcelo | 0129, 0130 | Concluída em 30/10/2026 ([#112](https://github.com/MarceloMLR/fisco-projects/pull/112)) |
 
+## v2
+
+Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo antes da implementação.
+
 ## 13. Linha do tempo própria
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Gantt-1 | `linha-do-tempo-propria` | A Linha do tempo desenhada pelo próprio FiscoProjects, com o mesmo comportamento e o mesmo visual, sem o Syncfusion, e navegável pelo teclado | 0051, 0071, 0134 | Concluída em 31/10/2026 ([#117](https://github.com/MarceloMLR/fisco-projects/pull/117)) |
-| Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Planejada |
+| Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Concluída em 31/10/2026 ([#118](https://github.com/MarceloMLR/fisco-projects/pull/118)) |
 | Gantt-3 | `importar-do-ms-project` | O "Novo projeto" a partir do XML do MS Project, com as fases, as tarefas, os marcos e as dependências | 0017, 0021, 0134 | Planejada |

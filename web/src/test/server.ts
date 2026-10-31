@@ -1470,8 +1470,6 @@ export const handlers = [
   http.get('/api/admin/email', () =>
     HttpResponse.json({ mailbox: 'projetos@empresa.example', lastTest: null }),
   ),
-  // No Syncfusion license in the tests (ADR-0087).
-  http.get('/api/client-settings', () => HttpResponse.json({ timelineLicense: null })),
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
   ),

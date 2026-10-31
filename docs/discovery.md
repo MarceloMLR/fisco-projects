@@ -75,7 +75,7 @@ Fora da v1, previstos para depois:
 - Tradução para inglês (ADR-0013).
 - Busca global (ADR-0011, ADR-0066).
 - Modo sem Microsoft 365 (contas locais, SMTP, arquivos em disco ou blob).
-- Gantt próprio no lugar do Syncfusion (ADR-0051).
+- Gantt próprio no lugar do Syncfusion (ADR-0051): feito na v2, com a Linha do tempo própria (ADR-0134).
 
 ## Critérios de sucesso
 
@@ -167,7 +167,7 @@ Uso esperado: 5 a 6 pessoas por instalação, não simultâneas, em horário com
 | Backend | ASP.NET Core no .NET 10 (LTS), EF Core com SQL Server | 0047, 0060 |
 | Arquitetura | Monolito modular, com Clean Architecture dentro de cada módulo | 0047 |
 | Frontend | React com TypeScript estrito, MUI (só pacotes gratuitos), React Hook Form com Zod, Tiptap, react-i18next | 0049, 0050 |
-| Cronograma na tela | Syncfusion React Gantt (licença comunitária), isolado no componente `ScheduleGantt` | 0051 |
+| Cronograma na tela | Componente próprio `ScheduleGantt`, desenhado em SVG a partir do design system, sem licença de terceiros (na v1, o Syncfusion React Gantt) | 0051, 0134 |
 | Autenticação | BFF com cookie de sessão; tokens da Microsoft nunca chegam ao navegador | 0054 |
 | API | REST com OpenAPI, Problem Details, GUID v7; tipos do frontend gerados do contrato | 0061 |
 | Banco | Azure SQL: provisionado em produção, oferta gratuita no desenvolvimento | 0048 |
@@ -229,7 +229,7 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 ### Gestão de segredos
 
 - Nenhum segredo no repositório, no Terraform ou no arquivo de estado (ADR-0053).
-- Segredos no Key Vault: certificado do aplicativo no Entra e chave de licença do Syncfusion (ADR-0051, ADR-0052).
+- Segredos no Key Vault, criados à mão por quem opera, como a chave e o segredo do aviso da Autentique (ADR-0052, ADR-0130); o aplicativo no Entra não tem certificado (ADR-0117).
 - Aplicação acessa banco e Key Vault pela identidade gerenciada, sem senha (ADR-0052).
 - GitHub Actions acessa o Azure por identidade federada (OIDC), sem segredo guardado (ADR-0055).
 - Mail.Send não é concedido no Entra ID; o envio é restrito à caixa compartilhada pelo RBAC do Exchange Online (ADR-0036).
@@ -296,7 +296,6 @@ Ler antes de implementar a área:
 | Exchange Online | RBAC para aplicações, restringindo o envio à caixa | 0036 |
 | Azure | App Service, Azure SQL, Key Vault, Application Insights, armazenamento do estado do Terraform | 0048, 0052, 0053, 0057 |
 | GitHub Actions | Build, testes e deploy, com OIDC no Azure | 0055 |
-| Syncfusion | Componente de Gantt, com chave de licença fora do repositório | 0051 |
 | MS Project | Exportação do cronograma no formato XML (arquivo, sem integração) | 0021 |
 | Microsoft Teams | Avisos, depois da v1 | 0038 |
 
@@ -323,7 +322,6 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 ## Pendências
 
 - Telas ainda não desenhadas: cadastros da Administração (Fornecedores, Prazos dos chamados, Pastas padrão, Categorias de links e Modelos de projeto). Calendário e feriados foi desenhada e aprovada em 19/10/2026. Seguem o padrão das telas de Usuários e Clientes, ou são desenhadas antes da change correspondente.
-- Confirmar na documentação do Syncfusion o ajuste da linha do tempo ao espaço disponível antes de implementar o cronograma (ADR-0071).
 - Divergência a corrigir: o ADR-0065 cita "Material Symbols", mas o design system usa Material Icons no estilo Outlined (variantes `…Outlined` do `@mui/icons-material`).
 - Levar os tokens do design system para o repositório na change do tema do MUI.
 - Exigir as verificações do CI na regra "Protect main" quando os workflows existirem (ADR-0055).

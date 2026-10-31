@@ -254,18 +254,6 @@ export function installationQuery() {
 }
 
 /**
- * What the browser needs from the configuration of the installation: the license of the timeline (ADR-0087). It
- * changes only with the configuration, so it is read once a session.
- */
-export function clientSettingsQuery() {
-  return queryOptions({
-    queryKey: [...queryKeys.installation, 'client-settings'] as const,
-    queryFn: ({ signal }) => dataOf(api.GET('/api/client-settings', { signal })),
-    staleTime: Infinity,
-  });
-}
-
-/**
  * The ways in of the installation, the local one and the one through Entra ID (ADR-0078, ADR-0117): the photos of the
  * people come from Microsoft 365 only with the second (ADR-0124). It changes only with the configuration.
  */

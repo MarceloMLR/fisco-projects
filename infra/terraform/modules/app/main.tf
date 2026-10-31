@@ -51,10 +51,6 @@ variable "key_vault_name" {
   type = string
 }
 
-variable "syncfusion_in_vault" {
-  type = bool
-}
-
 variable "app_settings" {
   type = map(string)
 }
@@ -81,12 +77,10 @@ variable "tags" {
 
 locals {
   free_plan = contains(["F1", "FREE"], upper(var.sku))
-  # The secret names use "--" for the ":" of the setting (ADR-0087).
-  secret_settings = merge(var.syncfusion_in_vault ? {
-    Syncfusion__LicenseKey = "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=Syncfusion--LicenseKey)"
-    } : {}, {
+  # The secret names use "--" for the ":" of the setting (ADR-0053).
+  secret_settings = {
     for setting, secret in var.vault_settings : setting => "@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})"
-  })
+  }
 }
 
 resource "azurerm_service_plan" "main" {

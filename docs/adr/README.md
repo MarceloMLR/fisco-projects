@@ -98,7 +98,7 @@ Regras:
 | [0048](0048-azure-sql-provisionado-em-producao.md) | Azure SQL como banco, provisionado em produção e gratuito no desenvolvimento | aceita | 2026-10-15 |
 | [0049](0049-frontend-react-typescript.md) | Frontend em React com TypeScript | aceita | 2026-10-15 |
 | [0050](0050-mui-como-biblioteca-de-componentes.md) | Material UI (MUI) como biblioteca de componentes, só com pacotes gratuitos | aceita | 2026-10-15 |
-| [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | aceita (nome do componente substituído pelo ADR-0074: `ScheduleGantt`) | 2026-10-15 |
+| [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | substituída pelo ADR-0134 (nome do componente substituído antes pelo ADR-0074: `ScheduleGantt`) | 2026-10-15 |
 | [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita (certificado do aplicativo no Entra substituído pelo ADR-0117) | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
 | [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
@@ -149,7 +149,7 @@ Regras:
 | [0084](0084-referencias-na-auditoria-pelo-nome-atual.md) | Referências a outros itens na auditoria, guardadas pelo identificador e mostradas pelo nome atual | aceita | 2026-10-19 |
 | [0085](0085-gerente-do-projeto-com-papel-no-sistema.md) | Gerente do projeto sempre com o papel no sistema Gerente de projeto ou Administrador | aceita | 2026-10-19 |
 | [0086](0086-iniciar-pede-o-percentual-e-marco-atrasado.md) | "Iniciar" pede o percentual, e o marco não atingido depois da data fica atrasado | aceita | 2026-10-19 |
-| [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | aceita | 2026-10-19 |
+| [0087](0087-chave-do-syncfusion-pela-api.md) | Chave de licença do Syncfusion entregue pela API, a partir da configuração da instalação | substituída pelo ADR-0134 | 2026-10-19 |
 | [0088](0088-subtarefas-na-v1.md) | Subtarefas na v1, em um nível, com a tarefa-resumo calculada e dependências só entre quem faz o trabalho | aceita | 2026-10-19 |
 | [0089](0089-dados-de-demonstracao-pela-api.md) | Dados de demonstração carregados por um comando que usa a própria API | aceita | 2026-10-19 |
 | [0090](0090-verificacao-do-pr-em-paralelo.md) | Verificação do PR em partes paralelas, com só as specs quando o commit muda apenas a documentação | aceita | 2026-10-19 |

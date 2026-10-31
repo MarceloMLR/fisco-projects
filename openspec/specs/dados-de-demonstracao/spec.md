@@ -180,7 +180,7 @@ A carga de demonstração MUST incluir seis clientes e projetos em todos os stat
 
 ### Requirement: Demonstração no Codespaces
 
-Um Codespace criado do repositório MUST se preparar sozinho, com o SDK do .NET e o Node das versões fixadas, o banco local com uma senha só dele, os pacotes e as telas compiladas. Ao ser aberto, MUST subir o banco e a API com as telas na porta 5175, carregar os dados de demonstração que faltam, tornar o endereço público e mostrá-lo com as pessoas para entrar. A chave do Syncfusion MUST vir só de um segredo do Codespaces, nunca do repositório (ADR-0089, ADR-0113).
+Um Codespace criado do repositório MUST se preparar sozinho, com o SDK do .NET e o Node das versões fixadas, o banco local com uma senha só dele, os pacotes e as telas compiladas. Ao ser aberto, MUST subir o banco e a API com as telas na porta 5175, carregar os dados de demonstração que faltam, tornar o endereço público e mostrá-lo com as pessoas para entrar, sem pedir nenhum segredo além da senha do banco que ele mesmo cria (ADR-0089, ADR-0113, ADR-0134).
 
 #### Scenario: Demonstração no Codespaces
 - **WHEN** Marcelo cria um Codespace do repositório e o abre

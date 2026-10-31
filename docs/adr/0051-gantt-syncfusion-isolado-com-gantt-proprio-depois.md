@@ -1,5 +1,5 @@
 ---
-status: aceita (nome do componente substituído pelo ADR-0074: `ScheduleGantt`)
+status: substituída pelo ADR-0134 (nome do componente substituído antes pelo ADR-0074: `ScheduleGantt`)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---
