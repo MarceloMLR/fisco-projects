@@ -44,6 +44,9 @@ public sealed class Schedule : Entity
     public const int ItemNameMaxLength = 200;
     public const int MaxDuration = 999;
 
+    /// <summary>The most business days an item of an outline may start after the first start: about a hundred years.</summary>
+    public const int MaxStartOffset = 30_000;
+
     /// <summary>The first and the last day a schedule may use, so a date computation never walks without end.</summary>
     public static readonly DateOnly FirstDay = new(2000, 1, 1);
 
@@ -439,28 +442,87 @@ public sealed class Schedule : Entity
     public void ApplyTemplate(ProjectTemplate template, DateOnly start, IBusinessDays days, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(template);
+        ApplyTemplate(template.ToOutline(), start, days, today);
+    }
+
+    /// <summary>
+    /// Makes the schedule of a new project from an outline, of a model or of a file of the MS Project (ADR-0017,
+    /// ADR-0135): its phases in order, and its items in order, each one starting as many business days after the start,
+    /// on a business day, as the outline says, in its task and after the items it depends on, as any inclusion places it
+    /// (ADR-0018, ADR-0019), with its owner or the client. Once every item has its dates, a task at 100% is completed on
+    /// its end and a milestone at 100% reached on its day, never after today (ADR-0020, ADR-0086).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The schedule already has phases.</exception>
+    /// <exception cref="ArgumentException">
+    /// The outline points outside itself, has a dependency on or of a task with subtasks, or from an item that does not
+    /// come before, or an item is not valid for its kind (as in <see cref="AddItem"/>).
+    /// </exception>
+    public void ApplyTemplate(SchedulePlanOutline outline, DateOnly start, IBusinessDays days, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(outline);
         ArgumentNullException.ThrowIfNull(days);
         if (_phases.Count > 0)
         {
             throw new InvalidOperationException("A model goes only into an empty schedule.");
         }
 
+        CheckOutline(outline);
         var first = OnABusinessDay(start, days);
-        var phases = template.Phases.OrderBy(phase => phase.Position).ToDictionary(phase => phase.Id, phase => AddPhase(phase.Name).Id);
-        var predecessors = template.Dependencies.ToLookup(dependency => dependency.SuccessorId, dependency => dependency.PredecessorId);
-        var items = new Dictionary<Guid, Guid>();
-        foreach (var item in template.Items.OrderBy(item => item.Position))
+        var phases = outline.Phases.Select(phase => AddPhase(phase.Name).Id).ToList();
+        var predecessors = outline.Dependencies.ToLookup(dependency => dependency.Successor, dependency => dependency.Predecessor);
+        var items = new List<ScheduleItem>();
+        foreach (var (item, index) in outline.Items.Select((item, index) => (item, index)))
         {
             var plan = new ScheduleItemPlan(
-                phases[item.PhaseId],
+                phases[item.Phase],
                 item.Name,
                 days.AddBusinessDays(first, item.StartOffset),
-                item.Kind == ScheduleItemKind.Milestone ? 0 : Math.Max(1, item.Duration),
-                OwnerId: null,
+                item.Kind == ScheduleItemKind.Milestone ? 0 : item.Duration,
+                item.OwnerId,
                 Progress: 0,
-                [.. predecessors[item.Id].Where(items.ContainsKey).Select(id => items[id])],
-                item.ParentId is { } parent && items.TryGetValue(parent, out var parentId) ? parentId : null);
-            items[item.Id] = AddItem(item.Kind, plan, days, today).Id;
+                [.. predecessors[index].Distinct().Select(position => items[position].Id)],
+                item.Parent is { } parent ? items[parent].Id : null,
+                item.OwnedByClient);
+            items.Add(AddItem(item.Kind, plan, days, today));
+        }
+
+        foreach (var (item, made) in outline.Items.Zip(items).Where(pair => pair.First.Progress > 0 && !IsSummary(pair.Second.Id)))
+        {
+            if (made.Kind == ScheduleItemKind.Task)
+            {
+                made.SetProgress(item.Progress, Earlier(made.End, today));
+            }
+            else
+            {
+                made.SetReached(true, Earlier(made.Start, today));
+            }
+        }
+
+        SummarizeProgress();
+    }
+
+    private static DateOnly Earlier(DateOnly day, DateOnly other) => day < other ? day : other;
+
+    /// <summary>
+    /// The outline holds together: each item in a phase, each subtask in an item before it, each dependency from an item
+    /// before the other, between items without subtasks, and each progress valid for the kind (100 for a milestone reached).
+    /// </summary>
+    private static void CheckOutline(SchedulePlanOutline outline)
+    {
+        var parents = outline.Items.Where(item => item.Parent is not null).Select(item => item.Parent!.Value).ToHashSet();
+        var valid = outline.Items.Select((item, index) =>
+                item.Phase >= 0 && item.Phase < outline.Phases.Count
+                && (item.Parent is not { } parent || (parent >= 0 && parent < index))
+                && item.StartOffset is >= 0 and <= MaxStartOffset
+                && (item.Kind == ScheduleItemKind.Milestone ? item.Progress is 0 or 100 : IsValidProgress(item.Kind, item.Progress)))
+            .All(ok => ok)
+            && outline.Dependencies.All(dependency =>
+                dependency.Predecessor >= 0 && dependency.Predecessor < dependency.Successor
+                && dependency.Successor < outline.Items.Count
+                && !parents.Contains(dependency.Predecessor) && !parents.Contains(dependency.Successor));
+        if (!valid)
+        {
+            throw new ArgumentException("The outline does not hold together.", nameof(outline));
         }
     }
 

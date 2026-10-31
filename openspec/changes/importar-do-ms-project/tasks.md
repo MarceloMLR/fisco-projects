@@ -4,9 +4,9 @@
 
 ## 2. Domínio e leitura
 
-- [ ] 2.1 `SchedulePlanOutline` aplicado pelo `Schedule.ApplyTemplate`, com o progresso, o responsável ou o cliente opcionais, entregue pelo `ProjectTemplate`; os testes dos modelos continuam passando
-- [ ] 2.2 `MsProjectImport.Read`: XML sem DTD, namespace do MS Project, limites de 5 MB e 2.000 tarefas, as linhas, os recursos de trabalho e as atribuições; testes com arquivos de exemplo, com DTD, sem namespace e grandes demais
-- [ ] 2.3 `MsProjectImport.Convert`: níveis, tarefas soltas, datas em dias úteis, durações de 1 a 999, dependências e intervalos, progresso, o primeiro recurso de cada tarefa, nomes cortados e os avisos; testes de cada regra do ADR-0135 e a ida e volta com o `MsProjectExport`
+- [x] 2.1 `SchedulePlanOutline` aplicado pelo `Schedule.ApplyTemplate`, com o progresso, o responsável ou o cliente opcionais, entregue pelo `ProjectTemplate`; os testes dos modelos continuam passando
+- [x] 2.2 `MsProjectImport.Read`: XML sem DTD, namespace do MS Project, limites de 5 MB e 2.000 tarefas, as linhas, os recursos de trabalho e as atribuições; testes com arquivos de exemplo, com DTD, sem namespace e grandes demais
+- [x] 2.3 `MsProjectImport.Convert`: níveis, tarefas soltas, datas em dias úteis, durações de 1 a 999, dependências e intervalos, progresso, o primeiro recurso de cada tarefa, nomes cortados e os avisos; testes de cada regra do ADR-0135 e a ida e volta com o `MsProjectExport`
 
 ## 3. API
 
