@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { typeInEditor } from '../test/editor';
 import { renderApp } from '../test/renderApp';
 import {
@@ -230,5 +231,48 @@ describe('Página do chamado', () => {
     await renderApp('/tickets/999');
 
     expect(await screen.findByText(text.details.notFound)).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos chamados', () => {
+  it('Formulário em andamento ao abrir chamado', async () => {
+    signedInAs('User');
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/tickets', async ({ request }) => {
+        opened.push(await request.json());
+        await held.until;
+        return HttpResponse.json(
+          { id: '0199f5a2-7c1e-7d40-9a1b-700000000105', number: 5 },
+          { status: 201 },
+        );
+      }),
+      http.get('/api/tickets/5', () => {
+        const [row] = demoTickets();
+        if (row === undefined) {
+          throw new Error('No ticket.');
+        }
+        return HttpResponse.json(demoTicket({ ...row, number: 5, title: 'Nota sem retorno' }));
+      }),
+    );
+    await renderApp(`/projects/${erp.id}/tickets/new`);
+    const teams = await screen.findByRole('radiogroup', { name: text.form.team });
+    fireEvent.click(within(teams).getByRole('radio', { name: text.teams.Development }));
+    fireEvent.change(screen.getByLabelText(text.form.title), {
+      target: { value: 'Nota sem retorno' },
+    });
+    await typeInEditor(text.form.description, 'A nota 3381 não volta da Sefaz.');
+    const submit = screen.getByRole('button', { name: text.form.submit });
+
+    fireEvent.click(submit);
+
+    await waitFor(() => {
+      expectBusy(submit, text.form.submit);
+    });
+    fireEvent.click(submit);
+    held.release();
+    expect(await screen.findByRole('heading', { name: 'Nota sem retorno' })).toBeVisible();
+    expect(opened).toHaveLength(1);
   });
 });

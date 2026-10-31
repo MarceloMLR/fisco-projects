@@ -9,6 +9,7 @@ import {
   demoAcceptances,
   demoMilestones,
 } from '../test/demoAcceptances';
+import { expectBusy, expectIdle, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoPeople, demoProjects, membersOf, problem, server, signedInAs } from '../test/server';
 
@@ -560,5 +561,64 @@ describe('Gaveta do termo com os signatários', () => {
 
     expect(within(drawer).getByRole('region', { name: text.details.signers })).toBeVisible();
     expect(within(drawer).getByRole('button', { name: text.actions.remind })).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos termos', () => {
+  it('Botão em andamento ao lembrar os signatários', async () => {
+    const held = heldAnswer();
+    // Held first, then the reminder of the simulated API.
+    server.use(
+      http.post('/api/projects/:id/acceptances/:termId/reminder', async () => {
+        await held.until;
+      }),
+    );
+    const drawer = await openTerm();
+    const remind = within(drawer).getByRole('button', { name: text.actions.remind });
+
+    fireEvent.click(remind);
+
+    await waitFor(() => {
+      expectBusy(remind, text.actions.remind);
+    });
+    fireEvent.click(remind);
+    held.release();
+    expect(await screen.findByText(text.messages.reminded)).toBeVisible();
+    expectIdle(remind);
+    expect(requests.map((request) => `${request.method} ${request.path}`)).toEqual([
+      `POST reminder ${pendingId}`,
+    ]);
+  });
+
+  it('Formulário em andamento ao pedir assinatura', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/projects/:id/acceptances', async () => {
+        await held.until;
+      }),
+    );
+    await renderApp(path);
+    fireEvent.click(await screen.findByRole('button', { name: text.request }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.requestTitle });
+    await choose(dialog, text.dialog.milestone, 'Homologação concluída · 03/11/2026');
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.title), {
+      target: { value: 'Aceite do cadastro de produtos' },
+    });
+    fireEvent.change(screen.getByTestId('acceptance-file'), {
+      target: { files: [pdf('termo-cadastro.pdf')] },
+    });
+    typeSigner(dialog, 1, 'Helena Rocha', 'helena.rocha@cliente.example');
+    const submit = within(dialog).getByRole('button', { name: text.dialog.submitRequest });
+
+    fireEvent.click(submit);
+
+    await waitFor(() => {
+      expectBusy(submit, text.dialog.submitRequest);
+    });
+    fireEvent.click(submit);
+    held.release();
+    expect(await screen.findByText('Assinatura pedida a 1 signatário.')).toBeVisible();
+    expect(requests).toHaveLength(1);
   });
 });

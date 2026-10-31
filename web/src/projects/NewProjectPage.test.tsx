@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type ClientRow, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   clientChoicesOf,
@@ -543,5 +544,33 @@ describe('Pasta do projeto na tela', () => {
     create();
 
     expect(await screen.findByText(folderText.invalid)).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento no Novo projeto', () => {
+  it('Formulário em andamento no Novo projeto', async () => {
+    const held = heldAnswer();
+    // Held first, then the creation of the simulated API.
+    server.use(
+      http.post('/api/projects', async () => {
+        await held.until;
+      }),
+    );
+    await openNewProject();
+    fill(form.code, 'PORTAL-RH');
+    fill(form.name, 'Portal do RH');
+    // The button sits in the header, outside the form, and is busy as well.
+    const submit = screen.getByRole('button', { name: form.create });
+
+    create();
+
+    await waitFor(() => {
+      expectBusy(submit, form.create);
+    });
+    create();
+    held.release();
+    await screen.findByRole('heading', { level: 1, name: 'Portal do RH' });
+    expect(requests).toEqual([`POST PORTAL-RH Portal do RH null ${marina.id} null`]);
   });
 });

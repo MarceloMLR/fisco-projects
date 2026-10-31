@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Ticket } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, expectIdle, heldAnswer } from '../test/busy';
 import { typeInEditor } from '../test/editor';
 import { renderApp } from '../test/renderApp';
 import { demoPeople, demoTicket, demoTickets, marina, server, signedInAs } from '../test/server';
@@ -459,5 +460,35 @@ describe('Foto no avatar', () => {
 
     expect(list.querySelector('img')).toBeNull();
     expect(within(list).getAllByText('DT')[0]).toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento na conversa', () => {
+  it('Botão em andamento ao responder', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/tickets/1/messages', async ({ request }) => {
+        sent.push(await request.text());
+        await held.until;
+        return new HttpResponse(null, { status: 201 });
+      }),
+    );
+    await openTicket();
+    await typeInEditor(text.reply.label, 'veja o XML');
+    const send = screen.getByRole('button', { name: text.reply.send });
+
+    fireEvent.click(send);
+
+    await waitFor(() => {
+      expectBusy(send, text.reply.send);
+    });
+    fireEvent.click(send);
+    held.release();
+    // The answer box starts again, with the button back to its rest.
+    await waitFor(() => {
+      expectIdle(screen.getByRole('button', { name: text.reply.send }));
+    });
+    expect(sent).toHaveLength(1);
   });
 });

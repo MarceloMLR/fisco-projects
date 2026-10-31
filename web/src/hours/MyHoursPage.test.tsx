@@ -11,6 +11,7 @@ import {
   hoursWork,
   timeEntryListOf,
 } from '../test/demoTimeEntries';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { server, signedInAs } from '../test/server';
 
@@ -270,5 +271,69 @@ describe('Minhas horas pela tela', () => {
     expect(first).toHaveTextContent('Roteiro dos testes de emissão de NF-e');
     expect(first).toHaveTextContent('3,5 h');
     expect(screen.getByRole('button', { name: text.log })).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nas horas', () => {
+  it('Botão em andamento ao apagar o apontamento', async () => {
+    const held = heldAnswer();
+    // Held first, then the removal of the simulated API.
+    server.use(
+      http.delete('/api/time-entries/:entryId', async () => {
+        await held.until;
+      }),
+    );
+    await openHours();
+    const grid = screen.getByRole('grid', { name: text.table });
+    fireEvent.click(
+      within(grid).getByRole('button', { name: text.menu.button.replace('{{day}}', '26/10/2026') }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.remove }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.remove.title });
+    const remove = within(confirm).getByRole('button', { name: text.remove.confirm });
+
+    fireEvent.click(remove);
+
+    await waitFor(() => {
+      expectBusy(remove, text.remove.confirm);
+    });
+    fireEvent.click(remove);
+    held.release();
+    expect(await screen.findByText(text.messages.removed)).toBeVisible();
+    expect(requests.map((request) => request.method)).toEqual(['DELETE']);
+  });
+
+  it('Formulário em andamento ao apontar', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/time-entries', async () => {
+        await held.until;
+      }),
+    );
+    await openHours();
+    fireEvent.click(screen.getByRole('button', { name: text.log }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.newTitle });
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.dialog.project }));
+    fireEvent.click(
+      within(await screen.findByRole('listbox')).getByRole('option', { name: /^ERP-FIN/ }),
+    );
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.hours), {
+      target: { value: '1:30' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.description), {
+      target: { value: 'Revisão do roteiro' },
+    });
+    const add = within(dialog).getByRole('button', { name: text.dialog.add });
+
+    fireEvent.click(add);
+
+    await waitFor(() => {
+      expectBusy(add, text.dialog.add);
+    });
+    fireEvent.click(add);
+    held.release();
+    expect(await screen.findByText(text.messages.added)).toBeVisible();
+    expect(requests.map((request) => request.method)).toEqual(['POST']);
   });
 });

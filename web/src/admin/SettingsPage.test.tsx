@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AuditEntry, type Installation, installationProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { renderApp } from '../test/renderApp';
 import { auditPage, marina, problem, server, signedInAs } from '../test/server';
 
@@ -848,5 +849,32 @@ describe('Logo escuro e seletor de cores nas Configurações gerais', () => {
     await waitFor(() => {
       expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
     });
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nas Configurações gerais', () => {
+  it('Formulário em andamento ao salvar', async () => {
+    const held = heldAnswer();
+    // Held first, then the saving of the simulated API.
+    server.use(
+      http.put('/api/installation', async () => {
+        await held.until;
+      }),
+    );
+    await openSettings();
+    fireEvent.change(nameField(), { target: { value: 'Consultoria Fictícia' } });
+    // Salvar sits in the header, outside the form, and is busy as well.
+    const save = saveButton();
+
+    fireEvent.click(save);
+
+    await waitFor(() => {
+      expectBusy(save, text.save);
+    });
+    fireEvent.click(save);
+    held.release();
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(requests).toEqual(['PUT Consultoria Fictícia America/Sao_Paulo']);
   });
 });

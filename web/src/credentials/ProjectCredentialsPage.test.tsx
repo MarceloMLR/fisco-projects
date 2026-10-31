@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Credential } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { credentialsList, demoCredentials, demoPasswordOf } from '../test/demoCredentials';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoProjects, problem, server, signedInAs } from '../test/server';
 import { credentialRows } from './credentials';
@@ -372,5 +373,72 @@ describe('Acessos do projeto', () => {
     expect(within(grid).queryByRole('columnheader', { name: text.columns.notes })).toBeNull();
     expect(screen.getAllByTestId('credential-password')).toHaveLength(4);
     expect(screen.getByRole('combobox', { name: text.environment })).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos acessos', () => {
+  it('Botão de ícone em andamento ao mostrar a senha', async () => {
+    const held = heldAnswer();
+    // Held first, then the password of the simulated API.
+    server.use(
+      http.get('/api/projects/:id/credentials/:credentialId/password', async () => {
+        await held.until;
+      }),
+    );
+    await openCredentials();
+    const [, production] = screen.getAllByRole('button', { name: named(text.show, 'ERP') });
+    if (production === undefined) {
+      throw new Error('No ERP in Produção.');
+    }
+
+    fireEvent.click(production);
+
+    await waitFor(() => {
+      expectBusy(production);
+    });
+    fireEvent.click(production);
+    held.release();
+    await waitFor(() => {
+      expect(passwordIn(2)).toBe(demoPasswordOf(erpProduction));
+    });
+    expect(passwordAsks).toEqual([erpProduction]);
+  });
+
+  it('Formulário em andamento ao incluir o acesso', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/projects/:id/credentials', async () => {
+        await held.until;
+      }),
+    );
+    await openCredentials();
+    fireEvent.click(screen.getByRole('button', { name: text.newCredential }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.newTitle });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.portal), {
+      target: { value: 'Emissor de NF-e' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.environment), {
+      target: { value: 'Homologação' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.username), {
+      target: { value: 'alfa-hml' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.password), {
+      target: { value: 'Kx7pa2V' },
+    });
+    const add = within(dialog).getByRole('button', { name: text.dialog.add });
+
+    fireEvent.click(add);
+
+    await waitFor(() => {
+      expectBusy(add, text.dialog.add);
+    });
+    fireEvent.click(add);
+    held.release();
+    await waitFor(() => {
+      expect(lines()).toContain('Emissor de NF-e');
+    });
+    expect(requests.map((request) => request.method)).toEqual(['POST']);
   });
 });

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectLink } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { demoLinks, linkCategoryIds, linksList } from '../test/demoLinks';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoProjects, problem, server, signedInAs } from '../test/server';
 import { initialOf, linkRows, shownAddress } from './links';
@@ -312,5 +313,71 @@ describe('Links do projeto', () => {
     expect(within(grid).queryByRole('columnheader', { name: text.columns.created })).toBeNull();
     expect(screen.getByRole('combobox', { name: text.category })).toBeVisible();
     expect(screen.getByRole('button', { name: text.newLink })).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos links', () => {
+  it('Botão em andamento ao excluir o link', async () => {
+    const held = heldAnswer();
+    // Held first, then the removal of the simulated API.
+    server.use(
+      http.delete('/api/projects/:id/links/:linkId', async () => {
+        await held.until;
+      }),
+    );
+    await openLinks();
+    fireEvent.click(
+      screen.getByRole('button', { name: named(text.menu.button, 'Layouts de integração') }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.remove }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.remove.title });
+    const remove = within(confirm).getByRole('button', { name: text.remove.confirm });
+
+    fireEvent.click(remove);
+
+    await waitFor(() => {
+      expectBusy(remove, text.remove.confirm);
+    });
+    fireEvent.click(remove);
+    held.release();
+    await waitFor(() => {
+      expect(lines()).not.toContain('LLayouts de integração');
+    });
+    expect(requests.map((request) => request.method)).toEqual(['DELETE']);
+  });
+
+  it('Formulário em andamento ao incluir o link', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/projects/:id/links', async () => {
+        await held.until;
+      }),
+    );
+    await openLinks();
+    fireEvent.click(screen.getByRole('button', { name: text.newLink }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.newTitle });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.title), {
+      target: { value: 'Portal da SEFAZ' },
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.dialog.url), {
+      target: { value: 'https://nfe.sefaz.example/consulta' },
+    });
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.dialog.category }));
+    fireEvent.click(
+      within(await screen.findByRole('listbox')).getByRole('option', { name: 'Sistemas' }),
+    );
+    const add = within(dialog).getByRole('button', { name: text.dialog.add });
+
+    fireEvent.click(add);
+
+    await waitFor(() => {
+      expectBusy(add, text.dialog.add);
+    });
+    // Enter in a field sends nothing while it sends.
+    fireEvent.submit(within(dialog).getByLabelText(text.dialog.title));
+    held.release();
+    expect(await screen.findByText(named(text.messages.added, 'Portal da SEFAZ'))).toBeVisible();
+    expect(requests.map((request) => request.method)).toEqual(['POST']);
   });
 });

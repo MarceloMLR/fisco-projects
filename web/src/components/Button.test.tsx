@@ -8,8 +8,8 @@ import { Form } from './Form';
 
 /** An answer of the server held until the test lets it go, with success or error. */
 function heldAnswer() {
-  let resolve = () => {};
-  let reject = () => {};
+  let resolve: () => void = () => undefined;
+  let reject: () => void = () => undefined;
   const promise = new Promise<void>((done, fail) => {
     resolve = done;
     reject = () => {
