@@ -238,6 +238,7 @@ export function answerOf(
     [acceptanceProblems.answered]: 'acceptances.messages.answered',
     [acceptanceProblems.noProvider]: 'acceptances.messages.noProvider',
     [acceptanceProblems.providerFailed]: 'acceptances.messages.providerFailed',
+    [acceptanceProblems.remindedRecently]: 'acceptances.messages.remindedRecently',
   } as const;
   const key = type === undefined ? undefined : messages[type as keyof typeof messages];
   return { kind: 'refused', message: t(key ?? 'acceptances.messages.failed') };

@@ -25,6 +25,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 29/10/2026, Marcelo perguntou como quem vende software instala na nuvem do cliente e escolheu que a Operação-6 parta do pacote de uma versão publicada, instalado pelo fornecedor (padrão) ou pela TI da empresa, e não de uma cópia do repositório (ADR-0127).
 - Em 29/10/2026, com a v1 concluída, Marcelo pediu duas novidades, que formam os grupos 11 e 12, fora do roadmap aprovado em 17/10/2026: as horas do projeto, só em horas, com a visão gerencial só do administrador (ADR-0128), e a assinatura dos termos de aceite por um provedor de assinatura eletrônica trocável, começando pela Autentique, com os termos só do gerente e do administrador.
 - Em 29/10/2026, para a assinatura dos termos, Marcelo aprovou que o e-mail de cada signatário fique guardado só enquanto o pedido está aberto: com o termo assinado, recusado ou cancelado, o e-mail é apagado e o nome fica no histórico; os dados completos ficam no PDF assinado que o provedor devolve, e tudo sai com o projeto excluído. Aprovou também as telas da Horas-1 e da Horas-2 no canvas "Horas do projeto".
+- Em 30/10/2026, no teste da Assinatura-2 no `dev`, "Lembrar signatários" logo depois do pedido disse que o provedor não respondeu, quando a Autentique só recusou o reenvio feito há pouco; a correção entrou como Assinatura-2.1 (`lembrete-logo-depois-do-envio`).
 
 ## Marcos
 
@@ -41,8 +42,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
-| 12. Assinatura dos termos de aceite | 2 | 2 |
-| **Total** | **95** | **95** |
+| 12. Assinatura dos termos de aceite | 3 | 3 |
+| **Total** | **96** | **96** |
 
 ## 1. Fundação
 
@@ -204,3 +205,4 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | --- | --- | --- | --- | --- |
 | Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Concluída em 30/10/2026 ([#109](https://github.com/MarceloMLR/fisco-projects/pull/109)) |
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127, 0129, 0130 | Concluída em 30/10/2026 ([#110](https://github.com/MarceloMLR/fisco-projects/pull/110)) |
+| Assinatura-2.1 | `lembrete-logo-depois-do-envio` | O lembrete recusado pelo provedor por ter mandado o link há pouco diz isso, no lugar de "não respondeu", a pedido de Marcelo | 0129, 0130 | Concluída em 30/10/2026 ([#112](https://github.com/MarceloMLR/fisco-projects/pull/112)) |

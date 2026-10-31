@@ -59,6 +59,9 @@ public enum AcceptanceOutcome
 
     /// <summary>The provider of signatures failed or refused; nothing was saved; 502.</summary>
     ProviderFailed = 9,
+
+    /// <summary>The provider sent the link a short while ago and does not send it again yet (ADR-0130); 409.</summary>
+    RemindedRecently = 10,
 }
 
 /// <summary>Why the file of a term is refused: empty, larger than the documents take, or not a PDF (ADR-0035).</summary>
@@ -624,9 +627,12 @@ public sealed class RemindAcceptance(
         {
             await provider.RemindAsync(term!.ProviderDocumentId!, cancellationToken);
         }
-        catch (SignatureProviderException)
+        catch (SignatureProviderException exception)
         {
-            return AcceptanceResult.Of(AcceptanceOutcome.ProviderFailed);
+            // The provider answered: it sent the link a short while ago, and the reminder does not enter the history.
+            return AcceptanceResult.Of(exception.Failure == SignatureFailure.RemindedRecently
+                ? AcceptanceOutcome.RemindedRecently
+                : AcceptanceOutcome.ProviderFailed);
         }
 
         term.Remind(viewer.UserId, clock.GetUtcNow().UtcDateTime);

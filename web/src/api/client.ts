@@ -306,6 +306,7 @@ export const acceptanceProblems = {
   fileRefused: 'urn:fiscoprojects:problem:acceptance-file-refused',
   noProvider: 'urn:fiscoprojects:problem:signature-provider-missing',
   providerFailed: 'urn:fiscoprojects:problem:signature-provider-failed',
+  remindedRecently: 'urn:fiscoprojects:problem:signature-reminded-recently',
 } as const;
 
 /** Problem types of the links (LinkProblems in the Documents module). */

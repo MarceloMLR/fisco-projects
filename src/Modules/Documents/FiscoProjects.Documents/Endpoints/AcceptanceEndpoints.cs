@@ -107,6 +107,12 @@ public static class AcceptanceProblems
 
     /// <summary>The provider of signatures failed or refused, and nothing was saved; status 502.</summary>
     public const string ProviderFailed = "urn:fiscoprojects:problem:signature-provider-failed";
+
+    /// <summary>
+    /// The provider sent the link to the signers a short while ago and does not send it again yet (ADR-0130); status
+    /// 409, and the reminder does not enter the history.
+    /// </summary>
+    public const string RemindedRecently = "urn:fiscoprojects:problem:signature-reminded-recently";
 }
 
 /// <summary>
@@ -368,6 +374,11 @@ public static class AcceptanceEndpoints
                 title: "Provider of signatures failed",
                 detail: "The provider of signatures did not take the change, and nothing was saved; try again.",
                 type: AcceptanceProblems.ProviderFailed),
+            AcceptanceOutcome.RemindedRecently => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Reminded recently",
+                detail: "The provider of signatures sent the link a short while ago; remind the signers again later.",
+                type: AcceptanceProblems.RemindedRecently),
             AcceptanceOutcome.Refused => TypedResults.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "File refused",

@@ -5,9 +5,19 @@ using FiscoProjects.Documents.Domain;
 
 namespace FiscoProjects.Documents.Application;
 
+/// <summary>Why the provider of signatures refused a call.</summary>
+public enum SignatureFailure
+{
+    /// <summary>It did not answer, or answered with an error.</summary>
+    Failed = 1,
+
+    /// <summary>It sent the link to the signers a short while ago and does not send it again yet (ADR-0130).</summary>
+    RemindedRecently = 2,
+}
+
 /// <summary>
-/// The provider of signatures failed or refused: it did not answer, or answered with an error. The message never has
-/// the signers, the term or the key (ADR-0057).
+/// The provider of signatures failed or refused: it did not answer, or answered with an error, as the
+/// <see cref="Failure"/> says. The message never has the signers, the term or the key (ADR-0057).
 /// </summary>
 public sealed class SignatureProviderException : Exception
 {
@@ -25,6 +35,14 @@ public sealed class SignatureProviderException : Exception
         : base(message, inner)
     {
     }
+
+    public SignatureProviderException(string message, SignatureFailure failure)
+        : base(message)
+    {
+        Failure = failure;
+    }
+
+    public SignatureFailure Failure { get; } = SignatureFailure.Failed;
 }
 
 /// <summary>A signer as the provider receives it: the name and the e-mail.</summary>
@@ -59,7 +77,10 @@ public interface ISignatureProvider
     /// <summary>Where each signer of the document stands.</summary>
     Task<IReadOnlyList<SignerState>> StatusAsync(string documentId, CancellationToken cancellationToken);
 
-    /// <summary>Sends the link again to the signers who did not sign.</summary>
+    /// <summary>
+    /// Sends the link again to the signers who did not sign; a provider that sent it a short while ago refuses with
+    /// <see cref="SignatureFailure.RemindedRecently"/>.
+    /// </summary>
     Task RemindAsync(string documentId, CancellationToken cancellationToken);
 
     /// <summary>Cancels the document, so nobody else signs it; a document already closed stays as it is.</summary>

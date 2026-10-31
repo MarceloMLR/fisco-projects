@@ -127,6 +127,20 @@ public sealed class AutentiqueSignatureProviderTests : SignatureProviderContract
         _autentique.DocumentOf(sent.DocumentId).Resent.Should().Equal(sent.SignerIds[1]);
     }
 
+    // Spec: termos-de-aceite, requirement "Lembrar e cancelar" (Assinatura-2.1).
+    [Fact(DisplayName = "Reenvio recusado logo depois do envio")]
+    public async Task Remind_TooSoon_IsTold_ApartFromAFailure()
+    {
+        var sent = await SendAsync();
+        _autentique.ResendBlocked = true;
+
+        var remind = () => Provider.RemindAsync(sent.DocumentId, Cancellation);
+
+        (await remind.Should().ThrowAsync<SignatureProviderException>()).Which.Failure.Should().Be(SignatureFailure.RemindedRecently);
+        _autentique.Down = true;
+        (await remind.Should().ThrowAsync<SignatureProviderException>()).Which.Failure.Should().Be(SignatureFailure.Failed);
+    }
+
     [Fact(DisplayName = "Falhas da Autentique sem a chave e os e-mails")]
     public async Task Failures_TellTheOperation_WithoutTheKeyNorTheEmails()
     {

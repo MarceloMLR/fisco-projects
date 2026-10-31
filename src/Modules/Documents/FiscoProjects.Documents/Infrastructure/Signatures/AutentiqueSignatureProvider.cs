@@ -33,6 +33,9 @@ internal sealed partial class AutentiqueSignatureProvider(
     /// <summary>The API of the Autentique, only GraphQL.</summary>
     public static readonly Uri Endpoint = new("https://api.autentique.com.br/v2/graphql");
 
+    // The code of the Autentique for links sent again too soon after they were sent.
+    private const string ResentRecently = "too_many_resent_emails";
+
     // The largest signed PDF taken from the Autentique, above the 20 MB of its professional plan.
     private const long MaxSignedBytes = 64L * 1024 * 1024;
 
@@ -363,6 +366,13 @@ internal sealed partial class AutentiqueSignatureProvider(
         if (answer?["errors"] is JsonArray { Count: > 0 } errors)
         {
             var code = CodeOf(errors);
+            if (code == ResentRecently)
+            {
+                // The Autentique keeps the links from being sent again a short while after they were sent.
+                LogResentRecently(logger, operation);
+                throw new SignatureProviderException($"The Autentique failed to {operation}: {code}.", SignatureFailure.RemindedRecently);
+            }
+
             return accepted is not null && code == accepted ? new JsonObject() : throw Failed(operation, code);
         }
 
@@ -478,6 +488,9 @@ internal sealed partial class AutentiqueSignatureProvider(
         LogFailed(logger, operation, detail);
         return inner is null ? new SignatureProviderException(message) : new SignatureProviderException(message, inner);
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "The Autentique sent the links a short while ago and did not {Operation} yet.")]
+    private static partial void LogResentRecently(ILogger logger, string operation);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The Autentique failed to {Operation}: {Detail}.")]
     private static partial void LogFailed(ILogger logger, string operation, string detail);
