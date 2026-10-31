@@ -29,6 +29,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 30/10/2026, depois da Assinatura-2.1, Marcelo pediu o ícone de carregamento nos botões ao clicar, em todos os que mandam algo ao servidor, e escolheu o ícone no lugar do ícone do botão, na hora do clique, sem os itens dos menus (Fundação-5.5, `botoes-em-andamento`, ADR-0131).
 - Em 30/10/2026, no teste da Fundação-5.5 no `dev`, o ícone só piscou com o servidor rápido, e dois botões ainda ficavam cinza; Marcelo escolheu o ícone visível por pelo menos meio segundo (Fundação-5.5.1, `botoes-em-andamento-visiveis`, ADR-0132).
 - Em 30/10/2026, Marcelo achou os avisos, os diálogos, as gavetas, a troca de página e as abas do projeto bruscos; comparou as opções numa página de prévia e, em 31/10/2026, escolheu um aviso só, no alto, com fundo de janela, e janelas e páginas que entram e saem suaves, com o movimento reduzido só esmaecendo (Fundação-5.6, `avisos-refinados`, e Fundação-5.7, `janelas-e-paginas-suaves`, ADR-0133).
+- Em 31/10/2026, com a v1 e os refinamentos concluídos, Marcelo pediu a Linha do tempo própria, prevista no ADR-0051 como evolução, para tirar a dependência da licença do Syncfusion antes de vender e depois importar do MS Project: forma o grupo 13, com a proposta aprovada por ele antes de cada implementação (ADR-0134).
 
 ## Marcos
 
@@ -213,3 +214,11 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Concluída em 30/10/2026 ([#109](https://github.com/MarceloMLR/fisco-projects/pull/109)) |
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127, 0129, 0130 | Concluída em 30/10/2026 ([#110](https://github.com/MarceloMLR/fisco-projects/pull/110)) |
 | Assinatura-2.1 | `lembrete-logo-depois-do-envio` | O lembrete recusado pelo provedor por ter mandado o link há pouco diz isso, no lugar de "não respondeu", a pedido de Marcelo | 0129, 0130 | Concluída em 30/10/2026 ([#112](https://github.com/MarceloMLR/fisco-projects/pull/112)) |
+
+## 13. Linha do tempo própria
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Gantt-1 | `linha-do-tempo-propria` | A Linha do tempo desenhada pelo próprio FiscoProjects, com o mesmo comportamento e o mesmo visual, sem o Syncfusion, e navegável pelo teclado | 0051, 0071, 0134 | Em andamento |
+| Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Planejada |
+| Gantt-3 | `importar-do-ms-project` | O "Novo projeto" a partir do XML do MS Project, com as fases, as tarefas, os marcos e as dependências | 0017, 0021, 0134 | Planejada |
