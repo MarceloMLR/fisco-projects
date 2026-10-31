@@ -42,8 +42,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
-| 12. Assinatura dos termos de aceite | 3 | 2 |
-| **Total** | **96** | **95** |
+| 12. Assinatura dos termos de aceite | 3 | 3 |
+| **Total** | **96** | **96** |
 
 ## 1. Fundação
 
@@ -205,4 +205,4 @@ Changes pedidas por Marcelo depois da v1, com as propostas aprovadas por ele ant
 | --- | --- | --- | --- | --- |
 | Assinatura-1 | `assinatura-dos-termos` | Pedido de aceite com um ou mais signatários (nome e e-mail) que assinam por um provedor trocável, com o provedor local; termos só do gerente e do administrador | 0035, 0045, 0095, 0129 | Concluída em 30/10/2026 ([#109](https://github.com/MarceloMLR/fisco-projects/pull/109)) |
 | Assinatura-2 | `assinatura-pela-autentique` | O provedor da Autentique, com o link por e-mail, o sandbox no `dev`, a chave no Key Vault e o passo no guia de instalação | 0035, 0127, 0129, 0130 | Concluída em 30/10/2026 ([#110](https://github.com/MarceloMLR/fisco-projects/pull/110)) |
-| Assinatura-2.1 | `lembrete-logo-depois-do-envio` | O lembrete recusado pelo provedor por ter mandado o link há pouco diz isso, no lugar de "não respondeu", a pedido de Marcelo | 0129, 0130 | PR aberto ([#112](https://github.com/MarceloMLR/fisco-projects/pull/112)) |
+| Assinatura-2.1 | `lembrete-logo-depois-do-envio` | O lembrete recusado pelo provedor por ter mandado o link há pouco diz isso, no lugar de "não respondeu", a pedido de Marcelo | 0129, 0130 | Concluída em 30/10/2026 ([#112](https://github.com/MarceloMLR/fisco-projects/pull/112)) |
