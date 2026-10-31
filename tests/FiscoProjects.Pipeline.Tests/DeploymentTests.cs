@@ -141,6 +141,7 @@ public sealed partial class DeploymentTests : IDisposable
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
             "az webapp deploy --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --src-path artifacts/app.zip --type zip --track-status false --output none",
+            "az webapp restart --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --output none",
             "curl https://app-fiscoprojects-mlr-prod.azurewebsites.net/health");
     }
 
@@ -171,8 +172,30 @@ public sealed partial class DeploymentTests : IDisposable
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
             "az webapp deploy --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --src-path artifacts/app.zip --type zip --track-status false --output none",
+            "az webapp restart --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --output none",
             "curl https://app-fiscoprojects-mlr-dev.azurewebsites.net/health",
             "npm run demo:data -- https://app-fiscoprojects-mlr-dev.azurewebsites.net (web)");
+    }
+
+    [Fact(DisplayName = "Reinício depois da publicação")]
+    public void Deploy_RestartsTheApplication_BeforeFollowingHealth()
+    {
+        Shell.SkipWithoutBash();
+        Fake("az", "echo \"az $1 $2\" >> \"$FAKES/calls\"");
+        Fake("curl", "echo \"curl\" >> \"$FAKES/calls\"; printf 200");
+        Fake("npm", "true");
+        Fake("sleep", "echo \"sleep $*\" >> \"$FAKES/calls\"");
+
+        foreach (var environment in new[] { "dev", "prod" })
+        {
+            File.Delete(Path.Combine(_fakes, "calls"));
+
+            var result = Run("deploy", environment);
+
+            result.ExitCode.Should().Be(0, result.Errors);
+            // The old process stops answering with the files mixed before /health is followed.
+            Calls().Take(4).Should().Equal("az webapp deploy", "az webapp restart", "sleep 20", "curl");
+        }
     }
 
     [Fact(DisplayName = "Demonstração depois de um reinício")]
@@ -200,8 +223,9 @@ public sealed partial class DeploymentTests : IDisposable
         var failed = Run("deploy");
 
         failed.ExitCode.Should().Be(1);
-        failed.Errors.Should().Contain("did not load in 3 attempts");
-        Calls().Should().Equal("sleep 20", "npm", "sleep 30", "npm", "sleep 30", "npm");
+        failed.Errors.Should().Contain("did not load in 6 attempts");
+        Calls().Should().Equal(
+            "sleep 20", "npm", "sleep 30", "npm", "sleep 30", "npm", "sleep 30", "npm", "sleep 30", "npm", "sleep 30", "npm");
     }
 
     [Fact(DisplayName = "Infraestrutura diferente do código")]

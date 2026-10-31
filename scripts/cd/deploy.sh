@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Publishes artifacts/app.zip in the App Service of an environment (ADR-0115) and waits for /health, while the
-# application starts and, in Development, applies its migrations. In an environment with the local sign-in, then loads
-# the demonstration data that is missing (ADR-0089). ENVIRONMENT names the environment of infra/terraform/environments,
-# and the Azure CLI must be signed in.
+# Publishes artifacts/app.zip in the App Service of an environment (ADR-0115), restarts the application and waits for
+# /health, while it starts and, in Development, applies its migrations. In an environment with the local sign-in, then
+# loads the demonstration data that is missing (ADR-0089). ENVIRONMENT names the environment of
+# infra/terraform/environments, and the Azure CLI must be signed in.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -16,6 +16,9 @@ address="https://$app.azurewebsites.net"
 
 # The startup is followed here, by /health: the tracking of the Azure CLI can keep waiting after the site is up.
 az webapp deploy --resource-group "$group" --name "$app" --src-path artifacts/app.zip --type zip --track-status false --output none
+# The zip goes over the running application, which the App Service restarts on its own, but not right away: until then,
+# the old process answers with old and new files mixed, /health included. The restart now ends that window.
+az webapp restart --resource-group "$group" --name "$app" --output none
 sleep 20
 
 healthy=0
@@ -35,7 +38,7 @@ echo "Published: $address"
 # The App Service may still restart with the new package after the first answers of /health; the load adds only what
 # is missing, so trying again is safe.
 if grep -q '^aspnetcore_environment *= *"Development"' "$tfvars"; then
-  attempts=3
+  attempts=6
   for attempt in $(seq 1 "$attempts"); do
     if (cd web && npm run demo:data -- "$address"); then
       break

@@ -36,7 +36,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 17 | 16 |
+| 1. Fundação | 18 | 16 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
@@ -49,7 +49,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
-| **Total** | **101** | **100** |
+| **Total** | **102** | **100** |
 
 ## 1. Fundação
 
@@ -74,6 +74,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-6.1 | `chave-do-syncfusion-no-dev` | A chave do Syncfusion lida do Key Vault no `dev`, a pedido de Marcelo | 0051, 0087 | Concluída em 26/10/2026 ([#96](https://github.com/MarceloMLR/fisco-projects/pull/96)) |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061, 0115, 0116 | Concluída em 25/10/2026 ([#85](https://github.com/MarceloMLR/fisco-projects/pull/85)) |
 | Fundação-7.1 | `demonstracao-depois-do-reinicio` | A carga dos dados de demonstração tenta de novo quando a aplicação reinicia logo depois da publicação | 0089, 0115 | Concluída em 25/10/2026 ([#90](https://github.com/MarceloMLR/fisco-projects/pull/90)) |
+| Fundação-7.2 | `reinicio-depois-da-publicacao` | A aplicação reinicia logo depois da publicação, e a carga da demonstração tenta até seis vezes, a pedido de Marcelo | 0055, 0089, 0115 | Em andamento |
 | Fundação-8 | `primeira-carga-mais-rapida` | Primeira abertura das telas mais rápida: aquecimento da API ao subir, leituras antes na tela e o código da Linha do tempo carregado antes, a pedido de Marcelo | 0047, 0080, 0106 | Concluída em 21/10/2026 ([#69](https://github.com/MarceloMLR/fisco-projects/pull/69)) |
 
 ## 2. Acesso e administração
