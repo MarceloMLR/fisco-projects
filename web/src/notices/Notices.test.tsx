@@ -55,7 +55,7 @@ async function wait(ms: number) {
   });
 }
 
-// Spec: estrutura-das-telas, requirement "Confirmações no alto da tela" (ADR-0109, ADR-0133).
+// Spec: estrutura-das-telas, requirements "Confirmações no alto da tela" and "Aparência e tempo do aviso" (ADR-0109, ADR-0133).
 describe('Confirmações no alto da tela', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -295,6 +295,7 @@ describe('Confirmações no alto da tela', () => {
   });
 });
 
+// Spec: estrutura-das-telas, requirement "Aparência e tempo do aviso" (ADR-0133).
 describe('Movimento do aviso', () => {
   const animate = vi.fn(() => ({ finished: Promise.resolve() }) as unknown as Animation);
 
