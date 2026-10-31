@@ -1,5 +1,5 @@
 ---
-status: proposta
+status: aceita
 date: 2026-10-31
 decision-makers: Marcelo Ribeiro
 ---
@@ -48,7 +48,7 @@ Opção escolhida: **E. Componente próprio**, porque o servidor já faz a parte
 
 - O `ScheduleGantt` mantém as propriedades e os eventos de hoje, menos a licença; a aba Cronograma, o Expandir e os detalhes não mudam.
 - A tabela à esquerda é uma árvore acessível (`treegrid`), com as fases e as tarefas-resumo que se recolhem, e as colunas de hoje (nome e progresso; no Expandir, também início, fim e responsável; no celular, só o nome).
-- O gráfico à direita desenha as linhas, os dias não úteis, as barras, os marcos, a linha de base, o progresso e a seleção em elementos HTML posicionados pelos tokens, e as setas das dependências e a linha de hoje numa camada SVG. A tabela e o gráfico rolam juntos na vertical, e só o gráfico rola para o lado.
+- O gráfico à direita é todo em SVG, como o componente Gantt do design system e a página de impressão: a escala, as linhas, os dias não úteis, as fases, as barras com o progresso, os marcos, a linha de base, a seleção, as setas das dependências e a linha de hoje, pelos tokens. O teclado fica na tabela, e cada barra tem um nome para o leitor de tela. A tabela e o gráfico rolam juntos na vertical, e só o gráfico rola para o lado.
 - Mover, puxar a borda e ligar usam os eventos de ponteiro, em dias inteiros, com a barra flutuando (`shadow-drag`). Nada muda de verdade até a API responder: a barra volta para o lugar se a API recusar.
 - A escala, o período e o ajuste ao espaço continuam em `ganttLayout.ts`, e as linhas em `ganttRows.ts`, sem as conversões de datas que existiam só para o Syncfusion.
 - Saem os pacotes `@syncfusion/*`, o CSS do tema, a paleta, a remoção da fonte do Google no build e a regra de uma Linha do tempo por vez. A regra do lint passa a recusar qualquer `@syncfusion/*`.
