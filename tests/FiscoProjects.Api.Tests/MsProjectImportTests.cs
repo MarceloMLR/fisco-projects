@@ -76,6 +76,18 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
             .Where(warning => warning.GetProperty("kind").GetString() == kind)
             .SelectMany(warning => warning.GetProperty("names").EnumerateArray().Select(name => name.GetString()))];
 
+    private static int WarningCount(JsonElement preview, string kind) =>
+        preview.GetProperty("warnings").EnumerateArray()
+            .Single(warning => warning.GetProperty("kind").GetString() == kind)
+            .GetProperty("count").GetInt32();
+
+    private static (int FileTasks, int Tasks, int FileResources, int Resources) CountsOf(JsonElement preview)
+    {
+        var counts = preview.GetProperty("counts");
+        return (counts.GetProperty("fileTasks").GetInt32(), counts.GetProperty("tasks").GetInt32(),
+            counts.GetProperty("fileResources").GetInt32(), counts.GetProperty("resources").GetInt32());
+    }
+
     [Fact(DisplayName = "Prévia do arquivo do MS Project")]
     public async Task Preview_HasThePhase_TheTask_TheMilestone_AndTheResource_KeepingNothing()
     {
@@ -106,6 +118,7 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
             .Should().Be(("Carla Mendes", 1, false));
         carla.GetProperty("person").GetProperty("directoryId").GetString().Should().Be(CarlaInTheDirectory);
         preview.GetProperty("warnings").GetArrayLength().Should().Be(0);
+        CountsOf(preview).Should().Be((3, 3, 1, 1));
         (await app.CountAsync("SELECT COUNT(*) FROM [projects].[projects]")).Should().Be(0);
         (await app.CountAsync("SELECT COUNT(*) FROM [users].[users]")).Should().Be(users);
     }
@@ -174,6 +187,44 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         WarningNames(preview, "OtherDependencies").Should().Equal("Levantar regras → Massa de testes");
         WarningNames(preview, "DependencyLags").Should().Equal("Levantar regras → Ajustar parâmetros");
         WarningNames(preview, "SummaryDependencies").Should().Equal("Testes → Revisar");
+    }
+
+    [Fact(DisplayName = "O que fica de fora do arquivo")]
+    public async Task Preview_TellsTheLinesAndTheResourcesLeftOut_AndHowMuchOfTheFileCame()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        var file = Project(
+            "Implantação do ERP",
+            [
+                new Line(1, 1, "Configuração", D(10, 13), D(10, 20)),
+                new Line(2, 2, "Parametrizar", D(10, 13), D(10, 14)),
+                new Line(3, 2, "Customização descontinuada", D(10, 15), D(10, 16), Active: false),
+                new Line(4, 3, "Relatório descontinuado", D(10, 15), D(10, 16), Active: false),
+                new Line(5, 2, string.Empty, D(10, 15), D(10, 15), Blank: true),
+                new Line(6, 2, string.Empty, D(10, 15), D(10, 15), Blank: true),
+                new Line(7, 2, "Aceite", D(10, 20), D(10, 20), Milestone: true),
+            ],
+            [
+                new Resource(1, "Carla Mendes"),
+                new Resource(2, "Servidor de homologação", Type: 0),
+                new Resource(3, "Licenças", Type: 2),
+                new Resource(4, "Consultor do relatório"),
+            ],
+            [(2, 1), (2, 2), (2, 3), (4, 4)]);
+
+        var preview = await PreviewOfAsync(scene.Admin, file);
+
+        ItemsOf(preview).Select(item => item.GetProperty("name").GetString()).Should().Equal("Parametrizar", "Aceite");
+        preview.GetProperty("resources").EnumerateArray().Select(resource => resource.GetProperty("name").GetString())
+            .Should().Equal("Carla Mendes");
+        WarningNames(preview, "InactiveTasks").Should().Equal("Customização descontinuada", "Relatório descontinuado");
+        WarningNames(preview, "BlankLines").Should().BeEmpty();
+        WarningCount(preview, "BlankLines").Should().Be(2);
+        WarningNames(preview, "OtherResources").Should().Equal("Servidor de homologação", "Licenças");
+        WarningCount(preview, "OtherResources").Should().Be(2);
+        WarningNames(preview, "UnusedResources").Should().Equal("Consultor do relatório");
+        CountsOf(preview).Should().Be((5, 3, 4, 1));
     }
 
     public static TheoryData<string, string> FilesNotOfTheMsProject => new()

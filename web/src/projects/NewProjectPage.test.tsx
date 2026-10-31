@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ClientRow, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { expectBusy, heldAnswer } from '../test/busy';
@@ -682,6 +682,146 @@ describe('Novo projeto a partir do MS Project', () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/projects/${newId}`);
     });
+  });
+
+  it('Quadro da conversão na tela', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    await openNewProject();
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+
+    // The page goes to the box, which may be below the visible part of the form.
+    const box = await screen.findByTestId('ms-project-conversion');
+    await waitFor(() => {
+      expect(scroll.mock.contexts).toContain(box);
+    });
+    expect(scroll).toHaveBeenLastCalledWith({ block: 'nearest', behavior: 'smooth' });
+    const status = within(box).getByRole('status');
+    expect(status).toHaveTextContent('4 de 4 tarefas e 2 de 2 recursos vieram do arquivo.');
+    expect(
+      within(status)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      '1 dependência ficou sem o intervalo: Parametrizar regras de ICMS → Aceite da configuração.',
+      '1 tarefa com mais de um recurso ficou com o primeiro: Treinar usuários.',
+      'O recurso Consultor externo está sem pessoa, e a tarefa dele fica sem responsável.',
+    ]);
+
+    // Another start reads the file again without moving the page.
+    const calls = scroll.mock.calls.length;
+    fireEvent.change(screen.getByLabelText(form.scheduleStart), {
+      target: { value: '2026-10-19' },
+    });
+    const preview = screen.getByRole('complementary', { name: form.preview });
+    expect(await within(preview).findByText('19/10 – 21/10/2026')).toBeVisible();
+    expect(scroll.mock.calls).toHaveLength(calls);
+
+    // The shortcut of the preview takes to the box, with the focus.
+    fireEvent.click(within(preview).getByRole('button', { name: '3 ajustes na conversão' }));
+    expect(box).toHaveFocus();
+    expect(scroll.mock.contexts.at(-1)).toBe(box);
+    scroll.mockRestore();
+  });
+
+  it('Arquivo sem ajustes na tela', async () => {
+    simulateDevice({ reducedMotion: true });
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const whole = demoMsProjectPreview();
+    server.use(
+      http.post('/api/projects/ms-project-preview', () =>
+        HttpResponse.json({
+          ...whole,
+          resources: whole.resources.map((resource) => ({
+            ...resource,
+            person: resource.person ?? {
+              id: demoPeople.diego.id,
+              directoryId: null,
+              name: 'Diego Torres',
+              email: 'diego.torres@empresa.example',
+            },
+          })),
+          warnings: [],
+        }),
+      ),
+    );
+    await openNewProject();
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+
+    const box = await screen.findByTestId('ms-project-conversion');
+    const status = within(box).getByRole('status');
+    expect(status).toHaveTextContent('4 de 4 tarefas e 2 de 2 recursos vieram do arquivo.');
+    expect(status).toHaveTextContent(msProject.noWarnings);
+    expect(within(status).queryByRole('listitem')).toBeNull();
+    const preview = screen.getByRole('complementary', { name: form.preview });
+    expect(within(preview).queryByRole('button', { name: /ajuste/ })).toBeNull();
+    // With less motion, the page goes there at once.
+    await waitFor(() => {
+      expect(scroll).toHaveBeenLastCalledWith({ block: 'nearest', behavior: 'auto' });
+    });
+    scroll.mockRestore();
+  });
+
+  it('Tarefas sem responsável na tela', async () => {
+    await openNewProject();
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+    const status = within(await screen.findByTestId('ms-project-conversion')).getByRole('status');
+    const preview = screen.getByRole('complementary', { name: form.preview });
+    const people = screen.getByRole('region', { name: owners.title });
+    const consultant = within(people).getByRole('listitem', { name: /Consultor externo/ });
+    const ownerless =
+      'O recurso Consultor externo está sem pessoa, e a tarefa dele fica sem responsável.';
+
+    // Without a person, the row and the box say the task stays without an owner; Carla, found, owns hers.
+    expect(status).toHaveTextContent(ownerless);
+    expect(
+      within(consultant).getByRole('combobox', { name: 'Responsável por Consultor externo' }),
+    ).toHaveAccessibleDescription('A tarefa fica sem responsável.');
+    const carla = within(people).getByRole('listitem', { name: /Carla Mendes/ });
+    expect(within(carla).queryByText(/fica sem responsável/)).toBeNull();
+
+    // A person of the company with nobody chosen still leaves it without an owner.
+    await chooseOption('Responsável por Consultor externo', owners.person);
+    expect(status).toHaveTextContent(ownerless);
+    await choosePerson('Pessoa de Consultor externo', 'Diego', 'Diego Torres');
+
+    expect(status).not.toHaveTextContent(/sem responsável/);
+    expect(within(consultant).queryByText(/fica sem responsável/)).toBeNull();
+    expect(within(preview).getByRole('button', { name: '2 ajustes na conversão' })).toBeVisible();
+  });
+
+  it('Recursos sem pessoa no quadro', async () => {
+    const [carla, consultant] = demoMsProjectPreview().resources;
+    if (carla === undefined || consultant === undefined) {
+      throw new Error('The preview has two resources.');
+    }
+    server.use(
+      http.post('/api/projects/ms-project-preview', () =>
+        HttpResponse.json({
+          ...demoMsProjectPreview(),
+          resources: [
+            { ...carla, person: null, tasks: 2 },
+            { ...consultant, tasks: 1 },
+          ],
+          warnings: [{ kind: 'BlankLines', names: [], count: 2 }],
+        }),
+      ),
+    );
+    await openNewProject();
+    fireEvent.click(screen.getByRole('radio', { name: new RegExp(form.fromMsProject) }));
+    chooseFile(xml());
+
+    const status = within(await screen.findByTestId('ms-project-conversion')).getByRole('status');
+    expect(
+      within(status)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      '2 linhas em branco ou sem nome ficaram de fora.',
+      '2 recursos estão sem pessoa, e as tarefas deles ficam sem responsável: Carla Mendes (2 tarefas), Consultor externo (1 tarefa).',
+    ]);
   });
 
   it('Arquivo recusado pela tela', async () => {

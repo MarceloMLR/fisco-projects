@@ -51,13 +51,16 @@ public sealed record MsProjectRow(
     int PercentComplete,
     IReadOnlyList<MsProjectLink> Links);
 
-/// <summary>A work resource of the file: a person, with the name and the e-mail when the file has one.</summary>
-public sealed record MsProjectResource(int Uid, string Name, string? Email);
+/// <summary>
+/// A resource of the file, with the name and the e-mail when the file has one: a work resource is a person; the others,
+/// of material and cost, stay out of the schedule (ADR-0135).
+/// </summary>
+public sealed record MsProjectResource(int Uid, string Name, string? Email, bool IsWork = true);
 
 /// <summary>A resource on a line, in the order of the file.</summary>
 public sealed record MsProjectAssignment(int TaskUid, int ResourceUid);
 
-/// <summary>A file of the MS Project as read: its title, its lines, its work resources and the assignments.</summary>
+/// <summary>A file of the MS Project as read: its title, its lines, its resources and the assignments.</summary>
 public sealed record MsProjectFile(
     string? Title, IReadOnlyList<MsProjectRow> Rows, IReadOnlyList<MsProjectResource> Resources, IReadOnlyList<MsProjectAssignment> Assignments);
 
@@ -99,17 +102,39 @@ public enum MsProjectWarningKind
 
     /// <summary>Lines without dates went away.</summary>
     NoDates = 12,
+
+    /// <summary>Resources of material and cost stayed out: only people own tasks.</summary>
+    OtherResources = 13,
+
+    /// <summary>Work resources that are the first of no task brought stayed out.</summary>
+    UnusedResources = 14,
+
+    /// <summary>Inactive lines, and the lines below them, stayed out.</summary>
+    InactiveTasks = 15,
+
+    /// <summary>Blank or nameless lines, and the lines below them, stayed out; only how many, as they have no name.</summary>
+    BlankLines = 16,
 }
 
-/// <summary>A change of the conversion, with the names of the lines it touched (or "A → B" for a dependency).</summary>
-public sealed record MsProjectWarning(MsProjectWarningKind Kind, IReadOnlyList<string> Names);
+/// <summary>
+/// A change of the conversion, with the names of the lines or resources it touched ("A → B" for a dependency) and how
+/// many: the names, but for the blank lines, which have none.
+/// </summary>
+public sealed record MsProjectWarning(MsProjectWarningKind Kind, IReadOnlyList<string> Names, int Count);
+
+/// <summary>
+/// How much of the file came: its tasks (the lines with a name, the inactive ones included) and the ones that became a
+/// phase, a task, a subtask or a milestone; its resources (those with a name, of any kind) and the ones that own tasks.
+/// </summary>
+public sealed record MsProjectCounts(int FileTasks, int Tasks, int FileResources, int Resources);
 
 /// <summary>A work resource of the file that is the first of some task: its name, its e-mail and how many tasks it has.</summary>
 public sealed record MsProjectImportedResource(string Name, string? Email, int Tasks);
 
 /// <summary>
 /// A file converted into the schedule of a new project (ADR-0135): its title, its first day, the outline, the position
-/// in <see cref="Resources"/> of the resource of each item (none without one) and the changes of the conversion.
+/// in <see cref="Resources"/> of the resource of each item (none without one), the changes of the conversion and how
+/// much of the file came.
 /// </summary>
 public sealed record MsProjectSchedule(
     string Title,
@@ -117,7 +142,8 @@ public sealed record MsProjectSchedule(
     SchedulePlanOutline Outline,
     IReadOnlyList<int?> ItemResources,
     IReadOnlyList<MsProjectImportedResource> Resources,
-    IReadOnlyList<MsProjectWarning> Warnings);
+    IReadOnlyList<MsProjectWarning> Warnings,
+    MsProjectCounts Counts);
 
 /// <summary>
 /// Reads an XML of the MS Project (MSPDI), as it saves with "Save as", "XML", and converts it into the outline of a new
@@ -174,8 +200,9 @@ public static class MsProjectImport
             throw new MsProjectFileRefusedException(MsProjectRefusal.NotMsProjectXml);
         }
 
+        // A blank line of the MS Project (IsNull) may come without a level; the summary of the whole project is at level 0.
         var tasks = project.Element(ns + "Tasks")?.Elements(ns + "Task")
-            .Where(task => Number(task.Element(ns + "OutlineLevel")) is >= 1)
+            .Where(task => Number(task.Element(ns + "OutlineLevel")) is >= 1 || Flag(task.Element(ns + "IsNull")) == true)
             .ToList() ?? [];
         if (tasks.Count > MaxTasks)
         {
@@ -186,7 +213,7 @@ public static class MsProjectImport
             .Where(task => Number(task.Element(ns + "UID")) is not null)
             .Select(task => new MsProjectRow(
                 Number(task.Element(ns + "UID"))!.Value,
-                Number(task.Element(ns + "OutlineLevel"))!.Value,
+                Number(task.Element(ns + "OutlineLevel")) ?? 1,
                 Flag(task.Element(ns + "Milestone")) ?? false,
                 Flag(task.Element(ns + "Active")) ?? true,
                 Flag(task.Element(ns + "IsNull")) ?? false,
@@ -213,13 +240,13 @@ public static class MsProjectImport
             throw new MsProjectFileRefusedException(MsProjectRefusal.NotMsProjectXml);
         }
 
-        // Work resources only (type 1, the one the MS Project takes when the file says none): material and cost stay out.
+        // A work resource is of type 1, the one the MS Project takes when the file says none; 0 is material and 2 cost.
         var resources = project.Element(ns + "Resources")?.Elements(ns + "Resource")
-            .Where(resource => (Number(resource.Element(ns + "Type")) ?? 1) == 1)
             .Select(resource => (Uid: Number(resource.Element(ns + "UID")), Name: ((string?)resource.Element(ns + "Name"))?.Trim(),
-                Email: ((string?)resource.Element(ns + "EmailAddress"))?.Trim()))
+                Email: ((string?)resource.Element(ns + "EmailAddress"))?.Trim(), IsWork: (Number(resource.Element(ns + "Type")) ?? 1) == 1))
             .Where(resource => resource.Uid is not null && !string.IsNullOrEmpty(resource.Name))
-            .Select(resource => new MsProjectResource(resource.Uid!.Value, resource.Name!, string.IsNullOrEmpty(resource.Email) ? null : resource.Email))
+            .Select(resource => new MsProjectResource(
+                resource.Uid!.Value, resource.Name!, string.IsNullOrEmpty(resource.Email) ? null : resource.Email, resource.IsWork))
             .ToList() ?? [];
         var assignments = project.Element(ns + "Assignments")?.Elements(ns + "Assignment")
             .Select(assignment => (Task: Number(assignment.Element(ns + "TaskUID")), Resource: Number(assignment.Element(ns + "ResourceUID"))))
@@ -275,6 +302,7 @@ public static class MsProjectImport
         private readonly List<Draft> _items = [];
         private readonly Dictionary<int, Role> _roles = [];
         private readonly Dictionary<int, string> _names = [];
+        private int _blankLines;
 
         public MsProjectSchedule Run()
         {
@@ -302,7 +330,7 @@ public static class MsProjectImport
             var dependencies = Dependencies();
             var ordered = Ordered(dependencies);
             var position = ordered.Select((item, index) => (item, index)).ToDictionary(pair => pair.item, pair => pair.index);
-            var (resources, itemResources) = Resources(ordered);
+            var (resources, itemResources, fileResources) = Resources(ordered);
             var outline = new SchedulePlanOutline(
                 [.. _phases.Select(name => new OutlinePhase(name))],
                 [.. ordered.Select(item => new OutlineItem(
@@ -319,36 +347,52 @@ public static class MsProjectImport
                     .Distinct()
                     .OrderBy(dependency => dependency.Successor)
                     .ThenBy(dependency => dependency.Predecessor)]);
+            var warnings = _warnings.Select(pair => new MsProjectWarning(pair.Key, pair.Value, pair.Value.Count)).ToList();
+            if (_blankLines > 0)
+            {
+                warnings.Add(new MsProjectWarning(MsProjectWarningKind.BlankLines, [], _blankLines));
+            }
+
             return new MsProjectSchedule(
                 title,
                 first,
                 outline,
                 itemResources,
                 resources,
-                [.. _warnings.OrderBy(pair => pair.Key).Select(pair => new MsProjectWarning(pair.Key, pair.Value))]);
+                [.. warnings.OrderBy(warning => warning.Kind)],
+                new MsProjectCounts(
+                    file.Rows.Count(row => !IsBlank(row)),
+                    _roles.Values.Count(role => role is Role.Phase or Role.Item),
+                    fileResources,
+                    resources.Count));
         }
 
         /// <summary>
-        /// The lines to bring, in the order of the file, each saying whether lines of the file are under it: an empty,
-        /// inactive or nameless line goes with the lines under it.
+        /// The lines to bring, in the order of the file, each saying whether lines of the file are under it: a blank line
+        /// goes alone, and an inactive or nameless line goes with the lines under it, each with its warning.
         /// </summary>
         private List<Line> Kept()
         {
-            var rows = file.Rows;
+            var rows = file.Rows.Where(row => !row.Empty).ToList();
+            _blankLines += file.Rows.Count - rows.Count;
             var kept = new List<Line>();
             int? skipBelow = null;
+            var belowInactive = false;
             for (var index = 0; index < rows.Count; index++)
             {
                 var row = rows[index];
                 if (skipBelow is { } level && row.Level > level)
                 {
+                    Skip(row, belowInactive);
                     continue;
                 }
 
                 skipBelow = null;
-                if (row.Empty || !row.Active || row.Name.Length == 0)
+                if (IsBlank(row) || !row.Active)
                 {
                     skipBelow = row.Level;
+                    belowInactive = !IsBlank(row);
+                    Skip(row, belowInactive);
                     continue;
                 }
 
@@ -357,6 +401,21 @@ public static class MsProjectImport
 
             return kept;
         }
+
+        /// <summary>A line that stays out: by its name, when inactive or below an inactive one, or counted as blank.</summary>
+        private void Skip(MsProjectRow row, bool belowInactive)
+        {
+            if (belowInactive && !IsBlank(row))
+            {
+                Warn(MsProjectWarningKind.InactiveTasks, row.Name);
+            }
+            else
+            {
+                _blankLines++;
+            }
+        }
+
+        private static bool IsBlank(MsProjectRow row) => row.Empty || row.Name.Length == 0;
 
         /// <summary>Each line in its place: the phases, the items and their tasks, as the levels say (ADR-0088, ADR-0135).</summary>
         private void Place(List<Line> lines)
@@ -519,10 +578,19 @@ public static class MsProjectImport
             return ordered;
         }
 
-        /// <summary>The first work resource of each task, and the resources that are the first of some task.</summary>
-        private (List<MsProjectImportedResource> Resources, List<int?> ItemResources) Resources(List<Draft> ordered)
+        /// <summary>
+        /// The first work resource of each task, the resources that are the first of some task and how many resources the
+        /// file has; the others stay out, each with its warning (ADR-0135).
+        /// </summary>
+        private (List<MsProjectImportedResource> Resources, List<int?> ItemResources, int FileResources) Resources(List<Draft> ordered)
         {
-            var resources = file.Resources.GroupBy(resource => resource.Uid).ToDictionary(group => group.Key, group => group.First());
+            var named = file.Resources.GroupBy(resource => resource.Uid).Select(group => group.First()).ToList();
+            foreach (var other in named.Where(resource => !resource.IsWork))
+            {
+                Warn(MsProjectWarningKind.OtherResources, other.Name);
+            }
+
+            var resources = named.Where(resource => resource.IsWork).ToDictionary(resource => resource.Uid);
             var byTask = file.Assignments
                 .Where(assignment => resources.ContainsKey(assignment.ResourceUid))
                 .GroupBy(assignment => assignment.TaskUid)
@@ -560,7 +628,12 @@ public static class MsProjectImport
                 itemResources.Add(used.IndexOf(uid));
             }
 
-            return ([.. used.Select(uid => new MsProjectImportedResource(resources[uid].Name, resources[uid].Email, tasks[uid]))], itemResources);
+            foreach (var unused in named.Where(resource => resource.IsWork && !used.Contains(resource.Uid)))
+            {
+                Warn(MsProjectWarningKind.UnusedResources, unused.Name);
+            }
+
+            return ([.. used.Select(uid => new MsProjectImportedResource(resources[uid].Name, resources[uid].Email, tasks[uid]))], itemResources, named.Count);
         }
 
         /// <summary>The business days of the calendar before the start, since the first day of the file (ADR-0135).</summary>

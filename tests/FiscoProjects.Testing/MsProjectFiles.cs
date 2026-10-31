@@ -13,7 +13,10 @@ public static class MsProjectFiles
 {
     public static readonly XNamespace Ns = "http://schemas.microsoft.com/project";
 
-    /// <summary>A line of the file; a summary is a line followed by lines of a higher level.</summary>
+    /// <summary>
+    /// A line of the file; a summary is a line followed by lines of a higher level. A blank line is saved as the MS Project
+    /// saves an empty row: only its numbers and IsNull.
+    /// </summary>
     public sealed record Line(
         int Uid,
         int Level,
@@ -23,7 +26,8 @@ public static class MsProjectFiles
         int Percent = 0,
         bool Milestone = false,
         bool Active = true,
-        IReadOnlyList<Link>? Links = null);
+        IReadOnlyList<Link>? Links = null,
+        bool Blank = false);
 
     /// <summary>A link to the line it depends on: type 1 is "finish to start", 3 "start to start"; the lag in tenths of minutes.</summary>
     public sealed record Link(int Predecessor, int Type = 1, int Lag = 0);
@@ -75,6 +79,15 @@ public static class MsProjectFiles
         for (var index = 0; index < lines.Count; index++)
         {
             var line = lines[index];
+            if (line.Blank)
+            {
+                tasks.Add(new XElement(Ns + "Task",
+                    new XElement(Ns + "UID", line.Uid),
+                    new XElement(Ns + "ID", index + 1),
+                    new XElement(Ns + "IsNull", 1)));
+                continue;
+            }
+
             var summary = index + 1 < lines.Count && lines[index + 1].Level > line.Level;
             var task = new XElement(Ns + "Task",
                 new XElement(Ns + "UID", line.Uid),

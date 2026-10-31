@@ -2892,6 +2892,20 @@ export interface components {
         MilestoneReachedRequest: {
             reached: boolean;
         };
+        /**
+         * @description How much of the file came: its tasks (the lines with a name) and the ones brought, its resources (of any kind) and the
+         *     ones that own tasks.
+         */
+        MsProjectCountsResponse: {
+            /** Format: int32 */
+            fileTasks: number;
+            /** Format: int32 */
+            tasks: number;
+            /** Format: int32 */
+            fileResources: number;
+            /** Format: int32 */
+            resources: number;
+        };
         /** @description The person of the company a resource suggests: a user (`id`) or a person of the directory who never signed in. */
         MsProjectPersonResponse: {
             /** Format: uuid */
@@ -2925,7 +2939,8 @@ export interface components {
         };
         /**
          * @description The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the
-         *     creation, its phases and items with the dates it is going to have, the resources and the changes of the conversion.
+         *     creation, its phases and items with the dates it is going to have, the resources, the changes of the conversion and
+         *     how much of the file came.
          */
         MsProjectPreviewResponse: {
             title: string;
@@ -2937,6 +2952,7 @@ export interface components {
             phases: components["schemas"]["MsProjectPreviewPhaseResponse"][];
             resources: components["schemas"]["MsProjectResourceResponse"][];
             warnings: components["schemas"]["MsProjectWarningResponse"][];
+            counts: components["schemas"]["MsProjectCountsResponse"];
         };
         /**
          * @description A work resource of the file that is the first of some task: its name, its e-mail (only for the preview, never kept)
@@ -2954,11 +2970,16 @@ export interface components {
          * @description What the conversion changed, for the person to know before creating the project (ADR-0135).
          * @enum {unknown}
          */
-        MsProjectWarningKind: "LooseTasks" | "DeepTasks" | "DroppedSummaries" | "OtherDependencies" | "SummaryDependencies" | "DependencyLags" | "DependencyCycles" | "LongTasks" | "CutNames" | "SeveralResources" | "NoOwner" | "NoDates";
-        /** @description A change of the conversion, with the names of the lines it touched ("A → B" for a dependency). */
+        MsProjectWarningKind: "LooseTasks" | "DeepTasks" | "DroppedSummaries" | "OtherDependencies" | "SummaryDependencies" | "DependencyLags" | "DependencyCycles" | "LongTasks" | "CutNames" | "SeveralResources" | "NoOwner" | "NoDates" | "OtherResources" | "UnusedResources" | "InactiveTasks" | "BlankLines";
+        /**
+         * @description A change of the conversion, with the names of the lines or resources it touched ("A → B" for a dependency) and how
+         *     many: the names, but for the blank lines, which have none.
+         */
         MsProjectWarningResponse: {
             kind: components["schemas"]["MsProjectWarningKind"];
             names: string[];
+            /** Format: int32 */
+            count: number;
         };
         /**
          * @description A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the

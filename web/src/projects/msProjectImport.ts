@@ -1,4 +1,9 @@
-import { api, type MsProjectPreview, type MsProjectWarning, type ProjectRole } from '../api/client';
+import {
+  api,
+  type MsProjectPreview,
+  type MsProjectResource,
+  type ProjectRole,
+} from '../api/client';
 import type { PersonChoice } from '../components/PersonField';
 import { problemText, problemType } from './projectForm';
 
@@ -88,6 +93,31 @@ export function suggestedOwners(preview: MsProjectPreview): ResourceOwner[] {
   });
 }
 
+/** Whether a resource gives its tasks an owner: a person chosen, or the client in a project with one (ADR-0135). */
+export function ownsTasks(owner: ResourceOwner | undefined, hasClient: boolean): boolean {
+  return owner?.kind === 'person' ? owner.person !== null : owner?.kind === 'client' && hasClient;
+}
+
+/** The resources whose tasks stay without an owner, by who each one is in "Responsáveis do arquivo" (ADR-0135). */
+export function ownerlessResources(
+  preview: MsProjectPreview,
+  owners: readonly ResourceOwner[],
+  hasClient: boolean,
+): MsProjectResource[] {
+  return preview.resources.filter((_resource, index) => !ownsTasks(owners[index], hasClient));
+}
+
+/** How many lines the box of the conversion lists: each warning of the server, and the tasks without an owner. */
+export function adjustmentsOf(
+  preview: MsProjectPreview,
+  owners: readonly ResourceOwner[],
+  hasClient: boolean,
+): number {
+  return (
+    preview.warnings.length + (ownerlessResources(preview, owners, hasClient).length > 0 ? 1 : 0)
+  );
+}
+
 /**
  * The schedule the preview converted, to send back on the creation, with who each resource is: a person without a
  * choice, or the client without a client in the form, is nobody.
@@ -101,8 +131,8 @@ export function importedScheduleOf(
     phases: preview.plan.phases,
     items: preview.plan.items,
     resources: preview.resources.map((_resource, index) => {
-      const owner = owners[index] ?? { kind: 'nobody' };
-      if (owner.kind === 'person' && owner.person !== null) {
+      const owner = owners[index];
+      if (owner?.kind === 'person' && owner.person !== null) {
         return {
           userId: owner.person.id,
           directoryId: owner.person.id === null ? owner.person.directoryId : null,
@@ -113,20 +143,20 @@ export function importedScheduleOf(
       return {
         userId: null,
         directoryId: null,
-        client: owner.kind === 'client' && hasClient,
+        client: ownsTasks(owner, hasClient),
         role: null,
       };
     }),
   };
 }
 
-/** How many names a warning shows before "e mais N". */
+/** How many names a line of the box shows before "e mais N". */
 export const namesShown = 5;
 
-/** The names of a warning, the first ones and how many more. */
-export function namesOf(warning: MsProjectWarning): { names: string; more: number } {
+/** The names of a line of the box, the first ones and how many more. */
+export function namesOf(names: readonly string[]): { names: string; more: number } {
   return {
-    names: warning.names.slice(0, namesShown).join(', '),
-    more: Math.max(0, warning.names.length - namesShown),
+    names: names.slice(0, namesShown).join(', '),
+    more: Math.max(0, names.length - namesShown),
   };
 }

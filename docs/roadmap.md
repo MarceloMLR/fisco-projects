@@ -48,8 +48,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
-| 13. Linha do tempo própria (v2) | 3 | 3 |
-| **Total** | **100** | **99** |
+| 13. Linha do tempo própria (v2) | 4 | 4 |
+| **Total** | **101** | **100** |
 
 ## 1. Fundação
 
@@ -228,3 +228,4 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | Gantt-1 | `linha-do-tempo-propria` | A Linha do tempo desenhada pelo próprio FiscoProjects, com o mesmo comportamento e o mesmo visual, sem o Syncfusion, e navegável pelo teclado | 0051, 0071, 0134 | Concluída em 31/10/2026 ([#117](https://github.com/MarceloMLR/fisco-projects/pull/117)) |
 | Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Concluída em 31/10/2026 ([#118](https://github.com/MarceloMLR/fisco-projects/pull/118)) |
 | Gantt-3 | `importar-do-ms-project` | O "Novo projeto" a partir do XML do MS Project, com as fases, as tarefas, os marcos, as dependências, o progresso e os responsáveis | 0017, 0021, 0134, 0135, 0136 | Concluída em 31/10/2026 ([#119](https://github.com/MarceloMLR/fisco-projects/pull/119)) |
+| Gantt-3.1 | `avisos-da-importacao` | O quadro da importação do MS Project sempre visível, com o que veio do arquivo, o que ficou de fora e as tarefas sem responsável, a pedido de Marcelo | 0135 | Concluída em 31/10/2026 ([#121](https://github.com/MarceloMLR/fisco-projects/pull/121)) |

@@ -54,12 +54,22 @@ public sealed record MsProjectPersonResponse(Guid? Id, string? DirectoryId, stri
 /// </summary>
 public sealed record MsProjectResourceResponse(string Name, string? Email, int Tasks, MsProjectPersonResponse? Person, bool Client);
 
-/// <summary>A change of the conversion, with the names of the lines it touched ("A → B" for a dependency).</summary>
-public sealed record MsProjectWarningResponse(MsProjectWarningKind Kind, IReadOnlyList<string> Names);
+/// <summary>
+/// A change of the conversion, with the names of the lines or resources it touched ("A → B" for a dependency) and how
+/// many: the names, but for the blank lines, which have none.
+/// </summary>
+public sealed record MsProjectWarningResponse(MsProjectWarningKind Kind, IReadOnlyList<string> Names, int Count);
+
+/// <summary>
+/// How much of the file came: its tasks (the lines with a name) and the ones brought, its resources (of any kind) and the
+/// ones that own tasks.
+/// </summary>
+public sealed record MsProjectCountsResponse(int FileTasks, int Tasks, int FileResources, int Resources);
 
 /// <summary>
 /// The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the
-/// creation, its phases and items with the dates it is going to have, the resources and the changes of the conversion.
+/// creation, its phases and items with the dates it is going to have, the resources, the changes of the conversion and
+/// how much of the file came.
 /// </summary>
 public sealed record MsProjectPreviewResponse(
     string Title,
@@ -68,7 +78,8 @@ public sealed record MsProjectPreviewResponse(
     ImportedPlanResponse Plan,
     IReadOnlyList<MsProjectPreviewPhaseResponse> Phases,
     IReadOnlyList<MsProjectResourceResponse> Resources,
-    IReadOnlyList<MsProjectWarningResponse> Warnings);
+    IReadOnlyList<MsProjectWarningResponse> Warnings,
+    MsProjectCountsResponse Counts);
 
 /// <summary>A task or milestone of the schedule from the MS Project, as the preview gave it (<see cref="ImportedItemResponse"/>).</summary>
 public sealed record ImportedItemRequest(
@@ -198,7 +209,8 @@ internal static class MsProjectImportEndpoints
                 pair.First.Tasks,
                 pair.Second.Person is { } person ? new MsProjectPersonResponse(person.UserId, person.DirectoryId, person.Name, person.Email) : null,
                 pair.Second.Client))],
-            [.. converted.Warnings.Select(warning => new MsProjectWarningResponse(warning.Kind, warning.Names))]));
+            [.. converted.Warnings.Select(warning => new MsProjectWarningResponse(warning.Kind, warning.Names, warning.Count))],
+            new MsProjectCountsResponse(converted.Counts.FileTasks, converted.Counts.Tasks, converted.Counts.FileResources, converted.Counts.Resources)));
     }
 
     private static ProblemHttpResult Refused(MsProjectRefusal reason) =>

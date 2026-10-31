@@ -12640,6 +12640,34 @@
         },
         "description": "Whether a milestone was reached."
       },
+      "MsProjectCountsResponse": {
+        "required": [
+          "fileTasks",
+          "tasks",
+          "fileResources",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "fileTasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tasks": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fileResources": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "resources": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How much of the file came: its tasks (the lines with a name) and the ones brought, its resources (of any kind) and the\nones that own tasks."
+      },
       "MsProjectPersonResponse": {
         "required": [
           "id",
@@ -12751,7 +12779,8 @@
           "plan",
           "phases",
           "resources",
-          "warnings"
+          "warnings",
+          "counts"
         ],
         "type": "object",
         "properties": {
@@ -12786,9 +12815,12 @@
             "items": {
               "$ref": "#/components/schemas/MsProjectWarningResponse"
             }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/MsProjectCountsResponse"
           }
         },
-        "description": "The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the\ncreation, its phases and items with the dates it is going to have, the resources and the changes of the conversion."
+        "description": "The file read (ADR-0135): its title, its first day, the start used, the schedule converted to send back on the\ncreation, its phases and items with the dates it is going to have, the resources, the changes of the conversion and\nhow much of the file came."
       },
       "MsProjectResourceResponse": {
         "required": [
@@ -12842,14 +12874,19 @@
           "CutNames",
           "SeveralResources",
           "NoOwner",
-          "NoDates"
+          "NoDates",
+          "OtherResources",
+          "UnusedResources",
+          "InactiveTasks",
+          "BlankLines"
         ],
         "description": "What the conversion changed, for the person to know before creating the project (ADR-0135)."
       },
       "MsProjectWarningResponse": {
         "required": [
           "kind",
-          "names"
+          "names",
+          "count"
         ],
         "type": "object",
         "properties": {
@@ -12861,9 +12898,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
           }
         },
-        "description": "A change of the conversion, with the names of the lines it touched (\"A → B\" for a dependency)."
+        "description": "A change of the conversion, with the names of the lines or resources it touched (\"A → B\" for a dependency) and how\nmany: the names, but for the blank lines, which have none."
       },
       "MyWorkAcceptanceResponse": {
         "required": [

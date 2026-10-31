@@ -844,11 +844,11 @@ O administrador MUST poder ver quantas tarefas e marcos dos projetos em aberto m
 
 ### Requirement: Importar do MS Project
 
-Quem cria projetos MUST poder ler um arquivo XML do MS Project numa prévia, sem guardar nada, e criar um projeto com o cronograma convertido: as fases, as tarefas, as subtarefas, os marcos e as dependências "termina, então começa", com as datas em dias úteis do calendário da instalação a partir do início escolhido. A conversão MUST seguir o ADR-0135 e dizer cada ajuste num aviso; a linha de base MUST NOT vir do arquivo (ADR-0017, ADR-0019, ADR-0088, ADR-0135).
+Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar nada, e criar um projeto com o cronograma convertido: fases, tarefas, subtarefas, marcos e dependências "termina, então começa", com as datas em dias úteis da instalação a partir do início escolhido. A conversão MUST seguir o ADR-0135, dizer num aviso cada ajuste e o que ficou de fora e contar as tarefas e os recursos do arquivo que vieram; a linha de base MUST NOT vir (ADR-0017, ADR-0019, ADR-0088, ADR-0135).
 
 #### Scenario: Prévia do arquivo do MS Project
 - **WHEN** a gerente manda na prévia o XML de um cronograma com uma fase, uma tarefa de 13/10/2026 a 15/10/2026 a 40% com o recurso Carla e um marco ligado a ela
-- **THEN** a resposta traz a fase, a tarefa de 3 dias úteis com 40%, o marco ligado a ela, o primeiro dia 13/10/2026 e o recurso Carla com uma tarefa, sem avisos, e nada é guardado
+- **THEN** a resposta traz a fase, a tarefa de 3 dias úteis com 40%, o marco ligado a ela, o primeiro dia 13/10/2026, o recurso Carla com uma tarefa e as 3 de 3 tarefas e o 1 de 1 recurso do arquivo, sem avisos, e nada é guardado
 
 #### Scenario: Projeto a partir do MS Project
 - **WHEN** a gerente cria um projeto com o cronograma da prévia, o início em 09/10/2026 (uma sexta-feira, antes do feriado de 12/10/2026) e o recurso Carla ligado à Carla como Colaboradora
@@ -857,6 +857,10 @@ Quem cria projetos MUST poder ler um arquivo XML do MS Project numa prévia, sem
 #### Scenario: O que não cabe no FiscoProjects
 - **WHEN** o arquivo tem uma tarefa no nível 4, uma tarefa solta no nível 1, uma dependência "começa, então começa", outra com intervalo e outra de uma tarefa-resumo
 - **THEN** a prévia traz a tarefa do nível 4 como subtarefa, a solta numa fase com o título do projeto, a dependência com intervalo sem o intervalo, as outras duas fora, e um aviso de cada ajuste com os nomes
+
+#### Scenario: O que fica de fora do arquivo
+- **WHEN** o arquivo tem uma tarefa inativa com uma subtarefa, duas linhas em branco, um recurso de material, um de custo e um recurso de trabalho só na subtarefa inativa
+- **THEN** a prévia não traz a tarefa inativa, a subtarefa nem esses recursos, avisa a tarefa inativa e a subtarefa pelos nomes, as linhas em branco pela quantidade, os recursos de material e custo e o recurso sem tarefa pelos nomes, e conta as tarefas e os recursos do arquivo e os que vieram
 
 #### Scenario: Arquivo que não é do MS Project
 - **WHEN** a gerente manda na prévia um .mpp, um XML de outro programa, um XML com DTD ou um arquivo acima de 5 MB
@@ -884,11 +888,23 @@ O cronograma importado MUST trazer o progresso de cada tarefa e marco do arquivo
 
 ### Requirement: Importar do MS Project pela tela
 
-O "Novo projeto" MUST oferecer "A partir do MS Project", além de "Em branco" e "A partir de um modelo", com o arquivo, o início preenchido com o primeiro dia do arquivo, a prévia das fases e dos itens com as datas e os avisos da conversão, e os responsáveis do arquivo, cada um com a pessoa e o papel. O arquivo recusado MUST dizer o motivo no campo (ADR-0071, ADR-0135).
+O "Novo projeto" MUST oferecer "A partir do MS Project", além de "Em branco" e "A partir de um modelo", com o arquivo, o início preenchido com o primeiro dia do arquivo, a prévia das fases e dos itens com as datas, o quadro da conversão e os responsáveis do arquivo, cada um com a pessoa e o papel. O quadro MUST aparecer a cada leitura, com o que veio, os avisos e as tarefas que ficam sem responsável. O arquivo recusado MUST dizer o motivo no campo (ADR-0071, ADR-0135).
 
 #### Scenario: Novo projeto a partir do MS Project
 - **WHEN** a gerente escolhe "A partir do MS Project", escolhe o arquivo, confere a prévia, liga um recurso a uma pessoa como Desenvolvedora e cria o projeto
 - **THEN** a prévia mostra as fases, os itens, os avisos e os responsáveis, a API recebe o cronograma convertido, a pessoa com o papel e o início, e a tela abre o projeto
+
+#### Scenario: Quadro da conversão na tela
+- **WHEN** a gerente escolhe um arquivo com dois avisos da conversão e um recurso sem pessoa achada, e depois troca o início
+- **THEN** a tela rola até o quadro só na escolha do arquivo, o quadro diz quantas tarefas e quantos recursos do arquivo vieram, os dois avisos e a tarefa sem responsável, e a prévia mostra "3 ajustes na conversão", que leva ao quadro
+
+#### Scenario: Arquivo sem ajustes na tela
+- **WHEN** a gerente escolhe um arquivo que veio inteiro, sem avisos, com a pessoa de cada recurso achada
+- **THEN** o quadro diz quantas tarefas e quantos recursos vieram e que nada mudou na conversão, e a prévia não mostra o atalho
+
+#### Scenario: Tarefas sem responsável na tela
+- **WHEN** o arquivo tem um recurso sem pessoa achada, com uma tarefa, e a gerente o liga depois a uma pessoa
+- **THEN** o quadro e a linha do recurso dizem que a tarefa fica sem responsável, e os dois avisos saem quando a pessoa é escolhida
 
 #### Scenario: Arquivo recusado pela tela
 - **WHEN** a gerente escolhe um .mpp em "A partir do MS Project"

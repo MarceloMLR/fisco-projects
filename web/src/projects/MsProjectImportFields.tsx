@@ -1,6 +1,6 @@
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import Box from '@mui/material/Box';
-import { useId, useRef } from 'react';
+import { type Ref, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MsProjectPreview, MsProjectResource } from '../api/client';
 import { Alert } from '../components/Alert';
@@ -12,6 +12,8 @@ import { Select } from '../components/Select';
 import { sizeText } from '../format/size';
 import {
   namesOf,
+  ownerlessResources,
+  ownsTasks,
   type ResourceOwner,
   type RoleOfNewPerson,
   rolesOfNewPeople,
@@ -87,32 +89,106 @@ export function MsProjectFileField({
   );
 }
 
-/** What the conversion changed, in an info alert, each kind with the names of the lines (ADR-0135). */
-export function MsProjectWarnings({ preview }: { preview: MsProjectPreview }) {
+/**
+ * The box of the conversion (ADR-0135), on every reading: how much of the file came, in the title, and what changed,
+ * each warning with its names and, last, the tasks left without an owner by who each resource is in "Responsáveis do
+ * arquivo", or that nothing changed. It takes the focus from the shortcut of the preview.
+ */
+export function MsProjectWarnings({
+  preview,
+  owners,
+  hasClient,
+  ref,
+}: {
+  preview: MsProjectPreview;
+  owners: readonly ResourceOwner[];
+  hasClient: boolean;
+  ref?: Ref<HTMLDivElement>;
+}) {
   const { t } = useTranslation();
-  if (preview.warnings.length === 0) {
-    return null;
+  const listed = (all: readonly string[]) => {
+    const { names, more } = namesOf(all);
+    return more === 0 ? names : t('projects.form.msProject.namesAndMore', { names, count: more });
+  };
+  const ownerless = ownerlessResources(preview, owners, hasClient);
+  const [single] = ownerless;
+  const lines: { key: string; text: string }[] = preview.warnings.map((warning) => ({
+    key: warning.kind,
+    text: t(`projects.form.msProject.warning.${warning.kind}`, {
+      count: warning.count,
+      title: preview.title,
+      names: listed(warning.names),
+    }),
+  }));
+  if (single !== undefined) {
+    lines.push({
+      key: 'ownerless',
+      text:
+        ownerless.length === 1
+          ? t('projects.form.msProject.ownerlessOne', {
+              name: single.name,
+              tasks: t('projects.form.msProject.ownerlessOneTasks', { count: single.tasks }),
+            })
+          : t('projects.form.msProject.ownerlessMany', {
+              resources: ownerless.length,
+              names: listed(
+                ownerless.map((resource) =>
+                  t('projects.form.msProject.ownerlessName', {
+                    name: resource.name,
+                    tasks: t('projects.form.msProject.owners.tasks', { count: resource.tasks }),
+                  }),
+                ),
+              ),
+            }),
+    });
   }
+  const { counts } = preview;
+  const tasks = t('projects.form.msProject.summaryTasks', {
+    count: counts.fileTasks,
+    brought: counts.tasks,
+  });
+  const title =
+    counts.fileResources === 0
+      ? t('projects.form.msProject.summaryOnlyTasks', { count: counts.tasks, tasks })
+      : t('projects.form.msProject.summary', {
+          tasks,
+          resources: t('projects.form.msProject.summaryResources', {
+            count: counts.fileResources,
+            brought: counts.resources,
+          }),
+        });
   return (
-    <Alert tone="info" title={t('projects.form.msProject.warnings')}>
-      <Box component="ul" sx={{ margin: 'var(--space-1) 0 0', paddingLeft: 'var(--space-4)' }}>
-        {preview.warnings.map((warning) => {
-          const { names, more } = namesOf(warning);
-          return (
-            <li key={warning.kind}>
-              {t(`projects.form.msProject.warning.${warning.kind}`, {
-                count: warning.names.length,
-                title: preview.title,
-                names:
-                  more === 0
-                    ? names
-                    : t('projects.form.msProject.namesAndMore', { names, count: more }),
-              })}
-            </li>
-          );
-        })}
-      </Box>
-    </Alert>
+    <Box
+      ref={ref}
+      tabIndex={-1}
+      data-testid="ms-project-conversion"
+      sx={{
+        borderRadius: 'var(--radius-md)',
+        scrollMarginBlock: 'var(--space-4)',
+        outline: 'none',
+        '&:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: 2 },
+      }}
+    >
+      <Alert tone={lines.length === 0 ? 'info' : 'warning'} title={title}>
+        {lines.length === 0 ? (
+          t('projects.form.msProject.noWarnings')
+        ) : (
+          <>
+            <Box component="p" sx={{ margin: 'var(--space-1) 0 0' }}>
+              {t('projects.form.msProject.warnings')}
+            </Box>
+            <Box
+              component="ul"
+              sx={{ margin: 'var(--space-1) 0 0', paddingLeft: 'var(--space-4)' }}
+            >
+              {lines.map((line) => (
+                <li key={line.key}>{line.text}</li>
+              ))}
+            </Box>
+          </>
+        )}
+      </Alert>
+    </Box>
   );
 }
 
@@ -148,6 +224,7 @@ function OwnerRow({
 }) {
   const { t } = useTranslation();
   const titleId = useId();
+  const ownerlessId = useId();
   // The client only in a project with one; without it, the resource stays without an owner.
   const kind: OwnerKind =
     owner.kind === 'client' && clientName === undefined ? 'nobody' : owner.kind;
@@ -166,6 +243,7 @@ function OwnerRow({
   const person = owner.kind === 'person' ? owner.person : null;
   const role: RoleOfNewPerson = owner.kind === 'person' ? owner.role : 'Contributor';
   const kept = keptRole(person, managerId, techLeadId);
+  const ownerless = !ownsTasks(owner, clientName !== undefined);
   return (
     <Box
       component="li"
@@ -195,11 +273,20 @@ function OwnerRow({
           '@media (max-width: 700px)': { gridTemplateColumns: 'minmax(0, 1fr)' },
         }}
       >
-        <FormField label={t('projects.form.msProject.owners.kind')}>
+        <FormField
+          label={t('projects.form.msProject.owners.kind')}
+          helper={
+            ownerless
+              ? t('projects.form.msProject.owners.ownerless', { count: resource.tasks })
+              : undefined
+          }
+          helpId={ownerlessId}
+        >
           <Select<OwnerKind>
             label={t('projects.form.msProject.owners.kindOf', { name: resource.name })}
             value={kind}
             options={kinds}
+            describedBy={ownerless ? ownerlessId : undefined}
             onChange={(value) => {
               onChange(
                 value === 'person'

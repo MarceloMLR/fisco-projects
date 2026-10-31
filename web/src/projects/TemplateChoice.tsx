@@ -1,11 +1,14 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
+import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import type SvgIcon from '@mui/material/SvgIcon';
 import Box from '@mui/material/Box';
 import { visuallyHidden } from '@mui/utils';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MsProjectPreview, ProjectTemplate, ScheduleItemKind } from '../api/client';
+import { Button } from '../components/Button';
 import { formatDayText, formatPeriodText } from '../format/dates';
 
 /** The ways a project starts its schedule (canvas NovoProjeto): blank, from a model or from the MS Project (ADR-0135). */
@@ -180,15 +183,17 @@ interface PreviewItem {
 
 /**
  * The preview of the schedule beside the form (canvas NovoProjeto): the name, how many tasks and milestones it has,
- * where its dates come from, and its phases with their items.
+ * where its dates come from, an action below them, and its phases with their items.
  */
 function SchedulePreview({
   title,
   note,
+  action,
   phases,
 }: {
   title: string;
   note: string;
+  action?: ReactNode;
   phases: readonly { name: string; items: readonly PreviewItem[] }[];
 }) {
   const { t } = useTranslation();
@@ -238,6 +243,7 @@ function SchedulePreview({
           })}
         </div>
         <div>{note}</div>
+        {action !== undefined && <Box sx={{ marginTop: 'var(--space-1)' }}>{action}</Box>}
       </Box>
       <Box
         component="ol"
@@ -320,15 +326,36 @@ export function TemplatePreview({ template }: { template: ProjectTemplate }) {
 }
 
 /**
- * The preview of a file of the MS Project (ADR-0135): its title, and its phases and items with the dates the server
- * computed in the calendar of the installation, from the start.
+ * The preview of a file of the MS Project (ADR-0135): its title, its phases and items with the dates the server
+ * computed in the calendar of the installation, from the start, and the shortcut to the box of the conversion when it
+ * lists something.
  */
-export function MsProjectSchedulePreview({ preview }: { preview: MsProjectPreview }) {
+export function MsProjectSchedulePreview({
+  preview,
+  adjustments,
+  onShowAdjustments,
+}: {
+  preview: MsProjectPreview;
+  adjustments: number;
+  onShowAdjustments: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <SchedulePreview
       title={preview.title}
       note={t('projects.form.msProject.previewDates', { start: formatDayText(preview.start) })}
+      action={
+        adjustments === 0 ? undefined : (
+          <Button
+            variant="text"
+            size="small"
+            startIcon={<WarningAmberOutlined />}
+            onClick={onShowAdjustments}
+          >
+            {t('projects.form.msProject.adjustments', { count: adjustments })}
+          </Button>
+        )
+      }
       phases={preview.phases.map((phase) => ({
         name: phase.name,
         items: phase.items.map((item) => ({
