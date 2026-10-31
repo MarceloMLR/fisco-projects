@@ -1,17 +1,25 @@
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import Box from '@mui/material/Box';
 import MuiDialog from '@mui/material/Dialog';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { backdropDuration, motion } from '../theme/motion';
 import { IconButton } from './Button';
 import { Form, type FormSubmit } from './Form';
+import { useKeptWhileOpen } from './keptWhileOpen';
+import { DialogMotion, LeavesWithMotion } from './WindowMotion';
+
+const backdropEasing = { enter: motion.enter, exit: motion.exit };
 
 /**
  * Dialog of the design system (Dialog, fp-dialog, size sm): the title and a close button at the top, the content and
  * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With
  * onSubmit, the dialog is a form (Form), so Enter in a field submits it, and its submit button is busy while it sends
  * (ADR-0131). An alert asks for a confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
- * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges.
+ * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges. It grows from
+ * 98% as it fades in and goes back the same way, with what it showed until its way out ends, also when the screen takes
+ * it away at once (ADR-0133).
  */
 export function Dialog({
   open,
@@ -24,6 +32,7 @@ export function Dialog({
   size = 'sm',
   subtitle,
   headerTools,
+  onExited,
 }: {
   open: boolean;
   title: string;
@@ -36,11 +45,19 @@ export function Dialog({
   subtitle?: ReactNode;
   /** In the header, after the title; the full size closes by them (its "Recolher"). */
   headerTools?: ReactNode;
+  /** Once its way out ended and it left the screen. */
+  onExited?: () => void;
 }) {
   const full = size === 'full';
   const { t } = useTranslation();
   const titleId = useId();
   const bodyId = useId();
+  const reduced = useMediaQuery('(prefers-reduced-motion: reduce)', { noSsr: true });
+  // What the dialog showed, until its way out ends: the screen may have cleared the state it came from.
+  const [shownTitle, shownSubtitle, shownTools, shownChildren, shownActions] = useKeptWhileOpen(
+    open,
+    [title, subtitle, headerTools, children, actions] as const,
+  );
 
   const content = (
     <>
@@ -69,15 +86,15 @@ export function Dialog({
               color: 'var(--text)',
             }}
           >
-            {title}
+            {shownTitle}
           </Box>
-          {subtitle !== undefined && (
+          {shownSubtitle !== undefined && (
             <Box sx={{ fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' }}>
-              {subtitle}
+              {shownSubtitle}
             </Box>
           )}
         </Box>
-        {headerTools}
+        {shownTools}
         {!full && (
           <IconButton
             size="small"
@@ -108,9 +125,9 @@ export function Dialog({
           ...(full && { flex: 1, minHeight: 0, overflow: 'hidden' }),
         }}
       >
-        {children}
+        {shownChildren}
       </Box>
-      {actions !== undefined && (
+      {shownActions !== undefined && (
         <Box
           sx={{
             display: 'flex',
@@ -119,9 +136,10 @@ export function Dialog({
             padding: 'var(--space-3) var(--space-5) var(--space-5)',
           }}
         >
-          {actions}
+          {shownActions}
         </Box>
       )}
+      <LeavesWithMotion kind="dialog" open={open} />
     </>
   );
 
@@ -133,7 +151,11 @@ export function Dialog({
       aria-labelledby={titleId}
       aria-describedby={alert ? bodyId : undefined}
       role={alert ? 'alertdialog' : 'dialog'}
+      transitionDuration={backdropDuration('dialog', reduced)}
+      slots={{ transition: DialogMotion }}
       slotProps={{
+        backdrop: { slotProps: { transition: { easing: backdropEasing } } },
+        transition: { onExited },
         paper: {
           sx: full
             ? {

@@ -509,3 +509,15 @@ O Editar dados MUST ter o campo "Pasta dos arquivos" para o administrador e o ge
 #### Scenario: Pasta que não muda mais
 - **WHEN** o gerente abre o Editar dados de um projeto que já tem documentos
 - **THEN** o campo mostra a pasta, sem "Escolher pasta…", e diz que ela não muda depois que o projeto guarda arquivos
+
+### Requirement: Contagens das abas juntas
+
+As abas do projeto MUST mostrar o lugar de cada contagem desde o começo, e os números MUST entrar juntos, esmaecendo em 150 ms, quando a última contagem chega, sem as abas mudarem de lugar uma a uma (ADR-0133).
+
+#### Scenario: Contagens juntas
+- **WHEN** uma pessoa abre um projeto e a contagem de Links chega antes da de Documentos
+- **THEN** as abas mostram o lugar das contagens vazio até a última chegar, e então todos os números aparecem juntos
+
+#### Scenario: Contagem que falha
+- **WHEN** a contagem de uma aba não chega por uma falha
+- **THEN** os outros números aparecem e o lugar daquela fica vazio

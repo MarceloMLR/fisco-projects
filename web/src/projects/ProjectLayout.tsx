@@ -33,6 +33,7 @@ import { preloadTimeline } from './timelinePreload';
 import { theme } from '../theme/theme';
 import { Button } from '../components/Button';
 import { useNotify } from '../notices/notify';
+import { structureRoutes, usePageMotion } from '../shell/pageMotion';
 
 const openStatuses = [
   'Planning',
@@ -87,6 +88,8 @@ export function ProjectLayout() {
   // The tickets not closed the API found when it refused to complete the project (ADR-0043).
   const [refusedTickets, setRefusedTickets] = useState<number>();
   const notify = useNotify();
+  // Only the tab comes in on a change of tab; the header of the project stays (ADR-0133).
+  const tabContent = usePageMotion<HTMLDivElement>(structureRoutes.project);
   // What closing the project would leave behind, read when the confirmation opens (ADR-0043).
   const { data: closing } = useQuery({
     ...projectClosingQuery(projectId),
@@ -186,6 +189,7 @@ export function ProjectLayout() {
       />
       <Page withTitle={false} flush={flush}>
         <Box
+          ref={tabContent}
           role="tabpanel"
           id="project-panel"
           aria-labelledby={`project-tab-${tab}`}

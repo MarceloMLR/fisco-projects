@@ -2,7 +2,7 @@ import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
-import type { MouseEvent } from 'react';
+import { type MouseEvent, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { managesTerms } from '../acceptances/acceptances';
@@ -17,6 +17,7 @@ import {
 import { initials } from '../components/initials';
 import { formatPeriodText } from '../format/dates';
 import { useSession } from '../session/SessionContext';
+import { fade, motion, play, reducesMotion } from '../theme/motion';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import type { ProjectTab } from './projectTabs';
@@ -78,6 +79,34 @@ const countSx = {
 } as const;
 
 /**
+ * The count of a tab (fp-count): its place is there from the start, empty while the counts come, and the number fades
+ * in with the others (ADR-0133). A count that failed leaves its place empty.
+ */
+function TabCount({ value }: { value: number | undefined }) {
+  const number = useRef<HTMLSpanElement>(null);
+  const shown = value !== undefined;
+  useLayoutEffect(() => {
+    if (shown) {
+      void play(
+        number.current,
+        fade(true),
+        reducesMotion() ? motion.reduced : motion.count,
+        motion.enter,
+      );
+    }
+  }, [shown]);
+  return (
+    <Box component="span" sx={countSx} aria-hidden={shown ? undefined : true}>
+      {shown && (
+        <Box component="span" ref={number}>
+          {value}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+/**
  * The header of a project in every tab (canvas ProjetoCabecalho, fp-proj): the logo of the client or the initials,
  * the name and the status, the code, the client, the manager and the tech lead (ADR-0072), the dates of the schedule
  * ("Sem cronograma" without tasks and milestones), "Ações do projeto" and the tabs, each a link to its address, Membros
@@ -95,20 +124,30 @@ export function ProjectHeader({
 }) {
   const { t } = useTranslation();
   // The count of the tab Chamados: all the tickets of the project, any status (canvas ProjetoChamados).
-  const tickets = useQuery(ticketCountsQuery(project.id)).data?.all;
+  const ticketCounts = useQuery(ticketCountsQuery(project.id));
   // The count of the tab Documentos: the documents not obsolete in the folders the person sees.
-  const documents = useQuery(documentFoldersQuery(project.id)).data?.total;
+  const documentFolders = useQuery(documentFoldersQuery(project.id));
   // The count of the tab Links: all the links of the project.
-  const links = useQuery(linksQuery(project.id)).data?.total;
+  const projectLinks = useQuery(linksQuery(project.id));
   // The count of the tab Acessos: all the credentials of the project.
-  const credentials = useQuery(credentialsQuery(project.id)).data?.total;
+  const projectCredentials = useQuery(credentialsQuery(project.id));
   // The tab Termos de aceite, only for who manages the terms (ADR-0129), with all the terms of the project.
   const { session } = useSession();
   const seesAcceptances = managesTerms(
     project,
     session.status === 'signed-in' ? session.user : undefined,
   );
-  const acceptances = useQuery({ ...acceptancesQuery(project.id), enabled: seesAcceptances }).data;
+  const projectAcceptances = useQuery({
+    ...acceptancesQuery(project.id),
+    enabled: seesAcceptances,
+  });
+  // The numbers come in all together, once every count answered, so the tabs do not move one by one (ADR-0133).
+  const counted =
+    [ticketCounts, documentFolders, projectLinks, projectCredentials].every(
+      (query) => !query.isPending,
+    ) &&
+    (!seesAcceptances || !projectAcceptances.isPending);
+  const count = (value: number | undefined) => <TabCount value={counted ? value : undefined} />;
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const managers = namesWith(project, 'Manager');
   const techLeads = namesWith(project, 'TechLead');
@@ -303,11 +342,7 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectTickets.title')}
-          {tickets !== undefined && (
-            <Box component="span" sx={countSx}>
-              {tickets}
-            </Box>
-          )}
+          {count(ticketCounts.data?.all)}
         </Box>
         <Box
           component={Link}
@@ -319,11 +354,7 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectDocuments.title')}
-          {documents !== undefined && (
-            <Box component="span" sx={countSx}>
-              {documents}
-            </Box>
-          )}
+          {count(documentFolders.data?.total)}
         </Box>
         <Box
           component={Link}
@@ -335,11 +366,7 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectLinks.title')}
-          {links !== undefined && (
-            <Box component="span" sx={countSx}>
-              {links}
-            </Box>
-          )}
+          {count(projectLinks.data?.total)}
         </Box>
         <Box
           component={Link}
@@ -351,11 +378,7 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectCredentials.title')}
-          {credentials !== undefined && (
-            <Box component="span" sx={countSx}>
-              {credentials}
-            </Box>
-          )}
+          {count(projectCredentials.data?.total)}
         </Box>
         {(seesAcceptances || tab === 'acceptances') && (
           <Box
@@ -368,11 +391,7 @@ export function ProjectHeader({
             sx={tabSx}
           >
             {t('pages.projectAcceptances.title')}
-            {acceptances !== undefined && (
-              <Box component="span" sx={countSx}>
-                {acceptances.counts.all}
-              </Box>
-            )}
+            {count(projectAcceptances.data?.counts.all)}
           </Box>
         )}
         <Box
@@ -385,9 +404,7 @@ export function ProjectHeader({
           sx={tabSx}
         >
           {t('pages.projectMembers.title')}
-          <Box component="span" sx={countSx}>
-            {project.members.length}
-          </Box>
+          {count(project.members.length)}
         </Box>
       </Box>
     </Box>

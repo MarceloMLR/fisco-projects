@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Outlet, useParams } from 'react-router';
 import { generalRulesQuery, projectQuery } from '../api/queries';
 import { useNoticesInShell } from '../notices/notify';
+import { structureRoutes, usePageMotion } from './pageMotion';
 import { SessionPending } from '../session/RequireSession';
 import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
@@ -50,6 +51,8 @@ export function AppShell() {
   // No screen shows a date before the time zone of the installation is known (ADR-0013).
   const rules = useQuery(generalRulesQuery());
   useNoticesInShell();
+  // The content of the page comes in on a change of page; the sidebar and the header stay (ADR-0133).
+  const content = usePageMotion<HTMLElement>(structureRoutes.shell);
 
   // The shell is only reached through RequireSession.
   if (session.status !== 'signed-in') {
@@ -81,6 +84,7 @@ export function AppShell() {
         <Sidebar />
         <Box
           component="main"
+          ref={content}
           sx={{
             gridColumn: 2,
             gridRow: 2,
@@ -161,6 +165,7 @@ export function AppShell() {
       </Drawer>
       <Box
         component="main"
+        ref={content}
         sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
       >
         <Outlet />

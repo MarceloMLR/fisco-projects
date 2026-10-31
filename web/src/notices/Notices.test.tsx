@@ -3,6 +3,11 @@ import { createMemoryRouter, Outlet, RouterProvider, useNavigate } from 'react-r
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { simulateDevice } from '../test/media';
+import {
+  type SimulatedAnimations,
+  simulateAnimations,
+  stopSimulatingAnimations,
+} from '../test/motion';
 import { motion } from '../theme/motion';
 import { NoticeProvider } from './Notices';
 import {
@@ -297,18 +302,18 @@ describe('Confirmações no alto da tela', () => {
 
 // Spec: estrutura-das-telas, requirement "Aparência e tempo do aviso" (ADR-0133).
 describe('Movimento do aviso', () => {
-  const animate = vi.fn(() => ({ finished: Promise.resolve() }) as unknown as Animation);
+  let animations: SimulatedAnimations;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    animate.mockClear();
-    HTMLElement.prototype.animate = animate;
+    animations = simulateAnimations();
   });
   afterEach(() => {
     vi.useRealTimers();
-    // jsdom has no animations: the tests go back to none.
-    Reflect.deleteProperty(HTMLElement.prototype, 'animate');
+    stopSimulatingAnimations();
   });
+
+  const last = () => animations.played.at(-1);
 
   it('Aviso entra descendo e sai esmaecendo', async () => {
     render(
@@ -318,19 +323,23 @@ describe('Movimento do aviso', () => {
     );
 
     await give(saved);
-    expect(animate).toHaveBeenLastCalledWith(
-      [
-        { opacity: 0, transform: 'translateY(-8px)' },
-        { opacity: 1, transform: 'translateY(0)' },
-      ],
-      { duration: motion.notice.enter, easing: motion.enter, fill: 'none' },
-    );
+    expect(last()?.frames).toEqual([
+      { opacity: 0, transform: 'translateY(-8px)' },
+      { opacity: 1, transform: 'translateY(0)' },
+    ]);
+    expect(last()?.options).toEqual({
+      duration: motion.notice.enter,
+      easing: motion.enter,
+      fill: 'none',
+    });
 
     await wait(noticeMs);
-    expect(animate).toHaveBeenLastCalledWith(
-      expect.arrayContaining([expect.objectContaining({ opacity: 0 })]),
-      { duration: motion.notice.exit, easing: motion.exit, fill: 'forwards' },
-    );
+    expect(last()?.frames.at(-1)).toMatchObject({ opacity: 0 });
+    expect(last()?.options).toEqual({
+      duration: motion.notice.exit,
+      easing: motion.exit,
+      fill: 'forwards',
+    });
     expect(notice()).not.toBeInTheDocument();
   });
 
@@ -346,11 +355,8 @@ describe('Movimento do aviso', () => {
     await wait(noticeMs);
 
     // Only a fade, in 150 ms, with no move.
-    expect(animate).toHaveBeenCalledTimes(2);
-    for (const [frames, options] of animate.mock.calls as unknown as [
-      Keyframe[],
-      KeyframeAnimationOptions,
-    ][]) {
+    expect(animations.played).toHaveLength(2);
+    for (const { frames, options } of animations.played) {
       expect(frames.every((frame) => frame.transform === undefined)).toBe(true);
       expect(options.duration).toBe(motion.reduced);
     }

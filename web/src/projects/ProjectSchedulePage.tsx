@@ -134,6 +134,8 @@ export function ProjectSchedulePage() {
   /** "Nova tarefa" open, maybe inside a task ("Nova subtarefa", ADR-0088). */
   const [creating, setCreating] = useState<{ parentId?: string }>();
   const [expanded, setExpanded] = useState(false);
+  // The timeline of the tab comes back once the one of Expandir left the screen: one timeline at a time (ADR-0051).
+  const [expandedLeft, setExpandedLeft] = useState(true);
   /** What "Exibir" shows in the Linha do tempo, the same in Expandir (ADR-0071). */
   const [display, setDisplay] = useState<ScheduleDisplay>(fullDisplay);
   const [search, setSearch] = useSearchParams();
@@ -530,6 +532,7 @@ export function ProjectSchedulePage() {
             disabled={schedule.start === null}
             onClick={() => {
               setExpanded(true);
+              setExpandedLeft(false);
             }}
           >
             {t('projects.timeline.expand')}
@@ -538,7 +541,7 @@ export function ProjectSchedulePage() {
         {desktop && actions(false)}
         {moreMenu}
       </Box>
-      {view === 'timeline' && expanded ? (
+      {view === 'timeline' && (expanded || !expandedLeft) ? (
         // One timeline at a time: the Syncfusion Gantt finds some of its parts in the whole page (ADR-0051).
         <Box sx={{ flex: 1, minHeight: 0 }} />
       ) : view === 'timeline' ? (
@@ -581,6 +584,9 @@ export function ProjectSchedulePage() {
         subtitle={`${project.code} · ${project.name}`}
         onClose={() => {
           setExpanded(false);
+        }}
+        onExited={() => {
+          setExpandedLeft(true);
         }}
         headerTools={
           <Box

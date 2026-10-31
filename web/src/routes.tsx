@@ -38,6 +38,7 @@ import { TicketDeadlinesPage } from './admin/TicketDeadlinesPage';
 import { TicketPage } from './tickets/TicketPage';
 import { TicketsPage } from './tickets/TicketsPage';
 import type { PageHandle } from './shell/pages';
+import { structureRoutes } from './shell/pageMotion';
 
 // Every screen and its address (ADR-0077). Paths are in English (ADR-0074).
 export const routes: RouteObject[] = [
@@ -59,6 +60,8 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        // The ids of the routes with an outlet tell which part of the screen comes in on a change (ADR-0133).
+        id: structureRoutes.shell,
         element: (
           <RequireSession>
             <AppShell />
@@ -94,6 +97,7 @@ export const routes: RouteObject[] = [
           // The page of a project, with a tab at each address (ProjectLayout).
           {
             path: 'projects/:projectId',
+            id: structureRoutes.project,
             element: <ProjectLayout />,
             children: [
               {
@@ -248,6 +252,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: 'admin',
+            id: structureRoutes.admin,
             element: (
               <RequireAdministrator>
                 <AdminLayout />
