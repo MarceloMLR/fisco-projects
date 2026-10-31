@@ -29,7 +29,8 @@ function utc(day: DayValue): Date {
   return new Date(Date.UTC(year, month - 1, dayOfMonth));
 }
 
-function plusDays(day: DayValue, days: number): DayValue {
+/** The day so many days after another (before, with a negative number). */
+export function plusDays(day: DayValue, days: number): DayValue {
   const moment = utc(day);
   moment.setUTCDate(moment.getUTCDate() + days);
   return dayOf(moment);

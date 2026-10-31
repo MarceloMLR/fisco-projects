@@ -1,11 +1,8 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { forwardRef, useEffect, useImperativeHandle } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { type Project, projectProblems, type Schedule, type ScheduleItem } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { ganttRowsOf } from '../schedule-gantt/ganttRows';
-import type { ScheduleGanttHandle, ScheduleGanttProps } from '../schedule-gantt/ScheduleGantt';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   type DemoProject,
@@ -18,55 +15,21 @@ import {
   server,
   signedInAs,
 } from '../test/server';
+import {
+  barOf,
+  dragBar,
+  linkBars,
+  spanOf,
+  timelineLine,
+  timelineLines,
+  timelineOf,
+  timelineTable,
+} from '../test/timeline';
 
 const text = ptBR.projects;
 
-/**
- * jsdom does not draw the Syncfusion Gantt faithfully (ScheduleGantt.test.tsx covers the real one): the tab is tested
- * with a ScheduleGantt that lists its lines as buttons and keeps what it received, to raise its events as a drag, a
- * stretch or a link would.
- */
-const gantt = vi.hoisted(() => ({
-  props: undefined as ScheduleGanttProps | undefined,
-  todayAsked: 0,
-}));
-
-vi.mock('../schedule-gantt/ScheduleGantt', () => {
-  const Simulated = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>(
-    function Simulated(props, ref) {
-      useEffect(() => {
-        gantt.props = props;
-      });
-      useImperativeHandle(ref, () => ({
-        goToToday: () => {
-          gantt.todayAsked += 1;
-        },
-      }));
-      return (
-        <ul
-          aria-label="simulated timeline"
-          data-editable={String(props.editable)}
-          data-detailed={String(props.detailed ?? false)}
-          data-scale={props.scale}
-        >
-          {ganttRowsOf(props.schedule).map((row) => (
-            <li key={row.key}>
-              <button
-                type="button"
-                onClick={() => {
-                  props.onChoose(row.target);
-                }}
-              >
-                {row.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      );
-    },
-  );
-  return { ScheduleGantt: Simulated, default: Simulated };
-});
+// The tab with the real Linha do tempo (ADR-0134): jsdom lays nothing out, so each day of the scale Dias takes the
+// narrowest width, and the pointer is pressed and moved where a person would (src/test/timeline.ts).
 
 let project: DemoProject;
 let schedule: Schedule;
@@ -89,8 +52,6 @@ beforeEach(() => {
   project = erp;
   schedule = demoSchedule();
   permissions = { canEditSchedule: true };
-  gantt.props = undefined;
-  gantt.todayAsked = 0;
   signedInAs('ProjectManager');
   server.use(
     http.get('/api/projects', ({ request }) =>
@@ -105,31 +66,14 @@ beforeEach(() => {
   );
 });
 
-function timeline() {
-  return screen.getByRole('list', { name: 'simulated timeline' });
-}
-
-async function openTimeline(width?: number) {
-  const view = await renderApp(`/projects/${project.id}/schedule`, width);
-  await screen.findByRole('list', { name: 'simulated timeline' });
+async function openTimeline(width?: number, path = `/projects/${project.id}/schedule`) {
+  const view = await renderApp(path, width);
+  await screen.findByRole('treegrid', { name: text.timeline.table }, { timeout: 5000 });
   await waitFor(() => {
-    expect(within(timeline()).getByRole('button', { name: 'Levantamento' })).toBeInTheDocument();
+    expect(timelineLine('Levantamento')).toBeInTheDocument();
   });
   return view;
 }
-
-/** What the timeline received last. */
-function received(): ScheduleGanttProps {
-  if (gantt.props === undefined) {
-    throw new Error('No timeline.');
-  }
-  return gantt.props;
-}
-
-const startOf = (name: string) =>
-  received()
-    .schedule.phases.flatMap((phase) => phase.items)
-    .find((item) => item.name === name)?.start;
 
 // Spec: cronograma, requirement "Aba Cronograma".
 describe('Aba Cronograma', () => {
@@ -141,7 +85,7 @@ describe('Aba Cronograma', () => {
       'aria-checked',
       'true',
     );
-    expect(timeline()).toHaveAttribute('data-scale', 'days');
+    expect(timelineOf()).toHaveAttribute('data-scale', 'days');
     expect(screen.queryByRole('grid', { name: text.schedule.table })).not.toBeInTheDocument();
     // The legend says what each color is.
     const legend = screen.getByRole('list', { name: text.timeline.legend.label });
@@ -162,13 +106,15 @@ describe('Aba Cronograma', () => {
       '42',
     );
     // "Hoje" brings today into view.
+    const scroller = timelineOf().querySelector<HTMLElement>('.fp-gantt__scroller');
+    expect(scroller?.scrollLeft).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: text.timeline.today }));
-    expect(gantt.todayAsked).toBe(1);
+    expect(scroller?.scrollLeft).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('radio', { name: text.timeline.views.list }));
 
     expect(await screen.findByRole('grid', { name: text.schedule.table })).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'simulated timeline' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('treegrid')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: text.timeline.today })).not.toBeInTheDocument();
     expect(router.state.location.search).toBe('?view=list');
     unmount();
@@ -190,11 +136,13 @@ describe('Escala pela tela', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: text.timeline.scales.weeks }));
     await waitFor(() => {
-      expect(timeline()).toHaveAttribute('data-scale', 'weeks');
+      expect(timelineOf()).toHaveAttribute('data-scale', 'weeks');
     });
+    // Each week by its Monday.
+    expect(timelineOf().querySelector('.g-scale-text')?.textContent).toBe('05/10');
     fireEvent.click(screen.getByRole('radio', { name: text.timeline.scales.months }));
     await waitFor(() => {
-      expect(timeline()).toHaveAttribute('data-scale', 'months');
+      expect(timelineOf()).toHaveAttribute('data-scale', 'months');
     });
     expect(router.state.location.search).toBe('?scale=months');
   });
@@ -225,11 +173,10 @@ describe('Arrastar na linha do tempo', () => {
     const sent = answerDates();
     await openTimeline();
     const validating = itemNamed('Validar cadastro de produtos');
-    expect(timeline()).toHaveAttribute('data-editable', 'true');
+    expect(timelineOf()).toHaveAttribute('data-editable', 'true');
 
-    act(() => {
-      received().onMove(validating.id, '2026-10-16');
-    });
+    // From 13/10 to 16/10.
+    dragBar(barOf('Validar cadastro de produtos'), 3);
 
     const saved = text.schedule.messages.itemSaved.Task.replace(
       '{{name}}',
@@ -242,9 +189,11 @@ describe('Arrastar na linha do tempo', () => {
     ).toBeInTheDocument();
     // Only the start: the API keeps the duration in business days and computes the end.
     expect(sent).toEqual([{ id: validating.id, start: '2026-10-16', end: null }]);
+    // The dates the API sent back: 16/10 to 20/10.
     await waitFor(() => {
-      expect(startOf('Validar cadastro de produtos')).toBe('2026-10-16');
+      expect(spanOf(barOf('Validar cadastro de produtos'))).toEqual([11, 5]);
     });
+    expect(barOf('Validar cadastro de produtos')).not.toHaveClass('g-item--dragging');
   });
 
   it('Puxar a borda de uma tarefa', async () => {
@@ -252,9 +201,8 @@ describe('Arrastar na linha do tempo', () => {
     await openTimeline();
     const validating = itemNamed('Validar cadastro de produtos');
 
-    act(() => {
-      received().onResize(validating.id, '2026-10-13', '2026-10-20');
-    });
+    // The end, from 15/10 to 20/10.
+    dragBar(barOf('Validar cadastro de produtos'), 5, 'end');
 
     expect(
       await screen.findByText(
@@ -265,21 +213,24 @@ describe('Arrastar na linha do tempo', () => {
   });
 
   it('Arrastar sem permissão', async () => {
+    const sent = answerDates();
     permissions = { canEditSchedule: false };
     const { unmount } = await openTimeline();
 
     // The technical lead sees the timeline, but its bars neither move nor link.
-    expect(timeline()).toHaveAttribute('data-editable', 'false');
+    expect(timelineOf()).toHaveAttribute('data-editable', 'false');
+    expect(
+      barOf('Validar cadastro de produtos').querySelector('.g-handle, .g-connector'),
+    ).toBeNull();
+    dragBar(barOf('Validar cadastro de produtos'), 3);
     expect(screen.queryByRole('button', { name: text.schedule.newItem })).not.toBeInTheDocument();
     unmount();
 
     // Nor on a phone, even for who edits the schedule.
     permissions = { canEditSchedule: true };
-    await renderApp(`/projects/${project.id}/schedule?view=timeline`, phoneWidth);
-    expect(await screen.findByRole('list', { name: 'simulated timeline' })).toHaveAttribute(
-      'data-editable',
-      'false',
-    );
+    await openTimeline(phoneWidth, `/projects/${project.id}/schedule?view=timeline`);
+    expect(timelineOf()).toHaveAttribute('data-editable', 'false');
+    expect(sent).toEqual([]);
   });
 });
 
@@ -296,13 +247,12 @@ describe('Ligar duas barras', () => {
         return HttpResponse.json({ pushed: 0 });
       }),
     );
-    await openTimeline();
+    const { container } = await openTimeline();
     const invoices = itemNamed('Integrar emissão de NF-e');
     const tests = itemNamed('Testes integrados');
+    expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
 
-    act(() => {
-      received().onLink(invoices.id, tests.id);
-    });
+    linkBars(barOf('Integrar emissão de NF-e'), barOf('Testes integrados'));
 
     expect(
       await screen.findByText(
@@ -328,12 +278,9 @@ describe('Ligar duas barras', () => {
         parentId: null,
       },
     ]);
+    // And the arrow appears.
     await waitFor(() => {
-      expect(
-        received()
-          .schedule.phases.flatMap((phase) => phase.items)
-          .find((item) => item.id === tests.id)?.predecessorIds,
-      ).toContain(invoices.id);
+      expect(container.querySelectorAll('.g-dep')).toHaveLength(7);
     });
   });
 
@@ -343,14 +290,9 @@ describe('Ligar duas barras', () => {
         problem(400, projectProblems.scheduleCycle),
       ),
     );
-    await openTimeline();
+    const { container } = await openTimeline();
 
-    act(() => {
-      received().onLink(
-        itemNamed('Testes integrados').id,
-        itemNamed('Parametrizar regras de ICMS').id,
-      );
-    });
+    linkBars(barOf('Testes integrados'), barOf('Parametrizar regras de ICMS'));
 
     expect(
       await screen.findByText(
@@ -362,6 +304,7 @@ describe('Ligar duas barras', () => {
     expect(itemNamed('Parametrizar regras de ICMS').predecessorIds).toEqual([
       itemNamed('Mapear processos fiscais').id,
     ]);
+    expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
   });
 });
 
@@ -378,12 +321,9 @@ describe('Subtarefas na linha do tempo', () => {
     );
     await openTimeline();
 
-    act(() => {
-      received().onLink(
-        itemNamed('Testes integrados').id,
-        itemNamed('Testes com a equipe do cliente').id,
-      );
-    });
+    // The task with subtasks has no point to link from; dropped on it, a link says why it does not link.
+    expect(barOf('Testes integrados').querySelector('.g-connector')).toBeNull();
+    linkBars(barOf('Integrar emissão de NF-e'), barOf('Testes integrados'));
 
     expect(
       await screen.findByText(
@@ -404,9 +344,7 @@ describe('Subtarefas na linha do tempo', () => {
     );
     await openTimeline();
 
-    act(() => {
-      received().onLink(itemNamed('Integrar emissão de NF-e').id, itemNamed('Executar testes').id);
-    });
+    linkBars(barOf('Integrar emissão de NF-e'), barOf('Executar testes'));
 
     await waitFor(() => {
       expect(sent).toEqual([
@@ -424,16 +362,14 @@ describe('Detalhe pela linha do tempo', () => {
   it('Detalhe pela linha do tempo', async () => {
     await openTimeline();
 
-    fireEvent.click(
-      within(timeline()).getByRole('button', { name: 'Validar cadastro de produtos' }),
-    );
+    fireEvent.click(barOf('Validar cadastro de produtos'));
 
     const drawer = await screen.findByRole('dialog', { name: text.schedule.details.label });
     expect(
       within(drawer).getByRole('heading', { name: 'Validar cadastro de produtos' }),
     ).toBeVisible();
     await waitFor(() => {
-      expect(received().selectedId).toBe(itemNamed('Validar cadastro de produtos').id);
+      expect(timelineLine('Validar cadastro de produtos')).toHaveAttribute('aria-selected', 'true');
     });
     fireEvent.click(within(drawer).getByRole('button', { name: ptBR.details.close }));
     await waitFor(() => {
@@ -441,12 +377,86 @@ describe('Detalhe pela linha do tempo', () => {
         screen.queryByRole('dialog', { name: text.schedule.details.label }),
       ).not.toBeInTheDocument();
     });
+    expect(timelineLine('Validar cadastro de produtos')).toHaveAttribute('aria-selected', 'false');
 
     // A phase opens the phase, for who edits the schedule.
-    fireEvent.click(within(timeline()).getByRole('button', { name: 'Configuração' }));
+    fireEvent.click(timelineLine('Configuração'));
     expect(
       await screen.findByRole('dialog', { name: text.schedule.phaseDialog.editTitle }),
     ).toBeVisible();
+  });
+});
+
+// Spec: cronograma, requirement "Linha do tempo pelo teclado".
+describe('Linha do tempo pelo teclado', () => {
+  it('Detalhe pelo teclado', async () => {
+    await openTimeline();
+    const table = timelineTable();
+
+    // Into the table, two lines down, and Enter.
+    act(() => {
+      table.focus();
+    });
+    fireEvent.keyDown(table, { key: 'ArrowDown' });
+    fireEvent.keyDown(table, { key: 'ArrowDown' });
+    fireEvent.keyDown(table, { key: 'Enter' });
+
+    const drawer = await screen.findByRole('dialog', { name: text.schedule.details.label });
+    expect(within(drawer).getByRole('heading', { name: 'Mapear processos fiscais' })).toBeVisible();
+  });
+});
+
+// Spec: cronograma, requirement "Linha do tempo sem licença de terceiros".
+describe('Linha do tempo sem licença de terceiros', () => {
+  it('Instalação sem chave de licença', async () => {
+    // The installation has no key of Syncfusion, and the timeline does not ask for one.
+    let asked = false;
+    server.use(
+      http.get('/api/client-settings', () => {
+        asked = true;
+        return HttpResponse.json({ timelineLicense: null });
+      }),
+    );
+    const { container } = await openTimeline();
+
+    // Complete: the lines, the bars, the arrows and today, without a notice of a trial.
+    expect(timelineLines()).toHaveLength(12);
+    expect(container.querySelectorAll('.g-bar')).toHaveLength(7);
+    expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
+    expect(container.querySelector('.g-today-label')).not.toBeNull();
+    expect(container.textContent).not.toMatch(/syncfusion|licen[cs]|trial|avalia/i);
+    expect(asked).toBe(false);
+  });
+
+  it('Barra que volta na recusa', async () => {
+    let refuse: () => void = () => undefined;
+    const refused = new Promise<void>((resolve) => {
+      refuse = resolve;
+    });
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId/dates', async () => {
+        await refused;
+        return problem(409, projectProblems.closed);
+      }),
+    );
+    await openTimeline();
+
+    dragBar(barOf('Validar cadastro de produtos'), 3);
+
+    // While the API answers, the bar stays where it was dropped.
+    expect(spanOf(barOf('Validar cadastro de produtos'))).toEqual([11, 3]);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(spanOf(barOf('Validar cadastro de produtos'))).toEqual([11, 3]);
+    refuse();
+
+    // Refused, it goes back to its dates, and the screen says why.
+    expect(await screen.findByText(text.schedule.messages.closed)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(spanOf(barOf('Validar cadastro de produtos'))).toEqual([8, 3]);
+    });
+    expect(barOf('Validar cadastro de produtos')).not.toHaveClass('g-item--dragging');
   });
 });
 
@@ -464,11 +474,24 @@ describe('Expandir o cronograma', () => {
     ).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.timeline.today })).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.schedule.newItem })).toBeVisible();
-    // The full table beside the timeline, and only one timeline on the screen.
-    const detailed = await within(expanded).findByRole('list', { name: 'simulated timeline' });
-    expect(detailed).toHaveAttribute('data-detailed', 'true');
-    expect(detailed).toHaveAttribute('data-editable', 'true');
-    expect(screen.getAllByRole('list', { name: 'simulated timeline' })).toHaveLength(1);
+    // The full table beside the timeline: name, start, end, owner and progress.
+    await within(expanded).findByRole('treegrid', { name: text.timeline.table });
+    expect(timelineOf(expanded)).toHaveAttribute('data-detailed', 'true');
+    expect(timelineOf(expanded)).toHaveAttribute('data-editable', 'true');
+    expect(
+      within(timelineTable(expanded))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      text.timeline.columns.name,
+      text.timeline.columns.start,
+      text.timeline.columns.end,
+      text.timeline.columns.owner,
+      text.timeline.columns.progress,
+    ]);
+    expect(timelineLine('Validar cadastro de produtos', expanded).textContent).toContain(
+      '13/1015/10Rafael',
+    );
 
     fireEvent.click(within(expanded).getByRole('button', { name: text.timeline.collapse }));
 
@@ -477,10 +500,7 @@ describe('Expandir o cronograma', () => {
         screen.queryByRole('dialog', { name: text.timeline.expandedTitle }),
       ).not.toBeInTheDocument();
     });
-    expect(await screen.findByRole('list', { name: 'simulated timeline' })).toHaveAttribute(
-      'data-detailed',
-      'false',
-    );
+    expect(timelineOf()).toHaveAttribute('data-detailed', 'false');
   });
 });
 
@@ -494,10 +514,12 @@ function legendEntries() {
 describe('Caminho crítico pela tela', () => {
   it('Exibir sem linha de base e caminho crítico', async () => {
     schedule = demoScheduleWithBaseline();
-    await openTimeline();
+    const { container } = await openTimeline();
 
     // Both are on at first, and the legend says what they are.
-    expect([received().showBaseline, received().showCritical]).toEqual([true, true]);
+    expect(timelineOf()).toHaveAttribute('data-baseline', 'true');
+    expect(timelineOf()).toHaveAttribute('data-critical', 'true');
+    expect(container.querySelectorAll('.g-baseline')).toHaveLength(7);
     expect(legendEntries()).toEqual([
       text.timeline.legend.done,
       text.timeline.legend.todo,
@@ -524,8 +546,10 @@ describe('Caminho crítico pela tela', () => {
         .map((option) => option.getAttribute('aria-checked')),
     ).toEqual(['false', 'false']);
     await waitFor(() => {
-      expect([received().showBaseline, received().showCritical]).toEqual([false, false]);
+      expect(timelineOf()).toHaveAttribute('data-critical', 'false');
     });
+    expect(timelineOf()).toHaveAttribute('data-baseline', 'false');
+    expect(container.querySelectorAll('.g-baseline, .g-bar--critical')).toHaveLength(0);
     fireEvent.keyDown(menu, { key: 'Escape' });
     await waitFor(() => {
       expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -547,20 +571,20 @@ describe('Caminho crítico pela tela', () => {
       within(expanded).getByRole('checkbox', { name: text.baseline.show.critical }),
     ).not.toBeChecked();
     fireEvent.click(baseline);
+    await within(expanded).findByRole('treegrid', { name: text.timeline.table });
     await waitFor(() => {
-      expect([received().detailed, received().showBaseline, received().showCritical]).toEqual([
-        true,
-        true,
-        false,
-      ]);
+      expect(timelineOf(expanded)).toHaveAttribute('data-baseline', 'true');
     });
+    expect(timelineOf(expanded)).toHaveAttribute('data-critical', 'false');
+    expect(timelineOf(expanded)).toHaveAttribute('data-detailed', 'true');
   });
 
   it('Sem linha de base, a legenda não a cita', async () => {
-    await openTimeline();
+    const { container } = await openTimeline();
 
     // With the baseline on in "Exibir", but none saved.
-    expect(received().showBaseline).toBe(true);
+    expect(timelineOf()).toHaveAttribute('data-baseline', 'true');
+    expect(container.querySelectorAll('.g-baseline')).toHaveLength(0);
     expect(legendEntries()).not.toContain(text.timeline.legend.baseline);
   });
 });

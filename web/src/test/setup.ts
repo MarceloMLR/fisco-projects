@@ -22,6 +22,11 @@ if (typeof Range !== 'undefined') {
   }
 }
 
+// jsdom scrolls nothing: a line the keyboard brings into view (the Linha do tempo) stays where it is.
+if (typeof Element !== 'undefined' && !('scrollIntoView' in Element.prototype)) {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { value: () => undefined });
+}
+
 // Any call to the API that a test did not simulate fails the test.
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
@@ -40,5 +45,5 @@ afterAll(() => {
   server.close();
 });
 
-// The code of the Linha do tempo is the Syncfusion: the screen tests do not load it ahead (timelinePreload.test.ts does).
+// The screen tests load the code of the Linha do tempo when it opens, not ahead (timelinePreload.test.ts does).
 vi.mock('../projects/timelinePreload', () => ({ preloadTimeline: () => undefined }));

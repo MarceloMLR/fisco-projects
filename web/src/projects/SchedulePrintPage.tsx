@@ -31,8 +31,8 @@ const noCollapsed: ReadonlySet<string> = new Set();
  * dates, progress and what it depends on, and its strip of the timeline in the period and the scale the person chose,
  * with the baseline and the critical path when "Exibir" had them on, and the legend. Always light, for paper, in A4
  * landscape; the scale repeats at the top of each page, and pages break between lines. "Imprimir" opens the printing of
- * the browser, which saves it as PDF. The strips are drawn here with the tokens of the design system, without the
- * Syncfusion (ADR-0051).
+ * the browser, which saves it as PDF. The strips are drawn here with the tokens of the design system, in SVG, as the
+ * Linha do tempo draws its bars (ADR-0134).
  */
 export function SchedulePrintPage() {
   const { t } = useTranslation();

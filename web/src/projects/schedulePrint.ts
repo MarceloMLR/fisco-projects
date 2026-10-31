@@ -145,8 +145,8 @@ export function scaleSpans(
 }
 
 /**
- * The colors of the strips drawn without the Syncfusion, from the tokens of the Gantt of the design system (fp-gantt):
- * the print page and the overview of a project (ADR-0051, ADR-0073).
+ * The colors of the strips of the print page and the overview of a project, from the tokens of the Gantt of the design
+ * system (fp-gantt), as the Linha do tempo has them (ADR-0073, ADR-0134).
  */
 export const ganttStripSx = {
   '& .g-nonworking': { fill: 'var(--gantt-nonworking)' },

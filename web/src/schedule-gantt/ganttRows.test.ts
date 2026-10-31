@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { demoSchedule, demoScheduleWithBaseline, demoScheduleWithSubtasks } from '../test/server';
-import { dateOfDay, dayOfDate, endOfDay, ganttRowsOf, lastDayOf } from './ganttRows';
+import { ganttRowsOf, shownRows } from './ganttRows';
 
 // Spec: cronograma, requirement "Linha do tempo": the lines and the dates the timeline draws come from the API.
 describe('Linhas da linha do tempo', () => {
@@ -25,44 +25,42 @@ describe('Linhas da linha do tempo', () => {
     ]);
     const [survey, opening, mapping, validating] = rows;
     expect(survey).toMatchObject({
-      key: 1,
-      cssClass: 'fp-gantt-phase fp-gantt-late',
+      key: schedule.phases[0]?.id,
+      level: 0,
+      shape: 'summary',
+      late: true,
       progress: 93,
+      hasChildren: true,
+      ownDates: false,
     });
     expect(opening).toMatchObject({
-      key: 2,
-      parentKey: 1,
-      cssClass: 'fp-gantt-task',
+      level: 1,
+      parentKey: survey?.key,
+      shape: 'bar',
       progress: 100,
+      ownDates: true,
     });
-    expect(mapping?.predecessor).toBe('2FS');
-    expect(validating).toMatchObject({
-      cssClass: 'fp-gantt-task fp-gantt-late',
-      predecessor: '3FS',
-    });
+    expect(mapping?.predecessors).toEqual([opening?.key]);
+    expect(validating).toMatchObject({ late: true, predecessors: [mapping?.key] });
     const acceptance = rows.find((row) => row.name === 'Aceite da homologação');
-    expect(acceptance).toMatchObject({
-      milestone: true,
-      cssClass: 'fp-gantt-milestone',
-      progress: 0,
-    });
+    expect(acceptance).toMatchObject({ shape: 'milestone', progress: 0 });
     expect(acceptance?.start).toEqual(acceptance?.end);
     // A phase without items has no dates, and no bar.
     const production = rows.at(-1);
     expect(production?.name).toBe('Entrada em produção');
-    expect([production?.start, production?.end]).toEqual([undefined, undefined]);
+    expect([production?.start, production?.end, production?.hasChildren]).toEqual([
+      undefined,
+      undefined,
+      false,
+    ]);
   });
 
   it('Datas da linha do tempo', () => {
-    // A task of 06/10 to 09/10 is drawn from the midnight of 06/10 to the midnight after 09/10.
-    const mapping = ganttRowsOf(demoSchedule())[2];
+    // The days of the API, as they are: a task of 06/10 to 09/10 is drawn from 06/10 to the end of 09/10.
+    const rows = ganttRowsOf(demoSchedule());
 
-    expect(mapping?.start).toEqual(new Date(2026, 9, 6));
-    expect(mapping?.end).toEqual(new Date(2026, 9, 10));
-    expect(dayOfDate(dateOfDay('2026-10-16'))).toBe('2026-10-16');
-    expect(lastDayOf(endOfDay('2026-10-16'))).toBe('2026-10-16');
-    // The Gantt may end a bar at the end of the working day, before midnight: the day is the same.
-    expect(lastDayOf(new Date(2026, 9, 16, 17, 0))).toBe('2026-10-16');
+    expect([rows[2]?.start, rows[2]?.end]).toEqual(['2026-10-06', '2026-10-09']);
+    expect([rows[4]?.start, rows[4]?.end]).toEqual(['2026-10-13', '2026-10-29']);
   });
 
   it('Subtarefas na linha do tempo', () => {
@@ -71,12 +69,37 @@ describe('Linhas da linha do tempo', () => {
     const row = (name: string) => rows.find((candidate) => candidate.name === name);
 
     const summary = row('Testes integrados');
-    expect(summary?.parentKey).toBe(row('Configuração')?.key);
-    expect(summary?.cssClass).toBe('fp-gantt-summary');
-    expect(row('Roteiro de testes')?.parentKey).toBe(summary?.key);
-    expect(row('Executar testes')?.parentKey).toBe(summary?.key);
-    expect(row('Executar testes')?.predecessor).toBe(`${String(row('Roteiro de testes')?.key)}FS`);
-    expect(row('Integrar emissão de NF-e')?.cssClass).toBe('fp-gantt-task');
+    expect(summary).toMatchObject({
+      parentKey: row('Configuração')?.key,
+      level: 1,
+      shape: 'summary',
+      hasChildren: true,
+      ownDates: false,
+    });
+    expect(row('Roteiro de testes')).toMatchObject({ parentKey: summary?.key, level: 2 });
+    expect(row('Executar testes')).toMatchObject({
+      parentKey: summary?.key,
+      predecessors: [row('Roteiro de testes')?.key],
+      ownDates: true,
+    });
+    expect(row('Integrar emissão de NF-e')?.shape).toBe('bar');
+  });
+
+  it('Linhas recolhidas', () => {
+    // Spec: cronograma, requirement "Recolher na linha do tempo".
+    const rows = ganttRowsOf(demoScheduleWithSubtasks());
+    const keyOf = (name: string) => rows.find((row) => row.name === name)?.key ?? '';
+
+    const names = (collapsed: string[]) =>
+      shownRows(rows, new Set(collapsed)).map((row) => row.name);
+
+    // A phase hides its tasks, its milestones and their subtasks; a task, only its subtasks.
+    expect(names([keyOf('Configuração')])).not.toContain('Executar testes');
+    expect(names([keyOf('Configuração')])).not.toContain('Parametrizar regras de ICMS');
+    expect(names([keyOf('Configuração')])).toContain('Homologação');
+    expect(names([keyOf('Testes integrados')])).toContain('Testes integrados');
+    expect(names([keyOf('Testes integrados')])).not.toContain('Roteiro de testes');
+    expect(names([])).toHaveLength(rows.length);
   });
 });
 
@@ -86,20 +109,15 @@ describe('Linha de base e caminho crítico nas linhas', () => {
     const rows = ganttRowsOf(demoScheduleWithBaseline(), { critical: true });
     const row = (name: string) => rows.find((one) => one.name === name);
 
-    // The thin bar from the first day of the baseline to the midnight after its last; none for a milestone.
+    // The thin bar from the first to the last day of the baseline; none for a milestone.
     expect(row('Parametrizar regras de ICMS')).toMatchObject({
-      baselineStart: dateOfDay('2026-10-13'),
-      baselineEnd: endOfDay('2026-10-20'),
-      cssClass: 'fp-gantt-task fp-gantt-critical',
+      baseline: { start: '2026-10-13', end: '2026-10-20' },
+      critical: true,
     });
-    expect(row('Aceite da homologação')).toMatchObject({
-      cssClass: 'fp-gantt-milestone fp-gantt-critical',
-    });
-    expect(row('Aceite da homologação')?.baselineStart).toBeUndefined();
-    expect(row('Validar cadastro de produtos')?.cssClass).toBe('fp-gantt-task fp-gantt-late');
+    expect(row('Aceite da homologação')).toMatchObject({ critical: true });
+    expect(row('Aceite da homologação')?.baseline).toBeUndefined();
+    expect(row('Validar cadastro de produtos')).toMatchObject({ critical: false, late: true });
     // Without the critical path in "Exibir", no line is red.
-    expect(
-      ganttRowsOf(demoScheduleWithBaseline()).some((one) => one.cssClass.includes('critical')),
-    ).toBe(false);
+    expect(ganttRowsOf(demoScheduleWithBaseline()).some((one) => one.critical)).toBe(false);
   });
 });
