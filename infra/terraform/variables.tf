@@ -144,12 +144,6 @@ variable "autentique" {
   default = null
 }
 
-variable "syncfusion_license_in_key_vault" {
-  description = "Whether the secret Syncfusion--LicenseKey already exists in the Key Vault; when true, the application reads it from there (ADR-0051, ADR-0087)."
-  type        = bool
-  default     = false
-}
-
 variable "app_is_database_admin" {
   description = "Whether the identity of the application is in the group of database administrators, to apply the migrations itself (only in the dev environment, ADR-0114)."
   type        = bool

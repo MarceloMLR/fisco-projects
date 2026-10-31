@@ -162,7 +162,6 @@ module "app" {
   insights_connection    = module.monitoring.insights_connection_string
   key_vault_id           = module.key_vault.id
   key_vault_name         = module.key_vault.name
-  syncfusion_in_vault    = var.syncfusion_license_in_key_vault
   app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)
   vault_settings         = local.signature_secrets
   database_admin         = var.app_is_database_admin
