@@ -1,13 +1,14 @@
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
 import MuiDialog from '@mui/material/Dialog';
-import { type ReactNode, type SubmitEvent, useId } from 'react';
+import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { IconButton } from './Button';
+import { Form, type FormSubmit } from './Form';
 
 /**
  * Dialog of the design system (Dialog, fp-dialog, size sm): the title and a close button at the top, the content and
- * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With onSubmit, the dialog is a form, so Enter in a field submits it. An alert asks for a
+ * the actions at the bottom. The large size (dialog-lg) takes a longer content, as a list of a few columns. With onSubmit, the dialog is a form (Form), so Enter in a field submits it, and its submit button is busy while it sends (ADR-0131). An alert asks for a
  * confirmation (alertdialog), and its text describes it. The full size (fp-dialog--full) covers almost the whole
  * screen, with a subtitle and the tools in the header, which closes it too, and the content to the edges.
  */
@@ -28,7 +29,7 @@ export function Dialog({
   onClose: () => void;
   children: ReactNode;
   actions?: ReactNode;
-  onSubmit?: (event: SubmitEvent<HTMLFormElement>) => void;
+  onSubmit?: FormSubmit;
   alert?: boolean;
   size?: 'sm' | 'lg' | 'full';
   subtitle?: ReactNode;
@@ -152,9 +153,9 @@ export function Dialog({
       {onSubmit === undefined ? (
         content
       ) : (
-        <Box component="form" noValidate onSubmit={onSubmit} sx={{ display: 'contents' }}>
+        <Form onSubmit={onSubmit} sx={{ display: 'contents' }}>
           {content}
-        </Box>
+        </Form>
       )}
     </MuiDialog>
   );
