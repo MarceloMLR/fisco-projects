@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { type Project, type ProjectRole, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   demoPeople,
@@ -656,5 +657,66 @@ describe('Chamados no detalhe da pessoa', () => {
       { numbers: tickets().map((ticket) => ticket.number), assigneeId: demoPeople.rafael.id },
     ]);
     expect(await within(drawer).findByText(text.tickets.none)).toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos membros', () => {
+  it('Botão em andamento ao remover do projeto', async () => {
+    const held = heldAnswer();
+    // Held first, then the removal of the simulated API.
+    server.use(
+      http.delete('/api/projects/:id/members/:userId', async () => {
+        await held.until;
+      }),
+    );
+    await openMembers();
+    const drawer = await choose('Diego Torres');
+    fireEvent.click(within(drawer).getByRole('button', { name: text.details.remove }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.remove.title });
+    const remove = within(confirm).getByRole('button', { name: text.remove.confirm });
+
+    fireEvent.click(remove);
+
+    await waitFor(() => {
+      expectBusy(remove, text.remove.confirm);
+    });
+    fireEvent.click(remove);
+    held.release();
+    expect(
+      await screen.findByText(text.messages.removed.replace('{{name}}', 'Diego Torres')),
+    ).toBeInTheDocument();
+    expect(requests).toEqual([`DELETE ${demoPeople.diego.id}`]);
+  });
+
+  it('Formulário em andamento ao incluir pessoa', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/projects/:id/members', async () => {
+        await held.until;
+      }),
+    );
+    await openMembers();
+    fireEvent.click(screen.getByRole('button', { name: text.include }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.title });
+    fireEvent.change(within(dialog).getByRole('combobox', { name: text.dialog.person }), {
+      target: { value: 'lucas' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: /Lucas Prado/ }));
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.dialog.role }));
+    fireEvent.click(await screen.findByRole('option', { name: roles.Contributor }));
+    const submit = within(dialog).getByRole('button', { name: text.dialog.submit });
+
+    fireEvent.click(submit);
+
+    await waitFor(() => {
+      expectBusy(submit, text.dialog.submit);
+    });
+    fireEvent.click(submit);
+    held.release();
+    expect(
+      await screen.findByText(text.messages.included.replace('{{name}}', 'Lucas Prado')),
+    ).toBeInTheDocument();
+    expect(requests).toEqual(['POST null local:lucas.prado@empresa.example Contributor']);
   });
 });

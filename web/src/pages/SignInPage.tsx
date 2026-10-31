@@ -3,7 +3,6 @@ import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +18,8 @@ import { type SignInState, useSession } from '../session/SessionContext';
 import { microsoftSignIn } from '../session/microsoftSignIn';
 import { rememberEmail, rememberedEmail } from '../session/rememberedEmail';
 import { SignInArt } from './SignInArt';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 // Below this width the card fills the screen and the brand panel shrinks (fp-screens.css).
 const phone = '@media (max-width: 860px)';
@@ -107,7 +108,7 @@ function SignInScreen() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<z.input<typeof form>, unknown, z.output<typeof form>>({
     resolver: zodResolver(form),
     defaultValues: { email: rememberedEmail() },
@@ -348,12 +349,8 @@ function SignInScreen() {
             [phone]: { padding: 'var(--space-8) var(--space-6)' },
           }}
         >
-          <Box
-            component="form"
-            noValidate
-            onSubmit={(event) => {
-              void signIn(event);
-            }}
+          <Form
+            onSubmit={(event) => signIn(event)}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -402,13 +399,7 @@ function SignInScreen() {
               }
               {...register('email')}
             />
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              disabled={isSubmitting || leaving}
-            >
+            <Button type="submit" variant="contained" size="large" fullWidth loading={leaving}>
               {t('signIn.submit')}
             </Button>
             <Box
@@ -425,7 +416,7 @@ function SignInScreen() {
               <NoteIcon aria-hidden sx={{ fontSize: 'var(--icon-sm)' }} />
               {texts.note}
             </Box>
-          </Box>
+          </Form>
           <Box
             component="p"
             sx={{

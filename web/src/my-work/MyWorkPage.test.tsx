@@ -9,6 +9,7 @@ import {
   demoUpcomingMilestones,
   emptyMyWork,
 } from '../test/demoMyWork';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   demoPeople,
@@ -372,5 +373,69 @@ describe('Meu trabalho no celular', () => {
     expect(within(late).queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: /^Meus projetos/ })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: text.milestones.title })).toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento no Meu trabalho', () => {
+  it('Botão em andamento ao concluir pela fila', async () => {
+    const held = heldAnswer();
+    // Held first, then the progress of the simulated API.
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId/progress', async () => {
+        await held.until;
+      }),
+    );
+    await openMyWork();
+    const complete = within(group('Atrasado')).getByRole('button', {
+      name: 'Concluir: Validar cadastro de produtos',
+    });
+
+    fireEvent.click(complete);
+
+    await waitFor(() => {
+      expectBusy(complete, text.actions.Complete);
+    });
+    fireEvent.click(complete);
+    held.release();
+    expect(
+      await screen.findByText('Tarefa Validar cadastro de produtos concluída.'),
+    ).toBeInTheDocument();
+    expect(progress).toEqual([{ itemId: demoMyWorkItems.lateTask.id, progress: 100 }]);
+  });
+
+  it('Formulário em andamento ao atualizar o progresso', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId/progress', async () => {
+        await held.until;
+      }),
+    );
+    await openMyWork();
+    fireEvent.click(
+      within(group('Próximos 7 dias')).getByRole('button', {
+        name: 'Atualizar: Configurar plano de contas',
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: ptBR.projects.schedule.progressDialog.updateTitle,
+    });
+    fireEvent.change(
+      within(dialog).getByRole('textbox', { name: ptBR.projects.schedule.form.progress }),
+      { target: { value: '80' } },
+    );
+    const save = within(dialog).getByRole('button', { name: ptBR.projects.schedule.form.save });
+
+    fireEvent.click(save);
+
+    await waitFor(() => {
+      expectBusy(save, ptBR.projects.schedule.form.save);
+    });
+    fireEvent.click(save);
+    held.release();
+    expect(
+      await screen.findByText('Progresso de Configurar plano de contas atualizado para 80%.'),
+    ).toBeInTheDocument();
+    expect(progress).toEqual([{ itemId: demoMyWorkItems.weekTask.id, progress: 80 }]);
   });
 });

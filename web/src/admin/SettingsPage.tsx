@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +25,8 @@ import { BrandPreview } from './BrandPreview';
 import { EmailSettings } from './EmailSettings';
 import { MainColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 /** Up to 1 MB, PNG or SVG, as the API checks (LogoFile in the Administration module). */
 const logoMaxBytes = 1024 * 1024;
@@ -499,13 +500,9 @@ export function SettingsPage() {
                 [singleColumn]: { gridTemplateColumns: 'minmax(0, 1fr)' },
               }}
             >
-              <Box
-                component="form"
+              <Form
                 id="settings-form"
-                noValidate
-                onSubmit={(event) => {
-                  void save(event);
-                }}
+                onSubmit={(event) => save(event)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -665,7 +662,7 @@ export function SettingsPage() {
                   </Box>
                   <EmailSettings onMessage={setMessage} />
                 </Box>
-              </Box>
+              </Form>
               <BrandPreview
                 name={typedName.trim() === '' ? (installation?.name ?? '') : typedName.trim()}
                 logo={shownLogo}
@@ -695,7 +692,8 @@ export function SettingsPage() {
           variant="contained"
           type="submit"
           form="settings-form"
-          disabled={!changed || isSubmitting}
+          disabled={!changed}
+          loading={isSubmitting}
         >
           {t('settings.save')}
         </Button>

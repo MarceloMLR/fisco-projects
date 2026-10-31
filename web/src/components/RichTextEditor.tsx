@@ -3,8 +3,6 @@ import FormatBoldOutlined from '@mui/icons-material/FormatBoldOutlined';
 import FormatListBulletedOutlined from '@mui/icons-material/FormatListBulletedOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
@@ -28,6 +26,7 @@ import {
   TypedMentions,
   typedMentionExtension,
 } from './typedMention';
+import { Button, IconButton } from './Button';
 
 export type { MentionChoice } from './typedMention';
 

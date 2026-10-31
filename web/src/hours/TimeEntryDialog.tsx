@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -17,6 +16,7 @@ import { TextField } from '../components/TextField';
 import { type DayValue, formatDayText, maskTypedDay, parseTypedDay } from '../format/dates';
 import { problemType } from '../projects/projectForm';
 import { hoursFieldText, parseHours } from './hours';
+import { Button } from '../components/Button';
 
 const errors = {
   dayInvalid: 'hours.errors.dayInvalid',
@@ -104,7 +104,7 @@ export function TimeEntryDialog({
     handleSubmit,
     setError,
     setValue,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<Values>({
     resolver: zodResolver(schemaOf(today)),
     defaultValues: {
@@ -215,15 +215,13 @@ export function TimeEntryDialog({
       open
       title={t(entry === undefined ? 'hours.dialog.newTitle' : 'hours.dialog.editTitle')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('hours.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(entry === undefined ? 'hours.dialog.add' : 'hours.dialog.save')}
           </Button>
         </>

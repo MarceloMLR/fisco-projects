@@ -6,9 +6,7 @@ import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
@@ -30,6 +28,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { useAdminContext } from './adminContext';
 import { ClientDialog } from './ClientDialog';
+import { Button, IconButton } from '../components/Button';
 
 const pageSize = 25;
 const searchDelay = 300;
@@ -429,7 +428,7 @@ export function ClientsPage() {
             <Button
               variant="contained"
               color="error"
-              disabled={remove.isPending}
+              loading={remove.isPending}
               onClick={() => {
                 if (removing !== undefined) {
                   remove.mutate(removing);

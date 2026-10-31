@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -36,6 +35,8 @@ import {
   projectDataSchema,
   projectFieldErrors,
 } from './projectForm';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 const form = projectDataSchema
   .extend({
@@ -234,13 +235,9 @@ export function NewProjectPage() {
             gap: 'var(--space-4)',
           }}
         >
-          <Box
-            component="form"
+          <Form
             id="new-project"
-            noValidate
-            onSubmit={(event) => {
-              void create(event);
-            }}
+            onSubmit={(event) => create(event)}
             sx={{ minHeight: 0, overflow: 'auto' }}
           >
             <Box component="section" aria-labelledby="new-project-data" sx={sectionSx}>
@@ -459,7 +456,7 @@ export function NewProjectPage() {
                 <TemplatePreview template={chosenTemplate} />
               </Box>
             )}
-          </Box>
+          </Form>
           {chosenTemplate !== undefined && desktop && <TemplatePreview template={chosenTemplate} />}
         </Box>
       </Page>
@@ -483,7 +480,7 @@ export function NewProjectPage() {
         >
           {t('projects.form.cancel')}
         </Button>
-        <Button variant="contained" type="submit" form="new-project" disabled={isSubmitting}>
+        <Button variant="contained" type="submit" form="new-project" loading={isSubmitting}>
           {t('projects.form.create')}
         </Button>
       </Box>

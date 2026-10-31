@@ -1,6 +1,5 @@
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -14,6 +13,7 @@ import { EmailNotices } from './EmailNotices';
 import { ProfileCard, ProfileRow, singleColumn } from './ProfileCard';
 import { ThemeOptions } from './ThemeOptions';
 import { useThemeChoice } from './themeChoice';
+import { Button } from '../components/Button';
 
 const knownSignInMethods = ['local', 'entra'] as const;
 type KnownSignInMethod = (typeof knownSignInMethods)[number];
@@ -181,9 +181,7 @@ export function ProfilePage() {
             variant="outlined"
             size="small"
             startIcon={<LogoutOutlined />}
-            onClick={() => {
-              void signOut();
-            }}
+            onClick={() => signOut()}
           >
             {t('shell.signOut')}
           </Button>

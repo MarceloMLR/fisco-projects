@@ -2,7 +2,6 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -23,6 +22,7 @@ import { AcceptanceDrawer } from './AcceptanceDrawer';
 import { useSession } from '../session/SessionContext';
 import { managesTerms, signersSummary } from './acceptances';
 import { AcceptanceStatusBadge } from './AcceptanceStatusBadge';
+import { Button } from '../components/Button';
 
 /** A project has a few dozen terms: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;

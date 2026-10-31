@@ -2,7 +2,6 @@ import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined';
 import ForumOutlined from '@mui/icons-material/ForumOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
@@ -17,6 +16,7 @@ import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { TicketDue } from './TicketDue';
 import { PeopleChangeDialog } from './TicketPeopleDialogs';
 import type { PeopleChange } from './ticketChanges';
+import { Button } from '../components/Button';
 
 export const ticketPageSize = 25;
 

@@ -10,6 +10,7 @@ import {
   documentsPage,
   folderIds,
 } from '../test/demoDocuments';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoProjects, demoSchedule, problem, server, signedInAs } from '../test/server';
 
@@ -428,5 +429,74 @@ describe('Documentos', () => {
     await renderApp(path);
 
     expect(await screen.findByText(text.loadFailed)).toBeVisible();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento nos documentos', () => {
+  async function chooseMap() {
+    await openDocuments();
+    fireEvent.click(screen.getByRole('button', { name: /03 Requisitos/ }));
+    await waitFor(() => {
+      expect(names()).toHaveLength(3);
+    });
+    return choose('Mapa de processos fiscais.docx');
+  }
+
+  it('Botão em andamento ao excluir o documento', async () => {
+    const held = heldAnswer();
+    // Held first, then the removal of the simulated API.
+    server.use(
+      http.delete('/api/projects/:id/documents/:documentId', async () => {
+        await held.until;
+      }),
+    );
+    const drawer = await chooseMap();
+    fireEvent.click(within(drawer).getByRole('button', { name: text.details.more }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.remove }));
+    const confirm = await screen.findByRole('alertdialog', { name: text.remove.title });
+    const remove = within(confirm).getByRole('button', { name: text.remove.confirm });
+
+    fireEvent.click(remove);
+
+    await waitFor(() => {
+      expectBusy(remove, text.remove.confirm);
+    });
+    fireEvent.click(remove);
+    held.release();
+    await waitFor(() => {
+      expect(screen.queryByRole('alertdialog', { name: text.remove.title })).toBeNull();
+    });
+    expect(requests.filter((request) => request.method === 'DELETE')).toHaveLength(1);
+  });
+
+  it('Formulário em andamento ao vincular', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.put('/api/projects/:id/documents/:documentId/:action', async () => {
+        await held.until;
+      }),
+    );
+    const drawer = await chooseMap();
+    fireEvent.click(within(drawer).getByRole('button', { name: text.details.more }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.link }));
+    const dialog = await screen.findByRole('dialog', { name: text.link.title });
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: text.link.field }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: /^Parametrizar regras de ICMS · Tarefa$/ }),
+    );
+    const save = within(dialog).getByRole('button', { name: text.link.save });
+
+    fireEvent.click(save);
+
+    await waitFor(() => {
+      expectBusy(save, text.link.save);
+    });
+    fireEvent.click(save);
+    held.release();
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: text.link.title })).toBeNull();
+    });
+    expect(requests).toHaveLength(1);
   });
 });

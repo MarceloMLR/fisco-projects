@@ -1,7 +1,6 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -21,6 +20,7 @@ import { useDebounced } from '../hooks/useDebounced';
 import { useProjectOutlet } from '../projects/projectOutlet';
 import { theme } from '../theme/theme';
 import { TicketTable, ticketPageSize } from './TicketTable';
+import { Button } from '../components/Button';
 
 type Segment = 'all' | 'open' | 'unassigned' | 'openedByMe';
 

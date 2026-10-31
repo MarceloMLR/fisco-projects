@@ -3,7 +3,6 @@ import type { TFunction } from 'i18next';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import ButtonBase from '@mui/material/ButtonBase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useId, useMemo, useState } from 'react';
@@ -30,6 +29,7 @@ import { formatDayText } from '../format/dates';
 import { useDates } from '../format/useDates';
 import { problemField } from './ticketChanges';
 import { VendorStatusBadge } from './TicketTags';
+import { Button } from '../components/Button';
 
 const labelSx = { fontSize: 13, lineHeight: '18px', color: 'var(--text-secondary)' } as const;
 
@@ -120,7 +120,7 @@ function RegisterDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<RegistrationValues>({
     resolver: zodResolver(schema),
     defaultValues: { vendorId: '', code: '', openedOn: today, status: 'Open', link: '', note: '' },
@@ -164,19 +164,13 @@ function RegisterDialog({
       title={t('tickets.vendors.register.title')}
       subtitle={t('tickets.vendors.register.subtitle', { number: ticket.number })}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.vendors.cancel')}
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isSubmitting || vendors?.length === 0}
-          >
+          <Button type="submit" variant="contained" disabled={vendors?.length === 0}>
             {t('tickets.vendors.register.confirm')}
           </Button>
         </>
@@ -289,7 +283,7 @@ function UpdateDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<UpdateValues>({
     resolver: zodResolver(updateSchema),
     defaultValues: { status: record.status, note: '' },
@@ -321,15 +315,13 @@ function UpdateDialog({
       title={t('tickets.vendors.update.title')}
       subtitle={t('tickets.vendors.update.subtitle', { code: record.code, vendor: record.vendor })}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.vendors.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('tickets.vendors.update.confirm')}
           </Button>
         </>

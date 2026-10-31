@@ -1,12 +1,12 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 import indexHtml from '../../index.html?raw';
 import mainSource from '../main.tsx?raw';
 import { describe, expect, it } from 'vitest';
+import { Button } from '../components/Button';
 import ptBR from '../locales/pt-BR.json';
 import { theme } from './theme';
 import { color, colorSchemes, colorTokenNames, cssVariables, fontFamilies } from './tokens';

@@ -1,6 +1,5 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import type { MouseEvent } from 'react';
@@ -21,6 +20,7 @@ import { useSession } from '../session/SessionContext';
 import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import type { ProjectTab } from './projectTabs';
+import { Button } from '../components/Button';
 
 /** The names of the people of the project with a role, joined. */
 const namesWith = (project: Project, role: Project['members'][number]['role']) =>

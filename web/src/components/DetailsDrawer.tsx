@@ -1,9 +1,9 @@
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { IconButton } from './Button';
 
 /** Widest the drawer gets; on narrower windows, such as the phone, it takes the whole width. */
 const maxWidth = 640;

@@ -10,8 +10,6 @@ import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import TodayOutlined from '@mui/icons-material/TodayOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -78,6 +76,8 @@ import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
 import { LateCounts, MilestoneStatus } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
+import { Button, IconButton } from '../components/Button';
+import { Form } from '../components/Form';
 
 /** Rows of a page of the list; the free Data Grid shows up to 100 (ADR-0050). */
 const pageSize = 100;
@@ -797,7 +797,7 @@ function NewItemDialog({
     handleSubmit,
     setError,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ScheduleItemValues>({
     resolver: zodResolver(scheduleItemSchema),
     defaultValues: newItemValues(firstPhase, parent?.id),
@@ -833,15 +833,13 @@ function NewItemDialog({
         parent === undefined ? 'projects.schedule.form.title' : 'projects.schedule.form.newSubtask',
       )}
       onClose={onClose}
-      onSubmit={(event) => {
-        void create(event);
-      }}
+      onSubmit={(event) => create(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('projects.schedule.form.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(`projects.schedule.form.create.${kind}`)}
           </Button>
         </>
@@ -948,7 +946,7 @@ function ItemEditor({
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ScheduleItemValues>({
     resolver: zodResolver(scheduleItemSchema),
     defaultValues: valuesOfItem(item),
@@ -1023,13 +1021,9 @@ function ItemEditor({
       )}
       {item.hasSubtasks && <SummaryDates item={item} />}
       <BaselineSection item={item} schedule={schedule} />
-      <Box
-        component="form"
-        noValidate
+      <Form
         aria-label={item.name}
-        onSubmit={(event) => {
-          void save(event);
-        }}
+        onSubmit={(event) => save(event)}
         sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
       >
         <ScheduleItemFields
@@ -1055,11 +1049,11 @@ function ItemEditor({
             {t(`projects.schedule.form.remove.${item.kind}`)}
           </Button>
           <Box sx={{ flex: 1 }} />
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t('projects.schedule.form.save')}
           </Button>
         </Box>
-      </Box>
+      </Form>
       <Dialog
         open={removing}
         alert
@@ -1080,10 +1074,8 @@ function ItemEditor({
             <Button
               variant="contained"
               color="error"
-              disabled={removePending}
-              onClick={() => {
-                void remove();
-              }}
+              loading={removePending}
+              onClick={() => remove()}
             >
               {t(`projects.schedule.form.remove.${item.kind}`)}
             </Button>

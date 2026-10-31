@@ -1,9 +1,9 @@
 import UndoOutlined from '@mui/icons-material/UndoOutlined';
-import IconButton from '@mui/material/IconButton';
 import { useTranslation } from 'react-i18next';
 import type { Project, Schedule } from '../api/client';
 import { stepText } from './schedule';
 import { useScheduleStep } from './useScheduleStep';
+import { IconButton } from '../components/Button';
 
 /**
  * "Desfazer" of the bar of the tab and of Expandir (ADR-0071), for who edits the schedule: its tip says what it undoes,
@@ -31,10 +31,9 @@ export function UndoButton({
         size="small"
         aria-label={t('projects.steps.undo')}
         aria-description={tip}
-        disabled={step === null || pending}
-        onClick={() => {
-          void run('undo', schedule);
-        }}
+        disabled={step === null}
+        loading={pending}
+        onClick={() => run('undo', schedule)}
         sx={{ color: 'var(--text-secondary)' }}
       >
         <UndoOutlined />

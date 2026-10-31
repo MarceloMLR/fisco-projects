@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -15,6 +14,7 @@ import { Select } from '../components/Select';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { problemType } from '../projects/projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   titleRequired: 'links.errors.titleRequired',
@@ -89,7 +89,7 @@ export function LinkDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -159,15 +159,13 @@ export function LinkDialog({
       open
       title={t(link === undefined ? 'links.dialog.newTitle' : 'links.dialog.editTitle')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('links.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(link === undefined ? 'links.dialog.add' : 'links.dialog.save')}
           </Button>
         </>

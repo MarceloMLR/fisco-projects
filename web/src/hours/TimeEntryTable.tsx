@@ -4,8 +4,6 @@ import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -22,6 +20,7 @@ import { problemType } from '../projects/projectForm';
 import { theme } from '../theme/theme';
 import { formatHours, type HoursRow, hoursRows, isDayRow, workOf } from './hours';
 import { TimeEntryDialog } from './TimeEntryDialog';
+import { Button, IconButton } from '../components/Button';
 
 /** A week or a month has a few dozen entries: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -352,11 +351,7 @@ export function TimeEntryTable({
             <Button
               variant="contained"
               color="error"
-              onClick={() => {
-                if (removing !== undefined) {
-                  void remove(removing);
-                }
-              }}
+              onClick={() => (removing === undefined ? undefined : remove(removing))}
             >
               {t('hours.remove.confirm')}
             </Button>

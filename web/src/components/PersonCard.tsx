@@ -1,7 +1,6 @@
 import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
 import MailOutlined from '@mui/icons-material/MailOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import Portal from '@mui/material/Portal';
 import Snackbar from '@mui/material/Snackbar';
@@ -11,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { personQuery } from '../api/queries';
 import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { Avatar } from './Avatar';
+import { Button } from './Button';
 
 /** A person shown by the avatar: the user and the name the screen already has. */
 export interface CardPerson {
@@ -186,6 +186,7 @@ export function CardAvatar({
                 variant="outlined"
                 size="small"
                 startIcon={<ContentCopyOutlined />}
+                // Copying sends nothing to the server, so the button is never busy (ADR-0131).
                 onClick={() => {
                   void copy(email);
                 }}

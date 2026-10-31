@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EmailStatus } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { expectBusy, expectIdle, heldAnswer } from '../test/busy';
 import { renderApp } from '../test/renderApp';
 import { problem, server, signedInAs } from '../test/server';
 
@@ -132,5 +133,31 @@ describe('Teste de envio', () => {
     fireEvent.click(within(section).getByRole('button', { name: text.emailTest.send }));
 
     expect(await screen.findByText(text.emailTest.noAddress)).toBeInTheDocument();
+  });
+});
+
+// Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
+describe('Botões em andamento no teste de envio', () => {
+  it('Botão em andamento ao enviar o teste', async () => {
+    const held = heldAnswer();
+    server.use(
+      http.post('/api/admin/email/test', async () => {
+        await held.until;
+      }),
+    );
+    const section = await openSection();
+    const send = within(section).getByRole('button', { name: text.emailTest.send });
+
+    fireEvent.click(send);
+
+    await waitFor(() => {
+      expectBusy(send, text.emailTest.send);
+    });
+    fireEvent.click(send);
+    held.release();
+    await waitFor(() => {
+      expectIdle(send);
+    });
+    expect(tests).toBe(1);
   });
 });

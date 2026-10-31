@@ -2,7 +2,6 @@ import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
@@ -33,6 +32,7 @@ import { projectTabs } from './projectTabs';
 import { projectStatusLook } from './projectStatus';
 import { preloadTimeline } from './timelinePreload';
 import { theme } from '../theme/theme';
+import { Button } from '../components/Button';
 
 const openStatuses = [
   'Planning',
@@ -357,7 +357,8 @@ export function ProjectLayout() {
             <Button
               variant="contained"
               color={confirming === 'Cancelled' ? 'error' : 'primary'}
-              disabled={changeStatus.isPending || blocked}
+              disabled={blocked}
+              loading={changeStatus.isPending}
               onClick={() => {
                 if (confirming !== undefined) {
                   changeStatus.mutate({ status: confirming, project });

@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useId, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -21,6 +20,7 @@ import {
   formatCnpj,
   maskTypedCnpj,
 } from '../format/cnpj';
+import { Button } from '../components/Button';
 
 /** Up to 1 MB, PNG or JPG, as the API checks by the content (ClientLogo in the Projects module). */
 const logoMaxBytes = 1024 * 1024;
@@ -153,7 +153,7 @@ export function ClientDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: {
@@ -293,15 +293,13 @@ export function ClientDialog({
       open
       title={t(editing ? 'clients.editClient' : 'clients.newClient')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('clients.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(editing ? 'clients.save' : 'clients.include')}
           </Button>
         </>

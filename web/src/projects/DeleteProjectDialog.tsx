@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +8,7 @@ import { ApiError, projectDeletionQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
+import { Button } from '../components/Button';
 
 /** The kinds of items the summary counts, in the order the dialog lists them. */
 const kinds = [
@@ -105,7 +105,8 @@ export function DeleteProjectDialog({
             type="submit"
             variant="contained"
             color="error"
-            disabled={!matches || summary === undefined || remove.isPending}
+            disabled={!matches || summary === undefined}
+            loading={remove.isPending}
           >
             {t('projects.deletion.confirm')}
           </Button>

@@ -19,8 +19,6 @@ import SyncOutlined from '@mui/icons-material/SyncOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Popover from '@mui/material/Popover';
 import type SvgIcon from '@mui/material/SvgIcon';
 import { visuallyHidden } from '@mui/utils';
@@ -39,6 +37,7 @@ import {
   noticeText,
   noticeWhen,
 } from './noticeText';
+import { Button, IconButton } from '../components/Button';
 
 const icons: Record<NoticeKind, typeof SvgIcon> = {
   TicketOpened: ConfirmationNumberOutlined,
@@ -281,7 +280,8 @@ function NotificationPanel({ unread, onOpened }: { unread: number; onOpened: () 
           size="small"
           aria-label={t('notifications.readAll')}
           title={t('notifications.readAll')}
-          disabled={unread === 0 || readAll.isPending}
+          disabled={unread === 0}
+          loading={readAll.isPending}
           onClick={() => {
             readAll.mutate();
           }}
@@ -407,7 +407,7 @@ function NotificationPanel({ unread, onOpened }: { unread: number; onOpened: () 
           <Button
             variant="text"
             size="small"
-            disabled={list.isFetchingNextPage}
+            loading={list.isFetchingNextPage}
             onClick={() => {
               if (filter === 'unread') {
                 setFilter('all');

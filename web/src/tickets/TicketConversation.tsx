@@ -7,7 +7,6 @@ import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ticket } from '../api/client';
@@ -27,6 +26,7 @@ import {
   toneOf,
 } from './conversation';
 import { sizeText } from '../format/size';
+import { Button } from '../components/Button';
 
 type Attachment = Ticket['attachments'][number];
 type Participant = Ticket['participants'][number];

@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery } from '@tanstack/react-query';
 import { type SubmitEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +9,7 @@ import { Dialog } from '../components/Dialog';
 import { FormField } from '../components/FormField';
 import { Select } from '../components/Select';
 import { problemType } from '../projects/projectForm';
+import { Button } from '../components/Button';
 
 const none = '';
 
@@ -41,7 +41,6 @@ export function LinkDocumentDialog({
         ? phaseValue(document.link.id)
         : itemValue(document.link.id);
   const [value, setValue] = useState(current);
-  const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<string>();
 
   const options = useMemo(
@@ -63,7 +62,6 @@ export function LinkDocumentDialog({
 
   const save = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSaving(true);
     setFailure(undefined);
     const phaseId = value.startsWith('phase:') ? value.slice('phase:'.length) : null;
     const itemId = value.startsWith('item:') ? value.slice('item:'.length) : null;
@@ -86,8 +84,6 @@ export function LinkDocumentDialog({
       );
     } catch {
       setFailure(t('documents.messages.failed'));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -96,15 +92,13 @@ export function LinkDocumentDialog({
       open
       title={t('documents.link.title')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('documents.link.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={saving || schedule === undefined}>
+          <Button type="submit" variant="contained" disabled={schedule === undefined}>
             {t('documents.link.save')}
           </Button>
         </>

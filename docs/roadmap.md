@@ -26,12 +26,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 29/10/2026, com a v1 concluída, Marcelo pediu duas novidades, que formam os grupos 11 e 12, fora do roadmap aprovado em 17/10/2026: as horas do projeto, só em horas, com a visão gerencial só do administrador (ADR-0128), e a assinatura dos termos de aceite por um provedor de assinatura eletrônica trocável, começando pela Autentique, com os termos só do gerente e do administrador.
 - Em 29/10/2026, para a assinatura dos termos, Marcelo aprovou que o e-mail de cada signatário fique guardado só enquanto o pedido está aberto: com o termo assinado, recusado ou cancelado, o e-mail é apagado e o nome fica no histórico; os dados completos ficam no PDF assinado que o provedor devolve, e tudo sai com o projeto excluído. Aprovou também as telas da Horas-1 e da Horas-2 no canvas "Horas do projeto".
 - Em 30/10/2026, no teste da Assinatura-2 no `dev`, "Lembrar signatários" logo depois do pedido disse que o provedor não respondeu, quando a Autentique só recusou o reenvio feito há pouco; a correção entrou como Assinatura-2.1 (`lembrete-logo-depois-do-envio`).
+- Em 30/10/2026, depois da Assinatura-2.1, Marcelo pediu o ícone de carregamento nos botões ao clicar, em todos os que mandam algo ao servidor, e escolheu o ícone no lugar do ícone do botão, na hora do clique, sem os itens dos menus (Fundação-5.5, `botoes-em-andamento`, ADR-0131).
 
 ## Marcos
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 16 | 16 |
+| 1. Fundação | 17 | 16 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
@@ -43,7 +44,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 10. Governança e operação | 6 | 6 |
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
-| **Total** | **96** | **96** |
+| **Total** | **97** | **96** |
 
 ## 1. Fundação
 
@@ -60,6 +61,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Fundação-5.2 | `voltar-do-navegador` | Um Voltar do navegador volta uma página: links nas tabelas, gavetas e formulários sem entradas a mais, a pedido de Marcelo | 0066, 0081, 0105 | Concluída em 21/10/2026 ([#68](https://github.com/MarceloMLR/fisco-projects/pull/68)) |
 | Fundação-5.3 | `avisos-no-topo` | As confirmações curtas no alto, no meio da tela, a pedido de Marcelo | 0066, 0109 | Concluída em 21/10/2026 ([#73](https://github.com/MarceloMLR/fisco-projects/pull/73)) |
 | Fundação-5.4 | `cartao-da-pessoa` | O avatar de outra pessoa abre o cartão dela, com o nome, o papel, o e-mail e "Copiar e-mail", em todas as telas, a pedido de Marcelo | 0065, 0069, 0118 | Concluída em 26/10/2026 ([#94](https://github.com/MarceloMLR/fisco-projects/pull/94)) |
+| Fundação-5.5 | `botoes-em-andamento` | O ícone de carregamento no lugar do ícone de todo botão que manda algo ao servidor, do clique até a resposta, sem clique repetido, a pedido de Marcelo | 0062, 0065, 0131 | Concluída |
 | Fundação-6 | `infraestrutura-azure` | Terraform com App Service, Azure SQL, Key Vault, Application Insights (com o teste de disponibilidade e os alertas do ADR-0112), backups do Azure SQL (ADR-0059) e registro do aplicativo no Entra | 0052, 0053, 0114 | Concluída em 25/10/2026 ([#83](https://github.com/MarceloMLR/fisco-projects/pull/83)) |
 | Fundação-6.1 | `chave-do-syncfusion-no-dev` | A chave do Syncfusion lida do Key Vault no `dev`, a pedido de Marcelo | 0051, 0087 | Concluída em 26/10/2026 ([#96](https://github.com/MarceloMLR/fisco-projects/pull/96)) |
 | Fundação-7 | `deploy-desenvolvimento` | Publicação automática no ambiente de desenvolvimento a cada merge; verificação de licenças dos pacotes do NuGet no PR | 0055, 0061, 0115, 0116 | Concluída em 25/10/2026 ([#85](https://github.com/MarceloMLR/fisco-projects/pull/85)) |

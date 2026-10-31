@@ -5,9 +5,7 @@ import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import ListSubheader from '@mui/material/ListSubheader';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -27,6 +25,7 @@ import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { documentFileUrl, opensInBrowser, statusesFor } from './documents';
 import { FileIcon } from './FileIcon';
 import { LinkDocumentDialog } from './LinkDocumentDialog';
+import { Button, IconButton } from '../components/Button';
 
 const section = {
   display: 'flex',
@@ -475,13 +474,7 @@ function DocumentDetailsContent({
             >
               {t('documents.remove.cancel')}
             </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => {
-                void remove();
-              }}
-            >
+            <Button variant="contained" color="error" onClick={() => remove()}>
               {t('documents.remove.confirm')}
             </Button>
           </>

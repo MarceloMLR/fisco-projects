@@ -9,8 +9,6 @@ import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import PlayArrowOutlined from '@mui/icons-material/PlayArrowOutlined';
 import ReplayOutlined from '@mui/icons-material/ReplayOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import type SvgIcon from '@mui/material/SvgIcon';
@@ -29,6 +27,7 @@ import { Dialog } from '../components/Dialog';
 import { Select } from '../components/Select';
 import type { PeopleChange } from './ticketChanges';
 import { PeopleChangeDialog, TransferDialog } from './TicketPeopleDialogs';
+import { Button, IconButton } from '../components/Button';
 
 const RichTextEditor = lazy(async () => ({
   default: (await import('../components/RichTextEditor')).RichTextEditor,
@@ -112,7 +111,7 @@ function ActionMessageDialog({
             type="submit"
             variant="contained"
             color={action === 'Cancel' ? 'error' : 'primary'}
-            disabled={busy}
+            loading={busy}
           >
             {t(`tickets.actions.${action}`)}
           </Button>
@@ -177,7 +176,7 @@ function PriorityDialog({
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.priorityChange.back')}
           </Button>
-          <Button type="submit" variant="contained" disabled={busy || priority === current}>
+          <Button type="submit" variant="contained" disabled={priority === current} loading={busy}>
             {t('tickets.priorityChange.save')}
           </Button>
         </>
@@ -220,11 +219,13 @@ export function TicketActions({
   const [prioritizing, setPrioritizing] = useState(false);
   const [changing, setChanging] = useState<PeopleChange>();
   const [transferring, setTransferring] = useState(false);
-  const [busy, setBusy] = useState(false);
+  // What is being sent: an action of the flow or the priority. The others wait for it (ADR-0131).
+  const [running, setRunning] = useState<TicketAction | 'priority'>();
+  const busy = running !== undefined;
   const [primary, ...others] = orderedActions(ticket.permissions.actions);
 
   const take = async (action: TicketAction, body?: string) => {
-    setBusy(true);
+    setRunning(action);
     try {
       const { response } = await api.POST('/api/tickets/{number}/transitions', {
         params: { path: { number: ticket.number } },
@@ -244,12 +245,12 @@ export function TicketActions({
     } catch {
       onMessage(t('tickets.actionFailed'));
     } finally {
-      setBusy(false);
+      setRunning(undefined);
     }
   };
 
   const prioritize = async (priority: TicketPriority) => {
-    setBusy(true);
+    setRunning('priority');
     try {
       const { response } = await api.PUT('/api/tickets/{number}/priority', {
         params: { path: { number: ticket.number } },
@@ -265,7 +266,7 @@ export function TicketActions({
     } catch {
       onMessage(t('tickets.priorityChange.failed'));
     } finally {
-      setBusy(false);
+      setRunning(undefined);
     }
   };
 
@@ -291,7 +292,8 @@ export function TicketActions({
       {primary !== undefined && (
         <Button
           variant="contained"
-          disabled={busy}
+          disabled={busy && running !== primary.action}
+          loading={running === primary.action}
           startIcon={PrimaryIcon === undefined ? undefined : <PrimaryIcon aria-hidden />}
           onClick={() => {
             choose(primary);

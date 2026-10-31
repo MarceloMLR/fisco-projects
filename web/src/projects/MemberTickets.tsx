@@ -1,6 +1,5 @@
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +11,7 @@ import { Dialog } from '../components/Dialog';
 import { Select } from '../components/Select';
 import { changePeople, ticketChangeProblemText } from '../tickets/ticketChanges';
 import { TicketStatusBadge } from '../tickets/TicketTags';
+import { Button } from '../components/Button';
 
 interface Person {
   id: string;
@@ -89,11 +89,9 @@ function HandOverDialog({
     .map((ticket) => ticket.number);
   const [assignee, setAssignee] = useState('');
   const [requester, setRequester] = useState('');
-  const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<string>();
 
   const handOver = async () => {
-    setBusy(true);
     setRefusal(undefined);
     try {
       for (const [kind, numbers, personId] of [
@@ -113,7 +111,6 @@ function HandOverDialog({
     } catch {
       setRefusal(t('projects.members.tickets.failed'));
     } finally {
-      setBusy(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
     }
   };
@@ -125,18 +122,14 @@ function HandOverDialog({
       onClose={onClose}
       onSubmit={(event) => {
         event.preventDefault();
-        void handOver();
+        return handOver();
       }}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('tickets.people.back')}
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={busy || (assignee === '' && requester === '')}
-          >
+          <Button type="submit" variant="contained" disabled={assignee === '' && requester === ''}>
             {t('projects.members.tickets.handOver')}
           </Button>
         </>

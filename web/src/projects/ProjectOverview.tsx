@@ -5,7 +5,6 @@ import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -23,6 +22,7 @@ import { type AttentionLine, attentionLines, deviationDue, milestoneText } from 
 import { OverviewTimeline } from './OverviewTimeline';
 import { useProjectOutlet } from './projectOutlet';
 import { memberToneOf } from './memberTone';
+import { Button } from '../components/Button';
 
 const listSx = { margin: 0, padding: 0, listStyle: 'none' } as const;
 

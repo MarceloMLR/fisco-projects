@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { signInProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { microsoftSignIn } from '../session/microsoftSignIn';
+import { expectBusy } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { marina, problem, server, signedOut } from '../test/server';
 
@@ -208,7 +209,8 @@ describe('Entrada pelo Entra na tela', () => {
       body: { email: marina.email, returnUrl: '/', previousUserId: null },
       csrf: '1',
     });
-    expect(screen.getByRole('button', { name: text.submit })).toBeDisabled();
+    // Busy until the browser leaves for Microsoft (ADR-0131).
+    expectBusy(screen.getByRole('button', { name: text.submit }), text.submit);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

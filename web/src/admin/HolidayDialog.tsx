@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +11,7 @@ import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { maskTypedDay, parseTypedDay } from '../format/dates';
 import { useDates } from '../format/useDates';
+import { Button } from '../components/Button';
 
 const fieldErrors = {
   nameRequired: 'calendar.errors.nameRequired',
@@ -92,7 +92,7 @@ export function HolidayDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: {
@@ -146,15 +146,13 @@ export function HolidayDialog({
       open
       title={t(editing ? 'calendar.editHoliday' : 'calendar.newHoliday')}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('calendar.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(editing ? 'calendar.save' : 'calendar.include')}
           </Button>
         </>

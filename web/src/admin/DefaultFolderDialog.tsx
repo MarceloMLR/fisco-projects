@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -9,6 +8,7 @@ import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { problemType } from '../projects/projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   nameRequired: 'defaultFolders.errors.nameRequired',
@@ -52,7 +52,7 @@ export function DefaultFolderDialog({
     register,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { name: folder?.name ?? '' },
@@ -104,15 +104,13 @@ export function DefaultFolderDialog({
         folder === undefined ? 'defaultFolders.dialog.newTitle' : 'defaultFolders.dialog.editTitle',
       )}
       onClose={onClose}
-      onSubmit={(event) => {
-        void save(event);
-      }}
+      onSubmit={(event) => save(event)}
       actions={
         <>
           <Button variant="outlined" onClick={onClose}>
             {t('defaultFolders.dialog.cancel')}
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
+          <Button type="submit" variant="contained">
             {t(folder === undefined ? 'defaultFolders.dialog.add' : 'defaultFolders.dialog.save')}
           </Button>
         </>

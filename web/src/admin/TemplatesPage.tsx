@@ -4,9 +4,7 @@ import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
@@ -20,6 +18,7 @@ import { Dialog } from '../components/Dialog';
 import { StatusBadge } from '../components/StatusBadge';
 import { Page } from '../shell/Page';
 import { TemplateDialog } from './TemplateDialog';
+import { Button, IconButton } from '../components/Button';
 
 /** The models fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
@@ -316,12 +315,8 @@ export function TemplatesPage() {
             <Button
               variant="contained"
               color="error"
-              disabled={pending}
-              onClick={() => {
-                if (removing !== undefined) {
-                  void remove(removing);
-                }
-              }}
+              loading={pending}
+              onClick={() => (removing === undefined ? undefined : remove(removing))}
             >
               {t('templates.remove.confirm')}
             </Button>

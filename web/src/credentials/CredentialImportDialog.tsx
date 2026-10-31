@@ -2,7 +2,6 @@ import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import FilterListOutlined from '@mui/icons-material/FilterListOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   type DragEvent,
@@ -38,6 +37,7 @@ import {
   type SheetRow,
   suggestMapping,
 } from './credentialImport';
+import { Button } from '../components/Button';
 
 const pageSize = 100;
 const none = 'none';
@@ -450,8 +450,8 @@ export function CredentialImportDialog({
       >
         <UploadFileOutlined aria-hidden sx={{ fontSize: 40, color: 'var(--text-secondary)' }} />
         <Box sx={{ color: 'var(--text-secondary)' }}>{t('credentials.import.pick')}</Box>
-        <Button variant="contained" disabled={reading} onClick={() => input.current?.click()}>
-          {reading ? t('credentials.import.reading') : t('credentials.import.choose')}
+        <Button variant="contained" loading={reading} onClick={() => input.current?.click()}>
+          {t('credentials.import.choose')}
         </Button>
         {refusal !== undefined && <Alert tone="danger">{refusal}</Alert>}
       </Box>
@@ -493,7 +493,7 @@ export function CredentialImportDialog({
               />
             </FormField>
           )}
-          <Button variant="outlined" disabled={reading} onClick={() => input.current?.click()}>
+          <Button variant="outlined" loading={reading} onClick={() => input.current?.click()}>
             {t('credentials.import.change')}
           </Button>
         </Box>
@@ -598,10 +598,9 @@ export function CredentialImportDialog({
           </Button>
           <Button
             variant="contained"
-            disabled={chosen.length === 0 || importing}
-            onClick={() => {
-              void save();
-            }}
+            disabled={chosen.length === 0}
+            loading={importing}
+            onClick={() => save()}
           >
             {t('credentials.import.confirm', { count: chosen.length })}
           </Button>

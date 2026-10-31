@@ -1,7 +1,6 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +24,7 @@ import { theme } from '../theme/theme';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { summaryText } from './schedule';
 import { LateCounts } from './ScheduleStatus';
+import { Button } from '../components/Button';
 
 const pageSize = 25;
 const searchDelay = 300;

@@ -1,7 +1,6 @@
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -19,6 +18,7 @@ import {
 import { predecessorNames, type ScheduleDisplay, scheduleRows } from './schedule';
 import { choiceOf, ganttStripSx, type PrintScale, printScale, scaleSpans } from './schedulePrint';
 import { TimelineLegend } from './ScheduleTimeline';
+import { Button } from '../components/Button';
 
 /** The width of the strip of the timeline in a line, in an A4 page in landscape, beside the columns of the table. */
 const stripWidth = 520;

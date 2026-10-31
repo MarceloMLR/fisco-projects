@@ -4,8 +4,6 @@ import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
@@ -20,6 +18,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { VendorDialog } from './VendorDialog';
+import { Button, IconButton } from '../components/Button';
 
 /** The vendors fit in one page: an installation keeps a few of them. */
 const pageSize = 100;

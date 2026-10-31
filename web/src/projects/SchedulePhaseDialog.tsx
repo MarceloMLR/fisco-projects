@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -13,6 +12,7 @@ import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
 import { TextField } from '../components/TextField';
 import { invalidFields, problemType } from './projectForm';
+import { Button } from '../components/Button';
 
 const errors = {
   nameRequired: 'projects.schedule.phaseDialog.nameRequired',
@@ -59,7 +59,7 @@ export function SchedulePhaseDialog({
     control,
     handleSubmit,
     setError,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: { name: phase?.name ?? '' },
@@ -142,9 +142,7 @@ export function SchedulePhaseDialog({
             : 'projects.schedule.phaseDialog.editTitle',
         )}
         onClose={onClose}
-        onSubmit={(event) => {
-          void save(event);
-        }}
+        onSubmit={(event) => save(event)}
         actions={
           <>
             {phase !== undefined && (
@@ -162,7 +160,7 @@ export function SchedulePhaseDialog({
             <Button variant="outlined" onClick={onClose}>
               {t('projects.schedule.phaseDialog.cancel')}
             </Button>
-            <Button type="submit" variant="contained" disabled={isSubmitting}>
+            <Button type="submit" variant="contained">
               {t(
                 phase === undefined
                   ? 'projects.schedule.phaseDialog.create'
@@ -211,10 +209,8 @@ export function SchedulePhaseDialog({
               <Button
                 variant="contained"
                 color="error"
-                disabled={removingPending}
-                onClick={() => {
-                  void remove();
-                }}
+                loading={removingPending}
+                onClick={() => remove()}
               >
                 {t('projects.schedule.removePhase.confirm')}
               </Button>

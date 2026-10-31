@@ -1,6 +1,5 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { ticketNumberOf } from './tickets';
 import { TicketDue } from './TicketDue';
 import { VendorSection } from './TicketVendors';
+import { Button } from '../components/Button';
 
 const tagSx = {
   display: 'inline-flex',
@@ -274,10 +274,8 @@ function SidePanel({
         <Button
           variant="outlined"
           size="small"
-          disabled={busy}
-          onClick={() => {
-            void follow();
-          }}
+          loading={busy}
+          onClick={() => follow()}
           sx={{ marginTop: 'var(--space-3)' }}
         >
           {ticket.following ? t('tickets.panel.unfollow') : t('tickets.panel.follow')}

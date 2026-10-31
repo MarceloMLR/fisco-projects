@@ -5,7 +5,6 @@ import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import type SvgIcon from '@mui/material/SvgIcon';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,6 +16,8 @@ import { TextArea } from '../components/TextArea';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
 import { isAcceptanceError, refusalSchema } from './acceptances';
+import { Button } from '../components/Button';
+import { Form } from '../components/Form';
 
 /** The address of the API behind the link of a signer: /sign/{token} → /api/local-signatures/{token}. */
 const documentUrl = (token: string) =>
@@ -245,13 +246,7 @@ export function LocalSigningPage() {
             >
               {t('localSigning.refuse')}
             </Button>
-            <Button
-              variant="contained"
-              disabled={signing}
-              onClick={() => {
-                void sign();
-              }}
-            >
+            <Button variant="contained" loading={signing} onClick={() => sign()}>
               {t('localSigning.sign')}
             </Button>
           </Box>
@@ -376,7 +371,7 @@ function RefusalForm({
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<{ reason: string }>({
     resolver: zodResolver(refusalSchema),
     defaultValues: { reason: '' },
@@ -405,12 +400,8 @@ function RefusalForm({
   });
 
   return (
-    <Box
-      component="form"
-      noValidate
-      onSubmit={(event) => {
-        void refuse(event);
-      }}
+    <Form
+      onSubmit={(event) => refuse(event)}
       sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
     >
       {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
@@ -433,10 +424,10 @@ function RefusalForm({
         <Button variant="outlined" onClick={onBack}>
           {t('localSigning.back')}
         </Button>
-        <Button type="submit" variant="contained" color="error" disabled={isSubmitting}>
+        <Button type="submit" variant="contained" color="error">
           {t('localSigning.confirmRefusal')}
         </Button>
       </Box>
-    </Box>
+    </Form>
   );
 }

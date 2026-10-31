@@ -7,8 +7,6 @@ import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
@@ -29,6 +27,7 @@ import { type ScheduleDisplay, stepText } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
 import { useScheduleStep } from './useScheduleStep';
+import { Button, IconButton } from '../components/Button';
 
 const displayOptions = ['baseline', 'critical'] as const;
 
@@ -301,13 +300,7 @@ export function ScheduleMoreMenu({
             >
               {t('projects.baseline.confirm.back')}
             </Button>
-            <Button
-              variant="contained"
-              disabled={pending}
-              onClick={() => {
-                void save();
-              }}
-            >
+            <Button variant="contained" loading={pending} onClick={() => save()}>
               {t('projects.baseline.update')}
             </Button>
           </>
