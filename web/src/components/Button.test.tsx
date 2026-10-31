@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { AppThemeProvider } from '../theme/AppThemeProvider';
 import { Button, IconButton } from './Button';
 import { Form } from './Form';
+import { noteRequest } from '../api/activity';
 import { minimumBusyMs } from './pending';
 
 /** An answer of the server held until the test lets it go, with success or error. */
@@ -228,7 +229,11 @@ describe('Botões em andamento', () => {
         startIcon={<CheckOutlined data-testid="icon" />}
         onClick={() => {
           calls += 1;
-          return Promise.resolve();
+          // A call to the API that answers after 120 ms.
+          noteRequest();
+          return new Promise<void>((done) => {
+            setTimeout(done, 120);
+          });
         }}
       >
         Salvar
@@ -237,7 +242,7 @@ describe('Botões em andamento', () => {
     const button = screen.getByRole('button', { name: 'Salvar' });
 
     fireEvent.click(button);
-    // The answer comes at once, but the button stays busy until half a second from the click.
+    // The answer comes after 120 ms, but the button stays busy until half a second from the click.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(minimumBusyMs - 100);
     });
@@ -261,8 +266,13 @@ describe('Botões em andamento', () => {
         <Button
           disabled={!changed}
           onClick={() => {
-            setChanged(false);
-            return Promise.resolve();
+            noteRequest();
+            return new Promise<void>((done) => {
+              setTimeout(() => {
+                setChanged(false);
+                done();
+              }, 120);
+            });
           }}
         >
           Salvar
@@ -274,7 +284,7 @@ describe('Botões em andamento', () => {
 
     fireEvent.click(button);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10);
+      await vi.advanceTimersByTimeAsync(200);
     });
 
     // Busy, not grey, while the half second lasts; then disabled.
@@ -285,5 +295,41 @@ describe('Botões em andamento', () => {
     });
     expect(button).toBeDisabled();
     expect(spinnerOf(button)).toBeNull();
+  });
+
+  it('Formulário recusado sem ir ao servidor não fica em andamento', async () => {
+    vi.useFakeTimers();
+    let sent = 0;
+    themed(
+      <Form
+        onSubmit={(event) => {
+          event.preventDefault();
+          // Refused by its own checks, without going to the server.
+          return Promise.resolve();
+        }}
+      >
+        <Button
+          type="submit"
+          onClick={() => {
+            sent += 1;
+          }}
+        >
+          Salvar
+        </Button>
+      </Form>,
+    );
+    const save = screen.getByRole('button', { name: 'Salvar' });
+
+    fireEvent.click(save);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+
+    expect(spinnerOf(save)).toBeNull();
+    fireEvent.click(save);
+    expect(sent).toBe(2);
   });
 });

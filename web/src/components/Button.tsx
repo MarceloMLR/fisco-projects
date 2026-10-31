@@ -6,7 +6,7 @@ import MuiIconButton, {
 } from '@mui/material/IconButton';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { type ElementType, type MouseEvent, useContext } from 'react';
-import { FormPending, useMinimumBusy, usePendingAction } from './pending';
+import { FormPending, useFormSending, useMinimumBusy, usePendingAction } from './pending';
 
 type Click = (event: MouseEvent<HTMLButtonElement>) => unknown;
 
@@ -76,9 +76,17 @@ function ignore(event: MouseEvent<HTMLButtonElement>) {
  * least half a second (ADR-0132), and not grey meanwhile, even when it becomes disabled with the answer.
  */
 export function Button({ onClick, loading, startIcon, type, sx, disabled, ...props }: ButtonProps) {
-  const sending = useContext(FormPending);
-  const [pending, run] = usePendingAction(onClick);
-  const busy = useMinimumBusy(Boolean(loading) || pending || (type === 'submit' && sending));
+  const around = useContext(FormPending);
+  const submit = type === 'submit';
+  // A submit button outside its form, tied by the attribute form, as a Salvar in the header of a page.
+  const tied = useFormSending(submit ? props.form : undefined);
+  const form = props.form === undefined ? around : tied;
+  const [pending, run, waited] = usePendingAction(onClick);
+  // What the screen passes in loading is taken as waiting for the server, as a mutation.
+  const busy = useMinimumBusy(
+    Boolean(loading) || pending || (submit && form.sending),
+    Boolean(loading) || waited || (submit && form.waited),
+  );
   return (
     <MuiButton
       {...props}
@@ -102,8 +110,8 @@ export function IconButton({
   disabled,
   ...props
 }: IconButtonProps) {
-  const [pending, run] = usePendingAction(onClick);
-  const busy = useMinimumBusy(Boolean(loading) || pending);
+  const [pending, run, waited] = usePendingAction(onClick);
+  const busy = useMinimumBusy(Boolean(loading) || pending, Boolean(loading) || waited);
   return (
     <MuiIconButton
       {...props}

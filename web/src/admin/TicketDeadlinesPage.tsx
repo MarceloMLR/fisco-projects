@@ -220,13 +220,7 @@ export function TicketDeadlinesPage() {
         >
           {t('ticketDeadlines.discard')}
         </Button>
-        <Button
-          variant="contained"
-          type="submit"
-          form="ticket-deadlines-form"
-          disabled={!isDirty}
-          loading={isSubmitting}
-        >
+        <Button variant="contained" type="submit" form="ticket-deadlines-form" disabled={!isDirty}>
           {t('ticketDeadlines.save')}
         </Button>
       </Box>

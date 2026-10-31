@@ -688,13 +688,7 @@ export function SettingsPage() {
         <Button variant="outlined" disabled={!changed || isSubmitting} onClick={discard}>
           {t('settings.discard')}
         </Button>
-        <Button
-          variant="contained"
-          type="submit"
-          form="settings-form"
-          disabled={!changed}
-          loading={isSubmitting}
-        >
+        <Button variant="contained" type="submit" form="settings-form" disabled={!changed}>
           {t('settings.save')}
         </Button>
       </Box>

@@ -1,4 +1,4 @@
-import { within } from '@testing-library/react';
+import { waitFor, within } from '@testing-library/react';
 import { expect } from 'vitest';
 
 /** An answer of the simulated API held until the test lets it go, to see the button busy meanwhile (ADR-0131). */
@@ -23,4 +23,11 @@ export function expectBusy(button: HTMLElement, label?: string) {
 export function expectIdle(button: HTMLElement) {
   expect(button).not.toHaveAttribute('aria-busy');
   expect(within(button).queryByTestId('button-spinner')).toBeNull();
+}
+
+/** Waits for the button to end its busy state, as a person who reads the answer before clicking again. */
+export async function untilIdle(button: HTMLElement) {
+  await waitFor(() => {
+    expectIdle(button);
+  });
 }

@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type ClientRow, clientProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { untilIdle } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { clientsPage, demoClients, problem, server, signedInAs } from '../test/server';
 
@@ -380,6 +381,8 @@ describe('Diálogo do cliente', () => {
     expect(field(dialog, cnpjLabel)).toHaveAttribute('aria-invalid', 'true');
 
     fireEvent.change(field(dialog, cnpjLabel), { target: { value: '77.555.888/0001-53' } });
+    // The button ends its busy state before the second sending (ADR-0132).
+    await untilIdle(within(dialog).getByRole('button', { name: text.include }));
     fireEvent.click(within(dialog).getByRole('button', { name: text.include }));
 
     expect(
@@ -511,6 +514,7 @@ describe('Diálogo do cliente', () => {
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(text.errors.logoFormat);
     // The client is saved: saving again changes it, and does not include another.
+    await untilIdle(within(dialog).getByRole('button', { name: text.include }));
     fireEvent.click(within(dialog).getByRole('button', { name: text.include }));
     await waitFor(() => {
       expect(requests).toHaveLength(4);

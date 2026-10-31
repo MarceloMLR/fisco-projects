@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Credential } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { credentialsList, demoCredentials, demoPasswordOf } from '../test/demoCredentials';
-import { expectBusy, heldAnswer } from '../test/busy';
+import { expectBusy, heldAnswer, untilIdle } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoProjects, problem, server, signedInAs } from '../test/server';
 import { credentialRows } from './credentials';
@@ -165,6 +165,7 @@ describe('Acessos do projeto', () => {
     expect(passwordIn(1)).toBe(text.mask);
     expect(passwordAsks).toEqual([erpProduction]);
 
+    await untilIdle(screen.getByRole('button', { name: named(text.hide, 'ERP') }));
     fireEvent.click(screen.getByRole('button', { name: named(text.hide, 'ERP') }));
     await waitFor(() => {
       expect(passwordIn(2)).toBe(text.mask);

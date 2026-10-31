@@ -167,7 +167,7 @@ export function OpenTicketPage() {
     setError,
     setValue,
     getValues,
-    formState: { errors: fieldErrors, isSubmitting },
+    formState: { errors: fieldErrors },
   } = useForm<FormValues>({
     resolver: zodResolver(form),
     defaultValues: {
@@ -466,7 +466,7 @@ export function OpenTicketPage() {
         >
           {t('tickets.form.cancel')}
         </Button>
-        <Button variant="contained" type="submit" form="open-ticket" loading={isSubmitting}>
+        <Button variant="contained" type="submit" form="open-ticket">
           {t('tickets.form.submit')}
         </Button>
       </Box>
