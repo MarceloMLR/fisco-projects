@@ -22,6 +22,10 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager
 /// (ADR-0122).
 /// </param>
+/// <param name="CanExportSchedule">
+/// Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed
+/// project: the Administrator and the manager (ADR-0136).
+/// </param>
 public sealed record ProjectPermissions(
     bool CanView,
     bool CanEditData,
@@ -31,9 +35,10 @@ public sealed record ProjectPermissions(
     bool CanEditSchedule,
     bool CanUpdateOwnProgress,
     bool CanDelete = false,
-    bool CanChooseFolder = false)
+    bool CanChooseFolder = false,
+    bool CanExportSchedule = false)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true, true);
     private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)

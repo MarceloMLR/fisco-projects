@@ -243,7 +243,7 @@ public sealed class MsProjectImportTests
         source.SetReached(acceptance.Id, true, Today);
         var document = MsProjectExport.Of(
             "ERP-FIN", "Implantação do ERP", source, source.Figures(Today), Days,
-            new Dictionary<Guid, string> { [Rafael] = "Rafael Souza" },
+            new Dictionary<Guid, MsProjectOwner> { [Rafael] = new("Rafael Souza", "rafael.souza@empresa.example") },
             new DateTime(2026, 10, 16, 12, 0, 0, DateTimeKind.Utc),
             "Cliente Exemplo");
 
@@ -254,7 +254,9 @@ public sealed class MsProjectImportTests
         imported.Warnings.Should().BeEmpty();
         made.Phases.Select(phase => phase.Name).Should().Equal(source.Phases.Select(phase => phase.Name));
         Shape(made).Should().BeEquivalentTo(Shape(source));
-        imported.Resources.Select(resource => (resource.Name, resource.Tasks)).Should().Equal(("Rafael Souza", 2), ("Cliente Exemplo", 1));
+        imported.Resources.Should().Equal(
+            new MsProjectImportedResource("Rafael Souza", "rafael.souza@empresa.example", 2),
+            new MsProjectImportedResource("Cliente Exemplo", null, 1));
     }
 
     private static ScheduleItem Add(

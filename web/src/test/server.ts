@@ -322,6 +322,7 @@ function demoProject(
       canEditSchedule: status !== 'Completed' && status !== 'Cancelled',
       canDelete: false,
       canChooseFolder: false,
+      canExportSchedule: true,
     },
     scheduleStart: null,
     scheduleEnd: null,

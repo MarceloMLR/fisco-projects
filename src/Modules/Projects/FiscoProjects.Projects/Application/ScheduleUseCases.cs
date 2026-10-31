@@ -809,9 +809,13 @@ public sealed class RedoScheduleChange(IProjectStore projects, IScheduleStore sc
 /// <summary>A file to download: its name, its media type and its content.</summary>
 public sealed record ExportedFile(string Name, string MediaType, string Content);
 
+/// <summary>The file, or why there is none: the project does not exist for the person, or the person may not download it.</summary>
+public sealed record ExportResult(ExportedFile? File, bool Forbidden = false);
+
 /// <summary>
-/// The schedule of a project in the XML of the MS Project (ADR-0021, ADR-0051), for whoever sees it (ADR-0043): the
-/// dates the server computed, the calendar of the installation and the baseline.
+/// The schedule of a project in the XML of the MS Project (ADR-0021, ADR-0051), with the e-mails of the people in charge,
+/// for the Administrator and the manager, also of a closed project (ADR-0136): the dates the server computed, the
+/// calendar of the installation and the baseline.
 /// </summary>
 public sealed class ExportScheduleToMsProject(
     IProjectStore projects,
@@ -822,23 +826,32 @@ public sealed class ExportScheduleToMsProject(
     TimeProvider time,
     IClientStore clients)
 {
-    /// <returns>The file, or null when the project does not exist for the person.</returns>
-    public async Task<ExportedFile?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
+    public async Task<ExportResult> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
     {
         var project = await projects.FindAsync(projectId, cancellationToken);
-        if (project is null || ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId)) is not { CanView: true })
+        var permissions = project is null ? null : ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId));
+        if (project is null || permissions is not { CanView: true })
         {
-            return null;
+            return new ExportResult(null);
+        }
+
+        if (!permissions.CanExportSchedule)
+        {
+            return new ExportResult(null, Forbidden: true);
         }
 
         var schedule = await schedules.FindAsync(projectId, cancellationToken) ?? new Schedule(projectId);
         var figures = schedule.Figures(await clock.TodayAsync(cancellationToken));
         var days = await calendar.GetAsync(cancellationToken);
-        var names = await PeopleNames.OfAsync(
-            users, schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value), cancellationToken);
+        var ownerIds = schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value).Distinct().ToList();
+        var owners = ownerIds.Count == 0
+            ? new Dictionary<Guid, MsProjectOwner>()
+            : (await users.PeopleAsync(ownerIds, cancellationToken)).ToDictionary(
+                person => person.Id, person => new MsProjectOwner(person.Name, person.Email));
         var client = project.ClientId is { } clientId ? await clients.FindAsync(clientId, cancellationToken) : null;
         var document = MsProjectExport.Of(
-            project.Code, project.Name, schedule, figures, days, names, time.GetUtcNow().UtcDateTime, client?.Name);
-        return new ExportedFile($"{project.Code}-cronograma.xml", "application/xml", document.Declaration + Environment.NewLine + document);
+            project.Code, project.Name, schedule, figures, days, owners, time.GetUtcNow().UtcDateTime, client?.Name);
+        return new ExportResult(new ExportedFile(
+            $"{project.Code}-cronograma.xml", "application/xml", document.Declaration + Environment.NewLine + document));
     }
 }

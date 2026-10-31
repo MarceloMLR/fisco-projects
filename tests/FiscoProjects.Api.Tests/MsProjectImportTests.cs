@@ -257,8 +257,11 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         plan.SelectMany(item => item.GetProperty("after").EnumerateArray()
                 .Select(before => $"{names[before.GetInt32()]} → {item.GetProperty("name").GetString()}"))
             .Should().BeEquivalentTo(["Levantar regras → Roteiro", "Roteiro → Execução", "Roteiro → Aceite"]);
-        preview.GetProperty("resources").EnumerateArray().Select(resource => resource.GetProperty("name").GetString())
-            .Should().Equal("Rafael Souza");
+        // The XML has the e-mail of each person in charge, so the preview suggests the person again (ADR-0136).
+        var rafael = preview.GetProperty("resources").EnumerateArray().Single();
+        (rafael.GetProperty("name").GetString(), rafael.GetProperty("email").GetString())
+            .Should().Be(("Rafael Souza", "rafael.souza@empresa.example"));
+        rafael.GetProperty("person").GetProperty("id").GetGuid().Should().Be(scene.Rafael);
         preview.GetProperty("warnings").GetArrayLength().Should().Be(0);
     }
 

@@ -3601,6 +3601,8 @@ export interface components {
             canDelete: boolean;
             /** @description Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122). */
             canChooseFolder: boolean;
+            /** @description Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136). */
+            canExportSchedule: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -7579,6 +7581,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

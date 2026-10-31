@@ -3500,6 +3500,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -14879,7 +14889,8 @@
           "canManageManagers",
           "canEditSchedule",
           "canDelete",
-          "canChooseFolder"
+          "canChooseFolder",
+          "canExportSchedule"
         ],
         "type": "object",
         "properties": {
@@ -14905,6 +14916,10 @@
           "canChooseFolder": {
             "type": "boolean",
             "description": "Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122)."
+          },
+          "canExportSchedule": {
+            "type": "boolean",
+            "description": "Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136)."
           }
         },
         "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."

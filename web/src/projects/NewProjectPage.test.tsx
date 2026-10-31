@@ -101,6 +101,7 @@ beforeEach(() => {
           canEditSchedule: true,
           canDelete: false,
           canChooseFolder: false,
+          canExportSchedule: true,
         },
         scheduleStart: null,
         scheduleEnd: null,

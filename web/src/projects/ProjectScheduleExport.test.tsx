@@ -17,7 +17,7 @@ const text = ptBR.projects;
 
 let project: DemoProject;
 let schedule: Schedule;
-let permissions: Pick<Project['permissions'], 'canEditSchedule'>;
+let permissions: Partial<Project['permissions']>;
 
 beforeEach(() => {
   const projects = demoProjects();
@@ -27,7 +27,7 @@ beforeEach(() => {
   }
   project = erp;
   schedule = demoSchedule();
-  permissions = { canEditSchedule: true };
+  permissions = { canEditSchedule: true, canExportSchedule: true };
   signedInAs('ProjectManager');
   server.use(
     http.get('/api/projects', ({ request }) =>
@@ -85,7 +85,8 @@ describe('Exportar o cronograma pela tela', () => {
   });
 
   it('Exportar sem editar', async () => {
-    permissions = { canEditSchedule: false };
+    // The XML carries the e-mails of the people in charge: only the Administrator and the manager (ADR-0136).
+    permissions = { canEditSchedule: false, canChangeStatus: false, canExportSchedule: false };
     signedInAs('User');
 
     const menu = await openMore();
@@ -94,7 +95,16 @@ describe('Exportar o cronograma pela tela', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual([text.export.pdf, text.export.xml]);
+    ).toEqual([text.export.pdf]);
+  });
+
+  it('XML no menu da gestão', async () => {
+    project = { ...project, status: 'Completed' };
+    permissions = { canEditSchedule: false, canChangeStatus: true, canExportSchedule: true };
+
+    const menu = await openMore();
+
+    expect(within(menu).getByRole('menuitem', { name: text.export.pdf })).toBeVisible();
     // The XML is a file the server makes, downloaded by the link.
     expect(within(menu).getByRole('menuitem', { name: text.export.xml })).toHaveAttribute(
       'href',

@@ -44,6 +44,7 @@ beforeEach(() => {
     canEditSchedule: true,
     canDelete: false,
     canChooseFolder: false,
+    canExportSchedule: true,
   };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
@@ -204,6 +205,7 @@ describe('Ações do projeto', () => {
       canEditSchedule: false,
       canDelete: false,
       canChooseFolder: false,
+      canExportSchedule: false,
     };
     await openProject();
 
@@ -326,6 +328,7 @@ describe('Ações do projeto', () => {
       canEditSchedule: false,
       canDelete: false,
       canChooseFolder: false,
+      canExportSchedule: false,
     };
     await openProject();
 

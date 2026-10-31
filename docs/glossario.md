@@ -108,6 +108,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Caminho crítico | CriticalPath | |
 | Progresso | Progress | De 0 a 100% numa tarefa; o da fase e o do projeto são ponderados pela duração (ADR-0020) |
 | Modelo de projeto | ProjectTemplate | |
+| Exportar para o MS Project (XML) | ExportScheduleToMsProject, MsProjectExport, CanExportSchedule, `canExportSchedule` | O XML do cronograma, com o nome e o e-mail de cada responsável, só para o administrador e o gerente (ADR-0021, ADR-0136) |
 | Plano do cronograma | SchedulePlanOutline | As fases, os itens e as dependências que o `Schedule.ApplyTemplate` aplica num projeto novo, vindos de um modelo ou do MS Project (ADR-0017, ADR-0135) |
 | A partir do MS Project; prévia do arquivo | MsProjectImport, PreviewMsProjectImport, `POST /api/projects/ms-project-preview` | Lê o XML do MS Project sem guardar e devolve o cronograma convertido, com as datas, os recursos e os avisos (ADR-0135) |
 | Avisos da conversão | MsProjectWarning, MsProjectWarningKind | O que mudou do arquivo para o cronograma, com os nomes: níveis, dependências, intervalos, durações, nomes e recursos (ADR-0135) |

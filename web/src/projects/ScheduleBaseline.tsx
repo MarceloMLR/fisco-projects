@@ -123,8 +123,9 @@ export function DisplayChecks({
 /**
  * The "⋮" of the tab (ADR-0071). For who edits the schedule: "Refazer" the last change undone (ADR-0091), and "Salvar
  * linha de base", which saves it right away, or, with one saved, "Atualizar linha de base", which asks first, saying
- * the day of the baseline it replaces (ADR-0021). For everyone who sees it: "Exportar em PDF", by the print page, and
- * "Exportar para o MS Project (XML)", a file the server makes (ADR-0021, ADR-0043).
+ * the day of the baseline it replaces (ADR-0021). For everyone who sees it: "Exportar em PDF", by the print page; for
+ * the Administrator and the manager, also of a closed project, "Exportar para o MS Project (XML)", a file the server
+ * makes with the e-mails of the people in charge (ADR-0021, ADR-0136).
  */
 export function ScheduleMoreMenu({
   project,
@@ -275,18 +276,20 @@ export function ScheduleMoreMenu({
           <PictureAsPdfOutlined aria-hidden />
           {t('projects.export.pdf')}
         </MenuItem>
-        <MenuItem
-          component="a"
-          href={`/api/projects/${project.id}/schedule/ms-project`}
-          download
-          disabled={schedule.start === null}
-          onClick={() => {
-            setAnchor(undefined);
-          }}
-        >
-          <FileDownloadOutlined aria-hidden />
-          {t('projects.export.xml')}
-        </MenuItem>
+        {project.permissions.canExportSchedule && (
+          <MenuItem
+            component="a"
+            href={`/api/projects/${project.id}/schedule/ms-project`}
+            download
+            disabled={schedule.start === null}
+            onClick={() => {
+              setAnchor(undefined);
+            }}
+          >
+            <FileDownloadOutlined aria-hidden />
+            {t('projects.export.xml')}
+          </MenuItem>
+        )}
       </Menu>
       <Dialog
         open={confirming}

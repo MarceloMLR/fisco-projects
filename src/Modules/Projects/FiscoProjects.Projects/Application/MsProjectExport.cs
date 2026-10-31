@@ -8,11 +8,14 @@ namespace FiscoProjects.Projects.Application;
 /// <summary>
 /// The schedule of a project in the XML format of the MS Project (MSPDI), built on the server (ADR-0021, ADR-0051): the
 /// phases as summary tasks of level 1, the tasks and milestones in level 2 and the subtasks in level 3, in the order
-/// of the Lista, with their dates, durations in business days, progress, owners, "finish to start" dependencies and
-/// baseline, and the calendar of the installation for the period. Every item with dates of its own keeps its start by
+/// of the Lista, with their dates, durations in business days, progress, owners (with their e-mails, ADR-0136), "finish
+/// to start" dependencies and baseline, and the calendar of the installation for the period. Every item with dates of its own keeps its start by
 /// a "start no earlier than" constraint, so the MS Project opens it with the same dates. The elements follow the order
 /// of the schema of the MS Project.
 /// </summary>
+/// <summary>A person in charge of tasks, as a resource of the file: the name and the e-mail (none for an anonymized person).</summary>
+public sealed record MsProjectOwner(string Name, string? Email);
+
 public static class MsProjectExport
 {
     public static readonly XNamespace Ns = "http://schemas.microsoft.com/project";
@@ -28,14 +31,14 @@ public static class MsProjectExport
         Schedule schedule,
         ScheduleFigures figures,
         IBusinessDays days,
-        IReadOnlyDictionary<Guid, string> ownerNames,
+        IReadOnlyDictionary<Guid, MsProjectOwner> owners,
         DateTime createdAt,
         string? clientName = null)
     {
         ArgumentNullException.ThrowIfNull(schedule);
         ArgumentNullException.ThrowIfNull(figures);
         ArgumentNullException.ThrowIfNull(days);
-        ArgumentNullException.ThrowIfNull(ownerNames);
+        ArgumentNullException.ThrowIfNull(owners);
         var start = figures.Start ?? DateOnly.FromDateTime(createdAt);
         var end = figures.End ?? start;
         // The numbers first: a dependency may point to an item further on.
@@ -73,23 +76,25 @@ public static class MsProjectExport
             : Summary(index + 1, line.Outline, 1, line.Phase.Phase.Name, line.Phase.Start!.Value, line.Phase.End!.Value,
                 line.Phase.Progress, days)));
 
-        var owners = schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value).Distinct().ToList();
-        // The client in charge of tasks is one more resource, after the people (ADR-0102).
+        var ownerIds = schedule.Items.Where(item => item.OwnerId is not null).Select(item => item.OwnerId!.Value).Distinct().ToList();
+        // The client in charge of tasks is one more resource, after the people, with the name only (ADR-0102).
         var clientInCharge = clientName is not null && schedule.Items.Any(item => item.OwnedByClient);
-        var names = owners.Select(owner => ownerNames.TryGetValue(owner, out var ownerName) ? ownerName : string.Empty).ToList();
+        var people = ownerIds.Select(owner => owners.TryGetValue(owner, out var found) ? found : new MsProjectOwner(string.Empty, null)).ToList();
         if (clientInCharge)
         {
-            names.Add(clientName!);
+            people.Add(new MsProjectOwner(clientName!, null));
         }
 
-        var resources = names.Select((resourceName, index) => new XElement(Ns + "Resource",
+        // The e-mail lets the import suggest the person again (ADR-0135, ADR-0136).
+        var resources = people.Select((person, index) => new XElement(Ns + "Resource",
             new XElement(Ns + "UID", index + 1),
             new XElement(Ns + "ID", index + 1),
-            new XElement(Ns + "Name", resourceName),
-            new XElement(Ns + "Type", 1)));
+            new XElement(Ns + "Name", person.Name),
+            new XElement(Ns + "Type", 1),
+            string.IsNullOrWhiteSpace(person.Email) ? null : new XElement(Ns + "EmailAddress", person.Email)));
         int? ResourceOf(ScheduleItem item) => item.OwnerId is { } ownerId
-            ? owners.IndexOf(ownerId) + 1
-            : item.OwnedByClient && clientInCharge ? names.Count : null;
+            ? ownerIds.IndexOf(ownerId) + 1
+            : item.OwnedByClient && clientInCharge ? people.Count : null;
         var assignments = schedule.Items
             .Where(item => ResourceOf(item) is not null && uids.ContainsKey(item.Id))
             .Select((item, index) => new XElement(Ns + "Assignment",
