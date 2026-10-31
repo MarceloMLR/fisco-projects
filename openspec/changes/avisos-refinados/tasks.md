@@ -18,4 +18,4 @@
 ## 4. Documentação e verificação
 
 - [x] 4.1 `CLAUDE.md` e roadmap
-- [ ] 4.2 Lint, tipos, testes, build e specs
+- [x] 4.2 Lint, tipos, testes, build e specs
