@@ -29,7 +29,7 @@ public sealed class MsProjectImportTests
         schedule.Warnings.SingleOrDefault(warning => warning.Kind == kind)?.Names ?? [];
 
     [Fact(DisplayName = "Leitura do XML do MS Project")]
-    public void Read_HasTheLines_TheWorkResources_AndTheAssignments()
+    public void Read_HasTheLines_TheResources_AndTheAssignments()
     {
         var file = Read(Project(
             "Implantação do ERP",
@@ -48,7 +48,10 @@ public sealed class MsProjectImportTests
             (2, 2, "Parametrizar regras de ICMS", D(10, 13), D(10, 15), 40, false),
             (3, 2, "Aceite", D(10, 15), D(10, 15), 0, true));
         file.Rows[2].Links.Should().Equal(new MsProjectLink(2, 1, 4800, false));
-        file.Resources.Should().Equal(new MsProjectResource(1, "Carla Mendes", "carla.mendes@empresa.example"));
+        file.Resources.Should().Equal(
+            new MsProjectResource(1, "Carla Mendes", "carla.mendes@empresa.example"),
+            new MsProjectResource(2, "Servidor", null, IsWork: false),
+            new MsProjectResource(3, "Licenças", null, IsWork: false));
         file.Assignments.Should().Equal(new MsProjectAssignment(2, 1), new MsProjectAssignment(2, 2));
     }
 
@@ -122,6 +125,7 @@ public sealed class MsProjectImportTests
         schedule.Resources.Should().Equal(new MsProjectImportedResource("Carla Mendes", "carla.mendes@empresa.example", 1));
         schedule.ItemResources.Should().Equal(0, null);
         schedule.Warnings.Should().BeEmpty();
+        schedule.Counts.Should().Be(new MsProjectCounts(FileTasks: 3, Tasks: 3, FileResources: 1, Resources: 1));
     }
 
     [Fact(DisplayName = "Conversão do que não cabe no FiscoProjects")]
@@ -182,7 +186,7 @@ public sealed class MsProjectImportTests
     }
 
     [Fact(DisplayName = "Linhas que não vêm do arquivo")]
-    public void Convert_LeavesOutTheInactiveAndEmptyLines_WithTheLinesUnderThem()
+    public void Convert_LeavesOutTheInactiveBlankAndNamelessLines_WithAWarning()
     {
         var schedule = Converted(Project(
             "Projeto",
@@ -191,12 +195,58 @@ public sealed class MsProjectImportTests
                 new Line(2, 2, "Fica", D(10, 13), D(10, 13)),
                 new Line(3, 2, "Cancelada", D(10, 14), D(10, 15), Active: false),
                 new Line(4, 3, "Dentro da cancelada", D(10, 14), D(10, 15)),
-                new Line(5, 2, "Depende da cancelada", D(10, 16), D(10, 16), Links: [new Link(4)]),
+                new Line(5, 2, string.Empty, D(10, 14), D(10, 14), Blank: true),
+                new Line(6, 2, "Depende da cancelada", D(10, 16), D(10, 16), Links: [new Link(4)]),
+                new Line(7, 2, string.Empty, D(10, 16), D(10, 16)),
+                new Line(8, 3, "Dentro da sem nome", D(10, 16), D(10, 16)),
             ]));
 
         schedule.Outline.Items.Select(item => item.Name).Should().Equal("Fica", "Depende da cancelada");
         schedule.Outline.Dependencies.Should().BeEmpty();
-        schedule.Warnings.Should().BeEmpty();
+        schedule.Warnings.Select(warning => (warning.Kind, warning.Names, warning.Count)).Should().BeEquivalentTo(
+            [
+                (MsProjectWarningKind.InactiveTasks, new[] { "Cancelada", "Dentro da cancelada" }, 2),
+                (MsProjectWarningKind.BlankLines, Array.Empty<string>(), 3),
+            ],
+            options => options.WithStrictOrdering());
+        // The blank line goes alone, and the nameless one with the line under it; neither is a task of the file.
+        schedule.Counts.Should().Be(new MsProjectCounts(FileTasks: 6, Tasks: 3, FileResources: 0, Resources: 0));
+    }
+
+    [Fact(DisplayName = "Recursos que não vêm do arquivo")]
+    public void Convert_LeavesOutTheResourcesOfMaterialAndCost_AndTheWorkResourcesWithoutTasks_WithAWarning()
+    {
+        var schedule = Converted(Project(
+            "Recursos",
+            [
+                new Line(1, 1, "Fase", D(10, 13), D(10, 20)),
+                new Line(2, 2, "Com dois recursos", D(10, 13), D(10, 14)),
+                new Line(3, 2, "Inativa", D(10, 15), D(10, 16), Active: false),
+                new Line(4, 2, "Marco", D(10, 20), D(10, 20), Milestone: true),
+            ],
+            [
+                new Resource(1, "Carla Mendes"),
+                new Resource(2, "Segunda da tarefa"),
+                new Resource(3, "Só na inativa"),
+                new Resource(4, "Só no marco"),
+                new Resource(5, "Sem tarefas"),
+                new Resource(6, "Servidor", Type: 0),
+                new Resource(7, "Licenças", Type: 2),
+            ],
+            [(2, 1), (2, 2), (2, 6), (3, 3), (4, 4), (2, 7)]));
+
+        schedule.Resources.Should().Equal(new MsProjectImportedResource("Carla Mendes", null, 1));
+        schedule.ItemResources.Should().Equal(0, null);
+        schedule.Warnings.Select(warning => (warning.Kind, warning.Names, warning.Count)).Should().BeEquivalentTo(
+            [
+                (MsProjectWarningKind.SeveralResources, new[] { "Com dois recursos" }, 1),
+                (MsProjectWarningKind.NoOwner, new[] { "Marco" }, 1),
+                (MsProjectWarningKind.OtherResources, new[] { "Servidor", "Licenças" }, 2),
+                (MsProjectWarningKind.UnusedResources, new[] { "Segunda da tarefa", "Só na inativa", "Só no marco", "Sem tarefas" }, 4),
+                (MsProjectWarningKind.InactiveTasks, new[] { "Inativa" }, 1),
+            ],
+            options => options.WithStrictOrdering());
+        schedule.Counts.Should().Be(new MsProjectCounts(FileTasks: 4, Tasks: 3, FileResources: 7, Resources: 1));
     }
 
     [Fact(DisplayName = "Dependência que formaria ciclo")]

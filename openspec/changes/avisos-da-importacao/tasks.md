@@ -4,8 +4,8 @@
 
 ## 2. Conversão e API
 
-- [ ] 2.1 `MsProjectImport.Read` guarda os recursos de material e custo com o tipo; a conversão ganha os avisos `OtherResources`, `UnusedResources`, `InactiveTasks` e `BlankLines`, o `Count` de cada aviso e as quantidades do arquivo (`MsProjectCounts`); testes da conversão para cada aviso novo e para as quantidades
-- [ ] 2.2 A prévia da API traz `counts` e o `count` de cada aviso; testes "Prévia do arquivo do MS Project" (com as quantidades) e "O que fica de fora do arquivo"
+- [x] 2.1 `MsProjectImport.Read` guarda os recursos de material e custo com o tipo; a conversão ganha os avisos `OtherResources`, `UnusedResources`, `InactiveTasks` e `BlankLines`, o `Count` de cada aviso e as quantidades do arquivo (`MsProjectCounts`); testes da conversão para cada aviso novo e para as quantidades
+- [x] 2.2 A prévia da API traz `counts` e o `count` de cada aviso; testes "Prévia do arquivo do MS Project" (com as quantidades) e "O que fica de fora do arquivo"
 
 ## 3. Tela
 

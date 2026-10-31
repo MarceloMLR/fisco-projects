@@ -27,7 +27,7 @@ A Gantt-3 (ADR-0135) lê o XML do MS Project na prévia e devolve os avisos da c
   - `OtherResources`: os recursos de material e de custo, pelos nomes. O leitor passa a guardá-los com o tipo, e a conversão os separa.
   - `UnusedResources`: os recursos de trabalho que não ficaram como o primeiro de nenhuma tarefa trazida (sem tarefa, só como segundo recurso, só em marco ou só em linhas que saíram).
   - `InactiveTasks`: as linhas com nome que ficam de fora por estarem inativas ou abaixo de uma inativa, pelos nomes.
-  - `BlankLines`: as linhas em branco ou sem nome e as que estão abaixo delas, só pela quantidade, porque não têm nome para mostrar.
+  - `BlankLines`: as linhas em branco, as sem nome e as que estão abaixo de uma sem nome, só pela quantidade, porque não têm nome para mostrar. A linha em branco do MS Project (`IsNull`) pode vir sem o nível e sai sozinha, sem levar as linhas de baixo nem mudar quem é tarefa-resumo.
 - **Tarefas sem responsável, na tela.** Quem decide a pessoa de cada recurso é a tela, e a escolha muda depois da prévia, então a conta fica no navegador, pelos responsáveis escolhidos: o recurso com "Sem responsável", com "Uma pessoa da empresa" sem a pessoa, ou com o cliente num projeto sem cliente. O quadro lista esses recursos com as tarefas de cada um, e a linha do recurso diz, embaixo do "Responsável", que as tarefas dele ficam sem responsável.
 - **O quadro.** Aparece a cada leitura, com o resumo no título ("14 de 17 tarefas e 3 de 5 recursos vieram do arquivo"; sem recursos no arquivo, só as tarefas). Embaixo, a lista dos avisos, com as tarefas sem responsável por último, ou "Nada mudou na conversão.". O tom é de atenção (`warning`) quando há algum item na lista e informativo (`info`) quando não há.
 - **Rolagem.** Depois de ler um arquivo novo, a tela rola até o quadro (`scrollIntoView` com `block: 'nearest'`, suave, ou na hora com o movimento reduzido). Ler de novo pelo início não rola, porque a pessoa já está perto do quadro. O foco não muda: o quadro é um `status`, anunciado pelo leitor de tela.
@@ -37,3 +37,4 @@ A Gantt-3 (ADR-0135) lê o XML do MS Project na prévia e devolve os avisos da c
 
 - [O tom de atenção em toda importação com ajustes] → É o que Marcelo pediu: o ajuste muda o cronograma e precisa ser visto. O arquivo que vem inteiro fica no tom informativo.
 - [Linhas abaixo de uma linha sem nome contam como em branco] → É raro no MS Project e evita um aviso a mais só para esse caso.
+- [A linha em branco deixa de levar as linhas de baixo] → O MS Project grava a linha em branco sem filhas; a regra antiga só mudaria algo num arquivo escrito à mão.
