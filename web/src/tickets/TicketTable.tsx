@@ -2,7 +2,6 @@ import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined';
 import ForumOutlined from '@mui/icons-material/ForumOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import { useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import { TicketDue } from './TicketDue';
 import { PeopleChangeDialog } from './TicketPeopleDialogs';
 import type { PeopleChange } from './ticketChanges';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 export const ticketPageSize = 25;
 
@@ -76,7 +76,7 @@ export function TicketTable({
   // The marked tickets, by number, kept across the pages until the change or "Limpar seleção" (canvas Chamados).
   const [marked, setMarked] = useState<ReadonlyMap<number, TicketRow>>(new Map());
   const [changing, setChanging] = useState<{ kind: PeopleChange; numbers: number[] }>();
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const selectable = rows.filter(isSelectable);
   const allMarked = selectable.length > 0 && selectable.every((row) => marked.has(row.number));
 
@@ -403,18 +403,10 @@ export function TicketTable({
           onDone={(text) => {
             setChanging(undefined);
             setMarked(new Map());
-            setMessage(text);
+            notify(text);
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </>
   );
 }

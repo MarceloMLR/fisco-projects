@@ -9,7 +9,6 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -39,6 +38,7 @@ import { theme } from '../theme/theme';
 import { calendarDayId, holidayName } from './calendarText';
 import { HolidayDialog } from './HolidayDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 type KindFilter = 'all' | CalendarDayKind;
 
@@ -110,7 +110,7 @@ export function CalendarPage() {
   const queryClient = useQueryClient();
   const [year, setYear] = useState(() => Number(dates.toDayValue(new Date()).slice(0, 4)));
   const [kind, setKind] = useState<KindFilter>('all');
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; day: CalendarDay }>();
   const [editing, setEditing] = useState<{ holiday?: CalendarDay }>();
   const [removing, setRemoving] = useState<CalendarDay>();
@@ -154,10 +154,10 @@ export function CalendarPage() {
     },
     onError: (_error, change, result) => {
       queryClient.setQueryData(calendarYearQuery(change.year).queryKey, result?.previous);
-      setMessage(t('calendar.messages.failed'));
+      notify(t('calendar.messages.failed'), { tone: 'error' });
     },
     onSuccess: () => {
-      setMessage(t('calendar.messages.saved'));
+      notify(t('calendar.messages.saved'));
     },
     onSettled: askAgain,
   });
@@ -182,10 +182,10 @@ export function CalendarPage() {
     },
     onError: (_error, { year: shown }, result) => {
       queryClient.setQueryData(calendarYearQuery(shown).queryKey, result?.previous);
-      setMessage(t('calendar.messages.failed'));
+      notify(t('calendar.messages.failed'), { tone: 'error' });
     },
     onSuccess: () => {
-      setMessage(t('calendar.messages.saved'));
+      notify(t('calendar.messages.saved'));
     },
     onSettled: askAgain,
   });
@@ -200,12 +200,12 @@ export function CalendarPage() {
       }
     },
     onSuccess: (_result, holiday) => {
-      setMessage(t('calendar.messages.removed', { name: holidayName(holiday, t) }));
+      notify(t('calendar.messages.removed', { name: holidayName(holiday, t) }));
       void queryClient.invalidateQueries({ queryKey: queryKeys.calendar });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
     onError: () => {
-      setMessage(t('calendar.messages.failed'));
+      notify(t('calendar.messages.failed'), { tone: 'error' });
     },
     onSettled: () => {
       setRemoving(undefined);
@@ -221,7 +221,7 @@ export function CalendarPage() {
       return done;
     },
     onSuccess: (done) => {
-      setMessage(
+      notify(
         done.projects.length === 0
           ? t('calendar.recalculation.nothing')
           : t('calendar.recalculation.done', { count: done.projects.length }),
@@ -233,7 +233,7 @@ export function CalendarPage() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
     onError: () => {
-      setMessage(t('calendar.recalculation.failed'));
+      notify(t('calendar.recalculation.failed'), { tone: 'error' });
     },
     onSettled: () => {
       setRecalculating(false);
@@ -762,7 +762,7 @@ export function CalendarPage() {
           }}
           onSaved={(saved, savedYear) => {
             setEditing(undefined);
-            setMessage(saved);
+            notify(saved);
             setYear(savedYear);
           }}
         />
@@ -886,14 +886,6 @@ export function CalendarPage() {
           </Box>
         </Box>
       </Dialog>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

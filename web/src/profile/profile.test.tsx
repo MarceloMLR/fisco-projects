@@ -153,7 +153,9 @@ describe('Tema no perfil', () => {
 
     // The theme goes back to the one the profile has, and the person is told.
     expect(await screen.findByText(text.themeFailed)).toBeInTheDocument();
-    expect(screenTheme()).toBe('light');
+    await waitFor(() => {
+      expect(screenTheme()).toBe('light');
+    });
     expect(themeInMenu(screen.getByRole('menu'), text.themes.Automatic)).toHaveAttribute(
       'aria-checked',
       'true',

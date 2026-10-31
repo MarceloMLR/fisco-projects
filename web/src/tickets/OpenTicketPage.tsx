@@ -30,6 +30,7 @@ import { ticketProblemText } from './ticketProblems';
 import { teamIcons } from './tickets';
 import { Button } from '../components/Button';
 import { Form } from '../components/Form';
+import { useNotify } from '../notices/notify';
 
 // The editor only loads on the screens of the tickets.
 const RichTextEditor = lazy(async () => ({
@@ -154,6 +155,7 @@ export function OpenTicketPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const notify = useNotify();
   const { projectId: fromProject } = useParams();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const ids = useId();
@@ -216,6 +218,7 @@ export function OpenTicketPage() {
       if (data !== undefined) {
         // The files of the description go right after the ticket exists (ADR-0069).
         let message = t('tickets.opened', { number: data.number });
+        let sentAll = true;
         if (files.length > 0) {
           const form = new FormData();
           for (const file of files) {
@@ -229,6 +232,7 @@ export function OpenTicketPage() {
             })
             .catch(() => undefined);
           if (sent?.response.ok !== true) {
+            sentAll = false;
             message = t('tickets.errors.attachmentsFailed', {
               number: data.number,
               reason: ticketProblemText(sent?.response.status ?? 0, sent?.error, t),
@@ -238,7 +242,9 @@ export function OpenTicketPage() {
         void queryClient.invalidateQueries({ queryKey: queryKeys.tickets });
         void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
         // The form is done: Back from the new ticket goes to where the form was opened from (ADR-0105).
-        await navigate(`/tickets/${String(data.number)}`, { replace: true, state: { message } });
+        // The notice is of the structure of the screens: it stays on the page of the ticket (ADR-0133).
+        notify(message, sentAll ? undefined : { tone: 'error' });
+        await navigate(`/tickets/${String(data.number)}`, { replace: true });
         return;
       }
       if (response.status === 409 && problemType(error) === projectProblems.closed) {

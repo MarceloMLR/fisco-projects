@@ -28,6 +28,7 @@ import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
 import { useScheduleStep } from './useScheduleStep';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const displayOptions = ['baseline', 'critical'] as const;
 
@@ -131,16 +132,15 @@ export function ScheduleMoreMenu({
   canEdit,
   scale,
   display,
-  notify,
 }: {
   project: Project;
   schedule: Schedule;
   canEdit: boolean;
   scale: GanttScale;
   display: ScheduleDisplay;
-  notify: (message: string) => void;
 }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const [anchor, setAnchor] = useState<HTMLElement>();
   const [confirming, setConfirming] = useState(false);
@@ -153,7 +153,7 @@ export function ScheduleMoreMenu({
     (project.permissions.canChangeStatus &&
       (project.status === 'Completed' || project.status === 'Cancelled'));
   const saved = schedule.baseline;
-  const steps = useScheduleStep(project, notify);
+  const steps = useScheduleStep(project);
 
   const save = async () => {
     setPending(true);
@@ -164,20 +164,25 @@ export function ScheduleMoreMenu({
       setConfirming(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
-      notify(
-        response.ok
-          ? t(
-              saved === null
-                ? 'projects.baseline.messages.saved'
-                : 'projects.baseline.messages.updated',
-            )
-          : response.status === 400
+      if (response.ok) {
+        notify(
+          t(
+            saved === null
+              ? 'projects.baseline.messages.saved'
+              : 'projects.baseline.messages.updated',
+          ),
+        );
+      } else {
+        notify(
+          response.status === 400
             ? t('projects.baseline.messages.noItems')
             : failureOf(error, response.status, t),
-      );
+          { tone: 'error' },
+        );
+      }
     } catch {
       setConfirming(false);
-      notify(t('projects.schedule.messages.failed'));
+      notify(t('projects.schedule.messages.failed'), { tone: 'error' });
     } finally {
       setPending(false);
     }

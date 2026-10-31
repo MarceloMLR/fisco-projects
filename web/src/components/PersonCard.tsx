@@ -2,8 +2,6 @@ import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
 import MailOutlined from '@mui/icons-material/MailOutlined';
 import Box from '@mui/material/Box';
 import Popover from '@mui/material/Popover';
-import Portal from '@mui/material/Portal';
-import Snackbar from '@mui/material/Snackbar';
 import { useQuery } from '@tanstack/react-query';
 import { type ComponentProps, type MouseEvent, type SyntheticEvent, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +9,7 @@ import { personQuery } from '../api/queries';
 import { usePersonPhoto } from '../hooks/usePersonPhoto';
 import { Avatar } from './Avatar';
 import { Button } from './Button';
+import { useNotify } from '../notices/notify';
 
 /** A person shown by the avatar: the user and the name the screen already has. */
 export interface CardPerson {
@@ -46,7 +45,7 @@ export function CardAvatar({
 }) {
   const { t } = useTranslation();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const titleId = useId();
   const open = anchor !== null;
   const details = useQuery({ ...personQuery(person.id), enabled: open });
@@ -57,9 +56,9 @@ export function CardAvatar({
   const copy = async (address: string) => {
     try {
       await navigator.clipboard.writeText(address);
-      setMessage(t('person.copied'));
+      notify(t('person.copied'));
     } catch {
-      setMessage(t('person.copyFailed'));
+      notify(t('person.copyFailed'), { tone: 'error' });
     }
   };
 
@@ -197,16 +196,6 @@ export function CardAvatar({
           )}
         </Box>
       </Popover>
-      <Portal>
-        <Snackbar
-          open={message !== undefined}
-          message={message}
-          autoHideDuration={5000}
-          onClose={() => {
-            setMessage(undefined);
-          }}
-        />
-      </Portal>
     </>
   );
 }

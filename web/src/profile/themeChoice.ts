@@ -1,9 +1,10 @@
 import BrightnessAutoOutlined from '@mui/icons-material/BrightnessAutoOutlined';
 import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
 import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ThemePreference, themePreferences } from '../api/client';
+import { useNotify } from '../notices/notify';
 import { useSession } from '../session/SessionContext';
 
 const icons = {
@@ -24,12 +25,12 @@ export function useThemeOptions() {
 
 /**
  * The theme in the profile of the person in the session and how to change it. A refusal of the API leaves the
- * theme as it was and a message to show.
+ * theme as it was and says so in the notice of the screens.
  */
 export function useThemeChoice() {
   const { t } = useTranslation();
   const { session, chooseTheme } = useSession();
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const theme: ThemePreference = session.status === 'signed-in' ? session.user.theme : 'Automatic';
 
   const choose = useCallback(
@@ -38,15 +39,11 @@ export function useThemeChoice() {
         return;
       }
       chooseTheme(chosen).catch(() => {
-        setMessage(t('profile.themeFailed'));
+        notify(t('profile.themeFailed'), { tone: 'error' });
       });
     },
-    [theme, chooseTheme, t],
+    [theme, chooseTheme, notify, t],
   );
 
-  const dismiss = useCallback(() => {
-    setMessage(undefined);
-  }, []);
-
-  return { theme, choose, message, dismiss };
+  return { theme, choose };
 }

@@ -1,7 +1,6 @@
 import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
@@ -28,6 +27,7 @@ import { HoursBalanceBadge } from './HoursBalanceBadge';
 import { balanceLook, hoursOrDash, projectHoursMeta } from './projectHours';
 import { projectHoursReport, projectHoursReportName } from './projectHoursReport';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** A page of the list; an installation has a few dozen projects, so most views fit in one. */
 const pageSize = 50;
@@ -57,7 +57,7 @@ export function ProjectHoursPage() {
   const [view, setView] = useState<ProjectHoursView>('Open');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [exporting, setExporting] = useState(false);
   const searched = useDebounced(search, searchDelay).trim();
   const { data, isFetching, error } = useQuery({
@@ -103,12 +103,12 @@ export function ProjectHoursPage() {
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       void queryClient.invalidateQueries({ queryKey: queryKeys.projectHours });
       void queryClient.invalidateQueries({ queryKey: queryKeys.timeEntries });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const download = async () => {
@@ -128,7 +128,7 @@ export function ProjectHoursPage() {
         projectHoursReportName(dates.toDayValue(new Date()), t),
       );
     } catch {
-      setMessage(t('projectHours.downloadFailed'));
+      notify(t('projectHours.downloadFailed'), { tone: 'error' });
     } finally {
       setExporting(false);
     }
@@ -307,14 +307,6 @@ export function ProjectHoursPage() {
         <Alert tone="danger">{t('projectHours.loadFailed')}</Alert>
       )}
       <ProjectHoursDrawer projectId={chosen} onClose={close} onChanged={changed} />
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

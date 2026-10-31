@@ -12,6 +12,7 @@ import { StatusBadge, type StatusTone } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
 import { useDates } from '../format/useDates';
 import { Button } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 const looks = {
   Sent: { tone: 'success', icon: CheckCircleOutlined },
@@ -35,8 +36,9 @@ const narrowForm = '@media (max-width: 700px)';
  * (AdminConfiguracoes): the shared mailbox, read-only, the result of the last test and "Enviar teste", which puts an
  * e-mail to the Administrator in the queue (ADR-0036). The result is read again while the test waits in the queue.
  */
-export function EmailSettings({ onMessage }: { onMessage: (message: string) => void }) {
+export function EmailSettings() {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const { formatDateTime } = useDates();
   const { data: status } = useQuery(emailStatusQuery());
@@ -50,13 +52,14 @@ export function EmailSettings({ onMessage }: { onMessage: (message: string) => v
       return data;
     },
     onSuccess: ({ to }) => {
-      onMessage(t('settings.emailTest.queued', { to }));
+      notify(t('settings.emailTest.queued', { to }));
     },
     onError: (error) => {
-      onMessage(
+      notify(
         error instanceof ApiError && error.status === 400
           ? t('settings.emailTest.noAddress')
           : t('settings.emailTest.failed'),
+        { tone: 'error' },
       );
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.email }),

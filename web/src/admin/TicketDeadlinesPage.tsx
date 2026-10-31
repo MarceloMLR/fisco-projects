@@ -1,8 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Box from '@mui/material/Box';
-import Snackbar from '@mui/material/Snackbar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -14,6 +13,7 @@ import { Page } from '../shell/Page';
 import { PriorityTag } from '../tickets/TicketTags';
 import { Button } from '../components/Button';
 import { Form } from '../components/Form';
+import { useNotify } from '../notices/notify';
 
 const days = z.number().int().min(1).max(365);
 
@@ -73,7 +73,7 @@ export function TicketDeadlinesPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: settings, isError } = useQuery(ticketDeadlinesQuery());
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const {
     register,
     handleSubmit,
@@ -97,10 +97,10 @@ export function TicketDeadlinesPage() {
         throw new Error(String(response.status));
       }
       reset(values);
-      setMessage(t('ticketDeadlines.saved'));
+      notify(t('ticketDeadlines.saved'));
       void queryClient.invalidateQueries({ queryKey: queryKeys.ticketDeadlines });
     } catch {
-      setMessage(t('ticketDeadlines.saveFailed'));
+      notify(t('ticketDeadlines.saveFailed'), { tone: 'error' });
     }
   });
 
@@ -224,14 +224,6 @@ export function TicketDeadlinesPage() {
           {t('ticketDeadlines.save')}
         </Button>
       </Box>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Box>
   );
 }

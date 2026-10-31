@@ -21,6 +21,7 @@ import { theme } from '../theme/theme';
 import { formatHours, type HoursRow, hoursRows, isDayRow, workOf } from './hours';
 import { TimeEntryDialog } from './TimeEntryDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** A week or a month has a few dozen entries: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -69,6 +70,7 @@ export function TimeEntryTable({
   onChanged: (message: string, day?: DayValue) => void;
 }) {
   const { t } = useTranslation();
+  const notify = useNotify();
   const { toDayValue, formatWeekday } = useDates();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const today = toDayValue(new Date());
@@ -98,15 +100,18 @@ export function TimeEntryTable({
       const { response, error: problem } = await api.DELETE('/api/time-entries/{entryId}', {
         params: { path: { entryId: entry.id } },
       });
-      onChanged(
-        response.ok
-          ? t('hours.messages.removed')
-          : response.status === 409 && problemType(problem) === timeEntryProblems.projectClosed
+      if (response.ok) {
+        onChanged(t('hours.messages.removed'));
+      } else {
+        notify(
+          response.status === 409 && problemType(problem) === timeEntryProblems.projectClosed
             ? t('hours.messages.closed')
             : t('hours.messages.failed'),
-      );
+          { tone: 'error' },
+        );
+      }
     } catch {
-      onChanged(t('hours.messages.failed'));
+      notify(t('hours.messages.failed'), { tone: 'error' });
     }
   };
 

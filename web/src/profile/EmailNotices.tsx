@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api, type Profile } from '../api/client';
 import { ApiError, generalRulesQuery, profileQuery, queryKeys } from '../api/queries';
 import { Checkbox } from '../components/Checkbox';
+import { useNotify } from '../notices/notify';
 import { ProfileCard, ProfileRow } from './ProfileCard';
 
 const immediate = ['messages', 'assigned', 'deadlines'] as const;
@@ -13,8 +14,9 @@ const immediate = ['messages', 'assigned', 'deadlines'] as const;
  * installation, which the person turns on and off, kept at once in the profile; and the e-mails sent now, always on,
  * since they cannot be turned off.
  */
-export function EmailNotices({ onMessage }: { onMessage: (message: string) => void }) {
+export function EmailNotices() {
   const { t } = useTranslation();
+  const notify = useNotify();
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(profileQuery());
   const { data: rules } = useQuery(generalRulesQuery());
@@ -36,7 +38,7 @@ export function EmailNotices({ onMessage }: { onMessage: (message: string) => vo
       );
     },
     onError: () => {
-      onMessage(t('profile.notices.failed'));
+      notify(t('profile.notices.failed'), { tone: 'error' });
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.profile }),
   });

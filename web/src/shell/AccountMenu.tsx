@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -49,7 +48,7 @@ export function SessionPerson({ user, mutedColor }: { user: SessionUser; mutedCo
 export function AccountMenu({ user }: { user: SessionUser }) {
   const { t } = useTranslation();
   const { signOut } = useSession();
-  const { theme, choose, message, dismiss } = useThemeChoice();
+  const { theme, choose } = useThemeChoice();
   const themeOptions = useThemeOptions();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
@@ -156,12 +155,6 @@ export function AccountMenu({ user }: { user: SessionUser }) {
           {t('shell.signOut')}
         </MenuItem>
       </Menu>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={dismiss}
-      />
     </>
   );
 }

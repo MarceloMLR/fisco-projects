@@ -7,7 +7,6 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +18,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Page } from '../shell/Page';
 import { TemplateDialog } from './TemplateDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** The models fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
@@ -52,7 +52,7 @@ export function TemplatesPage() {
   const queryClient = useQueryClient();
   const { data, isFetching } = useQuery(allTemplatesQuery());
   const templates = data ?? noTemplates;
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; template: ProjectTemplate }>();
   const [editing, setEditing] = useState<ProjectTemplate>();
   const [removing, setRemoving] = useState<ProjectTemplate>();
@@ -60,11 +60,11 @@ export function TemplatesPage() {
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const setActive = useCallback(
@@ -75,18 +75,20 @@ export function TemplatesPage() {
           params: { path: { id: template.id } },
           body: { name: template.name, description: template.description, isActive: active },
         });
-        changed(
-          response.ok
-            ? t(active ? 'templates.messages.reactivated' : 'templates.messages.deactivated', {
-                name: template.name,
-              })
-            : t('templates.messages.failed'),
-        );
+        if (response.ok) {
+          changed(
+            t(active ? 'templates.messages.reactivated' : 'templates.messages.deactivated', {
+              name: template.name,
+            }),
+          );
+        } else {
+          notify(t('templates.messages.failed'), { tone: 'error' });
+        }
       } catch {
-        setMessage(t('templates.messages.failed'));
+        notify(t('templates.messages.failed'), { tone: 'error' });
       }
     },
-    [changed, t],
+    [notify, changed, t],
   );
 
   const remove = async (template: ProjectTemplate) => {
@@ -95,13 +97,13 @@ export function TemplatesPage() {
       const { response } = await api.DELETE('/api/admin/project-templates/{id}', {
         params: { path: { id: template.id } },
       });
-      changed(
-        response.ok
-          ? t('templates.messages.removed', { name: template.name })
-          : t('templates.messages.failed'),
-      );
+      if (response.ok) {
+        changed(t('templates.messages.removed', { name: template.name }));
+      } else {
+        notify(t('templates.messages.failed'), { tone: 'error' });
+      }
     } catch {
-      setMessage(t('templates.messages.failed'));
+      notify(t('templates.messages.failed'), { tone: 'error' });
     } finally {
       setPending(false);
       setRemoving(undefined);
@@ -325,14 +327,6 @@ export function TemplatesPage() {
       >
         {removing !== undefined && t('templates.remove.text', { name: removing.name })}
       </Dialog>
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

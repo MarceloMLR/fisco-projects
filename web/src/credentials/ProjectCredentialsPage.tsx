@@ -31,6 +31,7 @@ import { CredentialDialog } from './CredentialDialog';
 import { CredentialImportDialog } from './CredentialImportDialog';
 import { credentialRows, type CredentialRow, isGroupRow } from './credentials';
 import { Button, IconButton } from '../components/Button';
+import type { NoticeOptions } from '../notices/notify';
 
 /** A project has a few dozen credentials: they all fit in one page of the free Data Grid (ADR-0050). */
 const pageSize = 100;
@@ -98,8 +99,8 @@ export function ProjectCredentialsPage() {
   const rows = useMemo(() => credentialRows(data?.items ?? []), [data?.items]);
 
   const changed = useCallback(
-    (message: string) => {
-      notify(message);
+    (message: string, options?: NoticeOptions) => {
+      notify(message, options);
       setShown({});
       void queryClient.invalidateQueries({ queryKey: [...queryKeys.credentials, project.id] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
@@ -126,7 +127,7 @@ export function ProjectCredentialsPage() {
     async (credential: Credential) => {
       const password = await passwordOf(credential);
       if (password === undefined) {
-        notify(t('credentials.messages.passwordFailed'));
+        notify(t('credentials.messages.passwordFailed'), { tone: 'error' });
         return;
       }
       setShown((current) => ({ ...current, [credential.id]: password }));
@@ -149,7 +150,7 @@ export function ProjectCredentialsPage() {
         await navigator.clipboard.writeText(text);
         notify(done);
       } catch {
-        notify(t('credentials.messages.copyFailed'));
+        notify(t('credentials.messages.copyFailed'), { tone: 'error' });
       }
     },
     [notify, t],
@@ -176,15 +177,19 @@ export function ProjectCredentialsPage() {
         '/api/projects/{projectId}/credentials/{credentialId}',
         { params: { path: { projectId: project.id, credentialId: credential.id } } },
       );
-      changed(
-        response.ok
-          ? t('credentials.messages.removed', { portal: credential.portal })
-          : response.status === 409 && problemType(problem) === credentialProblems.projectClosed
+      if (response.ok) {
+        changed(t('credentials.messages.removed', { portal: credential.portal }));
+      } else {
+        // The list is asked again: the project may have been closed meanwhile.
+        changed(
+          response.status === 409 && problemType(problem) === credentialProblems.projectClosed
             ? t('credentials.messages.closed')
             : t('credentials.messages.failed'),
-      );
+          { tone: 'error' },
+        );
+      }
     } catch {
-      notify(t('credentials.messages.failed'));
+      notify(t('credentials.messages.failed'), { tone: 'error' });
     }
   };
 

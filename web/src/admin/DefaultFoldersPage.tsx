@@ -7,7 +7,6 @@ import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
@@ -21,6 +20,7 @@ import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { DefaultFolderDialog } from './DefaultFolderDialog';
 import { Button, IconButton } from '../components/Button';
+import { useNotify } from '../notices/notify';
 
 /** The default folders fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
@@ -47,18 +47,18 @@ export function DefaultFoldersPage() {
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { data, isFetching } = useQuery(defaultFoldersQuery());
   const folders = data ?? noFolders;
-  const [message, setMessage] = useState<string>();
+  const notify = useNotify();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; folder: DefaultFolder }>();
   // A folder to rename, or null for a new one.
   const [editing, setEditing] = useState<DefaultFolder | null>();
 
   const changed = useCallback(
     (text: string) => {
-      setMessage(text);
+      notify(text);
       void queryClient.invalidateQueries({ queryKey: queryKeys.defaultFolders });
       void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
     },
-    [queryClient],
+    [notify, queryClient],
   );
 
   const setActive = useCallback(
@@ -69,23 +69,25 @@ export function DefaultFoldersPage() {
           params: { path: { id: folder.id } },
           body: { name: folder.name, isActive: active },
         });
-        changed(
-          response.ok
-            ? t(
-                active
-                  ? 'defaultFolders.messages.reactivated'
-                  : 'defaultFolders.messages.deactivated',
-                {
-                  name: folder.name,
-                },
-              )
-            : t('defaultFolders.messages.failed'),
-        );
+        if (response.ok) {
+          changed(
+            t(
+              active
+                ? 'defaultFolders.messages.reactivated'
+                : 'defaultFolders.messages.deactivated',
+              {
+                name: folder.name,
+              },
+            ),
+          );
+        } else {
+          notify(t('defaultFolders.messages.failed'), { tone: 'error' });
+        }
       } catch {
-        setMessage(t('defaultFolders.messages.failed'));
+        notify(t('defaultFolders.messages.failed'), { tone: 'error' });
       }
     },
-    [changed, t],
+    [notify, changed, t],
   );
 
   const openMenu = useCallback((event: MouseEvent<HTMLElement>, folder: DefaultFolder) => {
@@ -277,14 +279,6 @@ export function DefaultFoldersPage() {
           }}
         />
       )}
-      <Snackbar
-        open={message !== undefined}
-        message={message}
-        autoHideDuration={6000}
-        onClose={() => {
-          setMessage(undefined);
-        }}
-      />
     </Page>
   );
 }

@@ -434,12 +434,9 @@ export function ProjectSchedulePage() {
       canEdit={canEdit}
       scale={scale}
       display={display}
-      notify={notify}
     />
   );
-  const undoButton = canEdit && (
-    <UndoButton project={project} schedule={schedule} notify={notify} />
-  );
+  const undoButton = canEdit && <UndoButton project={project} schedule={schedule} />;
   const newItemButton = (
     <Button
       variant="contained"
@@ -554,7 +551,6 @@ export function ProjectSchedulePage() {
           display={display}
           ganttRef={timeline}
           onChoose={chooseInTimeline}
-          notify={notify}
           aside={summary}
         />
       ) : (
@@ -631,7 +627,6 @@ export function ProjectSchedulePage() {
             display={display}
             ganttRef={expandedTimeline}
             onChoose={chooseInTimeline}
-            notify={notify}
           />
         )}
       </Dialog>
@@ -643,9 +638,9 @@ export function ProjectSchedulePage() {
           onClose={() => {
             setPhaseDialog(undefined);
           }}
-          onDone={(message) => {
+          onDone={(message, options) => {
             setPhaseDialog(undefined);
-            notify(message);
+            notify(message, options);
           }}
         />
       )}
