@@ -37,7 +37,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 | Entrada e acesso | Página de entrada própria, login pelo Entra ID, criação do usuário no primeiro login, recusa de convidados e desativados, sessão de 8 h, "Sair" só do FiscoProjects | Módulo de identidade e host da API (BFF com cookie) | 0004, 0005, 0007, 0009, 0054 |
 | Meu trabalho | Fila única por urgência (chamados, tarefas, aceites), saúde dos projetos e próximos marcos | Tela do frontend que consome os contratos dos módulos | 0010, 0070 |
 | Projetos e clientes | Código, nome, cliente opcional, status, datas e progresso calculados, gerente e líder técnico na criação, exclusão só pelo administrador | Módulo Projetos | 0015, 0016, 0041, 0072, 0073 |
-| Cronograma | Fases, tarefas e marcos, com subtarefas em um nível, dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071, 0088 |
+| Cronograma | Fases, tarefas e marcos, com subtarefas em um nível, dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto e, na v2, Novo projeto a partir do XML do MS Project | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071, 0088, 0135 |
 | Chamados | Sempre ligados a um projeto, para os times Funcional e Desenvolvimento, fluxo de status em tabela, prazos em dias úteis, conversa com anexos e menções, troca de responsável e solicitante, chamados em fornecedores | Módulo Chamados | 0022 a 0029, 0068, 0069 |
 | Documentos | Pastas padrão configuráveis, versões, status manual, vínculo com o cronograma, visualização no navegador | Módulo Documentos, arquivos no SharePoint atrás de `IFileStorage` | 0030, 0031 |
 | Links | Links do projeto por categoria | Módulo Documentos ou Projetos (definir na change) | 0032 |
@@ -60,7 +60,7 @@ Fora do produto:
 - Aceite eletrônico por clique; todo aceite é por PDF assinado (ADR-0035, ADR-0129).
 - Orçamento, custos, horas em reais e campos personalizados (ADR-0016, ADR-0128).
 - Dependências entre projetos diferentes (ADR-0019).
-- Gerar arquivo `.mpp` nativo (ADR-0021).
+- Gerar ou ler arquivo `.mpp` nativo; o XML do MS Project basta para ir e voltar (ADR-0021, ADR-0135).
 - Senha da conta Microsoft digitada no FiscoProjects (ADR-0009).
 - Barra lateral recolhível, personalização do painel, gerador de senhas, exportação de acessos (ADR-0011, ADR-0010, ADR-0034).
 - Aplicativo instalável e notificações push no celular (ADR-0012).
@@ -69,13 +69,15 @@ Fora da v1, previstos para depois:
 
 - Pessoas de fora da empresa (clientes e fornecedores) no sistema (ADR-0007).
 - Filas compartilhadas, como a TI da empresa, e atendentes de fora do projeto (ADR-0068).
-- Importar arquivos do MS Project, mais de um nível de subtarefas, outros tipos de dependência e intervalo entre tarefas (ADR-0019, ADR-0021, ADR-0088).
+- Mais de um nível de subtarefas, outros tipos de dependência e intervalo entre tarefas (ADR-0019, ADR-0088).
+- Importar o MS Project num projeto já criado, pela aba Cronograma (ADR-0135).
 - Avisos pelo Teams e atualização em tempo real (ADR-0038).
 - Indicadores gerenciais e gráficos de evolução (ADR-0010, ADR-0073).
 - Tradução para inglês (ADR-0013).
 - Busca global (ADR-0011, ADR-0066).
 - Modo sem Microsoft 365 (contas locais, SMTP, arquivos em disco ou blob).
 - Gantt próprio no lugar do Syncfusion (ADR-0051): feito na v2, com a Linha do tempo própria (ADR-0134).
+- Importar o XML do MS Project (ADR-0021): feito na v2, no Novo projeto (ADR-0135).
 
 ## Critérios de sucesso
 
@@ -276,7 +278,7 @@ Ler antes de implementar a área:
 | Entrada, sessão e usuários | ADR-0005 a 0009, 0054 |
 | Telas, navegação e visual | ADR-0011 a 0014, 0062 a 0067, design system e canvas de telas |
 | Projetos e clientes | ADR-0015, 0016, 0041, 0072, 0073 |
-| Cronograma | ADR-0017 a 0021, 0051, 0071, 0088 |
+| Cronograma | ADR-0017 a 0021, 0051, 0071, 0088, 0134, 0135 |
 | Chamados | ADR-0022 a 0029, 0044, 0068, 0069 |
 | Documentos, links, acessos e termos | ADR-0030 a 0035, 0045 |
 | Avisos | ADR-0036 a 0038 |
@@ -296,7 +298,7 @@ Ler antes de implementar a área:
 | Exchange Online | RBAC para aplicações, restringindo o envio à caixa | 0036 |
 | Azure | App Service, Azure SQL, Key Vault, Application Insights, armazenamento do estado do Terraform | 0048, 0052, 0053, 0057 |
 | GitHub Actions | Build, testes e deploy, com OIDC no Azure | 0055 |
-| MS Project | Exportação do cronograma no formato XML (arquivo, sem integração) | 0021 |
+| MS Project | Exportação do cronograma e, na v2, importação no Novo projeto, no formato XML (arquivo, sem integração) | 0021, 0135 |
 | Microsoft Teams | Avisos, depois da v1 | 0038 |
 
 ## Modelo de deploy e promoção

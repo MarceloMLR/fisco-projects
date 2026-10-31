@@ -22,7 +22,7 @@
 ## 5. Demonstração e documentação
 
 - [x] 5.1 O projeto importado no plano de `web/scripts/demo`, com os responsáveis ligados às pessoas da demonstração, e o teste "Projeto importado na demonstração"
-- [ ] 5.2 `CLAUDE.md`, `docs/glossario.md`, `docs/discovery.md` e o contexto do OpenSpec com a importação
+- [x] 5.2 `CLAUDE.md`, `docs/glossario.md`, `docs/discovery.md` e o contexto do OpenSpec com a importação
 
 ## 6. Verificação
 

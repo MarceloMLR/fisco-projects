@@ -14,10 +14,11 @@ context: |
   termos de aceite (assinados por um provedor trocável ou anexados, só da gestão); membros e permissões; avisos (e-mail e sino);
   auditoria e LGPD; administração; perfil e tema.
   Também na v1: horas do projeto (apontamento de cada pessoa e saldo em horas, só para o administrador).
-  v2 (desde 31/10/2026): Linha do tempo própria, sem Gantt nem chave de licença de terceiros (ADR-0134).
+  v2 (desde 31/10/2026): Linha do tempo própria, sem Gantt nem chave de licença de terceiros (ADR-0134);
+  Novo projeto a partir do XML do MS Project, com prévia, avisos, progresso e responsáveis (ADR-0135).
   NÃO faz: service desk geral nem chamado sem projeto; usuários externos (v1); filas compartilhadas;
   aceite por clique; horas em reais, orçamento, custos; integração com sistemas de fornecedores; dependências
-  entre projetos; importação do MS Project; .mpp nativo; Teams; busca global; senha Microsoft no sistema.
+  entre projetos; ler ou gerar .mpp nativo; Teams; busca global; senha Microsoft no sistema.
 
   Stack: .NET 10 (LTS) ASP.NET Core, EF Core com SQL Server; React + TypeScript estrito, MUI só gratuito
   (@mui/material, icons-material, X Data Grid e Date Pickers MIT), React Hook Form + Zod, Tiptap,
