@@ -196,7 +196,7 @@ O avatar de uma pessoa MUST mostrar a foto dela no Microsoft 365 quando a foto c
 
 ### Requirement: Botões em andamento
 
-Todo botão e botão de ícone que manda algo ao servidor MUST ficar em andamento do clique até a resposta, com sucesso ou erro: o ícone de carregamento no lugar do ícone do botão, ou antes do texto quando não há ícone, o rótulo e a largura mantidos, inativo e marcado como ocupado para as tecnologias assistivas. Quando a ação vai ao servidor, o andamento MUST durar pelo menos meio segundo, mesmo com a resposta antes; a que não vai, como o formulário recusado pelas próprias regras, termina na hora (ADR-0132). Durante o andamento, um novo clique ou um novo Enter MUST NOT mandar a ação de novo. Os itens dos menus ficam fora (ADR-0131).
+Todo botão e botão de ícone que manda algo ao servidor MUST ficar em andamento do clique até a resposta: o ícone de carregamento no lugar do ícone, ou antes do texto, o rótulo e a largura mantidos, inativo e ocupado para as tecnologias assistivas. Quando vai ao servidor, o andamento MUST durar pelo menos meio segundo (ADR-0132). Um novo clique ou Enter durante o andamento MUST NOT mandar a ação de novo. Os itens dos menus ficam fora (ADR-0131).
 
 #### Scenario: Botão em andamento
 - **WHEN** a pessoa clica num botão com ícone que manda algo ao servidor, e a resposta demora
