@@ -473,6 +473,11 @@ public sealed class Schedule : Entity
         var items = new List<ScheduleItem>();
         foreach (var (item, index) in outline.Items.Select((item, index) => (item, index)))
         {
+            if (!Enum.IsDefined(item.Kind))
+            {
+                throw new ArgumentException("Unknown kind of schedule item.", nameof(outline));
+            }
+
             var plan = new ScheduleItemPlan(
                 phases[item.Phase],
                 item.Name,
@@ -483,8 +488,23 @@ public sealed class Schedule : Entity
                 [.. predecessors[index].Distinct().Select(position => items[position].Id)],
                 item.Parent is { } parent ? items[parent].Id : null,
                 item.OwnedByClient);
-            items.Add(AddItem(item.Kind, plan, days, today));
+            // As an inclusion places it (AddItem), but once: the outline has every item after its task and the items
+            // it depends on, and no dependency of a task with subtasks, so nothing is pushed nor passed on, and the
+            // tasks with subtasks take their dates from them at the end. A file of 2,000 tasks stays quick.
+            var made = new ScheduleItem(Id, item.Kind);
+            var before = CheckedPredecessors(made.Id, plan);
+            Apply(made, plan, today);
+            _items.Add(made);
+            foreach (var predecessor in before)
+            {
+                _dependencies.Add(new ScheduleDependency(Id, predecessor, made.Id));
+            }
+
+            made.Place(EarliestStart(made, plan.Start, days), days);
+            items.Add(made);
         }
+
+        Summarize(days);
 
         foreach (var (item, made) in outline.Items.Zip(items).Where(pair => pair.First.Progress > 0 && !IsSummary(pair.Second.Id)))
         {

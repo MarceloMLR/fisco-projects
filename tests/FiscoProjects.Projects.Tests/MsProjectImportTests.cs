@@ -90,7 +90,15 @@ public sealed class MsProjectImportTests
         var lines = Enumerable.Range(1, MsProjectImport.MaxTasks + 1).Select(uid => new Line(uid, 1, $"Tarefa {uid}", D(10, 13), D(10, 13))).ToList();
 
         RefusalOf(Project("Grande", lines)).Should().Be(MsProjectRefusal.TooManyTasks);
-        Converted(Project("No limite", lines[..MsProjectImport.MaxTasks])).Outline.Items.Should().HaveCount(MsProjectImport.MaxTasks);
+        // At the limit, each task after the one before it: the schedule is made at once, without pushing each time.
+        var chain = lines[..MsProjectImport.MaxTasks]
+            .Select(line => line with { Links = line.Uid == 1 ? null : [new Link(line.Uid - 1)] })
+            .ToList();
+        var converted = Converted(Project("No limite", chain));
+        var schedule = new Schedule(Guid.CreateVersion7());
+        schedule.ApplyTemplate(converted.Outline, converted.FirstDay, Days, Today);
+        (converted.Outline.Items.Count, converted.Outline.Dependencies.Count).Should().Be((MsProjectImport.MaxTasks, MsProjectImport.MaxTasks - 1));
+        schedule.Items[^1].Start.Should().Be(Days.AddBusinessDays(D(10, 13), MsProjectImport.MaxTasks - 1));
     }
 
     [Fact(DisplayName = "Arquivo sem tarefas")]
