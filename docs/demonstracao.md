@@ -7,7 +7,6 @@ Como pôr a demonstração do FiscoProjects no ar pelo GitHub Codespaces, de qua
 Em [github.com/settings/codespaces](https://github.com/settings/codespaces):
 
 - **Default idle timeout**: 240 minutos. O padrão (30) para o Codespace no meio de uma demonstração.
-- **Codespaces secrets** (opcional): um segredo `Syncfusion__LicenseKey` com a chave do Syncfusion e acesso ao repositório `fisco-projects`. Sem ele, a Linha do tempo mostra o aviso de licença.
 
 ## Pôr no ar
 

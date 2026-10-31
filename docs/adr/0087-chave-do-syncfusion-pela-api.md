@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: substituída pelo ADR-0134
 date: 2026-10-19
 decision-makers: Marcelo Ribeiro
 ---

@@ -14,7 +14,6 @@ As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a
 - O site do SharePoint dos arquivos e, se quiser, a biblioteca e uma pasta dentro dela (veja SharePoint, na Referência).
 - A caixa dos e-mails do sistema: uma que a empresa já tem, como um projetos@ que a equipe lê, ou uma compartilhada que o script do Exchange cria (veja Exchange Online, na Referência).
 - Quem será o primeiro administrador do FiscoProjects e o e-mail que recebe os alertas da instalação.
-- A chave de licença do Syncfusion, do titular da instalação (veja Licenças de terceiros, na Referência).
 - Se os termos de aceite forem assinados pelo sistema, a conta da Autentique, com o plano que couber no volume de termos (veja Assinatura dos termos de aceite, na Referência). Sem ela, a gestão só anexa os termos assinados por fora.
 
 ### Ferramentas de quem instala
@@ -118,20 +117,16 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 
    Depois do `apply`, apague o `infra/terraform/instalacao.tfplan`: ele guarda valores sensíveis da instalação.
 
-5. **Guarde os segredos no Key Vault** (o nome sai em `terraform -chdir=infra/terraform output key_vault_name`), sem deixá-los no histórico do terminal: a chave do Syncfusion e, se os termos forem assinados pela Autentique, a chave da API e o segredo do aviso dela (veja Assinatura dos termos de aceite, na Referência, para gerá-los):
+5. **Guarde os segredos no Key Vault**, só se os termos forem assinados pela Autentique (o nome do cofre sai em `terraform -chdir=infra/terraform output key_vault_name`), sem deixá-los no histórico do terminal: a chave da API e o segredo do aviso dela (veja Assinatura dos termos de aceite, na Referência, para gerá-los):
 
    ```powershell
-   $chave = Read-Host 'Chave do Syncfusion'
-   az keyvault secret set --vault-name <cofre> --name Syncfusion--LicenseKey --value $chave --output none
-
-   # Só com a Autentique:
    $chave = Read-Host 'Chave da API da Autentique'
    az keyvault secret set --vault-name <cofre> --name Signature--Autentique--ApiKey --value $chave --output none
    $segredo = Read-Host 'Segredo do aviso da Autentique'
    az keyvault secret set --vault-name <cofre> --name Signature--Autentique--WebhookSecret --value $segredo --output none
    ```
 
-   Depois, ponha `syncfusion_license_in_key_vault = true` e, com a Autentique, `autentique = { webhook = true }` no `local.auto.tfvars` e aplique de novo (passo 4).
+   Depois, ponha `autentique = { webhook = true }` no `local.auto.tfvars` e aplique de novo (passo 4).
 
 6. **Dê o site do SharePoint ao aplicativo**, com uma conta de Administrador do SharePoint ou Administrador global. Na primeira vez no tenant, o Microsoft Graph PowerShell pede o consentimento para `Sites.FullControl.All`, que só um Administrador de aplicativos ou global dá:
 
@@ -177,6 +172,11 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    ```
 
 4. Publique: `./infra/scripts/Publish-Version.ps1`. A aplicação reinicia com a versão nova e fica alguns minutos fora do ar: prefira um horário sem uso.
+5. Uma vez, numa instalação de antes da Linha do tempo própria (ADR-0134), que guarda a chave do Syncfusion: antes do passo 3, tire a linha `syncfusion_license_in_key_vault` do `local.auto.tfvars` (ou do `.tfvars` do ambiente, numa instalação pelo repositório); depois do `apply`, que tira a configuração da chave do App Service, apague o segredo, que a aplicação não lê mais:
+
+   ```bash
+   az keyvault secret delete --vault-name <cofre> --name Syncfusion--LicenseKey
+   ```
 
 Para voltar a uma versão anterior, rode o `Publish-Version.ps1` na pasta do pacote dela, com o `local.auto.tfvars` da instalação em `infra/terraform/`: as migrações só acrescentam, e a versão anterior roda no banco novo (ADR-0125). Não aplique o Terraform da versão anterior sem conferir o plano.
 
@@ -224,8 +224,7 @@ Com as ferramentas de "Antes de começar" (ADR-0053, ADR-0114):
    terraform -chdir=infra/terraform apply <ambiente>.tfplan
    ```
 
-5. Crie a chave do Syncfusion no Key Vault, como no passo 5 de "Instalar", ponha `syncfusion_license_in_key_vault = true` no `.tfvars` do ambiente e aplique de novo.
-6. A Autentique: o `dev.tfvars` já a liga, com o sandbox e o aviso (ADR-0130). Antes de aplicá-lo, crie os dois segredos dela no Key Vault, como no passo 5 de "Instalar", com o aviso cadastrado no endereço do `dev`, e confira que a versão publicada no `dev` já conhece a Autentique: a anterior não sobe com `Signature:Provider` = `Autentique`. Num ambiente sem a Autentique, tire o bloco `autentique` do `.tfvars`.
+5. A Autentique: o `dev.tfvars` já a liga, com o sandbox e o aviso (ADR-0130). Antes de aplicá-lo, crie os dois segredos dela no Key Vault, como no passo 5 de "Instalar", com o aviso cadastrado no endereço do `dev`, e confira que a versão publicada no `dev` já conhece a Autentique: a anterior não sobe com `Signature:Provider` = `Autentique`. Num ambiente sem a Autentique, tire o bloco `autentique` do `.tfvars`.
 
 Para apagar um ambiente: `terraform -chdir=infra/terraform destroy -var-file=environments/<ambiente>.tfvars`. O Key Vault fica recuperável pelo prazo da exclusão reversível (7 dias no `dev`).
 
@@ -291,7 +290,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Produção: App Service Linux B1 com Always On e Azure SQL provisionado (S0, ou Basic para começar) (ADR-0048, ADR-0052, [custos estimados](custos-estimados.md)).
 - Desenvolvimento e demonstração (opcional): App Service B1 e Azure SQL Basic, sem backups mensais; a oferta gratuita do Azure SQL acabaria em poucos dias com os processos em segundo plano (ADR-0052, ADR-0114). Uma assinatura de avaliação pode não ter cota de App Service na Brazil South: aí `app_location` leva a aplicação e o banco para uma região com cota, só nesse ambiente, que tem só dados fictícios (ADR-0114).
 - Identidade gerenciada do App Service com acesso ao Azure SQL e ao Key Vault (ADR-0052).
-- Key Vault com a chave de licença do Syncfusion e, com a Autentique, a chave e o segredo do aviso dela, com exclusão reversível e proteção contra exclusão definitiva (ADR-0051, ADR-0052, ADR-0059). O aplicativo no Entra não tem certificado: ele confia na identidade gerenciada (ADR-0117).
+- Key Vault com os segredos criados à mão (com a Autentique, a chave e o segredo do aviso dela), com exclusão reversível e proteção contra exclusão definitiva (ADR-0052, ADR-0059). O aplicativo no Entra não tem certificado: ele confia na identidade gerenciada (ADR-0117).
 - Só HTTPS; domínio próprio opcional com certificado gerenciado (ADR-0052).
 - Application Insights, teste de disponibilidade no `/health` e alertas por e-mail para o administrador: sistema fora do ar, aumento de erros, fila de e-mails parada (`fiscoprojects.emails.oldest_waiting` acima de 15 minutos) e banco perto do limite (ADR-0057, ADR-0112). A aplicação envia a telemetria só com a conexão em `APPLICATIONINSIGHTS_CONNECTION_STRING`, posta pelo Terraform nas configurações do App Service (ADR-0114); `Monitoring:TracesPerSecond` muda a amostragem (padrão 5 traces por segundo).
 - Backups do Azure SQL: restauração a qualquer ponto em 14 dias (Basic: 7), um backup mensal guardado por 12 meses e redundância por zona dentro da Brazil South (parâmetro da instalação) (ADR-0059).
@@ -301,7 +300,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 
 ### Licenças de terceiros
 
-- Syncfusion: chave de licença válida do titular da instalação (comunitária, se se enquadrar nos critérios, ou paga), configurada fora do repositório (ADR-0051). A aplicação a lê de `Syncfusion:LicenseKey`, vinda do Key Vault em produção, e a entrega à Linha do tempo pelo `GET /api/client-settings`, só com sessão; sem ela, a Linha do tempo mostra o aviso de avaliação do Syncfusion (ADR-0087).
+- Nenhum componente pago: a Linha do tempo é desenhada pelo próprio FiscoProjects, sem chave de licença (ADR-0134).
 - IBM Plex Sans e IBM Plex Mono: SIL Open Font License, distribuída junto com os arquivos das fontes (ADR-0064).
 
 ### Segurança
@@ -333,5 +332,4 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Arquivos locais: `FileStorage:Provider` = `Local` e a pasta em `FileStorage:Local:RootPath` (no `appsettings.Development.json`, `App_Data/files`, dentro da pasta da API e fora do Git). Apagar a pasta zera os arquivos de demonstração (ADR-0079).
 - SDK do .NET 10 e Node na LTS mais recente (Node 26 a partir de 28/10/2026) (ADR-0060).
 - Docker para o SQL Server dos testes de integração (ADR-0048, ADR-0056).
-- Licença comunitária do Syncfusion em nome de Marcelo (ADR-0051), nos segredos do usuário: `dotnet user-secrets set "Syncfusion:LicenseKey" "<chave>" --project src/FiscoProjects.Api` (ADR-0087).
 - Terraform CLI e Azure CLI instalados (ADR-0053).

@@ -13,14 +13,15 @@ context: |
   fornecedores); documentos (SharePoint, versões, status manual); links; acessos (senha cifrada);
   termos de aceite (assinados por um provedor trocável ou anexados, só da gestão); membros e permissões; avisos (e-mail e sino);
   auditoria e LGPD; administração; perfil e tema.
-  Depois da v1: horas do projeto (apontamento de cada pessoa e saldo em horas, só para o administrador).
+  Também na v1: horas do projeto (apontamento de cada pessoa e saldo em horas, só para o administrador).
+  v2 (desde 31/10/2026): Linha do tempo própria, sem Gantt nem chave de licença de terceiros (ADR-0134).
   NÃO faz: service desk geral nem chamado sem projeto; usuários externos (v1); filas compartilhadas;
   aceite por clique; horas em reais, orçamento, custos; integração com sistemas de fornecedores; dependências
   entre projetos; importação do MS Project; .mpp nativo; Teams; busca global; senha Microsoft no sistema.
 
   Stack: .NET 10 (LTS) ASP.NET Core, EF Core com SQL Server; React + TypeScript estrito, MUI só gratuito
   (@mui/material, icons-material, X Data Grid e Date Pickers MIT), React Hook Form + Zod, Tiptap,
-  react-i18next; Syncfusion React Gantt (licença comunitária) só dentro de ScheduleGantt; Azure SQL
+  react-i18next; Linha do tempo própria em SVG no ScheduleGantt, sem Gantt de terceiros; Azure SQL
   (provisionado em produção, oferta gratuita em dev), App Service Linux em Brazil South, Key Vault,
   identidade gerenciada, Application Insights + OpenTelemetry; Terraform (azurerm, azuread) em
   infra/terraform; GitHub Actions chamando scripts do repositório. Node 24 até 28/10/2026, depois Node 26.
@@ -36,7 +37,7 @@ context: |
 
   Integrações: Entra ID (OIDC, single-tenant; papéis nunca por App Roles); Microsoft Graph (usuários do
   diretório, SharePoint com Sites.Selected só escrita, e-mail por caixa compartilhada com RBAC do Exchange,
-  sem Mail.Send no Entra); Azure; Syncfusion (chave fora do repo); Teams depois.
+  sem Mail.Send no Entra); Azure; Autentique (assinatura dos termos); Teams depois.
 
   Padrões recorrentes (REUSE, não reinvente):
   - Microsoft 365 atrás de interfaces (IEmailSender, IFileStorage) com implementações locais para dev e testes.
