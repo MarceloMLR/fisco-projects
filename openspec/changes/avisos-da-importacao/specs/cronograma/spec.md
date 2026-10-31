@@ -41,8 +41,8 @@ O "Novo projeto" MUST oferecer "A partir do MS Project", além de "Em branco" e 
 - **THEN** a prévia mostra as fases, os itens, os avisos e os responsáveis, a API recebe o cronograma convertido, a pessoa com o papel e o início, e a tela abre o projeto
 
 #### Scenario: Quadro da conversão na tela
-- **WHEN** a gerente escolhe um arquivo com dois avisos da conversão
-- **THEN** a tela rola até o quadro, que diz quantas tarefas e quantos recursos do arquivo vieram e os dois avisos, e a prévia mostra "2 ajustes na conversão", que leva ao quadro
+- **WHEN** a gerente escolhe um arquivo com dois avisos da conversão e um recurso sem pessoa achada, e depois troca o início
+- **THEN** a tela rola até o quadro só na escolha do arquivo, o quadro diz quantas tarefas e quantos recursos do arquivo vieram, os dois avisos e a tarefa sem responsável, e a prévia mostra "3 ajustes na conversão", que leva ao quadro
 
 #### Scenario: Arquivo sem ajustes na tela
 - **WHEN** a gerente escolhe um arquivo que veio inteiro, sem avisos, com a pessoa de cada recurso achada

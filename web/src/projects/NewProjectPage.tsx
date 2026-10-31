@@ -3,7 +3,7 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -19,6 +19,7 @@ import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { useSession } from '../session/SessionContext';
 import { Page } from '../shell/Page';
+import { reducesMotion } from '../theme/motion';
 import { theme } from '../theme/theme';
 import { ClientSelectField } from './ClientSelectField';
 import type { ChosenFolder } from './ProjectFolderDialog';
@@ -26,6 +27,7 @@ import { ProjectFolderField } from './ProjectFolderField';
 import { systemFolderPath } from './projectFolder';
 import { MsProjectFileField, MsProjectOwners, MsProjectWarnings } from './MsProjectImportFields';
 import {
+  adjustmentsOf,
   importedScheduleOf,
   type MsProjectReading,
   readMsProject,
@@ -115,6 +117,17 @@ const sectionTitleSx = {
 // Below 700 px the fields of a row stack (fp-form-row).
 const narrowForm = '@media (max-width: 700px)';
 
+/** Brings the box of the conversion into view, smoothly unless the person asks for less motion, focusing it if asked. */
+function showConversion(box: HTMLElement | null, focus: boolean) {
+  if (box === null) {
+    return;
+  }
+  if (focus) {
+    box.focus({ preventScroll: true });
+  }
+  box.scrollIntoView({ block: 'nearest', behavior: reducesMotion() ? 'auto' : 'smooth' });
+}
+
 /**
  * Novo projeto (canvas NovoProjeto): the section "Dados do projeto" and the section "Cronograma", "Em branco", "A
  * partir de um modelo", with the model, the start and its preview beside the form (ADR-0017), or "A partir do MS
@@ -186,6 +199,9 @@ export function NewProjectPage() {
   const [msReading, setMsReading] = useState(false);
   const [msError, setMsError] = useState<string>();
   const readings = useRef(0);
+  // The box of the conversion, where the page goes after reading a new file and from the shortcut of the preview.
+  const conversion = useRef<HTMLDivElement>(null);
+  const [filesRead, setFilesRead] = useState(0);
   const clientId = useWatch({ control, name: 'clientId' });
   const clientChoices = useQuery(clientChoicesQuery());
   const clientName =
@@ -210,6 +226,9 @@ export function NewProjectPage() {
     if ('preview' in result) {
       setMsFile(file);
       setMsPreview(result.preview);
+      if (!keepOwners) {
+        setFilesRead((count) => count + 1);
+      }
       setOwners((current) =>
         keepOwners && current.length === result.preview.resources.length
           ? current
@@ -234,6 +253,13 @@ export function NewProjectPage() {
     }
   };
 
+  // A new file shows the box of the conversion, which may be below the visible part of the form (ADR-0135).
+  useEffect(() => {
+    if (filesRead > 0) {
+      showConversion(conversion.current, false);
+    }
+  }, [filesRead]);
+
   // A new start reads the file again: the server gives the dates from it (ADR-0051).
   const startChanged = (start: string) => {
     if (msFile !== null && msPreview !== null && start !== '' && start !== msPreview.start) {
@@ -247,12 +273,19 @@ export function NewProjectPage() {
   const typedCode = useWatch({ control, name: 'code' });
   const typedName = useWatch({ control, name: 'name' });
   const shownMsPreview = origin === 'msProject' ? msPreview : null;
+  const hasClient = clientName !== undefined;
   const hasPreview = chosenTemplate !== undefined || shownMsPreview !== null;
   const preview =
     chosenTemplate !== undefined ? (
       <TemplatePreview template={chosenTemplate} />
     ) : shownMsPreview !== null ? (
-      <MsProjectSchedulePreview preview={shownMsPreview} />
+      <MsProjectSchedulePreview
+        preview={shownMsPreview}
+        adjustments={adjustmentsOf(shownMsPreview, owners, hasClient)}
+        onShowAdjustments={() => {
+          showConversion(conversion.current, true);
+        }}
+      />
     ) : null;
   const errorText = (message: string | undefined) =>
     isProjectFieldError(message) ? t(message) : undefined;
@@ -591,7 +624,14 @@ export function NewProjectPage() {
                       )}
                     />
                   </Box>
-                  {msPreview !== null && <MsProjectWarnings preview={msPreview} />}
+                  {msPreview !== null && (
+                    <MsProjectWarnings
+                      ref={conversion}
+                      preview={msPreview}
+                      owners={owners}
+                      hasClient={hasClient}
+                    />
+                  )}
                   {msPreview !== null && (
                     <MsProjectOwners
                       preview={msPreview}

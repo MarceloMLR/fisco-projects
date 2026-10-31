@@ -3,7 +3,8 @@ import { demoPeople } from './server';
 
 /**
  * The preview of a fictitious file of the MS Project (ADR-0135), as the API reads it from the start given: a phase with
- * two tasks and a milestone, Carla found by her e-mail, a consultant without one, and two changes of the conversion.
+ * two tasks and a milestone, Carla found by her e-mail, a consultant without one, two changes of the conversion and the
+ * whole file brought.
  */
 export function demoMsProjectPreview(start = '2026-10-13'): MsProjectPreview {
   // The start moves the dates as the server would, in business days: 13/10 or 19/10/2026, both on a Monday or Tuesday.
@@ -106,8 +107,14 @@ export function demoMsProjectPreview(start = '2026-10-13'): MsProjectPreview {
       { name: 'Consultor externo', email: null, tasks: 1, person: null, client: false },
     ],
     warnings: [
-      { kind: 'DependencyLags', names: ['Parametrizar regras de ICMS → Aceite da configuração'] },
-      { kind: 'SeveralResources', names: ['Treinar usuários'] },
+      {
+        kind: 'DependencyLags',
+        names: ['Parametrizar regras de ICMS → Aceite da configuração'],
+        count: 1,
+      },
+      { kind: 'SeveralResources', names: ['Treinar usuários'], count: 1 },
     ],
+    // The phase and its three items came, and the two resources of the file.
+    counts: { fileTasks: 4, tasks: 4, fileResources: 2, resources: 2 },
   };
 }

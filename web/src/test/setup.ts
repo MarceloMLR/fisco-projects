@@ -22,9 +22,14 @@ if (typeof Range !== 'undefined') {
   }
 }
 
-// jsdom scrolls nothing: a line the keyboard brings into view (the Linha do tempo) stays where it is.
+// jsdom scrolls nothing: a line the keyboard brings into view (the Linha do tempo) stays where it is. A test may spy on
+// it, to see what the page brings into view.
 if (typeof Element !== 'undefined' && !('scrollIntoView' in Element.prototype)) {
-  Object.defineProperty(Element.prototype, 'scrollIntoView', { value: () => undefined });
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    value: () => undefined,
+    writable: true,
+    configurable: true,
+  });
 }
 
 // Any call to the API that a test did not simulate fails the test.
