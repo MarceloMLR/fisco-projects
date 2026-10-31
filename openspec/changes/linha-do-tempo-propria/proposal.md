@@ -6,10 +6,10 @@ A Linha do tempo do cronograma usa o Gantt do Syncfusion pela licença comunitá
 
 - A Linha do tempo passa a ser desenhada por um componente do FiscoProjects, com o mesmo comportamento e o mesmo visual de hoje, que segue o componente Gantt do design system: a tabela ao lado, as escalas Dias, Semanas e Meses ajustadas ao espaço, a linha de hoje, os dias não úteis, as fases, as tarefas, as subtarefas e os marcos, o progresso, a linha de base, o caminho crítico, as setas das dependências, a escolha da linha e o Expandir.
 - Quem edita, no computador, continua arrastando a barra, puxando a borda e ligando o fim de uma barra ao início de outra; nada muda até a API responder, e a barra volta se ela recusar.
-- As fases e as tarefas-resumo continuam se recolhendo pela seta ao lado do nome.
+- As fases e as tarefas-resumo continuam se recolhendo pela seta ao lado do nome, e a divisória entre a tabela e o gráfico continua se arrastando.
 - A tabela passa a ser navegável pelo teclado, e cada barra tem um nome para o leitor de tela.
 - A Linha do tempo aparece completa em qualquer instalação, sem chave de licença e sem aviso de versão de avaliação.
-- Saem do frontend os pacotes `@syncfusion/*`, o CSS do tema dele, a paleta, a remoção da fonte do Google no build e a espera do Expandir pela Linha do tempo da aba.
+- Saem do frontend os pacotes `@syncfusion/*` (hoje 6,6 MB de JavaScript e 2,4 MB de CSS baixados ao abrir um projeto), o CSS do tema dele, a paleta, a remoção da fonte do Google no build e a espera do Expandir pela Linha do tempo da aba.
 
 ## Capabilities
 

@@ -20,7 +20,8 @@ O que já existe ajuda:
 
 E o Syncfusion custa mais do que a licença:
 
-- cada comprador acima do limite da licença comunitária precisa da própria licença, e a chave passa pelo Key Vault, pelo Terraform, pelo Codespaces e pela API (ADR-0087);
+- a licença comunitária só vale enquanto quem desenvolve fatura menos de US$ 1 milhão por ano, tem até 5 desenvolvedores e até 10 funcionários; nesse limite, o sistema pode ser entregue às empresas para uso interno, mas a venda do código, a revenda ou o desenvolvimento pela própria empresa pedem a licença comercial (US$ 959 por desenvolvedor por ano só para o Gantt), e a chave passa pelo Key Vault, pelo Terraform, pelo Codespaces e pela API (ADR-0087);
+- o Gantt dele pesa 6,6 MB de JavaScript e 2,4 MB de CSS (cerca de 1,7 MB comprimidos), mais que o resto do sistema inteiro (1,9 MB), baixados por quem abre um projeto, que carrega a Linha do tempo antes;
 - o visual vem de mais de 300 linhas de CSS por cima do tema Material 3 dele, que ainda importa uma fonte do Google, tirada no build (ADR-0064);
 - a telemetria dele precisa ser desligada (ADR-0058);
 - ele procura partes de si na página inteira, então só uma Linha do tempo pode estar montada por vez (o Expandir espera a da aba sair), e os testes de escolher linhas e do caminho crítico precisam de arquivos próprios;
@@ -54,7 +55,8 @@ Opção escolhida: **E. Componente próprio**, porque o servidor já faz a parte
 
 ### Consequências
 
-- Bom, porque ninguém compra licença para usar a Linha do tempo, e a chave sai da instalação.
+- Bom, porque ninguém compra licença para usar a Linha do tempo, nem com o crescimento ou a venda do código, e a chave sai da instalação.
+- Bom, porque a Linha do tempo fica muito mais leve para baixar, principalmente no celular.
 - Bom, porque o visual sai direto dos tokens, sem sobrescrever o tema de outra biblioteca, e os testes passam a usar o componente real.
 - Bom, porque abre caminho para o que o Syncfusion não daria sem a licença: importar do MS Project e o que vier depois.
 - Ruim, porque passamos a manter o arrastar, a rolagem e o desempenho com muitas linhas.
@@ -70,8 +72,8 @@ Opção escolhida: **E. Componente próprio**, porque o servidor já faz a parte
 
 ### A. Manter o Syncfusion
 
-- Bom, porque já funciona.
-- Ruim, porque cada comprador acima do limite da licença comunitária paga a licença dele, e todos os custos do contexto continuam.
+- Bom, porque já funciona e, enquanto Marcelo estiver no limite da licença comunitária, não custa nada.
+- Ruim, porque a licença comercial volta com o crescimento ou a venda do código, e o peso, o CSS por cima e os contornos continuam.
 
 ### B. SVAR React Gantt (edição aberta)
 

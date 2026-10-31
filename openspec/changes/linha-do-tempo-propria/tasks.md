@@ -7,7 +7,7 @@
 - [ ] 2.1 `ganttRows` sem as conversões para o Syncfusion, com o nível e o recolher; cabeçalhos da escala (`timelineHeader`), com testes sem tela
 - [ ] 2.2 Tabela em árvore acessível: as colunas de hoje (compacta, completa e celular), o atraso, a seta de recolher e o teclado
 - [ ] 2.3 Gráfico: a escala ajustada ao espaço, os dias não úteis, hoje, as fases, as tarefas com o progresso, os marcos, a linha de base, o caminho crítico, as setas, a escolha e o `goToToday`
-- [ ] 2.4 Rolagem: a vertical junta, a lateral só no gráfico, os cabeçalhos presos
+- [ ] 2.4 Rolagem e divisória: a vertical junta, a lateral só no gráfico, os cabeçalhos presos e a divisória que se arrasta, também pelo teclado
 
 ## 3. Interações
 
