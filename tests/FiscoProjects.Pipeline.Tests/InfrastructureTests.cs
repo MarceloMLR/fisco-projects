@@ -53,7 +53,7 @@ public sealed partial class InfrastructureTests
             code.Should().NotContain($"resource \"{resource}\"");
         }
 
-        Read("modules", "app", "main.tf").Should().Contain("@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=Syncfusion--LicenseKey)");
+        Read("modules", "app", "main.tf").Should().Contain("@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})");
         var ignored = Repository.Read(".gitignore").Split('\n');
         ignored.Should().Contain(".terraform/").And.Contain("*.tfstate").And.Contain("*.tfstate.*").And.Contain("*.auto.tfvars");
         foreach (var file in Directory.GetFiles(Path.Combine(Folder, "environments")))
@@ -323,6 +323,21 @@ public sealed partial class InfrastructureTests
             .And.Contain("https://<endereço da instalação>/signature-notices")
             .And.Contain("do tipo Assinatura, com os eventos `signature.accepted` e `signature.rejected`")
             .And.Contain("autentique = { webhook = true }");
+    }
+
+    // Spec: cronograma, requirement "Linha do tempo sem licença de terceiros" (ADR-0134).
+    [Fact(DisplayName = "Instalação que não guarda a chave")]
+    public void Installation_NeitherAsksNorKeepsTheKeyOfTheTimeline()
+    {
+        var terraform = AllCode() + string.Join('\n', Directory.GetFiles(Path.Combine(Folder, "environments")).Select(File.ReadAllText));
+        terraform.Should().NotContainEquivalentOf("syncfusion");
+
+        // The guide names the old key only to say how to remove it from an installation that still keeps it.
+        var sections = Repository.Read("docs", "instalacao.md").Split("\n## ");
+        sections.Where(section => !section.StartsWith("Atualizar para uma versão nova", StringComparison.Ordinal))
+            .Should().AllSatisfy(section => section.Should().NotContainEquivalentOf("syncfusion"));
+        sections.Single(section => section.StartsWith("Atualizar para uma versão nova", StringComparison.Ordinal))
+            .Should().Contain("az keyvault secret delete").And.Contain("--name Syncfusion--LicenseKey");
     }
 
     [Fact(DisplayName = "Aplicativo do Entra sem segredo")]

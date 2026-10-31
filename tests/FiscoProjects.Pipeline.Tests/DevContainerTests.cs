@@ -36,10 +36,10 @@ public sealed class DevContainerTests : IDisposable
             commands[..2].Should().Equal("set -euo pipefail", "cd \"$(dirname \"$0\")/..\"");
         }
 
-        // The key of Syncfusion comes only from a secret of the codespace.
+        // No secret besides the password of the database it makes itself (ADR-0134): no license key.
         foreach (var file in Directory.GetFiles(RepositoryFiles.PathOf(".devcontainer")))
         {
-            File.ReadAllText(file).Should().NotContain("LicenseKey");
+            File.ReadAllText(file).Should().NotContain("LicenseKey").And.NotContainEquivalentOf("syncfusion");
         }
     }
 

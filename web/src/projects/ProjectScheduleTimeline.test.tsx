@@ -409,14 +409,8 @@ describe('Linha do tempo pelo teclado', () => {
 // Spec: cronograma, requirement "Linha do tempo sem licença de terceiros".
 describe('Linha do tempo sem licença de terceiros', () => {
   it('Instalação sem chave de licença', async () => {
-    // The installation has no key of Syncfusion, and the timeline does not ask for one.
-    let asked = false;
-    server.use(
-      http.get('/api/client-settings', () => {
-        asked = true;
-        return HttpResponse.json({ timelineLicense: null });
-      }),
-    );
+    // The installation has no key of Syncfusion, and the timeline asks for none: any call the test does not simulate
+    // fails it.
     const { container } = await openTimeline();
 
     // Complete: the lines, the bars, the arrows and today, without a notice of a trial.
@@ -425,7 +419,6 @@ describe('Linha do tempo sem licença de terceiros', () => {
     expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
     expect(container.querySelector('.g-today-label')).not.toBeNull();
     expect(container.textContent).not.toMatch(/syncfusion|licen[cs]|trial|avalia/i);
-    expect(asked).toBe(false);
   });
 
   it('Barra que volta na recusa', async () => {

@@ -325,22 +325,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/client-settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["GetClientSettings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -2449,11 +2433,6 @@ export interface components {
             logoUrl: null | string;
             observation: null | string;
             status: components["schemas"]["ClientStatus"];
-        };
-        /** @description What the browser needs from the configuration of the installation: the license key of the timeline. */
-        ClientSettingsResponse: {
-            /** @description The Syncfusion license key (ADR-0051, ADR-0087); none when not configured. */
-            timelineLicense: null | string;
         };
         /** @enum {unknown} */
         ClientStatus: "Active" | "Inactive";
@@ -5250,26 +5229,6 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    GetClientSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClientSettingsResponse"];
                 };
             };
         };

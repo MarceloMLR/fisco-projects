@@ -906,26 +906,6 @@
         }
       }
     },
-    "/api/client-settings": {
-      "get": {
-        "tags": [
-          "FiscoProjects.Api"
-        ],
-        "operationId": "GetClientSettings",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClientSettingsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/audit": {
       "get": {
         "tags": [
@@ -11071,22 +11051,6 @@
         },
         "description": "One client in the list: the CNPJ without punctuation (the screen formats it) and the address of the logo, which\nchanges whenever the logo changes, so the browser may keep it; null without a logo."
       },
-      "ClientSettingsResponse": {
-        "required": [
-          "timelineLicense"
-        ],
-        "type": "object",
-        "properties": {
-          "timelineLicense": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "The Syncfusion license key (ADR-0051, ADR-0087); none when not configured."
-          }
-        },
-        "description": "What the browser needs from the configuration of the installation: the license key of the timeline."
-      },
       "ClientStatus": {
         "enum": [
           "Active",
@@ -17509,9 +17473,6 @@
     },
     {
       "name": "MyWork"
-    },
-    {
-      "name": "FiscoProjects.Api"
     },
     {
       "name": "Audit"
