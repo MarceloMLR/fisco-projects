@@ -15,6 +15,7 @@ import { emailsOf, projectMembersQuery } from '../api/queries';
 import { FormField } from '../components/FormField';
 import { MultiSelect } from '../components/MultiSelect';
 import { Select } from '../components/Select';
+import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { formatDayText, maskTypedDay } from '../format/dates';
 import { itemsAfter, itemsOf, linkTypes } from './schedule';
@@ -23,6 +24,7 @@ import {
   type LinkSetting,
   noOwner,
   noParent,
+  noteMaxLength,
   type ScheduleItemValues,
   clientOwner,
 } from './scheduleItemValues';
@@ -40,8 +42,9 @@ const rowSx = (columns: string) =>
  * The fields of a task or milestone, the same in "Nova tarefa" and in the details: the name, the phase, the task it is
  * in ("Dentro de", a task right in the phase, ADR-0088), the start typed as dd/mm/aaaa and, for a task, the duration in
  * business days, the deadline (optional, also of a task with subtasks, which never moves the dates, GanttA-2), the
- * owner (a person of the project who is not a viewer, ADR-0043); and the items it depends on,
- * without the ones that already depend on it, which would make a cycle (ADR-0019), nor the tasks with subtasks. The end
+ * owner (a person of the project who is not a viewer, ADR-0043); the items it depends on,
+ * without the ones that already depend on it, which would make a cycle (ADR-0019), nor the tasks with subtasks; and the
+ * note, plain text up to 2,000 characters (ADR-0139). The end
  * is computed by the API, with the calendar of the installation; the progress changes by its own action (ADR-0086). A
  * task with subtasks (`summary`) has only the name, the phase and the owner: the rest comes from its subtasks.
  */
@@ -301,6 +304,22 @@ export function ScheduleItemFields({
           error={errorText((errors.linkSettings as FieldError | undefined)?.message)}
         />
       )}
+      <Controller
+        control={control}
+        name="note"
+        render={({ field }) => (
+          <TextArea
+            label={t('projects.schedule.form.note')}
+            optional={t('projects.schedule.form.optional')}
+            maxLength={noteMaxLength}
+            helper={t('projects.schedule.form.noteHelp', {
+              count: noteMaxLength - field.value.length,
+            })}
+            error={errorText(errors.note?.message)}
+            {...field}
+          />
+        )}
+      />
     </>
   );
 }

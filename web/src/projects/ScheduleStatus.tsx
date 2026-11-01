@@ -1,3 +1,4 @@
+import StickyNote2Outlined from '@mui/icons-material/StickyNote2Outlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
 import type { ScheduleItem } from '../api/client';
@@ -93,6 +94,27 @@ export function LateCounts({
           {t('projects.schedule.lateMilestones', { count: milestones })}
         </DueDate>
       )}
+    </Box>
+  );
+}
+
+/**
+ * The mark of a task or milestone with a note, beside its name in the Lista and in the Linha do tempo (ADR-0139): the
+ * icon, with the note on hover and for who reads the screen; nothing without a note.
+ */
+export function NoteMark({ note }: { note: string | null }) {
+  const { t } = useTranslation();
+  if (note === null) {
+    return null;
+  }
+  return (
+    <Box component="span" title={note} sx={{ display: 'inline-flex', flex: 'none' }}>
+      <StickyNote2Outlined
+        role="img"
+        aria-hidden={false}
+        aria-label={t('projects.schedule.noteMark', { note })}
+        sx={{ fontSize: 16, color: 'var(--text-secondary)' }}
+      />
     </Box>
   );
 }

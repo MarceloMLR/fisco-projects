@@ -333,4 +333,32 @@ describe('Folga no Excel', () => {
       '4',
     ]);
   });
+
+  // Spec: cronograma, requirement "Notas pela tela" (ADR-0139).
+  it('Nota no Excel', async () => {
+    const project = demoProjects()[0];
+    if (project === undefined) {
+      throw new Error('No ERP-FIN.');
+    }
+    const schedule = scheduleOfTheReport();
+    for (const phase of schedule.phases) {
+      phase.items = phase.items.map((item) =>
+        item.name === 'Validar cadastro de produtos'
+          ? { ...item, note: 'Aguardando o cliente mandar a planilha de produtos' }
+          : item,
+      );
+    }
+
+    const files = await unzip(
+      await scheduleReport({ project, schedule, generatedAt: '2026-10-16T13:30:00Z', dates, t }),
+    );
+
+    const sheet = cellsOf(files.get('xl/worksheets/sheet1.xml') ?? '');
+    expect(sheet.get('T1')?.value).toBe('Notas');
+    expect([sheet.get('C5')?.value, sheet.get('T5')?.value]).toEqual([
+      'Validar cadastro de produtos',
+      'Aguardando o cliente mandar a planilha de produtos',
+    ]);
+    expect(sheet.get('T2')?.value ?? '').toBe('');
+  });
 });

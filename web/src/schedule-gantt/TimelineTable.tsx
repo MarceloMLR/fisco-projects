@@ -1,6 +1,7 @@
 import ChevronRightOutlined from '@mui/icons-material/ChevronRightOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import FlagOutlined from '@mui/icons-material/FlagOutlined';
+import StickyNote2Outlined from '@mui/icons-material/StickyNote2Outlined';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -253,6 +254,12 @@ function TableRow({
         <span className="fp-gantt__text" title={row.name}>
           {row.name}
         </span>
+        {item?.note != null && (
+          <StickyNote2Outlined
+            titleAccess={t('projects.schedule.noteMark', { note: item.note })}
+            className="fp-gantt__icon"
+          />
+        )}
         {columns === 'narrow' && item !== undefined && isLate(row) && (
           <WarningAmberOutlined
             titleAccess={lateText(item, t)}

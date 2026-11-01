@@ -549,6 +549,7 @@ async function loadProject(
             })),
             parentId: item.inside === undefined ? null : idOf(item.inside, item.name),
             deadline: item.deadline === undefined ? null : dayFrom(firstDay, item.deadline),
+            note: item.note ?? null,
           },
         }),
         `Item ${item.name} de ${project.code}`,

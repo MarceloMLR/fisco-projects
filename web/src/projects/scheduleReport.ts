@@ -113,6 +113,7 @@ export function scheduleReport({
     t('projects.export.excel.columns.baselineStart'),
     t('projects.export.excel.columns.baselineEnd'),
     t('projects.export.excel.columns.baselineDeviation'),
+    t('projects.export.excel.columns.note'),
   ];
   const rows: XlsxCell[][] = [];
   for (const phase of schedule.phases) {
@@ -127,6 +128,7 @@ export function scheduleReport({
       '',
       percent(phase.progress),
       situation(workSituation(phase)),
+      '',
       '',
       '',
       '',
@@ -165,6 +167,8 @@ export function scheduleReport({
         day(item.baselineStart),
         day(item.baselineEnd),
         item.baselineDeviation ?? '',
+        // The note as typed, with its line breaks (ADR-0139).
+        item.note ?? '',
       ]);
     }
   }
@@ -178,7 +182,7 @@ export function scheduleReport({
     [
       {
         name: t('projects.export.excel.sheet'),
-        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 12, 16, 14, 10, 12, 14, 14, 14],
+        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 12, 16, 14, 10, 12, 14, 14, 14, 48],
         header: true,
         rows: [header, ...rows],
       },

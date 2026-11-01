@@ -611,7 +611,8 @@
         "CompletedOn": "Concluída em",
         "ReachedOn": "Atingido em",
         "OwnedByClient": "Responsável: o cliente",
-        "Deadline": "Data-limite"
+        "Deadline": "Data-limite",
+        "Note": "Notas"
       },
       "ScheduleDependency": {
         "ProjectId": "Projeto",
@@ -1200,6 +1201,8 @@
           "LongTasks_other": "{{count}} tarefas com mais de 999 dias úteis ficaram com 999: {{names}}.",
           "CutNames_one": "{{count}} nome longo foi cortado: {{names}}.",
           "CutNames_other": "{{count}} nomes longos foram cortados: {{names}}.",
+          "CutNotes_one": "{{count}} nota longa foi cortada em 2.000 caracteres: {{names}}.",
+          "CutNotes_other": "{{count}} notas longas foram cortadas em 2.000 caracteres: {{names}}.",
           "SeveralResources_one": "{{count}} tarefa com mais de um recurso ficou com o primeiro: {{names}}.",
           "SeveralResources_other": "{{count}} tarefas com mais de um recurso ficaram com o primeiro: {{names}}.",
           "NoOwner_one": "{{count}} marco com recurso ficou sem responsável, porque marco não tem responsável: {{names}}.",
@@ -1647,7 +1650,10 @@
           "Milestone": "Excluir marco"
         },
         "newSubtask": "Nova subtarefa",
-        "clientOwner": "{{name}} (cliente)"
+        "clientOwner": "{{name}} (cliente)",
+        "note": "Notas",
+        "noteHelp_one": "O que a equipe precisa saber, como \"aguardando o cliente mandar os arquivos\". Resta {{count}} caractere.",
+        "noteHelp_other": "O que a equipe precisa saber, como \"aguardando o cliente mandar os arquivos\". Restam {{count}} caracteres."
       },
       "errors": {
         "nameRequired": "Informe o nome.",
@@ -1661,7 +1667,8 @@
         "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",
         "predecessorsInvalid": "Escolha tarefas e marcos deste cronograma.",
         "cycle": "Essa dependência formaria um ciclo: uma das escolhidas já depende desta.",
-        "parentInvalid": "Escolha uma tarefa direto nesta fase, que não seja subtarefa."
+        "parentInvalid": "Escolha uma tarefa direto nesta fase, que não seja subtarefa.",
+        "noteTooLong": "Use até 2.000 caracteres."
       },
       "details": {
         "label": "Tarefa ou marco selecionado",
@@ -1676,7 +1683,8 @@
         "dependsOn": "Depende de",
         "subtasks": "Subtarefas",
         "deadline": "Data-limite",
-        "slack": "Folga"
+        "slack": "Folga",
+        "note": "Notas"
       },
       "phaseDialog": {
         "newTitle": "Nova fase",
@@ -1736,7 +1744,8 @@
       "computed_other": "Calculado pelas {{count}} subtarefas.",
       "clientOwner": "{{name}} (cliente)",
       "clientOwnerWithoutClient": "O cliente",
-      "clientTag": "Cliente"
+      "clientTag": "Cliente",
+      "noteMark": "Notas: {{note}}"
     },
     "timeline": {
       "views": {
@@ -1913,7 +1922,8 @@
           "slack": "Folga (dias úteis)",
           "baselineStart": "Início na linha de base",
           "baselineEnd": "Fim na linha de base",
-          "baselineDeviation": "Diferença da linha de base (dias úteis)"
+          "baselineDeviation": "Diferença da linha de base (dias úteis)",
+          "note": "Notas"
         },
         "types": {
           "phase": "Fase",

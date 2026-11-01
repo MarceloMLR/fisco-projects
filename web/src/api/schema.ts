@@ -2790,6 +2790,8 @@ export interface components {
             deadlineOffset?: null | number;
             /** @description The kind and the lag of each dependency, as the preview gave them; without them, after is "finishes, then starts" without lag. */
             links?: null | components["schemas"]["ImportedLinkResponse"][];
+            /** @description The note of the item, as the preview gave it (ADR-0139). */
+            note?: null | string;
         };
         /**
          * @description A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the
@@ -2818,6 +2820,8 @@ export interface components {
             deadlineOffset: null | number;
             /** @description The kind and the lag of each item in after, in the same order (ADR-0137). */
             links: components["schemas"]["ImportedLinkResponse"][];
+            /** @description The notes of the line, up to 2,000 characters; null without them (ADR-0139). */
+            note: null | string;
         };
         /** @description A dependency of an item converted from the MS Project: the position of the item before, the kind and the lag. */
         ImportedLinkResponse: {
@@ -3019,7 +3023,7 @@ export interface components {
          * @description What the conversion changed, for the person to know before creating the project (ADR-0135).
          * @enum {unknown}
          */
-        MsProjectWarningKind: "LooseTasks" | "DeepTasks" | "DroppedSummaries" | "OtherDependencies" | "SummaryDependencies" | "DependencyLags" | "DependencyCycles" | "LongTasks" | "CutNames" | "SeveralResources" | "NoOwner" | "NoDates" | "OtherResources" | "UnusedResources" | "InactiveTasks" | "BlankLines";
+        MsProjectWarningKind: "LooseTasks" | "DeepTasks" | "DroppedSummaries" | "OtherDependencies" | "SummaryDependencies" | "DependencyLags" | "DependencyCycles" | "LongTasks" | "CutNames" | "SeveralResources" | "NoOwner" | "NoDates" | "OtherResources" | "UnusedResources" | "InactiveTasks" | "BlankLines" | "CutNotes";
         /**
          * @description A change of the conversion, with the names of the lines or resources it touched ("A → B" for a dependency) and how
          *     many: the names, but for the blank lines, which have none.
@@ -3222,6 +3226,8 @@ export interface components {
             deadline?: null | string;
             /** @description The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137). */
             links?: null | components["schemas"]["ScheduleLinkRequest"][];
+            /** @description The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139). */
+            note?: null | string;
         };
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
@@ -3880,6 +3886,8 @@ export interface components {
             deadline?: null | string;
             /** @description The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137). */
             links?: null | components["schemas"]["ScheduleLinkRequest"][];
+            /** @description The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139). */
+            note?: null | string;
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
@@ -3951,6 +3959,8 @@ export interface components {
              * @description The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).
              */
             latestEnd: null | string;
+            /** @description What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139). */
+            note: null | string;
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.

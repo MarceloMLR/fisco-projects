@@ -371,6 +371,7 @@ function demoItem(
     // The float of each item, as the API counts it (GanttB-1); none in the screens that do not look at it.
     float: null,
     latestEnd: null,
+    note: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,

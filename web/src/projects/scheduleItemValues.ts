@@ -18,6 +18,7 @@ export const scheduleItemErrors = {
   parentInvalid: 'projects.schedule.errors.parentInvalid',
   deadlineInvalid: 'projects.schedule.errors.deadlineInvalid',
   linksInvalid: 'projects.schedule.errors.linksInvalid',
+  noteTooLong: 'projects.schedule.errors.noteTooLong',
   cycle: 'projects.schedule.errors.cycle',
 } as const;
 
@@ -42,11 +43,15 @@ export interface LinkSetting {
   lag: string;
 }
 
+/** The most characters of the note of a task or milestone, as the API keeps it (ADR-0139). */
+export const noteMaxLength = 2000;
+
 /**
  * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
  * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). A task with
  * subtasks (`summary`) takes its dates from them, so its duration is not checked (ADR-0088). The deadline is optional,
- * any task or milestone may have one (GanttA-2). The fields are kept as typed.
+ * any task or milestone may have one (GanttA-2), and so is the note, up to 2,000 characters (ADR-0139). The fields are
+ * kept as typed.
  */
 export const scheduleItemSchema = z
   .object({
@@ -77,6 +82,9 @@ export const scheduleItemSchema = z
       .refine((value) => value.trim() === '' || parseTypedDay(value) !== undefined, {
         error: scheduleItemErrors.deadlineInvalid,
       }),
+    note: z.string().refine((value) => value.trim().length <= noteMaxLength, {
+      error: scheduleItemErrors.noteTooLong,
+    }),
     summary: z.boolean().optional(),
   })
   .superRefine((values, context) => {
@@ -136,6 +144,7 @@ export function newItemValues(phaseId: string, parentId: string = noParent): Sch
     parentId,
     linkSettings: {},
     deadline: '',
+    note: '',
   };
 }
 
@@ -154,6 +163,7 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
       item.links.map((link) => [link.predecessorId, { type: link.type, lag: String(link.lag) }]),
     ),
     deadline: item.deadline === null ? '' : formatDayText(item.deadline),
+    note: item.note ?? '',
     summary: item.hasSubtasks,
   };
 }
@@ -190,6 +200,8 @@ export function bodyOf(values: ScheduleItemValues) {
     parentId: summary || values.parentId === noParent ? null : values.parentId,
     // An empty deadline takes it out (GanttA-2).
     deadline: values.deadline.trim() === '' ? null : (parseTypedDay(values.deadline) ?? null),
+    // Always sent: an empty note takes it out, and a request without it would keep it (ADR-0139).
+    note: values.note.trim(),
   };
 }
 
@@ -203,6 +215,7 @@ const apiFields = {
   parentId: 'parentId',
   deadline: 'deadline',
   linkSettings: 'links',
+  note: 'note',
 } as const;
 
 const fieldErrors = {
@@ -215,6 +228,7 @@ const fieldErrors = {
   parentId: scheduleItemErrors.parentInvalid,
   deadline: scheduleItemErrors.deadlineInvalid,
   linkSettings: scheduleItemErrors.linksInvalid,
+  note: scheduleItemErrors.noteTooLong,
 } as const;
 
 /**

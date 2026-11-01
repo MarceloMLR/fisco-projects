@@ -78,7 +78,13 @@ import {
 import { UndoButton } from './ScheduleSteps';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
-import { DeadlineStatus, LateCounts, MilestoneStatus, MissedDeadlines } from './ScheduleStatus';
+import {
+  DeadlineStatus,
+  LateCounts,
+  MilestoneStatus,
+  MissedDeadlines,
+  NoteMark,
+} from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import { ScheduleFilterMenu } from './ScheduleFilterMenu';
 import {
@@ -260,6 +266,7 @@ export function ProjectSchedulePage() {
               <Box component="span" sx={ellipsisSx} title={row.item.name}>
                 {row.item.name}
               </Box>
+              <NoteMark note={row.item.note} />
             </Box>
           ),
       },
@@ -1348,6 +1355,14 @@ function ItemDetails({
           <>
             <dt>{t('projects.schedule.details.dependsOn')}</dt>
             <dd>{names.length === 0 ? t('projects.schedule.none') : names.join(', ')}</dd>
+          </>
+        )}
+        {item.note !== null && (
+          <>
+            <dt>{t('projects.schedule.details.note')}</dt>
+            <Box component="dd" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+              {item.note}
+            </Box>
           </>
         )}
       </Box>

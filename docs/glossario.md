@@ -110,6 +110,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Tipo da dependência | ScheduleLinkType | "Termina, então começa" (FinishToStart), "Começa junto" (StartToStart) e "Termina junto" (FinishToFinish) (ADR-0137) |
 | Intervalo da dependência | Lag | Dias úteis de espera (positivo) ou de adiantamento (negativo), de -99 a 999 (ADR-0137) |
 | Data-limite | Deadline | Prazo de uma tarefa ou marco que não muda as datas e avisa quando o fim passa dele (GanttA-2) |
+| Notas da tarefa | ScheduleItem.Note, `note` | O texto simples de uma tarefa ou marco, como "aguardando o cliente mandar os arquivos", escrito por quem edita (ADR-0139) |
 | Data-limite estourada | MissedDeadline | Item em aberto que passou da data-limite |
 | Filtro do cronograma | ScheduleFilter, `filter` | Um filtro por vez da Lista, da Linha do tempo e do Expandir (GanttA-3) |
 | Próximas duas semanas | NextTwoWeeks | Itens em aberto que acontecem de hoje até 13 dias corridos depois |

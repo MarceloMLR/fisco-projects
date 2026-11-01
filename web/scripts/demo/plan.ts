@@ -139,6 +139,8 @@ export interface DemoItem {
   movedTo?: number;
   /** Days from the first day of the main project of its deadline, which never moves the dates (GanttA-2). */
   deadline?: number;
+  /** What the team needs to know of the item, written by the manager with the item (ADR-0139). */
+  note?: string;
 }
 
 export interface DemoPhase {
@@ -573,7 +575,11 @@ export const demoProjects: readonly DemoProject[] = [
             after: ['Mapear processos fiscais'],
             movedTo: 10,
           }),
-          task('Configurar plano de contas', 9, 6, { owner: 'carla', progress: 70 }),
+          task('Configurar plano de contas', 9, 6, {
+            owner: 'carla',
+            progress: 70,
+            note: 'Aguardando o cliente mandar os arquivos do plano de contas de 2025.',
+          }),
           // Of the week it is loaded, not started: "Iniciar" in Meu trabalho of the manager.
           task('Revisar parâmetros com o cliente', 14, 3, { owner: 'marina' }),
           task('Integrar emissão de NF-e', 14, 8, { owner: 'diego', progress: 30 }),
@@ -604,6 +610,7 @@ export const demoProjects: readonly DemoProject[] = [
           }),
           // The date the client fixed for the acceptance, two days after the planned one.
           milestone('Aceite da homologação', 29, {
+            note: 'O cliente assina depois da homologação na Sefaz.',
             after: ['Testes com a equipe do cliente'],
             deadline: 31,
           }),
