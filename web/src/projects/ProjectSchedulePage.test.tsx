@@ -202,6 +202,7 @@ describe('Aba Cronograma', () => {
       'Validar cadastro de produtos',
       '13/10/2026',
       `15/10/2026${oneDayLate}`,
+      '',
       days(3),
       'RSRafael Souza',
       '80%',
@@ -210,13 +211,14 @@ describe('Aba Cronograma', () => {
     expect(within(rowOf('Validar cadastro de produtos')).getByText(oneDayLate)).toHaveStyle({
       color: 'var(--status-danger-text)',
     });
-    expect(cellsOf('Integrar emissão de NF-e')[4]).toBe(text.noOwner);
+    expect(cellsOf('Integrar emissão de NF-e')[5]).toBe(text.noOwner);
     // The milestone: its flag, its day, its state, and no end or owner of its own.
     const milestone = rowOf('Aceite da homologação');
     expect(within(milestone).getByLabelText(text.kinds.Milestone)).toBeInTheDocument();
     expect(cellsOf('Aceite da homologação')).toEqual([
       'Aceite da homologação',
       '03/11/2026',
+      '',
       '',
       text.kinds.Milestone,
       '',
@@ -266,7 +268,7 @@ describe('Aba Cronograma', () => {
     schedule = { ...schedule, lateMilestones: 1 };
     await openSchedule();
 
-    const state = (name: string) => cellsOf(name)[5];
+    const state = (name: string) => cellsOf(name)[6];
     expect(state('Processos mapeados')).toBe(text.milestone.reached.replace('{{day}}', '09/10'));
     expect(state('Aceite da homologação')).toBe(text.milestone.pending);
     expect(state('Aceite do levantamento')).toBe(text.milestone.late);
@@ -309,7 +311,7 @@ describe('Aba Cronograma', () => {
 
     expect(cellsOf('Validar cadastro de produtos')[2]).toBe(`15/10/2026${text.late}`);
     expect(cellsOf('Aceite do levantamento')[2]).toBe('');
-    expect(cellsOf('Aceite do levantamento')[5]).toBe(text.milestone.late);
+    expect(cellsOf('Aceite do levantamento')[6]).toBe(text.milestone.late);
   });
 
   it('Cronograma vazio', async () => {
@@ -376,6 +378,8 @@ describe('Editar o cronograma pela tela', () => {
             baselineStart: null,
             baselineEnd: null,
             baselineDeviation: null,
+            deadline: null,
+            deadlineDeviation: null,
             duration: 3,
             progress: 0,
             completedOn: null,
@@ -434,12 +438,14 @@ describe('Editar o cronograma pela tela', () => {
         // Right in the phase (ADR-0088).
         parentId: null,
         ownedByClient: false,
+        deadline: null,
       },
     ]);
     await waitFor(() => {
-      expect(cellsOf('Configurar plano de contas').slice(1, 4)).toEqual([
+      expect(cellsOf('Configurar plano de contas').slice(1, 5)).toEqual([
         '19/10/2026',
         '21/10/2026',
+        '',
         days(3),
       ]);
     });
@@ -562,6 +568,7 @@ describe('Editar o cronograma pela tela', () => {
         // Right in the phase (ADR-0088).
         parentId: null,
         ownedByClient: false,
+        deadline: null,
       },
     ]);
     // The details start again from what the API computed.
@@ -717,7 +724,7 @@ describe('Progresso pela tela', () => {
     });
     expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
     await closeDrawer(drawer);
-    expect(cellsOf('Testes integrados')[5]).toBe('30%');
+    expect(cellsOf('Testes integrados')[6]).toBe('30%');
   });
 
   it('Atualizar progresso pela tela', async () => {
@@ -848,7 +855,7 @@ describe('Marco atingido pela tela', () => {
       within(drawer).getByText(text.milestone.reached.replace('{{day}}', '16/10/2026')),
     ).toBeVisible();
     await closeDrawer(drawer);
-    expect(cellsOf('Aceite da homologação')[5]).toBe(
+    expect(cellsOf('Aceite da homologação')[6]).toBe(
       text.milestone.reached.replace('{{day}}', '16/10'),
     );
   });
@@ -869,7 +876,12 @@ describe('Subtarefas pela tela', () => {
       'Executar testes',
     ]);
     // The summary, with the dates, the duration and the progress of its subtasks.
-    expect(cellsOf('Testes integrados').slice(1, 4)).toEqual(['23/10/2026', '29/10/2026', days(5)]);
+    expect(cellsOf('Testes integrados').slice(1, 5)).toEqual([
+      '23/10/2026',
+      '29/10/2026',
+      '',
+      days(5),
+    ]);
     expect(within(rowOf('Testes integrados')).getByText('Testes integrados')).toHaveStyle({
       fontWeight: '500',
     });
@@ -881,7 +893,7 @@ describe('Subtarefas pela tela', () => {
     expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Executar testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Integrar emissão de NF-e')).toBe('var(--space-6)');
-    expect(cellsOf('Executar testes')[6]).toBe('Roteiro de testes');
+    expect(cellsOf('Executar testes')[7]).toBe('Roteiro de testes');
     // The summary has the arrow of its subtasks, shown at first; the other tasks have none.
     expect(
       within(rowOf('Testes integrados')).getByRole('button', {

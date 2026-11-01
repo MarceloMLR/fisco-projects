@@ -37,7 +37,8 @@ const rowSx = (columns: string) =>
 /**
  * The fields of a task or milestone, the same in "Nova tarefa" and in the details: the name, the phase, the task it is
  * in ("Dentro de", a task right in the phase, ADR-0088), the start typed as dd/mm/aaaa and, for a task, the duration in
- * business days and the owner (a person of the project who is not a viewer, ADR-0043); and the items it depends on,
+ * business days, the deadline (optional, also of a task with subtasks, which never moves the dates, GanttA-2), the
+ * owner (a person of the project who is not a viewer, ADR-0043); and the items it depends on,
  * without the ones that already depend on it, which would make a cycle (ADR-0019), nor the tasks with subtasks. The end
  * is computed by the API, with the calendar of the installation; the progress changes by its own action (ADR-0086). A
  * task with subtasks (`summary`) has only the name, the phase and the owner: the rest comes from its subtasks.
@@ -227,6 +228,24 @@ export function ScheduleItemFields({
           )}
         </Box>
       )}
+      <Controller
+        control={control}
+        name="deadline"
+        render={({ field }) => (
+          <TextField
+            label={t('projects.schedule.form.deadline')}
+            optional={t('projects.schedule.form.optional')}
+            placeholder={t('projects.schedule.form.dayPlaceholder')}
+            inputMode="numeric"
+            error={errorText(errors.deadline?.message)}
+            helper={t('projects.schedule.form.deadlineHelp')}
+            {...field}
+            onChange={(event) => {
+              field.onChange(maskTypedDay(event.target.value));
+            }}
+          />
+        )}
+      />
       {task && (
         <Controller
           control={control}

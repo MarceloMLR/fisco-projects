@@ -46,6 +46,7 @@ import {
   isPhaseRow,
   itemsOf,
   lateText,
+  missesDeadline,
   predecessorNames,
   type ScheduleDisplay,
   type ScheduleRow,
@@ -74,7 +75,7 @@ import {
 import { UndoButton } from './ScheduleSteps';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
-import { LateCounts, MilestoneStatus } from './ScheduleStatus';
+import { DeadlineStatus, LateCounts, MilestoneStatus, MissedDeadlines } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import { Button, IconButton } from '../components/Button';
 import { Form } from '../components/Form';
@@ -94,6 +95,7 @@ const emptySchedule: Schedule = {
   baseline: null,
   undo: null,
   redo: null,
+  missedDeadlines: 0,
 };
 
 /** The views of the tab (ADR-0071). */
@@ -256,6 +258,25 @@ export function ProjectSchedulePage() {
             </Box>
           );
         },
+      },
+      {
+        field: 'deadline',
+        headerName: t('projects.schedule.columns.deadline'),
+        width: 160,
+        // The day, with how far past it an open item went (GanttA-2).
+        renderCell: ({ row }) =>
+          row.kind === 'phase' || row.item.deadline === null ? null : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <span>{formatDayText(row.item.deadline)}</span>
+              {missesDeadline(row.item) && (
+                <DueDate state="overdue">
+                  {t('projects.schedule.deadline.pastShort', {
+                    count: row.item.deadlineDeviation ?? 0,
+                  })}
+                </DueDate>
+              )}
+            </Box>
+          ),
       },
       {
         field: 'duration',
@@ -424,6 +445,7 @@ export function ProjectSchedulePage() {
         />
       </Box>
       <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
+      <MissedDeadlines count={schedule.missedDeadlines} />
       <BaselineSummary schedule={schedule} />
     </Box>
   );
@@ -896,9 +918,17 @@ function ItemHeading({ item, phase }: { item: ScheduleItem; phase: string }) {
       >
         {item.name}
       </Box>
-      {showsDelay(item) && (
-        <Box sx={{ marginTop: 'var(--space-1)' }}>
-          <DueDate state="overdue">{lateText(item, t)}</DueDate>
+      {(showsDelay(item) || item.deadline !== null) && (
+        <Box
+          sx={{
+            marginTop: 'var(--space-1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+          }}
+        >
+          {showsDelay(item) && <DueDate state="overdue">{lateText(item, t)}</DueDate>}
+          <DeadlineStatus item={item} />
         </Box>
       )}
     </Box>
@@ -1167,6 +1197,12 @@ function ItemDetails({
             <dd>
               {ownerText(item, project.client?.name ?? null, t) ?? t('projects.schedule.noOwner')}
             </dd>
+          </>
+        )}
+        {item.deadline !== null && (
+          <>
+            <dt>{t('projects.schedule.details.deadline')}</dt>
+            <dd>{formatDayText(item.deadline)}</dd>
           </>
         )}
         {subtasks === 0 && (

@@ -13,7 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Schedule } from '../api/client';
 import type { DayValue } from '../format/dates';
-import { ganttPeriod, type GanttScale, ganttUnitWidth } from './ganttLayout';
+import { ganttPeriod, type GanttScale, ganttSpan, ganttUnitWidth } from './ganttLayout';
 import { type GanttRow, ganttRowsOf, type GanttTarget, shownRows } from './ganttRows';
 import { type TimelineAnswer, TimelineChart } from './TimelineChart';
 import { type TimelineColumns, TimelineTable } from './TimelineTable';
@@ -23,7 +23,7 @@ import './ScheduleGantt.css';
 export type { TimelineAnswer } from './TimelineChart';
 
 /** The width of the table beside the timeline, before the person drags the divider (ADR-0071). */
-const listWidth = { compact: 320, detailed: 560 } as const;
+const listWidth = { compact: 320, detailed: 624 } as const;
 /** Below this width (a phone), the table keeps only the names, in less than half of the space. */
 const narrowWidth = 640;
 const narrowShare = 0.45;
@@ -103,17 +103,22 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       [schedule, showCritical],
     );
     const shown = useMemo(() => shownRows(rows, collapsed), [rows, collapsed]);
+    const deadlines = useMemo(
+      () => rows.flatMap((row) => (row.deadline === undefined ? [] : [row.deadline.day])),
+      [rows],
+    );
     const geometry = useMemo(() => {
       if (schedule.start === null || schedule.end === null) {
         return undefined;
       }
-      const period = ganttPeriod(schedule.start, schedule.end, scale);
+      const span = ganttSpan(schedule.start, schedule.end, deadlines);
+      const period = ganttPeriod(span.start, span.end, scale);
       return timelineGeometry(
         period,
         scale,
         ganttUnitWidth(scale, period.units, size.width - list),
       );
-    }, [schedule.start, schedule.end, scale, size.width, list]);
+    }, [schedule.start, schedule.end, deadlines, scale, size.width, list]);
 
     useEffect(() => {
       const element = scroller.current;

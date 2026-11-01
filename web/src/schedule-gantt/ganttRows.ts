@@ -1,5 +1,6 @@
 import type { Schedule, ScheduleItem, SchedulePhase } from '../api/client';
 import type { DayValue } from '../format/dates';
+import { missesDeadline } from '../projects/schedule';
 
 /** What a line of the timeline is: a phase, or a task or milestone in it. */
 export type GanttTarget =
@@ -34,6 +35,11 @@ export interface GanttRow {
   ownDates: boolean;
   /** The dates of a task in the baseline (ADR-0021), drawn as a thin bar under its own. */
   baseline?: { start: DayValue; end: DayValue };
+  /**
+   * The deadline of a task or milestone (GanttA-2), marked at the end of its day: missed while the item is open past
+   * it, by the business days it went past it.
+   */
+  deadline?: { day: DayValue; missed: boolean; days: number };
   /** The keys of the lines it depends on: they end before it starts (ADR-0019). */
   predecessors: string[];
   target: GanttTarget;
@@ -82,6 +88,15 @@ export function ganttRowsOf(schedule: Schedule, { critical = false } = {}): Gant
         ...(ownDates && !milestone && item.baselineStart !== null && item.baselineEnd !== null
           ? { baseline: { start: item.baselineStart, end: item.baselineEnd } }
           : {}),
+        ...(item.deadline === null
+          ? {}
+          : {
+              deadline: {
+                day: item.deadline,
+                missed: missesDeadline(item),
+                days: item.deadlineDeviation ?? 0,
+              },
+            }),
         predecessors: item.predecessorIds.filter((id) => known.has(id)),
         target: { kind: 'item', item, phase },
       });

@@ -164,6 +164,26 @@
   width: 112px;
 }
 
+/* The deadline, with room for the icon of a missed one (GanttA-2). */
+.fp-gantt__col--deadline {
+  width: 64px;
+}
+
+.fp-gantt__deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fp-gantt__deadline--missed {
+  color: var(--status-danger-text);
+  font-weight: 500;
+}
+
+.fp-gantt__deadline--missed .fp-gantt__icon.MuiSvgIcon-root {
+  color: var(--status-danger-text);
+}
+
 .fp-gantt__pct {
   display: inline-flex;
   align-items: center;
@@ -362,6 +382,26 @@
   fill: var(--gantt-dependency);
 }
 
+/* The deadline (GanttA-2): a dashed line at the end of its day with a small arrow on top, as the MS Project marks it;
+   in the color of the alarm once missed. */
+.fp-gantt .g-deadline-line {
+  stroke: var(--gantt-dependency);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+
+.fp-gantt .g-deadline-head {
+  fill: var(--gantt-dependency);
+}
+
+.fp-gantt .g-deadline--missed .g-deadline-line {
+  stroke: var(--status-danger-text);
+}
+
+.fp-gantt .g-deadline--missed .g-deadline-head {
+  fill: var(--status-danger-text);
+}
+
 .fp-gantt .g-today {
   stroke: var(--gantt-today);
   stroke-width: 1.5;
@@ -392,6 +432,7 @@
 .fp-gantt .g-baseline,
 .fp-gantt .g-dep,
 .fp-gantt .g-dep-head,
+.fp-gantt .g-deadline,
 .fp-gantt .g-label,
 .fp-gantt .g-today,
 .fp-gantt .g-link {

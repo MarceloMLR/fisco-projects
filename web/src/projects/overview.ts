@@ -53,7 +53,7 @@ export function milestoneText(milestone: Milestone, t: TFunction): string {
 /** A line of "Precisa de atenção": what it is, where it leads, its detail and its deadline. */
 export interface AttentionLine {
   key: string;
-  kind: 'task' | 'ticket' | 'unassigned' | 'acceptance' | 'vendor';
+  kind: 'task' | 'deadline' | 'ticket' | 'unassigned' | 'acceptance' | 'vendor';
   title: string;
   path: string;
   meta: string;
@@ -68,8 +68,8 @@ const late = (daysLate: number, day: DayValue, first: boolean, t: TFunction): st
       });
 
 /**
- * What needs attention in the project (ADR-0073), in the order of the API: the late tasks, the tickets, the pending
- * requests of acceptance and the stale tickets at vendors.
+ * What needs attention in the project (ADR-0073), in the order of the API: the late tasks, the items past their
+ * deadline (GanttA-2), the tickets, the pending requests of acceptance and the stale tickets at vendors.
  */
 export function attentionLines(
   projectId: string,
@@ -99,6 +99,21 @@ export function attentionLines(
       due: { state: 'overdue', text: late(task.daysLate, task.end, false, t) },
     };
   });
+  const deadlines = attention.deadlines.map(
+    (item): AttentionLine => ({
+      key: `deadline-${item.id}`,
+      kind: 'deadline',
+      title: item.name,
+      path: `/projects/${projectId}/schedule?item=${item.id}`,
+      meta: t(`projects.overview.attention.deadline.${item.kind}`, {
+        day: formatDayMonthText(item.deadline),
+      }),
+      due: {
+        state: 'overdue',
+        text: t('projects.overview.attention.deadlinePast', { count: item.daysPast }),
+      },
+    }),
+  );
   const tickets = attention.tickets.map((ticket): AttentionLine => {
     const team = t(`tickets.teams.${ticket.team}`);
     const first = ticket.deadline === 'FirstResponse';
@@ -166,5 +181,5 @@ export function attentionLines(
       text: t('projects.overview.attention.stale', { count: vendor.staleDays }),
     },
   }));
-  return [...tasks, ...tickets, ...acceptances, ...vendors];
+  return [...tasks, ...deadlines, ...tickets, ...acceptances, ...vendors];
 }

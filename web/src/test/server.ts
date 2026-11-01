@@ -364,6 +364,8 @@ function demoItem(
     baselineStart: null,
     baselineEnd: null,
     baselineDeviation: null,
+    deadline: null,
+    deadlineDeviation: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,
@@ -516,6 +518,7 @@ export function demoSchedule(): Schedule {
     baseline: null,
     undo: null,
     redo: null,
+    missedDeadlines: 0,
     phases: [
       {
         id: phaseIds.survey,
@@ -649,6 +652,7 @@ export const emptySchedule: Schedule = {
   baseline: null,
   undo: null,
   redo: null,
+  missedDeadlines: 0,
 };
 
 /**

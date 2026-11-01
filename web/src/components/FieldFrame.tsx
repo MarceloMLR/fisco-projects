@@ -13,6 +13,7 @@ export function FieldFrame({
   helpId,
   label,
   hideLabel = false,
+  optional,
   error,
   helper,
   width,
@@ -26,6 +27,8 @@ export function FieldFrame({
   helpId: string;
   label: string;
   hideLabel?: boolean;
+  /** The text that marks the field as optional, as "(opcional)", out of its accessible name. */
+  optional?: string;
   error?: string;
   helper?: string;
   width?: number;
@@ -54,6 +57,15 @@ export function FieldFrame({
         }
       >
         {label}
+        {optional !== undefined && (
+          <Box
+            component="span"
+            aria-hidden
+            sx={{ marginLeft: 'var(--space-1)', fontWeight: 400, color: 'var(--text-secondary)' }}
+          >
+            {optional}
+          </Box>
+        )}
       </Box>
       <Box
         sx={{

@@ -6,6 +6,8 @@ import { fieldInputSx, useFieldIds } from './fieldControl';
 
 export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'size'> {
   label: string;
+  /** The text that marks the field as optional, as "(opcional)". */
+  optional?: string;
   /** Message of a field with an error; it replaces the helper text. */
   error?: string;
   helper?: string;
@@ -20,6 +22,7 @@ export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'size'> {
 /** Text field of the design system (TextField, fp-field): label above, control, helper or error below. */
 export function TextField({
   label,
+  optional,
   error,
   helper,
   size = 'md',
@@ -40,6 +43,7 @@ export function TextField({
       helpId={helpId}
       label={label}
       hideLabel={hideLabel}
+      optional={optional}
       error={error}
       helper={helper}
       width={width}

@@ -36,6 +36,31 @@ export function plusDays(day: DayValue, days: number): DayValue {
   return dayOf(moment);
 }
 
+/** How far outside the schedule a deadline still widens the timeline, so a mistyped year does not stretch it. */
+export const deadlineReach = 92;
+
+/**
+ * The days the timeline spans: the schedule, widened to the deadlines near it (GanttA-2), so one after the last day
+ * still shows; one further than `deadlineReach` days stays out, and only the table says it.
+ */
+export function ganttSpan(
+  start: DayValue,
+  end: DayValue,
+  deadlines: readonly DayValue[],
+): { start: DayValue; end: DayValue } {
+  let first = start;
+  let last = end;
+  for (const day of deadlines) {
+    if (daysBetween(day, start) > 0 && daysBetween(day, start) <= deadlineReach && day < first) {
+      first = day;
+    }
+    if (daysBetween(end, day) > 0 && daysBetween(end, day) <= deadlineReach && day > last) {
+      last = day;
+    }
+  }
+  return { start: first, end: last };
+}
+
 /**
  * The period the timeline shows for a schedule from `start` to `end`: the days themselves; for weeks, from the Monday
  * before to the Sunday after; for months, from the first to the last day of the months.

@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { ProjectScheduleSummary, Schedule, ScheduleItem, SchedulePhase } from '../api/client';
+import type { DueState } from '../components/DueDate';
 import { formatDayMonthText } from '../format/dates';
 
 /** A line of the Lista of the schedule: a phase, with its dates and progress, or a task or milestone under it. */
@@ -56,7 +57,53 @@ export function lateText(item: ScheduleItem, t: TFunction): string {
   );
 }
 
-/** Every task and milestone of the schedule, in the order of the Lista. */
+/** Whether a task or milestone is done: a task at 100%, a milestone reached (ADR-0020, ADR-0086). */
+export function isDone(item: Pick<ScheduleItem, 'kind' | 'progress' | 'reachedOn'>): boolean {
+  return item.kind === 'Milestone' ? item.reachedOn !== null : item.progress >= 100;
+}
+
+type DeadlineOf = Pick<
+  ScheduleItem,
+  'kind' | 'progress' | 'reachedOn' | 'deadline' | 'deadlineDeviation'
+>;
+
+/**
+ * Whether an item still open went past its deadline (GanttA-2), as the API counts the missed ones: the business days
+ * it went past it, by its end or today, are more than zero.
+ */
+export function missesDeadline(item: DeadlineOf): boolean {
+  return item.deadlineDeviation !== null && item.deadlineDeviation > 0 && !isDone(item);
+}
+
+/**
+ * How the deadline of an item is going, by icon, color and text (ADR-0065): missed while open; met when it was done on
+ * it or before; on track before it. An item done after it says so without the alarm, since nothing is left to do. None
+ * without a deadline.
+ */
+export function deadlineState(item: DeadlineOf): DueState | undefined {
+  if (item.deadline === null || item.deadlineDeviation === null) {
+    return undefined;
+  }
+  if (missesDeadline(item)) {
+    return 'overdue';
+  }
+  return isDone(item) && item.deadlineDeviation <= 0 ? 'met' : 'onTrack';
+}
+
+/**
+ * The deadline in words, with the business days the API counts: "Passou 1 dia útil da data-limite", "3 dias úteis
+ * antes da data-limite" or "No dia da data-limite".
+ */
+export function deadlineText(item: Pick<ScheduleItem, 'deadlineDeviation'>, t: TFunction): string {
+  const deviation = item.deadlineDeviation ?? 0;
+  if (deviation > 0) {
+    return t('projects.schedule.deadline.past', { count: deviation });
+  }
+  return deviation < 0
+    ? t('projects.schedule.deadline.before', { count: -deviation })
+    : t('projects.schedule.deadline.onDay');
+}
+
 /**
  * Who is in charge of a task as the screens say it (ADR-0102): the person, the client of the project, or nobody
  * (null). A task of the client of a project that lost its client says only "O cliente".
@@ -77,6 +124,7 @@ export function ownerText(
     : t('projects.schedule.clientOwner', { name: clientName });
 }
 
+/** Every task and milestone of the schedule, in the order of the Lista. */
 export function itemsOf(schedule: Schedule): ScheduleItem[] {
   return schedule.phases.flatMap((phase) => phase.items);
 }
