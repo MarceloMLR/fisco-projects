@@ -266,6 +266,8 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
             hours = 16m,
             reason = "Integração com um segundo banco",
         }));
+        (await SendAsync(team.Admin, HttpMethod.Put, $"/api/admin/project-hours/{team.Erp}/tasks/{task}", new { hours = 24m }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         return new Scene(ticket, [team.Erp, phase, task, milestone, ticket, document, link, credential, term, hours, additional]);
     }

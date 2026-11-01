@@ -15,6 +15,8 @@ internal sealed class TimeTrackingDbContext(DbContextOptions<TimeTrackingDbConte
 
     public DbSet<AdditionalHours> AdditionalHours => Set<AdditionalHours>();
 
+    public DbSet<PlannedHours> PlannedHours => Set<PlannedHours>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TimeTrackingDbContext).Assembly);
 }

@@ -43,8 +43,20 @@ public sealed record ProjectHoursDetailResponse(
 public sealed record AdditionalHoursCreatedResponse(Guid Id);
 
 /// <summary>
-/// The contracted and additional hours of the projects and their balance, only for the Administrator (ADR-0046,
-/// ADR-0128). Only hours, never values in money.
+/// A task with its hours (ADR-0138): the id of the item of the schedule, the current name, the planned hours (null
+/// without them), the hours logged in it and the balance, whose contracted hours are the planned ones.
+/// </summary>
+public sealed record TaskHoursResponse(Guid ItemId, string Name, decimal? Planned, decimal Logged, HoursBalanceResponse Balance);
+
+/// <summary>
+/// The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged
+/// ones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule.
+/// </summary>
+public sealed record ProjectTaskHoursResponse(decimal Planned, decimal Logged, decimal Outside, IReadOnlyList<TaskHoursResponse> Items);
+
+/// <summary>
+/// The contracted and additional hours of the projects and their balance, and the planned hours of the tasks, only for
+/// the Administrator (ADR-0046, ADR-0128, ADR-0138). Only hours, never values in money.
 /// </summary>
 public static class ProjectHoursEndpoints
 {
@@ -65,6 +77,9 @@ public static class ProjectHoursEndpoints
         hours.MapPut("/{projectId:guid}/additional/{id:guid}", ChangeAdditionalAsync).WithName("ChangeAdditionalHours")
             .ProducesProblem(StatusCodes.Status400BadRequest);
         hours.MapDelete("/{projectId:guid}/additional/{id:guid}", DeleteAdditionalAsync).WithName("DeleteAdditionalHours");
+        hours.MapGet("/{projectId:guid}/tasks", TasksAsync).WithName("GetTaskHours");
+        hours.MapPut("/{projectId:guid}/tasks/{itemId:guid}", ChangePlannedAsync).WithName("ChangePlannedHours")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
     }
 
@@ -147,14 +162,46 @@ public static class ProjectHoursEndpoints
         return result.Outcome == ProjectHoursOutcome.Done ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
+    private static async Task<Results<Ok<ProjectTaskHoursResponse>, NotFound>> TasksAsync(
+        Guid projectId, GetTaskHours get, CancellationToken cancellationToken)
+    {
+        if (await get.ExecuteAsync(projectId, cancellationToken) is not { } tasks)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(new ProjectTaskHoursResponse(
+            tasks.Planned,
+            tasks.Logged,
+            tasks.Outside,
+            [.. tasks.Items.Select(task => new TaskHoursResponse(task.ItemId, task.Name, task.Planned, task.Logged, BalanceOf(task.Balance)))]));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound>> ChangePlannedAsync(
+        Guid projectId, Guid itemId, PlannedHoursRequest request, ChangePlannedHours change, CancellationToken cancellationToken)
+    {
+        var result = await change.ExecuteAsync(projectId, itemId, request, cancellationToken);
+        return result.Outcome switch
+        {
+            ProjectHoursOutcome.Done => TypedResults.NoContent(),
+            ProjectHoursOutcome.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["hours"] = [$"The planned hours are more than zero and up to {PlannedHours.Most:0}, in quarters of an hour."],
+            }),
+        };
+    }
+
+    private static HoursBalanceResponse BalanceOf(HoursBalance balance) => new(
+        balance.Contracted, balance.Additional, balance.Logged, balance.Total, balance.Balance, balance.Consumption, balance.State);
+
     private static ProjectHoursResponse ResponseOf(ProjectCard project, HoursBalance balance) => new(
         project.Id,
         project.Code,
         project.Name,
         project.Status,
         project.ClientName,
-        new HoursBalanceResponse(
-            balance.Contracted, balance.Additional, balance.Logged, balance.Total, balance.Balance, balance.Consumption, balance.State));
+        BalanceOf(balance));
 
     private static ValidationProblem InvalidOf(ProjectHoursResult result) =>
         TypedResults.ValidationProblem((result.Invalid ?? []).Distinct().ToDictionary(

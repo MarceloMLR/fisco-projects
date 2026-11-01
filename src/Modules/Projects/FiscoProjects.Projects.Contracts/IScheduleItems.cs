@@ -10,9 +10,11 @@ public enum ScheduleItemType
 
 /// <summary>
 /// A phase, task or milestone of a schedule, with its current name, as the other modules see it; a milestone with its
-/// day and the day it was reached, if it was (ADR-0086).
+/// day and the day it was reached, if it was (ADR-0086); a task done at 100% with <paramref name="IsDone"/>, as the
+/// hours of a task tell (ADR-0138).
 /// </summary>
-public sealed record ScheduleItemInfo(Guid Id, ScheduleItemType Type, string Name, DateOnly? Day = null, DateOnly? ReachedOn = null);
+public sealed record ScheduleItemInfo(
+    Guid Id, ScheduleItemType Type, string Name, DateOnly? Day = null, DateOnly? ReachedOn = null, bool IsDone = false);
 
 /// <summary>
 /// The phases, tasks and milestones of the schedule of a project, for the modules that point to them, as the link of a

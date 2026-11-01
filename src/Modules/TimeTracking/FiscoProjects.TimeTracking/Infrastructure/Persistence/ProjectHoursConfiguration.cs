@@ -42,3 +42,21 @@ internal sealed class AdditionalHoursConfiguration : IEntityTypeConfiguration<Ad
         additional.Property(a => a.UpdatedAt).ExcludeFromAudit();
     }
 }
+
+// The planned hours of a task (ADR-0138): one per task, in the audit by the current name of the task (ADR-0084), with
+// the project in every record; when they changed stays out, as the audit records it.
+internal sealed class PlannedHoursConfiguration : IEntityTypeConfiguration<PlannedHours>
+{
+    public void Configure(EntityTypeBuilder<PlannedHours> planned)
+    {
+        planned.ToTable("planned_hours");
+        planned.Property(p => p.Hours).HasPrecision(6, 2);
+        planned.HasIndex(p => p.ScheduleItemId).IsUnique();
+        planned.HasIndex(p => p.ProjectId);
+
+        planned.HasAuditLabelReference(p => p.ScheduleItemId, ProjectsAudit.ScheduleItemReference);
+        planned.Property(p => p.ProjectId).IsAuditReference(ProjectsAudit.ProjectReference).IsAuditContext();
+        planned.Property(p => p.ScheduleItemId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
+        planned.Property(p => p.UpdatedAt).ExcludeFromAudit();
+    }
+}

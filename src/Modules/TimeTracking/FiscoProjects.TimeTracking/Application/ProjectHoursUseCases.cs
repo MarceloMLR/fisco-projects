@@ -32,6 +32,15 @@ public interface IProjectHoursStore
     /// <summary>The additional hours, tracked.</summary>
     Task<AdditionalHours?> FindAdditionalAsync(Guid id, CancellationToken cancellationToken);
 
+    /// <summary>The planned hours of each task of the project that has them, also of the tasks no longer in the schedule.</summary>
+    Task<IReadOnlyDictionary<Guid, decimal>> PlannedOfAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>The planned hours of a task of the project, tracked; null when it has none.</summary>
+    Task<PlannedHours?> FindPlannedAsync(Guid projectId, Guid scheduleItemId, CancellationToken cancellationToken);
+
+    /// <summary>The logged hours of the project by the task of the entries, null for the ones without a task.</summary>
+    Task<IReadOnlyList<LoggedInTask>> LoggedByTaskAsync(Guid projectId, CancellationToken cancellationToken);
+
     void Add(ContractedHours contracted);
 
     void Remove(ContractedHours contracted);
@@ -40,8 +49,15 @@ public interface IProjectHoursStore
 
     void Remove(AdditionalHours additional);
 
+    void Add(PlannedHours planned);
+
+    void Remove(PlannedHours planned);
+
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>The hours logged in a task of a project, or without a task when <paramref name="ScheduleItemId"/> is null.</summary>
+public sealed record LoggedInTask(Guid? ScheduleItemId, decimal Hours);
 
 /// <summary>Which projects the list of the hours shows.</summary>
 public enum ProjectHoursView

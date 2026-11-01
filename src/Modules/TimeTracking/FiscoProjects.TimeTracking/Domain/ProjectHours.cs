@@ -53,6 +53,62 @@ public sealed class ContractedHours : Entity
     }
 }
 
+/// <summary>
+/// The hours a task of the schedule should take (ADR-0138): only the Administrator puts, changes and takes them out, on
+/// any task (also a summary task or a subtask, never a milestone or a phase), compared with the hours logged in it. One
+/// per task, out of the schedule: the dates, the undo, the baseline and the templates do not see them.
+/// </summary>
+public sealed class PlannedHours : Entity
+{
+    /// <summary>The most planned hours of a task.</summary>
+    public const decimal Most = 9_999m;
+
+    private PlannedHours()
+    {
+    }
+
+    public PlannedHours(Guid projectId, Guid scheduleItemId, decimal hours, DateTime now)
+    {
+        ProjectId = projectId;
+        ScheduleItemId = scheduleItemId;
+        Change(hours, now);
+    }
+
+    public Guid ProjectId { get; private init; }
+
+    /// <summary>The task of the schedule of the project.</summary>
+    public Guid ScheduleItemId { get; private init; }
+
+    public decimal Hours { get; private set; }
+
+    public DateTime UpdatedAt { get; private set; }
+
+    /// <summary>More than zero, up to 9,999, in quarters of an hour.</summary>
+    public static bool IsValid(decimal hours) => Quarters.IsValid(hours, Quarters.Step, Most);
+
+    public void Change(decimal hours, DateTime now)
+    {
+        if (!IsValid(hours))
+        {
+            throw new ArgumentOutOfRangeException(nameof(hours), hours, "Planned hours go from 0.25 to 9,999, in quarters.");
+        }
+
+        Hours = hours;
+        UpdatedAt = now;
+    }
+}
+
+/// <summary>
+/// The hours of a task (ADR-0138): the planned ones (null without them), the ones logged in it by anyone and the balance,
+/// by the rule of the balance of a project in one place (<see cref="HoursBalance"/>), the task done in the place of the
+/// closed project: a done task is never near the planned hours, as it gets no more work.
+/// </summary>
+public sealed record TaskHours(Guid ItemId, string Name, decimal? Planned, decimal Logged, HoursBalance Balance)
+{
+    public static TaskHours Of(Guid itemId, string name, decimal? planned, decimal logged, bool isDone) =>
+        new(itemId, name, planned, logged, HoursBalance.Of(planned, 0, logged, isDone));
+}
+
 /// <summary>The fields of additional hours, to tell which ones are not valid.</summary>
 public enum AdditionalHoursField
 {
