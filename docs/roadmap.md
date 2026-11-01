@@ -238,7 +238,7 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | Em andamento |
+| GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | PR aberto ([#123](https://github.com/MarceloMLR/fisco-projects/pull/123)) |
 | GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | Planejada |
 | GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | Planejada |
 | GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135 | Planejada |
