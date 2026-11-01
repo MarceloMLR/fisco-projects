@@ -102,7 +102,7 @@ describe('Exportar para o Excel', () => {
     expect(workbook).toContain('<sheet name="Projeto" sheetId="2" r:id="rId2"/>');
     const sheet = cellsOf(files.get('xl/worksheets/sheet1.xml') ?? '');
     const row = (number: number) =>
-      'ABCDEFGHIJKLMNOPQR'
+      'ABCDEFGHIJKLMNOPQRS'
         .split('')
         .map((column) => sheet.get(`${column}${String(number)}`)?.value);
     const day = (value: string) => String(spreadsheetDay(value));
@@ -123,6 +123,7 @@ describe('Exportar para o Excel', () => {
       'Passou da data-limite (dias úteis)',
       'Depende de (Nº)',
       'Caminho crítico',
+      'Folga (dias úteis)',
       'Início na linha de base',
       'Fim na linha de base',
       'Diferença da linha de base (dias úteis)',
@@ -165,7 +166,7 @@ describe('Exportar para o Excel', () => {
     expect(row(4).slice(11, 13)).toEqual([day('2026-10-16'), '']);
     expect(sheet.get('I5')?.style).toBe('7');
     // On the critical path, with the baseline two business days before.
-    expect(row(7).slice(14)).toEqual(['Sim', day('2026-10-13'), day('2026-10-20'), '2']);
+    expect(row(7).slice(14)).toEqual(['Sim', '', day('2026-10-13'), day('2026-10-20'), '2']);
     // The client as the owner.
     expect(row(8)[4]).toBe(t('projects.schedule.clientOwner', { name: project.client?.name }));
     // The subtask, indented, depending on the line of the ICMS.
@@ -302,5 +303,34 @@ describe('Dependências no Excel', () => {
         numbers,
       ),
     ).toBe('3; 5II+2; 7TT-1');
+  });
+});
+
+// Spec: cronograma, requirement "Folga pela tela" (GanttB-1).
+describe('Folga no Excel', () => {
+  it('Folga no Excel', async () => {
+    const project = demoProjects()[0];
+    if (project === undefined) {
+      throw new Error('No ERP-FIN.');
+    }
+    const schedule = scheduleOfTheReport();
+    for (const phase of schedule.phases) {
+      phase.items = phase.items.map((item) =>
+        item.name === 'Validar cadastro de produtos'
+          ? { ...item, float: 4, latestEnd: '2026-10-21' }
+          : item,
+      );
+    }
+
+    const files = await unzip(
+      await scheduleReport({ project, schedule, generatedAt: '2026-10-16T13:30:00Z', dates, t }),
+    );
+
+    const sheet = cellsOf(files.get('xl/worksheets/sheet1.xml') ?? '');
+    expect(sheet.get('P1')?.value).toBe('Folga (dias úteis)');
+    expect([sheet.get('C5')?.value, sheet.get('P5')?.value]).toEqual([
+      'Validar cadastro de produtos',
+      '4',
+    ]);
   });
 });

@@ -48,7 +48,9 @@ public sealed record ScheduleItemResponse(
     int? BaselineDeviation,
     [property: Description("The day the item has to be done by; it never moves the dates (GanttA-2).")] DateOnly? Deadline,
     [property: Description("The business days the item went past its deadline (positive) or is before it (negative); null without one.")] int? DeadlineDeviation,
-    [property: Description("The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137).")] IReadOnlyList<ScheduleLinkResponse> Links);
+    [property: Description("The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137).")] IReadOnlyList<ScheduleLinkResponse> Links,
+    [property: Description("The business days the item may end later without moving the end of the project; null for a task with subtasks (GanttB-1).")] int? Float,
+    [property: Description("The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).")] DateOnly? LatestEnd);
 
 /// <summary>
 /// A dependency of an item (ADR-0137): the item it depends on, the kind ("finishes, then starts", "starts with" or
@@ -514,7 +516,9 @@ internal static class ScheduleEndpoints
             view.DeadlineDeviations is not null && view.DeadlineDeviations.TryGetValue(item.Id, out var deviation) ? deviation : null,
             view.Links is not null && view.Links.TryGetValue(item.Id, out var links)
                 ? [.. links.Select(link => new ScheduleLinkResponse(link.PredecessorId, link.Type, link.Lag))]
-                : []);
+                : [],
+            view.Slack is not null && view.Slack.TryGetValue(item.Id, out var slack) ? slack.Days : null,
+            view.Slack is not null && view.Slack.TryGetValue(item.Id, out var latest) ? latest.LatestEnd : null);
     }
 
     /// <summary>The answer to a change without a body of its own.</summary>

@@ -76,6 +76,44 @@ public sealed class BaselineAndCriticalPathTests
         // From Friday 09/10 to Tuesday 13/10 only 13/10 is a business day: one day of float.
         friday.End.Should().Be(D(10, 9));
         critical.Should().BeEquivalentTo([tuesday.Id]);
+        var slack = ScheduleCriticalPath.Analyze(schedule.Items, schedule.Dependencies, Days).Slack;
+        slack[friday.Id].Should().Be(new ScheduleSlack(1, D(10, 13)));
+        slack[tuesday.Id].Should().Be(new ScheduleSlack(0, D(10, 13)));
+    }
+
+    [Fact(DisplayName = "Folga da tarefa")]
+    public void ShorterParallelTask_HasTheBusinessDaysLeftAsFloat()
+    {
+        var (schedule, phase) = NewSchedule();
+        var longer = Task(schedule, phase, "Parametrizar regras de ICMS", D(10, 13), 5);
+        var shorter = Task(schedule, phase, "Integrar emissão de NF-e", D(10, 13), 2);
+        var milestone = Milestone(schedule, phase, "Configuração aprovada", D(10, 13), longer, shorter);
+
+        var analysis = ScheduleCriticalPath.Analyze(schedule.Items, schedule.Dependencies, Days);
+
+        analysis.Critical.Should().BeEquivalentTo([longer.Id, milestone.Id]);
+        (analysis.Slack[longer.Id].Days, analysis.Slack[milestone.Id].Days, analysis.Slack[shorter.Id].Days).Should().Be((0, 0, 3));
+        analysis.Slack[shorter.Id].LatestEnd.Should().Be(longer.End);
+    }
+
+    [Fact(DisplayName = "Folga com os tipos")]
+    public void TaskEndingWithTheLastOne_HasNoFloat()
+    {
+        var (schedule, phase) = NewSchedule();
+        var longer = Task(schedule, phase, "Migrar saldos", D(10, 13), 5);
+        var training = schedule.AddItem(
+            ScheduleItemKind.Task,
+            new ScheduleItemPlan(phase.Id, "Treinar usuários", D(10, 13), 2, null, 0, [longer.Id],
+                Links: [new ScheduleLink(longer.Id, ScheduleLinkType.FinishToFinish)]),
+            Days,
+            Today);
+        Milestone(schedule, phase, "Virada", D(10, 13), longer);
+
+        var analysis = ScheduleCriticalPath.Analyze(schedule.Items, schedule.Dependencies, Days);
+
+        training.End.Should().Be(longer.End);
+        analysis.Slack[training.Id].Days.Should().Be(0);
+        analysis.Critical.Should().Contain(training.Id);
     }
 
     [Fact(DisplayName = "Subtarefas no caminho crítico")]

@@ -68,6 +68,8 @@ export interface TimelineChartProps {
   editable: boolean;
   selectedId?: string;
   showBaseline: boolean;
+  /** The float after each item with float, with the critical path (GanttB-1). */
+  showSlack?: boolean;
   onChoose: (row: GanttRow) => void;
   onMove: (itemId: string, start: DayValue) => TimelineAnswer;
   onResize: (itemId: string, start: DayValue, end: DayValue) => TimelineAnswer;
@@ -90,6 +92,7 @@ export function TimelineChart({
   editable,
   selectedId,
   showBaseline,
+  showSlack = false,
   onChoose,
   onMove,
   onResize,
@@ -313,6 +316,7 @@ export function TimelineChart({
 
   const dependencies: ReactNode[] = [];
   const baselines: ReactNode[] = [];
+  const slacks: ReactNode[] = [];
   const deadlines: ReactNode[] = [];
   const labels: ReactNode[] = [];
   rows.forEach((row, index) => {
@@ -351,6 +355,25 @@ export function TimelineChart({
     }
     if (dates === undefined || !row.ownDates) {
       return;
+    }
+    // From the end of the item to the end of the latest day it may end, under the labels (GanttB-1).
+    if (showSlack && row.slackEnd !== undefined && draft?.key !== row.key) {
+      const from =
+        row.shape === 'milestone' ? centerOf(dates.start) + corner : geometry.xAfter(dates.end);
+      const to = geometry.xAfter(row.slackEnd);
+      if (to > from) {
+        slacks.push(
+          <rect
+            key={row.key}
+            className="g-slack"
+            data-end={row.slackEnd}
+            x={round(from)}
+            y={top + barTop + barHeight}
+            width={round(to - from)}
+            height={2}
+          />,
+        );
+      }
     }
     if (row.shape === 'milestone') {
       const x = centerOf(dates.start);
@@ -709,6 +732,7 @@ export function TimelineChart({
           />
         ))}
         {baselines}
+        {slacks}
         {dependencies}
         {bars}
         <g aria-hidden>{deadlines}</g>

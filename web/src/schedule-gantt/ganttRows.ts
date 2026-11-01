@@ -42,6 +42,8 @@ export interface GanttRow {
   deadline?: { day: DayValue; missed: boolean; days: number };
   /** The keys of the lines it depends on: they end before it starts (ADR-0019). */
   predecessors: string[];
+  /** The latest end of a task or milestone with float, drawn as a thin line after it with the critical path (GanttB-1). */
+  slackEnd?: DayValue;
   /** The kind of each dependency that is not "finishes, then starts", by the key of the line before (ADR-0137). */
   predecessorTypes?: Partial<Record<string, ScheduleLinkType>>;
   target: GanttTarget;
@@ -99,6 +101,9 @@ export function ganttRowsOf(schedule: Schedule, { critical = false } = {}): Gant
                 days: item.deadlineDeviation ?? 0,
               },
             }),
+        ...(ownDates && item.float !== null && item.float > 0 && item.latestEnd !== null
+          ? { slackEnd: item.latestEnd }
+          : {}),
         predecessors: item.predecessorIds.filter((id) => known.has(id)),
         predecessorTypes: Object.fromEntries(
           item.links

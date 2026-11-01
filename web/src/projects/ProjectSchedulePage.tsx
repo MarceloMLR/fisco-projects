@@ -48,6 +48,7 @@ import {
   lateText,
   missesDeadline,
   predecessorTexts,
+  slackText,
   type ScheduleDisplay,
   type ScheduleRow,
   scheduleRows,
@@ -1105,6 +1106,7 @@ function ItemEditor({
         <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} onNew={onNewSubtask} />
       )}
       {item.hasSubtasks && <SummaryDates item={item} />}
+      <SlackLine item={item} />
       <BaselineSection item={item} schedule={schedule} />
       <Form
         aria-label={item.name}
@@ -1187,6 +1189,18 @@ const detailsListSx = {
   '& dd': { margin: 0, minWidth: 0 },
 } as const;
 
+/** The float of the item, for who edits the schedule (GanttB-1); nothing for a task with subtasks. */
+function SlackLine({ item }: { item: ScheduleItem }) {
+  const { t } = useTranslation();
+  const text = slackText(item, t);
+  return text === undefined ? null : (
+    <Box component="dl" sx={detailsListSx}>
+      <dt>{t('projects.schedule.details.slack')}</dt>
+      <dd>{text}</dd>
+    </Box>
+  );
+}
+
 /** The dates of a task with subtasks, computed from them and not typed (ADR-0088). */
 function SummaryDates({ item }: { item: ScheduleItem }) {
   const { t } = useTranslation();
@@ -1266,6 +1280,12 @@ function ItemDetails({
           <>
             <dt>{t('projects.schedule.details.deadline')}</dt>
             <dd>{formatDayText(item.deadline)}</dd>
+          </>
+        )}
+        {slackText(item, t) !== undefined && (
+          <>
+            <dt>{t('projects.schedule.details.slack')}</dt>
+            <dd>{slackText(item, t)}</dd>
           </>
         )}
         {subtasks === 0 && (

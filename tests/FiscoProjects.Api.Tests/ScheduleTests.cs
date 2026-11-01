@@ -837,6 +837,23 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         (await ScheduleOfAsync(scene)).Should().Be(before);
     }
 
+    [Fact(DisplayName = "Folga pela API")]
+    public async Task Schedule_SaysTheFloatOfEachItem()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        // A task from 13/10 to 14/10 with nothing after it: the project ends on 15/10, one business day later.
+        var other = await IdOfAsync(await SendAsync(scene.Admin, HttpMethod.Post, $"{scene.Path}/items",
+            Item(scene.Phase, "Documentar regras", "2026-10-13", 2, kind: "Task")));
+
+        var task = await ItemAsync(scene, scene.Task);
+        var spare = await ItemAsync(scene, other);
+
+        (task.GetProperty("float").GetInt32(), task.GetProperty("latestEnd").GetString()).Should().Be((0, "2026-10-15"));
+        (spare.GetProperty("float").GetInt32(), spare.GetProperty("latestEnd").GetString()).Should().Be((1, "2026-10-15"));
+        spare.GetProperty("critical").GetBoolean().Should().BeFalse();
+    }
+
     [Fact(DisplayName = "Desfazer volta a cadeia")]
     public async Task Undo_PutsTheTaskAndThePushedMilestoneBack()
     {

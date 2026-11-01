@@ -15573,7 +15573,9 @@
           "baselineDeviation",
           "deadline",
           "deadlineDeviation",
-          "links"
+          "links",
+          "float",
+          "latestEnd"
         ],
         "type": "object",
         "properties": {
@@ -15708,6 +15710,22 @@
               "$ref": "#/components/schemas/ScheduleLinkResponse"
             },
             "description": "The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137)."
+          },
+          "float": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The business days the item may end later without moving the end of the project; null for a task with subtasks (GanttB-1).",
+            "format": "int32"
+          },
+          "latestEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).",
+            "format": "date"
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."

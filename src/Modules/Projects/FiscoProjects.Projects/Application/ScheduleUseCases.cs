@@ -82,7 +82,8 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
 /// the schedule now, none until the manager saves one (ADR-0021), for who edits it, what undoing and redoing would
 /// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
-/// it (GanttA-2), and the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137).
+/// it (GanttA-2), the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137), and the
+/// float of each item with dates of its own (GanttB-1).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -97,7 +98,8 @@ public sealed record ScheduleView(
     ScheduleChangeLabel? Redo = null,
     IReadOnlyDictionary<Guid, int>? DeadlineDeviations = null,
     int MissedDeadlines = 0,
-    IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null);
+    IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null,
+    IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -127,6 +129,7 @@ public sealed class GetSchedule(
         var nonWorkingDays = days is not null && figures is { Start: { } start, End: { } end }
             ? Schedule.NonWorkingDaysAround(start, end, days)
             : [];
+        var analysis = days is null ? null : ScheduleCriticalPath.Analyze(schedule.Items, schedule.Dependencies, days);
         return new ScheduleView(
             figures,
             names,
@@ -142,7 +145,7 @@ public sealed class GetSchedule(
                     .ToHashSet(),
             nonWorkingDays,
             days is null ? new Dictionary<Guid, int>() : ScheduleFigures.LateDaysOf(schedule.Items, today, days),
-            days is null ? new HashSet<Guid>() : ScheduleCriticalPath.Of(schedule.Items, schedule.Dependencies, days),
+            analysis?.Critical ?? new HashSet<Guid>(),
             schedule.Baseline is { } baseline && days is not null ? baseline.CompareWith(schedule.Items, figures.End, days) : null,
             changes.LastOrDefault(change => !change.Undone)?.Label,
             changes.FirstOrDefault(change => change.Undone)?.Label,
@@ -153,7 +156,8 @@ public sealed class GetSchedule(
                 .ToDictionary(
                     group => group.Key,
                     group => (IReadOnlyList<ScheduleLink>)[.. group.Select(dependency =>
-                        new ScheduleLink(dependency.PredecessorId, dependency.Type, dependency.Lag))]));
+                        new ScheduleLink(dependency.PredecessorId, dependency.Type, dependency.Lag))]),
+            analysis?.Slack);
     }
 }
 

@@ -109,6 +109,7 @@ export function scheduleReport({
     t('projects.export.excel.columns.deadlinePast'),
     t('projects.export.excel.columns.dependsOn'),
     t('projects.export.excel.columns.critical'),
+    t('projects.export.excel.columns.slack'),
     t('projects.export.excel.columns.baselineStart'),
     t('projects.export.excel.columns.baselineEnd'),
     t('projects.export.excel.columns.baselineDeviation'),
@@ -126,6 +127,7 @@ export function scheduleReport({
       '',
       percent(phase.progress),
       situation(workSituation(phase)),
+      '',
       '',
       '',
       '',
@@ -159,6 +161,7 @@ export function scheduleReport({
         item.deadlineDeviation !== null && item.deadlineDeviation > 0 ? item.deadlineDeviation : '',
         dependencyCodes(item, numbers),
         item.critical ? t('projects.export.excel.yes') : '',
+        item.float ?? '',
         day(item.baselineStart),
         day(item.baselineEnd),
         item.baselineDeviation ?? '',
@@ -175,7 +178,7 @@ export function scheduleReport({
     [
       {
         name: t('projects.export.excel.sheet'),
-        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 12, 16, 14, 10, 14, 14, 14],
+        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 12, 16, 14, 10, 12, 14, 14, 14],
         header: true,
         rows: [header, ...rows],
       },
