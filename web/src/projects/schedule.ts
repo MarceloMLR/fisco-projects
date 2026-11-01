@@ -18,8 +18,8 @@ export type ScheduleRow =
 export const isPhaseRow = (row: ScheduleRow) => row.kind === 'phase';
 
 /**
- * The lines of the Lista: each phase in the order of the API, with its items below it in order, but the subtasks of
- * the tasks whose subtasks are hidden (ADR-0088).
+ * The lines of the Lista: each phase in the order of the API, with its items below it in order, but the items of the
+ * phases folded (Cronograma-4.2) and the subtasks of the tasks whose subtasks are hidden (ADR-0088).
  */
 export function scheduleRows(
   schedule: Schedule,
@@ -27,7 +27,7 @@ export function scheduleRows(
 ): ScheduleRow[] {
   return schedule.phases.flatMap((phase) => [
     { kind: 'phase', id: phase.id, phase } as const,
-    ...phase.items
+    ...(collapsed.has(phase.id) ? [] : phase.items)
       .filter((item) => item.parentId === null || !collapsed.has(item.parentId))
       .map((item) => ({ kind: 'item', id: item.id, item, phase }) as const),
   ]);

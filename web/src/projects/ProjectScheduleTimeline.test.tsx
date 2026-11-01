@@ -752,3 +752,36 @@ describe('Notas na linha do tempo', () => {
     expect(screen.getAllByRole('img', { name: /^Notas:/ })).toHaveLength(1);
   });
 });
+
+// Spec: cronograma, requirement "Recolhido igual nas duas visões" (Cronograma-4.2).
+describe('Recolhido igual nas duas visões', () => {
+  it('Fase recolhida ao trocar de visão', async () => {
+    await openTimeline();
+    const collapse = text.timeline.collapseRow.replace('{{name}}', 'Levantamento');
+    const expand = text.timeline.expandRow.replace('{{name}}', 'Levantamento');
+
+    fireEvent.click(within(timelineLine('Levantamento')).getByRole('button', { name: collapse }));
+    expect(timelineLine('Levantamento')).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(screen.getByRole('radio', { name: text.timeline.views.list }));
+
+    const grid = await screen.findByRole('grid', { name: text.schedule.table });
+    // The names of the lines of the Lista, below the header.
+    const names = () =>
+      within(grid)
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => within(row).queryAllByRole('gridcell')[0]?.textContent);
+    expect(names().slice(0, 2)).toEqual(['Levantamento', 'Configuração']);
+    fireEvent.click(within(grid).getByRole('button', { name: expand }));
+    await waitFor(() => {
+      expect(names()).toContain('Mapear processos fiscais');
+    });
+    fireEvent.click(screen.getByRole('radio', { name: text.timeline.views.timeline }));
+
+    await screen.findByRole('treegrid', { name: text.timeline.table });
+    await waitFor(() => {
+      expect(timelineLine('Levantamento')).toHaveAttribute('aria-expanded', 'true');
+    });
+    expect(timelineLine('Mapear processos fiscais')).toBeInTheDocument();
+  });
+});

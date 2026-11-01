@@ -187,7 +187,10 @@ export function ProjectSchedulePage() {
   const scale: GanttScale = isScale(askedScale) ? askedScale : 'days';
   const timeline = useRef<ScheduleGanttHandle>(null);
   const expandedTimeline = useRef<ScheduleGanttHandle>(null);
-  /** The tasks whose subtasks the Lista hides, until the arrow shows them again; all are shown at first. */
+  /**
+   * The phases and summary tasks folded, until the arrow shows them again, the same in the Lista, the Linha do tempo
+   * and Expandir (Cronograma-4.2); all are shown at first.
+   */
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
   /** The filter of the Lista, the Linha do tempo and Expandir, in the address (GanttA-3). */
   const filter = useMemo(() => filterOf(search), [search]);
@@ -273,8 +276,19 @@ export function ProjectSchedulePage() {
         ),
         renderCell: ({ row, tabIndex }) =>
           row.kind === 'phase' ? (
-            <Box component="span" sx={ellipsisSx}>
-              {row.phase.name}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+              <SubtasksArrow
+                name={row.phase.name}
+                phase
+                open={!collapsed.has(row.phase.id)}
+                tabIndex={tabIndex}
+                onToggle={() => {
+                  toggleSubtasks(row.phase.id);
+                }}
+              />
+              <Box component="span" sx={ellipsisSx}>
+                {row.phase.name}
+              </Box>
             </Box>
           ) : (
             <Box
@@ -844,6 +858,8 @@ export function ProjectSchedulePage() {
           ganttRef={timeline}
           onChoose={chooseInTimeline}
           aside={summary}
+          collapsed={collapsed}
+          onToggle={toggleSubtasks}
         />
       ) : (
         <DataTable<ListRow>
@@ -924,6 +940,8 @@ export function ProjectSchedulePage() {
             display={display}
             ganttRef={expandedTimeline}
             onChoose={chooseInTimeline}
+            collapsed={collapsed}
+            onToggle={toggleSubtasks}
           />
         )}
       </Dialog>
@@ -1001,23 +1019,28 @@ export function ProjectSchedulePage() {
  */
 function SubtasksArrow({
   name,
+  phase = false,
   open,
   tabIndex,
   onToggle,
 }: {
   name: string;
+  /** The arrow of a phase, named as the one of the Linha do tempo (Cronograma-4.2). */
+  phase?: boolean;
   open: boolean;
   tabIndex: -1 | 0;
   onToggle: () => void;
 }) {
   const { t } = useTranslation();
+  const label = phase
+    ? t(open ? 'projects.timeline.collapseRow' : 'projects.timeline.expandRow', { name })
+    : t(open ? 'projects.schedule.collapseSubtasks' : 'projects.schedule.expandSubtasks', {
+        name,
+      });
   return (
     <IconButton
       aria-expanded={open}
-      aria-label={t(
-        open ? 'projects.schedule.collapseSubtasks' : 'projects.schedule.expandSubtasks',
-        { name },
-      )}
+      aria-label={label}
       tabIndex={tabIndex}
       onClick={(event) => {
         event.stopPropagation();
