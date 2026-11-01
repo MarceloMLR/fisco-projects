@@ -301,3 +301,199 @@ Escolher um projeto em Horas dos projetos MUST abrir o detalhe numa gaveta (ADR-
 #### Scenario: Ver apontamentos pela tela
 - **WHEN** o administrador escolhe "Ver apontamentos" no detalhe
 - **THEN** abre a lista dos apontamentos do projeto no mês atual, por dia, com a pessoa de cada um, e a troca de mês
+
+### Requirement: Horas previstas da tarefa
+
+Só o administrador MUST pôr, trocar e tirar as horas previstas de uma tarefa do cronograma de um projeto, de qualquer situação. A tarefa MAY ser uma tarefa-resumo ou uma subtarefa; o marco e a fase MUST NOT receber horas previstas, nem a tarefa de outro projeto. As horas previstas MUST ir de 0,25 a 9.999, em quartos de hora, e tirá-las MUST deixar a tarefa sem horas previstas (ADR-0128, ADR-0138).
+
+#### Scenario: Pôr as horas previstas
+- **WHEN** o administrador põe 40 horas previstas na tarefa "Parametrizar regras de ICMS" e depois troca para 48
+- **THEN** as horas das tarefas do projeto mostram a tarefa com 48 horas previstas
+
+#### Scenario: Tirar as horas previstas
+- **WHEN** o administrador tira as horas previstas de uma tarefa sem horas apontadas
+- **THEN** a tarefa sai das horas das tarefas do projeto
+
+#### Scenario: Horas previstas inválidas
+- **WHEN** o administrador informa 0, 10,1 ou 10.000 horas previstas
+- **THEN** a API recusa com 400 no campo das horas, e nada muda
+
+#### Scenario: Horas previstas fora de uma tarefa
+- **WHEN** o administrador põe horas previstas num marco, numa fase ou numa tarefa de outro projeto
+- **THEN** a API recusa com 404, e nada muda
+
+### Requirement: Horas previstas fora do cronograma
+
+As horas previstas MUST NOT mudar as datas, o progresso, o desfazer, a linha de base, os modelos nem o XML do MS Project do cronograma, e MUST sair com o projeto excluído (ADR-0091, ADR-0111, ADR-0138).
+
+#### Scenario: Cronograma igual com as previstas
+- **WHEN** o administrador põe horas previstas numa tarefa
+- **THEN** o cronograma continua com as mesmas datas e o mesmo progresso, e o desfazer não oferece a mudança
+
+#### Scenario: Horas previstas na exclusão do projeto
+- **WHEN** o administrador exclui um projeto com horas previstas nas tarefas
+- **THEN** as horas previstas saem com o projeto
+
+### Requirement: Horas das tarefas
+
+O administrador MUST ver, de um projeto, as tarefas com horas previstas ou apontadas, na ordem do cronograma, cada uma com o nome atual, as previstas, as apontadas nela por qualquer pessoa, o saldo, o consumo e o estado, e os totais do projeto: as previstas nas tarefas, as apontadas nelas e as apontadas fora das tarefas do cronograma, sem tarefa ou numa tarefa excluída (ADR-0128, ADR-0138).
+
+#### Scenario: Horas fora das tarefas
+- **WHEN** um projeto tem horas apontadas sem tarefa e numa tarefa que foi excluída do cronograma
+- **THEN** essas horas contam como apontadas fora das tarefas, e a tarefa excluída não aparece
+
+#### Scenario: Tarefa sem horas previstas
+- **WHEN** uma tarefa tem só horas apontadas
+- **THEN** a tarefa aparece sem horas previstas, sem saldo nem consumo
+
+### Requirement: Estado das horas da tarefa
+
+O estado das horas de uma tarefa MUST seguir a regra do saldo do projeto, com a tarefa concluída no lugar do projeto encerrado: acima das previstas, perto das previstas a partir de 90% numa tarefa abaixo de 100%, dentro e sem horas previstas (ADR-0065, ADR-0138).
+
+#### Scenario: Tarefa acima das previstas
+- **WHEN** uma tarefa tem 40 horas previstas e 52 apontadas por duas pessoas
+- **THEN** a tarefa está acima das previstas, com o saldo de 12 horas acima e o consumo de 130%
+
+#### Scenario: Tarefa perto das previstas
+- **WHEN** uma tarefa em andamento tem 20 horas previstas e 18 apontadas
+- **THEN** a tarefa está perto das previstas, restam 2 horas, e o consumo é de 90%
+
+#### Scenario: Tarefa concluída perto das previstas
+- **WHEN** uma tarefa a 100% tem 20 horas previstas e 19 apontadas
+- **THEN** a tarefa está dentro das previstas, porque não recebe mais trabalho
+
+### Requirement: Permissões nas horas previstas
+
+Ver as horas das tarefas e pôr, trocar e tirar as horas previstas MUST ser permitido ao administrador e negado, com 403, ao gerente de projeto, ao líder técnico e ao usuário, mesmo no projeto deles (ADR-0046, ADR-0128, ADR-0138).
+
+#### Scenario: Permissões nas horas previstas por papel
+- **WHEN** cada papel no sistema tenta ver as horas das tarefas de um projeto e pôr as horas previstas numa tarefa dele
+- **THEN** o administrador consegue as duas, e o gerente de projeto, o líder técnico e o usuário recebem 403 em cada uma, sem mudar nada
+
+### Requirement: Horas previstas na auditoria
+
+Toda mudança das horas previstas MUST ir para a auditoria, com a tarefa pelo nome atual e o projeto como contexto (ADR-0039, ADR-0084).
+
+#### Scenario: Horas previstas na auditoria
+- **WHEN** o administrador põe e depois troca as horas previstas de uma tarefa
+- **THEN** a auditoria tem a inclusão e a alteração, por ele, com o nome da tarefa, no projeto
+
+### Requirement: Horas na Lista do cronograma pela tela
+
+Para o administrador, a Lista do cronograma MUST ter a coluna "Horas", com as apontadas e as previstas de cada tarefa ("12 de 16 h"), o estado por ícone, cor e texto quando a tarefa está acima ou perto das previstas, e só as apontadas quando a tarefa não tem previstas. Para as outras pessoas, a Lista MUST NOT mostrar horas (ADR-0065, ADR-0138).
+
+#### Scenario: Horas na Lista do administrador
+- **WHEN** o administrador abre a Lista de um cronograma com uma tarefa de 52 horas apontadas e 40 previstas
+- **THEN** a coluna "Horas" mostra "52 de 40 h" com o ícone e a cor de acima das previstas
+
+#### Scenario: Cronograma sem horas para a gestão
+- **WHEN** a gerente do projeto abre a Lista e o detalhe de uma tarefa
+- **THEN** a tela não tem a coluna "Horas" nem a seção "Horas"
+
+### Requirement: Horas no detalhe da tarefa pela tela
+
+Para o administrador, o detalhe de uma tarefa MUST ter a seção "Horas", com as previstas, as apontadas, o estado, a barra do consumo e "Alterar", que abre o diálogo das previstas, com o campo vazio para tirar (ADR-0138).
+
+#### Scenario: Alterar as previstas pelo detalhe da tarefa
+- **WHEN** o administrador abre o detalhe de uma tarefa, escolhe "Alterar" na seção "Horas", informa 48 e salva
+- **THEN** a seção e a coluna mostram as 48 horas previstas, e a tela confirma
+
+### Requirement: Horas por tarefa no detalhe das horas pela tela
+
+O detalhe de um projeto em Horas dos projetos MUST ter a seção "Por tarefa", com as previstas nas tarefas, as apontadas nelas e as apontadas fora das tarefas, a lista das tarefas com previstas ou apontadas, cada uma com as previstas, as apontadas e o saldo (ícone, cor e texto) e "Alterar", que abre o diálogo das previstas, e "Abrir o cronograma", que leva à Lista do cronograma do projeto (ADR-0081, ADR-0138).
+
+#### Scenario: Por tarefa no detalhe das horas
+- **WHEN** o administrador abre o detalhe de um projeto com previstas em duas tarefas e horas apontadas sem tarefa
+- **THEN** a seção "Por tarefa" mostra as duas tarefas com o saldo de cada uma e as horas apontadas fora das tarefas
+
+#### Scenario: Alterar as previstas pelo detalhe das horas
+- **WHEN** o administrador escolhe "Alterar" numa tarefa da seção "Por tarefa", informa 24 e salva
+- **THEN** a tarefa mostra 24 horas previstas e o novo saldo, e a tela confirma
+
+### Requirement: Carga da equipe
+
+O sistema MUST dar ao administrador a carga de cada pessoa em oito semanas, de segunda a domingo, a partir da semana pedida (a atual, sem pedido), entre os projetos não concluídos nem cancelados (ADR-0142). A carga da semana MUST somar, em cada dia útil dela, as horas previstas de cada tarefa abaixo de 100% da pessoa divididas pelos dias úteis da tarefa, e trazer as tarefas que pesam nela.
+
+#### Scenario: Tarefa espalhada pelas semanas
+- **WHEN** a Carla é responsável por uma tarefa de 40 horas previstas de quinta, 22/10, a quarta, 28/10, em 5 dias úteis
+- **THEN** a semana de 19/10 tem 16 horas dela e a de 26/10, 24 horas, cada uma com a tarefa e as horas na semana
+
+#### Scenario: Carga sobre um feriado
+- **WHEN** uma tarefa de 24 horas previstas vai de 30/10 a 04/11, com o feriado de 02/11 no meio
+- **THEN** cada um dos 3 dias úteis pesa 8 horas, e o feriado não pesa
+
+#### Scenario: Carga entre projetos
+- **WHEN** o Diego tem tarefas com horas previstas em dois projetos na mesma semana
+- **THEN** a carga da semana dele soma as duas, cada uma com o projeto
+
+#### Scenario: O que não pesa
+- **WHEN** a pessoa tem uma tarefa a 100%, uma tarefa sem horas previstas e uma tarefa de um projeto concluído, e o cliente é responsável por outra
+- **THEN** nenhuma delas pesa na carga
+
+### Requirement: Capacidade da semana
+
+A capacidade de uma pessoa numa semana MUST ser os dias úteis da semana menos os dias úteis em que a pessoa está ausente, vezes as horas por dia de trabalho da instalação (ADR-0141, ADR-0142). A ausência MUST NOT tirar a carga da semana.
+
+#### Scenario: Capacidade com férias
+- **WHEN** a Carla está ausente de quarta a sexta numa semana de 5 dias úteis, com 8 horas por dia de trabalho
+- **THEN** a capacidade dela na semana é 16 horas, com 3 dias de ausência, e a carga das tarefas dela continua contando
+
+#### Scenario: Capacidade com feriado
+- **WHEN** a semana tem o feriado de 02/11
+- **THEN** a capacidade de quem não está ausente é 32 horas
+
+### Requirement: Estado da carga
+
+Cada semana de cada pessoa MUST ter um estado, num lugar só: acima da capacidade (a carga passa da capacidade, também com capacidade zero), perto do limite (a carga chega a 90% da capacidade), dentro e livre (sem carga). A pessoa MUST dizer se está acima da capacidade em alguma das semanas (ADR-0142).
+
+#### Scenario: Estados da carga
+- **WHEN** a capacidade é 40 horas e a carga é 44, 38, 20 ou 0 horas
+- **THEN** o estado é acima da capacidade, perto do limite, dentro ou livre
+
+#### Scenario: Carga na semana toda de férias
+- **WHEN** a pessoa está ausente a semana inteira e tem uma tarefa com horas previstas nela
+- **THEN** a capacidade é zero e o estado é acima da capacidade
+
+### Requirement: Pessoas da carga
+
+A carga MUST trazer as pessoas ativas dos projetos não concluídos nem cancelados, em qualquer papel, mesmo sem carga, e quem tem carga sem estar num deles, pelo nome.
+
+#### Scenario: Pessoa livre na carga
+- **WHEN** o Lucas é leitor de um projeto em andamento e não tem tarefas
+- **THEN** ele aparece com as oito semanas livres
+
+#### Scenario: Pessoa desativada fora da carga
+- **WHEN** uma pessoa foi desativada
+- **THEN** ela não aparece na carga
+
+### Requirement: Permissões na carga
+
+`GET /api/admin/team-load` MUST ser só do administrador; as outras pessoas MUST receber 403 (ADR-0138, ADR-0142).
+
+#### Scenario: Permissões na carga por papel
+- **WHEN** cada papel pede a carga da equipe
+- **THEN** o administrador recebe a carga, e o gerente, o líder técnico, o colaborador, o desenvolvedor e o leitor recebem 403
+
+### Requirement: Carga da equipe pela tela
+
+A Administração MUST ter "Carga da equipe" na seção Acompanhamento, depois de Horas dos projetos, com uma linha por pessoa e uma coluna por semana, cada célula com a carga e a capacidade em horas e o estado por ícone, cor e texto, a marca da ausência na semana, a semana anterior, a seguinte e "Esta semana", a busca pelo nome e as visões "Todas" e "Com sobrecarga"; o subtítulo MUST dizer quantas pessoas estão acima da capacidade no período (ADR-0142).
+
+#### Scenario: Carga da equipe na tela
+- **WHEN** o administrador abre Carga da equipe
+- **THEN** a tela mostra as oito semanas a partir da atual, a carga e a capacidade de cada pessoa em cada uma, com o estado, e quantas pessoas estão acima da capacidade
+
+#### Scenario: Com sobrecarga pela tela
+- **WHEN** o administrador escolhe "Com sobrecarga"
+- **THEN** só as pessoas acima da capacidade em alguma semana ficam na lista
+
+#### Scenario: Próximas semanas pela tela
+- **WHEN** o administrador avança uma semana
+- **THEN** a tela pede a carga a partir da semana seguinte, e "Esta semana" volta à atual
+
+### Requirement: Detalhe da carga pela tela
+
+Escolher uma pessoa na Carga da equipe MUST abrir o detalhe na gaveta, pelo endereço (`?person=`), com cada semana: a carga, a capacidade, o estado, as ausências e as tarefas que pesam nela, com o projeto, a tarefa e as horas na semana, cada tarefa levando ao cronograma do projeto com o detalhe dela aberto (ADR-0081, ADR-0142).
+
+#### Scenario: Detalhe da carga
+- **WHEN** o administrador escolhe o Diego
+- **THEN** a gaveta mostra, em cada semana, as tarefas do Diego com o projeto e as horas, e as ausências dele
