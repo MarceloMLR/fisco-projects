@@ -191,6 +191,23 @@ export function projectMembersQuery(id: string) {
 }
 
 /**
+ * The absences of a person of a project, the latest end first, and whether the person in the session registers them
+ * (ADR-0141); under the project, so a change of it refreshes them.
+ */
+export function memberAbsencesQuery(projectId: string, userId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, projectId, 'members', userId, 'absences'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{id}/members/{userId}/absences', {
+          params: { path: { id: projectId, userId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
  * The e-mail of each person of a project by the id, from its members, to tell apart people of the same name in a
  * list to choose; an anonymized person has none.
  */

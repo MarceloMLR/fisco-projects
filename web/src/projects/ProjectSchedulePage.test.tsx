@@ -385,6 +385,7 @@ describe('Editar o cronograma pela tela', () => {
             float: null,
             latestEnd: null,
             note: null,
+            ownerAbsences: [],
             duration: 3,
             progress: 0,
             completedOn: null,
@@ -1728,5 +1729,49 @@ describe('Notas pela tela', () => {
     expect(note).toHaveTextContent(`${waiting} Cobrar na segunda.`);
     expect(note).toHaveStyle({ whiteSpace: 'pre-wrap' });
     expect(within(drawer).queryByLabelText(text.form.note)).toBeNull();
+  });
+});
+
+// Spec: cronograma, requirement "Responsável ausente durante a tarefa" (ADR-0141).
+describe('Responsável ausente pela tela', () => {
+  const away = ptBR.projects.absences.duringTask.replace('{{periods}}', '05/11 a 14/11');
+
+  it('Tarefa na ausência do responsável', async () => {
+    Object.assign(itemNamed('Testes com a equipe do cliente'), {
+      owner: { id: demoPeople.carla.id, name: demoPeople.carla.name },
+      ownerAbsences: [{ start: '2026-11-05', end: '2026-11-14' }],
+    });
+    await openSchedule();
+
+    const mark = within(rowOf('Testes com a equipe do cliente')).getByRole('img', { name: away });
+    expect(mark.parentElement).toHaveAttribute('title', away);
+    expect(
+      within(rowOf('Testes integrados')).queryByRole('img', { name: /ausente/ }),
+    ).not.toBeInTheDocument();
+    const drawer = await chooseItem('Testes com a equipe do cliente');
+    expect(within(drawer).getByText(away)).toBeVisible();
+    // The absence does not change the dates of the task.
+    expect(within(drawer).getByRole('textbox', { name: text.form.start })).toHaveValue(
+      '30/10/2026',
+    );
+  });
+
+  it('Responsável ausente no detalhe de quem só vê', async () => {
+    permissions = { canEditSchedule: false };
+    Object.assign(itemNamed('Testes integrados'), {
+      ownerAbsences: [
+        { start: '2026-10-26', end: '2026-10-26' },
+        { start: '2026-11-05', end: '2026-11-14' },
+      ],
+    });
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+
+    expect(
+      within(drawer).getByText(
+        ptBR.projects.absences.duringTask.replace('{{periods}}', '26/10, 05/11 a 14/11'),
+      ),
+    ).toBeVisible();
   });
 });

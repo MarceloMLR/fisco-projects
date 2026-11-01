@@ -1,6 +1,8 @@
+import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import StickyNote2Outlined from '@mui/icons-material/StickyNote2Outlined';
 import Box from '@mui/material/Box';
 import { useTranslation } from 'react-i18next';
+import { ownerAwayText } from './absences';
 import type { ScheduleItem } from '../api/client';
 import { DueDate, type DueState } from '../components/DueDate';
 import { formatDayMonthText, formatDayText } from '../format/dates';
@@ -115,6 +117,50 @@ export function NoteMark({ note }: { note: string | null }) {
         aria-label={t('projects.schedule.noteMark', { note })}
         sx={{ fontSize: 16, color: 'var(--text-secondary)' }}
       />
+    </Box>
+  );
+}
+
+/**
+ * The person in charge away on days of the task (ADR-0141): the icon beside the owner in the Lista, with the periods on
+ * hover and for who reads the screen, in the color of a warning; nothing without absences.
+ */
+export function OwnerAway({ item }: { item: Pick<ScheduleItem, 'ownerAbsences'> }) {
+  const { t } = useTranslation();
+  const text = ownerAwayText(item.ownerAbsences, t);
+  return text === undefined ? null : (
+    <Box component="span" title={text} sx={{ display: 'inline-flex', flex: 'none' }}>
+      <EventBusyOutlined
+        role="img"
+        aria-hidden={false}
+        aria-label={text}
+        sx={{ fontSize: 16, color: 'var(--status-warning-text)' }}
+      />
+    </Box>
+  );
+}
+
+/** The same warning in the details of the task: the icon and the text, in the color of a warning (ADR-0141). */
+export function OwnerAwayLine({ item }: { item: Pick<ScheduleItem, 'ownerAbsences'> }) {
+  const { t } = useTranslation();
+  const text = ownerAwayText(item.ownerAbsences, t);
+  return text === undefined ? null : (
+    <Box
+      component="p"
+      data-state="away"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-1)',
+        margin: 0,
+        fontSize: 13,
+        lineHeight: '18px',
+        fontWeight: 500,
+        color: 'var(--status-warning-text)',
+      }}
+    >
+      <EventBusyOutlined aria-hidden sx={{ fontSize: 16 }} />
+      {text}
     </Box>
   );
 }

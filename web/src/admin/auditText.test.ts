@@ -1607,4 +1607,40 @@ describe('Exclusão de projeto na auditoria', () => {
       after: 'Paulo Nogueira',
     });
   });
+  it('Ausência na auditoria', () => {
+    const absence = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'PersonAbsence',
+        actor: { id: '0199f5a2-7c1e-7d40-9a1b-000000000002', name: 'Marina Costa' },
+        itemLabel: 'Carla Mendes',
+        changes: [
+          {
+            field: 'UserId',
+            before: null,
+            after: 'Carla Mendes',
+            secret: false,
+            reference: 'User',
+          },
+          { field: 'Start', before: null, after: null, secret: true, reference: null },
+          { field: 'End', before: null, after: null, secret: true, reference: null },
+          {
+            field: 'CreatedBy',
+            before: null,
+            after: 'Marina Costa',
+            secret: false,
+            reference: 'User',
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(absence.title).toBe('Incluiu uma ausência');
+    expect(absence.properties).toEqual([{ label: 'Pessoa', value: 'Carla Mendes' }]);
+    expect(JSON.stringify(absence)).not.toMatch(/\d{2}\/\d{2}\/\d{4}|2026-/);
+    expect(absence.changes.map((change) => change.field)).toEqual(
+      expect.arrayContaining(['Início', 'Fim']),
+    );
+  });
 });

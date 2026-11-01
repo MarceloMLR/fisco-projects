@@ -230,3 +230,43 @@ describe('Notas na demonstração', () => {
     }
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Ausências na demonstração" (ADR-0141).
+describe('Ausências na demonstração', () => {
+  it('Ausências na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    if (main === undefined) {
+      throw new Error('No main project.');
+    }
+    const absences = main.absences ?? [];
+    const people = new Set([
+      main.manager ?? manager,
+      main.techLead,
+      ...(main.members ?? []).map(([person]) => person),
+    ]);
+    expect(absences.length).toBeGreaterThan(0);
+    for (const absence of absences) {
+      expect(people.has(absence.of)).toBe(true);
+      expect(absence.end).toBeGreaterThanOrEqual(absence.start);
+      expect(absence.end - absence.start + 1).toBeLessThanOrEqual(366);
+      // After the week it is loaded (today is from day 14 to 20): never over the hours logged.
+      expect(absence.start).toBeGreaterThan(20);
+      // Told in Membros: it starts in the next 30 days.
+      expect(absence.start).toBeLessThanOrEqual(14 + 30);
+    }
+    // One of them over an open task of the person, its calendar days roughly by its working days.
+    const tasks = main.phases.flatMap((phase) => phase.items);
+    expect(
+      absences.some((absence) =>
+        tasks.some(
+          (item) =>
+            item.kind === 'Task' &&
+            item.owner === absence.of &&
+            item.progress !== 100 &&
+            item.day <= absence.end &&
+            absence.start <= item.day + Math.ceil((item.duration * 7) / 5),
+        ),
+      ),
+    ).toBe(true);
+  });
+});

@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { type Project, type ProjectRole, projectProblems } from '../api/client';
+import { type MemberAbsence, type Project, type ProjectRole, projectProblems } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { expectBusy, heldAnswer } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
@@ -22,6 +22,7 @@ import {
 } from '../test/server';
 
 const text = ptBR.projects.members;
+const absenceTexts = ptBR.projects.absences;
 const roles = ptBR.projects.roles;
 const projectName = 'Implantação do ERP financeiro';
 
@@ -657,6 +658,208 @@ describe('Chamados no detalhe da pessoa', () => {
       { numbers: tickets().map((ticket) => ticket.number), assigneeId: demoPeople.rafael.id },
     ]);
     expect(await within(drawer).findByText(text.tickets.none)).toBeInTheDocument();
+  });
+});
+
+// Spec: membros-do-projeto, requirements "Ausências na lista de Membros" and "Ausências no detalhe da pessoa pela tela"
+// (ADR-0141).
+describe('Ausências pela tela', () => {
+  /** The absences of each person, as the simulated API keeps them, and whether the person in the session registers them. */
+  let absences: Record<string, MemberAbsence[]>;
+  let canManage: boolean;
+  const saved: unknown[] = [];
+
+  beforeEach(() => {
+    absences = {
+      [demoPeople.carla.id]: [
+        { id: '0199f5a2-7c1e-7d40-9a1b-0000000000a1', start: '2026-12-21', end: '2027-01-08' },
+      ],
+    };
+    canManage = true;
+    saved.length = 0;
+    server.use(
+      http.get('/api/projects/:id/members/:userId/absences', ({ params }) =>
+        HttpResponse.json({
+          absences: (absences[String(params.userId)] ?? []).toSorted((a, b) =>
+            b.end.localeCompare(a.end),
+          ),
+          canManage,
+        }),
+      ),
+      http.post('/api/projects/:id/members/:userId/absences', async ({ request, params }) => {
+        const body = (await request.json()) as { start: string; end: string };
+        saved.push(body);
+        const kept = absences[String(params.userId)] ?? [];
+        if (kept.some((absence) => absence.start <= body.end && body.start <= absence.end)) {
+          return HttpResponse.json(
+            { status: 409, title: 'Conflict', type: projectProblems.absenceOverlap },
+            { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
+          );
+        }
+        const id = '0199f5a2-7c1e-7d40-9a1b-0000000000a2';
+        absences[String(params.userId)] = [...kept, { id, ...body }];
+        return HttpResponse.json({ id }, { status: 201 });
+      }),
+    );
+  });
+
+  async function openAbsences(name: string) {
+    const drawer = await choose(name);
+    const section = await within(drawer).findByRole('region', { name: absenceTexts.title });
+    return { drawer, section };
+  }
+
+  async function typeAbsence(start: string, end: string) {
+    const dialog = await screen.findByRole('dialog', { name: absenceTexts.dialog.title });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: absenceTexts.dialog.start }), {
+      target: { value: start },
+    });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: absenceTexts.dialog.end }), {
+      target: { value: end },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: absenceTexts.dialog.save }));
+    return dialog;
+  }
+
+  it('Incluir ausência pela tela', async () => {
+    await openMembers();
+    const { section } = await openAbsences('Carla Mendes');
+    expect(await within(section).findByText('21/12/2026 a 08/01/2027')).toBeInTheDocument();
+
+    fireEvent.click(within(section).getByRole('button', { name: absenceTexts.add }));
+    const dialog = await typeAbsence('03/11/2026', '14/11/2026');
+
+    expect(
+      await screen.findByText(
+        absenceTexts.messages.added
+          .replace('{{name}}', 'Carla Mendes')
+          .replace('{{period}}', '03/11/2026 a 14/11/2026'),
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(dialog).not.toBeInTheDocument();
+    });
+    expect(saved).toEqual([{ start: '2026-11-03', end: '2026-11-14' }]);
+    await waitFor(() => {
+      expect(
+        within(section)
+          .getAllByRole('listitem')
+          .map((item) => item.textContent),
+      ).toEqual(['21/12/2026 a 08/01/2027', '03/11/2026 a 14/11/2026']);
+    });
+  });
+
+  it('Ausência inválida pela tela', async () => {
+    await openMembers();
+    const { section } = await openAbsences('Carla Mendes');
+    fireEvent.click(await within(section).findByRole('button', { name: absenceTexts.add }));
+
+    const dialog = await typeAbsence('14/11/2026', '03/11/2026');
+
+    await waitFor(() => {
+      expect(
+        within(dialog).getByRole('textbox', { name: absenceTexts.dialog.end }),
+      ).toHaveAccessibleDescription(absenceTexts.errors.endInvalid);
+    });
+    expect(saved).toEqual([]);
+  });
+
+  it('Ausência sobreposta pela tela', async () => {
+    await openMembers();
+    const { section } = await openAbsences('Carla Mendes');
+    fireEvent.click(await within(section).findByRole('button', { name: absenceTexts.add }));
+
+    const dialog = await typeAbsence('04/01/2027', '15/01/2027');
+
+    expect(await within(dialog).findByText(absenceTexts.errors.overlap)).toBeInTheDocument();
+    expect(dialog).toBeInTheDocument();
+    expect(saved).toEqual([{ start: '2027-01-04', end: '2027-01-15' }]);
+    // Behind the open dialog, the section keeps the one absence.
+    expect(within(section).getAllByRole('listitem', { hidden: true })).toHaveLength(1);
+  });
+
+  it('Apagar ausência pela tela', async () => {
+    const removed: string[] = [];
+    server.use(
+      http.delete('/api/projects/:id/members/:userId/absences/:absenceId', ({ params }) => {
+        removed.push(String(params.absenceId));
+        absences[String(params.userId)] = [];
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await openMembers();
+    const { section } = await openAbsences('Carla Mendes');
+
+    fireEvent.click(
+      await within(section).findByRole('button', {
+        name: absenceTexts.remove.replace('{{period}}', '21/12/2026 a 08/01/2027'),
+      }),
+    );
+    const confirm = await screen.findByRole('alertdialog', {
+      name: absenceTexts.removeDialog.title,
+    });
+    fireEvent.click(
+      within(confirm).getByRole('button', { name: absenceTexts.removeDialog.confirm }),
+    );
+
+    expect(
+      await screen.findByText(
+        absenceTexts.messages.removed
+          .replace('{{name}}', 'Carla Mendes')
+          .replace('{{period}}', '21/12/2026 a 08/01/2027'),
+      ),
+    ).toBeInTheDocument();
+    expect(await within(section).findByText(absenceTexts.none)).toBeInTheDocument();
+    expect(removed).toEqual(['0199f5a2-7c1e-7d40-9a1b-0000000000a1']);
+  });
+
+  it('Ausências de quem só vê', async () => {
+    // The tech lead manages the people, but not the absences.
+    canManage = false;
+    permissions = { canManagePeople: true, canManageManagers: false };
+    signedInAs('TechLead');
+    await openMembers();
+
+    const { section } = await openAbsences('Carla Mendes');
+
+    expect(await within(section).findByText('21/12/2026 a 08/01/2027')).toBeInTheDocument();
+    expect(
+      within(section).queryByRole('button', { name: absenceTexts.add }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(section).queryByRole('button', { name: /Apagar a ausência/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Ausente hoje na lista', async () => {
+    // Today is 19/10/2026: Carla is away until 14/11, and Diego goes on holiday next week.
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-19T15:00:00Z') });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const away: Record<string, { start: string; end: string }> = {
+      [demoPeople.carla.id]: { start: '2026-10-12', end: '2026-11-14' },
+      [demoPeople.diego.id]: { start: '2026-10-26', end: '2026-11-06' },
+      // Too far ahead to tell in the list.
+      [demoPeople.paulo.id]: { start: '2026-12-21', end: '2027-01-08' },
+    };
+    server.use(
+      http.get('/api/projects/:id/members', () =>
+        HttpResponse.json(
+          membersOf(project).map((member) => ({ ...member, nextAbsence: away[member.id] ?? null })),
+        ),
+      ),
+    );
+    await openMembers();
+
+    expect(rowOf('Carla Mendes')).toHaveTextContent(
+      absenceTexts.awayUntil.replace('{{end}}', '14/11'),
+    );
+    expect(rowOf('Diego Torres')).toHaveTextContent(
+      absenceTexts.awayFrom.replace('{{start}}', '26/10').replace('{{end}}', '06/11'),
+    );
+    expect(rowOf('Paulo Nogueira')).not.toHaveTextContent('Ausente');
+    expect(rowOf('Rafael Souza')).not.toHaveTextContent('Ausente');
   });
 });
 

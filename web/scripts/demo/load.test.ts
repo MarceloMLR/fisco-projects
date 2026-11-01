@@ -1023,6 +1023,34 @@ describe('Horas previstas na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Ausências na demonstração" (ADR-0141).
+describe('Ausências na demonstração', () => {
+  it('Ausências na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The manager registers the absences of the plan, by the person, after the members.
+    const absences = demoProjects.flatMap((project) => project.absences ?? []);
+    const pattern = / POST \/api\/projects\/[^/]+\/members\/[^/]+\/absences$/;
+    expect(callsBy(pattern)).toHaveLength(absences.length);
+    expect(people(pattern)).toEqual(['marina']);
+    const paths = callsBy(pattern).map((call) => call.split(' ')[2] ?? '');
+    expect(paths.map((path) => path.split('/')[5])).toEqual(
+      absences.map((absence) => idOf(absence.of)),
+    );
+    const sent = paths.flatMap((path) => bodies.get(path) ?? []) as {
+      start: string;
+      end: string;
+    }[];
+    expect(
+      sent.every((body) => /^\d{4}-\d{2}-\d{2}$/.test(body.start) && body.end >= body.start),
+    ).toBe(true);
+    const firstMember = calls.findIndex((call) =>
+      / POST \/api\/projects\/[^/]+\/members$/.test(call),
+    );
+    expect(calls.findIndex((call) => pattern.test(call))).toBeGreaterThan(firstMember);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Termos na demonstração".
 describe('Termos na demonstração', () => {
   it('Termos na demonstração', async () => {

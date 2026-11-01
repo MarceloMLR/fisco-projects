@@ -303,6 +303,7 @@
       "ContractedHours": "Horas contratadas",
       "AdditionalHours": "Horas adicionais",
       "PlannedHours": "Horas previstas",
+      "PersonAbsence": "Ausências",
       "AuditExport": "Exportação da auditoria",
       "AuditCleanup": "Limpeza da auditoria"
     },
@@ -479,6 +480,11 @@
         "Updated": "Alterou as horas previstas",
         "Deleted": "Tirou as horas previstas"
       },
+      "PersonAbsence": {
+        "Created": "Incluiu uma ausência",
+        "Updated": "Alterou uma ausência",
+        "Deleted": "Apagou uma ausência"
+      },
       "AuditExport": {
         "Exported": "Exportou a auditoria"
       },
@@ -531,7 +537,8 @@
         "AcceptanceSigner": "Signatário",
         "TimeEntry": "Apontamento",
         "AdditionalHours": "Motivo",
-        "PlannedHours": "Tarefa"
+        "PlannedHours": "Tarefa",
+        "PersonAbsence": "Pessoa"
       },
       "secret": "Alterado",
       "none": "—",
@@ -737,6 +744,12 @@
         "ProjectId": "Projeto",
         "ScheduleItemId": "Tarefa",
         "Hours": "Horas"
+      },
+      "PersonAbsence": {
+        "UserId": "Pessoa",
+        "Start": "Início",
+        "End": "Fim",
+        "CreatedBy": "Incluída por"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -2058,6 +2071,45 @@
         "moved_zero": "Nenhuma tarefa ou marco mudou de datas.",
         "moved_one": "Cronograma movido: {{count}} tarefa ou marco mudou de datas.",
         "moved_other": "Cronograma movido: {{count}} tarefas e marcos mudaram de datas."
+      }
+    },
+    "absences": {
+      "title": "Ausências",
+      "add": "Incluir ausência",
+      "none": "Nenhuma ausência.",
+      "loadFailed": "Não foi possível carregar as ausências. Tente de novo.",
+      "period": "{{start}} a {{end}}",
+      "shortPeriod": "{{start}} a {{end}}",
+      "awayUntil": "Ausente até {{end}}",
+      "awayToday": "Ausente hoje",
+      "awayFrom": "Ausente de {{start}} a {{end}}",
+      "awayOn": "Ausente em {{day}}",
+      "duringTask": "Responsável ausente: {{periods}}, durante a tarefa",
+      "remove": "Apagar a ausência de {{period}}",
+      "dialog": {
+        "title": "Incluir ausência",
+        "start": "Início",
+        "end": "Fim",
+        "help": "De 1 a 366 dias corridos. Só as datas ficam guardadas, por até um ano depois do fim.",
+        "save": "Incluir",
+        "cancel": "Cancelar"
+      },
+      "removeDialog": {
+        "title": "Apagar a ausência?",
+        "text": "A ausência de {{name}} de {{period}} sai de todos os projetos.",
+        "confirm": "Apagar",
+        "cancel": "Cancelar"
+      },
+      "errors": {
+        "startInvalid": "Digite o início como dd/mm/aaaa.",
+        "endInvalid": "Digite o fim como dd/mm/aaaa, no início ou depois dele.",
+        "tooLong": "Use até 366 dias corridos.",
+        "overlap": "A pessoa já tem ausência nesse período."
+      },
+      "messages": {
+        "added": "Ausência de {{name}} incluída: {{period}}.",
+        "removed": "Ausência de {{name}} apagada: {{period}}.",
+        "failed": "Não foi possível salvar. Tente de novo."
       }
     }
   },

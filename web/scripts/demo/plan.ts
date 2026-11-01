@@ -330,6 +330,16 @@ export interface DemoPlannedHours {
   hours: number;
 }
 
+/**
+ * An absence of a person of the project, registered by the manager (ADR-0141): the first and the last day, in calendar
+ * days from the first day of the main project, as the items of the schedule; only the dates, without a reason.
+ */
+export interface DemoAbsence {
+  of: DemoPerson;
+  start: number;
+  end: number;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -374,6 +384,8 @@ export interface DemoProject {
   additionalHours?: readonly DemoAdditionalHours[];
   /** The planned hours of tasks of the schedule, put by the Administrator after the hours logged (ADR-0138). */
   plannedHours?: readonly DemoPlannedHours[];
+  /** The absences of the people of the project, registered by the manager after the members (ADR-0141). */
+  absences?: readonly DemoAbsence[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -431,6 +443,12 @@ export const demoProjects: readonly DemoProject[] = [
       { task: 'Integrar emissão de NF-e', hours: 13.5 },
       { task: 'Roteiro de testes', hours: 6 },
       { task: 'Testes com a equipe do cliente', hours: 16 },
+    ],
+    // In the coming weeks (ADR-0141): the holidays of Diego over the migration of the balances, and a day of Rafael
+    // during the tests; Membros tells both, and the schedule warns on their tasks.
+    absences: [
+      { of: 'diego', start: 31, end: 45 },
+      { of: 'rafael', start: 25, end: 25 },
     ],
     hours: [
       {

@@ -509,6 +509,17 @@ async function loadProject(
     );
   }
 
+  // The absences of the people, by the manager, once they are in the project (ADR-0141).
+  for (const absence of project.absences ?? []) {
+    must(
+      await personOf(leader).api.POST('/api/projects/{id}/members/{userId}/absences', {
+        params: { path: { id, userId: personOf(absence.of).id } },
+        body: { start: dayFrom(firstDay, absence.start), end: dayFrom(firstDay, absence.end) },
+      }),
+      `Ausência de ${demoPeople[absence.of]} em ${project.code}`,
+    );
+  }
+
   const builder = personOf(leader).api;
   const ids = new Map<string, string>();
   const phaseIds = new Map<string, string>();
