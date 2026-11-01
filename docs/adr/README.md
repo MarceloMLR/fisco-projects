@@ -201,3 +201,4 @@ Regras:
 | [0136](0136-email-dos-responsaveis-no-xml-exportado.md) | E-mail dos responsáveis no XML do MS Project, exportado só pela gestão | aceita | 2026-10-31 |
 | [0137](0137-dependencias-com-tipo-e-intervalo.md) | Dependências com tipo e intervalo em dias úteis | aceita | 2026-11-01 |
 | [0138](0138-horas-previstas-por-tarefa.md) | Horas previstas por tarefa, só do administrador | aceita | 2026-11-01 |
+| [0139](0139-notas-das-tarefas-e-dos-marcos.md) | Notas nas tarefas e nos marcos | aceita | 2026-11-01 |
