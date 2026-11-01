@@ -177,6 +177,19 @@ export function linkOf(
   );
 }
 
+/**
+ * The float of a task or milestone in words (GanttB-1): "4 dias úteis de folga", or "Sem folga: no caminho crítico";
+ * nothing for a task with subtasks, which has none of its own.
+ */
+export function slackText(item: Pick<ScheduleItem, 'float'>, t: TFunction): string | undefined {
+  if (item.float === null) {
+    return undefined;
+  }
+  return item.float > 0
+    ? t('projects.schedule.slack.days', { count: item.float })
+    : t('projects.schedule.slack.none');
+}
+
 /** A lag with its sign, as "+2" or "-1". */
 export const signedLag = (lag: number) => (lag > 0 ? `+${String(lag)}` : String(lag));
 

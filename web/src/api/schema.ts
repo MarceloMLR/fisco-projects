@@ -3891,6 +3891,16 @@ export interface components {
             deadlineDeviation: null | number;
             /** @description The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137). */
             links: components["schemas"]["ScheduleLinkResponse"][];
+            /**
+             * Format: int32
+             * @description The business days the item may end later without moving the end of the project; null for a task with subtasks (GanttB-1).
+             */
+            float: null | number;
+            /**
+             * Format: date
+             * @description The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).
+             */
+            latestEnd: null | string;
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.

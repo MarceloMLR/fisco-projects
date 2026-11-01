@@ -1494,6 +1494,11 @@
       "late": "Atrasada",
       "lateDays_one": "{{count}} dia útil de atraso",
       "lateDays_other": "{{count}} dias úteis de atraso",
+      "slack": {
+        "days_one": "{{count}} dia útil de folga",
+        "days_other": "{{count}} dias úteis de folga",
+        "none": "Sem folga: no caminho crítico"
+      },
       "links": {
         "label": "Tipo e intervalo das dependências",
         "types": {
@@ -1657,7 +1662,8 @@
         "state": "Estado",
         "dependsOn": "Depende de",
         "subtasks": "Subtarefas",
-        "deadline": "Data-limite"
+        "deadline": "Data-limite",
+        "slack": "Folga"
       },
       "phaseDialog": {
         "newTitle": "Nova fase",
@@ -1772,6 +1778,7 @@
         "phase": "Fase",
         "milestone": "Marco",
         "deadline": "Data-limite",
+        "slack": "Folga",
         "nonWorking": "Fim de semana e feriado"
       },
       "messages": {
@@ -1890,6 +1897,7 @@
           "deadlinePast": "Passou da data-limite (dias úteis)",
           "dependsOn": "Depende de (Nº)",
           "critical": "Caminho crítico",
+          "slack": "Folga (dias úteis)",
           "baselineStart": "Início na linha de base",
           "baselineEnd": "Fim na linha de base",
           "baselineDeviation": "Diferença da linha de base (dias úteis)"

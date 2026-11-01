@@ -97,6 +97,7 @@ describe('Aba Cronograma', () => {
       text.timeline.legend.done,
       text.timeline.legend.todo,
       text.timeline.legend.critical,
+      text.timeline.legend.slack,
       text.timeline.legend.phase,
       text.timeline.legend.milestone,
       text.timeline.legend.nonWorking,
@@ -520,6 +521,7 @@ describe('Caminho crítico pela tela', () => {
       text.timeline.legend.todo,
       text.timeline.legend.critical,
       text.timeline.legend.baseline,
+      text.timeline.legend.slack,
       text.timeline.legend.phase,
       text.timeline.legend.milestone,
       text.timeline.legend.nonWorking,
@@ -706,5 +708,30 @@ describe('Tipos na linha do tempo', () => {
     const ends = container.querySelector('.g-dep[data-type="FinishToFinish"]');
     expect(ends?.getAttribute('d')).toMatch(/^M600 \d+ H608 V\d+ H\d+(\.\d+)?$/);
     expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
+  });
+});
+
+// Spec: cronograma, requirement "Folga pela tela" (GanttB-1).
+describe('Folga na linha do tempo', () => {
+  it('Folga na Linha do tempo', async () => {
+    Object.assign(itemNamed('Integrar emissão de NF-e'), { float: 4, latestEnd: '2026-11-03' });
+    Object.assign(itemNamed('Parametrizar regras de ICMS'), { float: 0, latestEnd: '2026-10-22' });
+    const { container } = await openTimeline();
+
+    // Days of 20 px from 05/10: from the end of 28/10 to the end of 03/11; none without float.
+    const slack = container.querySelector('.g-slack');
+    expect(container.querySelectorAll('.g-slack')).toHaveLength(1);
+    expect([slack?.getAttribute('x'), slack?.getAttribute('width')]).toEqual(['480', '120']);
+    expect(legendEntries()).toContain(text.timeline.legend.slack);
+
+    fireEvent.click(screen.getByRole('button', { name: text.baseline.display }));
+    const menu = screen.getByRole('menu', { name: text.baseline.displayLabel });
+    fireEvent.click(
+      within(menu).getByRole('menuitemcheckbox', { name: text.baseline.show.critical }),
+    );
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('.g-slack')).toHaveLength(0);
+    });
   });
 });

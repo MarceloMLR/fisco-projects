@@ -381,6 +381,8 @@ describe('Editar o cronograma pela tela', () => {
             deadline: null,
             deadlineDeviation: null,
             links: [],
+            float: null,
+            latestEnd: null,
             duration: 3,
             progress: 0,
             completedOn: null,
@@ -1475,5 +1477,37 @@ describe('Tipo e intervalo pela tela', () => {
 
     expect(await within(drawer).findByText(text.errors.linksInvalid)).toBeVisible();
     expect(sent).toBe(false);
+  });
+});
+
+// Spec: cronograma, requirement "Folga pela tela" (GanttB-1).
+describe('Folga pela tela', () => {
+  it('Folga no detalhe', async () => {
+    Object.assign(itemNamed('Integrar emissão de NF-e'), { float: 4, latestEnd: '2026-11-03' });
+    Object.assign(itemNamed('Parametrizar regras de ICMS'), { float: 0, latestEnd: '2026-10-22' });
+    await openSchedule();
+
+    const drawer = await chooseItem('Integrar emissão de NF-e');
+    expect(within(drawer).getByText(text.details.slack).nextElementSibling).toHaveTextContent(
+      text.slack.days_other.replace('{{count}}', '4'),
+    );
+    await closeDrawer(drawer);
+
+    const critical = await chooseItem('Parametrizar regras de ICMS');
+    expect(within(critical).getByText(text.details.slack).nextElementSibling).toHaveTextContent(
+      text.slack.none,
+    );
+  });
+
+  it('Folga no detalhe de quem só vê', async () => {
+    permissions = { canEditSchedule: false };
+    Object.assign(itemNamed('Integrar emissão de NF-e'), { float: 1, latestEnd: '2026-10-29' });
+    await openSchedule();
+
+    const drawer = await chooseItem('Integrar emissão de NF-e');
+
+    expect(within(drawer).getByText(text.details.slack).nextElementSibling).toHaveTextContent(
+      text.slack.days_one.replace('{{count}}', '1'),
+    );
   });
 });

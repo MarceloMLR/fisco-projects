@@ -231,6 +231,7 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
                 editable={editable}
                 selectedId={selectedId}
                 showBaseline={showBaseline && schedule.baseline !== null}
+                showSlack={showCritical}
                 onChoose={choose}
                 onMove={onMove}
                 onResize={onResize}

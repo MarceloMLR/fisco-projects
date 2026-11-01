@@ -241,7 +241,15 @@ export function ScheduleTimeline({
 }
 
 type LegendKey =
-  'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'milestone' | 'deadline' | 'nonWorking';
+  | 'done'
+  | 'todo'
+  | 'critical'
+  | 'baseline'
+  | 'phase'
+  | 'milestone'
+  | 'deadline'
+  | 'slack'
+  | 'nonWorking';
 
 /** The mark of a deadline in the legend: the dashed line with the arrow on top, as the timeline draws it. */
 function DeadlineMark() {
@@ -303,6 +311,10 @@ export function TimelineLegend({
   }
   if (baseline) {
     entries.push({ key: 'baseline', sx: swatch('gantt-baseline', { height: 4 }) });
+  }
+  // The float goes with the critical path (GanttB-1).
+  if (critical) {
+    entries.push({ key: 'slack', sx: swatch('gantt-baseline', { height: 2, borderRadius: 0 }) });
   }
   entries.push(
     { key: 'phase', sx: swatch('gantt-summary', { height: 6 }) },

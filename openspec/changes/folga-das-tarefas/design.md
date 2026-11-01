@@ -19,7 +19,7 @@ O `ScheduleCriticalPath.Of` volta do fim do projeto, em ordem topológica invers
 - **API.** `float` (dias úteis) e `latestEnd` em cada item, nulos para a tarefa-resumo e sem itens.
 - **Tela.**
   - Detalhe: a linha "Folga" no `ItemDetails` e no editor, com "4 dias úteis de folga" e, sem folga, "Sem folga: no caminho crítico", pelo `slackText` de `schedule.ts`.
-  - Linha do tempo: com `showCritical`, uma linha fina (`g-slack`) do fim da barra até o fim do último dia (`latestEnd`), na altura do meio da barra, na cor da linha de base (`--gantt-baseline`), sem token novo; a legenda ganha "Folga" com o caminho crítico.
+  - Linha do tempo: com `showCritical`, uma linha fina (`g-slack`) do fim da barra até o fim do último dia (`latestEnd`), logo abaixo da barra, para não riscar o nome dos marcos, na cor da linha de base (`--gantt-baseline`), sem token novo; a legenda ganha "Folga" com o caminho crítico.
   - Excel: "Folga (dias úteis)" depois de "Caminho crítico".
 
 ## Risks / Trade-offs

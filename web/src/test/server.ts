@@ -368,6 +368,9 @@ function demoItem(
     deadlineDeviation: null,
     // The kinds and lags of the dependencies that are not "finishes, then starts" without lag (ADR-0137).
     links: [],
+    // The float of each item, as the API counts it (GanttB-1); none in the screens that do not look at it.
+    float: null,
+    latestEnd: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,

@@ -106,6 +106,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Hoje da instalação | InstallationClock | O dia de hoje no fuso da instalação, para o atraso e a conclusão |
 | Linha de base | Baseline | |
 | Caminho crítico | CriticalPath | |
+| Folga | Float, ScheduleSlack, `float` | Dias úteis que uma tarefa ou marco pode terminar depois sem mudar o fim do projeto (GanttB-1) |
 | Tipo da dependência | ScheduleLinkType | "Termina, então começa" (FinishToStart), "Começa junto" (StartToStart) e "Termina junto" (FinishToFinish) (ADR-0137) |
 | Intervalo da dependência | Lag | Dias úteis de espera (positivo) ou de adiantamento (negativo), de -99 a 999 (ADR-0137) |
 | Data-limite | Deadline | Prazo de uma tarefa ou marco que não muda as datas e avisa quando o fim passa dele (GanttA-2) |

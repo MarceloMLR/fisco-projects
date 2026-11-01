@@ -341,6 +341,11 @@
   fill: var(--gantt-baseline);
 }
 
+/* The float after an item, with the critical path (GanttB-1). */
+.fp-gantt .g-slack {
+  fill: var(--gantt-baseline);
+}
+
 .fp-gantt .g-milestone {
   fill: var(--gantt-milestone);
 }
@@ -430,6 +435,7 @@
 .fp-gantt .g-selected,
 .fp-gantt .g-row-line,
 .fp-gantt .g-baseline,
+.fp-gantt .g-slack,
 .fp-gantt .g-dep,
 .fp-gantt .g-dep-head,
 .fp-gantt .g-deadline,
