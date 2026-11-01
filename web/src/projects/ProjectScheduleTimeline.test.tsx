@@ -274,8 +274,9 @@ describe('Ligar duas barras', () => {
         ownedByClient: false,
         progress: null,
         predecessorIds: [itemNamed('Parametrizar regras de ICMS').id, invoices.id],
-        // It stays where it is, right in the phase (ADR-0088).
+        // It stays where it is, right in the phase (ADR-0088), with its deadline (GanttA-2).
         parentId: null,
+        deadline: null,
       },
     ]);
     // And the arrow appears.
