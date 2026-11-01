@@ -103,16 +103,17 @@ public sealed class ProjectTests
 
     // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status, managing the people,
     // editing the schedule, updating the progress of one's own tasks, deleting it (ADR-0041), choosing its folder
-    // (ADR-0122) and downloading the XML of the MS Project with the e-mails (ADR-0136).
+    // (ADR-0122), downloading the XML of the MS Project with the e-mails (ADR-0136) and registering the absences of its
+    // people (ADR-0141).
     [Theory(DisplayName = "Permissões no projeto")]
-    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true, false, true, true)]
-    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true, false, false, false)]
-    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true, false, false, false)]
-    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true, false, false, false)]
-    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false, false, false, false)]
-    [InlineData(false, null, false, false, false, false, false, false, false, false, false, false)]
-    [InlineData(true, null, true, true, true, true, true, true, true, true, true, true)]
-    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true, false, true, true, true)]
+    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true, false, false, false, false)]
+    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true, false, false, false, false)]
+    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true, false, false, false, false)]
+    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false, false, false, false, false)]
+    [InlineData(false, null, false, false, false, false, false, false, false, false, false, false, false)]
+    [InlineData(true, null, true, true, true, true, true, true, true, true, true, true, true)]
+    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true, true, true, true, true)]
     public void Permissions_FollowTheMatrix(
         bool administrator,
         ProjectRole? role,
@@ -125,13 +126,14 @@ public sealed class ProjectTests
         bool canUpdateOwnProgress,
         bool canDelete,
         bool canChooseFolder,
-        bool canExportSchedule)
+        bool canExportSchedule,
+        bool canManageAbsences)
     {
         var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
 
         permissions.Should().Be(new ProjectPermissions(
             canView, canEditData, canChangeStatus, canManagePeople, canManageManagers, canEditSchedule, canUpdateOwnProgress,
-            canDelete, canChooseFolder, canExportSchedule));
+            canDelete, canChooseFolder, canExportSchedule, canManageAbsences));
     }
 
     // ADR-0043: the Administrator and the manager update the progress of any task; the tech lead, the contributor and
