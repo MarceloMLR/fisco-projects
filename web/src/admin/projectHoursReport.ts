@@ -2,8 +2,8 @@ import type { TFunction } from 'i18next';
 import type { ProjectHours, ProjectHoursView } from '../api/client';
 import type { DayValue } from '../format/dates';
 import type { Dates } from '../format/dates';
+import { xlsxColors } from '../format/xlsxColors';
 import { buildXlsx, type XlsxCell } from '../format/xlsx';
-import { color } from '../theme/tokens';
 import { balanceText } from './projectHours';
 
 export interface ProjectHoursReport {
@@ -16,9 +16,6 @@ export interface ProjectHoursReport {
   dates: Pick<Dates, 'timeZone' | 'toSpreadsheetDateTime'>;
   t: TFunction;
 }
-
-/** A color of the tokens, light theme, as RRGGBB. */
-const tokenColor = (name: string) => color(name, 'light').replace(/^#/, '');
 
 /** The name of the file: horas-dos-projetos-2026-10-29.xlsx. */
 export const projectHoursReportName = (today: DayValue, t: TFunction) =>
@@ -93,10 +90,6 @@ export function projectHoursReport({
         ],
       },
     ],
-    {
-      headerFill: tokenColor('bg-subtle'),
-      headerText: tokenColor('text'),
-      border: tokenColor('border'),
-    },
+    xlsxColors,
   );
 }

@@ -25,3 +25,17 @@ export async function unzip(bytes: Uint8Array<ArrayBuffer>): Promise<Map<string,
   }
   return files;
 }
+
+/** The bytes of a file the screen saved, to open with unzip. */
+export function bytesOf(content: Blob): Promise<Uint8Array<ArrayBuffer>> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(new Uint8Array(reader.result as ArrayBuffer));
+    };
+    reader.onerror = () => {
+      reject(new Error('The file could not be read.'));
+    };
+    reader.readAsArrayBuffer(content);
+  });
+}

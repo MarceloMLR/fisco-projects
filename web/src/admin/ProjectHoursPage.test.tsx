@@ -14,7 +14,7 @@ import { demoTimeEntries, hoursNow, timeEntryListOf } from '../test/demoTimeEntr
 import { expectBusy, expectIdle } from '../test/busy';
 import { renderApp } from '../test/renderApp';
 import { demoPeople, server, signedInAs } from '../test/server';
-import { unzip } from '../test/unzip';
+import { bytesOf, unzip } from '../test/unzip';
 
 const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
 
@@ -66,19 +66,6 @@ function withBalance(contracted: number | null, additional: AdditionalHours[]) {
       balance: balanceOf(contracted, sum, detail.project.balance.logged),
     },
   };
-}
-
-function bytesOf(content: Blob): Promise<Uint8Array<ArrayBuffer>> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(new Uint8Array(reader.result as ArrayBuffer));
-    };
-    reader.onerror = () => {
-      reject(new Error('The file could not be read.'));
-    };
-    reader.readAsArrayBuffer(content);
-  });
 }
 
 beforeEach(() => {

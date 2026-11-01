@@ -5,7 +5,7 @@ import type { AuditEntry } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { auditPage, demoAuditEntries, emailOf, problem, server, signedInAs } from '../test/server';
-import { unzip } from '../test/unzip';
+import { bytesOf, unzip } from '../test/unzip';
 
 const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
 
@@ -332,20 +332,6 @@ describe('Detalhes em gaveta sobreposta', () => {
     });
   });
 });
-
-/** The bytes of a file the screen made. */
-function bytesOf(content: Blob): Promise<Uint8Array<ArrayBuffer>> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(new Uint8Array(reader.result as ArrayBuffer));
-    };
-    reader.onerror = () => {
-      reject(new Error('The file could not be read.'));
-    };
-    reader.readAsArrayBuffer(content);
-  });
-}
 
 const exportEntry: AuditEntry = {
   id: '0199f5a2-7c1e-7d40-9a1b-100000000099',
