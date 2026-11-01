@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
@@ -14,7 +15,22 @@ namespace FiscoProjects.Projects.Endpoints;
 /// </summary>
 public sealed record ProjectMemberResponse(
     Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager,
-    bool CanBeTechLead);
+    bool CanBeTechLead,
+    [property: Description("The absence of today or the next one, the first that ends today or later; null without one (ADR-0141).")] AbsencePeriodResponse? NextAbsence);
+
+/// <summary>A period of an absence: the first and the last day (ADR-0141).</summary>
+public sealed record AbsencePeriodResponse(DateOnly Start, DateOnly End);
+
+/// <summary>An absence of a person: the id and the period.</summary>
+public sealed record AbsenceResponse(Guid Id, DateOnly Start, DateOnly End);
+
+/// <summary>The absences of a person, the latest end first, and whether the person who asks registers and removes them.</summary>
+public sealed record MemberAbsencesResponse(IReadOnlyList<AbsenceResponse> Absences, bool CanManage);
+
+/// <summary>A new absence: the first and the last day, from 1 to 366 calendar days (ADR-0141).</summary>
+public sealed record AbsenceRequest(DateOnly Start, DateOnly End);
+
+public sealed record AbsenceCreatedResponse(Guid Id);
 
 /// <summary>
 /// The person to include, by <c>userId</c> or, for a person of the company directory who never signed in, by the
@@ -45,6 +61,71 @@ internal static class ProjectMemberEndpoints
         projects.MapDelete("/{id:guid}/members/{userId:guid}", RemoveAsync).WithName("RemoveProjectMember")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+        // The absences of a person of the project (ADR-0141): seen by whoever sees the project, registered by the
+        // Administrator and the manager of the open project (ProjectPermissions.CanManageAbsences).
+        projects.MapGet("/{id:guid}/members/{userId:guid}/absences", ListAbsencesAsync).WithName("ListMemberAbsences");
+        projects.MapPost("/{id:guid}/members/{userId:guid}/absences", AddAbsenceAsync).WithName("AddMemberAbsence")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapDelete("/{id:guid}/members/{userId:guid}/absences/{absenceId:guid}", RemoveAbsenceAsync)
+            .WithName("RemoveMemberAbsence")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+    }
+
+    private static async Task<Results<Ok<MemberAbsencesResponse>, NotFound>> ListAbsencesAsync(
+        Guid id, Guid userId, HttpContext http, IUserAccess access, ListMemberAbsences list, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        return await list.ExecuteAsync(id, userId, viewer, cancellationToken) is { } absences
+            ? TypedResults.Ok(new MemberAbsencesResponse(
+                [.. absences.Absences.Select(absence => new AbsenceResponse(absence.Id, absence.Start, absence.End))],
+                absences.CanManage))
+            : TypedResults.NotFound();
+    }
+
+    private static async Task<Results<Created<AbsenceCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddAbsenceAsync(
+        Guid id,
+        Guid userId,
+        HttpContext http,
+        AbsenceRequest request,
+        IUserAccess access,
+        AddMemberAbsence add,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        var result = await add.ExecuteAsync(id, userId, request.Start, request.End, viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            AbsenceOutcome.Done => TypedResults.Created((string?)null, new AbsenceCreatedResponse(result.Id!.Value)),
+            AbsenceOutcome.NotFound => TypedResults.NotFound(),
+            AbsenceOutcome.Forbidden => TypedResults.Forbid(),
+            AbsenceOutcome.Invalid => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["end"] = [$"The absence goes from the start to the end, from 1 to {PersonAbsence.MaxDays} calendar days, from 2000 to 2099."],
+            }),
+            AbsenceOutcome.Closed => ProjectEndpoints.Closed(),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Absence on these days",
+                detail: "The person already has an absence on a day of the period.",
+                type: ProjectProblems.AbsenceOverlap),
+        };
+    }
+
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ProblemHttpResult>> RemoveAbsenceAsync(
+        Guid id, Guid userId, Guid absenceId, HttpContext http, IUserAccess access, RemoveMemberAbsence remove, CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        var result = await remove.ExecuteAsync(id, userId, absenceId, viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            AbsenceOutcome.Done => TypedResults.NoContent(),
+            AbsenceOutcome.Forbidden => TypedResults.Forbid(),
+            AbsenceOutcome.Closed => ProjectEndpoints.Closed(),
+            _ => TypedResults.NotFound(),
+        };
     }
 
     private static async Task<Results<Ok<IReadOnlyList<ProjectMemberResponse>>, NotFound>> ListAsync(
@@ -56,7 +137,8 @@ internal static class ProjectMemberEndpoints
             ? TypedResults.NotFound()
             : TypedResults.Ok<IReadOnlyList<ProjectMemberResponse>>([.. members.Select(member => new ProjectMemberResponse(
                 member.Id, member.Name, member.Email, member.Role, member.AddedAt, member.LastSignInAt, member.CanBeManager,
-                member.CanBeTechLead))]);
+                member.CanBeTechLead,
+                member.NextAbsence is { } next ? new AbsencePeriodResponse(next.Start, next.End) : null))]);
     }
 
     private static async Task<Results<Created<ProjectMemberCreatedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> AddAsync(

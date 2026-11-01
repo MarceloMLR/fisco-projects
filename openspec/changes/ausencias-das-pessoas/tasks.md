@@ -4,10 +4,10 @@
 
 ## 2. Domínio e API
 
-- [ ] 2.1 `PersonAbsence` no domínio, com a migração e a auditoria; testes das regras
-- [ ] 2.2 `ListMemberAbsences`, `AddMemberAbsence` e `RemoveMemberAbsence` e as rotas; testes "Incluir ausência", "Ausência inválida", "Ausência sobreposta", "Apagar ausência", "Permissões nas ausências por papel" e "Ausência na auditoria"
-- [ ] 2.3 `nextAbsence` na lista de Membros e `ownerAbsences` no cronograma; testes "Ausente hoje na lista", "Tarefa na ausência do responsável" e "Sem aviso na concluída"
-- [ ] 2.4 `CleanUpAbsences`, `AbsenceCleanup` e o apagador da anonimização; testes "Ausência apagada depois de um ano" e "Ausências na anonimização"
+- [x] 2.1 `PersonAbsence` no domínio, com a migração e a auditoria; testes das regras
+- [x] 2.2 `ListMemberAbsences`, `AddMemberAbsence` e `RemoveMemberAbsence` e as rotas; testes "Incluir ausência", "Ausência inválida", "Ausência sobreposta", "Apagar ausência", "Permissões nas ausências por papel", "Ausência pelo projeto encerrado" e "Ausência na auditoria"
+- [x] 2.3 `nextAbsence` na lista de Membros e `ownerAbsences` no cronograma; testes "Ausente hoje na lista", "Tarefa na ausência do responsável" e "Sem aviso na concluída"
+- [x] 2.4 `CleanUpAbsences`, `AbsenceCleanup` e o apagador da anonimização; testes "Ausência apagada depois de um ano" e "Ausências na anonimização"
 
 ## 3. Tela
 

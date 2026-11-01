@@ -28,6 +28,10 @@ Incluir e apagar as ausências de uma pessoa de um projeto em aberto MUST ser pe
 - **WHEN** cada papel do projeto tenta ver, incluir e apagar uma ausência de uma pessoa do projeto
 - **THEN** o administrador e o gerente conseguem tudo; o líder técnico, o colaborador, o desenvolvedor e o leitor veem e recebem 403 ao incluir e ao apagar; quem está fora do projeto recebe 404
 
+#### Scenario: Ausência pelo projeto encerrado
+- **WHEN** a gerente tenta incluir ou apagar uma ausência pelo projeto cancelado
+- **THEN** a API recusa com 409 de projeto encerrado, e as ausências continuam visíveis
+
 ### Requirement: Ausências na lista de Membros
 
 A lista de Membros MUST trazer, de cada pessoa, a ausência atual ou a próxima, e a tela MUST mostrar "Ausente até" com o fim, quando a pessoa está ausente hoje, ou "Ausente de" com o período, quando a ausência começa nos próximos 30 dias (ADR-0141).

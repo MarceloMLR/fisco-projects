@@ -26,6 +26,9 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed
 /// project: the Administrator and the manager (ADR-0136).
 /// </param>
+/// <param name="CanManageAbsences">
+/// Registers and removes the absences of the people of the project: the Administrator and the manager (ADR-0141).
+/// </param>
 public sealed record ProjectPermissions(
     bool CanView,
     bool CanEditData,
@@ -36,9 +39,10 @@ public sealed record ProjectPermissions(
     bool CanUpdateOwnProgress,
     bool CanDelete = false,
     bool CanChooseFolder = false,
-    bool CanExportSchedule = false)
+    bool CanExportSchedule = false,
+    bool CanManageAbsences = false)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true, true, true);
     private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)
