@@ -217,3 +217,35 @@ A carga de demonstração MUST criar um projeto fictício a partir do XML do MS 
 #### Scenario: Projeto importado na demonstração
 - **WHEN** o comando carrega os dados de demonstração
 - **THEN** a gerente exporta o cronograma de um projeto, cria um projeto novo a partir do arquivo, ligando os recursos às pessoas da demonstração, e ele nasce com as mesmas fases, itens, progresso e responsáveis
+
+### Requirement: Horas previstas na demonstração
+
+A carga de demonstração MUST pôr, pelo administrador, horas previstas em tarefas do projeto principal com horas apontadas, de modo que o cronograma e Horas dos projetos mostrem uma tarefa acima das previstas, uma perto das previstas e uma dentro (ADR-0089, ADR-0138).
+
+#### Scenario: Horas previstas na demonstração
+- **WHEN** o comando carrega os dados de demonstração e o administrador abre o detalhe do projeto principal em Horas dos projetos
+- **THEN** a seção "Por tarefa" mostra uma tarefa acima das previstas, uma perto e uma dentro
+
+### Requirement: Notas na demonstração
+
+A carga de demonstração MUST escrever, pela gerente, notas em itens do projeto principal, como a tarefa que espera os arquivos do cliente (ADR-0089, ADR-0139).
+
+#### Scenario: Notas na demonstração
+- **WHEN** o comando carrega os dados de demonstração e alguém abre a Lista do projeto principal
+- **THEN** pelo menos uma tarefa e um marco mostram o ícone de nota
+
+### Requirement: Ausências na demonstração
+
+A carga de demonstração MUST incluir, pela gerente, ausências de pessoas do projeto principal, uma delas durante uma tarefa em aberto do responsável (ADR-0089, ADR-0141).
+
+#### Scenario: Ausências na demonstração
+- **WHEN** o comando carrega os dados de demonstração e alguém abre o cronograma do projeto principal
+- **THEN** pelo menos uma tarefa mostra o aviso do responsável ausente, e Membros mostra a ausência
+
+### Requirement: Carga na demonstração
+
+A carga de demonstração MUST incluir horas previstas em tarefas de mais de um projeto de uma mesma pessoa, de modo que a Carga da equipe mostre uma pessoa acima da capacidade numa semana de ausência dela (ADR-0089, ADR-0142).
+
+#### Scenario: Carga na demonstração
+- **WHEN** o comando carrega os dados de demonstração e o administrador abre Carga da equipe
+- **THEN** pelo menos uma pessoa está acima da capacidade numa semana com ausência, com tarefas de dois projetos

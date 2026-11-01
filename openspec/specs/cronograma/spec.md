@@ -88,11 +88,27 @@ Uma tarefa pode ter um responsável: uma pessoa do projeto que não é leitora. 
 
 ### Requirement: Dependências
 
-Uma tarefa ou um marco pode depender de outras tarefas e marcos do mesmo cronograma, do tipo termina → começa: uma tarefa MUST começar no dia útil seguinte ao fim das anteriores, e um marco, no dia em que elas terminam. Um início mais cedo do que as anteriores permitem MUST passar para o primeiro dia possível. Depender de si mesmo ou formar um ciclo MUST receber 400 (ADR-0019).
+Uma tarefa ou um marco pode depender de outras tarefas e marcos do mesmo cronograma, com um tipo ("termina, então começa", "começa junto" ou "termina junto") e um intervalo de -99 a 999 dias úteis. O item MUST ficar no primeiro dia que as anteriores permitem pela regra do ADR-0137: na primeira, a tarefa começa no dia útil seguinte ao fim da anterior e o marco no dia do fim. Depender de si mesmo ou formar um ciclo MUST receber 400 (ADR-0019).
 
 #### Scenario: Tarefa depois da anterior
 - **WHEN** o gerente faz uma tarefa que começa em 08/10/2026 depender de outra que termina na sexta-feira 09/10/2026, e 12/10/2026 é feriado
 - **THEN** a tarefa passa a começar na terça-feira 13/10/2026, e um marco que dependa da mesma tarefa fica em 09/10/2026
+
+#### Scenario: Intervalo entre as tarefas
+- **WHEN** a homologação do cliente depende da entrega, que termina na sexta-feira 09/10/2026, com o intervalo de 2 dias úteis, e 12/10/2026 é feriado
+- **THEN** a homologação começa na quinta-feira 15/10/2026, e com o intervalo de -1 começa na sexta-feira 09/10/2026
+
+#### Scenario: Começa junto
+- **WHEN** os testes, de 3 dias úteis, dependem da parametrização, que começa em 14/10/2026, do tipo "começa junto" com o intervalo de 1 dia útil
+- **THEN** os testes vão de 15/10/2026 a 19/10/2026, mesmo que a parametrização termine depois
+
+#### Scenario: Termina junto
+- **WHEN** o treinamento, de 2 dias úteis, depende da migração, que termina em 20/10/2026, do tipo "termina junto"
+- **THEN** o treinamento vai de 19/10/2026 a 20/10/2026
+
+#### Scenario: Tipo e intervalo inválidos
+- **WHEN** o gerente manda uma dependência com o intervalo de 1.000 dias úteis ou um tipo que não existe
+- **THEN** a API responde 400 em `links` e nada muda
 
 #### Scenario: Dependência circular
 - **WHEN** a tarefa B depende de A, a tarefa C depende de B, e o gerente tenta fazer A depender de C
@@ -100,11 +116,15 @@ Uma tarefa ou um marco pode depender de outras tarefas e marcos do mesmo cronogr
 
 ### Requirement: Dependências que empurram
 
-Mudar o início ou a duração de uma tarefa para o fim ficar depois MUST empurrar as tarefas e os marcos seguintes, em cadeia, só o necessário para cada um começar depois das anteriores, pulando fins de semana e feriados. Antecipar uma tarefa MUST NOT mover as seguintes. A resposta MUST dizer quantos itens foram empurrados (ADR-0019).
+Mudar o início ou a duração de uma tarefa para o fim ficar depois MUST empurrar as tarefas e os marcos seguintes, em cadeia, só o necessário para cada um respeitar o tipo e o intervalo das dependências, pulando fins de semana e feriados. Antecipar uma tarefa MUST NOT mover as seguintes. A resposta MUST dizer quantos itens foram empurrados (ADR-0019, ADR-0137).
 
 #### Scenario: Atrasar empurra a cadeia
 - **WHEN** A vai de 05/10 a 09/10/2026, B depende de A e vai de 13/10 a 14/10, C depende de B e fica em 15/10, e o gerente aumenta a duração de A em um dia
 - **THEN** A termina em 13/10, B vai de 14/10 a 15/10, C fica em 16/10/2026, e a resposta diz que 2 itens foram empurrados
+
+#### Scenario: Empurrar pelo início
+- **WHEN** B começa junto com A e o gerente atrasa o início de A em dois dias úteis, sem mudar o fim de A além disso
+- **THEN** B começa dois dias úteis depois, com a mesma duração
 
 #### Scenario: Antecipar não puxa
 - **WHEN** o gerente antecipa em dois dias úteis o início de uma tarefa que tem uma tarefa seguinte
@@ -604,7 +624,7 @@ Com a linha de base salva, cada tarefa e marco que estava nela MUST dizer quanto
 
 ### Requirement: Caminho crítico
 
-O caminho crítico MUST ser calculado no servidor: as tarefas e os marcos com datas próprias sem folga, isto é, que não podem terminar um dia útil depois sem atrasar o fim do projeto, pelas dependências "termina, então começa" e pelo calendário da instalação. A tarefa-resumo MUST NOT entrar; as subtarefas, sim. Uma tarefa concluída continua no caminho crítico pelas datas (ADR-0018, ADR-0021, ADR-0051, ADR-0088).
+O caminho crítico MUST ser calculado no servidor: as tarefas e os marcos com datas próprias sem folga, isto é, que não podem terminar um dia útil depois sem atrasar o fim do projeto, pelas dependências com o tipo e o intervalo e pelo calendário da instalação. O servidor MUST dizer a folga de cada um, em dias úteis. A tarefa-resumo MUST NOT entrar; as subtarefas, sim. Uma tarefa concluída continua no caminho crítico pelas datas (ADR-0018, ADR-0021, ADR-0051, ADR-0088, ADR-0137).
 
 #### Scenario: Cadeia mais longa é crítica
 - **WHEN** a tarefa A, de 3 dias úteis, vem antes da tarefa B, de 2, que vem antes do marco M, e a tarefa C, de 2 dias úteis, começa com A e não tem seguintes
@@ -612,11 +632,19 @@ O caminho crítico MUST ser calculado no servidor: as tarefas e os marcos com da
 
 #### Scenario: Folga em dias úteis
 - **WHEN** uma tarefa termina na sexta 09/10/2026, sem seguintes, e o projeto termina na terça 13/10/2026, com o feriado de 12/10/2026
-- **THEN** a tarefa tem um dia útil de folga e não está no caminho crítico
+- **THEN** a tarefa tem um dia útil de folga, com o último fim em 13/10/2026, e não está no caminho crítico
 
 #### Scenario: Subtarefas no caminho crítico
 - **WHEN** a subtarefa mais longa de uma tarefa-resumo leva ao fim do projeto
 - **THEN** a subtarefa está no caminho crítico, e a tarefa-resumo não
+
+#### Scenario: Folga da tarefa
+- **WHEN** a tarefa A, de 5 dias úteis, e a tarefa B, de 2, começam juntas e vêm antes do marco M
+- **THEN** A e M estão no caminho crítico, sem folga, e B tem 3 dias úteis de folga
+
+#### Scenario: Folga com os tipos
+- **WHEN** a tarefa B, de 2 dias úteis, termina junto com a tarefa A, de 5, que vem antes do marco M
+- **THEN** B não tem folga e está no caminho crítico
 
 ### Requirement: Linha de base pela tela
 
@@ -860,7 +888,7 @@ O administrador MUST poder ver quantas tarefas e marcos dos projetos em aberto m
 
 ### Requirement: Importar do MS Project
 
-Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar nada, e criar um projeto com o cronograma convertido: fases, tarefas, subtarefas, marcos e dependências "termina, então começa", com as datas em dias úteis da instalação a partir do início escolhido. A conversão MUST seguir o ADR-0135, dizer num aviso cada ajuste e o que ficou de fora e contar as tarefas e os recursos do arquivo que vieram; a linha de base MUST NOT vir (ADR-0017, ADR-0019, ADR-0088, ADR-0135).
+Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar nada, e criar um projeto com o cronograma convertido (fases, tarefas, subtarefas, marcos e dependências com o tipo e o intervalo), em dias úteis a partir do início escolhido. A conversão MUST seguir o ADR-0135, avisar cada ajuste e o que ficou de fora e contar o que veio do arquivo; a linha de base MUST NOT vir (ADR-0017, ADR-0088, ADR-0137).
 
 #### Scenario: Prévia do arquivo do MS Project
 - **WHEN** a gerente manda na prévia o XML de um cronograma com uma fase, uma tarefa de 13/10/2026 a 15/10/2026 a 40% com o recurso Carla e um marco ligado a ela
@@ -871,8 +899,8 @@ Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar
 - **THEN** o projeto nasce com a fase, a tarefa de 09/10/2026 a 14/10/2026 a 40% com a Carla responsável e o marco no fim dela, e a Carla entra no projeto como Colaboradora
 
 #### Scenario: O que não cabe no FiscoProjects
-- **WHEN** o arquivo tem uma tarefa no nível 4, uma tarefa solta no nível 1, uma dependência "começa, então começa", outra com intervalo e outra de uma tarefa-resumo
-- **THEN** a prévia traz a tarefa do nível 4 como subtarefa, a solta numa fase com o título do projeto, a dependência com intervalo sem o intervalo, as outras duas fora, e um aviso de cada ajuste com os nomes
+- **WHEN** o arquivo tem uma tarefa no nível 4, uma tarefa solta no nível 1, uma dependência "começa, então termina", outra com o intervalo em porcentagem e outra de uma tarefa-resumo
+- **THEN** a prévia traz a tarefa do nível 4 como subtarefa, a solta numa fase com o título do projeto, a "começa, então termina" como "termina, então começa", o intervalo em dias úteis, a da tarefa-resumo fora, e um aviso de cada ajuste com os nomes
 
 #### Scenario: O que fica de fora do arquivo
 - **WHEN** o arquivo tem uma tarefa inativa com uma subtarefa, duas linhas em branco, um recurso de material, um de custo e um recurso de trabalho só na subtarefa inativa
@@ -888,7 +916,7 @@ Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar
 
 #### Scenario: Ida e volta pelo MS Project
 - **WHEN** a gerente exporta o XML de um cronograma e o manda na prévia
-- **THEN** a prévia traz as mesmas fases, tarefas, subtarefas, marcos, durações, progresso e dependências do cronograma exportado, e um recurso para cada responsável, com a pessoa dele sugerida pelo e-mail
+- **THEN** a prévia traz as mesmas fases, tarefas, subtarefas, marcos, durações, progresso e dependências, com os tipos e os intervalos, do cronograma exportado, e um recurso para cada responsável, com a pessoa dele sugerida pelo e-mail
 
 ### Requirement: Progresso e responsáveis do MS Project
 
@@ -925,3 +953,299 @@ O "Novo projeto" MUST oferecer "A partir do MS Project", além de "Em branco" e 
 #### Scenario: Arquivo recusado pela tela
 - **WHEN** a gerente escolhe um .mpp em "A partir do MS Project"
 - **THEN** o campo do arquivo diz que o arquivo precisa ser salvo como XML no MS Project, e o projeto não é criado
+
+### Requirement: Data-limite de tarefas e marcos
+
+Quem edita o cronograma MUST poder pôr, mudar e tirar a data-limite de uma tarefa ou de um marco, sem mudar as datas do item nem das dependências. O cronograma MUST dizer, em dias úteis da instalação, quanto cada item passou dela (pelo fim ou pelo dia do marco; concluído, pelo dia em que terminou; atrasado, por hoje) e quantos itens abertos passaram. Ela MUST entrar no desfazer, no XML do MS Project e no Excel (ADR-0018, ADR-0019, ADR-0020, ADR-0043, ADR-0091, ADR-0135).
+
+#### Scenario: Data-limite cumprida
+- **WHEN** a gerente põe a data-limite 30/10/2026 em Testes integrados, que termina em 29/10/2026
+- **THEN** as datas do item e das tarefas que dependem dele não mudam, e ele não passou da data-limite
+
+#### Scenario: Data-limite estourada
+- **WHEN** a data-limite de Testes integrados é 30/10/2026 e uma mudança empurra o fim dele para 03/11/2026, com 02/11/2026 feriado
+- **THEN** o item passou 1 dia útil da data-limite, e o cronograma conta 1 data-limite estourada
+
+#### Scenario: Data-limite do marco
+- **WHEN** um marco do dia 04/11/2026, com a data-limite 04/11/2026, ainda não foi atingido em 05/11/2026
+- **THEN** ele passou 1 dia útil da data-limite e conta como estourado; atingido em 05/11/2026, continua 1 dia útil depois, sem contar como estourado
+
+#### Scenario: Data-limite só de quem edita
+- **WHEN** um colaborador, um desenvolvedor, o líder técnico ou um leitor do projeto manda a data-limite de um item
+- **THEN** a API responde 403, e para o administrador e o gerente a data-limite é gravada
+
+#### Scenario: Desfazer a data-limite
+- **WHEN** a gerente põe a data-limite num item e escolhe "Desfazer"
+- **THEN** o item volta sem data-limite
+
+#### Scenario: Data-limite no MS Project
+- **WHEN** a gerente exporta o XML de um cronograma com uma data-limite e cria um projeto com esse arquivo, com o início 5 dias úteis depois
+- **THEN** o XML traz o `Deadline` da tarefa, e o projeto novo tem a data-limite 5 dias úteis depois da original
+
+#### Scenario: Data-limite no Excel
+- **WHEN** uma pessoa do projeto exporta para o Excel um cronograma com um item que passou 1 dia útil da data-limite
+- **THEN** a planilha traz a data-limite do item e o 1 dia útil na coluna do estouro
+
+### Requirement: Data-limite pela tela
+
+O detalhe da tarefa e do marco MUST ter o campo "Data-limite" para quem edita e dizer a quem vê quanto falta ou quanto passou, com ícone, cor e texto. A Linha do tempo e o PDF MUST marcar o dia da data-limite na linha do item, em vermelho quando passou, com a legenda. A Lista e o Expandir MUST ter a coluna "Data-limite", e o resumo da aba MUST contar as datas-limite estouradas (ADR-0065, ADR-0071, ADR-0134).
+
+#### Scenario: Data-limite no detalhe
+- **WHEN** a gerente põe a data-limite 30/10/2026 em Testes integrados pelo detalhe e, depois, o fim do item passa para 03/11/2026
+- **THEN** a API recebe a data-limite, e o detalhe diz "Passou 1 dia útil da data-limite" em vermelho, com o ícone
+
+#### Scenario: Marcador da data-limite
+- **WHEN** a Linha do tempo mostra um item com a data-limite no período
+- **THEN** a linha dele tem o marcador no dia da data-limite, vermelho se passou, e a legenda mostra "Data-limite"
+
+#### Scenario: Data-limite na Lista e no resumo
+- **WHEN** a Lista mostra um item que passou da data-limite
+- **THEN** a coluna "Data-limite" mostra a data com o estouro destacado, e o resumo da aba mostra "1 data-limite estourada"
+
+### Requirement: Filtros do cronograma
+
+Toda pessoa do projeto MUST poder filtrar a Lista, a Linha do tempo e o Expandir por um filtro de cada vez: atrasadas, datas-limite estouradas, caminho crítico, minhas tarefas, próximas duas semanas ou por responsável. Os itens que passam MUST aparecer sob a fase e, se forem subtarefas, sob a tarefa delas, sem mudar as datas nem o período; o filtro MUST ficar no endereço e dizer quantos itens aparecem (ADR-0020, ADR-0021, ADR-0071, ADR-0102).
+
+#### Scenario: Filtrar as atrasadas
+- **WHEN** a gerente escolhe "Atrasadas" num cronograma de 20 tarefas e marcos com 4 atrasados
+- **THEN** a Lista mostra só os 4, cada um sob a sua fase, o rodapé diz "4 de 20 tarefas e marcos" e o botão de filtro fica marcado, com o nome "Filtro: Atrasadas"
+
+#### Scenario: Minhas tarefas
+- **WHEN** Diego, desenvolvedor do projeto, escolhe "Minhas tarefas"
+- **THEN** aparecem só as tarefas de que ele é o responsável
+
+#### Scenario: Por responsável
+- **WHEN** uma pessoa do projeto escolhe Carla Mendes, o cliente ou "Sem responsável" em "Por responsável"
+- **THEN** aparecem só as tarefas dela, as do cliente ou as sem responsável, e uma subtarefa aparece sob a tarefa dela
+
+#### Scenario: Próximas duas semanas
+- **WHEN** hoje é 19/10/2026 e a pessoa escolhe "Próximas duas semanas"
+- **THEN** aparecem as tarefas e os marcos em aberto que acontecem de 19/10/2026 a 01/11/2026, e não os concluídos, os atrasados nem os que começam depois
+
+#### Scenario: Filtro na Linha do tempo
+- **WHEN** a pessoa escolhe "Caminho crítico" na Linha do tempo e abre o Expandir
+- **THEN** as duas mostram só as fases e os itens do caminho crítico, com as setas entre eles, no mesmo período, e o endereço guarda o filtro
+
+#### Scenario: Filtro sem resultado
+- **WHEN** o filtro escolhido não tem nenhum item, como "Datas-limite estouradas" sem nenhuma estourada
+- **THEN** a tela diz "Nenhuma tarefa ou marco neste filtro." e "Limpar filtro" volta a mostrar tudo
+
+### Requirement: Tipo e intervalo das dependências pela tela
+
+No detalhe da tarefa e do marco, quem edita MUST escolher o tipo ("Termina, então começa", "Começa junto", "Termina junto") e o intervalo de cada item de "Depende de". A Lista MUST dizer o tipo e o intervalo de cada anterior que não for "termina, então começa" sem intervalo, e a Linha do tempo MUST desenhar a seta de "começa junto" de início a início e a de "termina junto" de fim a fim; o Excel MUST dizê-los como o MS Project em português ("5II+2") (ADR-0137).
+
+#### Scenario: Tipo e intervalo no detalhe
+- **WHEN** a gerente escolhe, em Testes integrados, "Começa junto" e o intervalo 1 para Parametrizar regras de ICMS e salva
+- **THEN** a API recebe a dependência com o tipo e o intervalo, e a coluna "Depende de" diz "Parametrizar regras de ICMS (começa junto, +1)"
+
+#### Scenario: Setas dos tipos na Linha do tempo
+- **WHEN** a Linha do tempo mostra uma dependência "começa junto" e outra "termina junto"
+- **THEN** a primeira sai do início da anterior para o início da seguinte, e a segunda do fim da anterior para o fim da seguinte
+
+#### Scenario: Dependências no Excel
+- **WHEN** uma pessoa do projeto exporta para o Excel um item que depende da linha 3 sem intervalo, da linha 5 "começa junto" com +2 e da linha 7 "termina junto" com -1
+- **THEN** a coluna "Depende de (Nº)" diz "3; 5II+2; 7TT-1"
+
+### Requirement: Tipo e intervalo no MS Project
+
+O XML do MS Project MUST levar o tipo ("termina, então começa", "começa junto", "termina junto") e o intervalo em dias de cada dependência, e a importação MUST trazê-los. "Começa, então termina" MUST virar "termina, então começa", e um intervalo em horas, dias corridos ou porcentagem MUST virar dias úteis arredondados, cada um com o aviso e os nomes (ADR-0135, ADR-0137).
+
+#### Scenario: Tipos no MS Project
+- **WHEN** a gerente exporta um cronograma com uma dependência "começa junto" com +2 e outra "termina junto" e cria um projeto com esse arquivo
+- **THEN** o XML traz `Type` 3 com `LinkLag` 9600 e `Type` 0, e o projeto novo tem as mesmas dependências e datas
+
+### Requirement: Folga pela tela
+
+O detalhe da tarefa e do marco MUST dizer a folga ("4 dias úteis de folga" ou "Sem folga: no caminho crítico"). Com o caminho crítico ligado em "Exibir", a Linha do tempo MUST desenhar, depois da barra de cada item com folga, uma linha fina até o último dia em que ele pode terminar, com "Folga" na legenda; o Excel MUST ter a coluna "Folga (dias úteis)" (ADR-0021, ADR-0071).
+
+#### Scenario: Folga no detalhe
+- **WHEN** uma pessoa do projeto abre o detalhe de uma tarefa com 4 dias úteis de folga e o de uma tarefa do caminho crítico
+- **THEN** o primeiro diz "4 dias úteis de folga" e o segundo "Sem folga: no caminho crítico"
+
+#### Scenario: Folga na Linha do tempo
+- **WHEN** a Linha do tempo mostra, com o caminho crítico ligado, uma tarefa que termina em 28/10/2026 e pode terminar até 03/11/2026
+- **THEN** uma linha fina vai do fim da barra até o fim de 03/11/2026, e a legenda diz "Folga"; com o caminho crítico desligado, a linha some
+
+#### Scenario: Folga no Excel
+- **WHEN** uma pessoa do projeto exporta para o Excel um cronograma com uma tarefa de 4 dias úteis de folga
+- **THEN** a coluna "Folga (dias úteis)" da linha dela diz 4
+
+### Requirement: Notas da tarefa e do marco
+
+Cada tarefa, também a resumo e a subtarefa, e cada marco MAY ter uma nota de texto simples, com quebras de linha, de até 2.000 caracteres. Só quem edita o cronograma MUST escrever, trocar e apagar a nota, pelo pedido de incluir ou de editar o item; todos do projeto MUST vê-la. A nota ausente ou nula no pedido MUST ficar como estava, e a nota vazia MUST ser apagada (ADR-0043, ADR-0139).
+
+#### Scenario: Escrever a nota
+- **WHEN** a gerente escreve na tarefa "Configurar plano de contas" a nota "Aguardando o cliente mandar os arquivos do plano de contas"
+- **THEN** o cronograma traz a tarefa com a nota, para todos do projeto
+
+#### Scenario: Nota mantida sem o campo
+- **WHEN** a gerente arrasta a tarefa com nota na Linha do tempo, num pedido sem a nota
+- **THEN** a tarefa muda de datas e continua com a nota
+
+#### Scenario: Apagar a nota
+- **WHEN** a gerente salva a tarefa com a nota vazia
+- **THEN** a tarefa fica sem nota
+
+#### Scenario: Nota longa demais
+- **WHEN** a gerente escreve uma nota de 2.001 caracteres
+- **THEN** a API recusa com 400 no campo da nota, e nada muda
+
+### Requirement: Notas no desfazer e na auditoria
+
+A nota MUST entrar no desfazer de quem a mudou e na auditoria, e MUST NOT mudar as datas, o progresso, a linha de base nem os modelos de projeto (ADR-0039, ADR-0091, ADR-0139).
+
+#### Scenario: Desfazer a nota
+- **WHEN** a gerente escreve a nota de uma tarefa e escolhe "Desfazer"
+- **THEN** a tarefa volta à nota de antes, e a auditoria tem as duas mudanças
+
+### Requirement: Notas no MS Project
+
+A exportação para o MS Project MUST gravar a nota de cada item no campo de notas da tarefa, e a importação MUST trazer a nota de cada tarefa e marco do arquivo, cortada em 2.000 caracteres com um aviso que diz os itens cortados (ADR-0135, ADR-0139).
+
+#### Scenario: Nota exportada para o MS Project
+- **WHEN** a gerente baixa o XML do MS Project de um cronograma com uma tarefa com nota
+- **THEN** a tarefa do arquivo tem a mesma nota
+
+#### Scenario: Nota importada do MS Project
+- **WHEN** quem cria projetos importa um arquivo com uma tarefa com nota e outra com uma nota de 2.500 caracteres
+- **THEN** o projeto nasce com a primeira nota inteira e a segunda cortada em 2.000 caracteres, e a prévia avisa o corte com o nome da tarefa
+
+### Requirement: Notas pela tela
+
+A Lista e a tabela da Linha do tempo MUST mostrar um ícone de nota ao lado do nome do item com nota, com o texto da nota ao apontar e para quem lê a tela; o detalhe MUST mostrar a nota, e quem edita MUST ter o campo "Notas" no formulário do item; o Excel MUST ter a coluna "Notas" (ADR-0139).
+
+#### Scenario: Nota na Lista
+- **WHEN** alguém do projeto abre a Lista de um cronograma com uma tarefa com nota
+- **THEN** o nome da tarefa tem o ícone de nota, com o texto da nota
+
+#### Scenario: Escrever a nota pela tela
+- **WHEN** a gerente abre o detalhe da tarefa, escreve a nota no campo "Notas" e salva
+- **THEN** a tarefa passa a mostrar o ícone de nota, e a tela confirma
+
+#### Scenario: Nota no detalhe de quem só vê
+- **WHEN** quem não edita o cronograma abre o detalhe de uma tarefa com nota
+- **THEN** o detalhe mostra a nota, sem campo para mudá-la
+
+#### Scenario: Nota no Excel
+- **WHEN** alguém do projeto baixa o Excel do cronograma
+- **THEN** a aba Cronograma tem a coluna "Notas", com a nota de cada item
+
+### Requirement: Mover o cronograma
+
+Quem edita o cronograma MUST poder mover, de uma vez, cada tarefa e marco com datas próprias em aberto (tarefa abaixo de 100%, marco não atingido) de 1 a 999 dias úteis do calendário da instalação, para depois ou para antes, com a mesma duração em dias úteis; depois do movimento, cada item MUST começar depois das anteriores pelas dependências (ADR-0018, ADR-0140).
+
+#### Scenario: Mover para depois
+- **WHEN** a gerente move o cronograma 5 dias úteis para depois, com um feriado no caminho
+- **THEN** cada tarefa e marco em aberto anda 5 dias úteis, pulando o feriado, com a mesma duração, e o fim previsto do projeto anda junto
+
+#### Scenario: Mover para antes
+- **WHEN** a gerente move o cronograma 3 dias úteis para antes, com uma tarefa em aberto que depende de uma concluída
+- **THEN** os itens em aberto andam 3 dias úteis para antes, e a tarefa que depende da concluída só começa depois dela
+
+#### Scenario: Movimento inválido
+- **WHEN** a gerente pede um movimento de 0 ou de 1.000 dias úteis
+- **THEN** a API recusa com 400 no campo dos dias, e nada muda
+
+#### Scenario: Mover sem editar
+- **WHEN** o líder técnico ou alguém do projeto que não edita pede o movimento
+- **THEN** a API recusa com 403, e nada muda
+
+### Requirement: O que não anda no movimento
+
+No movimento do cronograma, as tarefas a 100%, os marcos atingidos, as datas-limite e a linha de base MUST NOT andar, e as tarefas-resumo MUST seguir as subtarefas (ADR-0021, ADR-0088, ADR-0140).
+
+#### Scenario: Concluídos parados
+- **WHEN** a gerente move o cronograma com uma tarefa a 100% e um marco atingido
+- **THEN** a tarefa e o marco ficam nas datas deles, e as datas-limite e a linha de base também
+
+### Requirement: Movimento no desfazer e na auditoria
+
+O movimento MUST ser uma mudança só no desfazer de quem o fez, MUST ir para a auditoria e MUST avisar os responsáveis das tarefas que mudam de datas (ADR-0037, ADR-0039, ADR-0091).
+
+#### Scenario: Desfazer o movimento
+- **WHEN** a gerente move o cronograma e escolhe "Desfazer"
+- **THEN** todos os itens voltam às datas de antes num passo só, e a auditoria tem as mudanças
+
+### Requirement: Mover o cronograma pela tela
+
+O "⋮" da aba Cronograma MUST ter "Mover o cronograma", para quem edita, num cronograma com itens em aberto, que abre o diálogo com a direção (para depois ou para antes), os dias úteis e quantos itens andam; ao confirmar, a tela MUST dizer quantos itens mudaram de datas, e o desfazer MUST dizer "o movimento do cronograma" (ADR-0140).
+
+#### Scenario: Mover pela tela
+- **WHEN** a gerente escolhe "Mover o cronograma", "Para depois" e 5 dias úteis e confirma
+- **THEN** a tela manda o movimento de 5 dias úteis, confirma quantos itens mudaram, e o "Desfazer" diz "o movimento do cronograma"
+
+#### Scenario: Dias inválidos pela tela
+- **WHEN** a gerente digita 0 ou 1000 dias úteis
+- **THEN** o diálogo mostra o erro no campo e não manda nada
+
+#### Scenario: Sem mover para quem não edita
+- **WHEN** quem não edita o cronograma abre o "⋮" da aba
+- **THEN** o menu não tem "Mover o cronograma"
+
+### Requirement: Responsável ausente durante a tarefa
+
+Cada tarefa em aberto com datas próprias e uma pessoa como responsável MUST trazer as ausências dessa pessoa que se cruzam com as datas da tarefa; a Lista MUST mostrar o aviso ao lado do responsável, e o detalhe, os períodos. As datas da tarefa MUST NOT mudar pela ausência (ADR-0019, ADR-0141).
+
+#### Scenario: Tarefa na ausência do responsável
+- **WHEN** a Carla, responsável pela tarefa de 03/11 a 07/11, tem ausência de 05/11 a 14/11
+- **THEN** a tarefa traz a ausência de 05/11 a 14/11, a Lista mostra o aviso ao lado da Carla, e o detalhe diz "Responsável ausente: 05/11 a 14/11, durante a tarefa"
+
+#### Scenario: Sem aviso na concluída
+- **WHEN** a tarefa da Carla está a 100% ou a ausência não se cruza com as datas dela
+- **THEN** a tarefa não traz ausências
+
+### Requirement: Modo de edição na Lista
+
+A Lista do cronograma MUST ter, no computador, o botão "Editar na tabela", para quem edita o cronograma ou atualiza o progresso de alguma tarefa. Ligado, a linha MUST NOT abrir o detalhe, e a tela MUST dizer como editar pelo teclado; desligado, a Lista MUST voltar a abrir o detalhe pela linha (ADR-0143).
+
+#### Scenario: Ligar o modo de edição
+- **WHEN** a gerente liga "Editar na tabela" na Lista
+- **THEN** o botão fica marcado, a linha de ajuda aparece, e escolher uma linha não abre o detalhe
+
+#### Scenario: Modo de edição de quem só vê
+- **WHEN** o leitor abre a Lista
+- **THEN** "Editar na tabela" não aparece
+
+### Requirement: Células editáveis na Lista
+
+No modo de edição, quem edita o cronograma MUST poder mudar o nome de toda tarefa e marco, e o início, o fim (só da tarefa), a duração (só da tarefa) e "Depende de" de quem tem datas próprias; o progresso, quem edita e o responsável, das tarefas com datas próprias. A tarefa-resumo MUST ter só o nome editável, e as fases MUST NOT se editar na tabela (ADR-0088, ADR-0143).
+
+#### Scenario: Células da tarefa-resumo e do marco
+- **WHEN** a gerente tenta editar a duração da tarefa-resumo e o fim de um marco
+- **THEN** as células não entram em edição, e o nome deles entra
+
+#### Scenario: Progresso do responsável na tabela
+- **WHEN** a Carla, que não edita o cronograma, liga o modo de edição
+- **THEN** só o progresso das tarefas dela entra em edição
+
+### Requirement: Salvar pela célula
+
+Cada célula salva MUST pedir à API o mesmo que o detalhe ou a Linha do tempo pedem: o nome, a duração e "Depende de" pelo pedido de editar o item, com os outros campos como estão; o início pelo pedido das datas, sem o fim; o fim pelo pedido das datas, com o início; o progresso pelo pedido do progresso. A tela MUST avisar o que foi salvo e mostrar o cronograma de novo (ADR-0143).
+
+#### Scenario: Duração pela célula
+- **WHEN** a gerente edita a duração de "Integrar emissão de NF-e" para 10 e aperta Enter
+- **THEN** a tela pede a edição do item com a duração 10 e os outros campos como estavam, e avisa que a tarefa foi salva
+
+#### Scenario: Datas pela célula
+- **WHEN** a gerente digita outro início e, depois, outro fim de uma tarefa
+- **THEN** a tela pede as datas com o início e o fim vazio e, depois, com o início e o fim
+
+#### Scenario: Dependências pela célula
+- **WHEN** a gerente escolhe mais uma tarefa em "Depende de" e sai da célula
+- **THEN** a tela pede a edição do item com as dependências escolhidas
+
+#### Scenario: Progresso pela célula
+- **WHEN** a gerente digita 60 no progresso de uma tarefa e aperta Tab
+- **THEN** a tela pede o progresso 60
+
+### Requirement: Valor inválido na célula
+
+A tela MUST conferir a célula antes de mandar: o nome de 1 a 200 caracteres, o dia como dd/mm/aaaa, o fim no início ou depois, a duração de 1 a 999 dias úteis e o progresso de 0 a 100; com valor inválido, a célula MUST continuar em edição, com o motivo, sem pedir nada. A recusa do servidor MUST voltar a célula ao valor de antes, com o aviso (ADR-0143).
+
+#### Scenario: Duração inválida na célula
+- **WHEN** a gerente digita 0 na duração e aperta Enter
+- **THEN** a célula continua em edição, diz o motivo, e nada é pedido
+
+#### Scenario: Dependência circular pela célula
+- **WHEN** a API recusa a dependência escolhida por ser circular
+- **THEN** a célula volta às dependências de antes, e a tela avisa a dependência circular
