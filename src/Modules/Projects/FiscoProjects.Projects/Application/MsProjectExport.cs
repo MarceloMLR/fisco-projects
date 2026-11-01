@@ -21,6 +21,10 @@ public static class MsProjectExport
     public static readonly XNamespace Ns = "http://schemas.microsoft.com/project";
 
     private const int HoursPerDay = 8;
+
+    /// <summary>A day of lag in the unit of the file: tenths of a minute of a day of 8 hours.</summary>
+    public const int LagUnitsPerDay = HoursPerDay * 60 * 10;
+
     private static readonly TimeSpan DayStart = new(8, 0, 0);
     private static readonly TimeSpan DayEnd = new(17, 0, 0);
 
@@ -183,13 +187,14 @@ public static class MsProjectExport
             task.Add(new XElement(Ns + "Deadline", Moment(deadline, DayEnd)));
         }
 
-        foreach (var predecessor in schedule.PredecessorsOf(item.Id).Where(predecessor => uids.ContainsKey(predecessor.Id)))
+        // The kind and the lag in days (ADR-0137): the lag in tenths of a minute of a day of 8 hours, shown in days.
+        foreach (var dependency in schedule.Dependencies.Where(d => d.SuccessorId == item.Id && uids.ContainsKey(d.PredecessorId)))
         {
             task.Add(new XElement(Ns + "PredecessorLink",
-                new XElement(Ns + "PredecessorUID", uids[predecessor.Id]),
-                new XElement(Ns + "Type", 1),
+                new XElement(Ns + "PredecessorUID", uids[dependency.PredecessorId]),
+                new XElement(Ns + "Type", LinkTypeOf(dependency.Type)),
                 new XElement(Ns + "CrossProject", 0),
-                new XElement(Ns + "LinkLag", 0),
+                new XElement(Ns + "LinkLag", dependency.Lag * LagUnitsPerDay),
                 new XElement(Ns + "LagFormat", 7)));
         }
 
@@ -244,6 +249,14 @@ public static class MsProjectExport
 
     private static XElement WorkingTime(string from, string to) =>
         new(Ns + "WorkingTime", new XElement(Ns + "FromTime", from), new XElement(Ns + "ToTime", to));
+
+    /// <summary>The kind of a dependency as the MS Project numbers it: 0 ends with, 1 finishes then starts, 3 starts with.</summary>
+    public static int LinkTypeOf(ScheduleLinkType type) => type switch
+    {
+        ScheduleLinkType.StartToStart => 3,
+        ScheduleLinkType.FinishToFinish => 0,
+        _ => 1,
+    };
 
     private static string Duration(int businessDays) =>
         string.Create(CultureInfo.InvariantCulture, $"PT{businessDays * HoursPerDay}H0M0S");

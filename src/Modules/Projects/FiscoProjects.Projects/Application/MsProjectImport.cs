@@ -33,7 +33,7 @@ public sealed class MsProjectFileRefusedException(MsProjectRefusal reason)
 }
 
 /// <summary>A dependency of a line on another, as the file has it: the kind (1 is "finish to start") and the lag.</summary>
-public sealed record MsProjectLink(int PredecessorUid, int Type, long Lag, bool CrossProject);
+public sealed record MsProjectLink(int PredecessorUid, int Type, long Lag, bool CrossProject, int LagFormat = 7);
 
 /// <summary>
 /// A line of the file, below the summary of the whole project: its number, level, whether it is a milestone, active or
@@ -78,13 +78,16 @@ public enum MsProjectWarningKind
     /// <summary>Summary tasks below the level 2 went away, their tasks staying.</summary>
     DroppedSummaries = 3,
 
-    /// <summary>Dependencies of a kind other than "finish to start" went away.</summary>
+    /// <summary>Dependencies "start to finish", which the FiscoProjects does not have, became "finish to start" (ADR-0137).</summary>
     OtherDependencies = 4,
 
     /// <summary>Dependencies of or on a summary task (a phase included) went away.</summary>
     SummaryDependencies = 5,
 
-    /// <summary>Dependencies with a lag stayed without it.</summary>
+    /// <summary>
+    /// Lags in hours that are not whole days, in calendar days or in percent became business days, rounded, and lags
+    /// past -99 or 999 business days stayed at the limit (ADR-0137).
+    /// </summary>
     DependencyLags = 6,
 
     /// <summary>Dependencies that would make a cycle went away.</summary>
@@ -157,6 +160,14 @@ public static class MsProjectImport
     public const int MaxTasks = 2_000;
 
     private const int FinishToStart = 1;
+    private const int StartToStart = 3;
+    private const int FinishToFinish = 0;
+
+    /// <summary>The formats of a lag (LagFormat): in days, in percent, and the ones in calendar time.</summary>
+    private const int DaysFormat = 7;
+    private const int PercentFormat = 19;
+    private const int ElapsedPercentFormat = 20;
+    private static readonly HashSet<int> ElapsedFormats = [4, 6, 8, 10, 12, 36, 38, 40, 42, 44];
 
     /// <summary>Reads the file; never returns without a valid file.</summary>
     /// <exception cref="MsProjectFileRefusedException">The file is not read, with the reason.</exception>
@@ -229,7 +240,8 @@ public static class MsProjectImport
                         Number(link.Element(ns + "PredecessorUID"))!.Value,
                         Number(link.Element(ns + "Type")) ?? FinishToStart,
                         long.TryParse((string?)link.Element(ns + "LinkLag"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var lag) ? lag : 0,
-                        Flag(link.Element(ns + "CrossProject")) ?? false))],
+                        Flag(link.Element(ns + "CrossProject")) ?? false,
+                        Number(link.Element(ns + "LagFormat")) ?? DaysFormat))],
                 Day(task.Element(ns + "Deadline"))))
             .ToList();
         if (rows.Count == 0)
@@ -347,7 +359,7 @@ public static class MsProjectImport
                     DeadlineOffset: DeadlineOffsetOf(first, item.Row.Deadline)))],
                 [.. dependencies
                     .Where(pair => !pair.Dropped)
-                    .Select(pair => new OutlineDependency(position[pair.Predecessor], position[pair.Successor]))
+                    .Select(pair => new OutlineDependency(position[pair.Predecessor], position[pair.Successor], pair.Type, pair.Lag))
                     .Distinct()
                     .OrderBy(dependency => dependency.Successor)
                     .ThenBy(dependency => dependency.Predecessor)]);
@@ -506,8 +518,8 @@ public static class MsProjectImport
         }
 
         /// <summary>
-        /// The "finish to start" dependencies between items with dates of their own, without lags; the others go away,
-        /// each with its warning (ADR-0019, ADR-0088).
+        /// The dependencies between items with dates of their own, with their kinds and lags in business days (ADR-0137);
+        /// "start to finish" becomes "finish to start", and the ones of a summary go away, each with its warning (ADR-0088).
         /// </summary>
         private List<Dependency> Dependencies()
         {
@@ -527,23 +539,68 @@ public static class MsProjectImport
                     {
                         Warn(MsProjectWarningKind.SummaryDependencies, pair);
                     }
-                    else if (link.Type != FinishToStart)
-                    {
-                        Warn(MsProjectWarningKind.OtherDependencies, pair);
-                    }
                     else if (link.PredecessorUid != successor.Uid)
                     {
-                        if (link.Lag != 0)
+                        var type = TypeOf(link.Type);
+                        if (type is null)
+                        {
+                            Warn(MsProjectWarningKind.OtherDependencies, pair);
+                        }
+
+                        var predecessor = byUid[link.PredecessorUid];
+                        var (lag, exact) = LagOf(link, predecessor);
+                        if (!exact)
                         {
                             Warn(MsProjectWarningKind.DependencyLags, pair);
                         }
 
-                        found.Add(new Dependency(byUid[link.PredecessorUid], byUid[successor.Uid], pair));
+                        found.Add(new Dependency(predecessor, byUid[successor.Uid], pair, type ?? ScheduleLinkType.FinishToStart, lag));
                     }
                 }
             }
 
             return found;
+        }
+
+        /// <summary>The kind of a link of the file: 1 finish to start, 3 start to start, 0 finish to finish; none for the others.</summary>
+        private static ScheduleLinkType? TypeOf(int type) => type switch
+        {
+            FinishToStart => ScheduleLinkType.FinishToStart,
+            StartToStart => ScheduleLinkType.StartToStart,
+            FinishToFinish => ScheduleLinkType.FinishToFinish,
+            _ => null,
+        };
+
+        /// <summary>
+        /// The lag of a link in business days and whether it came exact (ADR-0137): in work time (minutes, hours, days,
+        /// weeks, months) by the day of 8 hours, in calendar time by 5 business days in 7, and in percent of the
+        /// duration of the item before; rounded, between -99 and 999.
+        /// </summary>
+        private (int Lag, bool Exact) LagOf(MsProjectLink link, Draft predecessor)
+        {
+            if (link.Lag == 0)
+            {
+                return (0, true);
+            }
+
+            double days;
+            var exact = false;
+            if (link.LagFormat is PercentFormat or ElapsedPercentFormat)
+            {
+                days = link.Lag / 10.0 / 100.0 * (predecessor.Kind == ScheduleItemKind.Milestone ? 0 : DurationOf(predecessor));
+            }
+            else if (ElapsedFormats.Contains(link.LagFormat))
+            {
+                days = link.Lag / (10.0 * 60 * 24) * 5 / 7;
+            }
+            else
+            {
+                days = link.Lag / (double)MsProjectExport.LagUnitsPerDay;
+                exact = link.Lag % MsProjectExport.LagUnitsPerDay == 0;
+            }
+
+            var rounded = (int)Math.Clamp(Math.Round(days, MidpointRounding.AwayFromZero), ScheduleLinks.MinLag, ScheduleLinks.MaxLag);
+            return (rounded, exact && rounded == days);
         }
 
         private string NameOf(int uid) =>
@@ -717,13 +774,17 @@ public static class MsProjectImport
     }
 
     /// <summary>A dependency kept, unless it makes a cycle.</summary>
-    private sealed class Dependency(Draft predecessor, Draft successor, string pair)
+    private sealed class Dependency(Draft predecessor, Draft successor, string pair, ScheduleLinkType type, int lag)
     {
         public Draft Predecessor { get; } = predecessor;
 
         public Draft Successor { get; } = successor;
 
         public string Pair { get; } = pair;
+
+        public ScheduleLinkType Type { get; } = type;
+
+        public int Lag { get; } = lag;
 
         public bool Dropped { get; set; }
     }

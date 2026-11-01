@@ -47,7 +47,17 @@ public sealed record ScheduleItemResponse(
     DateOnly? BaselineEnd,
     int? BaselineDeviation,
     [property: Description("The day the item has to be done by; it never moves the dates (GanttA-2).")] DateOnly? Deadline,
-    [property: Description("The business days the item went past its deadline (positive) or is before it (negative); null without one.")] int? DeadlineDeviation);
+    [property: Description("The business days the item went past its deadline (positive) or is before it (negative); null without one.")] int? DeadlineDeviation,
+    [property: Description("The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137).")] IReadOnlyList<ScheduleLinkResponse> Links);
+
+/// <summary>
+/// A dependency of an item (ADR-0137): the item it depends on, the kind ("finishes, then starts", "starts with" or
+/// "ends with") and the business days of wait (positive) or lead (negative), from -99 to 999.
+/// </summary>
+public sealed record ScheduleLinkResponse(Guid PredecessorId, ScheduleLinkType Type, int Lag);
+
+/// <summary>A dependency asked for an item (ADR-0137), as <see cref="ScheduleLinkResponse"/>.</summary>
+public sealed record ScheduleLinkRequest(Guid PredecessorId, ScheduleLinkType Type, int Lag);
 
 /// <summary>
 /// The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
@@ -113,7 +123,8 @@ public sealed record NewScheduleItemRequest(
     IReadOnlyList<Guid>? PredecessorIds,
     Guid? ParentId = null,
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
-    [property: Description("The day the item has to be done by, which never moves the dates; none without one (GanttA-2).")] DateOnly? Deadline = null);
+    [property: Description("The day the item has to be done by, which never moves the dates; none without one (GanttA-2).")] DateOnly? Deadline = null,
+    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null);
 
 /// <summary>
 /// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
@@ -130,7 +141,8 @@ public sealed record ScheduleItemRequest(
     IReadOnlyList<Guid>? PredecessorIds,
     Guid? ParentId = null,
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
-    [property: Description("The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).")] DateOnly? Deadline = null);
+    [property: Description("The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).")] DateOnly? Deadline = null,
+    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -354,7 +366,8 @@ internal static class ScheduleEndpoints
                 request.PredecessorIds,
                 request.ParentId,
                 request.OwnedByClient,
-                request.Deadline),
+                request.Deadline,
+                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))]),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -390,7 +403,8 @@ internal static class ScheduleEndpoints
                 request.PredecessorIds,
                 request.ParentId,
                 request.OwnedByClient,
-                request.Deadline),
+                request.Deadline,
+                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))]),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -497,7 +511,10 @@ internal static class ScheduleEndpoints
             baseline?.End,
             baseline?.Deviation,
             item.Deadline,
-            view.DeadlineDeviations is not null && view.DeadlineDeviations.TryGetValue(item.Id, out var deviation) ? deviation : null);
+            view.DeadlineDeviations is not null && view.DeadlineDeviations.TryGetValue(item.Id, out var deviation) ? deviation : null,
+            view.Links is not null && view.Links.TryGetValue(item.Id, out var links)
+                ? [.. links.Select(link => new ScheduleLinkResponse(link.PredecessorId, link.Type, link.Lag))]
+                : []);
     }
 
     /// <summary>The answer to a change without a body of its own.</summary>
@@ -536,6 +553,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Parent => "parentId",
                 ScheduleField.Baseline => "baseline",
                 ScheduleField.Deadline => "deadline",
+                ScheduleField.Links => "links",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -553,6 +571,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.Parent => "The item goes into a task right in the same phase, which is not inside another; a task with subtasks goes into none.",
                     ScheduleField.Baseline => "A baseline needs tasks or milestones in the schedule.",
                     ScheduleField.Deadline => "The deadline is a day from 2000 to 2099.",
+                    ScheduleField.Links => "Each dependency is of a known kind, with a lag from -99 to 999 business days, once per item.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

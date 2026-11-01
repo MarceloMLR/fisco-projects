@@ -23,7 +23,12 @@ public sealed record ItemState(
     DateOnly? Deadline = null);
 
 /// <summary>A dependency as it was at a moment.</summary>
-public sealed record DependencyState(Guid Id, Guid PredecessorId, Guid SuccessorId);
+public sealed record DependencyState(
+    Guid Id,
+    Guid PredecessorId,
+    Guid SuccessorId,
+    ScheduleLinkType Type = ScheduleLinkType.FinishToStart,
+    int Lag = 0);
 
 /// <summary>The phases, items and dependencies of a schedule at a moment (ADR-0091).</summary>
 public sealed record ScheduleSnapshot(
