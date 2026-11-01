@@ -4,10 +4,10 @@
 
 ## 2. Tela
 
-- [ ] 2.1 `scheduleRows` sem os itens da fase recolhida; a seta das fases na Lista; teste "Recolher uma fase na lista"
-- [ ] 2.2 O recolhido da aba no `ScheduleGantt`, no `ScheduleTimeline` e no Expandir; teste "Fase recolhida ao trocar de visão"
-- [ ] 2.3 Conferência no navegador, nos temas claro e escuro
+- [x] 2.1 `scheduleRows` sem os itens da fase recolhida; a seta das fases na Lista; teste "Recolher uma fase na lista"
+- [x] 2.2 O recolhido da aba no `ScheduleGantt`, no `ScheduleTimeline` e no Expandir; teste "Fase recolhida ao trocar de visão"
+- [x] 2.3 Conferência no navegador, nos temas claro e escuro
 
 ## 3. Documentação
 
-- [ ] 3.1 `CLAUDE.md` com a seta das fases na Lista
+- [x] 3.1 `CLAUDE.md` com a seta das fases na Lista
