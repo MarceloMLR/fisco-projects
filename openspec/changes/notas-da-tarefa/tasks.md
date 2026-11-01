@@ -13,7 +13,7 @@
 - [x] 3.2 O ícone de nota na Lista e na Linha do tempo; teste "Nota na Lista"
 - [x] 3.3 A coluna do Excel, a auditoria e o aviso da importação; teste "Nota no Excel"
 - [x] 3.4 A demonstração; teste "Notas na demonstração"
-- [ ] 3.5 Conferência no navegador, no computador e no celular, nos temas claro e escuro
+- [x] 3.5 Conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 
