@@ -204,3 +204,4 @@ Regras:
 | [0139](0139-notas-das-tarefas-e-dos-marcos.md) | Notas nas tarefas e nos marcos | aceita | 2026-11-01 |
 | [0140](0140-mover-o-cronograma.md) | Mover o cronograma em dias úteis | aceita | 2026-11-01 |
 | [0141](0141-ausencias-das-pessoas.md) | Ausências das pessoas, cadastradas pela gestão, só com as datas | aceita | 2026-11-01 |
+| [0142](0142-carga-da-equipe.md) | Carga da equipe por semana, pelas horas previstas e pelas ausências | aceita | 2026-11-01 |
