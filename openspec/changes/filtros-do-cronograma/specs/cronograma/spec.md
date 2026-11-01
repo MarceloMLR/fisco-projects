@@ -6,7 +6,7 @@ Toda pessoa do projeto MUST poder filtrar a Lista, a Linha do tempo e o Expandir
 
 #### Scenario: Filtrar as atrasadas
 - **WHEN** a gerente escolhe "Atrasadas" num cronograma de 20 tarefas e marcos com 4 atrasados
-- **THEN** a Lista mostra só os 4, cada um sob a sua fase, o rodapé diz "4 de 20 tarefas e marcos" e o botão diz "Atrasadas"
+- **THEN** a Lista mostra só os 4, cada um sob a sua fase, o rodapé diz "4 de 20 tarefas e marcos" e o botão de filtro fica marcado, com o nome "Filtro: Atrasadas"
 
 #### Scenario: Minhas tarefas
 - **WHEN** Diego, desenvolvedor do projeto, escolhe "Minhas tarefas"

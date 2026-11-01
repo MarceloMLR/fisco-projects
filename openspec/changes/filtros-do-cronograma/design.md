@@ -26,7 +26,7 @@ O `GET /schedule` traz o cronograma inteiro, com o atraso (`late`, `lateDays`), 
 - **Contexto.** Uma subtarefa que passa traz a tarefa-resumo dela; a fase aparece quando tem algum item. A tarefa-resumo que passa sozinha aparece sem as subtarefas que não passam.
 - **Período.** A Linha do tempo mantém o período do cronograma inteiro, para o filtro não mexer na escala nem na rolagem.
 - **Endereço.** `?filter=late|missedDeadlines|critical|mine|nextTwoWeeks` e, por responsável, `?filter=owner&owner={id}|client|none`; um valor que não existe é ignorado.
-- **Na tela.** O botão "Filtrar" (ícone de filtro, menu de opções exclusivas, `menuitemradio`), ao lado do "Exibir", diz o filtro escolhido no lugar de "Filtrar". O rodapé da Lista e o resumo da Linha do tempo dizem "4 de 20 tarefas e marcos", com "Limpar filtro". No Expandir, o mesmo botão no cabeçalho.
+- **Na tela.** O "Filtrar" é um ícone ao lado do "Exibir", com o menu de opções exclusivas (`menuitemradio`): a barra da Linha do tempo já ocupa a largura toda num computador de 1440 px, e um botão com texto a quebraria em duas linhas. Com um filtro, o ícone fica marcado e o nome dele diz "Filtro: Atrasadas"; o resumo da aba diz "Atrasadas · 4 de 20 tarefas e marcos", com "Limpar filtro", e o rodapé da Lista, "4 de 20 tarefas e marcos". No Expandir, o mesmo ícone no cabeçalho.
 
 ## Risks / Trade-offs
 
