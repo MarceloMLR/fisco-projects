@@ -32,6 +32,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 31/10/2026, com a v1 e os refinamentos concluídos, Marcelo pediu a Linha do tempo própria, prevista no ADR-0051 como evolução, para tirar a dependência da licença do Syncfusion antes de vender e depois importar do MS Project: forma o grupo 13, com a proposta aprovada por ele antes de cada implementação (ADR-0134).
 - Em 31/10/2026, Marcelo definiu que a v1 fecha com a Assinatura dos termos (grupo 12) e os refinamentos do design (até a Fundação-5.7), e que da Linha do tempo própria (grupo 13) em diante é a v2.
 - Em 01/11/2026, depois do mapeamento do que o MS Project faz e o FiscoProjects não, Marcelo pediu dois grupos de aprimoramentos do Gantt: o 14, com o que vale fazer primeiro (Excel, data-limite, filtros, dependências com intervalo e horas previstas por tarefa), e o 15, com a segunda leva, na ordem em que uma usa a outra. Cada proposta é aprovada por ele antes da implementação. Custos em reais, campos personalizados, dependências entre projetos, o .mpp e o nivelamento automático de recursos continuam fora (ADR-0016, ADR-0019, ADR-0128, ADR-0135).
+- Em 01/11/2026, depois dos grupos 14 e 15, Marcelo pediu a seta de recolher as fases também na Lista (Cronograma-4.2), as horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa (GanttA-5.1, ADR-0144), e o fim digitado no detalhe da tarefa, ao lado da duração (Cronograma-4.3).
 
 ## Marcos
 
@@ -244,6 +245,7 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | Concluída em 01/11/2026 ([#126](https://github.com/MarceloMLR/fisco-projects/pull/126)) |
 | GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135, 0137 | Concluída em 01/11/2026 ([#127](https://github.com/MarceloMLR/fisco-projects/pull/127)) |
 | GanttA-5 | `horas-previstas-por-tarefa` | As horas previstas de cada tarefa contra as apontadas nela, só em horas | 0016, 0128, 0138 | Concluída em 01/11/2026 ([#129](https://github.com/MarceloMLR/fisco-projects/pull/129)) |
+| GanttA-5.1 | `horas-da-tarefa-para-o-gerente` | As horas das tarefas também para o gerente do projeto, nos projetos que gerencia, e "Ver apontamentos" na seção Horas da tarefa, com quem apontou, o dia e as horas, a pedido de Marcelo | 0128, 0138, 0144 | Em andamento |
 
 ## 15. Aprimoramento do Gantt 2
 
