@@ -368,12 +368,46 @@ export function TimelineChart({
         </text>,
       );
     }
-    // Each dependency from the end of the one before to the start of this one, with the elbow of the design system.
+    // Each dependency from the end of the one before to the start of this one, with the elbow of the design system;
+    // "starts with" from start to start and "ends with" from end to end (ADR-0137).
     for (const key of row.predecessors) {
       const from = indexOf.get(key);
       const before = from === undefined ? undefined : rows[from];
       const beforeDates = before === undefined ? undefined : datesOf(before);
       if (from === undefined || before === undefined || beforeDates === undefined) {
+        continue;
+      }
+      const type = row.predecessorTypes?.[key] ?? 'FinishToStart';
+      if (type !== 'FinishToStart') {
+        const y1 = from * rowHeight + rowHeight / 2;
+        const y2 = top + rowHeight / 2;
+        const startOf = (line: GanttRow, lineDates: { start: DayValue; end: DayValue }) =>
+          line.shape === 'milestone'
+            ? centerOf(lineDates.start) - corner
+            : geometry.xOf(lineDates.start);
+        const endOf = (line: GanttRow, lineDates: { start: DayValue; end: DayValue }) =>
+          line.shape === 'milestone'
+            ? centerOf(lineDates.start) + corner
+            : geometry.xAfter(lineDates.end);
+        const starts = type === 'StartToStart';
+        const x1 = round(starts ? startOf(before, beforeDates) : endOf(before, beforeDates));
+        const x2 = round(starts ? startOf(row, dates) : endOf(row, dates));
+        const side = starts ? Math.min(x1, x2) - 8 : Math.max(x1, x2) + 8;
+        const tip = starts ? x2 - 5 : x2 + 5;
+        const back = starts ? x2 - 6 : x2 + 6;
+        dependencies.push(
+          <path
+            key={`${key}-${row.key}`}
+            className="g-dep"
+            data-type={type}
+            d={`M${String(x1)} ${String(y1)} H${String(side)} V${String(y2)} H${String(tip)}`}
+          />,
+          <path
+            key={`${key}-${row.key}-head`}
+            className="g-dep-head"
+            d={`M${String(back)} ${String(y2 - 4)} L${String(x2)} ${String(y2)} L${String(back)} ${String(y2 + 4)} Z`}
+          />,
+        );
         continue;
       }
       const x1 = round(

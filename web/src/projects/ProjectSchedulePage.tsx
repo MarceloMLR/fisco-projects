@@ -47,7 +47,7 @@ import {
   itemsOf,
   lateText,
   missesDeadline,
-  predecessorNames,
+  predecessorTexts,
   type ScheduleDisplay,
   type ScheduleRow,
   scheduleRows,
@@ -381,7 +381,7 @@ export function ProjectSchedulePage() {
         flex: 1,
         minWidth: 160,
         valueGetter: (_value, row) =>
-          row.kind === 'phase' ? '' : predecessorNames(row.item, schedule).join(', '),
+          row.kind === 'phase' ? '' : predecessorTexts(row.item, schedule, t).join(', '),
         renderCell: ({ value }) => (
           <Box component="span" sx={{ ...ellipsisSx, ...secondarySx }} title={value as string}>
             {value as string}
@@ -1222,7 +1222,7 @@ function ItemDetails({
   onOpen: (itemId: string) => void;
 }) {
   const { t } = useTranslation();
-  const names = predecessorNames(item, schedule);
+  const names = predecessorTexts(item, schedule, t);
   const task = item.kind === 'Task';
   const subtasks = itemsOf(schedule).filter((other) => other.parentId === item.id).length;
   const parent = item.parentId === null ? undefined : findItem(schedule, item.parentId)?.item;

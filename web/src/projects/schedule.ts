@@ -1,5 +1,12 @@
 import type { TFunction } from 'i18next';
-import type { ProjectScheduleSummary, Schedule, ScheduleItem, SchedulePhase } from '../api/client';
+import type {
+  ProjectScheduleSummary,
+  Schedule,
+  ScheduleItem,
+  ScheduleLink,
+  ScheduleLinkType,
+  SchedulePhase,
+} from '../api/client';
 import type { DueState } from '../components/DueDate';
 import { formatDayMonthText } from '../format/dates';
 
@@ -148,6 +155,55 @@ export function predecessorNames(item: ScheduleItem, schedule: Schedule): string
   return itemsOf(schedule)
     .filter((other) => item.predecessorIds.includes(other.id))
     .map((other) => other.name);
+}
+
+/** The kinds of a dependency, in the order the screen offers them (ADR-0137). */
+export const linkTypes: readonly ScheduleLinkType[] = [
+  'FinishToStart',
+  'StartToStart',
+  'FinishToFinish',
+];
+
+/** The kind and the lag of the dependency of an item on another: "finishes, then starts" without lag by default. */
+export function linkOf(
+  item: Pick<ScheduleItem, 'links'>,
+  predecessorId: string,
+): Pick<ScheduleLink, 'type' | 'lag'> {
+  return (
+    item.links.find((link) => link.predecessorId === predecessorId) ?? {
+      type: 'FinishToStart',
+      lag: 0,
+    }
+  );
+}
+
+/** A lag with its sign, as "+2" or "-1". */
+export const signedLag = (lag: number) => (lag > 0 ? `+${String(lag)}` : String(lag));
+
+/**
+ * What a dependency says beside the name, when it is not "finishes, then starts" without lag: "começa junto, +1",
+ * "termina junto" or "+2" (ADR-0137); nothing otherwise.
+ */
+export function linkText(
+  link: Pick<ScheduleLink, 'type' | 'lag'>,
+  t: TFunction,
+): string | undefined {
+  const lag = link.lag === 0 ? undefined : signedLag(link.lag);
+  if (link.type === 'FinishToStart') {
+    return lag;
+  }
+  const kind = t(`projects.schedule.links.short.${link.type}`);
+  return lag === undefined ? kind : `${kind}, ${lag}`;
+}
+
+/** The items an item depends on, each with its kind and lag when they are not the usual: "Testes (começa junto, +1)". */
+export function predecessorTexts(item: ScheduleItem, schedule: Schedule, t: TFunction): string[] {
+  return itemsOf(schedule)
+    .filter((other) => item.predecessorIds.includes(other.id))
+    .map((other) => {
+      const text = linkText(linkOf(item, other.id), t);
+      return text === undefined ? other.name : `${other.name} (${text})`;
+    });
 }
 
 /**

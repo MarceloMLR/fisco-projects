@@ -366,6 +366,8 @@ function demoItem(
     baselineDeviation: null,
     deadline: null,
     deadlineDeviation: null,
+    // The kinds and lags of the dependencies that are not "finishes, then starts" without lag (ADR-0137).
+    links: [],
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,

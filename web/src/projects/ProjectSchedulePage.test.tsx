@@ -380,6 +380,7 @@ describe('Editar o cronograma pela tela', () => {
             baselineDeviation: null,
             deadline: null,
             deadlineDeviation: null,
+            links: [],
             duration: 3,
             progress: 0,
             completedOn: null,
