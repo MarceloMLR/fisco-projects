@@ -957,6 +957,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Moves the open tasks and milestones the business days given, later or earlier (ADR-0140). */
+        post: operations["MoveSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/schedule/undo": {
         parameters: {
             query?: never;
@@ -3815,7 +3832,7 @@ export interface components {
          * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
          * @enum {unknown}
          */
-        ScheduleAction: "PhaseAdded" | "PhaseRenamed" | "PhaseRemoved" | "TaskAdded" | "MilestoneAdded" | "TaskChanged" | "MilestoneChanged" | "TaskRemoved" | "MilestoneRemoved" | "DatesChanged" | "ProgressUpdated" | "MilestoneReached" | "MilestoneUnmarked";
+        ScheduleAction: "PhaseAdded" | "PhaseRenamed" | "PhaseRemoved" | "TaskAdded" | "MilestoneAdded" | "TaskChanged" | "MilestoneChanged" | "TaskRemoved" | "MilestoneRemoved" | "DatesChanged" | "ProgressUpdated" | "MilestoneReached" | "MilestoneUnmarked" | "ScheduleMoved";
         /**
          * @description The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
          *     business days the end of the project now is after (positive) or before (negative) it, null without items now.
@@ -3991,6 +4008,19 @@ export interface components {
          * @enum {unknown}
          */
         ScheduleLinkType: "FinishToStart" | "StartToStart" | "FinishToFinish";
+        /** @description How many tasks and milestones changed their dates with the move. */
+        ScheduleMovedResponse: {
+            /** Format: int32 */
+            moved: number;
+        };
+        /** @description A move of the open items of the schedule (ADR-0140): the business days, later when positive, earlier when negative. */
+        ScheduleMoveRequest: {
+            /**
+             * Format: int32
+             * @description From 1 to 999 business days: positive moves later, negative earlier.
+             */
+            days: number;
+        };
         /** @description The person in charge of a task. */
         ScheduleOwnerResponse: {
             /** Format: uuid */
@@ -8430,6 +8460,75 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    MoveSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleMoveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleMovedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */

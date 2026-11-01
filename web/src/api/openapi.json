@@ -4341,6 +4341,91 @@
         }
       }
     },
+    "/api/projects/{id}/schedule/move": {
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "Moves the open tasks and milestones the business days given, later or earlier (ADR-0140).",
+        "operationId": "MoveSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleMoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleMovedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/schedule/undo": {
       "post": {
         "tags": [
@@ -15571,7 +15656,8 @@
           "DatesChanged",
           "ProgressUpdated",
           "MilestoneReached",
-          "MilestoneUnmarked"
+          "MilestoneUnmarked",
+          "ScheduleMoved"
         ],
         "description": "The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091)."
       },
@@ -16003,6 +16089,33 @@
           "FinishToFinish"
         ],
         "description": "The kind of a dependency (ADR-0137): the next item starts after the one before ends, starts with it, or ends with it."
+      },
+      "ScheduleMovedResponse": {
+        "required": [
+          "moved"
+        ],
+        "type": "object",
+        "properties": {
+          "moved": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many tasks and milestones changed their dates with the move."
+      },
+      "ScheduleMoveRequest": {
+        "required": [
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "description": "From 1 to 999 business days: positive moves later, negative earlier.",
+            "format": "int32"
+          }
+        },
+        "description": "A move of the open items of the schedule (ADR-0140): the business days, later when positive, earlier when negative."
       },
       "ScheduleOwnerResponse": {
         "required": [

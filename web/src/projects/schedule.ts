@@ -275,3 +275,8 @@ export type ScheduleStep = NonNullable<Schedule['undo']>;
 export function stepText(step: ScheduleStep, t: TFunction): string {
   return t(`projects.steps.what.${step.action}`, { name: step.name });
 }
+
+/** The tasks and milestones a move of the schedule takes: the open ones with dates of their own (ADR-0140). */
+export function movableCount(schedule: Schedule): number {
+  return itemsOf(schedule).filter((item) => !item.hasSubtasks && !isDone(item)).length;
+}

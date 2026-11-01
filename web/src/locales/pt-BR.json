@@ -1875,7 +1875,8 @@
         "DatesChanged": "a mudança das datas de {{name}}",
         "ProgressUpdated": "a atualização do progresso de {{name}}",
         "MilestoneReached": "a marcação do marco {{name}} como atingido",
-        "MilestoneUnmarked": "a desmarcação do marco {{name}}"
+        "MilestoneUnmarked": "a desmarcação do marco {{name}}",
+        "ScheduleMoved": "o movimento do cronograma em {{name}} dias úteis"
       },
       "messages": {
         "undone": "{{what}} foi desfeita.",
@@ -2027,6 +2028,36 @@
         "AboveProjects": "Esta pasta guarda a pasta dos projetos ou a de um projeto. Abra uma pasta dentro dela.",
         "SystemFolder": "Esta é a pasta do sistema.",
         "NotFound": "Esta pasta não existe mais."
+      }
+    },
+    "move": {
+      "item": "Mover o cronograma",
+      "title": "Mover o cronograma",
+      "direction": "Direção",
+      "later": "Para depois",
+      "earlier": "Para antes",
+      "days": "Dias úteis",
+      "daysHelp": "De 1 a 999, pelo calendário da instalação.",
+      "businessDays_one": "{{count}} dia útil",
+      "businessDays_other": "{{count}} dias úteis",
+      "whatMoves_one": "{{count}} tarefa ou marco em aberto anda junto.",
+      "whatMoves_other": "{{count}} tarefas e marcos em aberto andam juntos.",
+      "summary": {
+        "later_one": "{{count}} tarefa ou marco em aberto anda {{days}} para depois.",
+        "later_other": "{{count}} tarefas e marcos em aberto andam {{days}} para depois.",
+        "earlier_one": "{{count}} tarefa ou marco em aberto anda {{days}} para antes.",
+        "earlier_other": "{{count}} tarefas e marcos em aberto andam {{days}} para antes."
+      },
+      "stays": "As tarefas concluídas, os marcos atingidos, as datas-limite e a linha de base ficam como estão, e as dependências continuam valendo. Você pode desfazer.",
+      "confirm": "Mover",
+      "cancel": "Cancelar",
+      "errors": {
+        "daysInvalid": "Use de 1 a 999 dias úteis."
+      },
+      "messages": {
+        "moved_zero": "Nenhuma tarefa ou marco mudou de datas.",
+        "moved_one": "Cronograma movido: {{count}} tarefa ou marco mudou de datas.",
+        "moved_other": "Cronograma movido: {{count}} tarefas e marcos mudaram de datas."
       }
     }
   },

@@ -5,6 +5,7 @@ import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import PostAddOutlined from '@mui/icons-material/PostAddOutlined';
 import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
+import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import TableViewOutlined from '@mui/icons-material/TableViewOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
@@ -27,7 +28,8 @@ import { xlsxType } from '../format/xlsx';
 import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import { ExportPdfDialog } from './ExportPdfDialog';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
-import { type ScheduleDisplay, stepText } from './schedule';
+import { MoveScheduleDialog } from './ScheduleMove';
+import { movableCount, type ScheduleDisplay, stepText } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
 import { scheduleReport, scheduleReportName } from './scheduleReport';
@@ -153,6 +155,7 @@ export function ScheduleMoreMenu({
   const [pending, setPending] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [moving, setMoving] = useState(false);
   // The Administrator and the manager save a model, also of a closed project (ADR-0017, ADR-0043).
   const canSaveTemplate =
     canEdit ||
@@ -272,6 +275,17 @@ export function ScheduleMoreMenu({
             <SaveOutlined aria-hidden />
             {t(saved === null ? 'projects.baseline.save' : 'projects.baseline.update')}
           </MenuItem>,
+          <MenuItem
+            key="move"
+            disabled={movableCount(schedule) === 0}
+            onClick={() => {
+              setAnchor(undefined);
+              setMoving(true);
+            }}
+          >
+            <SwapHorizOutlined aria-hidden />
+            {t('projects.move.item')}
+          </MenuItem>,
           <Divider key="baseline" sx={{ margin: 'var(--space-1) 0' }} />,
         ]}
         {canSaveTemplate && [
@@ -349,6 +363,19 @@ export function ScheduleMoreMenu({
         {saved !== null &&
           t('projects.baseline.confirm.text', { day: formatDayText(saved.savedOn) })}
       </Dialog>
+      {moving && (
+        <MoveScheduleDialog
+          project={project}
+          schedule={schedule}
+          onClose={() => {
+            setMoving(false);
+          }}
+          onMoved={(message) => {
+            setMoving(false);
+            notify(message);
+          }}
+        />
+      )}
       {savingTemplate && (
         <SaveTemplateDialog
           project={project}
