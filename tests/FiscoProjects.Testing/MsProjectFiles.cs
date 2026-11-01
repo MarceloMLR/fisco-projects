@@ -15,7 +15,8 @@ public static class MsProjectFiles
 
     /// <summary>
     /// A line of the file; a summary is a line followed by lines of a higher level. A blank line is saved as the MS Project
-    /// saves an empty row: only its numbers and IsNull. The deadline goes at the end of its day, as the MS Project saves it.
+    /// saves an empty row: only its numbers and IsNull. The deadline goes at the end of its day, as the MS Project saves it,
+    /// and the notes in the Notes of the task.
     /// </summary>
     public sealed record Line(
         int Uid,
@@ -28,7 +29,8 @@ public static class MsProjectFiles
         bool Active = true,
         IReadOnlyList<Link>? Links = null,
         bool Blank = false,
-        DateOnly? Deadline = null);
+        DateOnly? Deadline = null,
+        string? Notes = null);
 
     /// <summary>
     /// A link to the line it depends on: type 1 is "finish to start", 3 "start to start", 0 "finish to finish" and 2
@@ -106,6 +108,11 @@ public static class MsProjectFiles
             if (line.Deadline is { } deadline)
             {
                 task.Add(new XElement(Ns + "Deadline", Moment(deadline, 17)));
+            }
+
+            if (line.Notes is { } notes)
+            {
+                task.Add(new XElement(Ns + "Notes", notes));
             }
 
             foreach (var link in line.Links ?? [])

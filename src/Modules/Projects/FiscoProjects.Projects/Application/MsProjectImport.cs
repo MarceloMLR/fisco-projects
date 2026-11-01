@@ -37,8 +37,8 @@ public sealed record MsProjectLink(int PredecessorUid, int Type, long Lag, bool 
 
 /// <summary>
 /// A line of the file, below the summary of the whole project: its number, level, whether it is a milestone, active or
-/// an empty line, the name, the days it starts and finishes, the percent complete, the lines it depends on and its
-/// deadline (GanttA-2).
+/// an empty line, the name, the days it starts and finishes, the percent complete, the lines it depends on, its
+/// deadline (GanttA-2) and its notes (ADR-0139).
 /// </summary>
 public sealed record MsProjectRow(
     int Uid,
@@ -51,7 +51,8 @@ public sealed record MsProjectRow(
     DateOnly? Finish,
     int PercentComplete,
     IReadOnlyList<MsProjectLink> Links,
-    DateOnly? Deadline = null);
+    DateOnly? Deadline = null,
+    string? Notes = null);
 
 /// <summary>
 /// A resource of the file, with the name and the e-mail when the file has one: a work resource is a person; the others,
@@ -119,6 +120,9 @@ public enum MsProjectWarningKind
 
     /// <summary>Blank or nameless lines, and the lines below them, stayed out; only how many, as they have no name.</summary>
     BlankLines = 16,
+
+    /// <summary>Notes longer than the FiscoProjects keeps were cut (ADR-0139).</summary>
+    CutNotes = 17,
 }
 
 /// <summary>
@@ -242,7 +246,8 @@ public static class MsProjectImport
                         long.TryParse((string?)link.Element(ns + "LinkLag"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var lag) ? lag : 0,
                         Flag(link.Element(ns + "CrossProject")) ?? false,
                         Number(link.Element(ns + "LagFormat")) ?? DaysFormat))],
-                Day(task.Element(ns + "Deadline"))))
+                Day(task.Element(ns + "Deadline")),
+                (string?)task.Element(ns + "Notes")))
             .ToList();
         if (rows.Count == 0)
         {
@@ -356,7 +361,8 @@ public static class MsProjectImport
                     OffsetOf(first, item.Start!.Value),
                     item.Kind == ScheduleItemKind.Milestone ? 0 : DurationOf(item),
                     item.IsSummary ? 0 : item.Progress,
-                    DeadlineOffset: DeadlineOffsetOf(first, item.Row.Deadline)))],
+                    DeadlineOffset: DeadlineOffsetOf(first, item.Row.Deadline),
+                    Note: NoteOf(item)))],
                 [.. dependencies
                     .Where(pair => !pair.Dropped)
                     .Select(pair => new OutlineDependency(position[pair.Predecessor], position[pair.Successor], pair.Type, pair.Lag))
@@ -503,6 +509,28 @@ public static class MsProjectImport
         {
             _phases.Add(Cut(name, Schedule.PhaseNameMaxLength));
             return _phases.Count - 1;
+        }
+
+        /// <summary>
+        /// The notes of a line as the item keeps them (ADR-0139): without the control characters but line breaks and tabs,
+        /// cut at 2,000 characters with a warning; none when empty.
+        /// </summary>
+        private string? NoteOf(Draft item)
+        {
+            var clean = new string([.. (item.Row.Notes ?? string.Empty)
+                .Where(character => !char.IsControl(character) || character is '\n' or '\r' or '\t')]).Trim();
+            if (clean.Length == 0)
+            {
+                return null;
+            }
+
+            if (clean.Length <= ScheduleItem.NoteMaxLength)
+            {
+                return clean;
+            }
+
+            Warn(MsProjectWarningKind.CutNotes, item.Name);
+            return clean[..ScheduleItem.NoteMaxLength].TrimEnd();
         }
 
         private string Cut(string name, int length)

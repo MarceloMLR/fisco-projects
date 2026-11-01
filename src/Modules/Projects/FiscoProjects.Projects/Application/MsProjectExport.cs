@@ -187,6 +187,12 @@ public static class MsProjectExport
             task.Add(new XElement(Ns + "Deadline", Moment(deadline, DayEnd)));
         }
 
+        if (item.Note is { } note)
+        {
+            // The note of the item in the notes of the task, as plain text (ADR-0139).
+            task.Add(new XElement(Ns + "Notes", note));
+        }
+
         // The kind and the lag in days (ADR-0137): the lag in tenths of a minute of a day of 8 hours, shown in days.
         foreach (var dependency in schedule.Dependencies.Where(d => d.SuccessorId == item.Id && uids.ContainsKey(d.PredecessorId)))
         {

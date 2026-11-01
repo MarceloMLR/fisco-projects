@@ -50,7 +50,8 @@ public sealed record ScheduleItemResponse(
     [property: Description("The business days the item went past its deadline (positive) or is before it (negative); null without one.")] int? DeadlineDeviation,
     [property: Description("The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137).")] IReadOnlyList<ScheduleLinkResponse> Links,
     [property: Description("The business days the item may end later without moving the end of the project; null for a task with subtasks (GanttB-1).")] int? Float,
-    [property: Description("The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).")] DateOnly? LatestEnd);
+    [property: Description("The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).")] DateOnly? LatestEnd,
+    [property: Description("What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139).")] string? Note);
 
 /// <summary>
 /// A dependency of an item (ADR-0137): the item it depends on, the kind ("finishes, then starts", "starts with" or
@@ -126,7 +127,8 @@ public sealed record NewScheduleItemRequest(
     Guid? ParentId = null,
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
     [property: Description("The day the item has to be done by, which never moves the dates; none without one (GanttA-2).")] DateOnly? Deadline = null,
-    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null);
+    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null,
+    [property: Description("The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139).")] string? Note = null);
 
 /// <summary>
 /// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
@@ -144,7 +146,8 @@ public sealed record ScheduleItemRequest(
     Guid? ParentId = null,
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
     [property: Description("The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).")] DateOnly? Deadline = null,
-    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null);
+    [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null,
+    [property: Description("The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139).")] string? Note = null);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -369,7 +372,8 @@ internal static class ScheduleEndpoints
                 request.ParentId,
                 request.OwnedByClient,
                 request.Deadline,
-                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))]),
+                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))],
+                request.Note),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -406,7 +410,8 @@ internal static class ScheduleEndpoints
                 request.ParentId,
                 request.OwnedByClient,
                 request.Deadline,
-                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))]),
+                request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))],
+                request.Note),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -518,7 +523,8 @@ internal static class ScheduleEndpoints
                 ? [.. links.Select(link => new ScheduleLinkResponse(link.PredecessorId, link.Type, link.Lag))]
                 : [],
             view.Slack is not null && view.Slack.TryGetValue(item.Id, out var slack) ? slack.Days : null,
-            view.Slack is not null && view.Slack.TryGetValue(item.Id, out var latest) ? latest.LatestEnd : null);
+            view.Slack is not null && view.Slack.TryGetValue(item.Id, out var latest) ? latest.LatestEnd : null,
+            item.Note);
     }
 
     /// <summary>The answer to a change without a body of its own.</summary>
@@ -558,6 +564,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Baseline => "baseline",
                 ScheduleField.Deadline => "deadline",
                 ScheduleField.Links => "links",
+                ScheduleField.Note => "note",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -576,6 +583,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.Baseline => "A baseline needs tasks or milestones in the schedule.",
                     ScheduleField.Deadline => "The deadline is a day from 2000 to 2099.",
                     ScheduleField.Links => "Each dependency is of a known kind, with a lag from -99 to 999 business days, once per item.",
+                    ScheduleField.Note => $"The note has up to {ScheduleItem.NoteMaxLength} characters, without control characters but line breaks and tabs.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

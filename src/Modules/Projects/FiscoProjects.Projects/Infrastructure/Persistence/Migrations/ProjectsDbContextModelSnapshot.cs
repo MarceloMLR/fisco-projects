@@ -472,6 +472,10 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<bool>("OwnedByClient")
                         .HasColumnType("bit");
 

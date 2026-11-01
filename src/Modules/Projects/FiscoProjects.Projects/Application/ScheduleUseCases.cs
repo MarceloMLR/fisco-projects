@@ -211,6 +211,9 @@ public enum ScheduleField
 
     /// <summary>Each dependency is of a known kind, with a lag from -99 to 999, once per item (ADR-0137).</summary>
     Links = 13,
+
+    /// <summary>The note has up to 2,000 characters, without control characters but line breaks and tabs (ADR-0139).</summary>
+    Note = 14,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -480,7 +483,8 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 /// milestone), the owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a
 /// new item), the items it depends on, the task it is in (ADR-0088) and whether the client of the project is in charge
 /// instead of a person (ADR-0102). A task with subtasks takes only the phase, the name and the owner; its start and
-/// duration are not looked at.
+/// duration are not looked at. The note, when it comes, replaces the one of the item, empty to take it out; none keeps
+/// it as it is (ADR-0139).
 /// </summary>
 public sealed record ScheduleItemForm(
     Guid PhaseId,
@@ -493,7 +497,8 @@ public sealed record ScheduleItemForm(
     Guid? ParentId = null,
     bool OwnedByClient = false,
     DateOnly? Deadline = null,
-    IReadOnlyList<ScheduleLink>? Links = null);
+    IReadOnlyList<ScheduleLink>? Links = null,
+    string? Note = null);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
@@ -550,6 +555,11 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Deadline);
         }
 
+        if (form.Note is { } note && Schedule.NoteOf(note) is null)
+        {
+            invalid.Add(ScheduleField.Note);
+        }
+
         // The kinds and lags, when they come, say the items it depends on (ADR-0137).
         if (form.Links is { } links
             && (links.Any(link => !ScheduleLinks.IsValid(link.Type, link.Lag))
@@ -581,7 +591,8 @@ internal static class ScheduleItemChecks
                 form.ParentId,
                 form.OwnedByClient,
                 form.Deadline,
-                form.Links is null ? null : [.. form.Links.DistinctBy(link => link.PredecessorId)]), invalid);
+                form.Links is null ? null : [.. form.Links.DistinctBy(link => link.PredecessorId)],
+                form.Note), invalid);
     }
 }
 

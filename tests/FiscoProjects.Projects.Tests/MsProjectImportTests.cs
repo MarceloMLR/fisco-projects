@@ -385,6 +385,45 @@ public sealed class MsProjectImportTests
         made.Items.Select(item => item.Deadline).Should().Equal(D(10, 9), D(10, 19), null);
     }
 
+    [Fact(DisplayName = "Nota exportada para o MS Project")]
+    public void TheNote_GoesInTheNotesOfTheTask_AndComesBack()
+    {
+        const string Waiting = "Aguardando o cliente mandar os arquivos do plano de contas\nCobrar na reunião de segunda.";
+        var source = new Schedule(Guid.CreateVersion7());
+        var configuration = source.AddPhase("Configuração");
+        var task = source.AddItem(
+            ScheduleItemKind.Task,
+            new ScheduleItemPlan(configuration.Id, "Configurar plano de contas", D(10, 21), 3, null, 0, [], Note: Waiting),
+            Days,
+            Today);
+        Add(source, ScheduleItemKind.Milestone, configuration, "Plano aprovado", D(10, 26), 0, null, 0, [task]);
+        var document = MsProjectExport.Of(
+            "ERP-FIN", "Implantação do ERP", source, source.Figures(Today), Days, new Dictionary<Guid, MsProjectOwner>(),
+            new DateTime(2026, 10, 16, 12, 0, 0, DateTimeKind.Utc));
+
+        var notes = document.Descendants(MsProjectExport.Ns + "Task")
+            .ToDictionary(element => (string?)element.Element(MsProjectExport.Ns + "Name") ?? string.Empty,
+                element => (string?)element.Element(MsProjectExport.Ns + "Notes"));
+        notes["Configurar plano de contas"].Should().Be(Waiting);
+        notes["Plano aprovado"].Should().BeNull();
+        Converted(Bytes(document)).Outline.Items.Select(item => item.Note).Should().Equal(Waiting, null);
+    }
+
+    [Fact(DisplayName = "Nota importada do MS Project")]
+    public void TheNotesOfTheFile_ComeCleaned_AndLongOnesAreCut()
+    {
+        var schedule = Converted(Project("Cronograma", [
+            new Line(1, 1, "Configuração", D(10, 14), D(10, 16), Notes: "A fase não tem nota"),
+            new Line(2, 2, "Com nota", D(10, 14), D(10, 16), Notes: "  Esperando o cliente\r\n\u0090 "),
+            new Line(3, 2, "Nota longa", D(10, 14), D(10, 16), Notes: new string('n', 2_500)),
+            new Line(4, 2, "Sem nota", D(10, 14), D(10, 16), Notes: "   "),
+        ]));
+
+        schedule.Outline.Items.Select(item => item.Note?.Length > 100 ? $"{item.Note.Length}" : item.Note)
+            .Should().Equal("Esperando o cliente", "2000", null);
+        WarningsOf(schedule, MsProjectWarningKind.CutNotes).Should().Equal("Nota longa");
+    }
+
     private static ScheduleItem Add(
         Schedule schedule, ScheduleItemKind kind, SchedulePhase phase, string name, DateOnly start, int duration, Guid? owner, int progress,
         ScheduleItem[]? after = null, ScheduleItem? parent = null, bool ownedByClient = false, DateOnly? deadline = null) =>

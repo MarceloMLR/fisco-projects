@@ -66,6 +66,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             HttpStatusCode.OK),
         new("Set the deadline of a milestone", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Milestone}",
             Item(scene.Phase, "Aceite da configuração", "2026-10-15", 0, deadline: "2026-10-30")), HttpStatusCode.OK),
+        new("Write the note of a task", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, "Aguardando o cliente")), HttpStatusCode.OK),
         new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
             HttpStatusCode.NoContent),
         new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
@@ -1244,6 +1246,10 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             ? new { phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [], deadline }
             : new { kind, phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [], deadline };
 
+    /// <summary>A change of an item with its note, the rest as <see cref="Item"/> (ADR-0139).</summary>
+    private static object WithNote(Guid phase, string name, string start, int duration, string? note, Guid[]? after = null) =>
+        new { phaseId = phase, name, start, duration, ownerId = (Guid?)null, progress = (int?)null, predecessorIds = after ?? [], note };
+
     private static async Task<Guid> IdOfAsync(HttpResponseMessage response)
     {
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -1273,5 +1279,107 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         }
 
         return await client.SendAsync(request, Cancellation);
+    }
+
+    private const string Waiting = "Aguardando o cliente mandar os arquivos do plano de contas";
+
+    [Fact(DisplayName = "Escrever a nota")]
+    public async Task TheManager_WritesTheNote_AndEveryoneInTheProjectSeesIt()
+    {
+        var scene = await StartAsync("Viewer");
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        using var carla = await app.SignInAsync(scene.Carla);
+
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, $"  {Waiting}\nCobrar na segunda.  ")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        var milestone = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/items", new
+        {
+            kind = "Milestone",
+            phaseId = scene.Phase,
+            name = "Plano aprovado",
+            start = "2026-10-20",
+            duration = 0,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            note = "Depende da contabilidade do cliente",
+        }));
+
+        var items = (await carla.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation))
+            .GetProperty("phases").EnumerateArray()
+            .SelectMany(phase => phase.GetProperty("items").EnumerateArray())
+            .ToDictionary(item => item.GetProperty("id").GetGuid(), item => item.GetProperty("note").GetString());
+        items[scene.Task].Should().Be($"{Waiting}\nCobrar na segunda.");
+        items[milestone].Should().Be("Depende da contabilidade do cliente");
+    }
+
+    [Fact(DisplayName = "Nota mantida sem o campo")]
+    public async Task ARequestWithoutTheNote_AndTheTimeline_KeepIt()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, Waiting))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await DatesAsync(marina, scene, scene.Task, "2026-10-14")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            Item(scene.Phase, "Parametrizar as regras de ICMS", "2026-10-14", 3, progress: null))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var item = await ItemAsync(scene, scene.Task);
+        (item.GetProperty("name").GetString(), item.GetProperty("start").GetString(), item.GetProperty("note").GetString())
+            .Should().Be(("Parametrizar as regras de ICMS", "2026-10-14", Waiting));
+    }
+
+    [Fact(DisplayName = "Apagar a nota")]
+    public async Task AnEmptyNote_TakesItOut()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, Waiting))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, ""))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await ItemAsync(scene, scene.Task)).GetProperty("note").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact(DisplayName = "Nota longa demais")]
+    public async Task ANoteOver2000Characters_IsRefused()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+
+        var refused = await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, new string('n', 2_001)));
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await refused.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("errors").EnumerateObject()
+            .Select(error => error.Name).Should().Equal("note");
+        (await ItemAsync(scene, scene.Task)).GetProperty("note").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact(DisplayName = "Desfazer a nota")]
+    public async Task UndoingTheNote_LeavesTheItemWithoutIt_AndTheAuditHasIt()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, Waiting))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await ItemAsync(scene, scene.Task)).GetProperty("note").ValueKind.Should().Be(JsonValueKind.Null);
+        var entries = (await scene.Admin.GetFromJsonAsync<JsonElement>("/api/audit?pageSize=100", Cancellation))
+            .GetProperty("items").EnumerateArray()
+            .Where(entry => entry.GetProperty("itemType").GetString() == "ScheduleItem"
+                && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "Note"))
+            .ToList();
+        entries.Select(entry => Values(entry, "Note")).Should().BeEquivalentTo([(Waiting, (string?)null), (null, Waiting)]);
     }
 }
