@@ -47,21 +47,16 @@ export function FieldFrame({
     <Box
       sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', minWidth: 0, width }}
     >
-      <Box
-        component="label"
-        htmlFor={inputId}
-        sx={
-          hideLabel
-            ? visuallyHidden
-            : { fontSize: 13, lineHeight: '18px', fontWeight: 500, color: 'var(--text)' }
-        }
-      >
-        {label}
+      <Box sx={hideLabel ? visuallyHidden : { fontSize: 13, lineHeight: '18px' }}>
+        <Box component="label" htmlFor={inputId} sx={{ fontWeight: 500, color: 'var(--text)' }}>
+          {label}
+        </Box>
+        {/* Out of the label, so the field keeps its name; the mark is only seen. */}
         {optional !== undefined && (
           <Box
             component="span"
             aria-hidden
-            sx={{ marginLeft: 'var(--space-1)', fontWeight: 400, color: 'var(--text-secondary)' }}
+            sx={{ marginLeft: 'var(--space-1)', color: 'var(--text-secondary)' }}
           >
             {optional}
           </Box>

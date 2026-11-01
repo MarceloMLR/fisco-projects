@@ -106,6 +106,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Hoje da instalação | InstallationClock | O dia de hoje no fuso da instalação, para o atraso e a conclusão |
 | Linha de base | Baseline | |
 | Caminho crítico | CriticalPath | |
+| Data-limite | Deadline | Prazo de uma tarefa ou marco que não muda as datas e avisa quando o fim passa dele (GanttA-2) |
+| Data-limite estourada | MissedDeadline | Item em aberto que passou da data-limite |
 | Progresso | Progress | De 0 a 100% numa tarefa; o da fase e o do projeto são ponderados pela duração (ADR-0020) |
 | Modelo de projeto | ProjectTemplate | |
 | Exportar para o MS Project (XML) | ExportScheduleToMsProject, MsProjectExport, CanExportSchedule, `canExportSchedule` | O XML do cronograma, com o nome e o e-mail de cada responsável, só para o administrador e o gerente (ADR-0021, ADR-0136) |

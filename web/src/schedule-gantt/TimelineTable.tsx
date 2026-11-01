@@ -269,9 +269,7 @@ function TableRow({
             {item?.kind === 'Task' ? formatDayMonthText(item.end) : ''}
           </span>
           <span role="gridcell" className="fp-gantt__col fp-gantt__col--deadline">
-            {item?.deadline !== undefined && item.deadline !== null && (
-              <DeadlineCell item={item} />
-            )}
+            {item?.deadline !== undefined && item.deadline !== null && <DeadlineCell item={item} />}
           </span>
           <span role="gridcell" className="fp-gantt__col fp-gantt__col--who">
             {item === undefined ? '' : (ownerText(item, clientName, t) ?? '')}

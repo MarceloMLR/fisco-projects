@@ -233,19 +233,19 @@ export function ScheduleTimeline({
 }
 
 type LegendKey =
-  | 'done'
-  | 'todo'
-  | 'critical'
-  | 'baseline'
-  | 'phase'
-  | 'milestone'
-  | 'deadline'
-  | 'nonWorking';
+  'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'milestone' | 'deadline' | 'nonWorking';
 
 /** The mark of a deadline in the legend: the dashed line with the arrow on top, as the timeline draws it. */
 function DeadlineMark() {
   return (
-    <Box component="svg" aria-hidden width={10} height={14} viewBox="0 0 10 14" sx={{ flex: 'none' }}>
+    <Box
+      component="svg"
+      aria-hidden
+      width={10}
+      height={14}
+      viewBox="0 0 10 14"
+      sx={{ flex: 'none' }}
+    >
       <path d="M1 0.5 H9 L5 5.5 Z" fill="var(--gantt-dependency)" />
       <line
         x1={5}

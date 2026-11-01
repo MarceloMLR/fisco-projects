@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { datesIn } from '../format/dates';
 import i18n from '../i18n';
-import { demoOverview, demoOverviewTaskId, demoOverviewTermId } from '../test/demoOverview';
+import {
+  demoOverview,
+  demoOverviewDeadlineId,
+  demoOverviewTaskId,
+  demoOverviewTermId,
+} from '../test/demoOverview';
 import { attentionLines, deviationDue, milestoneText } from './overview';
 
 const t = i18n.t.bind(i18n);
@@ -92,6 +97,41 @@ describe('Precisa de atenção', () => {
     expect(other?.due).toEqual({ state: 'overdue', text: 'Venceu quinta' });
   });
 
+  it('Data-limite na atenção', () => {
+    const overview = demoOverview();
+    const [, deadline] = attentionLines(projectId, overview.attention, overview.today, dates, t);
+    expect(deadline).toEqual({
+      key: `deadline-${demoOverviewDeadlineId}`,
+      kind: 'deadline',
+      title: 'Testes integrados',
+      path: `/projects/${projectId}/schedule?item=${demoOverviewDeadlineId}`,
+      meta: 'Tarefa · data-limite 30/10',
+      due: { state: 'overdue', text: '1 dia útil depois da data-limite' },
+    });
+
+    const [milestone] = attentionLines(
+      projectId,
+      {
+        ...overview.attention,
+        tasks: [],
+        deadlines: [
+          {
+            id: demoOverviewDeadlineId,
+            kind: 'Milestone',
+            name: 'Virada para produção',
+            deadline: '2026-11-04',
+            daysPast: 3,
+          },
+        ],
+      },
+      overview.today,
+      dates,
+      t,
+    );
+    expect(milestone?.meta).toBe('Marco · data-limite 04/11');
+    expect(milestone?.due.text).toBe('3 dias úteis depois da data-limite');
+  });
+
   it('Chamados na atenção', () => {
     const overview = demoOverview();
     const lines = attentionLines(projectId, overview.attention, overview.today, dates, t).filter(
@@ -124,6 +164,7 @@ describe('Precisa de atenção', () => {
       {
         ...overview.attention,
         tasks: [],
+        deadlines: [],
         acceptances: [],
         vendors: [],
         tickets: [
@@ -171,7 +212,7 @@ describe('Precisa de atenção', () => {
       milestone: 'Aceite da homologação',
       milestoneDay: '2026-11-03',
     };
-    const [, , , , term, vendor] = attentionLines(
+    const [, , , , , term, vendor] = attentionLines(
       projectId,
       overview.attention,
       overview.today,
@@ -200,6 +241,7 @@ describe('Precisa de atenção', () => {
       {
         ...overview.attention,
         tasks: [],
+        deadlines: [],
         tickets: [],
         vendors: [],
         acceptances: [

@@ -467,7 +467,7 @@ describe('Expandir o cronograma', () => {
     ).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.timeline.today })).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.schedule.newItem })).toBeVisible();
-    // The full table beside the timeline: name, start, end, owner and progress.
+    // The full table beside the timeline: name, start, end, deadline, owner and progress.
     await within(expanded).findByRole('treegrid', { name: text.timeline.table });
     expect(timelineOf(expanded)).toHaveAttribute('data-detailed', 'true');
     expect(timelineOf(expanded)).toHaveAttribute('data-editable', 'true');
@@ -479,6 +479,7 @@ describe('Expandir o cronograma', () => {
       text.timeline.columns.name,
       text.timeline.columns.start,
       text.timeline.columns.end,
+      text.timeline.columns.deadline,
       text.timeline.columns.owner,
       text.timeline.columns.progress,
     ]);
@@ -579,5 +580,58 @@ describe('Caminho crítico pela tela', () => {
     expect(timelineOf()).toHaveAttribute('data-baseline', 'true');
     expect(container.querySelectorAll('.g-baseline')).toHaveLength(0);
     expect(legendEntries()).not.toContain(text.timeline.legend.baseline);
+  });
+});
+
+// Spec: cronograma, requirement "Data-limite pela tela" (GanttA-2).
+describe('Data-limite na linha do tempo', () => {
+  it('Marcador da data-limite', async () => {
+    Object.assign(itemNamed('Testes integrados'), {
+      deadline: '2026-10-28',
+      deadlineDeviation: 1,
+    });
+    Object.assign(itemNamed('Integrar emissão de NF-e'), {
+      deadline: '2026-10-30',
+      deadlineDeviation: -2,
+    });
+    const { container } = await openTimeline();
+
+    const markers = [...container.querySelectorAll('.g-deadline')];
+    expect(markers.map((marker) => marker.getAttribute('data-day'))).toEqual([
+      '2026-10-30',
+      '2026-10-28',
+    ]);
+    // Missed in the color of the alarm; at the end of the day, 05/10 being the first day of the timeline.
+    expect(markers.map((marker) => marker.classList.contains('g-deadline--missed'))).toEqual([
+      false,
+      true,
+    ]);
+    expect(markers[1]?.querySelector('.g-deadline-line')?.getAttribute('x1')).toBe(String(24 * 20));
+    expect(barOf('Testes integrados')).toHaveAccessibleName(
+      text.timeline.bars.missedDeadline_one
+        .replace('{{label}}', 'Tarefa Testes integrados, 23/10 a 29/10, 0%')
+        .replace('{{count}}', '1')
+        .replace('{{day}}', '28/10'),
+    );
+    expect(legendEntries()).toContain(text.timeline.legend.deadline);
+  });
+
+  it('Data-limite depois do fim do cronograma', async () => {
+    // The schedule ends on 03/11: the timeline widens to the deadline three days later.
+    Object.assign(itemNamed('Aceite da homologação'), {
+      deadline: '2026-11-06',
+      deadlineDeviation: -3,
+    });
+    const { container } = await openTimeline();
+
+    const marker = container.querySelector('.g-deadline');
+    expect(marker?.getAttribute('data-day')).toBe('2026-11-06');
+    expect(marker?.querySelector('.g-deadline-line')?.getAttribute('x1')).toBe(String(33 * 20));
+  });
+
+  it('Sem data-limite na legenda', async () => {
+    await openTimeline();
+
+    expect(legendEntries()).not.toContain(text.timeline.legend.deadline);
   });
 });

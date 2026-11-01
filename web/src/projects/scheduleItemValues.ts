@@ -49,10 +49,11 @@ export const scheduleItemSchema = z
     ownerId: z.string(),
     predecessorIds: z.array(z.string()),
     parentId: z.string(),
-    deadline: z.string().refine(
-      (value) => value.trim() === '' || parseTypedDay(value) !== undefined,
-      { error: scheduleItemErrors.deadlineInvalid },
-    ),
+    deadline: z
+      .string()
+      .refine((value) => value.trim() === '' || parseTypedDay(value) !== undefined, {
+        error: scheduleItemErrors.deadlineInvalid,
+      }),
     summary: z.boolean().optional(),
   })
   .superRefine((values, context) => {

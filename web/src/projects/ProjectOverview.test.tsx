@@ -5,6 +5,7 @@ import type { ProjectOverview } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import {
   demoOverview,
+  demoOverviewDeadlineId,
   demoOverviewTaskId,
   demoOverviewTermId,
   emptyOverview,
@@ -91,9 +92,14 @@ describe('Visão geral pela tela', () => {
 
     const list = attention();
     expect(within(list).getByRole('heading', { level: 2 })).toHaveTextContent(
-      `${text.attention.title}6`,
+      `${text.attention.title}7`,
     );
-    expect(within(list).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(7);
+    // The item past its deadline, after the late tasks (GanttA-2).
+    expect(within(list).getByRole('link', { name: 'Testes integrados' })).toHaveAttribute(
+      'href',
+      `/projects/${erpFin}/schedule?item=${demoOverviewDeadlineId}`,
+    );
     expect(
       within(list).getByRole('link', { name: 'Validar cadastro de produtos' }),
     ).toHaveAttribute('href', `/projects/${erpFin}/schedule?item=${demoOverviewTaskId}`);

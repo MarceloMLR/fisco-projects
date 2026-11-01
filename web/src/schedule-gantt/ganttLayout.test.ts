@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ganttPeriod, ganttUnitWidth, minUnitWidth } from './ganttLayout';
+import { deadlineReach, ganttPeriod, ganttSpan, ganttUnitWidth, minUnitWidth } from './ganttLayout';
 
 // Spec: cronograma, requirement "Escala e ajuste ao espaço".
 describe('Escala e ajuste ao espaço', () => {
@@ -42,5 +42,21 @@ describe('Escala e ajuste ao espaço', () => {
   it('Largura sem medida', () => {
     expect(ganttUnitWidth('weeks', 6, 0)).toBe(minUnitWidth.weeks);
     expect(ganttUnitWidth('months', 0, 800)).toBe(minUnitWidth.months);
+  });
+});
+
+// Spec: cronograma, requirement "Data-limite pela tela" (GanttA-2).
+describe('Data-limite na linha do tempo', () => {
+  it('Período alargado pela data-limite', () => {
+    // A deadline after the end and one before the start widen it; one inside changes nothing.
+    expect(
+      ganttSpan('2026-10-05', '2026-11-03', ['2026-11-06', '2026-10-20', '2026-10-01']),
+    ).toEqual({ start: '2026-10-01', end: '2026-11-06' });
+    // Too far from the schedule, as a mistyped year, it stays out of the timeline.
+    expect(deadlineReach).toBe(92);
+    expect(ganttSpan('2026-10-05', '2026-11-03', ['2027-11-06', '2025-10-01'])).toEqual({
+      start: '2026-10-05',
+      end: '2026-11-03',
+    });
   });
 });

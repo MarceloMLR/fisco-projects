@@ -1180,3 +1180,125 @@ describe('Cliente como responsável', () => {
     expect(options.some((option) => option.textContent.endsWith('(cliente)'))).toBe(false);
   });
 });
+
+// Spec: cronograma, requirement "Data-limite pela tela" (GanttA-2).
+describe('Data-limite pela tela', () => {
+  it('Data-limite no detalhe', async () => {
+    const changes: unknown[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        const body = (await request.json()) as { deadline: string | null; duration: number };
+        changes.push(body);
+        // The API keeps the deadline and counts it: on 29/10 a business day before it; pushed to 03/11, past it.
+        const tests = itemNamed('Testes integrados');
+        Object.assign(
+          tests,
+          body.duration === 5
+            ? { deadline: body.deadline, deadlineDeviation: -1 }
+            : {
+                duration: body.duration,
+                end: '2026-11-03',
+                deadline: body.deadline,
+                deadlineDeviation: 1,
+              },
+        );
+        schedule = { ...schedule, missedDeadlines: body.duration === 5 ? 0 : 1 };
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    const field = within(drawer).getByLabelText(text.form.deadline);
+    expect(field).toHaveValue('');
+    expect(field).toHaveAccessibleDescription(text.form.deadlineHelp);
+    fireEvent.change(field, { target: { value: '30102026' } });
+    expect(field).toHaveValue('30/10/2026');
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    const before = text.deadline.before_one.replace('{{count}}', '1');
+    expect(await within(drawer).findByText(before)).toBeVisible();
+    expect(changes).toEqual([expect.objectContaining({ deadline: '2026-10-30', duration: 5 })]);
+
+    fireEvent.change(within(drawer).getByLabelText(text.form.duration), {
+      target: { value: '7' },
+    });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    const past = text.deadline.past_one.replace('{{count}}', '1');
+    const warning = await within(drawer).findByText(past);
+    expect(warning).toHaveStyle({ color: 'var(--status-danger-text)' });
+    expect(warning).toHaveAttribute('data-state', 'overdue');
+    expect(warning.querySelector('svg')).not.toBeNull();
+    // An empty deadline takes it out.
+    fireEvent.change(within(drawer).getByLabelText(text.form.deadline), { target: { value: '' } });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+    await waitFor(() => {
+      expect(changes).toHaveLength(3);
+    });
+    expect(changes[2]).toEqual(expect.objectContaining({ deadline: null }));
+  });
+
+  it('Data-limite inválida pela tela', async () => {
+    let sent = false;
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', () => {
+        sent = true;
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    fireEvent.change(within(drawer).getByLabelText(text.form.deadline), {
+      target: { value: '31022026' },
+    });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    expect(await within(drawer).findByText(text.errors.deadlineInvalid)).toBeVisible();
+    expect(sent).toBe(false);
+  });
+
+  it('Data-limite na Lista e no resumo', async () => {
+    Object.assign(itemNamed('Testes integrados'), {
+      deadline: '2026-10-28',
+      deadlineDeviation: 1,
+    });
+    // Done before its deadline: only the day, without the alarm.
+    Object.assign(itemNamed('Reunião de abertura'), {
+      deadline: '2026-10-07',
+      deadlineDeviation: -2,
+    });
+    schedule = { ...schedule, missedDeadlines: 1 };
+    await openSchedule();
+
+    const pastShort = text.deadline.pastShort_one.replace('{{count}}', '1');
+    expect(cellsOf('Testes integrados')[3]).toBe(`28/10/2026${pastShort}`);
+    expect(within(rowOf('Testes integrados')).getByText(pastShort)).toHaveStyle({
+      color: 'var(--status-danger-text)',
+    });
+    expect(cellsOf('Reunião de abertura')[3]).toBe('07/10/2026');
+    expect(cellsOf('Aceite da homologação')[3]).toBe('');
+    const missed = screen.getByText(text.missedDeadlines_one.replace('{{count}}', '1'));
+    expect(missed).toHaveAttribute('data-state', 'overdue');
+  });
+
+  it('Data-limite no detalhe de quem só vê', async () => {
+    permissions = { canEditSchedule: false };
+    Object.assign(itemNamed('Testes integrados'), {
+      deadline: '2026-10-28',
+      deadlineDeviation: 1,
+    });
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+
+    expect(within(drawer).queryByLabelText(text.form.deadline)).not.toBeInTheDocument();
+    expect(within(drawer).getByText(text.details.deadline).nextElementSibling).toHaveTextContent(
+      '28/10/2026',
+    );
+    expect(
+      within(drawer).getByText(text.deadline.past_one.replace('{{count}}', '1')),
+    ).toHaveAttribute('data-state', 'overdue');
+  });
+});

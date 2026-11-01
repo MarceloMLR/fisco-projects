@@ -99,21 +99,19 @@ export function attentionLines(
       due: { state: 'overdue', text: late(task.daysLate, task.end, false, t) },
     };
   });
-  const deadlines = attention.deadlines.map(
-    (item): AttentionLine => ({
-      key: `deadline-${item.id}`,
-      kind: 'deadline',
-      title: item.name,
-      path: `/projects/${projectId}/schedule?item=${item.id}`,
-      meta: t(`projects.overview.attention.deadline.${item.kind}`, {
-        day: formatDayMonthText(item.deadline),
-      }),
-      due: {
-        state: 'overdue',
-        text: t('projects.overview.attention.deadlinePast', { count: item.daysPast }),
-      },
+  const deadlines = attention.deadlines.map((item): AttentionLine => ({
+    key: `deadline-${item.id}`,
+    kind: 'deadline',
+    title: item.name,
+    path: `/projects/${projectId}/schedule?item=${item.id}`,
+    meta: t(`projects.overview.attention.deadline.${item.kind}`, {
+      day: formatDayMonthText(item.deadline),
     }),
-  );
+    due: {
+      state: 'overdue',
+      text: t('projects.overview.attention.deadlinePast', { count: item.daysPast }),
+    },
+  }));
   const tickets = attention.tickets.map((ticket): AttentionLine => {
     const team = t(`tickets.teams.${ticket.team}`);
     const first = ticket.deadline === 'FirstResponse';

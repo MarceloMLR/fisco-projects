@@ -543,6 +543,7 @@ async function loadProject(
             progress: 0,
             predecessorIds: (item.after ?? []).map((name) => idOf(name, item.name)),
             parentId: item.inside === undefined ? null : idOf(item.inside, item.name),
+            deadline: item.deadline === undefined ? null : dayFrom(firstDay, item.deadline),
           },
         }),
         `Item ${item.name} de ${project.code}`,

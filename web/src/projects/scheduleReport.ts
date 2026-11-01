@@ -177,10 +177,7 @@ export function scheduleReport({
           [{ label: t('projects.export.excel.project.progress') }, percent(schedule.progress)],
           [{ label: t('projects.export.excel.project.lateTasks') }, schedule.lateTasks],
           [{ label: t('projects.export.excel.project.lateMilestones') }, schedule.lateMilestones],
-          [
-            { label: t('projects.export.excel.project.missedDeadlines') },
-            schedule.missedDeadlines,
-          ],
+          [{ label: t('projects.export.excel.project.missedDeadlines') }, schedule.missedDeadlines],
           [
             { label: t('projects.export.excel.project.baseline') },
             baseline === null

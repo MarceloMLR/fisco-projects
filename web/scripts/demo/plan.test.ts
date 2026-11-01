@@ -39,6 +39,29 @@ describe('Datas da demonstração', () => {
   });
 });
 
+// Spec: cronograma, requirement "Data-limite de tarefas e marcos" (GanttA-2), in the demonstration.
+describe('Datas-limite na demonstração', () => {
+  it('Datas-limite na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    const items = (main?.phases ?? []).flatMap((phase) => phase.items);
+    const withDeadline = items.filter((item) => item.deadline !== undefined);
+    expect(withDeadline.map((item) => item.name)).toEqual([
+      'Validar cadastro de produtos',
+      'Aceite da homologação',
+      'Migrar saldos',
+    ]);
+    // Loaded on the day 14, one open task already went past its deadline, before its own end; the others are ahead.
+    const missed = withDeadline.filter(
+      (item) =>
+        (item.progress ?? 0) < 100 &&
+        (item.deadline ?? 0) < 14 &&
+        (item.deadline ?? 0) < item.day + item.duration,
+    );
+    expect(missed.map((item) => item.name)).toEqual(['Validar cadastro de produtos']);
+    expect(withDeadline.filter((item) => (item.deadline ?? 0) > 14)).toHaveLength(2);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Meu trabalho na demonstração".
 describe('Meu trabalho na demonstração', () => {
   it('Meu trabalho na demonstração', () => {

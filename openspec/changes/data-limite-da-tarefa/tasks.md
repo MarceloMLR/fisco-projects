@@ -11,11 +11,11 @@
 
 ## 3. Tela
 
-- [ ] 3.1 `npm run api:update`; o campo no detalhe, o texto pelo `DueDate`, a coluna na Lista e no Expandir e o resumo; testes "Data-limite no detalhe" e "Data-limite na Lista e no resumo"
-- [ ] 3.2 O marcador no `ScheduleGantt` e no `SchedulePrintPage`, com a legenda; teste "Marcador da data-limite"
-- [ ] 3.3 A atenção na Visão geral e as colunas do Excel; teste "Data-limite no Excel"
+- [x] 3.1 `npm run api:update`; o campo no detalhe, o texto pelo `DueDate`, a coluna na Lista e no Expandir e o resumo; testes "Data-limite no detalhe" e "Data-limite na Lista e no resumo"
+- [x] 3.2 O marcador no `ScheduleGantt` e no `SchedulePrintPage`, com a legenda; teste "Marcador da data-limite"
+- [x] 3.3 A atenção na Visão geral e as colunas do Excel; teste "Data-limite no Excel"
 - [ ] 3.4 Datas-limite na demonstração (`plan.ts`), uma estourada; conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 
-- [ ] 4.1 `CLAUDE.md` e `docs/glossario.md` com a data-limite
+- [x] 4.1 `CLAUDE.md` e `docs/glossario.md` com a data-limite
