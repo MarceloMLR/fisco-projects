@@ -906,6 +906,47 @@
         }
       }
     },
+    "/api/admin/team-load": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "GetTeamLoad",
+        "parameters": [
+          {
+            "name": "week",
+            "in": "query",
+            "description": "A day of the first week, which starts on its Monday; the current week without it.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamLoadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/audit": {
       "get": {
         "tags": [
@@ -12419,7 +12460,8 @@
           "dailySummaryAt",
           "notificationRetentionDays",
           "auditRetentionYears",
-          "projectsFolder"
+          "projectsFolder",
+          "workHoursPerDay"
         ],
         "type": "object",
         "properties": {
@@ -12440,9 +12482,13 @@
           },
           "projectsFolder": {
             "type": "string"
+          },
+          "workHoursPerDay": {
+            "type": "number",
+            "format": "double"
           }
         },
-        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how\nmany years the audit is kept (ADR-0110) and the folder of the projects in the file storage (ADR-0121)."
+        "description": "The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the\ndaily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how\nmany years the audit is kept (ADR-0110), the folder of the projects in the file storage (ADR-0121) and the hours of a\nworking day (ADR-0142)."
       },
       "HoursBalanceResponse": {
         "required": [
@@ -13137,6 +13183,33 @@
           }
         },
         "description": "A link of the project: the title, the address, what it is for, the category and who included it and when."
+      },
+      "LoadAbsenceResponse": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "description": "A period a person does not work, both days included (ADR-0141)."
+      },
+      "LoadState": {
+        "enum": [
+          "Free",
+          "Within",
+          "NearLimit",
+          "Over"
+        ],
+        "description": "The state of the load of a person in a week (ADR-0142), from the freest to the most loaded."
       },
       "LocalHolidayCreatedResponse": {
         "required": [
@@ -14911,6 +14984,38 @@
         },
         "description": "The hours a person logged in the project, the share of them, in whole percentage, and the current role in the\nproject; null when the person left it."
       },
+      "PersonLoadResponse": {
+        "required": [
+          "id",
+          "name",
+          "email",
+          "overloaded",
+          "weeks"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "overloaded": {
+            "type": "boolean"
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonWeekResponse"
+            }
+          }
+        },
+        "description": "A person in the load: the name, the e-mail, whether any week is over the capacity and each week."
+      },
       "PersonResponse": {
         "required": [
           "id",
@@ -14949,6 +15054,47 @@
           }
         },
         "description": "A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of\nthe company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an\nactive Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a\ntech lead (ADR-0097)."
+      },
+      "PersonWeekResponse": {
+        "required": [
+          "load",
+          "capacity",
+          "absenceDays",
+          "state",
+          "tasks",
+          "absences"
+        ],
+        "type": "object",
+        "properties": {
+          "load": {
+            "type": "number",
+            "format": "double"
+          },
+          "capacity": {
+            "type": "number",
+            "format": "double"
+          },
+          "absenceDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LoadState"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeekTaskResponse"
+            }
+          },
+          "absences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadAbsenceResponse"
+            }
+          }
+        },
+        "description": "A week of a person: the load and the capacity in hours, the business days away, the state, the tasks that weigh on\nit, the most hours first, and the absences that cross it."
       },
       "PlannedHoursRequest": {
         "required": [
@@ -16846,6 +16992,61 @@
         },
         "description": "A task with its hours (ADR-0138): the id of the item of the schedule, the current name, the planned hours (null\nwithout them), the hours logged in it and the balance, whose contracted hours are the planned ones."
       },
+      "TeamLoadResponse": {
+        "required": [
+          "today",
+          "hoursPerDay",
+          "weeks",
+          "people"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "hoursPerDay": {
+            "type": "number",
+            "format": "double"
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamLoadWeekResponse"
+            }
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonLoadResponse"
+            }
+          }
+        },
+        "description": "The load of the team (ADR-0142): today, the hours of a working day, the eight weeks and the people, by name."
+      },
+      "TeamLoadWeekResponse": {
+        "required": [
+          "start",
+          "end",
+          "businessDays"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "businessDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A week of the load: its Monday, its Sunday and its business days in the calendar of the installation."
+      },
       "TemplateCreatedResponse": {
         "required": [
           "id"
@@ -18655,9 +18856,16 @@
               "null",
               "string"
             ]
+          },
+          "workHoursPerDay": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the\nnotifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the\nfolder of the projects in the file storage, with the folders separated by \"/\" (\"\" for its root; none keeps the one\nit had)."
+        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the\nnotifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the\nfolder of the projects in the file storage, with the folders separated by \"/\" (\"\" for its root; none keeps the one\nit had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142)."
       },
       "UserPageResponse": {
         "required": [
@@ -18963,6 +19171,56 @@
         },
         "description": "The new status of a ticket at a vendor, with a note."
       },
+      "WeekTaskResponse": {
+        "required": [
+          "projectId",
+          "projectCode",
+          "projectName",
+          "itemId",
+          "name",
+          "start",
+          "end",
+          "planned",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectCode": {
+            "type": "string"
+          },
+          "projectName": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "planned": {
+            "type": "number",
+            "format": "double"
+          },
+          "hours": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "A task that weighs on a week: the project, the task, its dates, its planned hours and the hours in the week."
+      },
       "WorkingDaysRequest": {
         "required": [
           "workingDays"
@@ -19003,6 +19261,9 @@
       "name": "MyWork"
     },
     {
+      "name": "TimeTracking"
+    },
+    {
       "name": "Audit"
     },
     {
@@ -19037,9 +19298,6 @@
     },
     {
       "name": "Notifications"
-    },
-    {
-      "name": "TimeTracking"
     }
   ]
 }

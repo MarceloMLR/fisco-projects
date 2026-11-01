@@ -13,6 +13,7 @@ import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
+import { hoursFieldText, parseHoursUpTo } from '../hours/hours';
 import {
   brandVariables,
   defaultMainColor,
@@ -42,10 +43,14 @@ const fieldErrors = {
   dailySummaryRequired: 'settings.errors.dailySummaryRequired',
   retentionRange: 'settings.errors.retentionRange',
   auditRetentionRange: 'settings.errors.auditRetentionRange',
+  workHoursRange: 'settings.errors.workHoursRange',
   projectsFolderInvalid: 'settings.errors.projectsFolderInvalid',
 } as const;
 
 type FieldError = (typeof fieldErrors)[keyof typeof fieldErrors];
+
+/** The most hours of a working day, as the API takes them (ADR-0142). */
+const maxWorkHoursPerDay = 12;
 
 const form = z.object({
   name: z
@@ -68,6 +73,12 @@ const form = z.object({
     .int({ error: fieldErrors.auditRetentionRange })
     .min(1, { error: fieldErrors.auditRetentionRange })
     .max(10, { error: fieldErrors.auditRetentionRange }),
+  // From 1 to 12 hours, in quarters, typed as "8" or "7,5", for the capacity of the load of the team (ADR-0142).
+  workHoursPerDay: z
+    .string()
+    .transform((value) => parseHoursUpTo(value, maxWorkHoursPerDay))
+    .refine((value) => value !== undefined && value >= 1, { error: fieldErrors.workHoursRange })
+    .transform((value) => value ?? 0),
   // Where the folders of the new projects go in the file storage; the server checks the names (ADR-0121).
   projectsFolder: z.string().trim(),
   // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
@@ -321,6 +332,7 @@ export function SettingsPage() {
       dailySummaryAt: '',
       notificationRetentionDays: '',
       auditRetentionYears: '',
+      workHoursPerDay: '',
       projectsFolder: '',
     },
     values:
@@ -333,6 +345,7 @@ export function SettingsPage() {
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
             auditRetentionYears: String(rules.auditRetentionYears),
+            workHoursPerDay: hoursFieldText(rules.workHoursPerDay),
             projectsFolder: rules.projectsFolder,
           },
   });
@@ -397,6 +410,7 @@ export function SettingsPage() {
       dailySummaryAt,
       notificationRetentionDays,
       auditRetentionYears,
+      workHoursPerDay,
       projectsFolder,
     }) => {
       // The new logos stay on screen until the brand is read again, so the old ones never flash back.
@@ -425,6 +439,7 @@ export function SettingsPage() {
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
               auditRetentionYears,
+              workHoursPerDay,
               projectsFolder,
             },
           });
@@ -445,6 +460,9 @@ export function SettingsPage() {
             }
             if (invalid.includes('auditRetentionYears')) {
               setError('auditRetentionYears', { message: fieldErrors.auditRetentionRange });
+            }
+            if (invalid.includes('workHoursPerDay')) {
+              setError('workHoursPerDay', { message: fieldErrors.workHoursRange });
             }
             if (invalid.includes('projectsFolder')) {
               setError('projectsFolder', { message: fieldErrors.projectsFolderInvalid });
@@ -483,6 +501,7 @@ export function SettingsPage() {
   const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
   const auditRetentionError = errors.auditRetentionYears?.message as FieldError | undefined;
   const projectsFolderError = errors.projectsFolder?.message as FieldError | undefined;
+  const workHoursError = errors.workHoursPerDay?.message as FieldError | undefined;
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -638,6 +657,14 @@ export function SettingsPage() {
                       helper={t('settings.auditRetentionHint')}
                       error={auditRetentionError === undefined ? undefined : t(auditRetentionError)}
                       {...register('auditRetentionYears')}
+                    />
+                    <TextField
+                      label={t('settings.workHoursPerDay')}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      helper={t('settings.workHoursPerDayHint')}
+                      error={workHoursError === undefined ? undefined : t(workHoursError)}
+                      {...register('workHoursPerDay')}
                     />
                   </Box>
                 </Box>

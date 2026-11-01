@@ -30,7 +30,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var rules = await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation));
 
-        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30), 90, 5, string.Empty));
+        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30), 90, 5, string.Empty, 8m));
     }
 
     [Fact(DisplayName = "Trocar o nome e o fuso")]
@@ -104,6 +104,54 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         invalid.Should().Equal(InstallationField.NotificationRetentionDays);
         (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
+    }
+
+    // Spec: configuracao-da-instalacao, requirement "Horas por dia de trabalho" (ADR-0142).
+    [Fact(DisplayName = "Horas por dia padrão")]
+    public async Task NewInstallation_HasEightHoursInAWorkingDay()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await SettingsAsync(database)).WorkHoursPerDay.Should().Be(8m);
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(8m);
+    }
+
+    [Fact(DisplayName = "Trocar as horas por dia")]
+    public async Task Update_KeepsTheHoursOfAWorkingDay_AndNoneKeepsThem()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(
+                new InstallationChanges("FiscoProjects", "America/Sao_Paulo", null, new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
+                Cancellation));
+        await UpdateAsync(database, "Outro nome", "America/Sao_Paulo");
+
+        invalid.Should().BeEmpty();
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(7.5m);
+        (await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(7.5m);
+    }
+
+    [Theory(DisplayName = "Horas por dia inválidas")]
+    [InlineData(0.5)]
+    [InlineData(12.5)]
+    [InlineData(7.3)]
+    [InlineData(0)]
+    public async Task WorkHoursOutOfRange_ChangesNothing(double hours)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(
+                new InstallationChanges("Outro nome", "America/Sao_Paulo", null, new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
+                Cancellation));
+
+        invalid.Should().Equal(InstallationField.WorkHoursPerDay);
+        var settings = await SettingsAsync(database);
+        (settings.Name, settings.WorkHoursPerDay).Should().Be(("FiscoProjects", 8m));
     }
 
     [Theory(DisplayName = "Nome inválido")]

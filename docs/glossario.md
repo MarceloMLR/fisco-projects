@@ -340,6 +340,11 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Horas dos projetos | `/admin/project-hours`, ProjectHoursPage | A visão gerencial do administrador, com o saldo de cada projeto e a planilha |
 | Ver apontamentos | ProjectEntriesDialog | Os apontamentos de todas as pessoas de um projeto, por mês, para o administrador corrigir |
 | Projetos para os outros módulos | IProjectCatalog | Contrato do `Projects.Contracts` com o código, o nome, a situação e o cliente de cada projeto |
+| Carga da equipe | TeamLoad, GetTeamLoad, `/admin/team-load` | As horas previstas das tarefas em aberto de cada pessoa, por semana, entre os projetos em aberto, contra a capacidade, só do administrador (ADR-0142) |
+| Capacidade (da semana) | TeamLoad.CapacityOf, `capacity` | Os dias úteis da semana menos os dias de ausência da pessoa, vezes as horas por dia de trabalho (ADR-0142) |
+| Acima da capacidade, Perto do limite, Dentro, Livre | LoadState: Over, NearLimit, Within, Free | O estado de uma semana na carga da equipe; perto do limite a partir de 90% da capacidade (ADR-0142) |
+| Com sobrecarga | `overloaded`, TeamLoadView `Overloaded` | A pessoa acima da capacidade em alguma das semanas mostradas (ADR-0142) |
+| Horas por dia de trabalho | InstallationSettings.WorkHoursPerDay, `workHoursPerDay` | Quantas horas cabem num dia útil, nas Configurações gerais, de 1 a 12, 8 de início (ADR-0142) |
 
 ## Telas
 

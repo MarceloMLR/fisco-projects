@@ -35,6 +35,9 @@ public interface IProjectHoursStore
     /// <summary>The planned hours of each task of the project that has them, also of the tasks no longer in the schedule.</summary>
     Task<IReadOnlyDictionary<Guid, decimal>> PlannedOfAsync(Guid projectId, CancellationToken cancellationToken);
 
+    /// <summary>The planned hours of each of the tasks that has them, of any project (ADR-0142).</summary>
+    Task<IReadOnlyDictionary<Guid, decimal>> PlannedOfItemsAsync(IReadOnlyCollection<Guid> itemIds, CancellationToken cancellationToken);
+
     /// <summary>The planned hours of a task of the project, tracked; null when it has none.</summary>
     Task<PlannedHours?> FindPlannedAsync(Guid projectId, Guid scheduleItemId, CancellationToken cancellationToken);
 

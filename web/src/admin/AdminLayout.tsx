@@ -1,3 +1,4 @@
+import BarChartOutlined from '@mui/icons-material/BarChartOutlined';
 import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
@@ -34,6 +35,12 @@ const sections = [
         path: '/admin/project-hours',
         labelKey: 'pages.projectHours.title',
         icon: ScheduleOutlined,
+        count: null,
+      },
+      {
+        path: '/admin/team-load',
+        labelKey: 'pages.teamLoad.title',
+        icon: BarChartOutlined,
         count: null,
       },
     ],

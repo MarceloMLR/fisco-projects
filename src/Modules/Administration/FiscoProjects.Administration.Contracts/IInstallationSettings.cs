@@ -3,8 +3,9 @@ namespace FiscoProjects.Administration.Contracts;
 /// <summary>
 /// What other modules may read of the settings of the installation: the name, for an e-mail, the IANA time zone, for
 /// deadlines and the daily summary (ADR-0013), the time of the daily summary (ADR-0037), how many days the
-/// notifications of the bell are kept (ADR-0038), how many years the audit is kept (ADR-0110) and the folder of the
-/// projects, where the folder of each project is created in the file storage ("" for its root, ADR-0121).
+/// notifications of the bell are kept (ADR-0038), how many years the audit is kept (ADR-0110), the folder of the
+/// projects, where the folder of each project is created in the file storage ("" for its root, ADR-0121), and how many
+/// hours fit in a business day, for the capacity of the load of the team (ADR-0142).
 /// </summary>
 public sealed record InstallationInfo(
     string Name,
@@ -12,7 +13,8 @@ public sealed record InstallationInfo(
     TimeOnly DailySummaryAt,
     int NotificationRetentionDays,
     int AuditRetentionYears = 5,
-    string ProjectsFolder = "")
+    string ProjectsFolder = "",
+    decimal WorkHoursPerDay = 8m)
 {
     /// <summary>The time zone of the installation; UTC when the system does not know it.</summary>
     public TimeZoneInfo Zone => TimeZoneInfo.TryFindSystemTimeZoneById(TimeZone, out var zone) ? zone : TimeZoneInfo.Utc;

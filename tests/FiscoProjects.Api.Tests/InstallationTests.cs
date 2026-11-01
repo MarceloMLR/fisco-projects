@@ -289,6 +289,46 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("dailySummaryAt");
     }
 
+    // Spec: configuracao-da-instalacao, requirement "Horas por dia de trabalho" (ADR-0142).
+    [Fact(DisplayName = "Trocar as horas por dia")]
+    public async Task ChangeOfTheHoursOfAWorkingDay_IsRead_AndAudited()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        var response = await SendAsync(
+            admin,
+            HttpMethod.Put,
+            "/api/installation",
+            new { name = "FiscoProjects", timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 7.5m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await admin.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("workHoursPerDay").GetDecimal()
+            .Should().Be(7.5m);
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
+        var entry = page.GetProperty("items").EnumerateArray().Should().ContainSingle().Subject;
+        Fields(entry).Should().ContainSingle().Which.Field.Should().Be("WorkHoursPerDay");
+    }
+
+    [Fact(DisplayName = "Horas por dia inválidas")]
+    public async Task HoursOfAWorkingDayOutOfRange_IsABadRequest()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+
+        var response = await SendAsync(
+            admin,
+            HttpMethod.Put,
+            "/api/installation",
+            new { name = "FiscoProjects", timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 12.5m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("workHoursPerDay");
+    }
+
     [Fact(DisplayName = "Trocar a cor principal")]
     public async Task MainColor_IsReadWithoutASession()
     {

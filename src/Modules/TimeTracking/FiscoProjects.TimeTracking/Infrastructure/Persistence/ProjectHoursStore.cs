@@ -51,6 +51,14 @@ internal sealed class ProjectHoursStore(TimeTrackingDbContext db) : IProjectHour
             .Where(planned => planned.ProjectId == projectId)
             .ToDictionaryAsync(planned => planned.ScheduleItemId, planned => planned.Hours, cancellationToken);
 
+    public async Task<IReadOnlyDictionary<Guid, decimal>> PlannedOfItemsAsync(
+        IReadOnlyCollection<Guid> itemIds, CancellationToken cancellationToken) =>
+        itemIds.Count == 0
+            ? new Dictionary<Guid, decimal>()
+            : await db.PlannedHours.AsNoTracking()
+                .Where(planned => itemIds.Contains(planned.ScheduleItemId))
+                .ToDictionaryAsync(planned => planned.ScheduleItemId, planned => planned.Hours, cancellationToken);
+
     public Task<PlannedHours?> FindPlannedAsync(Guid projectId, Guid scheduleItemId, CancellationToken cancellationToken) =>
         db.PlannedHours.SingleOrDefaultAsync(
             planned => planned.ProjectId == projectId && planned.ScheduleItemId == scheduleItemId, cancellationToken);

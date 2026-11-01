@@ -45,6 +45,13 @@ public sealed partial class InstallationSettings : Entity
 
     public const int MaxAuditRetentionYears = 10;
 
+    /// <summary>How many hours fit in a working day while nobody changes it, for the load of the team (ADR-0142).</summary>
+    public const decimal DefaultWorkHoursPerDay = 8m;
+
+    public const decimal MinWorkHoursPerDay = 1m;
+
+    public const decimal MaxWorkHoursPerDay = 12m;
+
     /// <summary>
     /// Contrast a main color needs with white (ADR-0082): it is the background of the white label of the main button
     /// and the color of the links over white surfaces (WCAG AA).
@@ -71,6 +78,9 @@ public sealed partial class InstallationSettings : Entity
 
     /// <summary>How many years the audit is kept; the monthly cleanup removes what is older (ADR-0058, ADR-0110).</summary>
     public int AuditRetentionYears { get; private set; } = DefaultAuditRetentionYears;
+
+    /// <summary>How many hours fit in a business day, in quarters of an hour, for the capacity of the load of the team (ADR-0142).</summary>
+    public decimal WorkHoursPerDay { get; private set; } = DefaultWorkHoursPerDay;
 
     /// <summary>
     /// The folder of the projects in the file storage, with the folders separated by "/": where the folder of each new
@@ -185,6 +195,16 @@ public sealed partial class InstallationSettings : Entity
             ? years
             : throw new ArgumentOutOfRangeException(
                 nameof(years), years, $"The audit is kept from {MinAuditRetentionYears} to {MaxAuditRetentionYears} years.");
+
+    /// <summary>From 1 to 12 hours, in quarters of an hour (ADR-0142).</summary>
+    public static bool IsValidWorkHoursPerDay(decimal hours) =>
+        hours is >= MinWorkHoursPerDay and <= MaxWorkHoursPerDay && decimal.Remainder(hours * 4m, 1m) == 0m;
+
+    public void ChangeWorkHoursPerDay(decimal hours) =>
+        WorkHoursPerDay = IsValidWorkHoursPerDay(hours)
+            ? hours
+            : throw new ArgumentOutOfRangeException(
+                nameof(hours), hours, $"A working day has from {MinWorkHoursPerDay} to {MaxWorkHoursPerDay} hours, in quarters of an hour.");
 
     /// <summary>The folder of the projects, already checked against the rules of names of the storage.</summary>
     public void ChangeProjectsFolder(string folder) => ProjectsFolder = folder;

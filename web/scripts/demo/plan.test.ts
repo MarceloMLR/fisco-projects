@@ -270,3 +270,34 @@ describe('Ausências na demonstração', () => {
     ).toBe(true);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Carga na demonstração" (ADR-0142).
+describe('Carga na demonstração', () => {
+  it('Carga na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    // The weeks of the plan, from the Monday of the first day, and the calendar days of a task by its working days.
+    const weekOf = (day: number) => Math.floor(day / 7);
+    const spanOf = (item: { day: number; duration: number }) => [
+      item.day,
+      item.day + Math.ceil((item.duration * 7) / 5),
+    ];
+    const loaded = (main?.absences ?? []).filter((absence) => {
+      const week = weekOf(absence.start);
+      const projects = demoProjects.filter((project) =>
+        (project.plannedHours ?? []).some(({ task }) => {
+          const item = project.phases
+            .flatMap((phase) => phase.items)
+            .find((one) => one.name === task);
+          if (item?.owner !== absence.of || item.progress === 100) {
+            return false;
+          }
+          const [first = 0, last = 0] = spanOf(item);
+          return weekOf(first) <= week && week <= weekOf(last);
+        }),
+      );
+      return projects.length >= 2;
+    });
+
+    expect(loaded.map((absence) => absence.of)).toContain('diego');
+  });
+});

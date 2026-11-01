@@ -325,6 +325,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/team-load": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTeamLoad"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -2784,7 +2800,8 @@ export interface components {
         /**
          * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
          *     daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how
-         *     many years the audit is kept (ADR-0110) and the folder of the projects in the file storage (ADR-0121).
+         *     many years the audit is kept (ADR-0110), the folder of the projects in the file storage (ADR-0121) and the hours of a
+         *     working day (ADR-0142).
          */
         GeneralRulesResponse: {
             timeZone: string;
@@ -2795,6 +2812,8 @@ export interface components {
             /** Format: int32 */
             auditRetentionYears: number;
             projectsFolder: string;
+            /** Format: double */
+            workHoursPerDay: number;
         };
         /**
          * @description The balance of the hours of a project (ADR-0128): the contracted hours (null without them), the sum of the additional
@@ -2999,6 +3018,18 @@ export interface components {
             categoryName: string;
             created: components["schemas"]["DocumentActionResponse"];
         };
+        /** @description A period a person does not work, both days included (ADR-0141). */
+        LoadAbsenceResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+        };
+        /**
+         * @description The state of the load of a person in a week (ADR-0142), from the freest to the most loaded.
+         * @enum {unknown}
+         */
+        LoadState: "Free" | "Within" | "NearLimit" | "Over";
         LocalHolidayCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -3553,6 +3584,15 @@ export interface components {
             /** Format: int32 */
             share: number;
         };
+        /** @description A person in the load: the name, the e-mail, whether any week is over the capacity and each week. */
+        PersonLoadResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            email: string;
+            overloaded: boolean;
+            weeks: components["schemas"]["PersonWeekResponse"][];
+        };
         /**
          * @description A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of
          *     the company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an
@@ -3567,6 +3607,21 @@ export interface components {
             email: string;
             canBeManager: boolean;
             canBeTechLead: boolean;
+        };
+        /**
+         * @description A week of a person: the load and the capacity in hours, the business days away, the state, the tasks that weigh on
+         *     it, the most hours first, and the absences that cross it.
+         */
+        PersonWeekResponse: {
+            /** Format: double */
+            load: number;
+            /** Format: double */
+            capacity: number;
+            /** Format: int32 */
+            absenceDays: number;
+            state: components["schemas"]["LoadState"];
+            tasks: components["schemas"]["WeekTaskResponse"][];
+            absences: components["schemas"]["LoadAbsenceResponse"][];
         };
         /** @description The planned hours of a task, or null to take them out. */
         PlannedHoursRequest: {
@@ -4225,6 +4280,24 @@ export interface components {
             logged: number;
             balance: components["schemas"]["HoursBalanceResponse"];
         };
+        /** @description The load of the team (ADR-0142): today, the hours of a working day, the eight weeks and the people, by name. */
+        TeamLoadResponse: {
+            /** Format: date */
+            today: string;
+            /** Format: double */
+            hoursPerDay: number;
+            weeks: components["schemas"]["TeamLoadWeekResponse"][];
+            people: components["schemas"]["PersonLoadResponse"][];
+        };
+        /** @description A week of the load: its Monday, its Sunday and its business days in the calendar of the installation. */
+        TeamLoadWeekResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            businessDays: number;
+        };
         TemplateCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -4774,7 +4847,7 @@ export interface components {
          *     for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
          *     notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
          *     folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
-         *     it had).
+         *     it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142).
          */
         UpdateInstallationRequest: {
             name: string;
@@ -4787,6 +4860,8 @@ export interface components {
             /** Format: int32 */
             auditRetentionYears?: null | number;
             projectsFolder?: null | string;
+            /** Format: double */
+            workHoursPerDay?: null | number;
         };
         UserPageResponse: {
             items: components["schemas"]["UserResponse"][];
@@ -4880,6 +4955,24 @@ export interface components {
         VendorTicketUpdateRequest: {
             status: null | components["schemas"]["VendorTicketStatus"];
             note?: null | string;
+        };
+        /** @description A task that weighs on a week: the project, the task, its dates, its planned hours and the hours in the week. */
+        WeekTaskResponse: {
+            /** Format: uuid */
+            projectId: string;
+            projectCode: string;
+            projectName: string;
+            /** Format: uuid */
+            itemId: string;
+            name: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: double */
+            planned: number;
+            /** Format: double */
+            hours: number;
         };
         /** @description The days of the week the installation works; at least one. */
         WorkingDaysRequest: {
@@ -5663,6 +5756,38 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetTeamLoad: {
+        parameters: {
+            query?: {
+                /** @description A day of the first week, which starts on its Monday; the current week without it. */
+                week?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamLoadResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

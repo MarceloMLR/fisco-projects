@@ -18,6 +18,7 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
         settings.Property(s => s.DailySummaryAt).HasDefaultValue(InstallationSettings.DefaultDailySummaryAt);
         settings.Property(s => s.NotificationRetentionDays).HasDefaultValue(InstallationSettings.DefaultNotificationRetentionDays);
         settings.Property(s => s.AuditRetentionYears).HasDefaultValue(InstallationSettings.DefaultAuditRetentionYears);
+        settings.Property(s => s.WorkHoursPerDay).HasPrecision(4, 2).HasDefaultValue(InstallationSettings.DefaultWorkHoursPerDay);
         settings.Property(s => s.ProjectsFolder).HasMaxLength(FileNames.MaxPathLength).HasDefaultValue(string.Empty);
         settings.Property(s => s.MainColor).HasMaxLength(7);
         settings.Property(s => s.LogoFileId).HasMaxLength(400);
@@ -39,6 +40,7 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
             NotificationRetentionDays = InstallationSettings.DefaultNotificationRetentionDays,
             AuditRetentionYears = InstallationSettings.DefaultAuditRetentionYears,
             ProjectsFolder = string.Empty,
+            WorkHoursPerDay = InstallationSettings.DefaultWorkHoursPerDay,
         });
 
         // Audit (ADR-0039): the name and the name of the logo file sent tell what changed; the item is always the

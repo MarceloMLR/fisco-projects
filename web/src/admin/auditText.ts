@@ -65,7 +65,8 @@ type SettingsField =
   | 'NotificationRetentionDays'
   | 'DarkLogoFileName'
   | 'AuditRetentionYears'
-  | 'ProjectsFolder';
+  | 'ProjectsFolder'
+  | 'WorkHoursPerDay';
 const settingsFields: readonly string[] = [
   'Name',
   'LogoFileName',
@@ -76,6 +77,7 @@ const settingsFields: readonly string[] = [
   'DarkLogoFileName',
   'AuditRetentionYears',
   'ProjectsFolder',
+  'WorkHoursPerDay',
 ] satisfies SettingsField[];
 
 const isSettingsField = (field: string): field is SettingsField => settingsFields.includes(field);
@@ -495,6 +497,14 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
     return formatDayText(value);
   }
   if (isHoursItem(entry) && field === 'Hours' && Number.isFinite(Number(value))) {
+    return formatHours(Number(value));
+  }
+  // The hours of a working day, for the load of the team (ADR-0142).
+  if (
+    entry.itemType === 'InstallationSettings' &&
+    field === 'WorkHoursPerDay' &&
+    Number.isFinite(Number(value))
+  ) {
     return formatHours(Number(value));
   }
   if (entry.itemType === 'Client' && field === 'Cnpj') {

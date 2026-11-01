@@ -60,6 +60,7 @@ public static class ProjectsModule
         services.AddScoped<IMemberChangeNotices, MemberChangeNotices>();
         services.AddScoped<ProjectNotices>();
         services.AddScoped<IUpcomingTasks, UpcomingTaskDirectory>();
+        services.AddScoped<ITeamWork, TeamWorkDirectory>();
         // The tasks of the person in Meu trabalho and the next milestones of the projects of the person (ADR-0096).
         services.AddScoped<IMyWorkSource, ScheduleWorkSource>();
         services.AddScoped<ListUpcomingMilestones>();

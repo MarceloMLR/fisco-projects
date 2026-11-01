@@ -1474,6 +1474,7 @@ export const handlers = [
       notificationRetentionDays: 90,
       auditRetentionYears: 5,
       projectsFolder: '',
+      workHoursPerDay: 8,
     }),
   ),
   http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),

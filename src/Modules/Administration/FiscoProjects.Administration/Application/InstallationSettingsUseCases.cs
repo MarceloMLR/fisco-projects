@@ -61,7 +61,12 @@ public sealed class GetInstallationLogo(IInstallationSettingsStore store, IFileS
 /// daily summary, which the profile shows, and the ones the General settings show.
 /// </summary>
 public sealed record GeneralRules(
-    string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears, string ProjectsFolder);
+    string TimeZone,
+    TimeOnly DailySummaryAt,
+    int NotificationRetentionDays,
+    int AuditRetentionYears,
+    string ProjectsFolder,
+    decimal WorkHoursPerDay);
 
 public sealed class GetGeneralRules(IInstallationSettingsStore store)
 {
@@ -73,7 +78,8 @@ public sealed class GetGeneralRules(IInstallationSettingsStore store)
             settings.DailySummaryAt,
             settings.NotificationRetentionDays,
             settings.AuditRetentionYears,
-            settings.ProjectsFolder);
+            settings.ProjectsFolder,
+            settings.WorkHoursPerDay);
     }
 }
 
@@ -87,12 +93,14 @@ public enum InstallationField
     NotificationRetentionDays = 5,
     AuditRetentionYears = 6,
     ProjectsFolder = 7,
+    WorkHoursPerDay = 8,
 }
 
 /// <summary>
 /// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
 /// summary, how many days the notifications are kept, how many years the audit is kept (none keeps the years it had,
-/// ADR-0110) and the folder of the projects (none keeps the one it had, ADR-0121).
+/// ADR-0110), the folder of the projects (none keeps the one it had, ADR-0121) and the hours of a working day (none keeps
+/// the ones it had, ADR-0142).
 /// </summary>
 public sealed record InstallationChanges(
     string? Name,
@@ -101,7 +109,8 @@ public sealed record InstallationChanges(
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
-    string? ProjectsFolder = null);
+    string? ProjectsFolder = null,
+    decimal? WorkHoursPerDay = null);
 
 /// <summary>
 /// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
@@ -146,6 +155,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.AuditRetentionYears);
         }
 
+        if (changes.WorkHoursPerDay is { } workHours && !InstallationSettings.IsValidWorkHoursPerDay(workHours))
+        {
+            invalid.Add(InstallationField.WorkHoursPerDay);
+        }
+
         var projectsFolder = ProjectsFolderOf(changes.ProjectsFolder);
         if (changes.ProjectsFolder is not null && projectsFolder is null)
         {
@@ -171,6 +185,11 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         if (projectsFolder is not null)
         {
             settings.ChangeProjectsFolder(projectsFolder);
+        }
+
+        if (changes.WorkHoursPerDay is { } hoursPerDay)
+        {
+            settings.ChangeWorkHoursPerDay(hoursPerDay);
         }
 
         await store.SaveChangesAsync(cancellationToken);

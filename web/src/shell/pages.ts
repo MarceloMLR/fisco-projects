@@ -50,6 +50,7 @@ export type PageTitleKey =
   | 'pages.hours.title'
   | 'pages.admin.title'
   | 'pages.projectHours.title'
+  | 'pages.teamLoad.title'
   | 'pages.users.title'
   | 'pages.audit.title'
   | 'pages.settings.title'
