@@ -10,7 +10,7 @@
 ## 3. Tela
 
 - [x] 3.1 `npm run api:update`; o item do "⋮" e o diálogo; testes "Mover pela tela", "Dias inválidos pela tela" e "Sem mover para quem não edita"
-- [ ] 3.2 Conferência no navegador, no computador e no celular, nos temas claro e escuro
+- [x] 3.2 Conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 

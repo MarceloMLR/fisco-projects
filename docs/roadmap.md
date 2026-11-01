@@ -250,7 +250,7 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | --- | --- | --- | --- | --- |
 | GanttB-1 | `folga-das-tarefas` | Quantos dias úteis cada tarefa pode atrasar sem mudar o fim do projeto, tirados do caminho crítico | 0021, 0051 | PR aberto ([#128](https://github.com/MarceloMLR/fisco-projects/pull/128)) |
 | GanttB-2 | `notas-da-tarefa` | Notas em cada tarefa e marco, como "aguardando o cliente mandar os arquivos" | 0019, 0139 | PR aberto ([#130](https://github.com/MarceloMLR/fisco-projects/pull/130)) |
-| GanttB-3 | `mover-o-projeto` | Mover o cronograma inteiro em dias úteis quando o início escorrega | 0018, 0051, 0140 | Em andamento |
+| GanttB-3 | `mover-o-projeto` | Mover o cronograma inteiro em dias úteis quando o início escorrega | 0018, 0051, 0140 | PR aberto ([#131](https://github.com/MarceloMLR/fisco-projects/pull/131)) |
 | GanttB-4 | `ausencias-das-pessoas` | As ausências e as férias de cada pessoa, com o aviso da tarefa que cai nelas (ADR novo) | 0018 | Planejada |
 | GanttB-5 | `carga-da-equipe` | A carga de cada pessoa por semana, entre os projetos, pelas horas previstas e pelas ausências, com o aviso de sobrecarga | 0021, 0128 | Planejada |
 | GanttB-6 | `edicao-na-tabela` | Editar o cronograma direto na tabela, como numa planilha: nome, duração, datas, dependências e progresso, pelo teclado | 0021, 0071, 0134 | Planejada |

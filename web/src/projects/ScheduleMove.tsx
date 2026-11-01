@@ -115,12 +115,15 @@ export function MoveScheduleDialog({
           name="direction"
           render={({ field }) => (
             <FormField label={t('projects.move.direction')}>
-              <SegmentedControl
-                label={t('projects.move.direction')}
-                value={field.value}
-                options={directions}
-                onChange={field.onChange}
-              />
+              {/* As wide as its options, not as the dialog. */}
+              <Box sx={{ display: 'flex' }}>
+                <SegmentedControl
+                  label={t('projects.move.direction')}
+                  value={field.value}
+                  options={directions}
+                  onChange={field.onChange}
+                />
+              </Box>
             </FormField>
           )}
         />
