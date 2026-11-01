@@ -166,7 +166,7 @@
 
 /* The deadline, with room for the icon of a missed one (GanttA-2). */
 .fp-gantt__col--deadline {
-  width: 64px;
+  width: 80px;
 }
 
 .fp-gantt__deadline {
