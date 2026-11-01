@@ -190,7 +190,7 @@ Regras:
 | [0125](0125-publicacao-em-producao.md) | Publicação em produção por versão, com aprovação e migrações pelo pipeline | aceita | 2026-10-28 |
 | [0126](0126-recalculo-das-datas-pelo-calendario.md) | Recálculo das datas dos cronogramas pelo calendário, pedido pelo administrador | aceita | 2026-10-28 |
 | [0127](0127-instalacao-a-partir-do-pacote-da-versao.md) | Instalação na nuvem do cliente a partir do pacote da versão | aceita | 2026-10-29 |
-| [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita | 2026-10-29 |
+| [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita (item "Horas planejadas por tarefa" substituído pelo ADR-0138) | 2026-10-29 |
 | [0129](0129-assinatura-eletronica-dos-termos.md) | Termos de aceite assinados por um provedor de assinatura eletrônica trocável, só da gestão | aceita | 2026-10-30 |
 | [0130](0130-assinatura-pela-autentique-na-pratica.md) | Como os termos são assinados pela Autentique | aceita | 2026-10-30 |
 | [0131](0131-botoes-em-andamento.md) | Botões em andamento, com o ícone de carregamento no lugar do ícone | aceita | 2026-10-30 |
@@ -200,3 +200,4 @@ Regras:
 | [0135](0135-importar-do-ms-project.md) | Importar o cronograma do XML do MS Project no Novo projeto | aceita (tipos e intervalo das dependências substituídos pelo ADR-0137) | 2026-10-31 |
 | [0136](0136-email-dos-responsaveis-no-xml-exportado.md) | E-mail dos responsáveis no XML do MS Project, exportado só pela gestão | aceita | 2026-10-31 |
 | [0137](0137-dependencias-com-tipo-e-intervalo.md) | Dependências com tipo e intervalo em dias úteis | aceita | 2026-11-01 |
+| [0138](0138-horas-previstas-por-tarefa.md) | Horas previstas por tarefa, só do administrador | aceita | 2026-11-01 |
