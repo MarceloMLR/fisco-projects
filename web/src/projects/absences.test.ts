@@ -15,9 +15,7 @@ describe('Texto das ausências', () => {
     expect(awayText({ start: '2026-10-26', end: '2026-11-06' }, today, t)).toBe(
       'Ausente de 26/10 a 06/11',
     );
-    expect(awayText({ start: '2026-11-06', end: '2026-11-06' }, today, t)).toBe(
-      'Ausente em 06/11',
-    );
+    expect(awayText({ start: '2026-11-06', end: '2026-11-06' }, today, t)).toBe('Ausente em 06/11');
     // Thirty days ahead is still told; past it, or already over, nothing.
     expect(awayText({ start: '2026-11-18', end: '2026-11-20' }, today, t)).toBe(
       'Ausente de 18/11 a 20/11',
