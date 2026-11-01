@@ -39,6 +39,7 @@ public static class TimeTrackingModule
         services.AddScoped<DeleteAdditionalHours>();
         services.AddScoped<GetTaskHours>();
         services.AddScoped<ChangePlannedHours>();
+        services.AddScoped<GetTeamLoad>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, TimeTrackingWarmUp>();
         return services;

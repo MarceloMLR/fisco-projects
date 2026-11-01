@@ -102,6 +102,12 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(64)")
                         .HasDefaultValue("America/Sao_Paulo");
 
+                    b.Property<decimal>("WorkHoursPerDay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)")
+                        .HasDefaultValue(8m);
+
                     b.HasKey("Id");
 
                     b.ToTable("installation_settings", "administration");
@@ -115,7 +121,8 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                             Name = "FiscoProjects",
                             NotificationRetentionDays = 90,
                             ProjectsFolder = "",
-                            TimeZone = "America/Sao_Paulo"
+                            TimeZone = "America/Sao_Paulo",
+                            WorkHoursPerDay = 8m
                         });
                 });
 #pragma warning restore 612, 618

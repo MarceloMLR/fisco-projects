@@ -21,6 +21,7 @@ internal sealed class InstallationSettingsStore(AdministrationDbContext db) : II
                 settings.DailySummaryAt,
                 settings.NotificationRetentionDays,
                 settings.AuditRetentionYears,
-                settings.ProjectsFolder))
+                settings.ProjectsFolder,
+                settings.WorkHoursPerDay))
             .SingleAsync(cancellationToken);
 }

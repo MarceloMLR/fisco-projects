@@ -22,7 +22,7 @@ public sealed record InstallationResponse(string Name, string? LogoUrl, string? 
 /// for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
 /// notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
 /// folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
-/// it had).
+/// it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142).
 /// </summary>
 public sealed record UpdateInstallationRequest(
     string Name,
@@ -31,15 +31,22 @@ public sealed record UpdateInstallationRequest(
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
-    string? ProjectsFolder = null);
+    string? ProjectsFolder = null,
+    decimal? WorkHoursPerDay = null);
 
 /// <summary>
 /// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
 /// daily summary of e-mails, in that time zone (ADR-0037), how many days the notifications are kept (ADR-0038), how
-/// many years the audit is kept (ADR-0110) and the folder of the projects in the file storage (ADR-0121).
+/// many years the audit is kept (ADR-0110), the folder of the projects in the file storage (ADR-0121) and the hours of a
+/// working day (ADR-0142).
 /// </summary>
 public sealed record GeneralRulesResponse(
-    string TimeZone, TimeOnly DailySummaryAt, int NotificationRetentionDays, int AuditRetentionYears, string ProjectsFolder);
+    string TimeZone,
+    TimeOnly DailySummaryAt,
+    int NotificationRetentionDays,
+    int AuditRetentionYears,
+    string ProjectsFolder,
+    decimal WorkHoursPerDay);
 
 /// <summary>Problem types of the logo, so the screen can tell the reason.</summary>
 public static class InstallationProblems
@@ -151,7 +158,12 @@ internal static class InstallationEndpoints
     {
         var rules = await getRules.ExecuteAsync(cancellationToken);
         return TypedResults.Ok(new GeneralRulesResponse(
-            rules.TimeZone, rules.DailySummaryAt, rules.NotificationRetentionDays, rules.AuditRetentionYears, rules.ProjectsFolder));
+            rules.TimeZone,
+            rules.DailySummaryAt,
+            rules.NotificationRetentionDays,
+            rules.AuditRetentionYears,
+            rules.ProjectsFolder,
+            rules.WorkHoursPerDay));
     }
 
     private static async Task<Results<NoContent, ValidationProblem>> UpdateAsync(
@@ -165,7 +177,8 @@ internal static class InstallationEndpoints
                 request.DailySummaryAt,
                 request.NotificationRetentionDays,
                 request.AuditRetentionYears,
-                request.ProjectsFolder),
+                request.ProjectsFolder,
+                request.WorkHoursPerDay),
             cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
@@ -224,6 +237,7 @@ internal static class InstallationEndpoints
         InstallationField.NotificationRetentionDays => "notificationRetentionDays",
         InstallationField.AuditRetentionYears => "auditRetentionYears",
         InstallationField.ProjectsFolder => "projectsFolder",
+        InstallationField.WorkHoursPerDay => "workHoursPerDay",
         _ => "mainColor",
     };
 
@@ -236,6 +250,7 @@ internal static class InstallationEndpoints
         InstallationField.AuditRetentionYears => "Keep the audit from 1 to 10 years.",
         InstallationField.ProjectsFolder =>
             "Separate the folders with /, with no empty folder, no . or .., none of \" * : < > ? \\ | and up to 400 characters.",
+        InstallationField.WorkHoursPerDay => "A working day has from 1 to 12 hours, in quarters of an hour.",
         _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
     };
 
