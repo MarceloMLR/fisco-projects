@@ -316,6 +316,40 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         preview.GetProperty("warnings").GetArrayLength().Should().Be(0);
     }
 
+    [Fact(DisplayName = "Data-limite no MS Project pela API")]
+    public async Task TheDeadline_GoesInTheXml_AndComesInTheNewProject_MovedWithTheStart()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var project = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, "/api/projects", new
+        {
+            code = "ERP-FIN",
+            name = "Implantação do ERP financeiro",
+            techLeadId = scene.Rafael,
+        }));
+        var path = $"/api/projects/{project}/schedule";
+        var phase = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, $"{path}/phases", new { name = "Homologação" }));
+        await AddItemAsync(marina, path, phase, "Task", "Testes integrados", "2026-10-26", 4, 0, deadline: "2026-10-30");
+        var exported = await marina.GetByteArrayAsync($"{path}/ms-project", Cancellation);
+        System.Text.Encoding.UTF8.GetString(exported).Should().Contain("<Deadline>2026-10-30T17:00:00</Deadline>");
+
+        // Five business days after the first day of the file, 26/10, without the holiday of 02/11.
+        var preview = await PreviewOfAsync(marina, exported, start: "2026-11-03");
+        var created = await SendAsync(marina, HttpMethod.Post, "/api/projects", new
+        {
+            code = "ERP-RH",
+            name = "Implantação do ERP de RH",
+            scheduleStart = "2026-11-03",
+            importedSchedule = ImportedSchedule(preview),
+        });
+
+        var schedule = await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{await IdOfAsync(created)}/schedule", Cancellation);
+        var item = ItemsOf(schedule).Single();
+        (item.GetProperty("start").GetString(), item.GetProperty("end").GetString(), item.GetProperty("deadline").GetString())
+            .Should().Be(("2026-11-03", "2026-11-06", "2026-11-09"));
+    }
+
     [Fact(DisplayName = "Projeto a partir do MS Project")]
     public async Task ANewProjectFromTheMsProject_HasTheSchedule_TheOwners_AndThePeople()
     {
@@ -424,7 +458,7 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
 
     private static async Task<Guid> AddItemAsync(
         HttpClient client, string path, Guid phase, string kind, string name, string start, int duration, int progress,
-        Guid? owner = null, Guid[]? after = null, Guid? parent = null) =>
+        Guid? owner = null, Guid[]? after = null, Guid? parent = null, string? deadline = null) =>
         await IdOfAsync(await SendAsync(client, HttpMethod.Post, $"{path}/items", new
         {
             kind,
@@ -436,6 +470,7 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
             progress,
             predecessorIds = after ?? [],
             parentId = parent,
+            deadline,
         }));
 
     private static async Task<Guid> IdOfAsync(HttpResponseMessage response)

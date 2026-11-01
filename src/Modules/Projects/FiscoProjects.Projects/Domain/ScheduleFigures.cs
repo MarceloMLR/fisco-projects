@@ -103,6 +103,27 @@ public sealed record ScheduleFigures(
         return late;
     }
 
+    /// <summary>
+    /// How far each task and milestone with a deadline went past it (positive) or is before it (negative), in business
+    /// days on a day (<see cref="ScheduleItem.DeadlineDeviation"/>); the items without a deadline are not in it (GanttA-2).
+    /// </summary>
+    public static IReadOnlyDictionary<Guid, int> DeadlineDeviationsOf(IEnumerable<ScheduleItem> items, DateOnly today, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(days);
+        return items
+            .Where(item => item.Deadline is not null)
+            .ToDictionary(item => item.Id, item => item.DeadlineDeviation(today, days)!.Value);
+    }
+
+    /// <summary>How many open tasks and milestones missed their deadline on a day (<see cref="ScheduleItem.MissesDeadline"/>).</summary>
+    public static int MissedDeadlinesOf(IEnumerable<ScheduleItem> items, DateOnly today, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(days);
+        return items.Count(item => item.MissesDeadline(today, days));
+    }
+
     /// <summary>The items of a phase by start, end, tasks before milestones of the same day, and name.</summary>
     public static IReadOnlyList<ScheduleItem> InOrder(IEnumerable<ScheduleItem> items) =>
         [.. items

@@ -10,8 +10,8 @@ namespace FiscoProjects.Api.Tests;
 // que empurram", "Tarefa atrasada", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria",
 // "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API",
 // "Dias não úteis no cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Subtarefas na
-// auditoria"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de projetos"
-// and "Cabeçalho do projeto".
+// auditoria"; "Data-limite de tarefas e marcos"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos:
+// "Cronograma na lista de projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
@@ -64,6 +64,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 6, progress: 50)), HttpStatusCode.OK),
         new("Move a task in the timeline", (client, scene) => DatesAsync(client, scene, scene.Task, "2026-10-14"),
             HttpStatusCode.OK),
+        new("Set the deadline of a milestone", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Milestone}",
+            Item(scene.Phase, "Aceite da configuração", "2026-10-15", 0, deadline: "2026-10-30")), HttpStatusCode.OK),
         new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
             HttpStatusCode.NoContent),
         new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
@@ -673,6 +675,107 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         all.EnumerateArray().Select(entry => entry.GetProperty("itemType").GetString()).Should().NotContain("ScheduleBaselineItem");
     }
 
+    [Theory(DisplayName = "Data-limite só de quem edita")]
+    [InlineData("Contributor", HttpStatusCode.Forbidden)]
+    [InlineData("Developer", HttpStatusCode.Forbidden)]
+    [InlineData("Viewer", HttpStatusCode.Forbidden)]
+    [InlineData("TechLead", HttpStatusCode.Forbidden)]
+    [InlineData("Manager", HttpStatusCode.OK)]
+    [InlineData("Administrator", HttpStatusCode.OK)]
+    public async Task OnlyWhoEditsTheSchedule_SetsADeadline(string who, HttpStatusCode expected)
+    {
+        var scene = await StartAsync(who is "Contributor" or "Developer" or "Viewer" ? who : "Viewer");
+        await using var app = scene.App;
+        var client = who switch
+        {
+            "Administrator" => scene.Admin,
+            "Manager" => await app.SignInAsync(scene.Marina),
+            "TechLead" => await app.SignInAsync(scene.Rafael),
+            _ => await app.SignInAsync(scene.Carla),
+        };
+
+        var response = await SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, deadline: "2026-10-30"));
+
+        response.StatusCode.Should().Be(expected);
+        var deadline = (await ItemAsync(scene, scene.Task)).GetProperty("deadline");
+        if (expected == HttpStatusCode.OK)
+        {
+            deadline.GetString().Should().Be("2026-10-30");
+        }
+        else
+        {
+            deadline.ValueKind.Should().Be(JsonValueKind.Null);
+        }
+
+        if (client != scene.Admin)
+        {
+            client.Dispose();
+        }
+    }
+
+    [Fact(DisplayName = "Data-limite estourada pela API")]
+    public async Task DeadlineBeforeTheNewEnd_IsMissed_AndCounted()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        // On 19/10 the task, which ended on 15/10, is late: until it is done it is compared with today.
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, deadline: "2026-10-30"))).StatusCode.Should().Be(HttpStatusCode.OK);
+        var kept = await ItemAsync(scene, scene.Task);
+        (kept.GetProperty("end").GetString(), kept.GetProperty("deadlineDeviation").GetInt32()).Should().Be(("2026-10-15", -9));
+
+        // The new dates end it on 03/11, after the holiday of 02/11, and keep the deadline: one business day past it.
+        (await DatesAsync(marina, scene, scene.Task, "2026-10-30", "2026-11-03")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var schedule = await marina.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation);
+        var task = schedule.GetProperty("phases")[0].GetProperty("items").EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == scene.Task);
+        (task.GetProperty("end").GetString(), task.GetProperty("deadline").GetString(), task.GetProperty("deadlineDeviation").GetInt32())
+            .Should().Be(("2026-11-03", "2026-10-30", 1));
+        schedule.GetProperty("missedDeadlines").GetInt32().Should().Be(1);
+        var milestone = schedule.GetProperty("phases")[0].GetProperty("items").EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == scene.Milestone);
+        (milestone.GetProperty("deadline").ValueKind, milestone.GetProperty("deadlineDeviation").ValueKind)
+            .Should().Be((JsonValueKind.Null, JsonValueKind.Null));
+    }
+
+    [Fact(DisplayName = "Data-limite inválida")]
+    public async Task DeadlineOutOfTheRange_IsABadRequest()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        var response = await SendAsync(scene.Admin, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
+            Item(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, deadline: "1999-12-31"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(response)).Should().Equal("deadline");
+    }
+
+    [Fact(DisplayName = "Desfazer a data-limite")]
+    public async Task UndoingTheDeadline_LeavesTheItemWithoutIt_AndTheAuditHasIt()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        (await SendAsync(marina, HttpMethod.Put, $"{scene.Path}/items/{scene.Milestone}",
+            Item(scene.Phase, "Aceite da configuração", "2026-10-15", 0, after: [scene.Task], deadline: "2026-10-30")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("deadline").GetString().Should().Be("2026-10-30");
+
+        (await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("deadline").ValueKind.Should().Be(JsonValueKind.Null);
+        var entries = (await scene.Admin.GetFromJsonAsync<JsonElement>("/api/audit?pageSize=100", Cancellation))
+            .GetProperty("items").EnumerateArray()
+            .Where(entry => entry.GetProperty("itemType").GetString() == "ScheduleItem"
+                && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "Deadline"))
+            .ToList();
+        entries.Select(entry => Values(entry, "Deadline")).Should().Equal(("2026-10-30", null), (null, "2026-10-30"));
+    }
+
     [Fact(DisplayName = "Desfazer volta a cadeia")]
     public async Task Undo_PutsTheTaskAndThePushedMilestoneBack()
     {
@@ -1050,10 +1153,18 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
     }
 
     private static object Item(
-        Guid phase, string name, string start, int duration, int? progress = 0, Guid? owner = null, string? kind = null, Guid[]? after = null) =>
+        Guid phase,
+        string name,
+        string start,
+        int duration,
+        int? progress = 0,
+        Guid? owner = null,
+        string? kind = null,
+        Guid[]? after = null,
+        string? deadline = null) =>
         kind is null
-            ? new { phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [] }
-            : new { kind, phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [] };
+            ? new { phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [], deadline }
+            : new { kind, phaseId = phase, name, start, duration, ownerId = owner, progress, predecessorIds = after ?? [], deadline };
 
     private static async Task<Guid> IdOfAsync(HttpResponseMessage response)
     {

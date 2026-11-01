@@ -15,7 +15,7 @@ public static class MsProjectFiles
 
     /// <summary>
     /// A line of the file; a summary is a line followed by lines of a higher level. A blank line is saved as the MS Project
-    /// saves an empty row: only its numbers and IsNull.
+    /// saves an empty row: only its numbers and IsNull. The deadline goes at the end of its day, as the MS Project saves it.
     /// </summary>
     public sealed record Line(
         int Uid,
@@ -27,7 +27,8 @@ public static class MsProjectFiles
         bool Milestone = false,
         bool Active = true,
         IReadOnlyList<Link>? Links = null,
-        bool Blank = false);
+        bool Blank = false,
+        DateOnly? Deadline = null);
 
     /// <summary>A link to the line it depends on: type 1 is "finish to start", 3 "start to start"; the lag in tenths of minutes.</summary>
     public sealed record Link(int Predecessor, int Type = 1, int Lag = 0);
@@ -99,6 +100,11 @@ public static class MsProjectFiles
                 new XElement(Ns + "Milestone", line.Milestone ? 1 : 0),
                 new XElement(Ns + "Summary", summary ? 1 : 0),
                 new XElement(Ns + "PercentComplete", line.Percent));
+            if (line.Deadline is { } deadline)
+            {
+                task.Add(new XElement(Ns + "Deadline", Moment(deadline, 17)));
+            }
+
             foreach (var link in line.Links ?? [])
             {
                 task.Add(new XElement(Ns + "PredecessorLink",

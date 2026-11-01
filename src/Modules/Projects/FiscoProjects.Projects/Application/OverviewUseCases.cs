@@ -45,6 +45,9 @@ public sealed record OverviewTimeline(DateOnly Start, DateOnly End, IReadOnlyLis
 public sealed record OverviewLateTask(
     Guid Id, string Name, Guid? OwnerId, int Progress, DateOnly End, int DaysLate, IReadOnlyList<string> Blocks);
 
+/// <summary>A task or milestone still open that went past its deadline, by how many business days (GanttA-2).</summary>
+public sealed record OverviewMissedDeadline(Guid Id, ScheduleItemKind Kind, string Name, DateOnly Deadline, int DaysPast);
+
 /// <summary>
 /// A pending request of acceptance, for who manages the terms (ADR-0129): the signers, or the person a request was asked
 /// of before, with the milestone and its day.
@@ -75,6 +78,7 @@ public sealed record ProjectOverview(
     OverviewMilestone? NextMilestone,
     OverviewTimeline? Timeline,
     IReadOnlyList<OverviewLateTask> LateTasks,
+    IReadOnlyList<OverviewMissedDeadline> MissedDeadlines,
     IReadOnlyList<OverviewAcceptance> Acceptances,
     IReadOnlyList<OverviewTeamPeople> Teams,
     IReadOnlyDictionary<Guid, string> Names)
@@ -85,8 +89,8 @@ public sealed record ProjectOverview(
 /// <summary>
 /// The overview of a project, which answers "está no prazo?" (ADR-0073), for whom sees the project (ADR-0043): the
 /// progress against the planned one (<see cref="SchedulePlan"/>), the end against the baseline, the tickets
-/// (<see cref="IProjectTickets"/>), the next milestone, the phases and the milestones, the late tasks, the pending
-/// requests of acceptance the person sees (<see cref="IProjectAcceptances"/>) and the team.
+/// (<see cref="IProjectTickets"/>), the next milestone, the phases and the milestones, the late tasks, the items past
+/// their deadline, the pending requests of acceptance the person sees (<see cref="IProjectAcceptances"/>) and the team.
 /// </summary>
 public sealed class GetProjectOverview(
     IProjectStore projects,
@@ -150,6 +154,7 @@ public sealed class GetProjectOverview(
             NextMilestoneOf(schedule, today, days),
             TimelineOf(schedule, figures, days),
             lateTasks,
+            MissedDeadlinesOf(schedule, today, days),
             [.. pending.Select(term =>
             {
                 var milestone = items.GetValueOrDefault(term.MilestoneId);
@@ -202,6 +207,18 @@ public sealed class GetProjectOverview(
                 .ThenBy(task => task.Name, StringComparer.CurrentCultureIgnoreCase),
         ];
     }
+
+    /// <summary>The open items past their deadline, the furthest first (<see cref="ScheduleItem.MissesDeadline"/>).</summary>
+    private static List<OverviewMissedDeadline> MissedDeadlinesOf(Schedule schedule, DateOnly today, IBusinessDays days) =>
+    [
+        .. schedule.Items
+            .Where(item => item.MissesDeadline(today, days))
+            .Select(item => new OverviewMissedDeadline(
+                item.Id, item.Kind, item.Name, item.Deadline!.Value, item.DeadlineDeviation(today, days)!.Value))
+            .OrderByDescending(item => item.DaysPast)
+            .ThenBy(item => item.Deadline)
+            .ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase),
+    ];
 
     /// <summary>
     /// The phases with dates and the milestones of the schedule, by start, a phase before a milestone of the same day;

@@ -4,10 +4,10 @@
 
 ## 2. Domínio e API
 
-- [ ] 2.1 `ScheduleItem.Deadline` com a migração, nos casos de uso de incluir e editar item, no `ItemState` (desfazer) e na auditoria; testes "Data-limite cumprida", "Data-limite só de quem edita" e "Desfazer a data-limite"
-- [ ] 2.2 `ScheduleFigures.DeadlineDeviationOf` e a contagem dos estourados; `deadline`, `deadlineDeviation` e `missedDeadlines` no `GET /schedule`; testes "Data-limite estourada" e "Data-limite do marco"
-- [ ] 2.3 Visão geral com os itens estourados em "Precisa de atenção"; teste "Data-limite na atenção"
-- [ ] 2.4 `Deadline` no XML exportado e na importação, com o `DeadlineOffset` do `SchedulePlanOutline`; teste "Data-limite no MS Project" e a ida e volta
+- [x] 2.1 `ScheduleItem.Deadline` com a migração, nos casos de uso de incluir e editar item, no `ItemState` (desfazer) e na auditoria; testes "Data-limite cumprida", "Data-limite só de quem edita" e "Desfazer a data-limite"
+- [x] 2.2 `ScheduleFigures.DeadlineDeviationOf` e a contagem dos estourados; `deadline`, `deadlineDeviation` e `missedDeadlines` no `GET /schedule`; testes "Data-limite estourada" e "Data-limite do marco"
+- [x] 2.3 Visão geral com os itens estourados em "Precisa de atenção"; teste "Data-limite na atenção"
+- [x] 2.4 `Deadline` no XML exportado e na importação, com o `DeadlineOffset` do `SchedulePlanOutline`; teste "Data-limite no MS Project" e a ida e volta
 
 ## 3. Tela
 

@@ -603,7 +603,8 @@
         "OwnerId": "Responsável",
         "CompletedOn": "Concluída em",
         "ReachedOn": "Atingido em",
-        "OwnedByClient": "Responsável: o cliente"
+        "OwnedByClient": "Responsável: o cliente",
+        "Deadline": "Data-limite"
       },
       "ScheduleDependency": {
         "ProjectId": "Projeto",

@@ -29,7 +29,8 @@ public sealed record ScheduleItemPlan(
     int? Progress,
     IReadOnlyCollection<Guid> PredecessorIds,
     Guid? ParentId = null,
-    bool OwnedByClient = false);
+    bool OwnedByClient = false,
+    DateOnly? Deadline = null);
 
 /// <summary>
 /// The schedule of a project (ADR-0019): phases and, in them, tasks and milestones, in business days of the calendar of
@@ -334,7 +335,8 @@ public sealed class Schedule : Entity
             Progress: null,
             [.. PredecessorsOf(itemId).Select(predecessor => predecessor.Id)],
             item.ParentId,
-            item.OwnedByClient);
+            item.OwnedByClient,
+            item.Deadline);
         return ChangeItem(itemId, plan, days, today);
     }
 
@@ -487,7 +489,8 @@ public sealed class Schedule : Entity
                 Progress: 0,
                 [.. predecessors[index].Distinct().Select(position => items[position].Id)],
                 item.Parent is { } parent ? items[parent].Id : null,
-                item.OwnedByClient);
+                item.OwnedByClient,
+                item.DeadlineOffset is { } deadline ? days.AddBusinessDays(first, deadline) : null);
             // As an inclusion places it (AddItem), but once: the outline has every item after its task and the items
             // it depends on, and no dependency of a task with subtasks, so nothing is pushed nor passed on, and the
             // tasks with subtasks take their dates from them at the end. A file of 2,000 tasks stays quick.
@@ -534,6 +537,7 @@ public sealed class Schedule : Entity
                 item.Phase >= 0 && item.Phase < outline.Phases.Count
                 && (item.Parent is not { } parent || (parent >= 0 && parent < index))
                 && item.StartOffset is >= 0 and <= MaxStartOffset
+                && item.DeadlineOffset is null or (>= -MaxStartOffset and <= MaxStartOffset)
                 && (item.Kind == ScheduleItemKind.Milestone ? item.Progress is 0 or 100 : IsValidProgress(item.Kind, item.Progress)))
             .All(ok => ok)
             && outline.Dependencies.All(dependency =>
@@ -734,6 +738,7 @@ public sealed class Schedule : Entity
             || (plan.Progress is { } progress && (summary || !IsValidProgress(item.Kind, progress)))
             || (item.Kind == ScheduleItemKind.Milestone && (plan.OwnerId is not null || plan.OwnedByClient))
             || (plan.OwnerId is not null && plan.OwnedByClient)
+            || (plan.Deadline is { } deadline && !IsValidDay(deadline))
             || (plan.ParentId is { } parentId && !MayHold(parentId, item.Id, plan.PhaseId)))
         {
             throw new ArgumentException("The plan is not valid for the kind of item.", nameof(plan));
@@ -741,6 +746,7 @@ public sealed class Schedule : Entity
 
         var name = NameOrThrow(ValidItemName(plan.Name), plan.Name);
         item.Set(plan.PhaseId, name, summary ? item.Duration : plan.Duration, plan.OwnerId, plan.ParentId, plan.OwnedByClient);
+        item.SetDeadline(plan.Deadline);
         if (summary)
         {
             foreach (var subtask in SubtasksOf(item.Id))
@@ -1059,6 +1065,12 @@ public sealed class ScheduleItem : Entity
     public DateOnly? ReachedOn { get; private set; }
 
     /// <summary>
+    /// The day the task or milestone has to be done by, as a legal deadline: it never moves the dates, only says how far
+    /// the item went past it (GanttA-2); none without one.
+    /// </summary>
+    public DateOnly? Deadline { get; private set; }
+
+    /// <summary>
     /// A task is late when its end passed and it has not reached 100% (ADR-0020); a milestone, when its day passed and it
     /// was not reached (ADR-0086).
     /// </summary>
@@ -1066,6 +1078,41 @@ public sealed class ScheduleItem : Entity
 
     /// <summary>A task at 100%, or a milestone reached.</summary>
     public bool IsDone => Kind == ScheduleItemKind.Task ? Progress == 100 : ReachedOn is not null;
+
+    /// <summary>
+    /// The day compared with the deadline: the day a task was completed or a milestone reached; while it is open, its
+    /// end (the day of a milestone), or today when that passed, as a late item ends no sooner than today (ADR-0020).
+    /// </summary>
+    public DateOnly DoneOrDueOn(DateOnly today)
+    {
+        if (IsDone)
+        {
+            return Kind == ScheduleItemKind.Task ? CompletedOn ?? End : ReachedOn!.Value;
+        }
+
+        return End < today ? today : End;
+    }
+
+    /// <summary>
+    /// The business days the item went past its deadline (positive) or is before it (negative), zero on it, in the
+    /// calendar of the installation (ADR-0018); null without a deadline.
+    /// </summary>
+    public int? DeadlineDeviation(DateOnly today, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        if (Deadline is not { } deadline)
+        {
+            return null;
+        }
+
+        var day = DoneOrDueOn(today);
+        return day > deadline
+            ? days.CountBusinessDays(deadline.AddDays(1), day)
+            : -days.CountBusinessDays(day.AddDays(1), deadline);
+    }
+
+    /// <summary>An open item past its deadline; a done one keeps its deviation, but is no longer missing it.</summary>
+    public bool MissesDeadline(DateOnly today, IBusinessDays days) => !IsDone && DeadlineDeviation(today, days) > 0;
 
     /// <summary>
     /// The business days of delay on a day: from the day after the end up to the day, both included, in the calendar of
@@ -1086,6 +1133,8 @@ public sealed class ScheduleItem : Entity
         ParentId = parentId;
         OwnedByClient = ownerId is null && ownedByClient;
     }
+
+    internal void SetDeadline(DateOnly? deadline) => Deadline = deadline;
 
     /// <summary>A subtask goes with its task to another phase.</summary>
     internal void MoveTo(Guid phaseId) => PhaseId = phaseId;
@@ -1131,7 +1180,7 @@ public sealed class ScheduleItem : Entity
     internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
 
     internal ItemState State() =>
-        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient);
+        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient, Deadline);
 
     /// <summary>Every field as it was; the kind never changes.</summary>
     internal void Restore(ItemState state)
@@ -1147,6 +1196,7 @@ public sealed class ScheduleItem : Entity
         OwnedByClient = state.OwnedByClient;
         CompletedOn = state.CompletedOn;
         ReachedOn = state.ReachedOn;
+        Deadline = state.Deadline;
     }
 }
 

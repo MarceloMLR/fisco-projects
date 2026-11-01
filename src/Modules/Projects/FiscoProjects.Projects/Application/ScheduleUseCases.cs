@@ -80,8 +80,9 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// owners, the items each item depends on, the tasks whose progress the person may update now (ADR-0043), the
 /// non-business days around its period, for the timeline to shade (ADR-0051), the business days of delay of each
 /// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
-/// the schedule now, none until the manager saves one (ADR-0021), and, for who edits it, what undoing and redoing would
-/// do (ADR-0091).
+/// the schedule now, none until the manager saves one (ADR-0021), for who edits it, what undoing and redoing would
+/// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
+/// it (GanttA-2).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -93,7 +94,9 @@ public sealed record ScheduleView(
     IReadOnlySet<Guid> Critical,
     BaselineComparison? Baseline,
     ScheduleChangeLabel? Undo = null,
-    ScheduleChangeLabel? Redo = null);
+    ScheduleChangeLabel? Redo = null,
+    IReadOnlyDictionary<Guid, int>? DeadlineDeviations = null,
+    int MissedDeadlines = 0);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -141,7 +144,9 @@ public sealed class GetSchedule(
             days is null ? new HashSet<Guid>() : ScheduleCriticalPath.Of(schedule.Items, schedule.Dependencies, days),
             schedule.Baseline is { } baseline && days is not null ? baseline.CompareWith(schedule.Items, figures.End, days) : null,
             changes.LastOrDefault(change => !change.Undone)?.Label,
-            changes.FirstOrDefault(change => change.Undone)?.Label);
+            changes.FirstOrDefault(change => change.Undone)?.Label,
+            days is null ? new Dictionary<Guid, int>() : ScheduleFigures.DeadlineDeviationsOf(schedule.Items, today, days),
+            days is null ? 0 : ScheduleFigures.MissedDeadlinesOf(schedule.Items, today, days));
     }
 }
 
@@ -189,6 +194,9 @@ public enum ScheduleField
 
     /// <summary>A baseline needs tasks or milestones in the schedule (ADR-0021).</summary>
     Baseline = 11,
+
+    /// <summary>The deadline of a task or milestone is a day from 2000 to 2099 (GanttA-2).</summary>
+    Deadline = 12,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -469,7 +477,8 @@ public sealed record ScheduleItemForm(
     int? Progress,
     IReadOnlyCollection<Guid>? PredecessorIds,
     Guid? ParentId = null,
-    bool OwnedByClient = false);
+    bool OwnedByClient = false,
+    DateOnly? Deadline = null);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
@@ -521,6 +530,11 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Parent);
         }
 
+        if (form.Deadline is { } deadline && !Schedule.IsValidDay(deadline))
+        {
+            invalid.Add(ScheduleField.Deadline);
+        }
+
         // Only the items with dates of their own have dependencies (ADR-0088).
         var predecessors = form.PredecessorIds ?? [];
         if (predecessors.Any(id => id == itemId || id == form.ParentId || schedule.ItemOf(id) is null || schedule.IsSummary(id))
@@ -540,7 +554,8 @@ internal static class ScheduleItemChecks
                 form.Progress,
                 [.. predecessors.Distinct()],
                 form.ParentId,
-                form.OwnedByClient), invalid);
+                form.OwnedByClient,
+                form.Deadline), invalid);
     }
 }
 

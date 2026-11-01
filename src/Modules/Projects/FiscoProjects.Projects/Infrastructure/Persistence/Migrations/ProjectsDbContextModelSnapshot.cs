@@ -436,6 +436,9 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("CompletedOn")
                         .HasColumnType("date");
 
+                    b.Property<DateOnly?>("Deadline")
+                        .HasColumnType("date");
+
                     b.Property<int>("Duration")
                         .HasColumnType("int");
 

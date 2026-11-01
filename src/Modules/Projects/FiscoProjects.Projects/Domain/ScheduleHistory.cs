@@ -19,7 +19,8 @@ public sealed record ItemState(
     Guid? OwnerId,
     DateOnly? CompletedOn,
     DateOnly? ReachedOn,
-    bool OwnedByClient = false);
+    bool OwnedByClient = false,
+    DateOnly? Deadline = null);
 
 /// <summary>A dependency as it was at a moment.</summary>
 public sealed record DependencyState(Guid Id, Guid PredecessorId, Guid SuccessorId);

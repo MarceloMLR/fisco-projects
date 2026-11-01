@@ -19,7 +19,7 @@ public sealed record OutlinePhase(string Name);
 /// none when it is right in the phase), its kind, name, how many business days after the first start it starts and its
 /// duration in business days (zero for a milestone). Optional, the progress of a task without subtasks, from 0 to 100,
 /// or of a milestone, 100 when it was reached; the person in charge of the task or the client of the project in its
-/// place (ADR-0102).
+/// place (ADR-0102); and the deadline, in business days after the first start, before it when negative (GanttA-2).
 /// </summary>
 public sealed record OutlineItem(
     int Phase,
@@ -30,7 +30,8 @@ public sealed record OutlineItem(
     int Duration,
     int Progress = 0,
     Guid? OwnerId = null,
-    bool OwnedByClient = false);
+    bool OwnedByClient = false,
+    int? DeadlineOffset = null);
 
 /// <summary>An item of an outline that starts only after an item before it ends, by their positions.</summary>
 public sealed record OutlineDependency(int Predecessor, int Successor);
