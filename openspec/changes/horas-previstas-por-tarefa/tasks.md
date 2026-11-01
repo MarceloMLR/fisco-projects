@@ -14,7 +14,7 @@
 - [x] 3.2 A coluna e a seção "Horas" no cronograma; testes "Horas na Lista do administrador", "Alterar as previstas pelo detalhe da tarefa" e "Cronograma sem horas para a gestão"
 - [x] 3.3 A seção "Por tarefa" no detalhe de Horas dos projetos; testes "Por tarefa no detalhe das horas", "Alterar as previstas pelo detalhe das horas" e "Horas previstas inválidas pela tela"
 - [x] 3.4 A auditoria na tela e a demonstração; teste "Horas previstas na demonstração"
-- [ ] 3.5 Conferência no navegador, no computador e no celular, nos temas claro e escuro
+- [x] 3.5 Conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 
