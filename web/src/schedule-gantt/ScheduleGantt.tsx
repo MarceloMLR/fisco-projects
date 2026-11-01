@@ -23,7 +23,7 @@ import './ScheduleGantt.css';
 export type { TimelineAnswer } from './TimelineChart';
 
 /** The width of the table beside the timeline, before the person drags the divider (ADR-0071). */
-const listWidth = { compact: 320, detailed: 624 } as const;
+const listWidth = { compact: 320, detailed: 640 } as const;
 /** Below this width (a phone), the table keeps only the names, in less than half of the space. */
 const narrowWidth = 640;
 const narrowShare = 0.45;
