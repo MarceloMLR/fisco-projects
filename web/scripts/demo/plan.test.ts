@@ -187,3 +187,31 @@ describe('Saldo na demonstração', () => {
     ).toBeGreaterThan(0);
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Horas previstas na demonstração" (ADR-0138).
+describe('Horas previstas na demonstração', () => {
+  it('Horas previstas na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    if (main === undefined) {
+      throw new Error('No main project.');
+    }
+    const tasks = new Map(
+      main.phases.flatMap((phase) => phase.items).map((item) => [item.name, item] as const),
+    );
+    // The state of the hours of a task, as the TimeTracking module computes it, with the task done at 100%.
+    const states = (main.plannedHours ?? []).map(({ task, hours }) => {
+      const item = tasks.get(task);
+      expect(item?.kind).toBe('Task');
+      expect(Number.isInteger(hours * 4) && hours > 0 && hours <= 9999).toBe(true);
+      const logged = (main.hours ?? [])
+        .filter((entry) => entry.task === task)
+        .reduce((sum, entry) => sum + entry.hours, 0);
+      return logged > hours
+        ? 'Over'
+        : item?.progress !== 100 && logged * 100 >= hours * 90
+          ? 'NearLimit'
+          : 'Within';
+    });
+    expect(new Set(states)).toEqual(new Set(['Over', 'NearLimit', 'Within']));
+  });
+});

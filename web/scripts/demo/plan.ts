@@ -322,6 +322,12 @@ export interface DemoAdditionalHours {
   reason: string;
 }
 
+/** The hours a task of the schedule should take, put by the Administrator, by the name of the task (ADR-0138). */
+export interface DemoPlannedHours {
+  task: string;
+  hours: number;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -364,6 +370,8 @@ export interface DemoProject {
   contractedHours?: number;
   /** The hours added for requests out of the scope, registered by the Administrator (ADR-0128). */
   additionalHours?: readonly DemoAdditionalHours[];
+  /** The planned hours of tasks of the schedule, put by the Administrator after the hours logged (ADR-0138). */
+  plannedHours?: readonly DemoPlannedHours[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -411,6 +419,16 @@ export const demoProjects: readonly DemoProject[] = [
         hours: 8,
         reason: 'Relatório de comissões, fora do escopo inicial, pedido pelo cliente',
       },
+    ],
+    // The planned hours of the tasks, against the logged ones: over in the chart of accounts, near in the NF-e and
+    // within in the others (ADR-0138).
+    plannedHours: [
+      { task: 'Mapear processos fiscais', hours: 8 },
+      { task: 'Parametrizar regras de ICMS', hours: 24 },
+      { task: 'Configurar plano de contas', hours: 8 },
+      { task: 'Integrar emissão de NF-e', hours: 13.5 },
+      { task: 'Roteiro de testes', hours: 6 },
+      { task: 'Testes com a equipe do cliente', hours: 16 },
     ],
     hours: [
       {

@@ -366,11 +366,21 @@ const additionalHoursFields: readonly string[] = [
 ] satisfies AdditionalHoursField[];
 const isAdditionalHoursField = (field: string): field is AdditionalHoursField =>
   additionalHoursFields.includes(field);
+// The planned hours of a task, by the Administrator (ADR-0138).
+type PlannedHoursField = 'ProjectId' | 'ScheduleItemId' | 'Hours';
+const plannedHoursFields: readonly string[] = [
+  'ProjectId',
+  'ScheduleItemId',
+  'Hours',
+] satisfies PlannedHoursField[];
+const isPlannedHoursField = (field: string): field is PlannedHoursField =>
+  plannedHoursFields.includes(field);
 /** The items of the module of the hours whose days and hours show as Minhas horas does. */
 const isHoursItem = (entry: AuditEntry) =>
   entry.itemType === 'TimeEntry' ||
   entry.itemType === 'ContractedHours' ||
-  entry.itemType === 'AdditionalHours';
+  entry.itemType === 'AdditionalHours' ||
+  entry.itemType === 'PlannedHours';
 
 type AcceptanceTermField =
   | 'ProjectId'
@@ -656,6 +666,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'AdditionalHours' && isAdditionalHoursField(field)) {
     return t(`audit.fields.AdditionalHours.${field}`);
   }
+  if (entry.itemType === 'PlannedHours' && isPlannedHoursField(field)) {
+    return t(`audit.fields.PlannedHours.${field}`);
+  }
   return field;
 }
 
@@ -792,8 +805,13 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
       `audit.actions.TimeEntry.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
   }
-  // The contracted and the additional hours of a project, by the Administrator (ADR-0128).
-  if (entry.itemType === 'ContractedHours' || entry.itemType === 'AdditionalHours') {
+  // The contracted and the additional hours of a project and the planned hours of a task, by the Administrator
+  // (ADR-0128, ADR-0138).
+  if (
+    entry.itemType === 'ContractedHours' ||
+    entry.itemType === 'AdditionalHours' ||
+    entry.itemType === 'PlannedHours'
+  ) {
     return t(
       `audit.actions.${entry.itemType}.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
@@ -1048,7 +1066,8 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
       entry.itemType === 'PortalCredential' ||
       entry.itemType === 'AcceptanceTerm' ||
       entry.itemType === 'TimeEntry' ||
-      entry.itemType === 'AdditionalHours') &&
+      entry.itemType === 'AdditionalHours' ||
+      entry.itemType === 'PlannedHours') &&
     entry.action !== 'Updated'
   ) {
     return join(label, projectOfMember(entry));
@@ -1250,6 +1269,12 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   if (entry.itemType === 'AdditionalHours') {
     return [
       { label: t('audit.details.item.AdditionalHours'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
+  }
+  if (entry.itemType === 'PlannedHours') {
+    return [
+      { label: t('audit.details.item.PlannedHours'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }

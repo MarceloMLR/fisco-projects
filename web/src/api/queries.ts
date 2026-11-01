@@ -653,6 +653,23 @@ export function projectHoursDetailQuery(projectId: string) {
   });
 }
 
+/**
+ * The hours of the tasks of a project, only for the Administrator (ADR-0138): the planned and logged hours of each task
+ * that has any, and the totals of the project.
+ */
+export function taskHoursQuery(projectId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projectHours, 'tasks', projectId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/admin/project-hours/{projectId}/tasks', {
+          params: { path: { projectId } },
+          signal,
+        }),
+      ),
+  });
+}
+
 /** The projects where the person logs hours. */
 export function timeEntryProjectsQuery() {
   return queryOptions({

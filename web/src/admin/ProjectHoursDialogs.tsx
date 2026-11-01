@@ -12,12 +12,17 @@ import { type DayValue, formatDayText, maskTypedDay, parseTypedDay } from '../fo
 import { parseHoursUpTo, plainHoursText } from '../hours/hours';
 import { Button } from '../components/Button';
 
-/** The most contracted hours of a project and the most of one addition, as the API has them (ADR-0128). */
+/**
+ * The most contracted hours of a project, the most of one addition and the most planned hours of a task, as the API
+ * has them (ADR-0128, ADR-0138).
+ */
 const mostContracted = 99_999;
 const mostAdditional = 9_999;
+const mostPlanned = 9_999;
 
 const errors = {
   contractedInvalid: 'projectHours.errors.contractedInvalid',
+  plannedInvalid: 'projectHours.errors.plannedInvalid',
   dayInvalid: 'projectHours.errors.dayInvalid',
   dayFuture: 'projectHours.errors.dayFuture',
   hoursInvalid: 'projectHours.errors.hoursInvalid',
@@ -134,6 +139,114 @@ export function ContractedHoursDialog({
         autoComplete="off"
         maxLength={8}
         helper={t('projectHours.contractedDialog.help')}
+        error={isHoursError(error) ? t(error) : undefined}
+        {...register('hours')}
+      />
+      {fieldErrors.root?.message !== undefined && (
+        <Alert tone="danger">{fieldErrors.root.message}</Alert>
+      )}
+    </Dialog>
+  );
+}
+
+const plannedSchema = z.object({
+  hours: z
+    .string()
+    .refine(
+      (hours) => hours.trim() === '' || parseHoursUpTo(hours, mostPlanned) !== undefined,
+      errors.plannedInvalid,
+    ),
+});
+
+/**
+ * "Alterar" the planned hours of a task of the schedule, only for the Administrator (ADR-0138): the hours the task
+ * should take, or the field left empty, which takes them out.
+ */
+export function PlannedHoursDialog({
+  projectId,
+  task,
+  planned,
+  onClose,
+  onSaved,
+}: {
+  projectId: string;
+  /** The task, by its id in the schedule and its name. */
+  task: { id: string; name: string };
+  /** The hours now; null without them. */
+  planned: number | null;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
+  const { t } = useTranslation();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors: fieldErrors },
+  } = useForm<z.input<typeof plannedSchema>>({
+    resolver: zodResolver(plannedSchema),
+    defaultValues: { hours: planned === null ? '' : plainHoursText(planned) },
+  });
+
+  const save = handleSubmit(async ({ hours }) => {
+    const value = hours.trim() === '' ? null : (parseHoursUpTo(hours, mostPlanned) ?? null);
+    try {
+      const { response } = await api.PUT('/api/admin/project-hours/{projectId}/tasks/{itemId}', {
+        params: { path: { projectId, itemId: task.id } },
+        body: { hours: value },
+      });
+      if (response.ok) {
+        onSaved(
+          t(
+            value === null
+              ? 'projectHours.messages.plannedRemoved'
+              : 'projectHours.messages.plannedSaved',
+            { name: task.name },
+          ),
+        );
+        return;
+      }
+      if (response.status === 400) {
+        setError('hours', { message: errors.plannedInvalid });
+        return;
+      }
+      setError('root', {
+        message: t(
+          response.status === 404
+            ? 'projectHours.messages.taskGone'
+            : 'projectHours.messages.failed',
+        ),
+      });
+    } catch {
+      setError('root', { message: t('projectHours.messages.failed') });
+    }
+  });
+
+  const error = fieldErrors.hours?.message;
+  return (
+    <Dialog
+      open
+      title={t('projectHours.plannedDialog.title')}
+      subtitle={task.name}
+      onClose={onClose}
+      onSubmit={(event) => save(event)}
+      actions={
+        <>
+          <Button variant="outlined" onClick={onClose}>
+            {t('projectHours.plannedDialog.cancel')}
+          </Button>
+          <Button type="submit" variant="contained">
+            {t('projectHours.plannedDialog.save')}
+          </Button>
+        </>
+      }
+    >
+      <TextField
+        label={t('projectHours.plannedDialog.hours')}
+        inputMode="decimal"
+        autoComplete="off"
+        maxLength={7}
+        helper={t('projectHours.plannedDialog.help')}
         error={isHoursError(error) ? t(error) : undefined}
         {...register('hours')}
       />

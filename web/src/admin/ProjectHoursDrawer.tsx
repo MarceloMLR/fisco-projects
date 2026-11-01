@@ -1,6 +1,7 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
+import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -8,8 +9,9 @@ import MenuItem from '@mui/material/MenuItem';
 import { useQuery } from '@tanstack/react-query';
 import { type MouseEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AdditionalHours, api, type ProjectHoursDetail } from '../api/client';
-import { projectHoursDetailQuery } from '../api/queries';
+import { Link } from 'react-router';
+import { type AdditionalHours, api, type ProjectHoursDetail, type TaskHours } from '../api/client';
+import { projectHoursDetailQuery, taskHoursQuery } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { DetailsDrawer } from '../components/DetailsDrawer';
 import { Dialog } from '../components/Dialog';
@@ -27,7 +29,12 @@ import {
 } from './AdditionalHoursList';
 import { hoursTableSx } from './hoursTable';
 import { ProjectEntriesDialog } from './ProjectEntriesDialog';
-import { AdditionalHoursDialog, ContractedHoursDialog } from './ProjectHoursDialogs';
+import {
+  AdditionalHoursDialog,
+  ContractedHoursDialog,
+  PlannedHoursDialog,
+} from './ProjectHoursDialogs';
+import { TaskHoursTable } from './TaskHours';
 import { HoursBalanceBadge } from './HoursBalanceBadge';
 import { balanceLook, consumptionDetail, hoursOrDash } from './projectHours';
 import { Button } from '../components/Button';
@@ -92,7 +99,8 @@ function Stat({
  * The hours of a project in the details drawer (canvas Horas do projeto, AdminProjeto, ADR-0081, ADR-0128): the code,
  * the name and the status; the contracted, the additional and the logged hours and the balance, with "Alterar" on the
  * contracted ones; the bar of the consumption; the additional hours, with "Incluir horas adicionais" and the "⋮" to
- * correct or delete each one; and the hours of each person, with "Ver apontamentos".
+ * correct or delete each one; the hours of each person, with "Ver apontamentos"; and the hours of each task, with
+ * "Alterar" the planned ones and "Abrir o cronograma" (ADR-0138).
  */
 export function ProjectHoursDrawer({
   projectId,
@@ -375,6 +383,7 @@ function ProjectHoursContent({
           </Box>
         )}
       </Box>
+      <TaskHoursPart projectId={project.id} onChanged={onChanged} />
       <Menu
         anchorEl={menu?.anchor}
         open={menu !== undefined}
@@ -494,5 +503,87 @@ function ProjectHoursContent({
         })}
       </Dialog>
     </>
+  );
+}
+
+const totalsSx = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) auto',
+  gap: 'var(--space-1) var(--space-3)',
+  margin: 0,
+  fontSize: 14,
+  lineHeight: '20px',
+  fontVariantNumeric: 'tabular-nums',
+  '& dt': { color: 'var(--text-secondary)' },
+  '& dd': { margin: 0, textAlign: 'right', color: 'var(--text)' },
+} as const;
+
+/**
+ * "Por tarefa" in the drawer (ADR-0138): the planned hours in the tasks, the ones logged in them and outside them, and
+ * each task with planned or logged hours, in the order of the schedule, with "Alterar" the planned ones.
+ */
+function TaskHoursPart({
+  projectId,
+  onChanged,
+}: {
+  projectId: string;
+  onChanged: (message: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { data, isError } = useQuery(taskHoursQuery(projectId));
+  const [changing, setChanging] = useState<TaskHours>();
+  return (
+    <Box
+      component="section"
+      aria-labelledby="project-hours-tasks"
+      sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
+    >
+      <Box sx={sectionHeadSx}>
+        <Box component="h3" id="project-hours-tasks" sx={sectionTitleSx}>
+          {t('projectHours.tasks.title')}
+        </Box>
+        <Button
+          component={Link}
+          to={`/projects/${projectId}/schedule?view=list`}
+          variant="text"
+          size="small"
+          startIcon={<TimelineOutlined />}
+        >
+          {t('projectHours.tasks.openSchedule')}
+        </Button>
+      </Box>
+      {isError && <Alert tone="danger">{t('projectHours.tasks.notLoaded')}</Alert>}
+      {data !== undefined && (
+        <>
+          <Box component="dl" sx={totalsSx}>
+            <dt>{t('projectHours.tasks.inTasks')}</dt>
+            <dd>{formatHours(data.planned)}</dd>
+            <dt>{t('projectHours.tasks.loggedInTasks')}</dt>
+            <dd>{formatHours(data.logged)}</dd>
+            <dt>{t('projectHours.tasks.outside')}</dt>
+            <dd>{formatHours(data.outside)}</dd>
+          </Box>
+          {data.items.length === 0 ? (
+            <Box sx={emptySx}>{t('projectHours.tasks.empty')}</Box>
+          ) : (
+            <TaskHoursTable items={data.items} onChange={setChanging} />
+          )}
+        </>
+      )}
+      {changing !== undefined && (
+        <PlannedHoursDialog
+          projectId={projectId}
+          task={{ id: changing.itemId, name: changing.name }}
+          planned={changing.planned}
+          onClose={() => {
+            setChanging(undefined);
+          }}
+          onSaved={(message) => {
+            setChanging(undefined);
+            onChanged(message);
+          }}
+        />
+      )}
+    </Box>
   );
 }

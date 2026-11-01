@@ -302,6 +302,7 @@
       "TimeEntry": "Horas",
       "ContractedHours": "Horas contratadas",
       "AdditionalHours": "Horas adicionais",
+      "PlannedHours": "Horas previstas",
       "AuditExport": "Exportação da auditoria",
       "AuditCleanup": "Limpeza da auditoria"
     },
@@ -473,6 +474,11 @@
         "Updated": "Corrigiu horas adicionais",
         "Deleted": "Apagou horas adicionais"
       },
+      "PlannedHours": {
+        "Created": "Pôs horas previstas",
+        "Updated": "Alterou as horas previstas",
+        "Deleted": "Tirou as horas previstas"
+      },
       "AuditExport": {
         "Exported": "Exportou a auditoria"
       },
@@ -524,7 +530,8 @@
         "AcceptanceTerm": "Termo",
         "AcceptanceSigner": "Signatário",
         "TimeEntry": "Apontamento",
-        "AdditionalHours": "Motivo"
+        "AdditionalHours": "Motivo",
+        "PlannedHours": "Tarefa"
       },
       "secret": "Alterado",
       "none": "—",
@@ -724,6 +731,11 @@
         "Hours": "Horas",
         "Reason": "Motivo",
         "CreatedBy": "Incluídas por"
+      },
+      "PlannedHours": {
+        "ProjectId": "Projeto",
+        "ScheduleItemId": "Tarefa",
+        "Hours": "Horas"
       }
     },
     "dependsOn": "depende de {{name}}",
@@ -1582,7 +1594,8 @@
         "owner": "Responsável",
         "progress": "Progresso",
         "dependsOn": "Depende de",
-        "deadline": "Data-limite"
+        "deadline": "Data-limite",
+        "hours": "Horas"
       },
       "duration_one": "{{count}} dia útil",
       "duration_other": "{{count}} dias úteis",
@@ -2698,6 +2711,35 @@
       "save": "Salvar",
       "cancel": "Cancelar"
     },
+    "plannedDialog": {
+      "title": "Horas previstas",
+      "hours": "Horas previstas",
+      "help": "Vazio, a tarefa fica sem horas previstas.",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "tasks": {
+      "section": "Horas",
+      "title": "Por tarefa",
+      "planned": "Previstas",
+      "logged": "Apontadas",
+      "loggedOfPlanned": "{{logged}} de {{planned}}",
+      "noPlanned": "Sem horas previstas",
+      "changeLabel": "Alterar as horas previstas de {{name}}",
+      "consumptionLabel": "Consumo das horas previstas de {{name}}",
+      "consumptionDetail": "{{hours}} ({{share}}%)",
+      "inTasks": "Previstas nas tarefas",
+      "loggedInTasks": "Apontadas nas tarefas",
+      "outside": "Apontadas fora das tarefas",
+      "openSchedule": "Abrir o cronograma",
+      "empty": "Nenhuma tarefa com horas previstas ou apontadas.",
+      "notLoaded": "Não foi possível carregar as horas das tarefas. Tente de novo.",
+      "columns": {
+        "task": "Tarefa",
+        "planned": "Previstas",
+        "logged": "Apontadas"
+      }
+    },
     "additionalDialog": {
       "newTitle": "Incluir horas adicionais",
       "editTitle": "Corrigir horas adicionais",
@@ -2713,7 +2755,8 @@
       "dayInvalid": "Digite o dia como dd/mm/aaaa.",
       "dayFuture": "O dia não pode ser depois de hoje.",
       "hoursInvalid": "Use de 0,25 a 9.999 horas, em quartos de hora.",
-      "reasonRequired": "Informe o motivo, em até 500 caracteres."
+      "reasonRequired": "Informe o motivo, em até 500 caracteres.",
+      "plannedInvalid": "Use de 0,25 a 9.999 horas, em quartos de hora."
     },
     "messages": {
       "contractedSaved": "Horas contratadas salvas.",
@@ -2721,7 +2764,10 @@
       "added": "Horas adicionais incluídas.",
       "saved": "Horas adicionais corrigidas.",
       "removed": "Horas adicionais apagadas.",
-      "failed": "Não foi possível salvar. Tente de novo."
+      "failed": "Não foi possível salvar. Tente de novo.",
+      "plannedSaved": "Horas previstas de {{name}} salvas.",
+      "plannedRemoved": "{{name}} ficou sem horas previstas.",
+      "taskGone": "A tarefa não está mais no cronograma."
     },
     "entries": {
       "title": "Apontamentos",

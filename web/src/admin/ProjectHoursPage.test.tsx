@@ -9,6 +9,8 @@ import {
   erpHoursDetail,
   erpProjectHours,
   openProjectHours,
+  taskHoursOf,
+  taskHoursRow,
 } from '../test/demoProjectHours';
 import { demoTimeEntries, hoursNow, timeEntryListOf } from '../test/demoTimeEntries';
 import { expectBusy, expectIdle } from '../test/busy';
@@ -430,5 +432,121 @@ describe('Botões em andamento nas horas dos projetos', () => {
     await waitFor(() => {
       expectIdle(download);
     });
+  });
+});
+
+// Spec: horas-do-projeto, requirement "Horas por tarefa no detalhe das horas pela tela" (ADR-0138).
+describe('Horas por tarefa pela tela', () => {
+  const icms = '0199f5a2-7c1e-7d40-9a1b-300000000011';
+  const nfe = '0199f5a2-7c1e-7d40-9a1b-300000000012';
+  let planned: Record<string, number | null>;
+
+  beforeEach(() => {
+    planned = { [icms]: 40, [nfe]: 20 };
+    server.use(
+      http.get('/api/admin/project-hours/:projectId/tasks', () =>
+        HttpResponse.json(
+          taskHoursOf(
+            [
+              taskHoursRow(icms, 'Parametrizar regras de ICMS', planned[icms] ?? null, 52),
+              taskHoursRow(nfe, 'Integrar emissão de NF-e', planned[nfe] ?? null, 18),
+            ],
+            12,
+          ),
+        ),
+      ),
+      http.put('/api/admin/project-hours/:projectId/tasks/:itemId', async ({ request, params }) => {
+        const body = (await request.json()) as { hours: number | null };
+        changes.push({
+          method: 'PUT',
+          path: `${String(params.projectId)}/tasks/${String(params.itemId)}`,
+          body,
+        });
+        planned[String(params.itemId)] = body.hours;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+  });
+
+  it('Por tarefa no detalhe das horas', async () => {
+    const drawer = await openErp();
+
+    const tasks = await within(drawer).findByRole('region', { name: text.tasks.title });
+    await within(tasks).findByText('Parametrizar regras de ICMS');
+    expect(within(tasks).getByText(text.tasks.inTasks).nextElementSibling).toHaveTextContent(
+      '60 h',
+    );
+    expect(within(tasks).getByText(text.tasks.loggedInTasks).nextElementSibling).toHaveTextContent(
+      '70 h',
+    );
+    expect(within(tasks).getByText(text.tasks.outside).nextElementSibling).toHaveTextContent(
+      '12 h',
+    );
+    const lines = within(tasks)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent);
+    expect(lines).toEqual([
+      expect.stringMatching(/Parametrizar regras de ICMS.*12 h acima.*40 h.*52 h/),
+      expect.stringMatching(/Integrar emissão de NF-e.*Restam 2 h.*20 h.*18 h/),
+    ]);
+    expect(within(tasks).getByText('12 h acima')).toHaveAttribute('data-state', 'Over');
+    expect(within(tasks).getByText('Restam 2 h')).toHaveAttribute('data-state', 'NearLimit');
+    expect(within(tasks).getByRole('link', { name: text.tasks.openSchedule })).toHaveAttribute(
+      'href',
+      `/projects/${erpProjectHours.id}/schedule?view=list`,
+    );
+  });
+
+  it('Alterar as previstas pelo detalhe das horas', async () => {
+    const drawer = await openErp();
+    const tasks = await within(drawer).findByRole('region', { name: text.tasks.title });
+    await within(tasks).findByText('Integrar emissão de NF-e');
+
+    fireEvent.click(
+      within(tasks).getByRole('button', {
+        name: text.tasks.changeLabel.replace('{{name}}', 'Integrar emissão de NF-e'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: text.plannedDialog.title });
+    const field = within(dialog).getByLabelText(text.plannedDialog.hours);
+    expect(field).toHaveValue('20');
+    fireEvent.change(field, { target: { value: '24' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.plannedDialog.save }));
+
+    expect(
+      await screen.findByText(
+        text.messages.plannedSaved.replace('{{name}}', 'Integrar emissão de NF-e'),
+      ),
+    ).toBeVisible();
+    expect(changes).toEqual([
+      { method: 'PUT', path: `${erpProjectHours.id}/tasks/${nfe}`, body: { hours: 24 } },
+    ]);
+    await waitFor(() => {
+      expect(within(tasks).getByText('Restam 6 h')).toBeVisible();
+    });
+    expect(within(tasks).getByText(text.tasks.inTasks).nextElementSibling).toHaveTextContent(
+      '64 h',
+    );
+  });
+
+  it('Horas previstas inválidas pela tela', async () => {
+    const drawer = await openErp();
+    const tasks = await within(drawer).findByRole('region', { name: text.tasks.title });
+    await within(tasks).findByText('Integrar emissão de NF-e');
+
+    fireEvent.click(
+      within(tasks).getByRole('button', {
+        name: text.tasks.changeLabel.replace('{{name}}', 'Integrar emissão de NF-e'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: text.plannedDialog.title });
+    fireEvent.change(within(dialog).getByLabelText(text.plannedDialog.hours), {
+      target: { value: '10000' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: text.plannedDialog.save }));
+
+    expect(await within(dialog).findByText(text.errors.plannedInvalid)).toBeVisible();
+    expect(changes).toEqual([]);
   });
 });

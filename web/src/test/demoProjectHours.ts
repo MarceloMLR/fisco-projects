@@ -1,4 +1,10 @@
-import type { HoursBalance, ProjectHours, ProjectHoursDetail } from '../api/client';
+import type {
+  HoursBalance,
+  ProjectHours,
+  ProjectHoursDetail,
+  ProjectTaskHours,
+  TaskHours,
+} from '../api/client';
 import { demoPeople } from './server';
 
 // The hours of the projects as the canvas Horas do projeto shows them (ADR-0128): all fictitious.
@@ -133,4 +139,25 @@ export function erpHoursDetail(project: ProjectHours = erpProjectHours) {
       { person: demoPeople.rafael, role: null, hours: 40, share: 9 },
     ],
   } satisfies ProjectHoursDetail;
+}
+
+/** A task with its planned and logged hours, as the API answers them (TaskHours in the TimeTracking module, ADR-0138). */
+export function taskHoursRow(
+  itemId: string,
+  name: string,
+  planned: number | null,
+  logged: number,
+  isDone = false,
+): TaskHours {
+  return { itemId, name, planned, logged, balance: balanceOf(planned, 0, logged, isDone) };
+}
+
+/** The hours of the tasks of a project, with the totals the API computes and the hours logged out of the tasks. */
+export function taskHoursOf(items: TaskHours[], outside = 0): ProjectTaskHours {
+  return {
+    planned: items.reduce((total, item) => total + (item.planned ?? 0), 0),
+    logged: items.reduce((total, item) => total + item.logged, 0),
+    outside,
+    items,
+  };
 }
