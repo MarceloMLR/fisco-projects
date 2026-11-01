@@ -108,6 +108,9 @@ public enum ScheduleAction
     ProgressUpdated = 11,
     MilestoneReached = 12,
     MilestoneUnmarked = 13,
+
+    /// <summary>The open items moved a number of business days, the signed number as the name (ADR-0140).</summary>
+    ScheduleMoved = 14,
 }
 
 /// <summary>What a change of the schedule was, by its kind and the name of the phase or item.</summary>
