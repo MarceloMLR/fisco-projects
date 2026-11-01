@@ -18,7 +18,7 @@ import { Select } from '../components/Select';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
 import { formatDayText, maskTypedDay } from '../format/dates';
-import { itemsAfter, itemsOf, linkTypes } from './schedule';
+import { itemsOf, linkTypes, predecessorChoices } from './schedule';
 import {
   isScheduleItemError,
   type LinkSetting,
@@ -119,15 +119,8 @@ export function ScheduleItemFields({
   const current = items.find((item) => item.id === itemId);
   const becomesSummary =
     parent !== undefined && !parent.hasSubtasks && parent.id !== current?.parentId;
-  const after = itemId === undefined ? new Set<string>() : itemsAfter(itemId, schedule);
-  const phaseNames = new Map(schedule.phases.map((phase) => [phase.id, phase.name]));
   // Only the items with dates of their own have dependencies, never the task the item goes into (ADR-0088).
-  const predecessorOptions = items
-    .filter(
-      (item) =>
-        item.id !== itemId && !after.has(item.id) && !item.hasSubtasks && item.id !== parent?.id,
-    )
-    .map((item) => ({ value: item.id, label: item.name, group: phaseNames.get(item.phaseId) }));
+  const predecessorOptions = predecessorChoices(schedule, itemId, parent?.id);
   const durationHelp =
     endsOn === undefined
       ? t('projects.schedule.form.durationHelp')

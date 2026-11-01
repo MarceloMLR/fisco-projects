@@ -64,14 +64,12 @@ describe('Regras da edição na tabela', () => {
   it('Pedido de cada célula', () => {
     const task = itemNamed('Integrar emissão de NF-e');
 
-    expect(cellRequest('duration', '10', task)).toEqual({
-      kind: 'item',
-      body: expect.objectContaining({
-        duration: 10,
-        name: task.name,
-        start: task.start,
-        progress: null,
-      }),
+    const duration = cellRequest('duration', '10', task);
+    expect(duration?.kind === 'item' ? duration.body : undefined).toMatchObject({
+      duration: 10,
+      name: task.name,
+      start: task.start,
+      progress: null,
     });
     expect(cellRequest('name', ` ${task.name} `, task)).toBeUndefined();
     expect(cellRequest('start', '21/10/2026', task)).toEqual({
@@ -85,10 +83,11 @@ describe('Regras da edição na tabela', () => {
       end: '2026-10-30',
     });
     expect(cellRequest('progress', '60', task)).toEqual({ kind: 'progress', progress: 60 });
-    expect(cellRequest('dependsOn', ['a', 'b'], task)).toEqual({
-      kind: 'item',
-      body: expect.objectContaining({ predecessorIds: ['a', 'b'] }),
-    });
+    const dependsOn = cellRequest('dependsOn', ['a', 'b'], task);
+    expect(dependsOn?.kind === 'item' ? dependsOn.body.predecessorIds : undefined).toEqual([
+      'a',
+      'b',
+    ]);
     expect(cellRequest('dependsOn', [...task.predecessorIds], task)).toBeUndefined();
   });
 });

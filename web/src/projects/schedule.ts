@@ -239,6 +239,26 @@ export function itemsAfter(itemId: string, schedule: Schedule): Set<string> {
 }
 
 /**
+ * The items an item may depend on, as "Depende de" lists them in the details and in the Lista (ADR-0143): the ones
+ * with dates of their own (ADR-0088), not the item, not the ones after it (they would close a cycle) and not the task
+ * it is inside of; each with the name of its phase, in the order of the schedule.
+ */
+export function predecessorChoices(
+  schedule: Schedule,
+  itemId: string | undefined,
+  parentId: string | undefined,
+): { value: string; label: string; group: string | undefined }[] {
+  const after = itemId === undefined ? new Set<string>() : itemsAfter(itemId, schedule);
+  const phaseNames = new Map(schedule.phases.map((phase) => [phase.id, phase.name]));
+  return itemsOf(schedule)
+    .filter(
+      (item) =>
+        item.id !== itemId && !after.has(item.id) && !item.hasSubtasks && item.id !== parentId,
+    )
+    .map((item) => ({ value: item.id, label: item.name, group: phaseNames.get(item.phaseId) }));
+}
+
+/**
  * What the list of projects says under the strip of phases: the progress and the current phase ("62% ·
  * Configuração"), when the project starts ("Começa em 26/10") or when it was completed ("100% · concluído em 28/08").
  */

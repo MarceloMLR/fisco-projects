@@ -19,6 +19,7 @@ import { useSearchParams } from 'react-router';
 import {
   api,
   type Project,
+  projectProblems,
   type Schedule,
   type ScheduleItem,
   type ScheduleItemKind,
@@ -63,11 +64,13 @@ import {
   bodyOf,
   failureOf,
   newItemValues,
+  scheduleItemErrors,
   scheduleItemSchema,
   type ScheduleItemValues,
   showRefusal,
   valuesOfItem,
 } from './scheduleItemValues';
+import { problemType } from './projectForm';
 import {
   BaselineSection,
   BaselineSummary,
@@ -88,6 +91,20 @@ import {
   OwnerAwayLine,
 } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
+import {
+  DependsOnEditCell,
+  EditInTableButton,
+  type ListRow,
+  ScheduleEditCell,
+  TableEditHelp,
+} from './ScheduleTableEdit';
+import {
+  cellError,
+  cellRequest,
+  type CellValue,
+  type EditableField,
+  editableFields,
+} from './scheduleTableEdit';
 import { ScheduleFilterMenu } from './ScheduleFilterMenu';
 import {
   type FilterContext,
@@ -159,6 +176,8 @@ export function ProjectSchedulePage() {
   /** "Nova tarefa" open, maybe inside a task ("Nova subtarefa", ADR-0088). */
   const [creating, setCreating] = useState<{ parentId?: string }>();
   const [expanded, setExpanded] = useState(false);
+  /** "Editar na tabela" on: the cells of the Lista edit in place, by the keyboard (ADR-0143). */
+  const [tableEdit, setTableEdit] = useState(false);
   /** What "Exibir" shows in the Linha do tempo, the same in Expandir (ADR-0071). */
   const [display, setDisplay] = useState<ScheduleDisplay>(fullDisplay);
   const [search, setSearch] = useSearchParams();
@@ -220,13 +239,38 @@ export function ProjectSchedulePage() {
   };
   const itemCount = itemsOf(schedule).length;
 
-  const columns = useMemo<DataTableColumn<ScheduleRow>[]>(
+  const editingTable = tableEdit && desktop && view === 'list';
+  /** Who edits the schedule, or updates the progress of some task, may turn the edition in the table on. */
+  const mayEditTable = canEdit || itemsOf(schedule).some((item) => item.canUpdateProgress);
+  /** What an editable column has, in the mode "Editar na tabela": the cell kept until saved and its check. */
+  const editableColumn = useCallback(
+    (field: EditableField) => ({
+      editable: editingTable,
+      valueSetter: (value: CellValue, row: ListRow): ListRow => ({
+        ...row,
+        edit: { field, value },
+      }),
+      preProcessEditCellProps: ({ props, row }: { props: { value?: unknown }; row: ListRow }) => ({
+        ...props,
+        error:
+          row.kind === 'item' && cellError(field, props.value as CellValue, row.item) !== undefined,
+      }),
+    }),
+    [editingTable],
+  );
+
+  const columns = useMemo<DataTableColumn<ListRow>[]>(
     () => [
       {
         field: 'name',
         headerName: t('projects.schedule.columns.name'),
         flex: 2,
         minWidth: 220,
+        ...editableColumn('name'),
+        valueGetter: (_value, row) => (row.kind === 'phase' ? row.phase.name : row.item.name),
+        renderEditCell: (params) => (
+          <ScheduleEditCell params={params} label={t('projects.schedule.columns.name')} />
+        ),
         renderCell: ({ row, tabIndex }) =>
           row.kind === 'phase' ? (
             <Box component="span" sx={ellipsisSx}>
@@ -275,7 +319,11 @@ export function ProjectSchedulePage() {
       {
         field: 'start',
         headerName: t('projects.schedule.columns.start'),
-        width: 104,
+        width: 120,
+        ...editableColumn('start'),
+        renderEditCell: (params) => (
+          <ScheduleEditCell params={params} label={t('projects.schedule.columns.start')} day />
+        ),
         valueGetter: (_value, row) => {
           const start = row.kind === 'phase' ? row.phase.start : row.item.start;
           return start === null ? '' : formatDayText(start);
@@ -285,6 +333,11 @@ export function ProjectSchedulePage() {
         field: 'end',
         headerName: t('projects.schedule.columns.end'),
         width: 196,
+        ...editableColumn('end'),
+        valueGetter: (_value, row) => (row.kind === 'phase' ? '' : formatDayText(row.item.end)),
+        renderEditCell: (params) => (
+          <ScheduleEditCell params={params} label={t('projects.schedule.columns.end')} day />
+        ),
         renderCell: ({ row }) => {
           if (row.kind === 'phase') {
             return (
@@ -327,9 +380,18 @@ export function ProjectSchedulePage() {
         field: 'duration',
         headerName: t('projects.schedule.columns.duration'),
         width: 112,
-        valueGetter: (_value, row) =>
+        ...editableColumn('duration'),
+        valueGetter: (_value, row) => (row.kind === 'phase' ? '' : String(row.item.duration)),
+        renderEditCell: (params) => (
+          <ScheduleEditCell
+            params={params}
+            label={t('projects.schedule.columns.duration')}
+            numeric
+          />
+        ),
+        renderCell: ({ row }) =>
           row.kind === 'phase'
-            ? ''
+            ? null
             : row.item.kind === 'Milestone'
               ? t('projects.schedule.kinds.Milestone')
               : t('projects.schedule.duration', { count: row.item.duration }),
@@ -375,6 +437,15 @@ export function ProjectSchedulePage() {
         field: 'progress',
         headerName: t('projects.schedule.columns.progress'),
         width: 148,
+        ...editableColumn('progress'),
+        valueGetter: (_value, row) => (row.kind === 'phase' ? '' : String(row.item.progress)),
+        renderEditCell: (params) => (
+          <ScheduleEditCell
+            params={params}
+            label={t('projects.schedule.columns.progress')}
+            numeric
+          />
+        ),
         renderCell: ({ row }) => {
           if (row.kind === 'phase') {
             return row.phase.start === null ? null : (
@@ -414,16 +485,122 @@ export function ProjectSchedulePage() {
         headerName: t('projects.schedule.columns.dependsOn'),
         flex: 1,
         minWidth: 160,
-        valueGetter: (_value, row) =>
-          row.kind === 'phase' ? '' : predecessorTexts(row.item, schedule, t).join(', '),
-        renderCell: ({ value }) => (
-          <Box component="span" sx={{ ...ellipsisSx, ...secondarySx }} title={value as string}>
-            {value as string}
-          </Box>
+        ...editableColumn('dependsOn'),
+        valueGetter: (_value, row) => (row.kind === 'phase' ? [] : row.item.predecessorIds),
+        renderEditCell: (params) => (
+          <DependsOnEditCell
+            params={params}
+            schedule={schedule}
+            label={t('projects.schedule.columns.dependsOn')}
+          />
         ),
+        renderCell: ({ row }) => {
+          const text =
+            row.kind === 'phase' ? '' : predecessorTexts(row.item, schedule, t).join(', ');
+          return (
+            <Box component="span" sx={{ ...ellipsisSx, ...secondarySx }} title={text}>
+              {text}
+            </Box>
+          );
+        },
       },
     ],
-    [t, schedule, collapsed, toggleSubtasks, project.client, isAdministrator, hoursById],
+    [
+      t,
+      schedule,
+      collapsed,
+      toggleSubtasks,
+      project.client,
+      isAdministrator,
+      hoursById,
+      editableColumn,
+    ],
+  );
+
+  const queryClient = useQueryClient();
+  const isCellEditable = useCallback(
+    ({ row, field }: { row: ListRow; field: string }) =>
+      row.kind === 'item' && editableFields(row.item, canEdit).has(field as EditableField),
+    [canEdit],
+  );
+  /**
+   * Saves the cell edited, as the details and the Linha do tempo save (ADR-0143): one request, a notice, and the
+   * schedule asked again; gives the line read again, or the one before when the API refused it.
+   */
+  const saveCell = useCallback(
+    async (newRow: ListRow, oldRow: ListRow): Promise<ListRow> => {
+      const { edit } = newRow;
+      const before: ListRow = { ...oldRow, edit: undefined };
+      if (edit === undefined || oldRow.kind !== 'item') {
+        return before;
+      }
+      const { item } = oldRow;
+      const request = cellRequest(edit.field, edit.value, item);
+      if (request === undefined) {
+        return before;
+      }
+      const path = { id: project.id, itemId: item.id };
+      try {
+        const { error, response, pushed } =
+          request.kind === 'item'
+            ? await api
+                .PUT('/api/projects/{id}/schedule/items/{itemId}', {
+                  params: { path },
+                  body: request.body,
+                })
+                .then((answer) => ({ ...answer, pushed: answer.data?.pushed ?? 0 }))
+            : request.kind === 'dates'
+              ? await api
+                  .PUT('/api/projects/{id}/schedule/items/{itemId}/dates', {
+                    params: { path },
+                    body: { start: request.start, end: request.end },
+                  })
+                  .then((answer) => ({ ...answer, pushed: answer.data?.pushed ?? 0 }))
+              : await api
+                  .PUT('/api/projects/{id}/schedule/items/{itemId}/progress', {
+                    params: { path },
+                    body: { progress: request.progress },
+                  })
+                  .then((answer) => ({ ...answer, pushed: 0 }));
+        if (!response.ok) {
+          notify(
+            problemType(error) === projectProblems.scheduleCycle
+              ? t(scheduleItemErrors.cycle)
+              : failureOf(error, response.status, t),
+            { tone: 'error' },
+          );
+        } else if (request.kind === 'progress') {
+          notify(
+            t('projects.schedule.messages.progressUpdated', {
+              name: item.name,
+              progress: request.progress,
+            }),
+          );
+        } else {
+          const name = request.kind === 'item' ? request.body.name : item.name;
+          const saved = t(`projects.schedule.messages.itemSaved.${item.kind}`, { name });
+          notify(
+            pushed === 0 ? saved : t('projects.schedule.messages.pushed', { saved, count: pushed }),
+          );
+        }
+      } catch {
+        notify(t('projects.schedule.messages.failed'), { tone: 'error' });
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.audit }),
+      ]);
+      const fresh = queryClient.getQueryData(projectScheduleQuery(project.id).queryKey);
+      const found = fresh === undefined ? undefined : findItem(fresh, item.id);
+      return found === undefined
+        ? before
+        : { kind: 'item', id: item.id, item: found.item, phase: found.phase };
+    },
+    [project.id, notify, t, queryClient],
+  );
+  const editing = useMemo(
+    () => (editingTable ? { isCellEditable, processRowUpdate: saveCell } : undefined),
+    [editingTable, isCellEditable, saveCell],
   );
 
   const footer = useCallback(
@@ -632,6 +809,9 @@ export function ProjectSchedulePage() {
           />
         )}
         {desktop && <Box sx={{ flex: 1 }} />}
+        {desktop && view === 'list' && mayEditTable && itemCount > 0 && (
+          <EditInTableButton on={tableEdit} onChange={setTableEdit} />
+        )}
         {itemCount > 0 && filterMenu}
         {view === 'timeline' && <DisplayMenu display={display} onChange={setDisplay} />}
         {undoButton}
@@ -651,6 +831,7 @@ export function ProjectSchedulePage() {
         {desktop && actions(false)}
         {moreMenu}
       </Box>
+      {editingTable && <TableEditHelp />}
       {view === 'timeline' ? (
         <ScheduleTimeline
           project={project}
@@ -665,7 +846,7 @@ export function ProjectSchedulePage() {
           aside={summary}
         />
       ) : (
-        <DataTable<ScheduleRow>
+        <DataTable<ListRow>
           label={t('projects.schedule.table')}
           rows={pageRows}
           columns={columns}
@@ -679,7 +860,8 @@ export function ProjectSchedulePage() {
             shownCount === undefined ? 'projects.schedule.empty' : 'projects.schedule.filter.empty',
           )}
           displayedRowsLabel={footer}
-          onRowChoose={choose}
+          onRowChoose={editingTable ? undefined : choose}
+          editing={editing}
           isGroupRow={isPhaseRow}
           groupRowsChoosable={canEdit}
           getRowId={getRowId}

@@ -2119,6 +2119,10 @@
         "removed": "Ausência de {{name}} apagada: {{period}}.",
         "failed": "Não foi possível salvar. Tente de novo."
       }
+    },
+    "tableEdit": {
+      "button": "Editar na tabela",
+      "help": "Editando na tabela: Enter, F2 ou digite para editar a célula; Enter salva e desce, Tab salva e vai para a próxima, Esc desiste. O responsável, a data-limite e a nota ficam no detalhe."
     }
   },
   "templates": {
