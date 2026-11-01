@@ -735,3 +735,20 @@ describe('Folga na linha do tempo', () => {
     });
   });
 });
+
+// Spec: cronograma, requirement "Notas pela tela" (ADR-0139).
+describe('Notas na linha do tempo', () => {
+  it('Nota na Linha do tempo', async () => {
+    Object.assign(itemNamed('Integrar emissão de NF-e'), {
+      note: 'Aguardando o certificado digital',
+    });
+    await openTimeline();
+
+    expect(
+      screen.getByRole('img', {
+        name: text.schedule.noteMark.replace('{{note}}', 'Aguardando o certificado digital'),
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('img', { name: /^Notas:/ })).toHaveLength(1);
+  });
+});

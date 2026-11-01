@@ -28,7 +28,8 @@ public sealed record ImportedItemResponse(
     IReadOnlyList<int> After,
     int? Resource,
     int? DeadlineOffset,
-    [property: Description("The kind and the lag of each item in after, in the same order (ADR-0137).")] IReadOnlyList<ImportedLinkResponse> Links);
+    [property: Description("The kind and the lag of each item in after, in the same order (ADR-0137).")] IReadOnlyList<ImportedLinkResponse> Links,
+    [property: Description("The notes of the line, up to 2,000 characters; null without them (ADR-0139).")] string? Note);
 
 /// <summary>A dependency of an item converted from the MS Project: the position of the item before, the kind and the lag.</summary>
 public sealed record ImportedLinkResponse(int Predecessor, ScheduleLinkType Type, int Lag);
@@ -99,7 +100,8 @@ public sealed record ImportedItemRequest(
     IReadOnlyList<int>? After,
     int? Resource,
     int? DeadlineOffset = null,
-    [property: Description("The kind and the lag of each dependency, as the preview gave them; without them, after is \"finishes, then starts\" without lag.")] IReadOnlyList<ImportedLinkResponse>? Links = null);
+    [property: Description("The kind and the lag of each dependency, as the preview gave them; without them, after is \"finishes, then starts\" without lag.")] IReadOnlyList<ImportedLinkResponse>? Links = null,
+    [property: Description("The note of the item, as the preview gave it (ADR-0139).")] string? Note = null);
 
 /// <summary>
 /// Who a resource of the file becomes (ADR-0135): a user (<c>userId</c>) or a person of the directory who never signed in
@@ -156,7 +158,8 @@ internal static class MsProjectImportEndpoints
                         item.StartOffset,
                         item.Duration,
                         item.Progress,
-                        DeadlineOffset: item.DeadlineOffset))],
+                        DeadlineOffset: item.DeadlineOffset,
+                        Note: item.Note))],
                     [.. items.SelectMany((item, index) => item.Links is { } links
                         ? links.Select(link => new OutlineDependency(link.Predecessor, index, link.Type, link.Lag))
                         : (item.After ?? []).Select(before => new OutlineDependency(before, index)))]),
@@ -211,7 +214,8 @@ internal static class MsProjectImportEndpoints
                     item.DeadlineOffset,
                     [.. converted.Outline.Dependencies
                         .Where(dependency => dependency.Successor == index)
-                        .Select(dependency => new ImportedLinkResponse(dependency.Predecessor, dependency.Type, dependency.Lag))]))]),
+                        .Select(dependency => new ImportedLinkResponse(dependency.Predecessor, dependency.Type, dependency.Lag))],
+                    item.Note))]),
             [.. result.Figures.Phases.Select(phase => new MsProjectPreviewPhaseResponse(
                 phase.Phase.Name,
                 [.. phase.Items.Select(item => new MsProjectPreviewItemResponse(

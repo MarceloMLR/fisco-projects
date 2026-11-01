@@ -353,6 +353,50 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
             .Should().Be(("2026-11-03", "2026-11-06", "2026-11-09"));
     }
 
+    [Fact(DisplayName = "Nota importada do MS Project pela API")]
+    public async Task TheNote_GoesInTheXml_AndComesInTheNewProject()
+    {
+        const string Waiting = "Aguardando o cliente mandar os arquivos do plano de contas";
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var project = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, "/api/projects", new
+        {
+            code = "ERP-FIN",
+            name = "Implantação do ERP financeiro",
+            techLeadId = scene.Rafael,
+        }));
+        var path = $"/api/projects/{project}/schedule";
+        var phase = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, $"{path}/phases", new { name = "Configuração" }));
+        await IdOfAsync(await SendAsync(marina, HttpMethod.Post, $"{path}/items", new
+        {
+            kind = "Task",
+            phaseId = phase,
+            name = "Configurar plano de contas",
+            start = "2026-10-26",
+            duration = 4,
+            ownerId = (Guid?)null,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            note = Waiting,
+        }));
+        var exported = await marina.GetByteArrayAsync($"{path}/ms-project", Cancellation);
+        System.Text.Encoding.UTF8.GetString(exported).Should().Contain($"<Notes>{Waiting}</Notes>");
+
+        var preview = await PreviewOfAsync(marina, exported, start: "2026-11-03");
+        preview.GetProperty("plan").GetProperty("items")[0].GetProperty("note").GetString().Should().Be(Waiting);
+        var created = await SendAsync(marina, HttpMethod.Post, "/api/projects", new
+        {
+            code = "ERP-RH",
+            name = "Implantação do ERP de RH",
+            scheduleStart = "2026-11-03",
+            importedSchedule = ImportedSchedule(preview),
+        });
+
+        var schedule = await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{await IdOfAsync(created)}/schedule", Cancellation);
+        ItemsOf(schedule).Single().GetProperty("note").GetString().Should().Be(Waiting);
+    }
+
     [Fact(DisplayName = "Projeto a partir do MS Project")]
     public async Task ANewProjectFromTheMsProject_HasTheSchedule_TheOwners_AndThePeople()
     {

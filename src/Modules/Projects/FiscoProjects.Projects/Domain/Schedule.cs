@@ -18,7 +18,8 @@ public sealed class ScheduleCycleException() : InvalidOperationException("The de
 /// owner (none for a milestone), the progress (zero for a milestone; none keeps it as it is, zero in a new item), the
 /// items it depends on, the task it is in, none when it is right in the phase (ADR-0088), and whether the client of the
 /// project is in charge of the task instead of a person (ADR-0102). For a task with subtasks, only the phase, the name
-/// and the owner count: its dates and progress come from them.
+/// and the owner count: its dates and progress come from them. The note, when given, replaces the one of the item, empty
+/// to take it out; none keeps it as it is (ADR-0139).
 /// </summary>
 public sealed record ScheduleItemPlan(
     Guid PhaseId,
@@ -31,7 +32,8 @@ public sealed record ScheduleItemPlan(
     Guid? ParentId = null,
     bool OwnedByClient = false,
     DateOnly? Deadline = null,
-    IReadOnlyList<ScheduleLink>? Links = null);
+    IReadOnlyList<ScheduleLink>? Links = null,
+    string? Note = null);
 
 /// <summary>
 /// The schedule of a project (ADR-0019): phases and, in them, tasks and milestones, in business days of the calendar of
@@ -83,6 +85,21 @@ public sealed class Schedule : Entity
 
     /// <summary>The name of a task or milestone without the spaces at the ends, when it is not empty and has up to 200 characters.</summary>
     public static string? ValidItemName(string? name) => Trimmed(name, ItemNameMaxLength);
+
+    /// <summary>
+    /// The note of a task or milestone as it is kept (ADR-0139): without the spaces at the ends, with its line breaks and
+    /// tabs, up to 2,000 characters; empty for no note; null when it is too long or has other control characters.
+    /// </summary>
+    public static string? NoteOf(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var note = text.Trim();
+        return note.Length > ScheduleItem.NoteMaxLength || note.Any(IsForbiddenInNote) ? null : note;
+    }
+
+    // Line breaks and tabs are text that was typed; the other control characters are not.
+    private static bool IsForbiddenInNote(char character) =>
+        char.IsControl(character) && character is not ('\n' or '\r' or '\t');
 
     public static bool IsValidDay(DateOnly day) => day >= FirstDay && day <= LastDay;
 
@@ -500,7 +517,8 @@ public sealed class Schedule : Entity
                 item.Parent is { } parent ? items[parent].Id : null,
                 item.OwnedByClient,
                 item.DeadlineOffset is { } deadline ? days.AddBusinessDays(first, deadline) : null,
-                [.. links[index].Select(link => new ScheduleLink(items[link.Predecessor].Id, link.Type, link.Lag))]);
+                [.. links[index].Select(link => new ScheduleLink(items[link.Predecessor].Id, link.Type, link.Lag))],
+                item.Note);
             // As an inclusion places it (AddItem), but once: the outline has every item after its task and the items
             // it depends on, and no dependency of a task with subtasks, so nothing is pushed nor passed on, and the
             // tasks with subtasks take their dates from them at the end. A file of 2,000 tasks stays quick.
@@ -747,6 +765,7 @@ public sealed class Schedule : Entity
             || (item.Kind == ScheduleItemKind.Milestone && (plan.OwnerId is not null || plan.OwnedByClient))
             || (plan.OwnerId is not null && plan.OwnedByClient)
             || (plan.Deadline is { } deadline && !IsValidDay(deadline))
+            || (plan.Note is { } typed && NoteOf(typed) is null)
             || (plan.ParentId is { } parentId && !MayHold(parentId, item.Id, plan.PhaseId)))
         {
             throw new ArgumentException("The plan is not valid for the kind of item.", nameof(plan));
@@ -755,6 +774,11 @@ public sealed class Schedule : Entity
         var name = NameOrThrow(ValidItemName(plan.Name), plan.Name);
         item.Set(plan.PhaseId, name, summary ? item.Duration : plan.Duration, plan.OwnerId, plan.ParentId, plan.OwnedByClient);
         item.SetDeadline(plan.Deadline);
+        if (plan.Note is { } note)
+        {
+            item.SetNote(NoteOf(note));
+        }
+
         if (summary)
         {
             foreach (var subtask in SubtasksOf(item.Id))
@@ -1038,6 +1062,9 @@ public sealed class SchedulePhase : Entity
 /// </summary>
 public sealed class ScheduleItem : Entity
 {
+    /// <summary>The most characters of a note (ADR-0139).</summary>
+    public const int NoteMaxLength = 2_000;
+
     private ScheduleItem()
     {
         Name = string.Empty;
@@ -1101,6 +1128,12 @@ public sealed class ScheduleItem : Entity
     /// the item went past it (GanttA-2); none without one.
     /// </summary>
     public DateOnly? Deadline { get; private set; }
+
+    /// <summary>
+    /// What the team needs to know of the task or milestone, as "aguardando o cliente mandar os arquivos" (ADR-0139): plain
+    /// text with line breaks, up to 2,000 characters; none without one.
+    /// </summary>
+    public string? Note { get; private set; }
 
     /// <summary>
     /// A task is late when its end passed and it has not reached 100% (ADR-0020); a milestone, when its day passed and it
@@ -1168,6 +1201,9 @@ public sealed class ScheduleItem : Entity
 
     internal void SetDeadline(DateOnly? deadline) => Deadline = deadline;
 
+    /// <summary>The note, already checked; empty takes it out.</summary>
+    internal void SetNote(string? note) => Note = string.IsNullOrEmpty(note) ? null : note;
+
     /// <summary>A subtask goes with its task to another phase.</summary>
     internal void MoveTo(Guid phaseId) => PhaseId = phaseId;
 
@@ -1212,7 +1248,7 @@ public sealed class ScheduleItem : Entity
     internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
 
     internal ItemState State() =>
-        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient, Deadline);
+        new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient, Deadline, Note);
 
     /// <summary>Every field as it was; the kind never changes.</summary>
     internal void Restore(ItemState state)
@@ -1229,6 +1265,7 @@ public sealed class ScheduleItem : Entity
         CompletedOn = state.CompletedOn;
         ReachedOn = state.ReachedOn;
         Deadline = state.Deadline;
+        Note = state.Note;
     }
 }
 

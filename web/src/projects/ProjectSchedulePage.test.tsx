@@ -384,6 +384,7 @@ describe('Editar o cronograma pela tela', () => {
             links: [],
             float: null,
             latestEnd: null,
+            note: null,
             duration: 3,
             progress: 0,
             completedOn: null,
@@ -443,6 +444,8 @@ describe('Editar o cronograma pela tela', () => {
         parentId: null,
         ownedByClient: false,
         deadline: null,
+        // No note: an empty one is sent, which leaves the item without one (ADR-0139).
+        note: '',
         // "Finishes, then starts" without lag, as the API takes them (ADR-0137).
         links: [
           {
@@ -581,6 +584,8 @@ describe('Editar o cronograma pela tela', () => {
         parentId: null,
         ownedByClient: false,
         deadline: null,
+        // No note: an empty one is sent, which leaves the item without one (ADR-0139).
+        note: '',
         // "Finishes, then starts" without lag, as the API takes them (ADR-0137).
         links: [
           { predecessorId: itemNamed('Reunião de abertura').id, type: 'FinishToStart', lag: 0 },
@@ -1625,5 +1630,103 @@ describe('Horas das tarefas pela tela', () => {
     const drawer = await chooseItem('Parametrizar regras de ICMS');
     expect(within(drawer).queryByRole('region', { name: hoursText.section })).toBeNull();
     expect(asked).toEqual([]);
+  });
+});
+
+// Spec: cronograma, requirement "Notas pela tela" (ADR-0139).
+describe('Notas pela tela', () => {
+  const waiting = 'Aguardando o cliente mandar os arquivos do plano de contas';
+  const markOf = (note: string) => text.noteMark.replace('{{note}}', note);
+
+  it('Nota na Lista', async () => {
+    Object.assign(itemNamed('Testes integrados'), { note: waiting });
+    Object.assign(itemNamed('Aceite da homologação'), { note: 'Depende da homologação na Sefaz' });
+    await openSchedule();
+
+    const mark = within(rowOf('Testes integrados')).getByRole('img', { name: markOf(waiting) });
+    expect(mark.parentElement).toHaveAttribute('title', waiting);
+    expect(
+      within(rowOf('Aceite da homologação')).getByRole('img', {
+        name: markOf('Depende da homologação na Sefaz'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(rowOf('Integrar emissão de NF-e')).queryByRole('img', { name: /^Notas/ }),
+    ).toBeNull();
+  });
+
+  it('Escrever a nota pela tela', async () => {
+    const changes: { note?: string }[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        const body = (await request.json()) as { note?: string };
+        changes.push(body);
+        Object.assign(itemNamed('Testes integrados'), {
+          note: body.note === '' ? null : body.note,
+        });
+        schedule = { ...schedule };
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    const field = within(drawer).getByLabelText(text.form.note);
+    expect(field).toHaveValue('');
+    const typed = `  ${waiting}\nCobrar na segunda.`;
+    fireEvent.change(field, { target: { value: typed } });
+    expect(field).toHaveAccessibleDescription(
+      text.form.noteHelp_other.replace('{{count}}', String(2000 - typed.length)),
+    );
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    expect(
+      await screen.findByText(
+        text.messages.itemSaved.Task.replace('{{name}}', 'Testes integrados'),
+      ),
+    ).toBeVisible();
+    expect(changes).toEqual([expect.objectContaining({ note: `${waiting}\nCobrar na segunda.` })]);
+    await closeDrawer(drawer);
+    await waitFor(() => {
+      expect(
+        within(rowOf('Testes integrados')).getByRole('img', {
+          name: markOf(`${waiting}\nCobrar na segunda.`),
+        }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('Nota longa demais pela tela', async () => {
+    let sent = false;
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', () => {
+        sent = true;
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    const field = within(drawer).getByLabelText(text.form.note);
+    // The field stops at 2,000 characters; a pasted text past it is refused by the form.
+    expect(field).toHaveAttribute('maxLength', '2000');
+    fireEvent.change(field, { target: { value: 'n'.repeat(2001) } });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    expect(await within(drawer).findByText(text.errors.noteTooLong)).toBeVisible();
+    expect(sent).toBe(false);
+  });
+
+  it('Nota no detalhe de quem só vê', async () => {
+    permissions = { canEditSchedule: false };
+    Object.assign(itemNamed('Testes integrados'), { note: `${waiting}\nCobrar na segunda.` });
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+
+    const note = within(drawer).getByText(text.details.note).nextElementSibling;
+    expect(note).toHaveTextContent(`${waiting} Cobrar na segunda.`);
+    expect(note).toHaveStyle({ whiteSpace: 'pre-wrap' });
+    expect(within(drawer).queryByLabelText(text.form.note)).toBeNull();
   });
 });

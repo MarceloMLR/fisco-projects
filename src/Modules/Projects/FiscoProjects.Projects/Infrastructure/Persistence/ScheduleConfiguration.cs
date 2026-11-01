@@ -56,6 +56,7 @@ internal sealed class ScheduleItemConfiguration : IEntityTypeConfiguration<Sched
         item.ToTable("schedule_items");
         item.Property(i => i.Kind).HasConversion<string>().HasMaxLength(16);
         item.Property(i => i.Name).HasMaxLength(Schedule.ItemNameMaxLength);
+        item.Property(i => i.Note).HasMaxLength(ScheduleItem.NoteMaxLength);
         item.HasOne<SchedulePhase>().WithMany().HasForeignKey(i => i.PhaseId).OnDelete(DeleteBehavior.ClientCascade);
         // The subtasks of a task (ADR-0088); the schedule removes them with the task.
         item.HasOne<ScheduleItem>().WithMany().HasForeignKey(i => i.ParentId).OnDelete(DeleteBehavior.ClientCascade);

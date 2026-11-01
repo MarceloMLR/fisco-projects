@@ -20,7 +20,8 @@ public sealed record ItemState(
     DateOnly? CompletedOn,
     DateOnly? ReachedOn,
     bool OwnedByClient = false,
-    DateOnly? Deadline = null);
+    DateOnly? Deadline = null,
+    string? Note = null);
 
 /// <summary>A dependency as it was at a moment.</summary>
 public sealed record DependencyState(

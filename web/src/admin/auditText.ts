@@ -166,7 +166,8 @@ type ScheduleItemField =
   | 'OwnedByClient'
   | 'CompletedOn'
   | 'ReachedOn'
-  | 'Deadline';
+  | 'Deadline'
+  | 'Note';
 const scheduleItemFields: readonly string[] = [
   'ProjectId',
   'PhaseId',
@@ -181,6 +182,7 @@ const scheduleItemFields: readonly string[] = [
   'CompletedOn',
   'ReachedOn',
   'Deadline',
+  'Note',
 ] satisfies ScheduleItemField[];
 
 const isScheduleItemField = (field: string): field is ScheduleItemField =>

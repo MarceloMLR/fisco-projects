@@ -215,3 +215,18 @@ describe('Horas previstas na demonstração', () => {
     expect(new Set(states)).toEqual(new Set(['Over', 'NearLimit', 'Within']));
   });
 });
+
+// Spec: dados-de-demonstracao, requirement "Notas na demonstração" (ADR-0139).
+describe('Notas na demonstração', () => {
+  it('Notas na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    const items = (main?.phases ?? []).flatMap((phase) => phase.items);
+    const noted = items.filter((item) => item.note !== undefined);
+
+    expect(new Set(noted.map((item) => item.kind))).toEqual(new Set(['Task', 'Milestone']));
+    for (const item of noted) {
+      expect((item.note ?? '').trim().length).toBeGreaterThan(0);
+      expect((item.note ?? '').length).toBeLessThanOrEqual(2000);
+    }
+  });
+});

@@ -9,6 +9,8 @@ export interface TextAreaProps extends ComponentProps<'textarea'> {
   error?: string;
   helper?: string;
   width?: number;
+  /** The text that marks the field as optional, as "(opcional)", out of its accessible name. */
+  optional?: string;
 }
 
 /**
@@ -20,6 +22,7 @@ export function TextArea({
   error,
   helper,
   width,
+  optional,
   id,
   ref,
   rows = 3,
@@ -36,6 +39,7 @@ export function TextArea({
       error={error}
       helper={helper}
       width={width}
+      optional={optional}
       multiline
     >
       <Box

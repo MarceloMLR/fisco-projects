@@ -12321,6 +12321,13 @@
               "$ref": "#/components/schemas/ImportedLinkResponse"
             },
             "description": "The kind and the lag of each dependency, as the preview gave them; without them, after is \"finishes, then starts\" without lag."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The note of the item, as the preview gave it (ADR-0139)."
           }
         },
         "description": "A task or milestone of the schedule from the MS Project, as the preview gave it (ImportedItemResponse)."
@@ -12337,7 +12344,8 @@
           "after",
           "resource",
           "deadlineOffset",
-          "links"
+          "links",
+          "note"
         ],
         "type": "object",
         "properties": {
@@ -12397,6 +12405,13 @@
               "$ref": "#/components/schemas/ImportedLinkResponse"
             },
             "description": "The kind and the lag of each item in after, in the same order (ADR-0137)."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The notes of the line, up to 2,000 characters; null without them (ADR-0139)."
           }
         },
         "description": "A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the\nposition of its phase, the position of the task it is in (an item before it), its kind, name, the business days\nafter the start it starts, its duration (zero for a milestone), its progress (100 for a milestone reached), the\npositions of the items it depends on (all before it), the position of its resource and the business days after the\nstart of its deadline, negative before it (GanttA-2)."
@@ -13063,7 +13078,8 @@
           "OtherResources",
           "UnusedResources",
           "InactiveTasks",
-          "BlankLines"
+          "BlankLines",
+          "CutNotes"
         ],
         "description": "What the conversion changed, for the person to know before creating the project (ADR-0135)."
       },
@@ -13678,6 +13694,13 @@
               "$ref": "#/components/schemas/ScheduleLinkRequest"
             },
             "description": "The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137)."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139)."
           }
         },
         "description": "A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a\nmilestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to\n100 (zero for a milestone), the items it depends on, and the task it goes into, right in the same phase (none for\nright in the phase). The first subtask of a task takes the dependencies of the task (ADR-0088)."
@@ -15719,6 +15742,13 @@
               "$ref": "#/components/schemas/ScheduleLinkRequest"
             },
             "description": "The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137)."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139)."
           }
         },
         "description": "A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is\nin, it goes right in the phase. A task with subtasks changes only its phase, name and owner: its start and duration\nare not looked at, and it has no dependencies (ADR-0088)."
@@ -15751,7 +15781,8 @@
           "deadlineDeviation",
           "links",
           "float",
-          "latestEnd"
+          "latestEnd",
+          "note"
         ],
         "type": "object",
         "properties": {
@@ -15902,6 +15933,13 @@
             ],
             "description": "The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).",
             "format": "date"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139)."
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."
