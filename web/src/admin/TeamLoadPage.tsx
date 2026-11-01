@@ -197,45 +197,61 @@ export function TeamLoadPage() {
     setPage(1);
   };
 
-  return (
-    <Page
-      subtitle={data === undefined ? undefined : teamLoadMeta(people, t)}
-      actions={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <IconButton
-            aria-label={t('teamLoad.previous')}
-            disabled={first === undefined}
-            onClick={() => {
-              if (first !== undefined) {
-                moveTo(weekAfter(first, -1));
-              }
-            }}
-          >
-            <ChevronLeftOutlined />
-          </IconButton>
-          <Button
-            variant="outlined"
-            disabled={week === null}
-            onClick={() => {
-              moveTo(null);
-            }}
-          >
-            {t('teamLoad.thisWeek')}
-          </Button>
-          <IconButton
-            aria-label={t('teamLoad.next')}
-            disabled={first === undefined}
-            onClick={() => {
-              if (first !== undefined) {
-                moveTo(weekAfter(first, 1));
-              }
-            }}
-          >
-            <ChevronRightOutlined />
-          </IconButton>
+  const arrowSx = {
+    border: '1px solid var(--border-control)',
+    borderRadius: 'var(--radius-md)',
+    width: 36,
+    height: 36,
+  } as const;
+  const last = weeks.at(-1)?.end;
+  const weekButtons = (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <IconButton
+        aria-label={t('teamLoad.previous')}
+        disabled={first === undefined}
+        sx={arrowSx}
+        onClick={() => {
+          if (first !== undefined) {
+            moveTo(weekAfter(first, -1));
+          }
+        }}
+      >
+        <ChevronLeftOutlined />
+      </IconButton>
+      {desktop ? (
+        <Button
+          variant="outlined"
+          disabled={week === null}
+          onClick={() => {
+            moveTo(null);
+          }}
+        >
+          {t('teamLoad.thisWeek')}
+        </Button>
+      ) : (
+        <Box
+          sx={{ flex: 1, textAlign: 'center', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}
+        >
+          {first === undefined || last === undefined ? null : weekText({ start: first, end: last })}
         </Box>
-      }
-    >
+      )}
+      <IconButton
+        aria-label={t('teamLoad.next')}
+        disabled={first === undefined}
+        sx={arrowSx}
+        onClick={() => {
+          if (first !== undefined) {
+            moveTo(weekAfter(first, 1));
+          }
+        }}
+      >
+        <ChevronRightOutlined />
+      </IconButton>
+    </Box>
+  );
+
+  return (
+    <Page subtitle={data === undefined ? undefined : teamLoadMeta(people, t)} actions={weekButtons}>
       {error === null ? (
         <Box
           sx={{
@@ -246,6 +262,21 @@ export function TeamLoadPage() {
             gap: 'var(--space-3)',
           }}
         >
+          {!desktop && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {weekButtons}
+              {week !== null && (
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    moveTo(null);
+                  }}
+                >
+                  {t('teamLoad.thisWeek')}
+                </Button>
+              )}
+            </Box>
+          )}
           {data !== undefined && (
             <Box
               component="p"

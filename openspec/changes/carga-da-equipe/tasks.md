@@ -13,11 +13,11 @@
 
 ## 4. Tela
 
-- [ ] 4.1 `npm run api:update`; o campo nas Configurações gerais
-- [ ] 4.2 A página Carga da equipe e a gaveta; testes "Carga da equipe na tela", "Com sobrecarga pela tela", "Próximas semanas pela tela" e "Detalhe da carga"
-- [ ] 4.3 A demonstração; teste "Carga na demonstração"
-- [ ] 4.4 Conferência no navegador, no computador e no celular, nos temas claro e escuro
+- [x] 4.1 `npm run api:update`; o campo nas Configurações gerais
+- [x] 4.2 A página Carga da equipe e a gaveta; testes "Carga da equipe na tela", "Com sobrecarga pela tela", "Próximas semanas pela tela" e "Detalhe da carga"
+- [x] 4.3 A demonstração; teste "Carga na demonstração"
+- [x] 4.4 Conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 5. Documentação
 
-- [ ] 5.1 `CLAUDE.md` e `docs/glossario.md` com a carga da equipe
+- [x] 5.1 `CLAUDE.md` e `docs/glossario.md` com a carga da equipe
