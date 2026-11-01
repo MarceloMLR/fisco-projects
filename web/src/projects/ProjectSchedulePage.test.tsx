@@ -1302,3 +1302,99 @@ describe('Data-limite pela tela', () => {
     ).toHaveAttribute('data-state', 'overdue');
   });
 });
+
+// Spec: cronograma, requirement "Filtros do cronograma" (GanttA-3).
+describe('Filtros pela tela', () => {
+  const filters = text.filter;
+
+  async function chooseFilter(name: string) {
+    fireEvent.click(screen.getByRole('button', { name: filters.button }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name }));
+  }
+
+  const shownText = (shown: number, count: number) =>
+    filters.shown_other.replace('{{shown}}', String(shown)).replace('{{count}}', String(count));
+
+  it('Filtrar as atrasadas pela tela', async () => {
+    const { router } = await openSchedule();
+
+    await chooseFilter(filters.kinds.late);
+
+    await waitFor(() => {
+      expect(lines()).toEqual(['fase: Levantamento', 'Validar cadastro de produtos']);
+    });
+    // The footer of the Lista and the summary say how many show, and the button says the filter.
+    expect(screen.getAllByText(shownText(1, 8)).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('button', { name: filters.active.replace('{{name}}', filters.kinds.late) }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(router.state.location.search).toBe('?view=list&filter=late');
+  });
+
+  it('Minhas tarefas pela tela', async () => {
+    await openSchedule();
+
+    // Marina is in the session.
+    await chooseFilter(filters.kinds.mine);
+
+    await waitFor(() => {
+      expect(lines()).toEqual([
+        'fase: Levantamento',
+        'Reunião de abertura',
+        'fase: Configuração',
+        'Testes integrados',
+      ]);
+    });
+  });
+
+  it('Por responsável pela tela', async () => {
+    schedule = demoScheduleWithSubtasks();
+    await openSchedule();
+
+    fireEvent.click(screen.getByRole('button', { name: filters.button }));
+    const menu = await screen.findByRole('menu', { name: filters.label });
+    expect(within(menu).getByText(filters.byOwner)).toBeVisible();
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: demoPeople.carla.name }));
+
+    // The subtask under its task, which keeps its place.
+    await waitFor(() => {
+      expect(lines()).toEqual(['fase: Configuração', 'Testes integrados', 'Roteiro de testes']);
+    });
+    expect(
+      screen.getByRole('button', {
+        name: filters.active.replace('{{name}}', demoPeople.carla.name),
+      }),
+    ).toBeVisible();
+  });
+
+  it('Filtro sem resultado pela tela', async () => {
+    await openSchedule();
+
+    await chooseFilter(filters.kinds.missedDeadlines);
+
+    expect(await within(table()).findByText(filters.empty)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: filters.clear }));
+    await waitFor(() => {
+      expect(lines()).toHaveLength(12);
+    });
+    expect(screen.getByRole('button', { name: filters.button })).toBeVisible();
+  });
+
+  it('Filtro no endereço', async () => {
+    await renderApp(`/projects/${project.id}/schedule?view=list&filter=critical`);
+
+    await waitFor(() => {
+      expect(lines()).toEqual([
+        'fase: Levantamento',
+        'Reunião de abertura',
+        'Mapear processos fiscais',
+        'fase: Configuração',
+        'Parametrizar regras de ICMS',
+        'Testes integrados',
+        'fase: Homologação',
+        'Testes com a equipe do cliente',
+        'Aceite da homologação',
+      ]);
+    });
+  });
+});

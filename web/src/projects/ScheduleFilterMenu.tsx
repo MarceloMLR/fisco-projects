@@ -1,0 +1,108 @@
+import CheckOutlined from '@mui/icons-material/CheckOutlined';
+import FilterListOutlined from '@mui/icons-material/FilterListOutlined';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import ListSubheader from '@mui/material/ListSubheader';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { IconButton } from '../components/Button';
+import { filterText, type OwnerOption, plainFilters, type ScheduleFilter } from './scheduleFilter';
+
+/** The key of "Todas as tarefas e marcos", without a filter. */
+const noFilterKey = 'all';
+
+const sameFilter = (one: ScheduleFilter | undefined, other: ScheduleFilter | undefined) =>
+  one?.kind === other?.kind &&
+  (one?.kind !== 'owner' || other?.kind !== 'owner' || one.owner === other.owner);
+
+/**
+ * "Filtrar" in the bar of the tab and in Expandir (GanttA-3): a menu of one filter at a time, with "Por responsável"
+ * below the others. The icon keeps the bar in one line; with a filter, it is marked and its name says the filter, which
+ * the summary of the tab also shows.
+ */
+export function ScheduleFilterMenu({
+  filter,
+  owners,
+  onChange,
+}: {
+  filter: ScheduleFilter | undefined;
+  owners: readonly OwnerOption[];
+  onChange: (filter: ScheduleFilter | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  const [anchor, setAnchor] = useState<HTMLElement>();
+  const label =
+    filter === undefined
+      ? t('projects.schedule.filter.button')
+      : t('projects.schedule.filter.active', { name: filterText(filter, owners, t) });
+  const choose = (chosen: ScheduleFilter | undefined) => {
+    setAnchor(undefined);
+    onChange(chosen);
+  };
+  const item = (key: string, label: string, value: ScheduleFilter | undefined) => {
+    const current = sameFilter(filter, value);
+    return (
+      <MenuItem
+        key={key}
+        role="menuitemradio"
+        aria-checked={current}
+        selected={current}
+        onClick={() => {
+          choose(value);
+        }}
+      >
+        <Box component="span" sx={{ flex: 1 }}>
+          {label}
+        </Box>
+        {current && <CheckOutlined aria-hidden sx={{ color: 'var(--action-text) !important' }} />}
+      </MenuItem>
+    );
+  };
+  return (
+    <>
+      <span title={label}>
+        <IconButton
+          aria-label={label}
+          aria-haspopup="menu"
+          aria-expanded={anchor !== undefined}
+          aria-pressed={filter !== undefined}
+          onClick={(event) => {
+            setAnchor(event.currentTarget);
+          }}
+          sx={
+            filter === undefined
+              ? { color: 'var(--text-secondary)' }
+              : { color: 'var(--action-text)', backgroundColor: 'var(--bg-selected)' }
+          }
+        >
+          <FilterListOutlined />
+        </IconButton>
+      </span>
+      <Menu
+        anchorEl={anchor}
+        open={anchor !== undefined}
+        onClose={() => {
+          setAnchor(undefined);
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={{
+          paper: { sx: { minWidth: 240, maxHeight: 420, marginTop: 'var(--space-1)' } },
+          list: { 'aria-label': t('projects.schedule.filter.label') },
+        }}
+      >
+        {item(noFilterKey, t('projects.schedule.filter.all'), undefined)}
+        {plainFilters.map((kind) =>
+          item(kind, t(`projects.schedule.filter.kinds.${kind}`), { kind }),
+        )}
+        <Divider sx={{ margin: 'var(--space-1) 0' }} />
+        <ListSubheader>{t('projects.schedule.filter.byOwner')}</ListSubheader>
+        {owners.map((option) =>
+          item(`owner-${option.owner}`, option.label, { kind: 'owner', owner: option.owner }),
+        )}
+      </Menu>
+    </>
+  );
+}

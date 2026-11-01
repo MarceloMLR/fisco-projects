@@ -33,6 +33,7 @@ export function ScheduleTimeline({
   display,
   ganttRef,
   onChoose,
+  emptyText,
   aside,
 }: {
   project: Project;
@@ -45,6 +46,8 @@ export function ScheduleTimeline({
   display: ScheduleDisplay;
   ganttRef?: Ref<ScheduleGanttHandle>;
   onChoose: (target: GanttTarget) => void;
+  /** Said in place of the timeline when a filter leaves no task or milestone (GanttA-3). */
+  emptyText?: string;
   /** Beside the legend, such as the progress of the project and its delays. */
   aside?: ReactNode;
 }) {
@@ -178,7 +181,7 @@ export function ScheduleTimeline({
         gap: 'var(--space-2)',
       }}
     >
-      {schedule.start === null ? (
+      {schedule.start === null || emptyText !== undefined ? (
         <Box
           sx={{
             ...quietSx,
@@ -189,9 +192,12 @@ export function ScheduleTimeline({
             borderRadius: 'var(--radius-lg)',
           }}
         >
-          {t(
-            schedule.phases.length === 0 ? 'projects.schedule.empty' : 'projects.timeline.noItems',
-          )}
+          {emptyText ??
+            t(
+              schedule.phases.length === 0
+                ? 'projects.schedule.empty'
+                : 'projects.timeline.noItems',
+            )}
         </Box>
       ) : (
         <Suspense fallback={loading}>

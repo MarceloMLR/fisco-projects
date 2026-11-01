@@ -77,6 +77,18 @@ import { SchedulePhaseDialog } from './SchedulePhaseDialog';
 import { SubtaskSection } from './ScheduleSubtasks';
 import { DeadlineStatus, LateCounts, MilestoneStatus, MissedDeadlines } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
+import { ScheduleFilterMenu } from './ScheduleFilterMenu';
+import {
+  type FilterContext,
+  filterOf,
+  filteredSchedule,
+  filterText,
+  ownerOptions,
+  passingCount,
+  type ScheduleFilter,
+  withFilter,
+} from './scheduleFilter';
+import { useSession } from '../session/SessionContext';
 import { Button, IconButton } from '../components/Button';
 import { Form } from '../components/Form';
 
@@ -147,7 +159,21 @@ export function ProjectSchedulePage() {
   const expandedTimeline = useRef<ScheduleGanttHandle>(null);
   /** The tasks whose subtasks the Lista hides, until the arrow shows them again; all are shown at first. */
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
-  const rows = useMemo(() => scheduleRows(schedule, collapsed), [schedule, collapsed]);
+  /** The filter of the Lista, the Linha do tempo and Expandir, in the address (GanttA-3). */
+  const filter = useMemo(() => filterOf(search), [search]);
+  const { session } = useSession();
+  const me = session.status === 'signed-in' ? session.user.id : undefined;
+  const filterContext = useMemo<FilterContext>(
+    () => ({ today: schedule.today, me }),
+    [schedule.today, me],
+  );
+  const shown = useMemo(
+    () => (filter === undefined ? schedule : filteredSchedule(schedule, filter, filterContext)),
+    [schedule, filter, filterContext],
+  );
+  const shownCount =
+    filter === undefined ? undefined : passingCount(schedule, filter, filterContext);
+  const rows = useMemo(() => scheduleRows(shown, collapsed), [shown, collapsed]);
   const toggleSubtasks = useCallback((itemId: string) => {
     setCollapsed((current) => {
       const next = new Set(current);
@@ -369,12 +395,26 @@ export function ProjectSchedulePage() {
 
   const footer = useCallback(
     () =>
-      t('projects.schedule.footer', {
-        phases: t('projects.schedule.phases', { count: schedule.phases.length }),
-        items: t('projects.schedule.items', { count: itemCount }),
-      }),
-    [t, schedule.phases.length, itemCount],
+      shownCount === undefined
+        ? t('projects.schedule.footer', {
+            phases: t('projects.schedule.phases', { count: schedule.phases.length }),
+            items: t('projects.schedule.items', { count: itemCount }),
+          })
+        : t('projects.schedule.filter.shown', { shown: shownCount, count: itemCount }),
+    [t, schedule.phases.length, itemCount, shownCount],
   );
+  const owners = useMemo(
+    () => ownerOptions(schedule, project.client?.name ?? null, t),
+    [schedule, project.client, t],
+  );
+  const chooseFilter = useCallback(
+    (chosen: ScheduleFilter | undefined) => {
+      setPage(1);
+      setSearch((current) => withFilter(current, chosen), { replace: true });
+    },
+    [setSearch],
+  );
+  const filterMenu = <ScheduleFilterMenu filter={filter} owners={owners} onChange={chooseFilter} />;
   const choose = useCallback(
     (row: ScheduleRow) => {
       if (row.kind === 'item') {
@@ -447,6 +487,23 @@ export function ProjectSchedulePage() {
       <LateCounts tasks={schedule.lateTasks} milestones={schedule.lateMilestones} />
       <MissedDeadlines count={schedule.missedDeadlines} />
       <BaselineSummary schedule={schedule} />
+      {shownCount !== undefined && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Box component="span" sx={{ fontSize: 13, lineHeight: '18px', ...secondarySx }}>
+            {filter !== undefined && `${filterText(filter, owners, t)} · `}
+            {t('projects.schedule.filter.shown', { shown: shownCount, count: itemCount })}
+          </Box>
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => {
+              chooseFilter(undefined);
+            }}
+          >
+            {t('projects.schedule.filter.clear')}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
   const moreMenu = (
@@ -542,6 +599,7 @@ export function ProjectSchedulePage() {
           />
         )}
         {desktop && <Box sx={{ flex: 1 }} />}
+        {itemCount > 0 && filterMenu}
         {view === 'timeline' && <DisplayMenu display={display} onChange={setDisplay} />}
         {undoButton}
         {desktop && view === 'timeline' && (
@@ -563,7 +621,8 @@ export function ProjectSchedulePage() {
       {view === 'timeline' ? (
         <ScheduleTimeline
           project={project}
-          schedule={schedule}
+          schedule={shown}
+          emptyText={shownCount === 0 ? t('projects.schedule.filter.empty') : undefined}
           scale={scale}
           editable={canEdit && desktop}
           selectedId={chosen?.item.id ?? phaseDialog?.phase?.id}
@@ -583,7 +642,9 @@ export function ProjectSchedulePage() {
           onPageChange={setPage}
           loading={isFetching}
           rowHeight={48}
-          emptyLabel={t('projects.schedule.empty')}
+          emptyLabel={t(
+            shownCount === undefined ? 'projects.schedule.empty' : 'projects.schedule.filter.empty',
+          )}
           displayedRowsLabel={footer}
           onRowChoose={choose}
           isGroupRow={isPhaseRow}
@@ -618,6 +679,7 @@ export function ProjectSchedulePage() {
                 expandedTimeline.current?.goToToday();
               }}
             />
+            {filterMenu}
             <DisplayChecks display={display} onChange={setDisplay} />
             <Box sx={{ flex: 1 }} />
             {undoButton}
@@ -638,7 +700,8 @@ export function ProjectSchedulePage() {
         {expanded && (
           <ScheduleTimeline
             project={project}
-            schedule={schedule}
+            schedule={shown}
+            emptyText={shownCount === 0 ? t('projects.schedule.filter.empty') : undefined}
             scale={scale}
             editable={canEdit}
             detailed
