@@ -30,12 +30,13 @@ public sealed record ScheduleItemPlan(
     IReadOnlyCollection<Guid> PredecessorIds,
     Guid? ParentId = null,
     bool OwnedByClient = false,
-    DateOnly? Deadline = null);
+    DateOnly? Deadline = null,
+    IReadOnlyList<ScheduleLink>? Links = null);
 
 /// <summary>
 /// The schedule of a project (ADR-0019): phases and, in them, tasks and milestones, in business days of the calendar of
-/// the installation (ADR-0018), with dependencies of the kind "finishes, then starts" that push the next items later
-/// and never pull them earlier, and the progress of the tasks (ADR-0020). A task right in a phase may hold subtasks,
+/// the installation (ADR-0018), with dependencies of a kind and a lag (ADR-0137) that push the next items later and
+/// never pull them earlier, and the progress of the tasks (ADR-0020). A task right in a phase may hold subtasks,
 /// tasks and milestones one level down; it is then a summary, with its dates and progress from them, and only the items
 /// with dates of their own have dependencies (ADR-0088). Its id is the id of the project.
 /// </summary>
@@ -189,7 +190,7 @@ public sealed class Schedule : Entity
         _items.Add(item);
         foreach (var predecessor in predecessors)
         {
-            _dependencies.Add(new ScheduleDependency(Id, predecessor, item.Id));
+            _dependencies.Add(NewDependency(predecessor, item.Id, plan));
         }
 
         if (heir is { } summary)
@@ -245,9 +246,16 @@ public sealed class Schedule : Entity
 
         Apply(item, plan, today);
         _dependencies.RemoveAll(dependency => dependency.SuccessorId == itemId && !predecessors.Contains(dependency.PredecessorId));
+        // A plan with the kinds and lags sets them on the dependencies it keeps; without them, each keeps its own.
+        foreach (var kept in _dependencies.Where(d => d.SuccessorId == itemId && plan.Links is not null))
+        {
+            var link = LinkOf(kept.PredecessorId, plan);
+            kept.Set(link.Type, link.Lag);
+        }
+
         foreach (var predecessor in predecessors.Where(id => !_dependencies.Any(d => d.SuccessorId == itemId && d.PredecessorId == id)))
         {
-            _dependencies.Add(new ScheduleDependency(Id, predecessor, itemId));
+            _dependencies.Add(NewDependency(predecessor, itemId, plan));
         }
 
         if (heir is { } summary)
@@ -472,6 +480,7 @@ public sealed class Schedule : Entity
         var first = OnABusinessDay(start, days);
         var phases = outline.Phases.Select(phase => AddPhase(phase.Name).Id).ToList();
         var predecessors = outline.Dependencies.ToLookup(dependency => dependency.Successor, dependency => dependency.Predecessor);
+        var links = outline.Dependencies.ToLookup(dependency => dependency.Successor);
         var items = new List<ScheduleItem>();
         foreach (var (item, index) in outline.Items.Select((item, index) => (item, index)))
         {
@@ -490,7 +499,8 @@ public sealed class Schedule : Entity
                 [.. predecessors[index].Distinct().Select(position => items[position].Id)],
                 item.Parent is { } parent ? items[parent].Id : null,
                 item.OwnedByClient,
-                item.DeadlineOffset is { } deadline ? days.AddBusinessDays(first, deadline) : null);
+                item.DeadlineOffset is { } deadline ? days.AddBusinessDays(first, deadline) : null,
+                [.. links[index].Select(link => new ScheduleLink(items[link.Predecessor].Id, link.Type, link.Lag))]);
             // As an inclusion places it (AddItem), but once: the outline has every item after its task and the items
             // it depends on, and no dependency of a task with subtasks, so nothing is pushed nor passed on, and the
             // tasks with subtasks take their dates from them at the end. A file of 2,000 tasks stays quick.
@@ -500,7 +510,7 @@ public sealed class Schedule : Entity
             _items.Add(made);
             foreach (var predecessor in before)
             {
-                _dependencies.Add(new ScheduleDependency(Id, predecessor, made.Id));
+                _dependencies.Add(NewDependency(predecessor, made.Id, plan));
             }
 
             made.Place(EarliestStart(made, plan.Start, days), days);
@@ -543,6 +553,7 @@ public sealed class Schedule : Entity
             && outline.Dependencies.All(dependency =>
                 dependency.Predecessor >= 0 && dependency.Predecessor < dependency.Successor
                 && dependency.Successor < outline.Items.Count
+                && ScheduleLinks.IsValid(dependency.Type, dependency.Lag)
                 && !parents.Contains(dependency.Predecessor) && !parents.Contains(dependency.Successor));
         if (!valid)
         {
@@ -716,9 +727,6 @@ public sealed class Schedule : Entity
         valid ?? throw new ArgumentException($"'{name}' is no valid name.", nameof(name));
 
     /// <summary>The first day an item may start after another: the next business day for a task, the same day for a milestone.</summary>
-    private static DateOnly EarliestAfter(ScheduleItem predecessor, ScheduleItemKind kind, IBusinessDays days) =>
-        kind == ScheduleItemKind.Milestone ? predecessor.End : days.AddBusinessDays(predecessor.End, 1);
-
     private static DateOnly OnABusinessDay(DateOnly day, IBusinessDays days) =>
         days.IsBusinessDay(day) ? day : days.AddBusinessDays(day, 1);
 
@@ -776,7 +784,24 @@ public sealed class Schedule : Entity
             throw new ArgumentException("The item depends on items of the schedule with dates of their own, other than itself.", nameof(plan));
         }
 
+        if (plan.Links is { } links
+            && (links.Any(link => !ScheduleLinks.IsValid(link.Type, link.Lag) || !predecessors.Contains(link.PredecessorId))
+                || links.Select(link => link.PredecessorId).Distinct().Count() < links.Count))
+        {
+            throw new ArgumentException("Each link is of a known kind, with a lag from -99 to 999, on one item it depends on.", nameof(plan));
+        }
+
         return predecessors;
+    }
+
+    /// <summary>The kind and the lag the plan asks for an item it depends on: "finishes, then starts" without lag by default.</summary>
+    private static ScheduleLink LinkOf(Guid predecessorId, ScheduleItemPlan plan) =>
+        plan.Links?.FirstOrDefault(link => link.PredecessorId == predecessorId) ?? new ScheduleLink(predecessorId);
+
+    private ScheduleDependency NewDependency(Guid predecessorId, Guid successorId, ScheduleItemPlan plan)
+    {
+        var link = LinkOf(predecessorId, plan);
+        return new ScheduleDependency(Id, predecessorId, successorId, link.Type, link.Lag);
     }
 
     /// <summary>The task that becomes a summary when the item goes into it: one without subtasks yet.</summary>
@@ -797,7 +822,7 @@ public sealed class Schedule : Entity
             var successor = dependency.SuccessorId == fromId ? toId : dependency.SuccessorId;
             if (predecessor != successor && !_dependencies.Any(d => d.PredecessorId == predecessor && d.SuccessorId == successor))
             {
-                _dependencies.Add(new ScheduleDependency(Id, predecessor, successor));
+                _dependencies.Add(new ScheduleDependency(Id, predecessor, successor, dependency.Type, dependency.Lag));
             }
         }
     }
@@ -861,20 +886,28 @@ public sealed class Schedule : Entity
         }
     }
 
-    /// <summary>The asked start on a business day, or later when the items before it end later.</summary>
+    /// <summary>The asked start on a business day, or later when the items before it allow only later (ADR-0137).</summary>
     private DateOnly EarliestStart(ScheduleItem item, DateOnly asked, IBusinessDays days)
     {
         var start = OnABusinessDay(asked, days);
-        foreach (var predecessor in PredecessorsOf(item.Id))
+        var earliest = EarliestByDependencies(item, days);
+        return earliest is { } day && day > start ? OnABusinessDay(day, days) : start;
+    }
+
+    /// <summary>The latest of the earliest starts the dependencies of an item allow; none without dependencies.</summary>
+    private DateOnly? EarliestByDependencies(ScheduleItem item, IBusinessDays days)
+    {
+        DateOnly? earliest = null;
+        foreach (var dependency in _dependencies.Where(dependency => dependency.SuccessorId == item.Id))
         {
-            var earliest = EarliestAfter(predecessor, item.Kind, days);
-            if (earliest > start)
+            var day = dependency.EarliestStart(Item(dependency.PredecessorId), item, days);
+            if (earliest is null || day > earliest)
             {
-                start = earliest;
+                earliest = day;
             }
         }
 
-        return OnABusinessDay(start, days);
+        return earliest;
     }
 
     /// <summary>Every item that depends, directly or through others, on the item.</summary>
@@ -912,8 +945,7 @@ public sealed class Schedule : Entity
         var pushed = 0;
         while (ready.TryDequeue(out var item))
         {
-            var earliest = PredecessorsOf(item.Id).Max(predecessor => EarliestAfter(predecessor, item.Kind, days));
-            if (earliest > item.Start)
+            if (EarliestByDependencies(item, days) is { } earliest && earliest > item.Start)
             {
                 item.Place(OnABusinessDay(earliest, days), days);
                 pushed++;
@@ -1207,21 +1239,28 @@ public sealed class ScheduleDependency : Entity
     {
     }
 
-    internal ScheduleDependency(Guid projectId, Guid predecessorId, Guid successorId)
+    internal ScheduleDependency(
+        Guid projectId,
+        Guid predecessorId,
+        Guid successorId,
+        ScheduleLinkType type = ScheduleLinkType.FinishToStart,
+        int lag = 0)
     {
         ProjectId = projectId;
         PredecessorId = predecessorId;
         SuccessorId = successorId;
+        Type = type;
+        Lag = lag;
     }
 
     /// <summary>A dependency back as it was, with its id (ADR-0091).</summary>
     internal ScheduleDependency(Guid projectId, DependencyState state)
-        : this(projectId, state.PredecessorId, state.SuccessorId)
+        : this(projectId, state.PredecessorId, state.SuccessorId, state.Type, state.Lag)
     {
         Id = state.Id;
     }
 
-    internal DependencyState State() => new(Id, PredecessorId, SuccessorId);
+    internal DependencyState State() => new(Id, PredecessorId, SuccessorId, Type, Lag);
 
     public Guid ProjectId { get; private init; }
 
@@ -1230,4 +1269,20 @@ public sealed class ScheduleDependency : Entity
 
     /// <summary>The item that starts after it.</summary>
     public Guid SuccessorId { get; private init; }
+
+    /// <summary>How the item after it follows it (ADR-0137).</summary>
+    public ScheduleLinkType Type { get; private set; } = ScheduleLinkType.FinishToStart;
+
+    /// <summary>The business days of wait (positive) or of lead (negative), from -99 to 999 (ADR-0137).</summary>
+    public int Lag { get; private set; }
+
+    /// <summary>The earliest start of the item after it, by the kind and the lag.</summary>
+    public DateOnly EarliestStart(ScheduleItem before, ScheduleItem next, IBusinessDays days) =>
+        ScheduleLinks.EarliestStart(Type, Lag, before, next, days);
+
+    internal void Set(ScheduleLinkType type, int lag)
+    {
+        Type = type;
+        Lag = lag;
+    }
 }

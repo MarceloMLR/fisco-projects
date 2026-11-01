@@ -777,6 +777,66 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         entries.Select(entry => Values(entry, "Deadline")).Should().BeEquivalentTo([("2026-10-30", (string?)null), (null, "2026-10-30")]);
     }
 
+    [Fact(DisplayName = "Tipo e intervalo pela API")]
+    public async Task LinksWithKindsAndLags_AreSaved_AndPlaceTheItem()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        // The task goes from 13/10 to 15/10/2026; the new one starts with it, one business day later.
+        var tests = await IdOfAsync(await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/items", new
+        {
+            kind = "Task",
+            phaseId = scene.Phase,
+            name = "Testes integrados",
+            start = "2026-10-13",
+            duration = 3,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            links = new[] { new { predecessorId = scene.Task, type = "StartToStart", lag = 1 } },
+        }));
+
+        var item = await ItemAsync(scene, tests);
+
+        (item.GetProperty("start").GetString(), item.GetProperty("end").GetString()).Should().Be(("2026-10-14", "2026-10-16"));
+        item.GetProperty("predecessorIds").EnumerateArray().Select(id => id.GetGuid()).Should().Equal(scene.Task);
+        var link = item.GetProperty("links").EnumerateArray().Single();
+        (link.GetProperty("predecessorId").GetGuid(), link.GetProperty("type").GetString(), link.GetProperty("lag").GetInt32())
+            .Should().Be((scene.Task, "StartToStart", 1));
+        // The milestone keeps "finishes, then starts" without lag.
+        var milestone = (await ItemAsync(scene, scene.Milestone)).GetProperty("links").EnumerateArray().Single();
+        (milestone.GetProperty("type").GetString(), milestone.GetProperty("lag").GetInt32()).Should().Be(("FinishToStart", 0));
+    }
+
+    [Theory(DisplayName = "Tipo e intervalo inválidos")]
+    [InlineData("FinishToStart", 1000)]
+    [InlineData("FinishToStart", -100)]
+    [InlineData("StartToFinish", 0)]
+    public async Task InvalidLink_IsABadRequest(string type, int lag)
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        var before = await ScheduleOfAsync(scene);
+
+        var response = await SendAsync(scene.Admin, HttpMethod.Put, $"{scene.Path}/items/{scene.Milestone}", new
+        {
+            phaseId = scene.Phase,
+            name = "Aceite da configuração",
+            start = "2026-10-15",
+            duration = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            links = new[] { new { predecessorId = scene.Task, type, lag } },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        if (type != "StartToFinish")
+        {
+            (await ErrorFieldsAsync(response)).Should().Equal("links");
+        }
+
+        (await ScheduleOfAsync(scene)).Should().Be(before);
+    }
+
     [Fact(DisplayName = "Desfazer volta a cadeia")]
     public async Task Undo_PutsTheTaskAndThePushedMilestoneBack()
     {

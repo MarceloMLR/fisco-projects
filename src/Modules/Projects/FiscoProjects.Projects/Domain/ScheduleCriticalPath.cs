@@ -5,8 +5,8 @@ namespace FiscoProjects.Projects.Domain;
 /// <summary>
 /// The critical path of a schedule (ADR-0021, ADR-0051): the tasks and milestones with dates of their own without float,
 /// the ones that cannot end one business day later without the end of the project moving. It goes backwards from the
-/// end of the project through the dependencies of the kind "finishes, then starts", on the dates the schedule already
-/// has and in business days of the calendar of the installation (ADR-0018). A task with subtasks is out of it, and its
+/// end of the project through the dependencies, by their kinds and lags (ADR-0137, <see cref="ScheduleLinks.LatestEnd"/>),
+/// on the dates the schedule already has and in business days of the calendar of the installation (ADR-0018). A task with subtasks is out of it, and its
 /// subtasks are in it as any item (ADR-0088).
 /// </summary>
 public static class ScheduleCriticalPath
@@ -29,7 +29,7 @@ public static class ScheduleCriticalPath
         var links = dependencies
             .Where(dependency => own.ContainsKey(dependency.PredecessorId) && own.ContainsKey(dependency.SuccessorId))
             .ToList();
-        var successors = links.ToLookup(dependency => dependency.PredecessorId, dependency => dependency.SuccessorId);
+        var successors = links.ToLookup(dependency => dependency.PredecessorId);
         var predecessors = links.ToLookup(dependency => dependency.SuccessorId, dependency => dependency.PredecessorId);
         var finish = own.Values.Max(item => item.End);
 
@@ -42,7 +42,8 @@ public static class ScheduleCriticalPath
         {
             var item = own[id];
             var latestEnd = successors[id]
-                .Select(successor => LatestEndBefore(own[successor], latestStarts[successor], days))
+                .Select(link => ScheduleLinks.LatestEnd(
+                    link.Type, link.Lag, item, own[link.SuccessorId], latestStarts[link.SuccessorId], days))
                 .DefaultIfEmpty(finish)
                 .Min();
             latestStarts[id] = item.Kind == ScheduleItemKind.Milestone
@@ -64,11 +65,4 @@ public static class ScheduleCriticalPath
 
         return critical;
     }
-
-    /// <summary>
-    /// The latest an item may end for the one after it to start on its latest start: the business day before for a
-    /// task, the same day for a milestone, the inverse of the rule that places them (Schedule.EarliestAfter).
-    /// </summary>
-    private static DateOnly LatestEndBefore(ScheduleItem successor, DateOnly latestStart, IBusinessDays days) =>
-        successor.Kind == ScheduleItemKind.Milestone ? latestStart : days.AddBusinessDays(latestStart, -1);
 }

@@ -139,8 +139,8 @@ public sealed class MsProjectImportTests
                 new Line(3, 2, "Testes", D(10, 15), D(10, 16)),
                 new Line(4, 3, "Roteiros", D(10, 15), D(10, 16)),
                 new Line(5, 4, "Roteiro de notas", D(10, 15), D(10, 16)),
-                new Line(6, 3, "Massa de testes", D(10, 15), D(10, 15), Links: [new Link(2, Type: 3)]),
-                new Line(7, 2, "Ajustar parâmetros", D(10, 19), D(10, 20), Links: [new Link(2, Lag: 4800)]),
+                new Line(6, 3, "Massa de testes", D(10, 15), D(10, 15), Links: [new Link(2, Type: 2)]),
+                new Line(7, 2, "Ajustar parâmetros", D(10, 19), D(10, 20), Links: [new Link(2, Lag: 500, LagFormat: 19)]),
                 new Line(8, 2, "Revisar", D(10, 21), D(10, 21), Links: [new Link(3)]),
                 new Line(9, 1, "Comunicar a diretoria", D(10, 22), D(10, 22)),
             ]));
@@ -154,14 +154,39 @@ public sealed class MsProjectImportTests
             (0, null, "Ajustar parâmetros"),
             (0, null, "Revisar"),
             (1, null, "Comunicar a diretoria"));
-        // The dependency with a lag stays without it; the others go away.
-        schedule.Outline.Dependencies.Should().Equal(new OutlineDependency(0, 4));
+        // "Start to finish" becomes "finish to start"; the lag of half of the 2 business days before becomes 1; the one of a
+        // summary goes away (ADR-0137).
+        schedule.Outline.Dependencies.Should().Equal(new OutlineDependency(0, 3), new OutlineDependency(0, 4, Lag: 1));
         WarningsOf(schedule, MsProjectWarningKind.LooseTasks).Should().Equal("Comunicar a diretoria");
         WarningsOf(schedule, MsProjectWarningKind.DeepTasks).Should().Equal("Roteiro de notas");
         WarningsOf(schedule, MsProjectWarningKind.DroppedSummaries).Should().Equal("Roteiros");
         WarningsOf(schedule, MsProjectWarningKind.OtherDependencies).Should().Equal("Levantar regras → Massa de testes");
         WarningsOf(schedule, MsProjectWarningKind.DependencyLags).Should().Equal("Levantar regras → Ajustar parâmetros");
         WarningsOf(schedule, MsProjectWarningKind.SummaryDependencies).Should().Equal("Testes → Revisar");
+    }
+
+    [Fact(DisplayName = "Tipos e intervalos do arquivo")]
+    public void Convert_KeepsTheKindsAndTheLagsInDays()
+    {
+        var schedule = Converted(Project(
+            "Implantação do ERP",
+            [
+                new Line(1, 1, "Configuração", D(10, 13), D(10, 23)),
+                new Line(2, 2, "Parametrizar", D(10, 13), D(10, 16)),
+                new Line(3, 2, "Testes", D(10, 14), D(10, 16), Links: [new Link(2, Type: 3, Lag: 4800)]),
+                new Line(4, 2, "Treinamento", D(10, 15), D(10, 16), Links: [new Link(2, Type: 0)]),
+                new Line(5, 2, "Virada", D(10, 23), D(10, 23), Milestone: true, Links: [new Link(4, Lag: 4 * 4800)]),
+                new Line(6, 2, "Comunicado", D(10, 13), D(10, 13), Links: [new Link(2, Lag: -2400, LagFormat: 5)]),
+            ]));
+
+        schedule.Outline.Dependencies.Should().Equal(
+            new OutlineDependency(0, 1, ScheduleLinkType.StartToStart, 1),
+            new OutlineDependency(0, 2, ScheduleLinkType.FinishToFinish),
+            new OutlineDependency(2, 3, Lag: 4),
+            new OutlineDependency(0, 4, Lag: -1));
+        // Half a day before in hours is not a whole day: it becomes one, with the warning.
+        WarningsOf(schedule, MsProjectWarningKind.DependencyLags).Should().Equal("Parametrizar → Comunicado");
+        WarningsOf(schedule, MsProjectWarningKind.OtherDependencies).Should().BeEmpty();
     }
 
     [Fact(DisplayName = "Datas em dias úteis do calendário da instalação")]

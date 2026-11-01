@@ -30,8 +30,11 @@ public static class MsProjectFiles
         bool Blank = false,
         DateOnly? Deadline = null);
 
-    /// <summary>A link to the line it depends on: type 1 is "finish to start", 3 "start to start"; the lag in tenths of minutes.</summary>
-    public sealed record Link(int Predecessor, int Type = 1, int Lag = 0);
+    /// <summary>
+    /// A link to the line it depends on: type 1 is "finish to start", 3 "start to start", 0 "finish to finish" and 2
+    /// "start to finish"; the lag in tenths of minutes (in tenths of percent for the format 19) and its format, 7 for days.
+    /// </summary>
+    public sealed record Link(int Predecessor, int Type = 1, int Lag = 0, int LagFormat = 7);
 
     /// <summary>A resource: type 1 is work (a person), 0 material and 2 cost.</summary>
     public sealed record Resource(int Uid, string Name, string? Email = null, int Type = 1);
@@ -112,7 +115,7 @@ public static class MsProjectFiles
                     new XElement(Ns + "Type", link.Type),
                     new XElement(Ns + "CrossProject", 0),
                     new XElement(Ns + "LinkLag", link.Lag),
-                    new XElement(Ns + "LagFormat", 7)));
+                    new XElement(Ns + "LagFormat", link.LagFormat)));
             }
 
             task.Add(new XElement(Ns + "Active", line.Active ? 1 : 0));

@@ -4,6 +4,7 @@ import { useId } from 'react';
 import {
   type Control,
   Controller,
+  type FieldError,
   type FieldErrors,
   useController,
   useWatch,
@@ -16,9 +17,10 @@ import { MultiSelect } from '../components/MultiSelect';
 import { Select } from '../components/Select';
 import { TextField } from '../components/TextField';
 import { formatDayText, maskTypedDay } from '../format/dates';
-import { itemsAfter, itemsOf } from './schedule';
+import { itemsAfter, itemsOf, linkTypes } from './schedule';
 import {
   isScheduleItemError,
+  type LinkSetting,
   noOwner,
   noParent,
   type ScheduleItemValues,
@@ -291,6 +293,116 @@ export function ScheduleItemFields({
           )}
         />
       )}
+      {!summary && (
+        <LinkSettings
+          control={control}
+          names={new Map(items.map((item) => [item.id, item.name]))}
+          // The schema puts one message on the whole field.
+          error={errorText((errors.linkSettings as FieldError | undefined)?.message)}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * The kind and the lag of each item chosen in "Depende de" (ADR-0137): one line per item, with its name, the kind
+ * ("Termina, então começa", "Começa junto", "Termina junto") and the lag in business days, empty for none.
+ */
+function LinkSettings({
+  control,
+  names,
+  error,
+}: {
+  control: Control<ScheduleItemValues>;
+  names: ReadonlyMap<string, string>;
+  error: string | undefined;
+}) {
+  const { t } = useTranslation();
+  const helpId = useId();
+  const predecessorIds = useWatch({ control, name: 'predecessorIds' });
+  const { field } = useController({ control, name: 'linkSettings' });
+  if (predecessorIds.length === 0) {
+    return null;
+  }
+  const settings: Record<string, LinkSetting> = field.value;
+  const change = (id: string, setting: Partial<LinkSetting>) => {
+    field.onChange({
+      ...settings,
+      [id]: { type: 'FinishToStart', lag: '', ...settings[id], ...setting },
+    });
+  };
+  const typeOptions = linkTypes.map((type) => ({
+    value: type,
+    label: t(`projects.schedule.links.types.${type}`),
+  }));
+  return (
+    <Box
+      role="group"
+      aria-label={t('projects.schedule.links.label')}
+      aria-describedby={helpId}
+      sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}
+    >
+      {predecessorIds.map((id) => {
+        const name = names.get(id) ?? '';
+        return (
+          <Box
+            key={id}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 88px', sm: 'minmax(0, 1fr) 200px 88px' },
+              gap: 'var(--space-2)',
+              alignItems: 'center',
+            }}
+          >
+            <Box
+              component="span"
+              title={name}
+              sx={{
+                gridColumn: { xs: '1 / -1', sm: 'auto' },
+                fontSize: 13,
+                lineHeight: '18px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {name}
+            </Box>
+            <Select
+              label={t('projects.schedule.links.type', { name })}
+              size="sm"
+              value={settings[id]?.type ?? 'FinishToStart'}
+              options={typeOptions}
+              onChange={(type) => {
+                change(id, { type });
+              }}
+            />
+            <TextField
+              label={t('projects.schedule.links.lag', { name })}
+              hideLabel
+              size="sm"
+              inputMode="numeric"
+              placeholder={t('projects.schedule.links.lagShort')}
+              value={settings[id]?.lag ?? ''}
+              aria-invalid={error === undefined ? undefined : true}
+              onChange={(event) => {
+                change(id, { lag: event.target.value.replace(/[^\d-]/g, '').slice(0, 4) });
+              }}
+            />
+          </Box>
+        );
+      })}
+      <Box
+        id={helpId}
+        sx={{
+          fontSize: 12,
+          lineHeight: '16px',
+          color: error === undefined ? 'var(--text-secondary)' : 'var(--status-danger-text)',
+        }}
+      >
+        {error ?? t('projects.schedule.links.lagHelp')}
+      </Box>
+    </Box>
   );
 }

@@ -34,4 +34,8 @@ public sealed record OutlineItem(
     int? DeadlineOffset = null);
 
 /// <summary>An item of an outline that starts only after an item before it ends, by their positions.</summary>
-public sealed record OutlineDependency(int Predecessor, int Successor);
+public sealed record OutlineDependency(
+    int Predecessor,
+    int Successor,
+    ScheduleLinkType Type = ScheduleLinkType.FinishToStart,
+    int Lag = 0);

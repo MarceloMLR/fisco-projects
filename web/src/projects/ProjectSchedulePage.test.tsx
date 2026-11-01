@@ -380,6 +380,7 @@ describe('Editar o cronograma pela tela', () => {
             baselineDeviation: null,
             deadline: null,
             deadlineDeviation: null,
+            links: [],
             duration: 3,
             progress: 0,
             completedOn: null,
@@ -439,6 +440,14 @@ describe('Editar o cronograma pela tela', () => {
         parentId: null,
         ownedByClient: false,
         deadline: null,
+        // "Finishes, then starts" without lag, as the API takes them (ADR-0137).
+        links: [
+          {
+            predecessorId: itemNamed('Mapear processos fiscais').id,
+            type: 'FinishToStart',
+            lag: 0,
+          },
+        ],
       },
     ]);
     await waitFor(() => {
@@ -569,6 +578,10 @@ describe('Editar o cronograma pela tela', () => {
         parentId: null,
         ownedByClient: false,
         deadline: null,
+        // "Finishes, then starts" without lag, as the API takes them (ADR-0137).
+        links: [
+          { predecessorId: itemNamed('Reunião de abertura').id, type: 'FinishToStart', lag: 0 },
+        ],
       },
     ]);
     // The details start again from what the API computed.
@@ -1396,5 +1409,71 @@ describe('Filtros pela tela', () => {
         'Aceite da homologação',
       ]);
     });
+  });
+});
+
+// Spec: cronograma, requirement "Tipo e intervalo das dependências pela tela" (ADR-0137).
+describe('Tipo e intervalo pela tela', () => {
+  const links = text.links;
+
+  it('Tipo e intervalo no detalhe', async () => {
+    const sent: { links?: unknown }[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        const body = (await request.json()) as { links: ScheduleItem['links'] };
+        sent.push(body);
+        Object.assign(itemNamed('Testes integrados'), { links: body.links });
+        schedule = { ...schedule };
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+    const icms = itemNamed('Parametrizar regras de ICMS');
+
+    const drawer = await chooseItem('Testes integrados');
+    const group = within(drawer).getByRole('group', { name: links.label });
+    fireEvent.mouseDown(
+      within(group).getByRole('combobox', {
+        name: links.type.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    );
+    fireEvent.click(await screen.findByRole('option', { name: links.types.StartToStart }));
+    fireEvent.change(
+      within(group).getByLabelText(links.lag.replace('{{name}}', 'Parametrizar regras de ICMS')),
+      { target: { value: '1' } },
+    );
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]?.links).toEqual([{ predecessorId: icms.id, type: 'StartToStart', lag: 1 }]);
+    await closeDrawer(drawer);
+    await waitFor(() => {
+      expect(cellsOf('Testes integrados')[7]).toBe(
+        `Parametrizar regras de ICMS (${links.short.StartToStart}, +1)`,
+      );
+    });
+  });
+
+  it('Intervalo inválido pela tela', async () => {
+    let sent = false;
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', () => {
+        sent = true;
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+
+    const drawer = await chooseItem('Testes integrados');
+    fireEvent.change(
+      within(drawer).getByLabelText(links.lag.replace('{{name}}', 'Parametrizar regras de ICMS')),
+      { target: { value: '1000' } },
+    );
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    expect(await within(drawer).findByText(text.errors.linksInvalid)).toBeVisible();
+    expect(sent).toBe(false);
   });
 });

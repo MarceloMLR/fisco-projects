@@ -3,7 +3,7 @@ import type { Project, Schedule, ScheduleItem } from '../api/client';
 import type { Dates } from '../format/dates';
 import { buildXlsx, spreadsheetDay, type XlsxCell } from '../format/xlsx';
 import { xlsxColors } from '../format/xlsxColors';
-import { milestoneStatus, ownerText } from './schedule';
+import { linkOf, milestoneStatus, ownerText, signedLag } from './schedule';
 
 export interface ScheduleReport {
   project: Project;
@@ -46,6 +46,28 @@ const day = (value: string | null | undefined): XlsxCell =>
   value === null || value === undefined ? '' : { day: spreadsheetDay(value) };
 
 const percent = (progress: number): XlsxCell => ({ percent: progress / 100 });
+
+/** The kinds of a dependency as the MS Project in Portuguese writes them: término-início, início-início, término-término. */
+const linkCodes = { FinishToStart: 'TI', StartToStart: 'II', FinishToFinish: 'TT' } as const;
+
+/**
+ * The lines an item depends on, as the MS Project writes them (ADR-0137): "3" for "finishes, then starts" without lag,
+ * "5II+2" or "7TT-1" for the others.
+ */
+export function dependencyCodes(item: ScheduleItem, numbers: ReadonlyMap<string, number>): string {
+  return item.predecessorIds
+    .flatMap((id) => {
+      const number = numbers.get(id);
+      if (number === undefined) {
+        return [];
+      }
+      const link = linkOf(item, id);
+      return link.type === 'FinishToStart' && link.lag === 0
+        ? [String(number)]
+        : [`${String(number)}${linkCodes[link.type]}${link.lag === 0 ? '' : signedLag(link.lag)}`];
+    })
+    .join('; ');
+}
 
 /**
  * The schedule in Excel (ADR-0021, ADR-0099): the tab Cronograma with a line per phase and item in the order of the
@@ -135,10 +157,7 @@ export function scheduleReport({
         day(item.deadline),
         // Only how far past it went: also an item done after it, which the history keeps (GanttA-2).
         item.deadlineDeviation !== null && item.deadlineDeviation > 0 ? item.deadlineDeviation : '',
-        item.predecessorIds
-          .map((id) => numbers.get(id))
-          .filter((number) => number !== undefined)
-          .join('; '),
+        dependencyCodes(item, numbers),
         item.critical ? t('projects.export.excel.yes') : '',
         day(item.baselineStart),
         day(item.baselineEnd),

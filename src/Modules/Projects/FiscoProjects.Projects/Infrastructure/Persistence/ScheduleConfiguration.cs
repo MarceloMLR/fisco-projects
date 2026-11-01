@@ -111,6 +111,7 @@ internal sealed class ScheduleDependencyConfiguration : IEntityTypeConfiguration
         dependency.HasOne<ScheduleItem>().WithMany().HasForeignKey(d => d.SuccessorId).OnDelete(DeleteBehavior.ClientCascade);
         // One dependency per pair of items.
         dependency.HasIndex(d => new { d.PredecessorId, d.SuccessorId }).IsUnique();
+        dependency.Property(d => d.Type).HasConversion<string>().HasMaxLength(16);
 
         // Audit (ADR-0039, ADR-0084): the dependency by the item that comes after, and both items by name.
         dependency.HasAuditLabelReference(d => d.SuccessorId, ProjectsAudit.ScheduleItemReference);

@@ -2756,6 +2756,8 @@ export interface components {
             resource: null | number;
             /** Format: int32 */
             deadlineOffset?: null | number;
+            /** @description The kind and the lag of each dependency, as the preview gave them; without them, after is "finishes, then starts" without lag. */
+            links?: null | components["schemas"]["ImportedLinkResponse"][];
         };
         /**
          * @description A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the
@@ -2782,6 +2784,16 @@ export interface components {
             resource: null | number;
             /** Format: int32 */
             deadlineOffset: null | number;
+            /** @description The kind and the lag of each item in after, in the same order (ADR-0137). */
+            links: components["schemas"]["ImportedLinkResponse"][];
+        };
+        /** @description A dependency of an item converted from the MS Project: the position of the item before, the kind and the lag. */
+        ImportedLinkResponse: {
+            /** Format: int32 */
+            predecessor: number;
+            type: components["schemas"]["ScheduleLinkType"];
+            /** Format: int32 */
+            lag: number;
         };
         /** @description The schedule converted from the file: the names of the phases and the items in the order they are made. */
         ImportedPlanResponse: {
@@ -3176,6 +3188,8 @@ export interface components {
              * @description The day the item has to be done by, which never moves the dates; none without one (GanttA-2).
              */
             deadline?: null | string;
+            /** @description The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137). */
+            links?: null | components["schemas"]["ScheduleLinkRequest"][];
         };
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
@@ -3814,6 +3828,8 @@ export interface components {
              * @description The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).
              */
             deadline?: null | string;
+            /** @description The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137). */
+            links?: null | components["schemas"]["ScheduleLinkRequest"][];
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
@@ -3873,12 +3889,38 @@ export interface components {
              * @description The business days the item went past its deadline (positive) or is before it (negative); null without one.
              */
             deadlineDeviation: null | number;
+            /** @description The kind and the lag of each dependency, in the order of predecessorIds (ADR-0137). */
+            links: components["schemas"]["ScheduleLinkResponse"][];
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
          * @enum {unknown}
          */
         ScheduleItemType: "Phase" | "Task" | "Milestone";
+        /** @description A dependency asked for an item (ADR-0137), as ScheduleLinkResponse. */
+        ScheduleLinkRequest: {
+            /** Format: uuid */
+            predecessorId: string;
+            type: components["schemas"]["ScheduleLinkType"];
+            /** Format: int32 */
+            lag: number;
+        };
+        /**
+         * @description A dependency of an item (ADR-0137): the item it depends on, the kind ("finishes, then starts", "starts with" or
+         *     "ends with") and the business days of wait (positive) or lead (negative), from -99 to 999.
+         */
+        ScheduleLinkResponse: {
+            /** Format: uuid */
+            predecessorId: string;
+            type: components["schemas"]["ScheduleLinkType"];
+            /** Format: int32 */
+            lag: number;
+        };
+        /**
+         * @description The kind of a dependency (ADR-0137): the next item starts after the one before ends, starts with it, or ends with it.
+         * @enum {unknown}
+         */
+        ScheduleLinkType: "FinishToStart" | "StartToStart" | "FinishToFinish";
         /** @description The person in charge of a task. */
         ScheduleOwnerResponse: {
             /** Format: uuid */

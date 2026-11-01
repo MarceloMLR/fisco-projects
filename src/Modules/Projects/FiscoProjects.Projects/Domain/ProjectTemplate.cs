@@ -123,7 +123,7 @@ public sealed class ProjectTemplate : Entity
         foreach (var dependency in schedule.Dependencies)
         {
             template._dependencies.Add(new ProjectTemplateDependency(
-                template.Id, items[dependency.PredecessorId], items[dependency.SuccessorId]));
+                template.Id, items[dependency.PredecessorId], items[dependency.SuccessorId], dependency.Type, dependency.Lag));
         }
 
         return template;
@@ -161,7 +161,8 @@ public sealed class ProjectTemplate : Entity
                 item.Kind == ScheduleItemKind.Milestone ? 0 : Math.Clamp(item.Duration, 1, Schedule.MaxDuration)))],
             [.. _dependencies
                 .Where(dependency => itemIndex.ContainsKey(dependency.PredecessorId) && itemIndex.ContainsKey(dependency.SuccessorId))
-                .Select(dependency => new OutlineDependency(itemIndex[dependency.PredecessorId], itemIndex[dependency.SuccessorId]))
+                .Select(dependency => new OutlineDependency(
+                    itemIndex[dependency.PredecessorId], itemIndex[dependency.SuccessorId], dependency.Type, dependency.Lag))
                 .Where(dependency => dependency.Predecessor < dependency.Successor)]);
     }
 
@@ -236,18 +237,25 @@ public sealed class ProjectTemplateItem : Entity
     internal void PutInto(Guid parentId) => ParentId = parentId;
 }
 
-/// <summary>An item of a model that starts only after another ends.</summary>
+/// <summary>An item of a model that follows another, by the kind and the lag of the dependency (ADR-0137).</summary>
 public sealed class ProjectTemplateDependency : Entity
 {
     private ProjectTemplateDependency()
     {
     }
 
-    internal ProjectTemplateDependency(Guid templateId, Guid predecessorId, Guid successorId)
+    internal ProjectTemplateDependency(
+        Guid templateId,
+        Guid predecessorId,
+        Guid successorId,
+        ScheduleLinkType type = ScheduleLinkType.FinishToStart,
+        int lag = 0)
     {
         TemplateId = templateId;
         PredecessorId = predecessorId;
         SuccessorId = successorId;
+        Type = type;
+        Lag = lag;
     }
 
     public Guid TemplateId { get; private init; }
@@ -255,4 +263,8 @@ public sealed class ProjectTemplateDependency : Entity
     public Guid PredecessorId { get; private init; }
 
     public Guid SuccessorId { get; private init; }
+
+    public ScheduleLinkType Type { get; private init; } = ScheduleLinkType.FinishToStart;
+
+    public int Lag { get; private init; }
 }

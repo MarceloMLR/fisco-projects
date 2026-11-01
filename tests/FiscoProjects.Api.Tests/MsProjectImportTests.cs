@@ -166,8 +166,8 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
                 new Line(3, 2, "Testes", D(10, 15), D(10, 16)),
                 new Line(4, 3, "Roteiros", D(10, 15), D(10, 16)),
                 new Line(5, 4, "Roteiro de notas", D(10, 15), D(10, 16)),
-                new Line(6, 3, "Massa de testes", D(10, 15), D(10, 15), Links: [new Link(2, Type: 3)]),
-                new Line(7, 2, "Ajustar parâmetros", D(10, 19), D(10, 20), Links: [new Link(2, Lag: 4800)]),
+                new Line(6, 3, "Massa de testes", D(10, 15), D(10, 15), Links: [new Link(2, Type: 2)]),
+                new Line(7, 2, "Ajustar parâmetros", D(10, 19), D(10, 20), Links: [new Link(2, Lag: 500, LagFormat: 19)]),
                 new Line(8, 2, "Revisar", D(10, 21), D(10, 21), Links: [new Link(3)]),
                 new Line(9, 1, "Comunicar a diretoria", D(10, 22), D(10, 22)),
             ]);
@@ -181,6 +181,9 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         var adjust = preview.GetProperty("plan").GetProperty("items").EnumerateArray()
             .Single(item => item.GetProperty("name").GetString() == "Ajustar parâmetros");
         adjust.GetProperty("after").GetArrayLength().Should().Be(1);
+        // Half of the 2 business days before: one business day of lag (ADR-0137).
+        var lag = adjust.GetProperty("links").EnumerateArray().Single();
+        (lag.GetProperty("type").GetString(), lag.GetProperty("lag").GetInt32()).Should().Be(("FinishToStart", 1));
         WarningNames(preview, "DeepTasks").Should().Equal("Roteiro de notas");
         WarningNames(preview, "DroppedSummaries").Should().Equal("Roteiros");
         WarningNames(preview, "LooseTasks").Should().Equal("Comunicar a diretoria");
@@ -434,6 +437,8 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         {
             imported["items"]![0]!["after"] = new JsonArray(1);
             imported["items"]![1]!["after"] = new JsonArray();
+            imported["items"]![0]!["links"] = new JsonArray(new JsonObject { ["predecessor"] = 1, ["type"] = "FinishToStart", ["lag"] = 0 });
+            imported["items"]![1]!["links"] = new JsonArray();
         }
 
         var templateId = invalid == "com modelo" ? Guid.CreateVersion7() : (Guid?)null;

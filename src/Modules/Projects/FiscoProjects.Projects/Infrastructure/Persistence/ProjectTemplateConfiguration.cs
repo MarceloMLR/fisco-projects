@@ -53,6 +53,7 @@ internal sealed class ProjectTemplateDependencyConfiguration : IEntityTypeConfig
     public void Configure(EntityTypeBuilder<ProjectTemplateDependency> dependency)
     {
         dependency.ToTable("project_template_dependencies");
+        dependency.Property(d => d.Type).HasConversion<string>().HasMaxLength(16);
         dependency.ExcludeFromAudit();
     }
 }

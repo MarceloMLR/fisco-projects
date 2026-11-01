@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { UseFormSetError } from 'react-hook-form';
 import { z } from 'zod';
-import { projectProblems, type ScheduleItem } from '../api/client';
+import { projectProblems, type ScheduleItem, type ScheduleLinkType } from '../api/client';
 import { formatDayText, parseTypedDay } from '../format/dates';
 import { invalidFields, problemType } from './projectForm';
 
@@ -17,6 +17,7 @@ export const scheduleItemErrors = {
   predecessorsInvalid: 'projects.schedule.errors.predecessorsInvalid',
   parentInvalid: 'projects.schedule.errors.parentInvalid',
   deadlineInvalid: 'projects.schedule.errors.deadlineInvalid',
+  linksInvalid: 'projects.schedule.errors.linksInvalid',
   cycle: 'projects.schedule.errors.cycle',
 } as const;
 
@@ -26,6 +27,20 @@ export const isScheduleItemError = (message: string | undefined): message is Sch
   Object.values(scheduleItemErrors).some((error) => error === message);
 
 const wholeNumber = /^\d{1,4}$/;
+
+/** A lag as typed: a whole number of business days from -99 to 999, or empty for none (ADR-0137). */
+const lagPattern = /^-?\d{1,3}$/;
+
+export const isValidLag = (typed: string) => {
+  const lag = typed.trim();
+  return lag === '' || (lagPattern.test(lag) && Number(lag) >= -99 && Number(lag) <= 999);
+};
+
+/** The kind and the lag of a dependency, as the form keeps them. */
+export interface LinkSetting {
+  type: ScheduleLinkType;
+  lag: string;
+}
 
 /**
  * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
@@ -49,6 +64,14 @@ export const scheduleItemSchema = z
     ownerId: z.string(),
     predecessorIds: z.array(z.string()),
     parentId: z.string(),
+    /** The kind and the lag of each item it depends on, by its id; the ones not chosen are not looked at. */
+    linkSettings: z.record(
+      z.string(),
+      z.object({
+        type: z.enum(['FinishToStart', 'StartToStart', 'FinishToFinish']),
+        lag: z.string(),
+      }),
+    ),
     deadline: z
       .string()
       .refine((value) => value.trim() === '' || parseTypedDay(value) !== undefined, {
@@ -57,6 +80,13 @@ export const scheduleItemSchema = z
     summary: z.boolean().optional(),
   })
   .superRefine((values, context) => {
+    if (values.predecessorIds.some((id) => !isValidLag(values.linkSettings[id]?.lag ?? ''))) {
+      context.addIssue({
+        code: 'custom',
+        path: ['linkSettings'],
+        message: scheduleItemErrors.linksInvalid,
+      });
+    }
     if (values.kind === 'Milestone' || values.summary === true) {
       return;
     }
@@ -104,6 +134,7 @@ export function newItemValues(phaseId: string, parentId: string = noParent): Sch
     ownerId: noOwner,
     predecessorIds: [],
     parentId,
+    linkSettings: {},
     deadline: '',
   };
 }
@@ -119,6 +150,9 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     ownerId: item.ownedByClient ? clientOwner : (item.owner?.id ?? noOwner),
     predecessorIds: item.predecessorIds,
     parentId: item.parentId ?? noParent,
+    linkSettings: Object.fromEntries(
+      item.links.map((link) => [link.predecessorId, { type: link.type, lag: String(link.lag) }]),
+    ),
     deadline: item.deadline === null ? '' : formatDayText(item.deadline),
     summary: item.hasSubtasks,
   };
@@ -141,6 +175,18 @@ export function bodyOf(values: ScheduleItemValues) {
       task && values.ownerId !== noOwner && values.ownerId !== clientOwner ? values.ownerId : null,
     ownedByClient: task && values.ownerId === clientOwner,
     predecessorIds: summary ? [] : values.predecessorIds,
+    // The kind and the lag of each one, which the API takes in place of the ids (ADR-0137).
+    links: summary
+      ? []
+      : values.predecessorIds.map((id) => {
+          const setting = values.linkSettings[id];
+          const lag = setting?.lag.trim() ?? '';
+          return {
+            predecessorId: id,
+            type: setting?.type ?? 'FinishToStart',
+            lag: lag === '' ? 0 : Number(lag),
+          };
+        }),
     parentId: summary || values.parentId === noParent ? null : values.parentId,
     // An empty deadline takes it out (GanttA-2).
     deadline: values.deadline.trim() === '' ? null : (parseTypedDay(values.deadline) ?? null),
@@ -156,6 +202,7 @@ const apiFields = {
   predecessorIds: 'predecessorIds',
   parentId: 'parentId',
   deadline: 'deadline',
+  linkSettings: 'links',
 } as const;
 
 const fieldErrors = {
@@ -167,6 +214,7 @@ const fieldErrors = {
   predecessorIds: scheduleItemErrors.predecessorsInvalid,
   parentId: scheduleItemErrors.parentInvalid,
   deadline: scheduleItemErrors.deadlineInvalid,
+  linkSettings: scheduleItemErrors.linksInvalid,
 } as const;
 
 /**

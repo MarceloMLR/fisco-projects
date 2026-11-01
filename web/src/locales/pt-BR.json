@@ -609,7 +609,9 @@
       "ScheduleDependency": {
         "ProjectId": "Projeto",
         "PredecessorId": "Anterior",
-        "SuccessorId": "Seguinte"
+        "SuccessorId": "Seguinte",
+        "Type": "Tipo",
+        "Lag": "Intervalo em dias úteis"
       },
       "ScheduleBaseline": {
         "SavedOn": "Salva em",
@@ -1492,6 +1494,22 @@
       "late": "Atrasada",
       "lateDays_one": "{{count}} dia útil de atraso",
       "lateDays_other": "{{count}} dias úteis de atraso",
+      "links": {
+        "label": "Tipo e intervalo das dependências",
+        "types": {
+          "FinishToStart": "Termina, então começa",
+          "StartToStart": "Começa junto",
+          "FinishToFinish": "Termina junto"
+        },
+        "short": {
+          "StartToStart": "começa junto",
+          "FinishToFinish": "termina junto"
+        },
+        "type": "Tipo da dependência de {{name}}",
+        "lag": "Intervalo de {{name}} em dias úteis",
+        "lagShort": "Intervalo",
+        "lagHelp": "Em dias úteis: positivo espera, negativo adianta."
+      },
       "filter": {
         "button": "Filtrar",
         "active": "Filtro: {{name}}",
@@ -1593,7 +1611,7 @@
         "owner": "Responsável",
         "progress": "Progresso (%)",
         "dependsOn": "Depende de",
-        "dependsOnHelp": "Começa depois que essas terminam.",
+        "dependsOnHelp": "Por padrão, começa depois que essas terminam; o tipo e o intervalo de cada uma ficam embaixo.",
         "dependsOnPlaceholder": "Nenhuma",
         "deadline": "Data-limite",
         "deadlineHelp": "Não muda as datas: avisa quando o fim passa dela.",
@@ -1619,6 +1637,7 @@
         "phaseRequired": "Escolha a fase.",
         "startInvalid": "Informe uma data válida, como 13/10/2026.",
         "deadlineInvalid": "Informe uma data válida, como 30/10/2026, ou deixe em branco.",
+        "linksInvalid": "Informe intervalos de -99 a 999 dias úteis.",
         "durationInvalid": "Informe de 1 a 999 dias úteis.",
         "progressInvalid": "Informe de 0 a 100.",
         "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",

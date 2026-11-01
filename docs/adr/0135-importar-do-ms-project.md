@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (tipos e intervalo das dependências substituídos pelo ADR-0137)
 date: 2026-10-31
 decision-makers: Marcelo Ribeiro
 ---

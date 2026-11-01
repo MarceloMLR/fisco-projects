@@ -542,6 +542,11 @@ async function loadProject(
             ownedByClient: item.byClient === true,
             progress: 0,
             predecessorIds: (item.after ?? []).map((name) => idOf(name, item.name)),
+            links: (item.after ?? []).map((name) => ({
+              predecessorId: idOf(name, item.name),
+              type: item.links?.[name]?.type ?? ('FinishToStart' as const),
+              lag: item.links?.[name]?.lag ?? 0,
+            })),
             parentId: item.inside === undefined ? null : idOf(item.inside, item.name),
             deadline: item.deadline === undefined ? null : dayFrom(firstDay, item.deadline),
           },

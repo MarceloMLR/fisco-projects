@@ -675,3 +675,36 @@ describe('Filtros na linha do tempo', () => {
     expect(screen.queryByRole('treegrid', { name: text.timeline.table })).not.toBeInTheDocument();
   });
 });
+
+// Spec: cronograma, requirement "Tipo e intervalo das dependências pela tela" (ADR-0137).
+describe('Tipos na linha do tempo', () => {
+  it('Setas dos tipos na Linha do tempo', async () => {
+    Object.assign(itemNamed('Testes integrados'), {
+      links: [
+        {
+          predecessorId: itemNamed('Parametrizar regras de ICMS').id,
+          type: 'StartToStart',
+          lag: 0,
+        },
+      ],
+    });
+    Object.assign(itemNamed('Aceite da homologação'), {
+      links: [
+        {
+          predecessorId: itemNamed('Testes com a equipe do cliente').id,
+          type: 'FinishToFinish',
+          lag: 0,
+        },
+      ],
+    });
+    const { container } = await openTimeline();
+
+    // Days of 20 px from 05/10: "starts with" from the start of ICMS, on 13/10, to the start of the tests, on 23/10.
+    const starts = container.querySelector('.g-dep[data-type="StartToStart"]');
+    expect(starts?.getAttribute('d')).toMatch(/^M160 \d+ H152 V\d+ H355$/);
+    // "Ends with" from the end of the tests with the client, on 03/11, to the milestone, entering from the right.
+    const ends = container.querySelector('.g-dep[data-type="FinishToFinish"]');
+    expect(ends?.getAttribute('d')).toMatch(/^M600 \d+ H608 V\d+ H\d+(\.\d+)?$/);
+    expect(container.querySelectorAll('.g-dep')).toHaveLength(6);
+  });
+});

@@ -82,7 +82,7 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
 /// the schedule now, none until the manager saves one (ADR-0021), for who edits it, what undoing and redoing would
 /// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
-/// it (GanttA-2).
+/// it (GanttA-2), and the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -96,7 +96,8 @@ public sealed record ScheduleView(
     ScheduleChangeLabel? Undo = null,
     ScheduleChangeLabel? Redo = null,
     IReadOnlyDictionary<Guid, int>? DeadlineDeviations = null,
-    int MissedDeadlines = 0);
+    int MissedDeadlines = 0,
+    IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -146,7 +147,13 @@ public sealed class GetSchedule(
             changes.LastOrDefault(change => !change.Undone)?.Label,
             changes.FirstOrDefault(change => change.Undone)?.Label,
             days is null ? new Dictionary<Guid, int>() : ScheduleFigures.DeadlineDeviationsOf(schedule.Items, today, days),
-            days is null ? 0 : ScheduleFigures.MissedDeadlinesOf(schedule.Items, today, days));
+            days is null ? 0 : ScheduleFigures.MissedDeadlinesOf(schedule.Items, today, days),
+            schedule.Dependencies
+                .GroupBy(dependency => dependency.SuccessorId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyList<ScheduleLink>)[.. group.Select(dependency =>
+                        new ScheduleLink(dependency.PredecessorId, dependency.Type, dependency.Lag))]));
     }
 }
 
@@ -197,6 +204,9 @@ public enum ScheduleField
 
     /// <summary>The deadline of a task or milestone is a day from 2000 to 2099 (GanttA-2).</summary>
     Deadline = 12,
+
+    /// <summary>Each dependency is of a known kind, with a lag from -99 to 999, once per item (ADR-0137).</summary>
+    Links = 13,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -478,7 +488,8 @@ public sealed record ScheduleItemForm(
     IReadOnlyCollection<Guid>? PredecessorIds,
     Guid? ParentId = null,
     bool OwnedByClient = false,
-    DateOnly? Deadline = null);
+    DateOnly? Deadline = null,
+    IReadOnlyList<ScheduleLink>? Links = null);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
@@ -535,8 +546,18 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Deadline);
         }
 
+        // The kinds and lags, when they come, say the items it depends on (ADR-0137).
+        if (form.Links is { } links
+            && (links.Any(link => !ScheduleLinks.IsValid(link.Type, link.Lag))
+                || links.Select(link => link.PredecessorId).Distinct().Count() < links.Count))
+        {
+            invalid.Add(ScheduleField.Links);
+        }
+
         // Only the items with dates of their own have dependencies (ADR-0088).
-        var predecessors = form.PredecessorIds ?? [];
+        IReadOnlyCollection<Guid> predecessors = form.Links is { } asked
+            ? [.. asked.Select(link => link.PredecessorId)]
+            : form.PredecessorIds ?? [];
         if (predecessors.Any(id => id == itemId || id == form.ParentId || schedule.ItemOf(id) is null || schedule.IsSummary(id))
             || (summary && predecessors.Count > 0))
         {
@@ -555,7 +576,8 @@ internal static class ScheduleItemChecks
                 [.. predecessors.Distinct()],
                 form.ParentId,
                 form.OwnedByClient,
-                form.Deadline), invalid);
+                form.Deadline,
+                form.Links is null ? null : [.. form.Links.DistinctBy(link => link.PredecessorId)]), invalid);
     }
 }
 

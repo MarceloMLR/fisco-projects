@@ -1,4 +1,4 @@
-import type { Schedule, ScheduleItem, SchedulePhase } from '../api/client';
+import type { Schedule, ScheduleItem, ScheduleLinkType, SchedulePhase } from '../api/client';
 import type { DayValue } from '../format/dates';
 import { missesDeadline } from '../projects/schedule';
 
@@ -42,6 +42,8 @@ export interface GanttRow {
   deadline?: { day: DayValue; missed: boolean; days: number };
   /** The keys of the lines it depends on: they end before it starts (ADR-0019). */
   predecessors: string[];
+  /** The kind of each dependency that is not "finishes, then starts", by the key of the line before (ADR-0137). */
+  predecessorTypes?: Partial<Record<string, ScheduleLinkType>>;
   target: GanttTarget;
 }
 
@@ -98,6 +100,11 @@ export function ganttRowsOf(schedule: Schedule, { critical = false } = {}): Gant
               },
             }),
         predecessors: item.predecessorIds.filter((id) => known.has(id)),
+        predecessorTypes: Object.fromEntries(
+          item.links
+            .filter((link) => link.type !== 'FinishToStart')
+            .map((link) => [link.predecessorId, link.type]),
+        ),
         target: { kind: 'item', item, phase },
       });
     }

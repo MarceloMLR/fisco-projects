@@ -13,6 +13,7 @@ import {
   projectStatuses,
   type ProjectStatus,
   type ScheduleItemKind,
+  type ScheduleLinkType,
   systemRoles,
   type SystemRole,
   ticketPriorities,
@@ -27,6 +28,7 @@ import {
 import { formatCnpj } from '../format/cnpj';
 import { formatDayText } from '../format/dates';
 import { formatHours } from '../hours/hours';
+import { linkTypes } from '../projects/schedule';
 import { calculatedHolidayName } from './calendarText';
 
 /** How the Audit screen tells a record (canvas AdminAuditoria). */
@@ -184,8 +186,10 @@ const scheduleItemFields: readonly string[] = [
 const isScheduleItemField = (field: string): field is ScheduleItemField =>
   scheduleItemFields.includes(field);
 
-type ScheduleDependencyField = 'ProjectId' | 'PredecessorId' | 'SuccessorId';
+type ScheduleDependencyField = 'ProjectId' | 'PredecessorId' | 'SuccessorId' | 'Type' | 'Lag';
 const scheduleDependencyFields: readonly string[] = [
+  'Type',
+  'Lag',
   'ProjectId',
   'PredecessorId',
   'SuccessorId',
@@ -414,6 +418,9 @@ const isSchedule = (
 ): entry is AuditEntry & { itemType: (typeof scheduleTypes)[number] } =>
   scheduleTypes.some((type) => type === entry.itemType);
 
+const isLinkType = (value: string | null | undefined): value is ScheduleLinkType =>
+  linkTypes.some((type) => type === value);
+
 const isScheduleItemKind = (value: string | null | undefined): value is ScheduleItemKind =>
   value === 'Task' || value === 'Milestone';
 
@@ -485,6 +492,9 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   }
   if (entry.itemType === 'ScheduleItem' && field === 'Kind' && isScheduleItemKind(value)) {
     return t(`projects.schedule.kinds.${value}`);
+  }
+  if (entry.itemType === 'ScheduleDependency' && field === 'Type' && isLinkType(value)) {
+    return t(`projects.schedule.links.types.${value}`);
   }
   if (entry.itemType === 'ScheduleItem' && scheduleDays.includes(field)) {
     return formatDayText(value);

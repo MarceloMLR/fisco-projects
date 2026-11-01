@@ -18,7 +18,7 @@ import {
 import {
   itemsOf,
   missesDeadline,
-  predecessorNames,
+  predecessorTexts,
   type ScheduleDisplay,
   scheduleRows,
 } from './schedule';
@@ -229,8 +229,8 @@ export function SchedulePrintPage() {
                         `projects.timeline.milestone.${row.item.reachedOn === null ? (row.item.late ? 'late' : 'pending') : 'reached'}`,
                       )}
                 </td>
-                <td title={predecessorNames(row.item, data).join(', ')}>
-                  {predecessorNames(row.item, data).join(', ')}
+                <td title={predecessorTexts(row.item, data, t).join(', ')}>
+                  {predecessorTexts(row.item, data, t).join(', ')}
                 </td>
                 <td className="strip">
                   <LineStrip

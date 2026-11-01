@@ -206,6 +206,9 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Lag")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("PredecessorId")
                         .HasColumnType("uniqueidentifier");
 
@@ -214,6 +217,11 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("TemplateId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.HasKey("Id");
 
@@ -399,6 +407,9 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Lag")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("PredecessorId")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
@@ -411,6 +422,11 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("SuccessorId")
                         .HasColumnType("uniqueidentifier")
                         .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.HasKey("Id");
 
