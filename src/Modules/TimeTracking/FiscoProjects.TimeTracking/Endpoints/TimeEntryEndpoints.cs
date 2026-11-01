@@ -161,7 +161,7 @@ public static class TimeEntryEndpoints
         return result.Outcome == TimeEntryOutcome.Done ? TypedResults.NoContent() : Refusal<NoContent>(result);
     }
 
-    private static TimeEntryResponse ResponseOf(TimeEntryRow row) => new(
+    internal static TimeEntryResponse ResponseOf(TimeEntryRow row) => new(
         row.Entry.Id,
         row.Entry.Day,
         row.Entry.Hours,
@@ -207,7 +207,7 @@ public static class TimeEntryEndpoints
     };
 
     /// <summary>The person of the session, and whether the person is the Administrator, read from the database now.</summary>
-    private static async Task<TimeEntryViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
+    internal static async Task<TimeEntryViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
     {
         var userId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("The hours are read in a session.");

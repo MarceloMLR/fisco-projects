@@ -25,6 +25,7 @@ public static class TimeTrackingModule
         services.AddScoped<TimeEntryProjects>();
         services.AddScoped<TimeEntryTargets>();
         services.AddScoped<ListTimeEntries>();
+        services.AddScoped<TimeEntryRows>();
         services.AddScoped<ListTimeEntryProjects>();
         services.AddScoped<ListTimeEntryWork>();
         services.AddScoped<AddTimeEntry>();
@@ -38,6 +39,7 @@ public static class TimeTrackingModule
         services.AddScoped<ChangeAdditionalHours>();
         services.AddScoped<DeleteAdditionalHours>();
         services.AddScoped<GetTaskHours>();
+        services.AddScoped<ListTaskTimeEntries>();
         services.AddScoped<ChangePlannedHours>();
         services.AddScoped<GetTeamLoad>();
         // The main reads, once after the API starts (ADR-0106).

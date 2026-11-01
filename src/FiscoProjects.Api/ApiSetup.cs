@@ -116,6 +116,7 @@ public static class ApiSetup
             .MapMyWorkEndpoints()
             .MapTimeTrackingEndpoints()
             .MapProjectHoursEndpoints()
+            .MapTaskHoursEndpoints()
             .MapTeamLoadEndpoints();
 
         // The notices of the provider of signatures, outside /api: no session nor X-CSRF (ADR-0130).

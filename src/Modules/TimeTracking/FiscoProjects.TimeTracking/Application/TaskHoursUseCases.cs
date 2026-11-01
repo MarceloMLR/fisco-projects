@@ -13,18 +13,35 @@ public sealed record ProjectTaskHours(decimal Planned, decimal Logged, decimal O
 /// <summary>The planned hours of a task, or null to take them out.</summary>
 public sealed record PlannedHoursRequest(decimal? Hours);
 
-/// <summary>
-/// The hours of the tasks of a project for the Administrator (ADR-0138): each task of the schedule, also a summary task
-/// or a subtask, with planned or logged hours, with its current name and its balance, and the totals of the project.
-/// Only the Administrator reaches it, by the policy of the routes. Null when the project does not exist.
-/// </summary>
-public sealed class GetTaskHours(IProjectCatalog catalog, IScheduleItems schedule, IProjectHoursStore store)
+/// <summary>Why the hours of the tasks of a project are not shown, or that they are.</summary>
+public enum TaskHoursOutcome
 {
-    public async Task<ProjectTaskHours?> ExecuteAsync(Guid projectId, CancellationToken cancellationToken)
+    Done = 1,
+
+    /// <summary>The project does not exist or the person does not see it, or the item is not a task of it (404).</summary>
+    NotFound = 2,
+
+    /// <summary>The person sees the project, but not its hours, as its tech lead (403).</summary>
+    Forbidden = 3,
+}
+
+/// <summary>The hours of the tasks of a project, and whether the person may change the planned ones.</summary>
+public sealed record TaskHoursView(ProjectTaskHours Hours, bool CanChangePlanned);
+
+/// <summary>
+/// The hours of the tasks of a project (ADR-0138, ADR-0144): each task of the schedule, also a summary task or a
+/// subtask, with planned or logged hours, with its current name and its balance, and the totals of the project, for the
+/// Administrator and the manager of the project, of any status.
+/// </summary>
+public sealed class GetTaskHours(TimeEntryProjects projects, IScheduleItems schedule, IProjectHoursStore store)
+{
+    public async Task<(TaskHoursView? View, TaskHoursOutcome Outcome)> ExecuteAsync(
+        Guid projectId, TimeEntryViewer viewer, CancellationToken cancellationToken)
     {
-        if (await catalog.FindAsync(projectId, cancellationToken) is null)
+        ArgumentNullException.ThrowIfNull(viewer);
+        if (await TaskHoursAccess.RefusalAsync(projects, projectId, viewer, cancellationToken) is { } refusal)
         {
-            return null;
+            return (null, refusal);
         }
 
         var tasks = (await schedule.ItemsAsync(projectId, cancellationToken)).Where(item => item.Type == ScheduleItemType.Task);
@@ -43,8 +60,54 @@ public sealed class GetTaskHours(IProjectCatalog catalog, IScheduleItems schedul
                 task.IsDone))
             .ToList();
         var loggedInTasks = items.Sum(item => item.Logged);
-        return new ProjectTaskHours(
+        var view = new ProjectTaskHours(
             items.Sum(item => item.Planned ?? 0m), loggedInTasks, logged.Sum(row => row.Hours) - loggedInTasks, items);
+        return (new TaskHoursView(view, TimeEntryAccess.ChangesPlannedHours(viewer)), TaskHoursOutcome.Done);
+    }
+}
+
+/// <summary>
+/// The entries of a task of the schedule of a project (ADR-0144), also a summary task or a subtask, of every person,
+/// the newest day first, with their total, for who sees the hours of the tasks; each says whether the person may change
+/// it, by the rules of an entry (ADR-0128).
+/// </summary>
+public sealed class ListTaskTimeEntries(TimeEntryProjects projects, IScheduleItems schedule, ITimeEntryStore store, TimeEntryRows rows)
+{
+    public async Task<(TimeEntryList? List, TaskHoursOutcome Outcome)> ExecuteAsync(
+        Guid projectId, Guid itemId, TimeEntryViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        if (await TaskHoursAccess.RefusalAsync(projects, projectId, viewer, cancellationToken) is { } refusal)
+        {
+            return (null, refusal);
+        }
+
+        if (!(await schedule.ItemsAsync(projectId, cancellationToken)).Any(item => item.Id == itemId && item.Type == ScheduleItemType.Task))
+        {
+            return (null, TaskHoursOutcome.NotFound);
+        }
+
+        var project = await projects.FindAsync(projectId, viewer, cancellationToken);
+        var entries = await store.OfTaskAsync(projectId, itemId, cancellationToken);
+        return (await rows.ListAsync(entries, new Dictionary<Guid, ProjectAccess> { [projectId] = project! }, viewer, cancellationToken),
+            TaskHoursOutcome.Done);
+    }
+}
+
+/// <summary>Who reaches the hours of the tasks of a project, by the rule of the <see cref="TimeEntryAccess"/>.</summary>
+internal static class TaskHoursAccess
+{
+    /// <summary>Why the person does not reach the hours of the tasks of the project, or null when the person does.</summary>
+    public static async Task<TaskHoursOutcome?> RefusalAsync(
+        TimeEntryProjects projects, Guid projectId, TimeEntryViewer viewer, CancellationToken cancellationToken)
+    {
+        if (await projects.FindAsync(projectId, viewer, cancellationToken) is not { } project
+            || !TimeEntryAccess.Sees(viewer, project))
+        {
+            return TaskHoursOutcome.NotFound;
+        }
+
+        return TimeEntryAccess.SeesTaskHours(viewer, project) ? null : TaskHoursOutcome.Forbidden;
     }
 }
 
