@@ -1325,7 +1325,9 @@ describe('Filtros pela tela', () => {
     });
     // The footer of the Lista and the summary say how many show, and the button says the filter.
     expect(screen.getAllByText(shownText(1, 8)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: filters.kinds.late })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: filters.active.replace('{{name}}', filters.kinds.late) }),
+    ).toHaveAttribute('aria-pressed', 'true');
     expect(router.state.location.search).toBe('?view=list&filter=late');
   });
 
@@ -1358,7 +1360,11 @@ describe('Filtros pela tela', () => {
     await waitFor(() => {
       expect(lines()).toEqual(['fase: Configuração', 'Testes integrados', 'Roteiro de testes']);
     });
-    expect(screen.getByRole('button', { name: demoPeople.carla.name })).toBeVisible();
+    expect(
+      screen.getByRole('button', {
+        name: filters.active.replace('{{name}}', demoPeople.carla.name),
+      }),
+    ).toBeVisible();
   });
 
   it('Filtro sem resultado pela tela', async () => {

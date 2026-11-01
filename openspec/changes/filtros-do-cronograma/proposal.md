@@ -4,7 +4,7 @@ Num cronograma de implantação, com dezenas de tarefas, a gestão e cada pessoa
 
 ## What Changes
 
-- O botão "Filtrar" na barra da aba Cronograma e no Expandir, para todas as pessoas do projeto, com um filtro por vez:
+- O "Filtrar" (um ícone, para a barra continuar numa linha) na barra da aba Cronograma e no Expandir, para todas as pessoas do projeto, com um filtro por vez:
   - Atrasadas: as tarefas e os marcos atrasados (ADR-0020, ADR-0086);
   - Datas-limite estouradas: os itens em aberto que passaram da data-limite (GanttA-2);
   - Caminho crítico (ADR-0021);
@@ -12,7 +12,7 @@ Num cronograma de implantação, com dezenas de tarefas, a gestão e cada pessoa
   - Próximas duas semanas: as tarefas e os marcos em aberto que acontecem de hoje até 13 dias depois;
   - Por responsável: uma pessoa do cronograma, o cliente do projeto (ADR-0102) ou "Sem responsável".
 - O filtro vale para a Lista, a Linha do tempo e o Expandir: aparecem os itens que passam nele, com a fase e, para uma subtarefa, a tarefa em que está, para não perder o lugar; as setas das dependências ficam só entre os que aparecem. As datas, o período da Linha do tempo e o resumo da aba não mudam.
-- O botão diz o filtro escolhido, o rodapé da Lista e o resumo dizem quantos itens aparecem ("4 de 20 tarefas e marcos"), e "Limpar filtro" volta a mostrar tudo. Sem nenhum item, a tela diz "Nenhuma tarefa ou marco neste filtro."
+- O ícone de filtro fica marcado com um filtro escolhido, o resumo diz o filtro e quantos itens aparecem ("Atrasadas · 4 de 20 tarefas e marcos"), o rodapé da Lista também, e "Limpar filtro" volta a mostrar tudo. Sem nenhum item, a tela diz "Nenhuma tarefa ou marco neste filtro."
 - O filtro fica no endereço (`?filter=`), como a visão e a escala, para voltar a ele e mandar o link.
 
 ## Capabilities

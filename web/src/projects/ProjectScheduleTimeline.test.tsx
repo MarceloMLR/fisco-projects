@@ -661,7 +661,9 @@ describe('Filtros na linha do tempo', () => {
     });
     expect(() => timelineLine('Parametrizar regras de ICMS', expanded)).toThrow();
     expect(
-      within(expanded).getByRole('button', { name: text.schedule.filter.kinds.late }),
+      within(expanded).getByRole('button', {
+        name: text.schedule.filter.active.replace('{{name}}', text.schedule.filter.kinds.late),
+      }),
     ).toBeVisible();
     expect(router.state.location.search).toBe('?filter=late');
   });

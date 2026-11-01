@@ -9,7 +9,7 @@
 ## 3. Tela
 
 - [x] 3.1 O botão "Filtrar" na aba e no Expandir, a Lista e a Linha do tempo com o filtro, a contagem, "Limpar filtro" e a mensagem sem resultado; testes "Filtrar as atrasadas", "Minhas tarefas", "Por responsável", "Próximas duas semanas", "Filtro na Linha do tempo" e "Filtro sem resultado"
-- [ ] 3.2 Conferência no navegador, no computador e no celular, nos temas claro e escuro
+- [x] 3.2 Conferência no navegador, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 

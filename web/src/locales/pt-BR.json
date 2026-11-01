@@ -1494,6 +1494,7 @@
       "lateDays_other": "{{count}} dias úteis de atraso",
       "filter": {
         "button": "Filtrar",
+        "active": "Filtro: {{name}}",
         "label": "Filtro do cronograma",
         "all": "Todas as tarefas e marcos",
         "byOwner": "Por responsável",
