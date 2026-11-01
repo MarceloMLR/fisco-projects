@@ -752,11 +752,27 @@ Todas as pessoas do projeto MUST poder abrir a página de impressão do cronogra
 
 #### Scenario: Exportar sem editar
 - **WHEN** quem não é o administrador nem o gerente do projeto abre o menu "⋮"
-- **THEN** o menu tem só "Exportar em PDF", sem o XML, sem refazer e sem a linha de base
+- **THEN** o menu tem só "Exportar em PDF" e "Exportar para Excel", sem o XML, sem refazer e sem a linha de base
 
 #### Scenario: XML no menu da gestão
 - **WHEN** o gerente de um projeto concluído abre o menu "⋮"
 - **THEN** o menu tem "Exportar em PDF" e "Exportar para o MS Project (XML)"
+
+### Requirement: Exportar para o Excel
+
+Todas as pessoas do projeto MUST poder baixar o cronograma numa planilha do Excel pelo menu "⋮", também com o projeto encerrado: uma linha por fase e item, na ordem da tela, com o responsável, as datas, a duração, o progresso, a situação, o atraso, as dependências, o caminho crítico e a linha de base, e uma aba com os dados do projeto. A planilha MUST NOT levar e-mails (ADR-0021, ADR-0099, ADR-0136).
+
+#### Scenario: Cronograma no Excel
+- **WHEN** uma pessoa do projeto escolhe "Exportar para Excel" num cronograma com uma fase, uma tarefa com uma subtarefa, um marco que depende dela e a linha de base salva
+- **THEN** ela baixa o arquivo com o código do projeto no nome, com a aba "Cronograma" (uma linha para a fase, a tarefa, a subtarefa recuada e o marco, com as datas como datas do Excel e o marco apontando para a linha da tarefa) e a aba "Projeto", sem nenhum e-mail
+
+#### Scenario: Excel do projeto encerrado
+- **WHEN** uma pessoa do projeto concluído escolhe "Exportar para Excel"
+- **THEN** ela baixa a planilha com o cronograma como ele ficou
+
+#### Scenario: Excel sem cronograma
+- **WHEN** o cronograma não tem tarefas nem marcos
+- **THEN** "Exportar para Excel" aparece desabilitado no menu "⋮", como o PDF
 
 ### Requirement: Endereço do detalhe
 
