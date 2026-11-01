@@ -48,6 +48,9 @@ public sealed class Schedule : Entity
     public const int ItemNameMaxLength = 200;
     public const int MaxDuration = 999;
 
+    /// <summary>The most business days the open items of a schedule move at once, later or earlier (ADR-0140).</summary>
+    public const int MaxMove = 999;
+
     /// <summary>The most business days an item of an outline may start after the first start: about a hundred years.</summary>
     public const int MaxStartOffset = 30_000;
 
@@ -599,6 +602,52 @@ public sealed class Schedule : Entity
 
         Summarize(days);
         return _items.Count(item => before[item.Id] != (item.Start, item.End, item.Duration));
+    }
+
+    /// <summary>A move of the schedule is from 1 to 999 business days, later (positive) or earlier (negative).</summary>
+    public static bool IsValidMove(int businessDays) => businessDays is not 0 and >= -MaxMove and <= MaxMove;
+
+    /// <summary>
+    /// Moves the schedule when its start slips or comes earlier (ADR-0140): each task and milestone with dates of its own
+    /// still open (a task below 100%, a milestone not reached) goes the business days given, later or earlier, with the
+    /// same duration in business days, and then starts after the items it depends on, by their kinds and lags
+    /// (ADR-0137), which may hold an item that depends on a done one. The done items, the deadlines and the baseline stay;
+    /// the tasks with subtasks follow them (ADR-0088). Nothing changes when a new start would fall out of the days a
+    /// schedule may use.
+    /// </summary>
+    /// <returns>How many items changed their dates.</returns>
+    public int Move(int businessDays, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        if (!IsValidMove(businessDays))
+        {
+            throw new ArgumentOutOfRangeException(nameof(businessDays), businessDays, "A move goes from 1 to 999 business days.");
+        }
+
+        var open = InDependencyOrder().Where(item => !item.IsDone && !IsSummary(item.Id)).ToList();
+        var starts = open.ToDictionary(item => item.Id, item => days.AddBusinessDays(OnABusinessDay(item.Start, days), businessDays));
+        if (starts.Values.Any(start => !IsValidDay(start)))
+        {
+            throw new ArgumentOutOfRangeException(nameof(businessDays), businessDays, "The move takes items out of the days a schedule may use.");
+        }
+
+        var before = _items.ToDictionary(item => item.Id, item => (item.Start, item.End, item.Duration));
+        foreach (var item in open)
+        {
+            item.Place(EarliestStart(item, starts[item.Id], days), days);
+        }
+
+        Summarize(days);
+        return _items.Count(item => before[item.Id] != (item.Start, item.End, item.Duration));
+    }
+
+    /// <summary>Whether a move would keep every open item in the days a schedule may use.</summary>
+    public bool MayMove(int businessDays, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        return IsValidMove(businessDays)
+            && _items.Where(item => !item.IsDone && !IsSummary(item.Id))
+                .All(item => IsValidDay(days.AddBusinessDays(OnABusinessDay(item.Start, days), businessDays)));
     }
 
     /// <summary>The dates, the progress and the delays of the schedule on a day (<see cref="ScheduleFigures"/>).</summary>

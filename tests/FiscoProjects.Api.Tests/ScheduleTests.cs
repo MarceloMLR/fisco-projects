@@ -68,6 +68,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             Item(scene.Phase, "Aceite da configuração", "2026-10-15", 0, deadline: "2026-10-30")), HttpStatusCode.OK),
         new("Write the note of a task", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{scene.Task}",
             WithNote(scene.Phase, "Parametrizar regras de ICMS", "2026-10-13", 3, "Aguardando o cliente")), HttpStatusCode.OK),
+        new("Move the schedule", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/move", new { days = 2 }),
+            HttpStatusCode.OK),
         new("Update the progress of a task of no one", (client, scene) => ProgressAsync(client, scene, scene.Task, 70),
             HttpStatusCode.NoContent),
         new("Mark the milestone as reached", (client, scene) => ReachedAsync(client, scene, scene.Milestone, true),
@@ -1381,5 +1383,72 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
                 && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "Note"))
             .ToList();
         entries.Select(entry => Values(entry, "Note")).Should().BeEquivalentTo([(Waiting, (string?)null), (null, Waiting)]);
+    }
+
+    [Theory(DisplayName = "Movimento inválido")]
+    [InlineData(0)]
+    [InlineData(1000)]
+    [InlineData(-1000)]
+    public async Task AMoveOutOf1To999BusinessDays_IsRefused(int days)
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var before = (await ItemAsync(scene, scene.Task)).GetProperty("start").GetString();
+
+        var refused = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/move", new { days });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await refused.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("errors").EnumerateObject()
+            .Select(error => error.Name).Should().Equal("days");
+        (await ItemAsync(scene, scene.Task)).GetProperty("start").GetString().Should().Be(before);
+    }
+
+    [Theory(DisplayName = "Mover sem editar")]
+    [InlineData("TechLead")]
+    [InlineData("Contributor")]
+    public async Task OnlyWhoEditsTheSchedule_MovesIt(string who)
+    {
+        var scene = await StartAsync("Contributor");
+        await using var app = scene.App;
+        using var client = await app.SignInAsync(who == "TechLead" ? scene.Rafael : scene.Carla);
+        var before = (await ItemAsync(scene, scene.Task)).GetProperty("start").GetString();
+
+        (await SendAsync(client, HttpMethod.Post, $"{scene.Path}/move", new { days = 5 })).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await ItemAsync(scene, scene.Task)).GetProperty("start").GetString().Should().Be(before);
+    }
+
+    [Fact(DisplayName = "Desfazer o movimento")]
+    public async Task UndoingTheMove_BringsEveryItemBack_InOneStep()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var dates = async () => (await scene.Admin.GetFromJsonAsync<JsonElement>(scene.Path, Cancellation))
+            .GetProperty("phases").EnumerateArray()
+            .SelectMany(phase => phase.GetProperty("items").EnumerateArray())
+            .Select(item => (item.GetProperty("name").GetString(), item.GetProperty("start").GetString(), item.GetProperty("end").GetString()))
+            .ToList();
+        var before = await dates();
+
+        var moved = await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/move", new { days = 5 });
+
+        moved.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await moved.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("moved").GetInt32().Should().Be(2);
+        (await dates()).Should().NotEqual(before);
+        (await StepsAsync(marina, scene)).Undo.Should().Be("ScheduleMoved:+5");
+
+        (await SendAsync(marina, HttpMethod.Post, $"{scene.Path}/undo")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await dates()).Should().Equal(before);
+        var entries = (await scene.Admin.GetFromJsonAsync<JsonElement>("/api/audit?pageSize=100", Cancellation))
+            .GetProperty("items").EnumerateArray()
+            .Where(entry => entry.GetProperty("itemType").GetString() == "ScheduleItem"
+                && entry.GetProperty("action").GetString() == "Updated"
+                && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "Start"))
+            .ToList();
+        // Each item moved and came back, by the manager.
+        entries.Should().HaveCount(4);
     }
 }

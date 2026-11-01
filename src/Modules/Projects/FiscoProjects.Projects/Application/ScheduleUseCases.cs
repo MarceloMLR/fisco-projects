@@ -1,3 +1,4 @@
+using System.Globalization;
 using FiscoProjects.Administration.Contracts;
 using FiscoProjects.Calendar.Contracts;
 using FiscoProjects.Projects.Contracts;
@@ -214,6 +215,9 @@ public enum ScheduleField
 
     /// <summary>The note has up to 2,000 characters, without control characters but line breaks and tabs (ADR-0139).</summary>
     Note = 14,
+
+    /// <summary>A move is from 1 to 999 business days, keeping every open item from 2000 to 2099 (ADR-0140).</summary>
+    Move = 15,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -823,6 +827,27 @@ public sealed class RescheduleScheduleItem(
                 : ScheduleResult.Done(pushed: schedule.Reschedule(itemId, dates.Start, dates.End, days, today) ?? 0)
                     .Labeled(ScheduleAction.DatesChanged, item.Name);
         }, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Moves the open tasks and milestones of the schedule the business days given, later (positive) or earlier
+/// (negative), for who edits it (ADR-0140): one change for the undo, with the signed days as its name, in the audit and
+/// telling the owners whose dates changed.
+/// </summary>
+public sealed class MoveSchedule(
+    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, ProjectNotices notices)
+{
+    public async Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, int businessDays, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var days = await calendar.GetAsync(cancellationToken);
+        return await ScheduleEditing.RunAsync(projects, schedules, notices, projectId, viewer, mayChange: null, (_, schedule) =>
+            !schedule.MayMove(businessDays, days)
+                ? ScheduleResult.InvalidFields([ScheduleField.Move])
+                : ScheduleResult.Done(pushed: schedule.Move(businessDays, days))
+                    .Labeled(ScheduleAction.ScheduleMoved, businessDays.ToString("+0;-0", CultureInfo.InvariantCulture)),
+            cancellationToken);
     }
 }
 

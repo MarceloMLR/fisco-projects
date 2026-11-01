@@ -166,6 +166,13 @@ public sealed record ScheduleCreatedResponse(Guid Id);
 /// <summary>How many items after the changed one were pushed later (ADR-0019).</summary>
 public sealed record ScheduleItemChangedResponse(int Pushed);
 
+/// <summary>A move of the open items of the schedule (ADR-0140): the business days, later when positive, earlier when negative.</summary>
+public sealed record ScheduleMoveRequest(
+    [property: Description("From 1 to 999 business days: positive moves later, negative earlier.")] int Days);
+
+/// <summary>How many tasks and milestones changed their dates with the move.</summary>
+public sealed record ScheduleMovedResponse(int Moved);
+
 /// <summary>
 /// The schedule of a project (ADR-0018 to ADR-0020, ADR-0043): whoever sees the project sees it; only the Administrator
 /// and the manager change it, and the people in charge of the tasks update their progress, while the project is open.
@@ -208,6 +215,11 @@ internal static class ScheduleEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapPut("/{id:guid}/schedule/baseline", SaveBaselineAsync).WithName("SaveScheduleBaseline")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        projects.MapPost("/{id:guid}/schedule/move", MoveAsync).WithName("MoveSchedule")
+            .WithDescription("Moves the open tasks and milestones the business days given, later or earlier (ADR-0140).")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         projects.MapPost("/{id:guid}/schedule/undo", UndoAsync).WithName("UndoScheduleChange")
@@ -478,6 +490,26 @@ internal static class ScheduleEndpoints
         };
     }
 
+    private static async Task<Results<Ok<ScheduleMovedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> MoveAsync(
+        Guid id,
+        HttpContext http,
+        ScheduleMoveRequest request,
+        IUserAccess access,
+        MoveSchedule move,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        var result = await move.ExecuteAsync(id, request.Days, viewer, cancellationToken);
+        return result.Outcome switch
+        {
+            ScheduleOutcome.Done => TypedResults.Ok(new ScheduleMovedResponse(result.Pushed)),
+            ScheduleOutcome.NotFound => TypedResults.NotFound(),
+            ScheduleOutcome.Forbidden => TypedResults.Forbid(),
+            ScheduleOutcome.Invalid => Invalid(result.Invalid),
+            _ => Problem(result.Outcome),
+        };
+    }
+
     /// <summary>
     /// Saves the baseline of the project, or updates it, with the dates of the schedule today (ADR-0021). Without a
     /// body: the server copies the dates it has.
@@ -565,6 +597,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.Deadline => "deadline",
                 ScheduleField.Links => "links",
                 ScheduleField.Note => "note",
+                ScheduleField.Move => "days",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -584,6 +617,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.Deadline => "The deadline is a day from 2000 to 2099.",
                     ScheduleField.Links => "Each dependency is of a known kind, with a lag from -99 to 999 business days, once per item.",
                     ScheduleField.Note => $"The note has up to {ScheduleItem.NoteMaxLength} characters, without control characters but line breaks and tabs.",
+                    ScheduleField.Move => $"The move is from 1 to {Schedule.MaxMove} business days, later or earlier, keeping every open item from 2000 to 2099.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

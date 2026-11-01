@@ -84,6 +84,7 @@ public static class ProjectsModule
         services.AddScoped<ChangeTemplate>();
         services.AddScoped<RemoveTemplate>();
         services.AddScoped<RescheduleScheduleItem>();
+        services.AddScoped<MoveSchedule>();
         services.AddScoped<PreviewScheduleRecalculation>();
         services.AddScoped<RecalculateSchedules>();
         services.AddScoped<ListClients>();
