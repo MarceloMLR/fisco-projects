@@ -773,7 +773,8 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
             .Where(entry => entry.GetProperty("itemType").GetString() == "ScheduleItem"
                 && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "Deadline"))
             .ToList();
-        entries.Select(entry => Values(entry, "Deadline")).Should().Equal(("2026-10-30", null), (null, "2026-10-30"));
+        // Both changes, in any order: they may share the moment.
+        entries.Select(entry => Values(entry, "Deadline")).Should().BeEquivalentTo([("2026-10-30", (string?)null), (null, "2026-10-30")]);
     }
 
     [Fact(DisplayName = "Desfazer volta a cadeia")]
