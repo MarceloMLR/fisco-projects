@@ -84,6 +84,8 @@ import {
   MilestoneStatus,
   MissedDeadlines,
   NoteMark,
+  OwnerAway,
+  OwnerAwayLine,
 } from './ScheduleStatus';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import { ScheduleFilterMenu } from './ScheduleFilterMenu';
@@ -364,6 +366,7 @@ export function ProjectSchedulePage() {
               <Box component="span" sx={ellipsisSx}>
                 {owner.name}
               </Box>
+              <OwnerAway item={row.item} />
             </Box>
           );
         },
@@ -1137,6 +1140,7 @@ function ItemEditor({
         <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} onNew={onNewSubtask} />
       )}
       {item.hasSubtasks && <SummaryDates item={item} />}
+      <OwnerAwayLine item={item} />
       <SlackLine item={item} />
       <BaselineSection item={item} schedule={schedule} />
       {item.kind === 'Task' && <ItemHours project={project} item={item} onSaved={onSaved} />}
@@ -1317,6 +1321,7 @@ function ItemDetails({
         <MilestoneState project={project} item={item} canEdit={false} onDone={onDone} />
       )}
       {subtasks > 0 && <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} />}
+      <OwnerAwayLine item={item} />
       <BaselineSection item={item} schedule={schedule} />
       <Box component="dl" sx={detailsListSx}>
         {parent !== undefined && (

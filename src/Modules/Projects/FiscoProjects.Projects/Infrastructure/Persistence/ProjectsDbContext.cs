@@ -29,6 +29,8 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<ProjectTemplate> ProjectTemplates => Set<ProjectTemplate>();
 
+    public DbSet<PersonAbsence> PersonAbsences => Set<PersonAbsence>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }

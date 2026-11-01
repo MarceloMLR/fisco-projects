@@ -77,6 +77,44 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Label", "Name");
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.PersonAbsence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date")
+                        .HasAnnotation("FiscoProjects:Audit:Secret", true);
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date")
+                        .HasAnnotation("FiscoProjects:Audit:Secret", true);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "User");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("End");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("person_absences", "projects");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "UserId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "User");
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.Project", b =>
                 {
                     b.Property<Guid>("Id")

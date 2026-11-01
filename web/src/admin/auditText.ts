@@ -377,6 +377,16 @@ const plannedHoursFields: readonly string[] = [
 ] satisfies PlannedHoursField[];
 const isPlannedHoursField = (field: string): field is PlannedHoursField =>
   plannedHoursFields.includes(field);
+// The absences of a person, by the Administrator or a manager, without the dates (ADR-0141).
+type PersonAbsenceField = 'UserId' | 'Start' | 'End' | 'CreatedBy';
+const personAbsenceFields: readonly string[] = [
+  'UserId',
+  'Start',
+  'End',
+  'CreatedBy',
+] satisfies PersonAbsenceField[];
+const isPersonAbsenceField = (field: string): field is PersonAbsenceField =>
+  personAbsenceFields.includes(field);
 /** The items of the module of the hours whose days and hours show as Minhas horas does. */
 const isHoursItem = (entry: AuditEntry) =>
   entry.itemType === 'TimeEntry' ||
@@ -671,6 +681,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'PlannedHours' && isPlannedHoursField(field)) {
     return t(`audit.fields.PlannedHours.${field}`);
   }
+  if (entry.itemType === 'PersonAbsence' && isPersonAbsenceField(field)) {
+    return t(`audit.fields.PersonAbsence.${field}`);
+  }
   return field;
 }
 
@@ -812,7 +825,8 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (
     entry.itemType === 'ContractedHours' ||
     entry.itemType === 'AdditionalHours' ||
-    entry.itemType === 'PlannedHours'
+    entry.itemType === 'PlannedHours' ||
+    entry.itemType === 'PersonAbsence'
   ) {
     return t(
       `audit.actions.${entry.itemType}.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
@@ -1279,6 +1293,10 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.details.item.PlannedHours'), value: label },
       { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
+  }
+  // An absence is of the person, its label; the dates stay out (ADR-0141).
+  if (entry.itemType === 'PersonAbsence') {
+    return [{ label: t('audit.details.item.PersonAbsence'), value: label }];
   }
   if (entry.itemType === 'Ticket') {
     return [

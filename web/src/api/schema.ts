@@ -797,6 +797,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/members/{userId}/absences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListMemberAbsences"];
+        put?: never;
+        post: operations["AddMemberAbsence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/members/{userId}/absences/{absenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RemoveMemberAbsence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/schedule": {
         parameters: {
             query?: never;
@@ -2186,6 +2218,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AbsenceCreatedResponse: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description A period of an absence: the first and the last day (ADR-0141). */
+        AbsencePeriodResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+        };
+        /** @description A new absence: the first and the last day, from 1 to 366 calendar days (ADR-0141). */
+        AbsenceRequest: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+        };
+        /** @description An absence of a person: the id and the period. */
+        AbsenceResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+        };
         /** @description What the person may do with the term now. */
         AcceptanceActionsResponse: {
             canAttach: boolean;
@@ -2958,6 +3017,11 @@ export interface components {
         LocalSignInRequest: {
             email: string;
         };
+        /** @description The absences of a person, the latest end first, and whether the person who asks registers and removes them. */
+        MemberAbsencesResponse: {
+            absences: components["schemas"]["AbsenceResponse"][];
+            canManage: boolean;
+        };
         /** @description Whether a milestone was reached. */
         MilestoneReachedRequest: {
             reached: boolean;
@@ -3674,6 +3738,7 @@ export interface components {
             lastSignInAt: null | string;
             canBeManager: boolean;
             canBeTechLead: boolean;
+            nextAbsence: null | components["schemas"]["AbsencePeriodResponse"];
         };
         /** @enum {unknown} */
         ProjectMemberRole: "Manager" | "TechLead" | "Contributor" | "Developer" | "Viewer" | null;
@@ -3978,6 +4043,8 @@ export interface components {
             latestEnd: null | string;
             /** @description What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139). */
             note: null | string;
+            /** @description The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141). */
+            ownerAbsences: components["schemas"]["AbsencePeriodResponse"][];
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
@@ -7703,6 +7770,171 @@ export interface operations {
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListMemberAbsences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAbsencesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddMemberAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbsenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveMemberAbsence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
+                absenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

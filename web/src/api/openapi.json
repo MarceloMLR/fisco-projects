@@ -3416,6 +3416,225 @@
         }
       }
     },
+    "/api/projects/{id}/members/{userId}/absences": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ListMemberAbsences",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAbsencesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "AddMemberAbsence",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbsenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbsenceCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/members/{userId}/absences/{absenceId}": {
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RemoveMemberAbsence",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "absenceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/schedule": {
       "get": {
         "tags": [
@@ -10332,6 +10551,77 @@
   },
   "components": {
     "schemas": {
+      "AbsenceCreatedResponse": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AbsencePeriodResponse": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "description": "A period of an absence: the first and the last day (ADR-0141)."
+      },
+      "AbsenceRequest": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "description": "A new absence: the first and the last day, from 1 to 366 calendar days (ADR-0141)."
+      },
+      "AbsenceResponse": {
+        "required": [
+          "id",
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "description": "An absence of a person: the id and the period."
+      },
       "AcceptanceActionsResponse": {
         "required": [
           "canAttach",
@@ -12913,6 +13203,25 @@
           }
         }
       },
+      "MemberAbsencesResponse": {
+        "required": [
+          "absences",
+          "canManage"
+        ],
+        "type": "object",
+        "properties": {
+          "absences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AbsenceResponse"
+            }
+          },
+          "canManage": {
+            "type": "boolean"
+          }
+        },
+        "description": "The absences of a person, the latest end first, and whether the person who asks registers and removes them."
+      },
       "MilestoneReachedRequest": {
         "required": [
           "reached"
@@ -15132,7 +15441,8 @@
           "addedAt",
           "lastSignInAt",
           "canBeManager",
-          "canBeTechLead"
+          "canBeTechLead",
+          "nextAbsence"
         ],
         "type": "object",
         "properties": {
@@ -15165,6 +15475,17 @@
           },
           "canBeTechLead": {
             "type": "boolean"
+          },
+          "nextAbsence": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The absence of today or the next one, the first that ends today or later; null without one (ADR-0141).",
+                "$ref": "#/components/schemas/AbsencePeriodResponse"
+              }
+            ]
           }
         },
         "description": "A person of a project as the Members tab shows it: the e-mail, the role, when the person joined, the last sign-in\n(null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) of a project."
@@ -15868,7 +16189,8 @@
           "links",
           "float",
           "latestEnd",
-          "note"
+          "note",
+          "ownerAbsences"
         ],
         "type": "object",
         "properties": {
@@ -16026,6 +16348,13 @@
               "string"
             ],
             "description": "What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139)."
+          },
+          "ownerAbsences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AbsencePeriodResponse"
+            },
+            "description": "The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141)."
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."

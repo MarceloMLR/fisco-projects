@@ -293,6 +293,8 @@ export function membersOf(project: Project): ProjectMember[] {
       lastSignInAt: lastSignIns[member.id] ?? null,
       canBeManager: managers.has(member.id),
       canBeTechLead: techLeads.has(member.id),
+      // Nobody away by default (ADR-0141).
+      nextAbsence: null,
     }))
     .toSorted((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
@@ -372,6 +374,7 @@ function demoItem(
     float: null,
     latestEnd: null,
     note: null,
+    ownerAbsences: [],
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,
@@ -1524,6 +1527,10 @@ export const handlers = [
     return HttpResponse.json({ id, name: known.name, email: email === '' ? null : email });
   }),
   http.get('/api/projects/:id/members', () => HttpResponse.json([])),
+  // The absences of a person of the project (ADR-0141): none, and nothing to manage.
+  http.get('/api/projects/:id/members/:userId/absences', () =>
+    HttpResponse.json({ absences: [], canManage: false }),
+  ),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
   http.get('/api/projects/:id/overview', () => HttpResponse.json(emptyOverview)),
   http.get('/api/projects/:id/closing', () =>

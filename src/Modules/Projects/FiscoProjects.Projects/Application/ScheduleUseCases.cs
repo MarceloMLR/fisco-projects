@@ -83,8 +83,9 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// late item (<see cref="ScheduleFigures.LateDaysOf"/>), the items on the critical path and the baseline compared with
 /// the schedule now, none until the manager saves one (ADR-0021), for who edits it, what undoing and redoing would
 /// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
-/// it (GanttA-2), the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137), and the
-/// float of each item with dates of its own (GanttB-1).
+/// it (GanttA-2), the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137), the
+/// float of each item with dates of its own (GanttB-1) and, for each open task with dates of its own and a person in
+/// charge, the absences of the person on its days (ADR-0141).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -100,11 +101,17 @@ public sealed record ScheduleView(
     IReadOnlyDictionary<Guid, int>? DeadlineDeviations = null,
     int MissedDeadlines = 0,
     IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null,
-    IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null);
+    IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null,
+    IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>? OwnerAbsences = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
-    IProjectStore projects, IScheduleStore schedules, IUserDirectory users, IWorkCalendar calendar, InstallationClock clock)
+    IProjectStore projects,
+    IScheduleStore schedules,
+    IUserDirectory users,
+    IWorkCalendar calendar,
+    InstallationClock clock,
+    IAbsenceStore absences)
 {
     /// <returns>The schedule, empty while the project has none, or null when the project does not exist for the person.</returns>
     public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -131,6 +138,7 @@ public sealed class GetSchedule(
             ? Schedule.NonWorkingDaysAround(start, end, days)
             : [];
         var analysis = days is null ? null : ScheduleCriticalPath.Analyze(schedule.Items, schedule.Dependencies, days);
+        var ownerAbsences = await OwnerAbsencesAsync(schedule, figures, cancellationToken);
         return new ScheduleView(
             figures,
             names,
@@ -158,7 +166,35 @@ public sealed class GetSchedule(
                     group => group.Key,
                     group => (IReadOnlyList<ScheduleLink>)[.. group.Select(dependency =>
                         new ScheduleLink(dependency.PredecessorId, dependency.Type, dependency.Lag))]),
-            analysis?.Slack);
+            analysis?.Slack,
+            ownerAbsences);
+    }
+
+    /// <summary>
+    /// The absences of the person in charge of each open task with dates of its own that fall on its days (ADR-0141); the
+    /// dates of the task do not change.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>> OwnerAbsencesAsync(
+        Schedule schedule, ScheduleFigures figures, CancellationToken cancellationToken)
+    {
+        var tasks = schedule.Items
+            .Where(item => item.OwnerId is not null && !item.IsDone && !figures.Summaries.Contains(item.Id))
+            .ToList();
+        if (tasks.Count == 0)
+        {
+            return new Dictionary<Guid, IReadOnlyList<AbsencePeriod>>();
+        }
+
+        var kept = (await absences.EndingFromAsync(
+                [.. tasks.Select(task => task.OwnerId!.Value).Distinct()], tasks.Min(task => task.Start), cancellationToken))
+            .ToLookup(absence => absence.UserId);
+        return tasks
+            .Select(task => (task.Id, Periods: (IReadOnlyList<AbsencePeriod>)[.. kept[task.OwnerId!.Value]
+                .Where(absence => absence.Overlaps(task.Start, task.End))
+                .OrderBy(absence => absence.Start)
+                .Select(absence => absence.Period)]))
+            .Where(pair => pair.Periods.Count > 0)
+            .ToDictionary(pair => pair.Id, pair => pair.Periods);
     }
 }
 

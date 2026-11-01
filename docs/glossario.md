@@ -46,6 +46,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Pessoa do projeto (membro) | ProjectMember | A pessoa e o papel dela num projeto; na Auditoria, "Pessoas dos projetos" |
 | Membros (aba do projeto) | `/projects/{id}/members` | As pessoas do projeto por time ou por nome, com "Incluir pessoa" e o detalhe na gaveta |
 | Times na aba Membros: Gestão, Funcional, Desenvolvimento, Leitores | MemberTeam: management, functional, development, viewers | O líder técnico aparece em Gestão e em Desenvolvimento (ADR-0040, ADR-0068) |
+| Ausência | PersonAbsence, `absences` | Período em que a pessoa não trabalha (férias, folga), só com o início e o fim, da pessoa e não do projeto; cadastrada pelo administrador e pelo gerente, vista pelas pessoas dos mesmos projetos e apagada um ano depois do fim (ADR-0141) |
+| Responsável ausente | `ownerAbsences` | Ausências do responsável que se cruzam com as datas de uma tarefa em aberto; o cronograma avisa, sem mudar as datas (ADR-0141) |
 | Incluir pessoa, trocar o papel, remover do projeto | AddProjectMember, ChangeProjectMemberRole, RemoveProjectMember | Administrador e gerente com todos; líder técnico com todos menos os gerentes (ADR-0042, ADR-0043) |
 | Quem gerencia as pessoas | `CanManagePeople`, `CanManageManagers`, `MayManage` | A regra num lugar só, em `ProjectPermissions` |
 | Último gerente | LastManager | O projeto sempre tem um gerente: remover ou rebaixar o último é recusado (ADR-0042) |

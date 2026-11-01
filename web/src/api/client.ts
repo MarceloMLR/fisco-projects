@@ -24,6 +24,8 @@ export type ProjectRow = components['schemas']['ProjectListItemResponse'];
 export type Project = components['schemas']['ProjectResponse'];
 export type ProjectPerson = components['schemas']['ProjectPersonResponse'];
 export type ProjectMember = components['schemas']['ProjectMemberResponse'];
+export type AbsencePeriod = components['schemas']['AbsencePeriodResponse'];
+export type MemberAbsence = components['schemas']['AbsenceResponse'];
 export type ProjectStatus = components['schemas']['ProjectStatus'];
 export type ProjectRole = components['schemas']['ProjectRole'];
 export type ProjectSituation = components['schemas']['ProjectSituation'];
@@ -196,6 +198,7 @@ export const auditItemTypes = [
   'ContractedHours',
   'AdditionalHours',
   'PlannedHours',
+  'PersonAbsence',
   'AuditExport',
   'AuditCleanup',
 ] as const;
@@ -271,6 +274,7 @@ export const projectProblems = {
   hasOpenTickets: 'urn:fiscoprojects:problem:project-has-open-tickets',
   ticketsChanged: 'urn:fiscoprojects:problem:project-tickets-changed',
   hasFiles: 'urn:fiscoprojects:problem:project-has-files',
+  absenceOverlap: 'urn:fiscoprojects:problem:absence-overlap',
 } as const;
 
 /** Problem types of the tickets (TicketProblems in the Tickets module). */

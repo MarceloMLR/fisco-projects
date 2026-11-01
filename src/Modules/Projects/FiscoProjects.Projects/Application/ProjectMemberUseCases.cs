@@ -26,14 +26,15 @@ public enum MemberOutcome
 
 /// <summary>
 /// A person of a project as the Members tab shows it: the name, the e-mail, the role, when the person joined, the last
-/// sign-in (null for who never signed in) and whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097).
+/// sign-in (null for who never signed in), whether the person may be a manager (ADR-0085) or a tech lead (ADR-0097) and
+/// the absence of today or the next one (ADR-0141).
 /// </summary>
 public sealed record ProjectMemberItem(
     Guid Id, string Name, string Email, ProjectRole Role, DateTime AddedAt, DateTime? LastSignInAt, bool CanBeManager,
-    bool CanBeTechLead = false);
+    bool CanBeTechLead = false, AbsencePeriod? NextAbsence = null);
 
 /// <summary>The people of a project, by name, for whoever sees the project (ADR-0043).</summary>
-public sealed class ListProjectMembers(IProjectStore store, IUserDirectory users)
+public sealed class ListProjectMembers(IProjectStore store, IUserDirectory users, IAbsenceStore absences, InstallationClock clock)
 {
     /// <returns>The people, or null when the project does not exist for the person who asks.</returns>
     public async Task<IReadOnlyList<ProjectMemberItem>?> ExecuteAsync(
@@ -47,12 +48,18 @@ public sealed class ListProjectMembers(IProjectStore store, IUserDirectory users
 
         var people = (await users.PeopleAsync([.. project.Members.Select(member => member.UserId)], cancellationToken))
             .ToDictionary(person => person.Id);
+        // The absence of today or the next one of each person, which the people of the project see (ADR-0141).
+        var today = await clock.TodayAsync(cancellationToken);
+        var next = (await absences.EndingFromAsync([.. project.Members.Select(member => member.UserId)], today, cancellationToken))
+            .GroupBy(absence => absence.UserId)
+            .ToDictionary(group => group.Key, group => group.MinBy(absence => absence.Start)!.Period);
         return [.. project.Members
             .Select(member => people.TryGetValue(member.UserId, out var person)
                 ? new ProjectMemberItem(
                     member.UserId, person.Name, person.Email, member.Role, member.AddedAt, person.LastSignInAt, person.CanBeManager,
-                    person.CanBeTechLead)
-                : new ProjectMemberItem(member.UserId, string.Empty, string.Empty, member.Role, member.AddedAt, null, false))
+                    person.CanBeTechLead, next.GetValueOrDefault(member.UserId))
+                : new ProjectMemberItem(
+                    member.UserId, string.Empty, string.Empty, member.Role, member.AddedAt, null, false, NextAbsence: next.GetValueOrDefault(member.UserId)))
             .OrderBy(person => person.Name, StringComparer.CurrentCultureIgnoreCase)];
     }
 }

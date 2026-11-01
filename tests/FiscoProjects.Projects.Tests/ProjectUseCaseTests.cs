@@ -64,7 +64,8 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         var details = await GetAsync(created.Id!.Value, Marina);
 
         details!.Members.Should().Equal(new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager));
-        details.Permissions.Should().Be(new ProjectPermissions(true, true, true, true, true, true, true, CanChooseFolder: true, CanExportSchedule: true));
+        details.Permissions.Should().Be(new ProjectPermissions(
+            true, true, true, true, true, true, true, CanChooseFolder: true, CanExportSchedule: true, CanManageAbsences: true));
     }
 
     [Fact(DisplayName = "Projeto para outro gerente")]

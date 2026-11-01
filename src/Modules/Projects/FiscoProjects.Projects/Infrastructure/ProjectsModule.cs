@@ -1,5 +1,6 @@
 using FiscoProjects.MyWork.Contracts;
 using FiscoProjects.Persistence;
+using FiscoProjects.Persistence.PersonalData;
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Contracts;
 using FiscoProjects.Projects.Infrastructure.Persistence;
@@ -44,6 +45,14 @@ public static class ProjectsModule
         services.AddScoped<DeleteProject>();
         services.AddScoped<GetProjectOverview>();
         services.AddScoped<ListProjectMembers>();
+        // The absences of the people (ADR-0141): kept for a year after their end and erased with the anonymization.
+        services.AddScoped<IAbsenceStore, AbsenceStore>();
+        services.AddScoped<ListMemberAbsences>();
+        services.AddScoped<AddMemberAbsence>();
+        services.AddScoped<RemoveMemberAbsence>();
+        services.AddScoped<CleanUpAbsences>();
+        services.AddScoped<IPersonalDataEraser, ProjectsPersonalData>();
+        services.AddHostedService<AbsenceCleanup>();
         services.AddScoped<AddProjectMember>();
         services.AddScoped<ChangeProjectMemberRole>();
         services.AddScoped<RemoveProjectMember>();

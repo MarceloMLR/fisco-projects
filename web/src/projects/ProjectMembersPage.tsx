@@ -1,4 +1,5 @@
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
+import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import Box from '@mui/material/Box';
@@ -20,7 +21,9 @@ import { Avatar } from '../components/Avatar';
 import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { DetailsDrawer } from '../components/DetailsDrawer';
+import { MemberAbsences } from './MemberAbsences';
 import { MemberTickets } from './MemberTickets';
+import { awayText } from './absences';
 import { Dialog } from '../components/Dialog';
 import { FormField } from '../components/FormField';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -67,6 +70,36 @@ function teamsText(role: ProjectRole, t: TFunction): string {
 }
 
 /**
+ * The absence of a person beside the name (ADR-0141): the icon and "Ausente até 14/11"; nothing without one. In a
+ * narrow column the text gives way to the name, down to the icon alone, with the text on hover.
+ */
+function AwayTag({ text }: { text: string | undefined }) {
+  return text === undefined ? null : (
+    <Box
+      component="span"
+      title={text}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 'var(--space-1)',
+        flex: '0 1 auto',
+        minWidth: 14,
+        overflow: 'hidden',
+        fontSize: 12,
+        lineHeight: '16px',
+        color: 'var(--text-secondary)',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <EventBusyOutlined aria-hidden sx={{ fontSize: 14, flex: 'none' }} />
+      <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {text}
+      </Box>
+    </Box>
+  );
+}
+
+/**
  * The tab Membros of a project (canvas ProjetoMembros): the people by team (Gestão, Funcional, Desenvolvimento and
  * Leitores, the tech lead in Gestão and in Desenvolvimento) or by name, with the search, and "Incluir pessoa" for who
  * manages the people (ADR-0042, ADR-0043). Choosing a person opens the details in a drawer (ADR-0081), where the role
@@ -75,7 +108,8 @@ function teamsText(role: ProjectRole, t: TFunction): string {
 export function ProjectMembersPage() {
   const { t } = useTranslation();
   const { project, notify } = useProjectOutlet();
-  const { formatLastAccess } = useDates();
+  const { formatLastAccess, toDayValue } = useDates();
+  const today = toDayValue(new Date());
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { data: members = [], isFetching } = useQuery(projectMembersQuery(project.id));
   const [search, setSearch] = useState('');
@@ -120,16 +154,23 @@ export function ProjectMembersPage() {
               <CardAvatar person={row.member} role={t(`projects.roles.${row.member.role}`)} />
               <Box sx={{ minWidth: 0 }}>
                 <Box
-                  component="span"
-                  sx={{
-                    display: 'block',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}
                 >
-                  {row.member.name}
+                  <Box
+                    component="span"
+                    sx={{
+                      // The name comes first: the absence beside it gives way, down to its icon.
+                      flex: 'none',
+                      maxWidth: 'calc(100% - 22px)',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {row.member.name}
+                  </Box>
+                  <AwayTag text={awayText(row.member.nextAbsence, today, t)} />
                 </Box>
                 <Box component="span" sx={secondarySx}>
                   {row.member.email}
@@ -159,7 +200,7 @@ export function ProjectMembersPage() {
         ),
       },
     ],
-    [t, formatLastAccess],
+    [t, formatLastAccess, today],
   );
   const footer = useCallback(
     () => t('projects.members.total', { count: found.length }),
@@ -467,6 +508,13 @@ function MemberDetails({
         projectId={project.id}
         member={member}
         canHandOver={permissions.canManagePeople}
+        onDone={(message) => {
+          onDone(message, false);
+        }}
+      />
+      <MemberAbsences
+        projectId={project.id}
+        member={member}
         onDone={(message) => {
           onDone(message, false);
         }}

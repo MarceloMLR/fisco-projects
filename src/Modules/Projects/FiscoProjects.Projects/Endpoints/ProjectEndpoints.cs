@@ -186,6 +186,9 @@ public static class ProjectProblems
     /// <summary>The person is already in the project: change the role instead (ADR-0042).</summary>
     public const string MemberExists = "urn:fiscoprojects:problem:project-member-exists";
 
+    /// <summary>The person already has an absence on a day of the period (ADR-0141).</summary>
+    public const string AbsenceOverlap = "urn:fiscoprojects:problem:absence-overlap";
+
     /// <summary>The change would leave the project without a manager (ADR-0042).</summary>
     public const string LastManager = "urn:fiscoprojects:problem:project-last-manager";
 
