@@ -50,6 +50,12 @@ export interface ScheduleGanttProps {
   onMove: (itemId: string, start: DayValue) => TimelineAnswer;
   onResize: (itemId: string, start: DayValue, end: DayValue) => TimelineAnswer;
   onLink: (predecessorId: string, successorId: string) => TimelineAnswer;
+  /**
+   * The phases and summary tasks folded, by their ids, kept by the tab so the Lista shows the same (Cronograma-4.2),
+   * with the toggle of one of them; without them, the timeline keeps its own.
+   */
+  collapsed?: ReadonlySet<string>;
+  onToggle?: (key: string) => void;
 }
 
 export interface ScheduleGanttHandle {
@@ -74,6 +80,8 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       showBaseline = false,
       showCritical = false,
       clientName = null,
+      collapsed: collapsedOutside,
+      onToggle,
       onChoose,
       onMove,
       onResize,
@@ -96,7 +104,8 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
     const maxList = Math.max(defaultList, Math.floor(size.width / 2));
     const list = draggedList?.columns === columns ? draggedList.width : defaultList;
 
-    const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+    const [collapsedInside, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+    const collapsed = collapsedOutside ?? collapsedInside;
     const [active, setActive] = useState<string>();
     const rows = useMemo(
       () => ganttRowsOf(schedule, { critical: showCritical }),
@@ -159,15 +168,22 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       [geometry, schedule.today, list],
     );
 
-    const toggle = useCallback((key: string) => {
-      setCollapsed((current) => {
-        const next = new Set(current);
-        if (!next.delete(key)) {
-          next.add(key);
+    const toggle = useCallback(
+      (key: string) => {
+        if (onToggle !== undefined) {
+          onToggle(key);
+          return;
         }
-        return next;
-      });
-    }, []);
+        setCollapsed((current) => {
+          const next = new Set(current);
+          if (!next.delete(key)) {
+            next.add(key);
+          }
+          return next;
+        });
+      },
+      [onToggle],
+    );
 
     const choose = useCallback(
       (row: GanttRow) => {

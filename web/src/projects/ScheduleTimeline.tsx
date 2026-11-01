@@ -35,6 +35,8 @@ export function ScheduleTimeline({
   onChoose,
   emptyText,
   aside,
+  collapsed,
+  onToggle,
 }: {
   project: Project;
   schedule: Schedule;
@@ -50,6 +52,9 @@ export function ScheduleTimeline({
   emptyText?: string;
   /** Beside the legend, such as the progress of the project and its delays. */
   aside?: ReactNode;
+  /** The phases and summary tasks folded, the same of the Lista, and the toggle of one (Cronograma-4.2). */
+  collapsed?: ReadonlySet<string>;
+  onToggle?: (key: string) => void;
 }) {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -215,6 +220,8 @@ export function ScheduleTimeline({
             onMove={move}
             onResize={resize}
             onLink={link}
+            collapsed={collapsed}
+            onToggle={onToggle}
           />
         </Suspense>
       )}

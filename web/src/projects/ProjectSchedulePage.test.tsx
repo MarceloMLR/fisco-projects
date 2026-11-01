@@ -925,6 +925,39 @@ describe('Subtarefas pela tela', () => {
     expect(within(rowOf('Integrar emissão de NF-e')).queryByRole('button')).not.toBeInTheDocument();
   });
 
+  // Spec: cronograma, requirement "Recolher fases na Lista" (Cronograma-4.2).
+  it('Recolher uma fase na lista', async () => {
+    await openSchedule();
+    const collapse = ptBR.projects.timeline.collapseRow.replace('{{name}}', 'Configuração');
+    const expand = ptBR.projects.timeline.expandRow.replace('{{name}}', 'Configuração');
+
+    fireEvent.click(within(rowOf('Configuração')).getByRole('button', { name: collapse }));
+
+    // The tasks of the phase leave the Lista; the phase stays, with its dates, and its dialog does not open.
+    await waitFor(() => {
+      expect(lines()).not.toContain('Parametrizar regras de ICMS');
+    });
+    expect(lines().slice(3, 6)).toEqual([
+      'Validar cadastro de produtos',
+      'fase: Configuração',
+      'fase: Homologação',
+    ]);
+    expect(cellsOf('Configuração')[1]).toBe('13/10/2026');
+    expect(
+      screen.queryByRole('dialog', { name: text.phaseDialog.editTitle }),
+    ).not.toBeInTheDocument();
+    const show = within(rowOf('Configuração')).getByRole('button', { name: expand });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.keyDown(show, { key: 'Enter' });
+    fireEvent.click(show);
+    await waitFor(() => {
+      expect(lines()).toContain('Parametrizar regras de ICMS');
+    });
+    expect(
+      screen.queryByRole('dialog', { name: text.phaseDialog.editTitle }),
+    ).not.toBeInTheDocument();
+  });
+
   it('Recolher subtarefas na lista', async () => {
     schedule = demoScheduleWithSubtasks();
     await openSchedule();
