@@ -443,6 +443,8 @@ export const demoProjects: readonly DemoProject[] = [
       { task: 'Integrar emissão de NF-e', hours: 13.5 },
       { task: 'Roteiro de testes', hours: 6 },
       { task: 'Testes com a equipe do cliente', hours: 16 },
+      // In the holidays of Diego: with the tests of the CT-e of the TMS-DELTA, over his capacity (ADR-0142).
+      { task: 'Migrar saldos', hours: 16 },
     ],
     // In the coming weeks (ADR-0141): the holidays of Diego over the migration of the balances, and a day of Rafael
     // during the tests; Membros tells both, and the schedule warns on their tasks.
@@ -1362,6 +1364,8 @@ export const demoProjects: readonly DemoProject[] = [
     additionalHours: [
       { daysAgo: 3, hours: 16, reason: 'Integração com a transportadora parceira, fora do escopo' },
     ],
+    // The week before the holidays of Diego, with the migration of the ERP-FIN: over his capacity (ADR-0142).
+    plannedHours: [{ task: 'Testes de emissão de CT-e', hours: 40 }],
     hours: [
       {
         by: 'carla',

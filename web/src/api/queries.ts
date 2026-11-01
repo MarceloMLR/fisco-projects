@@ -74,6 +74,7 @@ export const queryKeys = {
   myWork: ['my-work'],
   timeEntries: ['time-entries'],
   projectHours: ['project-hours'],
+  teamLoad: ['team-load'],
 } as const;
 
 /** A page of the users, with the filters of the Users screen; with pageSize 1, only the count. */
@@ -187,6 +188,24 @@ export function projectMembersQuery(id: string) {
     queryKey: [...queryKeys.projects, id, 'members'] as const,
     queryFn: ({ signal }) =>
       dataOf(api.GET('/api/projects/{id}/members', { params: { path: { id } }, signal })),
+  });
+}
+
+/**
+ * The load of the team in eight weeks from the week of the day (the current one without it), only for the
+ * Administrator (ADR-0142); read again whenever the page opens, as the planned hours, the schedules and the absences
+ * change elsewhere.
+ */
+export function teamLoadQuery(week: string | null) {
+  return queryOptions({
+    queryKey: [...queryKeys.teamLoad, week ?? 'current'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/admin/team-load', {
+          params: { query: week === null ? {} : { week } },
+          signal,
+        }),
+      ),
   });
 }
 

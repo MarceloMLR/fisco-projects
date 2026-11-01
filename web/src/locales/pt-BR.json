@@ -40,6 +40,9 @@
     "projectHours": {
       "title": "Horas dos projetos"
     },
+    "teamLoad": {
+      "title": "Carga da equipe"
+    },
     "users": {
       "title": "Usuários"
     },
@@ -2903,6 +2906,52 @@
         "generatedAt": "Gerada em",
         "generatedBy": "Gerada por"
       }
+    }
+  },
+  "teamLoad": {
+    "table": "Carga da equipe por semana",
+    "columns": {
+      "person": "Pessoa"
+    },
+    "search": "Buscar pessoa",
+    "viewsLabel": "Pessoas",
+    "views": {
+      "All": "Todas",
+      "Overloaded": "Com sobrecarga"
+    },
+    "previous": "Semanas anteriores",
+    "next": "Semanas seguintes",
+    "thisWeek": "Esta semana",
+    "loadOf": "{{load}} de {{capacity}}",
+    "period": "{{start}} a {{end}}",
+    "states": {
+      "Over": "Acima",
+      "NearLimit": "Perto do limite",
+      "Within": "Dentro",
+      "Free": "Livre"
+    },
+    "absenceDays_one": "{{count}} dia de ausência",
+    "absenceDays_other": "{{count}} dias de ausência",
+    "rule": "Só as tarefas com horas previstas pesam: as horas de cada uma em partes iguais pelos dias úteis dela, contra {{hours}} por dia útil, sem os dias de ausência.",
+    "meta": {
+      "people_one": "{{count}} pessoa",
+      "people_other": "{{count}} pessoas",
+      "over_one": "{{count}} acima da capacidade",
+      "over_other": "{{count}} acima da capacidade",
+      "joined": "{{people}} · {{over}}"
+    },
+    "empty": "Nenhuma pessoa nos projetos em aberto.",
+    "emptyOverloaded": "Ninguém acima da capacidade nessas semanas.",
+    "loadFailed": "Não foi possível carregar a carga da equipe. Tente de novo.",
+    "details": {
+      "label": "Carga da pessoa",
+      "week": "Semana de {{period}}",
+      "away": "Ausente: {{periods}}",
+      "noTasks": "Nenhuma tarefa com horas previstas.",
+      "taskHours": "{{hours}} na semana",
+      "taskDetail": "{{planned}} previstas, de {{period}}",
+      "openTask": "Abrir {{name}} no cronograma de {{code}}",
+      "notFound": "Essa pessoa não está na carga dessas semanas."
     }
   },
   "editor": {
