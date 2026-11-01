@@ -1611,7 +1611,7 @@
         "owner": "Responsável",
         "progress": "Progresso (%)",
         "dependsOn": "Depende de",
-        "dependsOnHelp": "Começa depois que essas terminam.",
+        "dependsOnHelp": "Por padrão, começa depois que essas terminam; o tipo e o intervalo de cada uma ficam embaixo.",
         "dependsOnPlaceholder": "Nenhuma",
         "deadline": "Data-limite",
         "deadlineHelp": "Não muda as datas: avisa quando o fim passa dela.",
