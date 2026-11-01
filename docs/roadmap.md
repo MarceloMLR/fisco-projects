@@ -240,18 +240,18 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | Concluída em 01/11/2026 ([#123](https://github.com/MarceloMLR/fisco-projects/pull/123)) |
-| GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | PR aberto ([#125](https://github.com/MarceloMLR/fisco-projects/pull/125)) |
-| GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | PR aberto ([#126](https://github.com/MarceloMLR/fisco-projects/pull/126)) |
-| GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135, 0137 | PR aberto ([#127](https://github.com/MarceloMLR/fisco-projects/pull/127)) |
-| GanttA-5 | `horas-previstas-por-tarefa` | As horas previstas de cada tarefa contra as apontadas nela, só em horas | 0016, 0128, 0138 | PR aberto ([#129](https://github.com/MarceloMLR/fisco-projects/pull/129)) |
+| GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | Concluída em 01/11/2026 ([#125](https://github.com/MarceloMLR/fisco-projects/pull/125)) |
+| GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | Concluída em 01/11/2026 ([#126](https://github.com/MarceloMLR/fisco-projects/pull/126)) |
+| GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135, 0137 | Concluída em 01/11/2026 ([#127](https://github.com/MarceloMLR/fisco-projects/pull/127)) |
+| GanttA-5 | `horas-previstas-por-tarefa` | As horas previstas de cada tarefa contra as apontadas nela, só em horas | 0016, 0128, 0138 | Concluída em 01/11/2026 ([#129](https://github.com/MarceloMLR/fisco-projects/pull/129)) |
 
 ## 15. Aprimoramento do Gantt 2
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| GanttB-1 | `folga-das-tarefas` | Quantos dias úteis cada tarefa pode atrasar sem mudar o fim do projeto, tirados do caminho crítico | 0021, 0051 | PR aberto ([#128](https://github.com/MarceloMLR/fisco-projects/pull/128)) |
-| GanttB-2 | `notas-da-tarefa` | Notas em cada tarefa e marco, como "aguardando o cliente mandar os arquivos" | 0019, 0139 | PR aberto ([#130](https://github.com/MarceloMLR/fisco-projects/pull/130)) |
-| GanttB-3 | `mover-o-projeto` | Mover o cronograma inteiro em dias úteis quando o início escorrega | 0018, 0051, 0140 | PR aberto ([#131](https://github.com/MarceloMLR/fisco-projects/pull/131)) |
-| GanttB-4 | `ausencias-das-pessoas` | As ausências e as férias de cada pessoa, com o aviso da tarefa que cai nelas | 0018, 0058, 0141 | PR aberto ([#132](https://github.com/MarceloMLR/fisco-projects/pull/132)) |
-| GanttB-5 | `carga-da-equipe` | A carga de cada pessoa por semana, entre os projetos, pelas horas previstas e pelas ausências, com o aviso de sobrecarga | 0021, 0128, 0142 | PR aberto ([#133](https://github.com/MarceloMLR/fisco-projects/pull/133)) |
-| GanttB-6 | `edicao-na-tabela` | Editar o cronograma direto na tabela, como numa planilha: nome, duração, datas, dependências e progresso, pelo teclado | 0021, 0071, 0134, 0143 | PR aberto ([#134](https://github.com/MarceloMLR/fisco-projects/pull/134)) |
+| GanttB-1 | `folga-das-tarefas` | Quantos dias úteis cada tarefa pode atrasar sem mudar o fim do projeto, tirados do caminho crítico | 0021, 0051 | Concluída em 01/11/2026 ([#128](https://github.com/MarceloMLR/fisco-projects/pull/128)) |
+| GanttB-2 | `notas-da-tarefa` | Notas em cada tarefa e marco, como "aguardando o cliente mandar os arquivos" | 0019, 0139 | Concluída em 01/11/2026 ([#130](https://github.com/MarceloMLR/fisco-projects/pull/130)) |
+| GanttB-3 | `mover-o-projeto` | Mover o cronograma inteiro em dias úteis quando o início escorrega | 0018, 0051, 0140 | Concluída em 01/11/2026 ([#131](https://github.com/MarceloMLR/fisco-projects/pull/131)) |
+| GanttB-4 | `ausencias-das-pessoas` | As ausências e as férias de cada pessoa, com o aviso da tarefa que cai nelas | 0018, 0058, 0141 | Concluída em 01/11/2026 ([#132](https://github.com/MarceloMLR/fisco-projects/pull/132)) |
+| GanttB-5 | `carga-da-equipe` | A carga de cada pessoa por semana, entre os projetos, pelas horas previstas e pelas ausências, com o aviso de sobrecarga | 0021, 0128, 0142 | Concluída em 01/11/2026 ([#133](https://github.com/MarceloMLR/fisco-projects/pull/133)) |
+| GanttB-6 | `edicao-na-tabela` | Editar o cronograma direto na tabela, como numa planilha: nome, duração, datas, dependências e progresso, pelo teclado | 0021, 0071, 0134, 0143 | Concluída em 01/11/2026 ([#134](https://github.com/MarceloMLR/fisco-projects/pull/134)) |
