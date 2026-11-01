@@ -50,9 +50,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
-| 14. Aprimoramento do Gantt 1 (v2) | 5 | 0 |
+| 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **116** | **105** |
+| **Total** | **116** | **106** |
 
 ## 1. Fundação
 
@@ -238,7 +238,7 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | PR aberto ([#123](https://github.com/MarceloMLR/fisco-projects/pull/123)) |
+| GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | Concluída em 01/11/2026 ([#123](https://github.com/MarceloMLR/fisco-projects/pull/123)) |
 | GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | Planejada |
 | GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | Planejada |
 | GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135 | Planejada |
