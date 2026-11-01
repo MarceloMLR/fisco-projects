@@ -2,8 +2,18 @@
 // (ADR-0099): sheets with text, numbers and dates, a header with the filter of Excel and the first row fixed, the widths
 // of the columns and text that breaks into lines. The file is a .zip of XML parts, compressed by the browser.
 
-/** A cell: text, a label in bold, a number or a date and time as the spreadsheet keeps it (toSpreadsheetDateTime). */
-export type XlsxCell = string | number | { label: string } | { dateTime: number };
+/**
+ * A cell: text, a label in bold, an indented text, a number, a percentage (0 to 1), a date and time as the spreadsheet
+ * keeps it (toSpreadsheetDateTime) or a day without time (spreadsheetDay).
+ */
+export type XlsxCell =
+  | string
+  | number
+  | { label: string }
+  | { indented: string }
+  | { percent: number }
+  | { dateTime: number }
+  | { day: number };
 
 export interface XlsxSheet {
   /** The name of the tab, up to 31 characters. */
@@ -43,6 +53,14 @@ export function xmlText(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+const dayMilliseconds = 24 * 60 * 60 * 1000;
+
+/** A day as the spreadsheet keeps it: the days since 30/12/1899, from a day without time zone (yyyy-mm-dd). */
+export function spreadsheetDay(day: string): number {
+  const [year = 0, month = 1, date = 1] = day.split('-').map(Number);
+  return (Date.UTC(year, month - 1, date) - Date.UTC(1899, 11, 30)) / dayMilliseconds;
+}
+
 /** The name of a column: A, B, ..., Z, AA, AB... */
 export function columnName(index: number): string {
   let name = '';
@@ -53,7 +71,17 @@ export function columnName(index: number): string {
 }
 
 // The styles, by their place in cellXfs.
-const style = { plain: 0, header: 1, text: 2, dateTime: 3, number: 4, label: 5 } as const;
+const style = {
+  plain: 0,
+  header: 1,
+  text: 2,
+  dateTime: 3,
+  number: 4,
+  label: 5,
+  day: 6,
+  percent: 7,
+  indented: 8,
+} as const;
 
 function stylesXml(colors: XlsxColors): string {
   const argb = (rgb: string) => `FF${rgb.toUpperCase()}`;
@@ -62,7 +90,7 @@ function stylesXml(colors: XlsxColors): string {
   return [
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
     `<styleSheet xmlns="${mainNamespace}">`,
-    `<numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy hh:mm"/></numFmts>`,
+    `<numFmts count="2"><numFmt numFmtId="164" formatCode="dd/mm/yyyy hh:mm"/><numFmt numFmtId="165" formatCode="dd/mm/yyyy"/></numFmts>`,
     `<fonts count="2">`,
     `<font><sz val="11"/><name val="Calibri"/><family val="2"/></font>`,
     `<font><b/><sz val="11"/><color rgb="${argb(colors.headerText)}"/><name val="Calibri"/><family val="2"/></font>`,
@@ -77,13 +105,16 @@ function stylesXml(colors: XlsxColors): string {
     `<border>${side('left')}${side('right')}${side('top')}${side('bottom')}<diagonal/></border>`,
     `</borders>`,
     `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`,
-    `<cellXfs count="6">`,
+    `<cellXfs count="9">`,
     `<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`,
     `<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>`,
     `<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>`,
     `<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf>`,
     `<xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf>`,
     `<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>`,
+    `<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf>`,
+    `<xf numFmtId="9" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf>`,
+    `<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" indent="1" wrapText="1"/></xf>`,
     `</cellXfs>`,
     `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>`,
     `</styleSheet>`,
@@ -97,6 +128,12 @@ function cellXml(cell: XlsxCell, reference: string, header: boolean): string {
   if (typeof cell === 'object' && 'dateTime' in cell) {
     return `<c r="${reference}" s="${String(style.dateTime)}"><v>${String(cell.dateTime)}</v></c>`;
   }
+  if (typeof cell === 'object' && 'day' in cell) {
+    return `<c r="${reference}" s="${String(style.day)}"><v>${String(cell.day)}</v></c>`;
+  }
+  if (typeof cell === 'object' && 'percent' in cell) {
+    return `<c r="${reference}" s="${String(style.percent)}"><v>${String(cell.percent)}</v></c>`;
+  }
   // An empty text keeps only the lines of the cell.
   if (cell === '' && !header) {
     return `<c r="${reference}" s="${String(style.text)}"/>`;
@@ -104,7 +141,9 @@ function cellXml(cell: XlsxCell, reference: string, header: boolean): string {
   const [text, cellStyle] =
     typeof cell === 'string'
       ? [cell, header ? style.header : style.text]
-      : [cell.label, header ? style.header : style.label];
+      : 'indented' in cell
+        ? [cell.indented, header ? style.header : style.indented]
+        : [cell.label, header ? style.header : style.label];
   return `<c r="${reference}" t="inlineStr" s="${String(cellStyle)}"><is><t xml:space="preserve">${xmlText(text)}</t></is></c>`;
 }
 

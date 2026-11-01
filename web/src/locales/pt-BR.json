@@ -1793,6 +1793,8 @@
     "export": {
       "pdf": "Exportar em PDF",
       "xml": "Exportar para o MS Project (XML)",
+      "excelItem": "Exportar para Excel",
+      "excelFailed": "Não foi possível gerar a planilha. Tente de novo.",
       "dialog": {
         "title": "Exportar em PDF",
         "text": "A página de impressão abre numa aba nova. Lá, escolha \"Imprimir\" e salve em PDF.",
@@ -1800,6 +1802,62 @@
         "to": "Até",
         "open": "Abrir para imprimir",
         "cancel": "Cancelar"
+      },
+      "excel": {
+        "fileName": "{{code}} - Cronograma.xlsx",
+        "sheet": "Cronograma",
+        "projectSheet": "Projeto",
+        "yes": "Sim",
+        "columns": {
+          "number": "Nº",
+          "phase": "Fase",
+          "name": "Nome",
+          "type": "Tipo",
+          "owner": "Responsável",
+          "start": "Início",
+          "end": "Fim",
+          "duration": "Duração (dias úteis)",
+          "progress": "Progresso",
+          "situation": "Situação",
+          "lateDays": "Atraso (dias úteis)",
+          "dependsOn": "Depende de (Nº)",
+          "critical": "Caminho crítico",
+          "baselineStart": "Início na linha de base",
+          "baselineEnd": "Fim na linha de base",
+          "baselineDeviation": "Diferença da linha de base (dias úteis)"
+        },
+        "types": {
+          "phase": "Fase",
+          "task": "Tarefa",
+          "subtask": "Subtarefa",
+          "milestone": "Marco"
+        },
+        "situations": {
+          "done": "Concluída",
+          "late": "Atrasada",
+          "inProgress": "Em andamento",
+          "notStarted": "Não iniciada",
+          "reached": "Atingido",
+          "lateMilestone": "Atrasado",
+          "pending": "Previsto"
+        },
+        "project": {
+          "code": "Código",
+          "name": "Projeto",
+          "client": "Cliente",
+          "noClient": "Sem cliente",
+          "manager": "Gerente",
+          "start": "Início do cronograma",
+          "end": "Fim do cronograma",
+          "progress": "Progresso",
+          "lateTasks": "Tarefas atrasadas",
+          "lateMilestones": "Marcos atrasados",
+          "baseline": "Linha de base salva em",
+          "noBaseline": "Sem linha de base",
+          "baselineDeviation": "Diferença do fim contra a linha de base (dias úteis)",
+          "generatedAt": "Planilha gerada em",
+          "timeZone": "Fuso horário"
+        }
       }
     },
     "print": {

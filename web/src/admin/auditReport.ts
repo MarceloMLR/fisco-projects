@@ -1,8 +1,8 @@
 import type { TFunction } from 'i18next';
 import { type AuditEntry, type AuditItemType } from '../api/client';
 import { type Dates, type DayValue, formatDayText } from '../format/dates';
+import { xlsxColors } from '../format/xlsxColors';
 import { buildXlsx, type XlsxCell } from '../format/xlsx';
-import { color } from '../theme/tokens';
 import { describeAuditEntry } from './auditText';
 
 /** The filters of the spreadsheet, as the screen had them. */
@@ -23,9 +23,6 @@ export interface AuditReport {
   dates: Pick<Dates, 'timeZone' | 'toSpreadsheetDateTime'>;
   t: TFunction;
 }
-
-/** A color of the tokens, light theme, as RRGGBB. */
-const tokenColor = (name: string) => color(name, 'light').replace(/^#/, '');
 
 /** The name of the file: auditoria-2026-09-21-a-2026-10-20.xlsx. */
 export const auditReportName = (filters: AuditReportFilters, t: TFunction) =>
@@ -102,10 +99,6 @@ export function auditReport({
         ],
       },
     ],
-    {
-      headerFill: tokenColor('bg-subtle'),
-      headerText: tokenColor('text'),
-      border: tokenColor('border'),
-    },
+    xlsxColors,
   );
 }

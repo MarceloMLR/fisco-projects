@@ -8,10 +8,21 @@ import {
   type DemoProject,
   demoProjects,
   demoSchedule,
+  emptySchedule,
   projectsPage,
   server,
   signedInAs,
 } from '../test/server';
+import { bytesOf, unzip } from '../test/unzip';
+
+const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
+
+// The browser saves the spreadsheet; the tests keep it to open.
+vi.mock('../format/saveFile', () => ({
+  saveFile: (content: Blob, name: string) => {
+    saved.files.push({ content, name });
+  },
+}));
 
 const text = ptBR.projects;
 
@@ -27,6 +38,7 @@ beforeEach(() => {
   }
   project = erp;
   schedule = demoSchedule();
+  saved.files.length = 0;
   permissions = { canEditSchedule: true, canExportSchedule: true };
   signedInAs('ProjectManager');
   server.use(
@@ -95,7 +107,7 @@ describe('Exportar o cronograma pela tela', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual([text.export.pdf]);
+    ).toEqual([text.export.pdf, text.export.excelItem]);
   });
 
   it('XML no menu da gestão', async () => {
@@ -109,6 +121,63 @@ describe('Exportar o cronograma pela tela', () => {
     expect(within(menu).getByRole('menuitem', { name: text.export.xml })).toHaveAttribute(
       'href',
       `/api/projects/${project.id}/schedule/ms-project`,
+    );
+  });
+
+  // Spec: cronograma, requirement "Exportar para o Excel" (ADR-0099, ADR-0136).
+  it('Cronograma no Excel', async () => {
+    permissions = { canEditSchedule: false, canChangeStatus: false, canExportSchedule: false };
+    signedInAs('User');
+    const menu = await openMore();
+
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.export.excelItem }));
+
+    await waitFor(() => {
+      expect(saved.files).toHaveLength(1);
+    });
+    const [file] = saved.files;
+    expect(file?.name).toBe('ERP-FIN - Cronograma.xlsx');
+    const parts = await unzip(await bytesOf(file?.content ?? new Blob()));
+    expect(parts.get('xl/workbook.xml')).toContain('<sheet name="Cronograma"');
+    const sheet = parts.get('xl/worksheets/sheet1.xml') ?? '';
+    // A line per phase and item of the tab, after the header.
+    const lines = schedule.phases.reduce((count, phase) => count + 1 + phase.items.length, 0);
+    expect(sheet.match(/<row /g)).toHaveLength(lines + 1);
+    expect(sheet).toContain('Parametrizar regras de ICMS');
+    expect(sheet).toContain('Aceite da homologação');
+    expect(parts.get('xl/worksheets/sheet2.xml')).toContain('ERP-FIN');
+    expect([...parts.values()].join('')).not.toContain('@');
+    expect(screen.queryByRole('menu', { name: text.baseline.more })).not.toBeInTheDocument();
+  });
+
+  it('Excel do projeto encerrado', async () => {
+    project = { ...project, status: 'Completed' };
+    permissions = { canEditSchedule: false, canChangeStatus: false, canExportSchedule: false };
+    signedInAs('User');
+    const menu = await openMore();
+
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.export.excelItem }));
+
+    await waitFor(() => {
+      expect(saved.files).toHaveLength(1);
+    });
+    expect(saved.files[0]?.name).toBe('ERP-FIN - Cronograma.xlsx');
+  });
+
+  it('Excel sem cronograma', async () => {
+    schedule = emptySchedule;
+    await renderApp(`/projects/${project.id}/schedule?view=list`);
+    fireEvent.click(await screen.findByRole('button', { name: text.baseline.more }));
+    const menu = await screen.findByRole('menu', { name: text.baseline.more });
+
+    // As the PDF, nothing to export without tasks nor milestones.
+    expect(within(menu).getByRole('menuitem', { name: text.export.excelItem })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(within(menu).getByRole('menuitem', { name: text.export.pdf })).toHaveAttribute(
+      'aria-disabled',
+      'true',
     );
   });
 

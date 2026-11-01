@@ -5,6 +5,7 @@ import PictureAsPdfOutlined from '@mui/icons-material/PictureAsPdfOutlined';
 import PostAddOutlined from '@mui/icons-material/PostAddOutlined';
 import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import SaveOutlined from '@mui/icons-material/SaveOutlined';
+import TableViewOutlined from '@mui/icons-material/TableViewOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -20,12 +21,16 @@ import { Checkbox, CheckboxMark } from '../components/Checkbox';
 import { Dialog } from '../components/Dialog';
 import { DueDate } from '../components/DueDate';
 import { formatDayText } from '../format/dates';
+import { saveFile } from '../format/saveFile';
+import { useDates } from '../format/useDates';
+import { xlsxType } from '../format/xlsx';
 import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import { ExportPdfDialog } from './ExportPdfDialog';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
 import { type ScheduleDisplay, stepText } from './schedule';
 import { DetailsSection } from './ScheduleItemProgress';
 import { failureOf } from './scheduleItemValues';
+import { scheduleReport, scheduleReportName } from './scheduleReport';
 import { useScheduleStep } from './useScheduleStep';
 import { Button, IconButton } from '../components/Button';
 import { useNotify } from '../notices/notify';
@@ -155,6 +160,23 @@ export function ScheduleMoreMenu({
       (project.status === 'Completed' || project.status === 'Cancelled'));
   const saved = schedule.baseline;
   const steps = useScheduleStep(project);
+  const dates = useDates();
+
+  // The spreadsheet comes from the schedule the tab shows, made in the browser (ADR-0099).
+  const exportExcel = async () => {
+    try {
+      const bytes = await scheduleReport({
+        project,
+        schedule,
+        generatedAt: new Date().toISOString(),
+        dates,
+        t,
+      });
+      saveFile(new Blob([bytes], { type: xlsxType }), scheduleReportName(project, t));
+    } catch {
+      notify(t('projects.export.excelFailed'), { tone: 'error' });
+    }
+  };
 
   const save = async () => {
     setPending(true);
@@ -275,6 +297,16 @@ export function ScheduleMoreMenu({
         >
           <PictureAsPdfOutlined aria-hidden />
           {t('projects.export.pdf')}
+        </MenuItem>
+        <MenuItem
+          disabled={schedule.start === null}
+          onClick={() => {
+            setAnchor(undefined);
+            void exportExcel();
+          }}
+        >
+          <TableViewOutlined aria-hidden />
+          {t('projects.export.excelItem')}
         </MenuItem>
         {project.permissions.canExportSchedule && (
           <MenuItem

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { unzip } from '../test/unzip';
-import { buildXlsx, columnName, crc32, xmlText, zip } from './xlsx';
+import { buildXlsx, columnName, crc32, spreadsheetDay, xmlText, zip } from './xlsx';
 
 const colors = { headerFill: 'f3f5f8', headerText: '1b1f24', border: 'dde2e8' };
 const encoder = new TextEncoder();
@@ -99,5 +99,36 @@ describe('Planilha .xlsx', () => {
     const styles = files.get('xl/styles.xml') ?? '';
     expect(styles).toContain('<fgColor rgb="FFF3F5F8"/>');
     expect(styles).toContain('formatCode="dd/mm/yyyy hh:mm"');
+  });
+
+  // Design: cronograma-no-excel, the cells of the schedule.
+  it('Dias, porcentagens e textos recuados', async () => {
+    expect(['1899-12-31', '1900-03-01', '2026-10-13'].map(spreadsheetDay)).toEqual([1, 61, 46308]);
+
+    const files = await unzip(
+      await buildXlsx(
+        [
+          {
+            name: 'Cronograma',
+            widths: [12, 10, 30],
+            header: false,
+            rows: [[{ day: 46308 }, { percent: 0.4 }, { indented: 'Regras de ICMS' }]],
+          },
+        ],
+        colors,
+      ),
+    );
+
+    const sheet = files.get('xl/worksheets/sheet1.xml') ?? '';
+    expect(sheet).toContain('<c r="A1" s="6"><v>46308</v></c>');
+    expect(sheet).toContain('<c r="B1" s="7"><v>0.4</v></c>');
+    expect(sheet).toContain(
+      '<c r="C1" t="inlineStr" s="8"><is><t xml:space="preserve">Regras de ICMS</t></is></c>',
+    );
+    const styles = files.get('xl/styles.xml') ?? '';
+    expect(styles).toContain('<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>');
+    expect(styles).toContain('<cellXfs count="9">');
+    expect(styles).toContain('<xf numFmtId="9"');
+    expect(styles).toContain('indent="1"');
   });
 });
