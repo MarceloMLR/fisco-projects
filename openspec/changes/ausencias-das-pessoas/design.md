@@ -23,7 +23,7 @@ O `Projects` é dono dos projetos e das pessoas de cada um (`project_members`), 
 - **Tela.**
   - `MemberAbsences` (`web/src/projects/MemberAbsences.tsx`) depois dos chamados no detalhe da pessoa: a lista, "Incluir ausência" e o apagar com confirmação, pelo `memberAbsencesQuery`; o diálogo `AbsenceDialog`, com o início e o fim digitados (`maskTypedDay`) e as regras em `absences.ts` (`absenceText`, `awayText`).
   - Na lista de Membros, embaixo do e-mail, "Ausente até 14/11" ou "Ausente de 03/11 a 14/11" (próximos 30 dias), com o ícone de ausência.
-  - No cronograma, o ícone de ausência (`OwnerAway`, `ScheduleStatus.tsx`) ao lado do responsável na Lista, com os períodos no nome acessível, e a linha "Ausente de 05/11 a 14/11, durante a tarefa" no detalhe.
+  - No cronograma, o ícone de ausência (`OwnerAway`, `ScheduleStatus.tsx`) ao lado do responsável na Lista, com os períodos no nome acessível, e a linha "Responsável ausente: 05/11 a 14/11, durante a tarefa" no detalhe.
 - **Demonstração.** O plano ganha `absences` (a pessoa e os dias úteis a partir de hoje), incluídas pela gerente depois dos membros.
 
 ## Risks / Trade-offs
