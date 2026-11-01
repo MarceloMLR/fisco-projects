@@ -18,6 +18,7 @@ let dailySummaryAt: string;
 let notificationRetentionDays: number;
 let auditRetentionYears: number;
 let projectsFolder: string;
+let workHoursPerDay: number;
 const requests: string[] = [];
 
 beforeEach(() => {
@@ -32,6 +33,7 @@ beforeEach(() => {
   notificationRetentionDays = 90;
   auditRetentionYears = 5;
   projectsFolder = '';
+  workHoursPerDay = 8;
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
@@ -43,6 +45,7 @@ beforeEach(() => {
         notificationRetentionDays,
         auditRetentionYears,
         projectsFolder,
+        workHoursPerDay,
       }),
     ),
     http.put('/api/installation', async ({ request }) => {
@@ -54,6 +57,7 @@ beforeEach(() => {
         notificationRetentionDays: number;
         auditRetentionYears: number;
         projectsFolder: string;
+        workHoursPerDay: number;
       };
       requests.push(
         `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
@@ -68,6 +72,7 @@ beforeEach(() => {
       notificationRetentionDays = body.notificationRetentionDays;
       auditRetentionYears = body.auditRetentionYears;
       projectsFolder = body.projectsFolder;
+      workHoursPerDay = body.workHoursPerDay;
       return new HttpResponse(null, { status: 204 });
     }),
     // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
@@ -724,6 +729,34 @@ describe('Prazo da auditoria', () => {
     fireEvent.click(saveButton());
 
     expect(await screen.findByText(text.errors.auditRetentionRange)).toBeInTheDocument();
+  });
+
+  // Spec: configuracao-da-instalacao, requirement "Horas por dia de trabalho" (the screen, ADR-0142).
+  function workHoursField() {
+    return within(screen.getByRole('region', { name: text.rules })).getByRole('textbox', {
+      name: text.workHoursPerDay,
+    });
+  }
+
+  it('Horas por dia pela tela', async () => {
+    await openSettings();
+    await waitFor(() => {
+      expect(workHoursField()).toHaveValue('8');
+    });
+
+    fireEvent.change(workHoursField(), { target: { value: '7,3' } });
+    fireEvent.click(saveButton());
+    expect(await screen.findByText(text.errors.workHoursRange)).toBeInTheDocument();
+    expect(requests).toEqual([]);
+
+    fireEvent.change(workHoursField(), { target: { value: '7,5' } });
+    fireEvent.click(saveButton());
+
+    expect(await screen.findByText(text.saved)).toBeInTheDocument();
+    expect(workHoursPerDay).toBe(7.5);
+    await waitFor(() => {
+      expect(workHoursField()).toHaveValue('7,5');
+    });
   });
 });
 

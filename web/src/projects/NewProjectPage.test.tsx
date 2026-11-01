@@ -413,6 +413,7 @@ describe('Pasta do projeto na tela', () => {
           notificationRetentionDays: 90,
           auditRetentionYears: 5,
           projectsFolder: 'Projetos',
+          workHoursPerDay: 8,
         }),
       ),
       http.get('/api/project-folders', ({ request }) => {

@@ -1446,6 +1446,29 @@ describe('Dados pessoais na auditoria', () => {
     expect(changed.changes).toEqual([{ field: 'Guardar auditoria por', before: '5', after: '7' }]);
   });
 
+  it('Horas por dia na auditoria', () => {
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'InstallationSettings',
+        changes: [
+          {
+            field: 'WorkHoursPerDay',
+            before: '8.00',
+            after: '7.50',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.changes).toEqual([
+      { field: 'Horas por dia de trabalho', before: '8 h', after: '7,5 h' },
+    ]);
+  });
+
   it('Pasta dos projetos na auditoria', () => {
     const changed = describeAuditEntry(
       entry({

@@ -4,12 +4,12 @@
 
 ## 2. Configuração
 
-- [ ] 2.1 `WorkHoursPerDay` nas configurações da instalação, com a migração, o contrato e a auditoria; testes "Horas por dia padrão", "Trocar as horas por dia" e "Horas por dia inválidas"
+- [x] 2.1 `WorkHoursPerDay` nas configurações da instalação, com a migração, o contrato e a auditoria; testes "Horas por dia padrão", "Trocar as horas por dia" e "Horas por dia inválidas"
 
 ## 3. Domínio e API
 
-- [ ] 3.1 `TeamLoad` no domínio das horas; testes "Tarefa espalhada pelas semanas", "Carga sobre um feriado", "Capacidade com férias", "Capacidade com feriado", "Estados da carga" e "Carga na semana toda de férias"
-- [ ] 3.2 O contrato `ITeamWork` e a implementação no `Projects`; o `GetTeamLoad` e a rota; testes "Carga entre projetos", "O que não pesa", "Pessoa livre na carga", "Pessoa desativada fora da carga" e "Permissões na carga por papel"
+- [x] 3.1 `TeamLoad` no domínio das horas; testes "Tarefa espalhada pelas semanas", "Carga sobre um feriado", "Capacidade com férias", "Capacidade com feriado", "Estados da carga" e "Carga na semana toda de férias"
+- [x] 3.2 O contrato `ITeamWork` e a implementação no `Projects`; o `GetTeamLoad` e a rota; testes "Carga entre projetos", "O que não pesa", "Pessoa livre na carga", "Pessoa desativada fora da carga" e "Permissões na carga por papel"
 
 ## 4. Tela
 

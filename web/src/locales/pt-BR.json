@@ -562,6 +562,7 @@
         "NotificationRetentionDays": "Guardar notificações por",
         "DarkLogoFileName": "Logo para o tema escuro",
         "AuditRetentionYears": "Guardar auditoria por",
+        "WorkHoursPerDay": "Horas por dia de trabalho",
         "ProjectsFolder": "Pasta dos projetos"
       },
       "WorkCalendar": {
@@ -834,6 +835,8 @@
     "notificationRetentionHint": "De 1 a 365 dias. As mais antigas saem do sino, lidas ou não.",
     "auditRetention": "Guardar auditoria por (anos)",
     "auditRetentionHint": "De 1 a 10 anos. Uma vez por mês, os registros mais antigos são apagados.",
+    "workHoursPerDay": "Horas por dia de trabalho",
+    "workHoursPerDayHint": "De 1 a 12 horas, como 8 ou 7,5. A capacidade da carga da equipe conta essas horas em cada dia útil.",
     "files": "Arquivos",
     "projectsFolder": "Pasta dos projetos",
     "projectsFolderHint": "Onde ficam as pastas dos projetos novos, com as pastas separadas por /, como Projetos ou Clientes/Projetos. Vazia, elas ficam na raiz do armazenamento. Os projetos que já têm pasta continuam onde estão.",
@@ -865,6 +868,7 @@
       "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
       "retentionRange": "Use de 1 a 365 dias.",
       "auditRetentionRange": "Use de 1 a 10 anos.",
+      "workHoursRange": "Use de 1 a 12 horas, em quartos de hora, como 8 ou 7,5.",
       "projectsFolderInvalid": "Separe as pastas por /, sem pasta vazia, sem . ou .., sem espaço nas pontas de cada uma e sem os caracteres \" * : < > ? \\ |."
     },
     "preview": "Prévia",
