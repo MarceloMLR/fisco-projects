@@ -141,6 +141,8 @@ export function ScheduleTimeline({
             progress: null,
             predecessorIds: [...successor.predecessorIds, predecessorId],
             parentId: successor.parentId,
+            // The deadline stays as it was (GanttA-2).
+            deadline: successor.deadline,
           },
         });
         const refreshed = refresh();
