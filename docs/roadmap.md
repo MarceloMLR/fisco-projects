@@ -241,7 +241,7 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | Concluída em 01/11/2026 ([#123](https://github.com/MarceloMLR/fisco-projects/pull/123)) |
 | GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | PR aberto ([#125](https://github.com/MarceloMLR/fisco-projects/pull/125)) |
 | GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | PR aberto ([#126](https://github.com/MarceloMLR/fisco-projects/pull/126)) |
-| GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135 | Planejada |
+| GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135, 0137 | Em andamento |
 | GanttA-5 | `horas-previstas-por-tarefa` | As horas previstas de cada tarefa contra as apontadas nela, só em horas | 0016, 0128 | Planejada |
 
 ## 15. Aprimoramento do Gantt 2

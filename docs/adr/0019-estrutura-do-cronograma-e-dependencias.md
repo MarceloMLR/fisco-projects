@@ -1,5 +1,5 @@
 ---
-status: aceita (item "Subtarefas" substituído pelo ADR-0088)
+status: aceita (item "Subtarefas" substituído pelo ADR-0088; tipos e intervalo das dependências, pelo ADR-0137)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---
