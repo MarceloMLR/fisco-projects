@@ -5,7 +5,13 @@ import { spreadsheetDay } from '../format/xlsx';
 import i18n from '../i18n';
 import { demoPeople, demoProjects, demoScheduleWithSubtasks } from '../test/server';
 import { unzip } from '../test/unzip';
-import { itemSituation, scheduleReport, scheduleReportName, workSituation } from './scheduleReport';
+import {
+  dependencyCodes,
+  itemSituation,
+  scheduleReport,
+  scheduleReportName,
+  workSituation,
+} from './scheduleReport';
 
 const t = i18n.t.bind(i18n);
 const dates = datesIn('America/Sao_Paulo');
@@ -267,5 +273,34 @@ describe('Data-limite no Excel', () => {
       'Datas-limite estouradas',
       '1',
     ]);
+  });
+});
+
+// Spec: cronograma, requirement "Tipo e intervalo das dependências pela tela" (ADR-0137).
+describe('Dependências no Excel', () => {
+  it('Dependências no Excel', () => {
+    const item = demoScheduleWithSubtasks().phases[1]?.items[0];
+    if (item === undefined) {
+      throw new Error('No item.');
+    }
+    const numbers = new Map([
+      ['a', 3],
+      ['b', 5],
+      ['c', 7],
+    ]);
+
+    expect(
+      dependencyCodes(
+        {
+          ...item,
+          predecessorIds: ['a', 'b', 'c'],
+          links: [
+            { predecessorId: 'b', type: 'StartToStart', lag: 2 },
+            { predecessorId: 'c', type: 'FinishToFinish', lag: -1 },
+          ],
+        },
+        numbers,
+      ),
+    ).toBe('3; 5II+2; 7TT-1');
   });
 });

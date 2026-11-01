@@ -609,7 +609,9 @@
       "ScheduleDependency": {
         "ProjectId": "Projeto",
         "PredecessorId": "Anterior",
-        "SuccessorId": "Seguinte"
+        "SuccessorId": "Seguinte",
+        "Type": "Tipo",
+        "Lag": "Intervalo em dias úteis"
       },
       "ScheduleBaseline": {
         "SavedOn": "Salva em",
@@ -1510,6 +1512,7 @@
       },
       "filter": {
         "button": "Filtrar",
+        "active": "Filtro: {{name}}",
         "label": "Filtro do cronograma",
         "all": "Todas as tarefas e marcos",
         "byOwner": "Por responsável",

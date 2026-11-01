@@ -82,6 +82,7 @@ import {
   type FilterContext,
   filterOf,
   filteredSchedule,
+  filterText,
   ownerOptions,
   passingCount,
   type ScheduleFilter,
@@ -489,6 +490,7 @@ export function ProjectSchedulePage() {
       {shownCount !== undefined && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Box component="span" sx={{ fontSize: 13, lineHeight: '18px', ...secondarySx }}>
+            {filter !== undefined && `${filterText(filter, owners, t)} · `}
             {t('projects.schedule.filter.shown', { shown: shownCount, count: itemCount })}
           </Box>
           <Button

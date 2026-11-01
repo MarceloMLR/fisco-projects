@@ -125,6 +125,10 @@ export interface DemoItem {
   progress?: number;
   /** The names of the items it depends on, of the same project. */
   after?: readonly string[];
+  /** The kind and the lag of a dependency that is not "finishes, then starts" without lag, by the name in after (ADR-0137). */
+  links?: Readonly<
+    Partial<Record<string, { type: 'StartToStart' | 'FinishToFinish'; lag?: number }>>
+  >;
   reached?: boolean;
   /** The name of the task it is inside, of the same phase and before it in the plan (ADR-0088). */
   inside?: string;
@@ -596,8 +600,17 @@ export const demoProjects: readonly DemoProject[] = [
             after: ['Aceite da homologação'],
             deadline: 35,
           }),
-          task('Treinar usuários', 31, 4, { owner: 'marina' }),
-          task('Acompanhamento assistido', 35, 5, { owner: 'rafael', after: ['Migrar saldos'] }),
+          // The training starts a business day after the migration starts, and the follow-up ends after it (ADR-0137).
+          task('Treinar usuários', 31, 4, {
+            owner: 'marina',
+            after: ['Migrar saldos'],
+            links: { 'Migrar saldos': { type: 'StartToStart', lag: 1 } },
+          }),
+          task('Acompanhamento assistido', 35, 5, {
+            owner: 'rafael',
+            after: ['Migrar saldos', 'Treinar usuários'],
+            links: { 'Treinar usuários': { type: 'FinishToFinish' } },
+          }),
           milestone('Virada para produção', 39, { after: ['Acompanhamento assistido'] }),
         ],
       },
