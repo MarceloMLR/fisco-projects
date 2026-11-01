@@ -1492,6 +1492,24 @@
       "late": "Atrasada",
       "lateDays_one": "{{count}} dia útil de atraso",
       "lateDays_other": "{{count}} dias úteis de atraso",
+      "filter": {
+        "button": "Filtrar",
+        "label": "Filtro do cronograma",
+        "all": "Todas as tarefas e marcos",
+        "byOwner": "Por responsável",
+        "kinds": {
+          "late": "Atrasadas",
+          "missedDeadlines": "Datas-limite estouradas",
+          "critical": "Caminho crítico",
+          "mine": "Minhas tarefas",
+          "nextTwoWeeks": "Próximas duas semanas",
+          "owner": "Por responsável"
+        },
+        "shown_one": "{{shown}} de {{count}} tarefa ou marco",
+        "shown_other": "{{shown}} de {{count}} tarefas e marcos",
+        "clear": "Limpar filtro",
+        "empty": "Nenhuma tarefa ou marco neste filtro."
+      },
       "missedDeadlines_one": "{{count}} data-limite estourada",
       "missedDeadlines_other": "{{count}} datas-limite estouradas",
       "deadline": {

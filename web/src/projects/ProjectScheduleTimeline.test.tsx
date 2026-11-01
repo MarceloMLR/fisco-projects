@@ -635,3 +635,40 @@ describe('Data-limite na linha do tempo', () => {
     expect(legendEntries()).not.toContain(text.timeline.legend.deadline);
   });
 });
+
+// Spec: cronograma, requirement "Filtros do cronograma" (GanttA-3).
+describe('Filtros na linha do tempo', () => {
+  it('Filtro na Linha do tempo', async () => {
+    const { router } = await openTimeline(
+      undefined,
+      `/projects/${project.id}/schedule?filter=late`,
+    );
+
+    await waitFor(() => {
+      expect(timelineLines()).toHaveLength(2);
+    });
+    expect(timelineLine('Validar cadastro de produtos')).toBeInTheDocument();
+    expect(() => timelineLine('Parametrizar regras de ICMS')).toThrow();
+    // The period stays the whole schedule's: 05/10 to 03/11.
+    expect(timelineOf().querySelectorAll('.g-scale-text')).toHaveLength(30);
+
+    fireEvent.click(screen.getByRole('button', { name: text.timeline.expand }));
+    const expanded = await screen.findByRole('dialog', { name: text.timeline.expandedTitle });
+
+    await waitFor(() => {
+      expect(timelineLine('Validar cadastro de produtos', expanded)).toBeInTheDocument();
+    });
+    expect(() => timelineLine('Parametrizar regras de ICMS', expanded)).toThrow();
+    expect(
+      within(expanded).getByRole('button', { name: text.schedule.filter.kinds.late }),
+    ).toBeVisible();
+    expect(router.state.location.search).toBe('?filter=late');
+  });
+
+  it('Filtro sem resultado na Linha do tempo', async () => {
+    await renderApp(`/projects/${project.id}/schedule?filter=missedDeadlines`);
+
+    expect(await screen.findByText(text.schedule.filter.empty)).toBeVisible();
+    expect(screen.queryByRole('treegrid', { name: text.timeline.table })).not.toBeInTheDocument();
+  });
+});
