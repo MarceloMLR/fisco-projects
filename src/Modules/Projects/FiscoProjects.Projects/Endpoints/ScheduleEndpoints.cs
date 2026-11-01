@@ -45,7 +45,9 @@ public sealed record ScheduleItemResponse(
     bool Critical,
     DateOnly? BaselineStart,
     DateOnly? BaselineEnd,
-    int? BaselineDeviation);
+    int? BaselineDeviation,
+    [property: Description("The day the item has to be done by; it never moves the dates (GanttA-2).")] DateOnly? Deadline,
+    [property: Description("The business days the item went past its deadline (positive) or is before it (negative); null without one.")] int? DeadlineDeviation);
 
 /// <summary>
 /// The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the
@@ -83,7 +85,8 @@ public sealed record ScheduleResponse(
     IReadOnlyList<DateOnly> NonWorkingDays,
     ScheduleBaselineResponse? Baseline,
     ScheduleStepResponse? Undo,
-    ScheduleStepResponse? Redo);
+    ScheduleStepResponse? Redo,
+    [property: Description("How many open tasks and milestones missed their deadline (GanttA-2).")] int MissedDeadlines);
 
 /// <summary>
 /// A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or
@@ -109,7 +112,8 @@ public sealed record NewScheduleItemRequest(
     int Progress,
     IReadOnlyList<Guid>? PredecessorIds,
     Guid? ParentId = null,
-    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false);
+    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
+    [property: Description("The day the item has to be done by, which never moves the dates; none without one (GanttA-2).")] DateOnly? Deadline = null);
 
 /// <summary>
 /// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
@@ -125,7 +129,8 @@ public sealed record ScheduleItemRequest(
     int? Progress,
     IReadOnlyList<Guid>? PredecessorIds,
     Guid? ParentId = null,
-    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false);
+    [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
+    [property: Description("The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).")] DateOnly? Deadline = null);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -227,7 +232,8 @@ internal static class ScheduleEndpoints
                 ? new ScheduleBaselineResponse(baseline.SavedOn, baseline.Start, baseline.End, baseline.Deviation)
                 : null,
             StepOf(view.Undo),
-            StepOf(view.Redo)));
+            StepOf(view.Redo),
+            view.MissedDeadlines));
     }
 
     /// <summary>
@@ -347,7 +353,8 @@ internal static class ScheduleEndpoints
                 request.Progress,
                 request.PredecessorIds,
                 request.ParentId,
-                request.OwnedByClient),
+                request.OwnedByClient,
+                request.Deadline),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -382,7 +389,8 @@ internal static class ScheduleEndpoints
                 request.Progress,
                 request.PredecessorIds,
                 request.ParentId,
-                request.OwnedByClient),
+                request.OwnedByClient,
+                request.Deadline),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -487,7 +495,9 @@ internal static class ScheduleEndpoints
             view.Critical.Contains(item.Id),
             baseline?.Start,
             baseline?.End,
-            baseline?.Deviation);
+            baseline?.Deviation,
+            item.Deadline,
+            view.DeadlineDeviations is not null && view.DeadlineDeviations.TryGetValue(item.Id, out var deviation) ? deviation : null);
     }
 
     /// <summary>The answer to a change without a body of its own.</summary>
@@ -525,6 +535,7 @@ internal static class ScheduleEndpoints
                 ScheduleField.End => "end",
                 ScheduleField.Parent => "parentId",
                 ScheduleField.Baseline => "baseline",
+                ScheduleField.Deadline => "deadline",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -541,6 +552,7 @@ internal static class ScheduleEndpoints
                     ScheduleField.End => "The end of a task comes on or after its start, up to 999 business days; a milestone has no end.",
                     ScheduleField.Parent => "The item goes into a task right in the same phase, which is not inside another; a task with subtasks goes into none.",
                     ScheduleField.Baseline => "A baseline needs tasks or milestones in the schedule.",
+                    ScheduleField.Deadline => "The deadline is a day from 2000 to 2099.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

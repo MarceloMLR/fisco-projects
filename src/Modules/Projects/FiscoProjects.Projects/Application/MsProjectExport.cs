@@ -177,6 +177,12 @@ public static class MsProjectExport
                 new XElement(Ns + "ConstraintDate", start));
         }
 
+        if (item.Deadline is { } deadline)
+        {
+            // The deadline at the end of its day, as the MS Project marks one (GanttA-2).
+            task.Add(new XElement(Ns + "Deadline", Moment(deadline, DayEnd)));
+        }
+
         foreach (var predecessor in schedule.PredecessorsOf(item.Id).Where(predecessor => uids.ContainsKey(predecessor.Id)))
         {
             task.Add(new XElement(Ns + "PredecessorLink",

@@ -15,7 +15,13 @@ import {
   formatDayText,
   formatPeriodText,
 } from '../format/dates';
-import { predecessorNames, type ScheduleDisplay, scheduleRows } from './schedule';
+import {
+  itemsOf,
+  missesDeadline,
+  predecessorNames,
+  type ScheduleDisplay,
+  scheduleRows,
+} from './schedule';
 import { choiceOf, ganttStripSx, type PrintScale, printScale, scaleSpans } from './schedulePrint';
 import { TimelineLegend } from './ScheduleTimeline';
 import { Button } from '../components/Button';
@@ -243,6 +249,7 @@ export function SchedulePrintPage() {
         <TimelineLegend
           critical={choice.display.critical}
           baseline={choice.display.baseline && data.baseline !== null}
+          deadline={itemsOf(data).some((item) => item.deadline !== null)}
         />
       </Box>
     </Box>
@@ -307,7 +314,8 @@ function ScaleStrip({
 
 /**
  * The strip of one line: the days off shaded (in days), today, and the phase, task or milestone in the period, cut at
- * its edges; the part done in green, the critical path in red and the baseline under the bar when they are on.
+ * its edges; the part done in green, the critical path in red and the baseline under the bar when they are on; and the
+ * deadline at the end of its day, in red when missed, as the Linha do tempo marks it (GanttA-2).
  */
 function LineStrip({
   phase,
@@ -427,6 +435,37 @@ function LineStrip({
         <line className="g-today" x1={today} x2={today} y1={0} y2={rowHeight} />
       )}
       {shapes}
+      {item?.deadline !== undefined && item.deadline !== null && (
+        <DeadlineMarker item={item} deadline={item.deadline} printing={printing} />
+      )}
     </svg>
+  );
+}
+
+/** The deadline of an item in its strip, when it is in the period. */
+function DeadlineMarker({
+  item,
+  deadline,
+  printing,
+}: {
+  item: ScheduleItem;
+  deadline: DayValue;
+  printing: PrintScale;
+}) {
+  const x = printing.xEnd(deadline);
+  if (x < 0 || x > printing.width) {
+    return null;
+  }
+  return (
+    <g
+      className={missesDeadline(item) ? 'g-deadline g-deadline--missed' : 'g-deadline'}
+      data-day={deadline}
+    >
+      <line className="g-deadline-line" x1={x} x2={x} y1={5} y2={rowHeight - 2} />
+      <path
+        className="g-deadline-head"
+        d={`M${String(x - 3.5)} ${String(1)} H${String(x + 3.5)} L${String(x)} ${String(5.5)} Z`}
+      />
+    </g>
   );
 }

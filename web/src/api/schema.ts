@@ -2754,12 +2754,15 @@ export interface components {
             after: null | number[];
             /** Format: int32 */
             resource: null | number;
+            /** Format: int32 */
+            deadlineOffset?: null | number;
         };
         /**
          * @description A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the
          *     position of its phase, the position of the task it is in (an item before it), its kind, name, the business days
          *     after the start it starts, its duration (zero for a milestone), its progress (100 for a milestone reached), the
-         *     positions of the items it depends on (all before it) and the position of its resource.
+         *     positions of the items it depends on (all before it), the position of its resource and the business days after the
+         *     start of its deadline, negative before it (GanttA-2).
          */
         ImportedItemResponse: {
             /** Format: int32 */
@@ -2777,6 +2780,8 @@ export interface components {
             after: number[];
             /** Format: int32 */
             resource: null | number;
+            /** Format: int32 */
+            deadlineOffset: null | number;
         };
         /** @description The schedule converted from the file: the names of the phases and the items in the order they are made. */
         ImportedPlanResponse: {
@@ -3166,6 +3171,11 @@ export interface components {
              * @default false
              */
             ownedByClient: boolean;
+            /**
+             * Format: date
+             * @description The day the item has to be done by, which never moves the dates; none without one (GanttA-2).
+             */
+            deadline?: null | string;
         };
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
@@ -3244,6 +3254,7 @@ export interface components {
         /** @description What needs attention (ADR-0073), in the order of the list. */
         OverviewAttentionResponse: {
             tasks: components["schemas"]["OverviewLateTaskResponse"][];
+            deadlines: components["schemas"]["OverviewMissedDeadlineResponse"][];
             tickets: components["schemas"]["OverviewTicketResponse"][];
             acceptances: components["schemas"]["OverviewAcceptanceResponse"][];
             vendors: components["schemas"]["OverviewVendorTicketResponse"][];
@@ -3282,6 +3293,17 @@ export interface components {
             businessDaysLeft: number;
             /** Format: int32 */
             daysLate: null | number;
+        };
+        /** @description A task or milestone still open past its deadline, by how many business days (GanttA-2). */
+        OverviewMissedDeadlineResponse: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ScheduleItemKind"];
+            name: string;
+            /** Format: date */
+            deadline: string;
+            /** Format: int32 */
+            daysPast: number;
         };
         /** @description A person of the overview, by the current name. */
         OverviewPersonResponse: {
@@ -3787,6 +3809,11 @@ export interface components {
              * @default false
              */
             ownedByClient: boolean;
+            /**
+             * Format: date
+             * @description The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).
+             */
+            deadline?: null | string;
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
@@ -3836,6 +3863,16 @@ export interface components {
             baselineEnd: null | string;
             /** Format: int32 */
             baselineDeviation: null | number;
+            /**
+             * Format: date
+             * @description The day the item has to be done by; it never moves the dates (GanttA-2).
+             */
+            deadline: null | string;
+            /**
+             * Format: int32
+             * @description The business days the item went past its deadline (positive) or is before it (negative); null without one.
+             */
+            deadlineDeviation: null | number;
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
@@ -3917,6 +3954,11 @@ export interface components {
             baseline: null | components["schemas"]["ScheduleBaselineResponse"];
             undo: null | components["schemas"]["ScheduleStepResponse"];
             redo: null | components["schemas"]["ScheduleStepResponse"];
+            /**
+             * Format: int32
+             * @description How many open tasks and milestones missed their deadline (GanttA-2).
+             */
+            missedDeadlines: number;
         };
         /**
          * @description A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or

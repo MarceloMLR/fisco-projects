@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next';
 import type { ScheduleItem } from '../api/client';
 import { DueDate, type DueState } from '../components/DueDate';
 import { formatDayMonthText, formatDayText } from '../format/dates';
-import { type MilestoneStatus as Status, milestoneStatus } from './schedule';
+import {
+  deadlineState,
+  deadlineText,
+  type MilestoneStatus as Status,
+  milestoneStatus,
+} from './schedule';
 
 const dueStates = { reached: 'met', late: 'overdue', pending: 'onTrack' } as const satisfies Record<
   Status,
@@ -31,6 +36,24 @@ export function MilestoneStatus({
           })
         : t(`projects.schedule.milestone.${status === 'late' ? 'late' : 'pending'}`)}
     </DueDate>
+  );
+}
+
+/**
+ * How the deadline of a task or milestone is going, by icon, color and text (GanttA-2, ADR-0065): "Passou 1 dia útil
+ * da data-limite" while it is missed, or how far before it the item ends; nothing without a deadline.
+ */
+export function DeadlineStatus({ item }: { item: ScheduleItem }) {
+  const { t } = useTranslation();
+  const state = deadlineState(item);
+  return state === undefined ? null : <DueDate state={state}>{deadlineText(item, t)}</DueDate>;
+}
+
+/** How many open tasks and milestones went past their deadline, when one did: "1 data-limite estourada". */
+export function MissedDeadlines({ count }: { count: number }) {
+  const { t } = useTranslation();
+  return count === 0 ? null : (
+    <DueDate state="overdue">{t('projects.schedule.missedDeadlines', { count })}</DueDate>
   );
 }
 

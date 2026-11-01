@@ -83,6 +83,8 @@ export function scheduleReport({
     t('projects.export.excel.columns.progress'),
     t('projects.export.excel.columns.situation'),
     t('projects.export.excel.columns.lateDays'),
+    t('projects.export.excel.columns.deadline'),
+    t('projects.export.excel.columns.deadlinePast'),
     t('projects.export.excel.columns.dependsOn'),
     t('projects.export.excel.columns.critical'),
     t('projects.export.excel.columns.baselineStart'),
@@ -102,6 +104,8 @@ export function scheduleReport({
       '',
       percent(phase.progress),
       situation(workSituation(phase)),
+      '',
+      '',
       '',
       '',
       '',
@@ -128,6 +132,9 @@ export function scheduleReport({
         milestone ? '' : percent(item.progress),
         situation(itemSituation(item)),
         item.lateDays > 0 ? item.lateDays : '',
+        day(item.deadline),
+        // Only how far past it went: also an item done after it, which the history keeps (GanttA-2).
+        item.deadlineDeviation !== null && item.deadlineDeviation > 0 ? item.deadlineDeviation : '',
         item.predecessorIds
           .map((id) => numbers.get(id))
           .filter((number) => number !== undefined)
@@ -149,7 +156,7 @@ export function scheduleReport({
     [
       {
         name: t('projects.export.excel.sheet'),
-        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 14, 10, 14, 14, 14],
+        widths: [6, 22, 42, 11, 24, 12, 12, 12, 11, 14, 12, 12, 16, 14, 10, 14, 14, 14],
         header: true,
         rows: [header, ...rows],
       },
@@ -170,6 +177,7 @@ export function scheduleReport({
           [{ label: t('projects.export.excel.project.progress') }, percent(schedule.progress)],
           [{ label: t('projects.export.excel.project.lateTasks') }, schedule.lateTasks],
           [{ label: t('projects.export.excel.project.lateMilestones') }, schedule.lateMilestones],
+          [{ label: t('projects.export.excel.project.missedDeadlines') }, schedule.missedDeadlines],
           [
             { label: t('projects.export.excel.project.baseline') },
             baseline === null

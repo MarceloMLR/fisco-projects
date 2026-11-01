@@ -1,5 +1,6 @@
 using FiscoProjects.Projects.Application;
 using FiscoProjects.Projects.Contracts;
+using FiscoProjects.Projects.Domain;
 using FiscoProjects.Users.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -45,6 +46,9 @@ public sealed record OverviewTimelineResponse(
 public sealed record OverviewLateTaskResponse(
     Guid Id, string Name, OverviewPersonResponse? Owner, int Progress, DateOnly End, int DaysLate, IReadOnlyList<string> Blocks);
 
+/// <summary>A task or milestone still open past its deadline, by how many business days (GanttA-2).</summary>
+public sealed record OverviewMissedDeadlineResponse(Guid Id, ScheduleItemKind Kind, string Name, DateOnly Deadline, int DaysPast);
+
 /// <summary>A ticket that needs attention: late, due up to the next business day or without an assignee.</summary>
 public sealed record OverviewTicketResponse(
     int Number,
@@ -76,6 +80,7 @@ public sealed record OverviewVendorTicketResponse(int TicketNumber, string Vendo
 /// <summary>What needs attention (ADR-0073), in the order of the list.</summary>
 public sealed record OverviewAttentionResponse(
     IReadOnlyList<OverviewLateTaskResponse> Tasks,
+    IReadOnlyList<OverviewMissedDeadlineResponse> Deadlines,
     IReadOnlyList<OverviewTicketResponse> Tickets,
     IReadOnlyList<OverviewAcceptanceResponse> Acceptances,
     IReadOnlyList<OverviewVendorTicketResponse> Vendors);
@@ -143,6 +148,8 @@ internal static class OverviewEndpoints
                     task.End,
                     task.DaysLate,
                     task.Blocks))],
+                [.. result.MissedDeadlines.Select(item => new OverviewMissedDeadlineResponse(
+                    item.Id, item.Kind, item.Name, item.Deadline, item.DaysPast))],
                 [.. tickets.Attention.Select(ticket => new OverviewTicketResponse(
                     ticket.Number,
                     ticket.Title,

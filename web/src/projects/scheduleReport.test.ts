@@ -22,21 +22,28 @@ function cellsOf(xml: string): Map<string, { style: string; value: string }> {
   return cells;
 }
 
-/** ERP-FIN with "Testes integrados" in subtasks, the NF-e with the client and the baseline saved on 09/10/2026. */
+/**
+ * ERP-FIN with "Testes integrados" in subtasks, the NF-e with the client, the baseline saved on 09/10/2026, the
+ * products past their deadline and the processes done before theirs.
+ */
 function scheduleOfTheReport(): Schedule {
   const schedule = demoScheduleWithSubtasks();
   for (const phase of schedule.phases) {
     phase.items = phase.items.map((item) =>
       item.name === 'Integrar emissão de NF-e'
         ? { ...item, owner: null, ownedByClient: true }
-        : item.name === 'Parametrizar regras de ICMS'
-          ? {
-              ...item,
-              baselineStart: '2026-10-13',
-              baselineEnd: '2026-10-20',
-              baselineDeviation: 2,
-            }
-          : item,
+        : item.name === 'Validar cadastro de produtos'
+          ? { ...item, deadline: '2026-10-14', deadlineDeviation: 1 }
+          : item.name === 'Mapear processos fiscais'
+            ? { ...item, deadline: '2026-10-16', deadlineDeviation: -4 }
+            : item.name === 'Parametrizar regras de ICMS'
+              ? {
+                  ...item,
+                  baselineStart: '2026-10-13',
+                  baselineEnd: '2026-10-20',
+                  baselineDeviation: 2,
+                }
+              : item,
     );
   }
   return {
@@ -89,7 +96,9 @@ describe('Exportar para o Excel', () => {
     expect(workbook).toContain('<sheet name="Projeto" sheetId="2" r:id="rId2"/>');
     const sheet = cellsOf(files.get('xl/worksheets/sheet1.xml') ?? '');
     const row = (number: number) =>
-      'ABCDEFGHIJKLMNOP'.split('').map((column) => sheet.get(`${column}${String(number)}`)?.value);
+      'ABCDEFGHIJKLMNOPQR'
+        .split('')
+        .map((column) => sheet.get(`${column}${String(number)}`)?.value);
     const day = (value: string) => String(spreadsheetDay(value));
 
     expect(row(1)).toEqual([
@@ -104,6 +113,8 @@ describe('Exportar para o Excel', () => {
       'Progresso',
       'Situação',
       'Atraso (dias úteis)',
+      'Data-limite',
+      'Passou da data-limite (dias úteis)',
       'Depende de (Nº)',
       'Caminho crítico',
       'Início na linha de base',
@@ -124,8 +135,8 @@ describe('Exportar para o Excel', () => {
       'Atrasada',
     ]);
     expect(sheet.get('C2')?.style).toBe('5');
-    // A task late by a business day, after the one it depends on.
-    expect(row(5).slice(0, 13)).toEqual([
+    // A task late by a business day, a business day past its deadline, after the one it depends on.
+    expect(row(5).slice(0, 15)).toEqual([
       '4',
       'Levantamento',
       'Validar cadastro de produtos',
@@ -137,17 +148,22 @@ describe('Exportar para o Excel', () => {
       '0.8',
       'Atrasada',
       '1',
+      day('2026-10-14'),
+      '1',
       '3',
       '',
     ]);
     expect(sheet.get('F5')?.style).toBe('6');
+    expect(sheet.get('L5')?.style).toBe('6');
+    // Done before its deadline: the day, and nothing past it (GanttA-2).
+    expect(row(4).slice(11, 13)).toEqual([day('2026-10-16'), '']);
     expect(sheet.get('I5')?.style).toBe('7');
     // On the critical path, with the baseline two business days before.
-    expect(row(7).slice(12)).toEqual(['Sim', day('2026-10-13'), day('2026-10-20'), '2']);
+    expect(row(7).slice(14)).toEqual(['Sim', day('2026-10-13'), day('2026-10-20'), '2']);
     // The client as the owner.
     expect(row(8)[4]).toBe(t('projects.schedule.clientOwner', { name: project.client?.name }));
     // The subtask, indented, depending on the line of the ICMS.
-    expect(row(10).slice(1, 12)).toEqual([
+    expect(row(10).slice(1, 14)).toEqual([
       'Configuração',
       'Roteiro de testes',
       'Subtarefa',
@@ -158,11 +174,13 @@ describe('Exportar para o Excel', () => {
       '0',
       'Não iniciada',
       '',
+      '',
+      '',
       '6',
     ]);
     expect(sheet.get('C10')?.style).toBe('8');
     // The milestone points at the line of the tests with the client and has no duration nor progress.
-    expect(row(14).slice(0, 13)).toEqual([
+    expect(row(14).slice(0, 15)).toEqual([
       '13',
       'Homologação',
       'Aceite da homologação',
@@ -173,6 +191,8 @@ describe('Exportar para o Excel', () => {
       '',
       '',
       'Previsto',
+      '',
+      '',
       '',
       '12',
       'Sim',
@@ -189,7 +209,7 @@ describe('Exportar para o Excel', () => {
     ]);
 
     const tab = cellsOf(files.get('xl/worksheets/sheet2.xml') ?? '');
-    const pairs = Array.from({ length: 13 }, (_, index) => [
+    const pairs = Array.from({ length: 14 }, (_, index) => [
       tab.get(`A${String(index + 1)}`)?.value,
       tab.get(`B${String(index + 1)}`)?.value,
     ]);
@@ -203,6 +223,7 @@ describe('Exportar para o Excel', () => {
       ['Progresso', '0.42'],
       ['Tarefas atrasadas', '1'],
       ['Marcos atrasados', '0'],
+      ['Datas-limite estouradas', '0'],
       ['Linha de base salva em', day('2026-10-09')],
       ['Diferença do fim contra a linha de base (dias úteis)', '2'],
       ['Planilha gerada em', String(dates.toSpreadsheetDateTime('2026-10-16T13:30:00Z'))],
@@ -210,5 +231,41 @@ describe('Exportar para o Excel', () => {
     ]);
     // No e-mail goes in the spreadsheet: they are only in the XML of the managers (ADR-0136).
     expect([...files.values()].join('')).not.toContain('@');
+  });
+});
+
+// Spec: cronograma, requirement "Data-limite de tarefas e marcos" (GanttA-2).
+describe('Data-limite no Excel', () => {
+  it('Data-limite no Excel', async () => {
+    const project = demoProjects()[0];
+    if (project === undefined) {
+      throw new Error('No ERP-FIN.');
+    }
+    const schedule = scheduleOfTheReport();
+
+    const files = await unzip(
+      await scheduleReport({
+        project,
+        schedule: { ...schedule, missedDeadlines: 1 },
+        generatedAt: '2026-10-16T13:30:00Z',
+        dates,
+        t,
+      }),
+    );
+
+    const sheet = cellsOf(files.get('xl/worksheets/sheet1.xml') ?? '');
+    // The line of the products, a business day past its deadline of 14/10: the day and the business day.
+    expect([sheet.get('C5')?.value, sheet.get('L5')?.value, sheet.get('M5')?.value]).toEqual([
+      'Validar cadastro de produtos',
+      String(spreadsheetDay('2026-10-14')),
+      '1',
+    ]);
+    expect(sheet.get('L1')?.value).toBe('Data-limite');
+    expect(sheet.get('M1')?.value).toBe('Passou da data-limite (dias úteis)');
+    const tab = cellsOf(files.get('xl/worksheets/sheet2.xml') ?? '');
+    expect([tab.get('A10')?.value, tab.get('B10')?.value]).toEqual([
+      'Datas-limite estouradas',
+      '1',
+    ]);
   });
 });

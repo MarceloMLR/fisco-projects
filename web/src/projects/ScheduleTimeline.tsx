@@ -9,7 +9,7 @@ import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import type { GanttTarget } from '../schedule-gantt/ganttRows';
 import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { problemType } from './projectForm';
-import { findItem, type ScheduleDisplay } from './schedule';
+import { findItem, itemsOf, type ScheduleDisplay } from './schedule';
 import { failureOf } from './scheduleItemValues';
 import { useNotify } from '../notices/notify';
 
@@ -141,6 +141,8 @@ export function ScheduleTimeline({
             progress: null,
             predecessorIds: [...successor.predecessorIds, predecessorId],
             parentId: successor.parentId,
+            // The deadline stays as it was (GanttA-2).
+            deadline: successor.deadline,
           },
         });
         const refreshed = refresh();
@@ -223,6 +225,7 @@ export function ScheduleTimeline({
           <TimelineLegend
             critical={display.critical}
             baseline={display.baseline && schedule.baseline !== null}
+            deadline={itemsOf(schedule).some((item) => item.deadline !== null)}
           />
           {aside}
         </Box>
@@ -231,13 +234,47 @@ export function ScheduleTimeline({
   );
 }
 
-type LegendKey = 'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'milestone' | 'nonWorking';
+type LegendKey =
+  'done' | 'todo' | 'critical' | 'baseline' | 'phase' | 'milestone' | 'deadline' | 'nonWorking';
+
+/** The mark of a deadline in the legend: the dashed line with the arrow on top, as the timeline draws it. */
+function DeadlineMark() {
+  return (
+    <Box
+      component="svg"
+      aria-hidden
+      width={10}
+      height={14}
+      viewBox="0 0 10 14"
+      sx={{ flex: 'none' }}
+    >
+      <path d="M1 0.5 H9 L5 5.5 Z" fill="var(--gantt-dependency)" />
+      <line
+        x1={5}
+        x2={5}
+        y1={5}
+        y2={14}
+        stroke="var(--gantt-dependency)"
+        strokeWidth={1.5}
+        strokeDasharray="3 2"
+      />
+    </Box>
+  );
+}
 
 /**
  * What each color of the timeline is (Gantt.Legend of the design system), with the critical path and the baseline
- * while they are shown.
+ * while they are shown, and the deadline when an item has one (GanttA-2).
  */
-export function TimelineLegend({ critical, baseline }: { critical: boolean; baseline: boolean }) {
+export function TimelineLegend({
+  critical,
+  baseline,
+  deadline = false,
+}: {
+  critical: boolean;
+  baseline: boolean;
+  deadline?: boolean;
+}) {
   const { t } = useTranslation();
   const swatch = (background: string, more: object = {}): object => ({
     display: 'inline-block',
@@ -248,7 +285,7 @@ export function TimelineLegend({ critical, baseline }: { critical: boolean; base
     background: `var(--${background})`,
     ...more,
   });
-  const entries: { key: LegendKey; sx: object }[] = [
+  const entries: { key: LegendKey; sx?: object }[] = [
     { key: 'done', sx: swatch('gantt-progress') },
     { key: 'todo', sx: swatch('gantt-bar', { border: '1px solid var(--gantt-bar-border)' }) },
   ];
@@ -267,8 +304,14 @@ export function TimelineLegend({ critical, baseline }: { critical: boolean; base
       key: 'milestone',
       sx: swatch('gantt-milestone', { width: 10, transform: 'rotate(45deg)', borderRadius: 0 }),
     },
-    { key: 'nonWorking', sx: swatch('gantt-nonworking', { border: '1px solid var(--border)' }) },
   );
+  if (deadline) {
+    entries.push({ key: 'deadline' });
+  }
+  entries.push({
+    key: 'nonWorking',
+    sx: swatch('gantt-nonworking', { border: '1px solid var(--border)' }),
+  });
   return (
     <Box
       component="ul"
@@ -291,7 +334,11 @@ export function TimelineLegend({ critical, baseline }: { critical: boolean; base
           key={entry.key}
           sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <Box component="span" aria-hidden sx={entry.sx} />
+          {entry.sx === undefined ? (
+            <DeadlineMark />
+          ) : (
+            <Box component="span" aria-hidden sx={entry.sx} />
+          )}
           {t(`projects.timeline.legend.${entry.key}`)}
         </Box>
       ))}

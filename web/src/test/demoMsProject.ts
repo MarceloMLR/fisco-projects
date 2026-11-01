@@ -26,6 +26,7 @@ export function demoMsProjectPreview(start = '2026-10-13'): MsProjectPreview {
           progress: 40,
           after: [],
           resource: 0,
+          deadlineOffset: null,
         },
         {
           phase: 0,
@@ -37,6 +38,7 @@ export function demoMsProjectPreview(start = '2026-10-13'): MsProjectPreview {
           progress: 0,
           after: [],
           resource: 1,
+          deadlineOffset: null,
         },
         {
           phase: 0,
@@ -48,6 +50,7 @@ export function demoMsProjectPreview(start = '2026-10-13'): MsProjectPreview {
           progress: 0,
           after: [0],
           resource: null,
+          deadlineOffset: null,
         },
       ],
     },

@@ -16,6 +16,7 @@ export const scheduleItemErrors = {
   ownerInvalid: 'projects.schedule.errors.ownerInvalid',
   predecessorsInvalid: 'projects.schedule.errors.predecessorsInvalid',
   parentInvalid: 'projects.schedule.errors.parentInvalid',
+  deadlineInvalid: 'projects.schedule.errors.deadlineInvalid',
   cycle: 'projects.schedule.errors.cycle',
 } as const;
 
@@ -29,8 +30,8 @@ const wholeNumber = /^\d{1,4}$/;
 /**
  * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
  * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). A task with
- * subtasks (`summary`) takes its dates from them, so its duration is not checked (ADR-0088). The fields are kept as
- * typed.
+ * subtasks (`summary`) takes its dates from them, so its duration is not checked (ADR-0088). The deadline is optional,
+ * any task or milestone may have one (GanttA-2). The fields are kept as typed.
  */
 export const scheduleItemSchema = z
   .object({
@@ -48,6 +49,11 @@ export const scheduleItemSchema = z
     ownerId: z.string(),
     predecessorIds: z.array(z.string()),
     parentId: z.string(),
+    deadline: z
+      .string()
+      .refine((value) => value.trim() === '' || parseTypedDay(value) !== undefined, {
+        error: scheduleItemErrors.deadlineInvalid,
+      }),
     summary: z.boolean().optional(),
   })
   .superRefine((values, context) => {
@@ -98,6 +104,7 @@ export function newItemValues(phaseId: string, parentId: string = noParent): Sch
     ownerId: noOwner,
     predecessorIds: [],
     parentId,
+    deadline: '',
   };
 }
 
@@ -112,6 +119,7 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     ownerId: item.ownedByClient ? clientOwner : (item.owner?.id ?? noOwner),
     predecessorIds: item.predecessorIds,
     parentId: item.parentId ?? noParent,
+    deadline: item.deadline === null ? '' : formatDayText(item.deadline),
     summary: item.hasSubtasks,
   };
 }
@@ -134,6 +142,8 @@ export function bodyOf(values: ScheduleItemValues) {
     ownedByClient: task && values.ownerId === clientOwner,
     predecessorIds: summary ? [] : values.predecessorIds,
     parentId: summary || values.parentId === noParent ? null : values.parentId,
+    // An empty deadline takes it out (GanttA-2).
+    deadline: values.deadline.trim() === '' ? null : (parseTypedDay(values.deadline) ?? null),
   };
 }
 
@@ -145,6 +155,7 @@ const apiFields = {
   ownerId: 'ownerId',
   predecessorIds: 'predecessorIds',
   parentId: 'parentId',
+  deadline: 'deadline',
 } as const;
 
 const fieldErrors = {
@@ -155,6 +166,7 @@ const fieldErrors = {
   ownerId: scheduleItemErrors.ownerInvalid,
   predecessorIds: scheduleItemErrors.predecessorsInvalid,
   parentId: scheduleItemErrors.parentInvalid,
+  deadline: scheduleItemErrors.deadlineInvalid,
 } as const;
 
 /**

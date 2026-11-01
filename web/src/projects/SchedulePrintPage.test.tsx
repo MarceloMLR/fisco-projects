@@ -60,3 +60,35 @@ describe('Exportar em PDF pela impressão', () => {
     expect(within(legend).queryByText(text.timeline.legend.critical)).not.toBeInTheDocument();
   });
 });
+
+// Spec: cronograma, requirement "Data-limite pela tela" (GanttA-2), on paper.
+describe('Data-limite na impressão', () => {
+  it('Marcador da data-limite na impressão', async () => {
+    const schedule = demoScheduleWithBaseline();
+    for (const phase of schedule.phases) {
+      phase.items = phase.items.map((item) =>
+        item.name === 'Testes integrados'
+          ? { ...item, deadline: '2026-10-28', deadlineDeviation: 1 }
+          : item.name === 'Reunião de abertura'
+            ? { ...item, deadline: '2026-11-20', deadlineDeviation: -30 }
+            : item,
+      );
+    }
+    server.use(http.get('/api/projects/:id/schedule', () => HttpResponse.json(schedule)));
+    const { container } = await renderApp(
+      `/projects/${project.id}/schedule/print?from=2026-10-05&to=2026-10-31&scale=days&baseline=0&critical=0`,
+    );
+
+    await screen.findByRole('table', { name: text.print.table });
+
+    // Only the one in the period, in the color of the alarm.
+    await waitFor(() => {
+      expect(container.querySelectorAll('.g-deadline')).toHaveLength(1);
+    });
+    const marker = container.querySelector('.g-deadline');
+    expect(marker?.getAttribute('data-day')).toBe('2026-10-28');
+    expect(marker).toHaveClass('g-deadline--missed');
+    const legend = screen.getByRole('list', { name: text.timeline.legend.label });
+    expect(within(legend).getByText(text.timeline.legend.deadline)).toBeVisible();
+  });
+});

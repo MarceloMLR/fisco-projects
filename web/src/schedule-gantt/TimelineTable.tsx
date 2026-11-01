@@ -7,7 +7,13 @@ import { useTranslation } from 'react-i18next';
 import { IconButton } from '../components/Button';
 import { DueDate } from '../components/DueDate';
 import { formatDayMonthText } from '../format/dates';
-import { lateText, milestoneStatus, ownerText } from '../projects/schedule';
+import {
+  deadlineText,
+  lateText,
+  milestoneStatus,
+  missesDeadline,
+  ownerText,
+} from '../projects/schedule';
 import type { GanttRow } from './ganttRows';
 
 /** The columns beside the timeline: the name and the progress; in Expandir, all of them; on a phone, only the name. */
@@ -141,6 +147,9 @@ export function TimelineTable({
             <span role="columnheader" className="fp-gantt__col">
               {t('projects.timeline.columns.end')}
             </span>
+            <span role="columnheader" className="fp-gantt__col fp-gantt__col--deadline">
+              {t('projects.timeline.columns.deadline')}
+            </span>
             <span role="columnheader" className="fp-gantt__col fp-gantt__col--who">
               {t('projects.timeline.columns.owner')}
             </span>
@@ -259,6 +268,9 @@ function TableRow({
           <span role="gridcell" className="fp-gantt__col">
             {item?.kind === 'Task' ? formatDayMonthText(item.end) : ''}
           </span>
+          <span role="gridcell" className="fp-gantt__col fp-gantt__col--deadline">
+            {item?.deadline !== undefined && item.deadline !== null && <DeadlineCell item={item} />}
+          </span>
           <span role="gridcell" className="fp-gantt__col fp-gantt__col--who">
             {item === undefined ? '' : (ownerText(item, clientName, t) ?? '')}
           </span>
@@ -272,6 +284,25 @@ function TableRow({
     </div>
   );
 }
+
+/** The day of the deadline; missed, in the color of the alarm, with the icon that says by how much (GanttA-2). */
+function DeadlineCell({ item }: { item: GanttItem }) {
+  const { t } = useTranslation();
+  if (item.deadline === null) {
+    return null;
+  }
+  const day = formatDayMonthText(item.deadline);
+  return missesDeadline(item) ? (
+    <span className="fp-gantt__deadline fp-gantt__deadline--missed">
+      <WarningAmberOutlined titleAccess={deadlineText(item, t)} className="fp-gantt__icon" />
+      {day}
+    </span>
+  ) : (
+    <span className="fp-gantt__deadline">{day}</span>
+  );
+}
+
+type GanttItem = Extract<GanttRow['target'], { kind: 'item' }>['item'];
 
 /** A task late, or a milestone not reached past its day (ADR-0065). */
 function isLate(row: GanttRow): boolean {

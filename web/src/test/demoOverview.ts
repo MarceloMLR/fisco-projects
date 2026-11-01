@@ -40,6 +40,7 @@ function nonWorkingDays(from: string, to: string, holidays: string[]): string[] 
 }
 
 export const demoOverviewTaskId = '0199f5a2-7c1e-7d40-9a1b-0000000f1001';
+export const demoOverviewDeadlineId = '0199f5a2-7c1e-7d40-9a1b-0000000f1002';
 export const demoOverviewTermId = '0199f5a2-7c1e-7d40-9a1b-0000000f2001';
 
 export function demoOverview(): ProjectOverview {
@@ -103,6 +104,15 @@ export function demoOverview(): ProjectOverview {
           end: '2026-10-15',
           daysLate: 1,
           blocks: ['Configurar plano de contas'],
+        },
+      ],
+      deadlines: [
+        {
+          id: demoOverviewDeadlineId,
+          kind: 'Task',
+          name: 'Testes integrados',
+          deadline: '2026-10-30',
+          daysPast: 1,
         },
       ],
       tickets: [
@@ -191,7 +201,7 @@ export const emptyOverview: ProjectOverview = {
   tickets: { open: 0, total: 0, overdue: 0, waitingForRequester: 0 },
   nextMilestone: null,
   timeline: null,
-  attention: { tasks: [], tickets: [], acceptances: [], vendors: [] },
+  attention: { tasks: [], deadlines: [], tickets: [], acceptances: [], vendors: [] },
   teams: [
     { team: 'Management', people: [], openTickets: null },
     { team: 'Functional', people: [], openTickets: 0 },

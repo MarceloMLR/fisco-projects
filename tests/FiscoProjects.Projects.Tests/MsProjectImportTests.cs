@@ -294,10 +294,10 @@ public sealed class MsProjectImportTests
         var configuration = source.AddPhase("Configuração");
         var go = source.AddPhase("Entrada em produção");
         var survey = Add(source, ScheduleItemKind.Task, configuration, "Levantar regras", D(10, 13), 3, Rafael, 100);
-        var tests = Add(source, ScheduleItemKind.Task, configuration, "Testes integrados", D(10, 16), 4, Rafael, 0, [survey]);
+        var tests = Add(source, ScheduleItemKind.Task, configuration, "Testes integrados", D(10, 16), 4, Rafael, 0, [survey], deadline: D(10, 21));
         var script = Add(source, ScheduleItemKind.Task, configuration, "Roteiro", D(10, 16), 2, null, 50, [survey], tests);
         Add(source, ScheduleItemKind.Task, configuration, "Execução", D(10, 20), 2, null, 0, [script], tests, ownedByClient: true);
-        var acceptance = Add(source, ScheduleItemKind.Milestone, go, "Aceite", D(10, 22), 0, null, 0, [script]);
+        var acceptance = Add(source, ScheduleItemKind.Milestone, go, "Aceite", D(10, 22), 0, null, 0, [script], deadline: D(10, 9));
         source.SetReached(acceptance.Id, true, Today);
         var document = MsProjectExport.Of(
             "ERP-FIN", "Implantação do ERP", source, source.Figures(Today), Days,
@@ -317,11 +317,55 @@ public sealed class MsProjectImportTests
             new MsProjectImportedResource("Cliente Exemplo", null, 1));
     }
 
+    [Fact(DisplayName = "Data-limite no MS Project")]
+    public void Deadline_GoesInTheXml_AndMovesWithTheStart()
+    {
+        var source = new Schedule(Guid.CreateVersion7());
+        var configuration = source.AddPhase("Configuração");
+        var survey = Add(source, ScheduleItemKind.Task, configuration, "Levantar regras", D(10, 21), 3, null, 0);
+        var tests = Add(source, ScheduleItemKind.Task, configuration, "Testes integrados", D(10, 26), 4, null, 0, [survey], deadline: D(10, 30));
+        var document = MsProjectExport.Of(
+            "ERP-FIN", "Implantação do ERP", source, source.Figures(Today), Days, new Dictionary<Guid, MsProjectOwner>(),
+            new DateTime(2026, 10, 16, 12, 0, 0, DateTimeKind.Utc));
+        var imported = Converted(Bytes(document));
+        var made = new Schedule(Guid.CreateVersion7());
+
+        // Five business days after the first day of the file, 21/10: 28/10.
+        made.ApplyTemplate(imported.Outline, Days.AddBusinessDays(imported.FirstDay, 5), Days, Today);
+
+        var task = document.Descendants(MsProjectExport.Ns + "Task")
+            .Single(element => (string?)element.Element(MsProjectExport.Ns + "Name") == tests.Name);
+        ((string?)task.Element(MsProjectExport.Ns + "Deadline")).Should().Be("2026-10-30T17:00:00");
+        // 30/10 plus five business days, without the holiday of 02/11: 09/11, and the task moves the same.
+        var moved = made.Items.Single(item => item.Name == tests.Name);
+        (moved.Start, moved.End, moved.Deadline).Should().Be((D(11, 3), D(11, 6), D(11, 9)));
+        made.Items.Single(item => item.Name == survey.Name).Deadline.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Data-limite do arquivo do MS Project")]
+    public void DeadlineOfTheFile_IsCountedInBusinessDays_FromTheFirstDay_EvenBeforeIt()
+    {
+        var schedule = Converted(Project("Cronograma", [
+            new Line(1, 1, "Configuração", D(10, 14), D(10, 16)),
+            new Line(2, 2, "Antes do início", D(10, 14), D(10, 16), Deadline: D(10, 9)),
+            new Line(3, 2, "Num sábado", D(10, 14), D(10, 16), Deadline: D(10, 17)),
+            new Line(4, 2, "Sem data-limite", D(10, 14), D(10, 16)),
+        ]));
+        var made = new Schedule(Guid.CreateVersion7());
+
+        made.ApplyTemplate(schedule.Outline, schedule.FirstDay, Days, Today);
+
+        schedule.Outline.Items.Select(item => item.DeadlineOffset).Should().Equal(-2, 3, null);
+        // Before the first day, back in business days without the holiday of 12/10; on a Saturday, to the next business day.
+        made.Items.Select(item => item.Deadline).Should().Equal(D(10, 9), D(10, 19), null);
+    }
+
     private static ScheduleItem Add(
         Schedule schedule, ScheduleItemKind kind, SchedulePhase phase, string name, DateOnly start, int duration, Guid? owner, int progress,
-        ScheduleItem[]? after = null, ScheduleItem? parent = null, bool ownedByClient = false) =>
+        ScheduleItem[]? after = null, ScheduleItem? parent = null, bool ownedByClient = false, DateOnly? deadline = null) =>
         schedule.AddItem(kind, new ScheduleItemPlan(
-            phase.Id, name, start, duration, owner, progress, [.. (after ?? []).Select(item => item.Id)], parent?.Id, ownedByClient), Days, Today);
+            phase.Id, name, start, duration, owner, progress, [.. (after ?? []).Select(item => item.Id)], parent?.Id, ownedByClient, deadline),
+            Days, Today);
 
     /// <summary>The items by name, with the phase, the task, the kind, the dates, the progress and the items before them.</summary>
     private static IEnumerable<object> Shape(Schedule schedule) => schedule.Items.Select(item => new
@@ -335,6 +379,7 @@ public sealed class MsProjectImportTests
         item.Duration,
         item.Progress,
         item.IsDone,
+        item.Deadline,
         Before = schedule.PredecessorsOf(item.Id).Select(predecessor => predecessor.Name).Order().ToList(),
     });
 }

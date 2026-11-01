@@ -76,7 +76,8 @@ export interface TimelineChartProps {
 
 /**
  * The chart of the timeline, as the Gantt of the design system draws it: the scale, the days off, the lines, the
- * phases, the tasks with the part done, the milestones, the baseline, the arrows of the dependencies and today. Who
+ * phases, the tasks with the part done, the milestones, the baseline, the arrows of the dependencies, the deadlines
+ * (GanttA-2) and today. Who
  * edits drags a bar, pulls its edges and links its end to another bar; the bar stays where it was dropped until the API
  * answers, and the schedule that comes back is drawn (ADR-0019, ADR-0051, ADR-0134).
  */
@@ -274,7 +275,19 @@ export function TimelineChart({
     }
   };
 
-  const labelOf = (row: GanttRow, dates: { start: DayValue; end: DayValue }) =>
+  const labelOf = (row: GanttRow, dates: { start: DayValue; end: DayValue }) => {
+    const label = shapeLabelOf(row, dates);
+    const deadline = row.deadline;
+    if (deadline === undefined) {
+      return label;
+    }
+    const day = formatDayMonthText(deadline.day);
+    return deadline.missed
+      ? t('projects.timeline.bars.missedDeadline', { label, day, count: deadline.days })
+      : t('projects.timeline.bars.deadline', { label, day });
+  };
+
+  const shapeLabelOf = (row: GanttRow, dates: { start: DayValue; end: DayValue }) =>
     row.shape === 'milestone'
       ? t('projects.timeline.bars.milestone', {
           name: row.name,
@@ -300,10 +313,28 @@ export function TimelineChart({
 
   const dependencies: ReactNode[] = [];
   const baselines: ReactNode[] = [];
+  const deadlines: ReactNode[] = [];
   const labels: ReactNode[] = [];
   rows.forEach((row, index) => {
     const dates = datesOf(row);
     const top = index * rowHeight;
+    // At the end of the day of the deadline, on the line of the item, over its bar (GanttA-2).
+    if (row.deadline !== undefined && inPeriod(row.deadline.day)) {
+      const x = round(geometry.xAfter(row.deadline.day));
+      deadlines.push(
+        <g
+          key={row.key}
+          className={classes('g-deadline', row.deadline.missed && 'g-deadline--missed')}
+          data-day={row.deadline.day}
+        >
+          <line className="g-deadline-line" x1={x} x2={x} y1={top + 6} y2={top + rowHeight - 3} />
+          <path
+            className="g-deadline-head"
+            d={`M${String(x - 4)} ${String(top + 2)} H${String(x + 4)} L${String(x)} ${String(top + 7)} Z`}
+          />
+        </g>,
+      );
+    }
     if (showBaseline && row.baseline !== undefined) {
       const x = geometry.xOf(row.baseline.start);
       baselines.push(
@@ -646,6 +677,7 @@ export function TimelineChart({
         {baselines}
         {dependencies}
         {bars}
+        <g aria-hidden>{deadlines}</g>
         <g aria-hidden>{labels}</g>
         {showsToday && <line className="g-today" x1={todayX} x2={todayX} y1={0} y2={height} />}
         {link !== undefined && (

@@ -164,6 +164,14 @@ export const ganttStripSx = {
     stroke: 'var(--gantt-critical-border)',
   },
   '& .g-today': { stroke: 'var(--gantt-today)', strokeWidth: 1.5, strokeDasharray: '4 3' },
+  '& .g-deadline-line': {
+    stroke: 'var(--gantt-dependency)',
+    strokeWidth: 1.5,
+    strokeDasharray: '3 2',
+  },
+  '& .g-deadline-head': { fill: 'var(--gantt-dependency)' },
+  '& .g-deadline--missed .g-deadline-line': { stroke: 'var(--status-danger-text)' },
+  '& .g-deadline--missed .g-deadline-head': { fill: 'var(--status-danger-text)' },
   '& .g-scale-line': { stroke: 'var(--border)', strokeWidth: 1 },
   '& .g-scale-text': {
     fill: 'var(--text-secondary)',

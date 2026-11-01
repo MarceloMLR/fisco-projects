@@ -603,7 +603,8 @@
         "OwnerId": "Responsável",
         "CompletedOn": "Concluída em",
         "ReachedOn": "Atingido em",
-        "OwnedByClient": "Responsável: o cliente"
+        "OwnedByClient": "Responsável: o cliente",
+        "Deadline": "Data-limite"
       },
       "ScheduleDependency": {
         "ProjectId": "Projeto",
@@ -1370,6 +1371,12 @@
         "milestone": "Marco em {{day}}",
         "noMilestone": "Pedido em {{day}}",
         "vendor": "Chamado no fornecedor ligado ao #{{number}}",
+        "deadline": {
+          "Task": "Tarefa · data-limite {{day}}",
+          "Milestone": "Marco · data-limite {{day}}"
+        },
+        "deadlinePast_one": "{{count}} dia útil depois da data-limite",
+        "deadlinePast_other": "{{count}} dias úteis depois da data-limite",
         "stale_one": "Sem retorno há {{count}} dia útil",
         "stale_other": "Sem retorno há {{count}} dias úteis"
       },
@@ -1485,6 +1492,17 @@
       "late": "Atrasada",
       "lateDays_one": "{{count}} dia útil de atraso",
       "lateDays_other": "{{count}} dias úteis de atraso",
+      "missedDeadlines_one": "{{count}} data-limite estourada",
+      "missedDeadlines_other": "{{count}} datas-limite estouradas",
+      "deadline": {
+        "past_one": "Passou {{count}} dia útil da data-limite",
+        "past_other": "Passou {{count}} dias úteis da data-limite",
+        "before_one": "{{count}} dia útil antes da data-limite",
+        "before_other": "{{count}} dias úteis antes da data-limite",
+        "onDay": "No dia da data-limite",
+        "pastShort_one": "{{count}} dia útil depois",
+        "pastShort_other": "{{count}} dias úteis depois"
+      },
       "collapseSubtasks": "Recolher as subtarefas de {{name}}",
       "expandSubtasks": "Mostrar as subtarefas de {{name}}",
       "milestone": {
@@ -1521,7 +1539,8 @@
         "duration": "Duração",
         "owner": "Responsável",
         "progress": "Progresso",
-        "dependsOn": "Depende de"
+        "dependsOn": "Depende de",
+        "deadline": "Data-limite"
       },
       "duration_one": "{{count}} dia útil",
       "duration_other": "{{count}} dias úteis",
@@ -1557,6 +1576,8 @@
         "dependsOn": "Depende de",
         "dependsOnHelp": "Começa depois que essas terminam.",
         "dependsOnPlaceholder": "Nenhuma",
+        "deadline": "Data-limite",
+        "deadlineHelp": "Não muda as datas: avisa quando o fim passa dela.",
         "noItems": "Nenhuma tarefa ou marco para escolher",
         "optional": "(opcional)",
         "title": "Nova tarefa ou marco",
@@ -1578,6 +1599,7 @@
         "nameTooLong": "Use até 200 caracteres.",
         "phaseRequired": "Escolha a fase.",
         "startInvalid": "Informe uma data válida, como 13/10/2026.",
+        "deadlineInvalid": "Informe uma data válida, como 30/10/2026, ou deixe em branco.",
         "durationInvalid": "Informe de 1 a 999 dias úteis.",
         "progressInvalid": "Informe de 0 a 100.",
         "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",
@@ -1596,7 +1618,8 @@
         "progress": "Progresso",
         "state": "Estado",
         "dependsOn": "Depende de",
-        "subtasks": "Subtarefas"
+        "subtasks": "Subtarefas",
+        "deadline": "Data-limite"
       },
       "phaseDialog": {
         "newTitle": "Nova fase",
@@ -1682,7 +1705,10 @@
       "bars": {
         "phase": "Fase {{name}}, {{start}} a {{end}}, {{progress}}%",
         "task": "Tarefa {{name}}, {{start}} a {{end}}, {{progress}}%",
-        "milestone": "Marco {{name}}, {{day}}"
+        "milestone": "Marco {{name}}, {{day}}",
+        "deadline": "{{label}}, data-limite {{day}}",
+        "missedDeadline_one": "{{label}}, passou {{count}} dia útil da data-limite {{day}}",
+        "missedDeadline_other": "{{label}}, passou {{count}} dias úteis da data-limite {{day}}"
       },
       "loading": "Carregando a linha do tempo…",
       "noItems": "A linha do tempo aparece quando o cronograma tiver tarefas ou marcos.",
@@ -1690,6 +1716,7 @@
         "name": "Tarefa",
         "start": "Início",
         "end": "Fim",
+        "deadline": "Data-limite",
         "owner": "Responsável",
         "progress": "Progresso"
       },
@@ -1706,6 +1733,7 @@
         "baseline": "Linha de base",
         "phase": "Fase",
         "milestone": "Marco",
+        "deadline": "Data-limite",
         "nonWorking": "Fim de semana e feriado"
       },
       "messages": {
@@ -1820,6 +1848,8 @@
           "progress": "Progresso",
           "situation": "Situação",
           "lateDays": "Atraso (dias úteis)",
+          "deadline": "Data-limite",
+          "deadlinePast": "Passou da data-limite (dias úteis)",
           "dependsOn": "Depende de (Nº)",
           "critical": "Caminho crítico",
           "baselineStart": "Início na linha de base",
@@ -1852,6 +1882,7 @@
           "progress": "Progresso",
           "lateTasks": "Tarefas atrasadas",
           "lateMilestones": "Marcos atrasados",
+          "missedDeadlines": "Datas-limite estouradas",
           "baseline": "Linha de base salva em",
           "noBaseline": "Sem linha de base",
           "baselineDeviation": "Diferença do fim contra a linha de base (dias úteis)",

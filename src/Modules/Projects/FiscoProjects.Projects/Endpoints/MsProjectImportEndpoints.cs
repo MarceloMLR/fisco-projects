@@ -14,7 +14,8 @@ namespace FiscoProjects.Projects.Endpoints;
 /// A task or milestone of the schedule converted from the MS Project, as the creation receives it back (ADR-0135): the
 /// position of its phase, the position of the task it is in (an item before it), its kind, name, the business days
 /// after the start it starts, its duration (zero for a milestone), its progress (100 for a milestone reached), the
-/// positions of the items it depends on (all before it) and the position of its resource.
+/// positions of the items it depends on (all before it), the position of its resource and the business days after the
+/// start of its deadline, negative before it (GanttA-2).
 /// </summary>
 public sealed record ImportedItemResponse(
     int Phase,
@@ -25,7 +26,8 @@ public sealed record ImportedItemResponse(
     int Duration,
     int Progress,
     IReadOnlyList<int> After,
-    int? Resource);
+    int? Resource,
+    int? DeadlineOffset);
 
 /// <summary>The schedule converted from the file: the names of the phases and the items in the order they are made.</summary>
 public sealed record ImportedPlanResponse(IReadOnlyList<string> Phases, IReadOnlyList<ImportedItemResponse> Items);
@@ -91,7 +93,8 @@ public sealed record ImportedItemRequest(
     int Duration,
     int Progress,
     IReadOnlyList<int>? After,
-    int? Resource);
+    int? Resource,
+    int? DeadlineOffset = null);
 
 /// <summary>
 /// Who a resource of the file becomes (ADR-0135): a user (<c>userId</c>) or a person of the directory who never signed in
@@ -141,7 +144,14 @@ internal static class MsProjectImportEndpoints
                 new SchedulePlanOutline(
                     [.. phases.Select(name => new OutlinePhase(name))],
                     [.. items.Select(item => new OutlineItem(
-                        item.Phase, item.Parent, item.Kind, item.Name ?? string.Empty, item.StartOffset, item.Duration, item.Progress))],
+                        item.Phase,
+                        item.Parent,
+                        item.Kind,
+                        item.Name ?? string.Empty,
+                        item.StartOffset,
+                        item.Duration,
+                        item.Progress,
+                        DeadlineOffset: item.DeadlineOffset))],
                     [.. items.SelectMany((item, index) => (item.After ?? []).Select(before => new OutlineDependency(before, index)))]),
                 [.. items.Select(item => item.Resource)],
                 [.. (request.Resources ?? []).Select(resource => new ImportedResourceChoice(
@@ -190,7 +200,8 @@ internal static class MsProjectImportEndpoints
                     item.Duration,
                     item.Progress,
                     [.. converted.Outline.Dependencies.Where(dependency => dependency.Successor == index).Select(dependency => dependency.Predecessor)],
-                    converted.ItemResources[index]))]),
+                    converted.ItemResources[index],
+                    item.DeadlineOffset))]),
             [.. result.Figures.Phases.Select(phase => new MsProjectPreviewPhaseResponse(
                 phase.Phase.Name,
                 [.. phase.Items.Select(item => new MsProjectPreviewItemResponse(

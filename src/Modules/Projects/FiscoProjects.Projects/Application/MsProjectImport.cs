@@ -37,7 +37,8 @@ public sealed record MsProjectLink(int PredecessorUid, int Type, long Lag, bool 
 
 /// <summary>
 /// A line of the file, below the summary of the whole project: its number, level, whether it is a milestone, active or
-/// an empty line, the name, the days it starts and finishes, the percent complete and the lines it depends on.
+/// an empty line, the name, the days it starts and finishes, the percent complete, the lines it depends on and its
+/// deadline (GanttA-2).
 /// </summary>
 public sealed record MsProjectRow(
     int Uid,
@@ -49,7 +50,8 @@ public sealed record MsProjectRow(
     DateOnly? Start,
     DateOnly? Finish,
     int PercentComplete,
-    IReadOnlyList<MsProjectLink> Links);
+    IReadOnlyList<MsProjectLink> Links,
+    DateOnly? Deadline = null);
 
 /// <summary>
 /// A resource of the file, with the name and the e-mail when the file has one: a work resource is a person; the others,
@@ -227,7 +229,8 @@ public static class MsProjectImport
                         Number(link.Element(ns + "PredecessorUID"))!.Value,
                         Number(link.Element(ns + "Type")) ?? FinishToStart,
                         long.TryParse((string?)link.Element(ns + "LinkLag"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var lag) ? lag : 0,
-                        Flag(link.Element(ns + "CrossProject")) ?? false))]))
+                        Flag(link.Element(ns + "CrossProject")) ?? false))],
+                Day(task.Element(ns + "Deadline"))))
             .ToList();
         if (rows.Count == 0)
         {
@@ -340,7 +343,8 @@ public static class MsProjectImport
                     item.Name,
                     OffsetOf(first, item.Start!.Value),
                     item.Kind == ScheduleItemKind.Milestone ? 0 : DurationOf(item),
-                    item.IsSummary ? 0 : item.Progress))],
+                    item.IsSummary ? 0 : item.Progress,
+                    DeadlineOffset: DeadlineOffsetOf(first, item.Row.Deadline)))],
                 [.. dependencies
                     .Where(pair => !pair.Dropped)
                     .Select(pair => new OutlineDependency(position[pair.Predecessor], position[pair.Successor]))
@@ -639,6 +643,22 @@ public static class MsProjectImport
         /// <summary>The business days of the calendar before the start, since the first day of the file (ADR-0135).</summary>
         private int OffsetOf(DateOnly first, DateOnly start) =>
             start <= first ? 0 : days.CountBusinessDays(first, start.AddDays(-1));
+
+        /// <summary>
+        /// The business days of the calendar from the first day of the file to the deadline, negative before it, so the
+        /// deadline moves with the start (GanttA-2); one on a day off goes to the next business day, as the starts, and
+        /// one too far from the schedule stays out.
+        /// </summary>
+        private int? DeadlineOffsetOf(DateOnly first, DateOnly? deadline)
+        {
+            if (deadline is not { } day)
+            {
+                return null;
+            }
+
+            var offset = day >= first ? OffsetOf(first, day) : -days.CountBusinessDays(day, first.AddDays(-1));
+            return Math.Abs(offset) <= Schedule.MaxStartOffset ? offset : null;
+        }
 
         /// <summary>The business days from the start, on a business day, to the finish, from 1 to 999 (ADR-0135).</summary>
         private int DurationOf(Draft item)

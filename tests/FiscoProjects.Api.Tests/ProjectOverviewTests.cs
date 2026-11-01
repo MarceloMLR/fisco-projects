@@ -31,7 +31,7 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
 
     private static async Task<Guid> ItemAsync(
         ProjectTeam team, Guid project, Guid phase, string kind, string name, string start, int duration = 0, Guid? owner = null,
-        int progress = 0, Guid[]? after = null) =>
+        int progress = 0, Guid[]? after = null, string? deadline = null) =>
         await IdOfAsync(await SendAsync(team.Admin, HttpMethod.Post, $"/api/projects/{project}/schedule/items", new
         {
             kind,
@@ -42,6 +42,7 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
             ownerId = owner,
             progress,
             predecessorIds = after ?? [],
+            deadline,
         }));
 
     private static async Task<int> OpenTicketAsync(HttpClient client, Guid project, string title, string team = "Development", string priority = "Medium")
@@ -236,6 +237,26 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         task.GetProperty("blocks").EnumerateArray().Select(name => name.GetString()).Should().Equal("Configurar plano de contas");
     }
 
+    [Fact(DisplayName = "Data-limite na atenção")]
+    public async Task OpenItemPastItsDeadline_NeedsAttention_ButNotOneDoneOrOnTime()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        var phase = await PhaseAsync(team, team.Erp);
+        // From 30/10 to 03/11, after the holiday of 02/11: one business day past the deadline.
+        var tests = await ItemAsync(team, team.Erp, phase, "Task", "Testes integrados", "2026-10-30", 2, deadline: "2026-10-30");
+        await ItemAsync(team, team.Erp, phase, "Task", "Levantar regras", "2026-10-13", 3, progress: 100, deadline: "2026-10-14");
+        await ItemAsync(team, team.Erp, phase, "Milestone", "Configuração aprovada", "2026-10-21", deadline: "2026-10-22");
+
+        var deadlines = (await OverviewAsync(await team.ClientOfAsync(team.Marina), team.Erp))
+            .GetProperty("attention").GetProperty("deadlines").EnumerateArray().ToList();
+
+        deadlines.Should().ContainSingle();
+        var item = deadlines[0];
+        (item.GetProperty("id").GetGuid(), item.GetProperty("kind").GetString(), item.GetProperty("name").GetString())
+            .Should().Be((tests, "Task", "Testes integrados"));
+        (item.GetProperty("deadline").GetString(), item.GetProperty("daysPast").GetInt32()).Should().Be(("2026-10-30", 1));
+    }
+
     [Fact(DisplayName = "Chamados na atenção")]
     public async Task Tickets_DueSoon_OrWithoutAnAssignee_NeedAttention()
     {
@@ -302,12 +323,13 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         var other = await team.CreateProjectAsync("FISC-SP", "Revisão fiscal da filial SP");
         await team.App.AddProjectMemberAsync(other, team.Diego, "Developer");
         var phase = await PhaseAsync(team, other);
-        await ItemAsync(team, other, phase, "Task", "Revisar cadastro de CFOP", "2026-10-13", 3, team.Diego, 50);
+        await ItemAsync(team, other, phase, "Task", "Revisar cadastro de CFOP", "2026-10-13", 3, team.Diego, 50, deadline: "2026-10-14");
         await OpenTicketAsync(await team.ClientOfAsync(team.Diego), other, "Dúvida sobre o CFOP", team: "Development");
 
         var attention = (await OverviewAsync(await team.ClientOfAsync(team.Marina), team.Erp)).GetProperty("attention");
 
         attention.GetProperty("tasks").GetArrayLength().Should().Be(0);
+        attention.GetProperty("deadlines").GetArrayLength().Should().Be(0);
         attention.GetProperty("tickets").GetArrayLength().Should().Be(0);
     }
 

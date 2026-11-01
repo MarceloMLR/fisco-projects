@@ -133,6 +133,8 @@ export interface DemoItem {
    * pushes the items after it (ADR-0021).
    */
   movedTo?: number;
+  /** Days from the first day of the main project of its deadline, which never moves the dates (GanttA-2). */
+  deadline?: number;
 }
 
 export interface DemoPhase {
@@ -529,11 +531,12 @@ export const demoProjects: readonly DemoProject[] = [
             progress: 60,
             after: ['Reunião de abertura'],
           }),
-          // Late on the Monday it is loaded: it ended on the Friday before, at 80%.
+          // Late on the Monday it is loaded: it ended on the Friday before, at 80%, past its deadline (GanttA-2).
           task('Validar cadastro de produtos', 8, 4, {
             owner: 'diego',
             progress: 80,
             after: ['Mapear processos fiscais'],
+            deadline: 10,
           }),
           milestone('Cadastro validado', 11, { after: ['Validar cadastro de produtos'] }),
         ],
@@ -577,13 +580,22 @@ export const demoProjects: readonly DemoProject[] = [
             byClient: true,
             after: ['Executar testes'],
           }),
-          milestone('Aceite da homologação', 29, { after: ['Testes com a equipe do cliente'] }),
+          // The date the client fixed for the acceptance, two days after the planned one.
+          milestone('Aceite da homologação', 29, {
+            after: ['Testes com a equipe do cliente'],
+            deadline: 31,
+          }),
         ],
       },
       {
         name: 'Entrada em produção',
         items: [
-          task('Migrar saldos', 30, 2, { owner: 'diego', after: ['Aceite da homologação'] }),
+          // The legal deadline of the balances, as an obligation has (GanttA-2).
+          task('Migrar saldos', 30, 2, {
+            owner: 'diego',
+            after: ['Aceite da homologação'],
+            deadline: 35,
+          }),
           task('Treinar usuários', 31, 4, { owner: 'marina' }),
           task('Acompanhamento assistido', 35, 5, { owner: 'rafael', after: ['Migrar saldos'] }),
           milestone('Virada para produção', 39, { after: ['Acompanhamento assistido'] }),
