@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { ProjectTaskHours, TaskHours } from '../api/client';
+import type { Project, ProjectTaskHours, SessionUser, TaskHours } from '../api/client';
 import { formatHours } from '../hours/hours';
 
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
@@ -30,7 +30,19 @@ export function needsAttention(task: TaskHours): boolean {
   return task.balance.state === 'Over' || task.balance.state === 'NearLimit';
 }
 
-/** The hours of each task of a project by the id of the task; empty while they load or for whoever is not the Administrator. */
+/** The hours of each task of a project by the id of the task; empty while they load or for whoever does not see them. */
 export function taskHoursById(hours: ProjectTaskHours | undefined): ReadonlyMap<string, TaskHours> {
   return new Map((hours?.items ?? []).map((task) => [task.itemId, task]));
+}
+
+/**
+ * Whether the person sees the hours of the tasks of the project (ADR-0144): the Administrator, and the manager of the
+ * project. The API decides; this only keeps the screen from asking what would be refused with 403.
+ */
+export function seesTaskHours(project: Project, user: SessionUser | undefined): boolean {
+  return (
+    user !== undefined &&
+    (user.role === 'Administrator' ||
+      project.members.some((member) => member.id === user.id && member.role === 'Manager'))
+  );
 }

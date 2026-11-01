@@ -44,8 +44,8 @@ function noPaging() {
 
 /**
  * The entries of a period grouped by day, the newest first, with the total of each day (ADR-0128): the table of
- * Minhas horas, where the first column is the project, and of the entries of a project for the Administrator, where it
- * is the person who logged them. The "⋮" of each entry the person may change corrects it, in the dialog of the entry,
+ * Minhas horas, where the first column is the project, and of the entries of a project for the Administrator and of a
+ * task (ADR-0144), where it is the person who logged them. The "⋮" of each entry the person may change corrects it, in the dialog of the entry,
  * or deletes it, after a confirmation. On the phone, each entry shows the project, what was done and the hours.
  */
 export function TimeEntryTable({
@@ -55,6 +55,7 @@ export function TimeEntryTable({
   loading,
   emptyLabel,
   footer,
+  showWork = true,
   onChanged,
 }: {
   /** Accessible name of the table. */
@@ -66,6 +67,8 @@ export function TimeEntryTable({
   emptyLabel: string;
   /** The text of the footer, such as "Total da semana: 27 h". */
   footer: string;
+  /** The column of the task or the ticket; left out when every entry is of the same task (ADR-0144). */
+  showWork?: boolean;
   /** An entry was corrected or deleted, with the message and, when corrected, its day. */
   onChanged: (message: string, day?: DayValue) => void;
 }) {
@@ -166,7 +169,7 @@ export function TimeEntryTable({
       flex: desktop ? 1.1 : 1,
       minWidth: desktop ? 240 : 160,
       // A day spans the project or the person, the work and the description (fp-group-row).
-      colSpan: (_value, row) => (row.kind === 'day' && desktop ? 3 : undefined),
+      colSpan: (_value, row) => (row.kind === 'day' && desktop ? (showWork ? 3 : 2) : undefined),
       renderCell: ({ row }) =>
         row.kind === 'day' ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -242,13 +245,17 @@ export function TimeEntryTable({
     }
     return [
       firstColumn,
-      {
-        field: 'work',
-        headerName: t('hours.columns.work'),
-        flex: 1.2,
-        minWidth: 220,
-        renderCell: ({ row }) => row.kind === 'entry' && workCell(row.entry),
-      },
+      ...(showWork
+        ? [
+            {
+              field: 'work',
+              headerName: t('hours.columns.work'),
+              flex: 1.2,
+              minWidth: 220,
+              renderCell: ({ row }) => row.kind === 'entry' && workCell(row.entry),
+            } satisfies DataTableColumn<HoursRow>,
+          ]
+        : []),
       {
         field: 'description',
         headerName: t('hours.columns.description'),
@@ -264,7 +271,7 @@ export function TimeEntryTable({
       hours,
       actions,
     ];
-  }, [dayLabel, desktop, first, openMenu, t, today]);
+  }, [dayLabel, desktop, first, openMenu, showWork, t, today]);
 
   const displayedRows = useCallback(() => footer, [footer]);
 

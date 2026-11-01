@@ -2198,7 +2198,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/project-hours/{projectId}/tasks": {
+    "/api/admin/project-hours/{projectId}/tasks/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangePlannedHours"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{projectId}/task-hours": {
         parameters: {
             query?: never;
             header?: never;
@@ -2214,15 +2230,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/project-hours/{projectId}/tasks/{itemId}": {
+    "/api/projects/{projectId}/task-hours/{itemId}/entries": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put: operations["ChangePlannedHours"];
+        get: operations["ListTaskTimeEntries"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -3920,7 +3936,8 @@ export interface components {
         };
         /**
          * @description The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged
-         *     ones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule.
+         *     ones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule, and
+         *     whether the person may change the planned hours, only the Administrator (ADR-0144).
          */
         ProjectTaskHoursResponse: {
             /** Format: double */
@@ -3930,6 +3947,7 @@ export interface components {
             /** Format: double */
             outside: number;
             items: components["schemas"]["TaskHoursResponse"][];
+            canChangePlanned: boolean;
         };
         /** @enum {unknown} */
         ProjectTicketDeadline: "FirstResponse" | "Resolution" | null;
@@ -13650,6 +13668,65 @@ export interface operations {
             };
         };
     };
+    ChangePlannedHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannedHoursRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     GetTaskHours: {
         parameters: {
             query?: never;
@@ -13697,7 +13774,7 @@ export interface operations {
             };
         };
     };
-    ChangePlannedHours: {
+    ListTaskTimeEntries: {
         parameters: {
             query?: never;
             header?: never;
@@ -13707,26 +13784,15 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlannedHoursRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                    "application/json": components["schemas"]["TimeEntryListResponse"];
                 };
             };
             /** @description Unauthorized */

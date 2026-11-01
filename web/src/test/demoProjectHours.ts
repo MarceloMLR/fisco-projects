@@ -152,12 +152,20 @@ export function taskHoursRow(
   return { itemId, name, planned, logged, balance: balanceOf(planned, 0, logged, isDone) };
 }
 
-/** The hours of the tasks of a project, with the totals the API computes and the hours logged out of the tasks. */
-export function taskHoursOf(items: TaskHours[], outside = 0): ProjectTaskHours {
+/**
+ * The hours of the tasks of a project, with the totals the API computes, the hours logged out of the tasks and whether
+ * the person may change the planned hours, only the Administrator (ADR-0144).
+ */
+export function taskHoursOf(
+  items: TaskHours[],
+  outside = 0,
+  canChangePlanned = true,
+): ProjectTaskHours {
   return {
     planned: items.reduce((total, item) => total + (item.planned ?? 0), 0),
     logged: items.reduce((total, item) => total + item.logged, 0),
     outside,
     items,
+    canChangePlanned,
   };
 }
