@@ -1683,6 +1683,7 @@
         "deadlineInvalid": "Informe uma data válida, como 30/10/2026, ou deixe em branco.",
         "linksInvalid": "Informe intervalos de -99 a 999 dias úteis.",
         "durationInvalid": "Informe de 1 a 999 dias úteis.",
+        "endInvalid": "Informe o fim como dd/mm/aaaa, no início ou depois.",
         "progressInvalid": "Informe de 0 a 100.",
         "ownerInvalid": "Escolha uma pessoa do projeto que não seja leitora.",
         "predecessorsInvalid": "Escolha tarefas e marcos deste cronograma.",
@@ -2118,6 +2119,10 @@
         "removed": "Ausência de {{name}} apagada: {{period}}.",
         "failed": "Não foi possível salvar. Tente de novo."
       }
+    },
+    "tableEdit": {
+      "button": "Editar na tabela",
+      "help": "Editando na tabela: Enter, F2 ou digite para editar a célula; Enter salva e desce, Tab salva e vai para a próxima, Esc desiste. O responsável, a data-limite e a nota ficam no detalhe."
     }
   },
   "templates": {

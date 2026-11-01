@@ -114,6 +114,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Data-limite | Deadline | Prazo de uma tarefa ou marco que não muda as datas e avisa quando o fim passa dele (GanttA-2) |
 | Notas da tarefa | ScheduleItem.Note, `note` | O texto simples de uma tarefa ou marco, como "aguardando o cliente mandar os arquivos", escrito por quem edita (ADR-0139) |
 | Mover o cronograma | MoveSchedule, Schedule.Move | Levar as tarefas e os marcos em aberto N dias úteis para depois ou para antes, de uma vez (ADR-0140) |
+| Editar na tabela | EditInTableButton, `scheduleTableEdit.ts` | O modo da Lista do cronograma em que as células (nome, início, fim, duração, "Depende de" e progresso) se editam pelo teclado, como numa planilha (ADR-0143) |
 | Data-limite estourada | MissedDeadline | Item em aberto que passou da data-limite |
 | Filtro do cronograma | ScheduleFilter, `filter` | Um filtro por vez da Lista, da Linha do tempo e do Expandir (GanttA-3) |
 | Próximas duas semanas | NextTwoWeeks | Itens em aberto que acontecem de hoje até 13 dias corridos depois |

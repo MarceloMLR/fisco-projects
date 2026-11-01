@@ -80,6 +80,15 @@ export interface DataTableProps<Row extends GridValidRowModel> {
   displayedRowsLabel?: (range: { from: number; to: number; count: number }) => string;
   /** The id of a row whose field id is not unique or empty. Keep it the same function between renders. */
   getRowId?: (row: Row) => GridRowId;
+  /**
+   * The cells that edit in place, as a spreadsheet (ADR-0143): which cell of a row edits, and the save of a row with
+   * the cell edited, which gives the row to show; a rejection keeps the cell editing. The screen does not pass
+   * `onRowChoose` while editing, so Enter starts the edition.
+   */
+  editing?: {
+    isCellEditable: (params: GridCellParams<Row>) => boolean;
+    processRowUpdate: (newRow: Row, oldRow: Row) => Promise<Row>;
+  };
 }
 
 const localeText = ptBR.components.MuiDataGrid.defaultProps.localeText;
@@ -218,6 +227,9 @@ const choosableGroupsGridSx = {
  * value between renders: a screen that renders again without new rows, such as when a filter changes, does not
  * draw the cells again.
  */
+/** A save rejected keeps the cell editing with its reason, which the cell already shows (ADR-0143). */
+const ignoreRejectedSave = () => undefined;
+
 export function DataTable<Row extends GridValidRowModel>({
   label,
   rows,
@@ -239,6 +251,7 @@ export function DataTable<Row extends GridValidRowModel>({
   onRowHover,
   displayedRowsLabel,
   getRowId,
+  editing,
 }: DataTableProps<Row>) {
   const text = useMemo(
     () => ({
@@ -355,6 +368,9 @@ export function DataTable<Row extends GridValidRowModel>({
           rowSelectionModel={selection}
           onRowClick={onRowClick}
           onCellKeyDown={onCellKeyDown}
+          isCellEditable={editing?.isCellEditable}
+          processRowUpdate={editing?.processRowUpdate}
+          onProcessRowUpdateError={editing === undefined ? undefined : ignoreRejectedSave}
           paginationMode="server"
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
