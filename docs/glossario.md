@@ -327,6 +327,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Quem aponta, vê e corrige | TimeEntryAccess | As regras das horas num lugar só (ADR-0128) |
 | Chamados de um projeto | IProjectTicketList | Contrato do `Tickets.Contracts`, que o `Tickets` implementa (`TicketList`) |
 | Horas contratadas | ContractedHours | As horas vendidas com o projeto, só do administrador; sem elas, o projeto fica sem saldo |
+| Horas previstas | PlannedHours | As horas que uma tarefa do cronograma deveria levar, só do administrador, comparadas com as apontadas nela (ADR-0138) |
+| Horas das tarefas, Por tarefa | TaskHours, GetTaskHours | As previstas e as apontadas de cada tarefa, com o saldo pela regra do projeto e as apontadas fora das tarefas |
 | Horas adicionais | AdditionalHours | Horas acrescentadas por um pedido fora do escopo, com o dia, as horas e o motivo, só do administrador |
 | Saldo; consumo | HoursBalance, `balance`, `consumption` | As contratadas e as adicionais menos as apontadas, e as apontadas sobre elas, em porcentagem (ADR-0128) |
 | Acima, perto do limite, dentro, sem horas contratadas | HoursBalanceState: Over, NearLimit, Within, NoContract | Os estados do saldo; perto do limite a partir de 90% num projeto em aberto |

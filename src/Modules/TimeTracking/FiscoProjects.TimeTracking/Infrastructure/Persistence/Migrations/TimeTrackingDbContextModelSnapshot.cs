@@ -96,6 +96,42 @@ namespace FiscoProjects.TimeTracking.Infrastructure.Persistence.Migrations
                         .HasAnnotation("FiscoProjects:Audit:LabelReference", "Project");
                 });
 
+            modelBuilder.Entity("FiscoProjects.TimeTracking.Domain.PlannedHours", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Hours")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Context", true)
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "Project");
+
+                    b.Property<Guid>("ScheduleItemId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Reference", "ScheduleItem");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ScheduleItemId")
+                        .IsUnique();
+
+                    b.ToTable("planned_hours", "timetracking");
+
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "ScheduleItemId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "ScheduleItem");
+                });
+
             modelBuilder.Entity("FiscoProjects.TimeTracking.Domain.TimeEntry", b =>
                 {
                     b.Property<Guid>("Id")

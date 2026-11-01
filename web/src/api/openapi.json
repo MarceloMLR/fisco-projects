@@ -10113,6 +10113,136 @@
           }
         }
       }
+    },
+    "/api/admin/project-hours/{projectId}/tasks": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "GetTaskHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectTaskHoursResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/admin/project-hours/{projectId}/tasks/{itemId}": {
+      "put": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "ChangePlannedHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlannedHoursRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -14403,6 +14533,22 @@
         },
         "description": "A person to choose, such as the manager of a project or a person to include in it: a user (`id`) or a person of\nthe company directory who never signed in (`directoryId`), who becomes a user when included (ADR-0005). Only an\nactive Administrator or Project manager can be a manager (ADR-0085), and only an active Administrator or Tech lead a\ntech lead (ADR-0097)."
       },
+      "PlannedHoursRequest": {
+        "required": [
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "hours": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "The planned hours of a task, or null to take them out."
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -15311,6 +15457,36 @@
           }
         }
       },
+      "ProjectTaskHoursResponse": {
+        "required": [
+          "planned",
+          "logged",
+          "outside",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "planned": {
+            "type": "number",
+            "format": "double"
+          },
+          "logged": {
+            "type": "number",
+            "format": "double"
+          },
+          "outside": {
+            "type": "number",
+            "format": "double"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskHoursResponse"
+            }
+          }
+        },
+        "description": "The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged\nones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule."
+      },
       "ProjectTicketDeadline": {
         "enum": [
           "FirstResponse",
@@ -16155,6 +16331,40 @@
           "TechLead"
         ],
         "description": "Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a\nvalid role."
+      },
+      "TaskHoursResponse": {
+        "required": [
+          "itemId",
+          "name",
+          "planned",
+          "logged",
+          "balance"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "planned": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "logged": {
+            "type": "number",
+            "format": "double"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/HoursBalanceResponse"
+          }
+        },
+        "description": "A task with its hours (ADR-0138): the id of the item of the schedule, the current name, the planned hours (null\nwithout them), the hours logged in it and the balance, whose contracted hours are the planned ones."
       },
       "TemplateCreatedResponse": {
         "required": [

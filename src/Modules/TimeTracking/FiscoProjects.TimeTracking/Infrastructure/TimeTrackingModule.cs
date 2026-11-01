@@ -11,7 +11,7 @@ namespace FiscoProjects.TimeTracking.Infrastructure;
 
 /// <summary>
 /// Services of the TimeTracking module: the hours each person works on the projects and the contracted and additional
-/// hours of each project, with the balance (ADR-0128).
+/// hours of each project, with the balance (ADR-0128), and the planned hours of each task (ADR-0138).
 /// </summary>
 public static class TimeTrackingModule
 {
@@ -37,6 +37,8 @@ public static class TimeTrackingModule
         services.AddScoped<AddAdditionalHours>();
         services.AddScoped<ChangeAdditionalHours>();
         services.AddScoped<DeleteAdditionalHours>();
+        services.AddScoped<GetTaskHours>();
+        services.AddScoped<ChangePlannedHours>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, TimeTrackingWarmUp>();
         return services;

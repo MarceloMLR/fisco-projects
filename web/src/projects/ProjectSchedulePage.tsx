@@ -24,7 +24,9 @@ import {
   type ScheduleItemKind,
   type SchedulePhase,
 } from '../api/client';
-import { projectScheduleQuery, queryKeys } from '../api/queries';
+import { projectScheduleQuery, queryKeys, taskHoursQuery } from '../api/queries';
+import { TaskHoursCell, TaskHoursSection } from '../admin/TaskHours';
+import { taskHoursById } from '../admin/taskHours';
 import { Alert } from '../components/Alert';
 import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
@@ -164,6 +166,13 @@ export function ProjectSchedulePage() {
   const filter = useMemo(() => filterOf(search), [search]);
   const { session } = useSession();
   const me = session.status === 'signed-in' ? session.user.id : undefined;
+  /** The hours of the tasks are the Administrator's only (ADR-0138). */
+  const isAdministrator = session.status === 'signed-in' && session.user.role === 'Administrator';
+  const { data: taskHours } = useQuery({
+    ...taskHoursQuery(project.id),
+    enabled: isAdministrator,
+  });
+  const hoursById = useMemo(() => taskHoursById(taskHours), [taskHours]);
   const filterContext = useMemo<FilterContext>(
     () => ({ today: schedule.today, me }),
     [schedule.today, me],
@@ -377,6 +386,19 @@ export function ProjectSchedulePage() {
           );
         },
       },
+      ...(isAdministrator
+        ? [
+            {
+              field: 'hours',
+              headerName: t('projects.schedule.columns.hours'),
+              width: 132,
+              renderCell: ({ row }) =>
+                row.kind === 'phase' || row.item.kind === 'Milestone' ? null : (
+                  <TaskHoursCell task={hoursById.get(row.item.id)} />
+                ),
+            } satisfies DataTableColumn<ScheduleRow>,
+          ]
+        : []),
       {
         field: 'dependsOn',
         headerName: t('projects.schedule.columns.dependsOn'),
@@ -391,7 +413,7 @@ export function ProjectSchedulePage() {
         ),
       },
     ],
-    [t, schedule, collapsed, toggleSubtasks, project.client],
+    [t, schedule, collapsed, toggleSubtasks, project.client, isAdministrator, hoursById],
   );
 
   const footer = useCallback(
@@ -1042,6 +1064,8 @@ function ItemEditor({
   const refreshed = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.projects });
     void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+    // The hours of the tasks show their current names, and a removed task leaves them (ADR-0138).
+    void queryClient.invalidateQueries({ queryKey: taskHoursQuery(project.id).queryKey });
   };
 
   const save = handleSubmit(async (values) => {
@@ -1108,6 +1132,7 @@ function ItemEditor({
       {item.hasSubtasks && <SummaryDates item={item} />}
       <SlackLine item={item} />
       <BaselineSection item={item} schedule={schedule} />
+      {item.kind === 'Task' && <ItemHours project={project} item={item} onSaved={onSaved} />}
       <Form
         aria-label={item.name}
         onSubmit={(event) => save(event)}
@@ -1174,6 +1199,37 @@ function ItemEditor({
           : t('projects.schedule.removeItem.text', { name: item.name })}
       </Dialog>
     </Box>
+  );
+}
+
+/** The hours of a task in its details, only for the Administrator (ADR-0138). */
+function ItemHours({
+  project,
+  item,
+  onSaved,
+}: {
+  project: Project;
+  item: ScheduleItem;
+  onSaved: (message: string) => void;
+}) {
+  const queryClient = useQueryClient();
+  const { session } = useSession();
+  const isAdministrator = session.status === 'signed-in' && session.user.role === 'Administrator';
+  const { data } = useQuery({ ...taskHoursQuery(project.id), enabled: isAdministrator });
+  if (!isAdministrator) {
+    return null;
+  }
+  return (
+    <TaskHoursSection
+      projectId={project.id}
+      task={item}
+      hours={data?.items.find((task) => task.itemId === item.id)}
+      onSaved={(message) => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.projectHours });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+        onSaved(message);
+      }}
+    />
   );
 }
 

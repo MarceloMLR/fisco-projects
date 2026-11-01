@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (item "Horas planejadas por tarefa" substituído pelo ADR-0138)
 date: 2026-10-29
 decision-makers: Marcelo Ribeiro
 ---

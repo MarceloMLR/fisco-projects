@@ -757,7 +757,7 @@ async function loadProject(
     await loadHours(project, id, today, ids, ticketIds, personOf);
   }
 
-  await loadBalance(project, id, today, admin);
+  await loadBalance(project, id, today, ids, admin);
 
   if (project.status !== undefined) {
     done(
@@ -989,13 +989,15 @@ async function loadHours(
 }
 
 /**
- * The contracted and the additional hours of the project, registered by the Administrator after the hours logged
- * (ADR-0128), so the hours of the projects show each state of the balance.
+ * The contracted and the additional hours of the project and the planned hours of its tasks, registered by the
+ * Administrator after the hours logged (ADR-0128, ADR-0138), so the hours of the projects show each state of the
+ * balance and of the hours of the tasks.
  */
 async function loadBalance(
   project: DemoProject,
   projectId: string,
   today: string,
+  items: ReadonlyMap<string, string>,
   admin: Api,
 ): Promise<void> {
   if (project.contractedHours !== undefined) {
@@ -1018,6 +1020,19 @@ async function loadBalance(
         },
       }),
       `Horas adicionais de ${project.code}`,
+    );
+  }
+  for (const planned of project.plannedHours ?? []) {
+    const itemId = items.get(planned.task);
+    if (itemId === undefined) {
+      throw new Error(`A tarefa ${planned.task} não está no cronograma de ${project.code}.`);
+    }
+    done(
+      await admin.PUT('/api/admin/project-hours/{projectId}/tasks/{itemId}', {
+        params: { path: { projectId, itemId } },
+        body: { hours: planned.hours },
+      }),
+      `Horas previstas de ${planned.task} em ${project.code}`,
     );
   }
 }

@@ -105,6 +105,8 @@ export type TimeEntryWork = components['schemas']['TimeEntryWorkResponse'];
 export type ProjectHours = components['schemas']['ProjectHoursResponse'];
 export type ProjectHoursDetail = components['schemas']['ProjectHoursDetailResponse'];
 export type HoursBalance = components['schemas']['HoursBalanceResponse'];
+export type TaskHours = components['schemas']['TaskHoursResponse'];
+export type ProjectTaskHours = components['schemas']['ProjectTaskHoursResponse'];
 export type HoursBalanceState = components['schemas']['HoursBalanceState'];
 export type ProjectHoursView = components['schemas']['ProjectHoursView'];
 export type AdditionalHours = components['schemas']['AdditionalHoursResponse'];
@@ -193,6 +195,7 @@ export const auditItemTypes = [
   'TimeEntry',
   'ContractedHours',
   'AdditionalHours',
+  'PlannedHours',
   'AuditExport',
   'AuditCleanup',
 ] as const;

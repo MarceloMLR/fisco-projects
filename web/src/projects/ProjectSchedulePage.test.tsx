@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type Project, projectProblems, type Schedule, type ScheduleItem } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
+import { taskHoursOf, taskHoursRow } from '../test/demoProjectHours';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import {
   type DemoProject,
@@ -1509,5 +1510,120 @@ describe('Folga pela tela', () => {
     expect(within(drawer).getByText(text.details.slack).nextElementSibling).toHaveTextContent(
       text.slack.days_one.replace('{{count}}', '1'),
     );
+  });
+});
+
+// Spec: horas-do-projeto, requirements "Horas na Lista do cronograma pela tela" and "Horas no detalhe da tarefa pela
+// tela" (ADR-0138).
+describe('Horas das tarefas pela tela', () => {
+  const hoursText = ptBR.projectHours.tasks;
+  /** The planned hours of each task as the simulated API keeps them, and the hours logged in each one. */
+  let planned: Record<string, number | null>;
+  const logged: Record<string, number> = {
+    'Parametrizar regras de ICMS': 52,
+    'Integrar emissão de NF-e': 6,
+  };
+  const asked: string[] = [];
+  const sent: unknown[] = [];
+
+  function answerTaskHours() {
+    server.use(
+      http.get('/api/admin/project-hours/:projectId/tasks', ({ params }) => {
+        asked.push(String(params.projectId));
+        return HttpResponse.json(
+          taskHoursOf(
+            Object.entries(logged).map(([name, hours]) =>
+              taskHoursRow(itemNamed(name).id, name, planned[name] ?? null, hours),
+            ),
+          ),
+        );
+      }),
+      http.put('/api/admin/project-hours/:projectId/tasks/:itemId', async ({ request, params }) => {
+        const body = (await request.json()) as { hours: number | null };
+        sent.push({ itemId: params.itemId, ...body });
+        const name = Object.keys(logged).find((one) => itemNamed(one).id === params.itemId);
+        if (name !== undefined) {
+          planned[name] = body.hours;
+        }
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+  }
+
+  beforeEach(() => {
+    planned = { 'Parametrizar regras de ICMS': 40, 'Integrar emissão de NF-e': null };
+    asked.length = 0;
+    sent.length = 0;
+    answerTaskHours();
+  });
+
+  it('Horas na Lista do administrador', async () => {
+    signedInAs('Administrator');
+    await openSchedule();
+
+    expect(
+      within(table()).getByRole('columnheader', { name: text.columns.hours }),
+    ).toBeInTheDocument();
+    const over = await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h');
+    expect(over).toHaveAttribute('data-state', 'Over');
+    expect(over).toHaveStyle({ color: 'var(--status-danger-text)' });
+    expect(over).toHaveTextContent('52 de 40 h, 12 h acima');
+    // Without planned hours, only the logged ones, without a state.
+    const only = within(rowOf('Integrar emissão de NF-e')).getByText('6 h');
+    expect(only).not.toHaveAttribute('data-state');
+    expect(only).toHaveAttribute('title', hoursText.noPlanned);
+    // A task without hours has a dash, and a milestone nothing.
+    expect(cellsOf('Testes integrados')).toContain(ptBR.projectHours.none);
+    expect(cellsOf('Aceite da homologação')).not.toContain(ptBR.projectHours.none);
+  });
+
+  it('Alterar as previstas pelo detalhe da tarefa', async () => {
+    signedInAs('Administrator');
+    await openSchedule();
+    await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h');
+
+    const drawer = await chooseItem('Parametrizar regras de ICMS');
+    const section = within(drawer).getByRole('region', { name: hoursText.section });
+    expect(within(section).getByText('40 h')).toBeVisible();
+    expect(within(section).getByText('52 h')).toBeVisible();
+    expect(within(section).getByText('12 h acima')).toBeVisible();
+    fireEvent.click(
+      within(section).getByRole('button', {
+        name: hoursText.changeLabel.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: ptBR.projectHours.plannedDialog.title,
+    });
+    const field = within(dialog).getByLabelText(ptBR.projectHours.plannedDialog.hours);
+    expect(field).toHaveValue('40');
+    fireEvent.change(field, { target: { value: '48' } });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: ptBR.projectHours.plannedDialog.save }),
+    );
+
+    expect(
+      await screen.findByText(
+        ptBR.projectHours.messages.plannedSaved.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      ),
+    ).toBeVisible();
+    expect(sent).toEqual([{ itemId: itemNamed('Parametrizar regras de ICMS').id, hours: 48 }]);
+    await waitFor(() => {
+      expect(within(section).getByText('48 h')).toBeVisible();
+    });
+    expect(within(section).getByText('4 h acima')).toBeVisible();
+    await closeDrawer(drawer);
+    expect(within(rowOf('Parametrizar regras de ICMS')).getByText('52 de 48 h')).toBeVisible();
+  });
+
+  it('Cronograma sem horas para a gestão', async () => {
+    await openSchedule();
+
+    expect(
+      within(table()).queryByRole('columnheader', { name: text.columns.hours }),
+    ).not.toBeInTheDocument();
+    const drawer = await chooseItem('Parametrizar regras de ICMS');
+    expect(within(drawer).queryByRole('region', { name: hoursText.section })).toBeNull();
+    expect(asked).toEqual([]);
   });
 });

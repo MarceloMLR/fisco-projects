@@ -1009,6 +1009,20 @@ describe('Saldo na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Horas previstas na demonstração" (ADR-0138).
+describe('Horas previstas na demonstração', () => {
+  it('Horas previstas na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // The Administrator puts the planned hours of each task of the plan, after the hours logged.
+    const planned = demoProjects.flatMap((project) => project.plannedHours ?? []);
+    expect(planned.length).toBeGreaterThan(0);
+    expect(callsBy(/ PUT \/api\/admin\/project-hours\/[^/]+\/tasks\/[^/]+$/)).toHaveLength(
+      planned.length,
+    );
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Termos na demonstração".
 describe('Termos na demonstração', () => {
   it('Termos na demonstração', async () => {
