@@ -1,6 +1,6 @@
 # Roadmap
 
-As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -31,12 +31,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 30/10/2026, Marcelo achou os avisos, os diálogos, as gavetas, a troca de página e as abas do projeto bruscos; comparou as opções numa página de prévia e, em 31/10/2026, escolheu um aviso só, no alto, com fundo de janela, e janelas e páginas que entram e saem suaves, com o movimento reduzido só esmaecendo (Fundação-5.6, `avisos-refinados`, e Fundação-5.7, `janelas-e-paginas-suaves`, ADR-0133).
 - Em 31/10/2026, com a v1 e os refinamentos concluídos, Marcelo pediu a Linha do tempo própria, prevista no ADR-0051 como evolução, para tirar a dependência da licença do Syncfusion antes de vender e depois importar do MS Project: forma o grupo 13, com a proposta aprovada por ele antes de cada implementação (ADR-0134).
 - Em 31/10/2026, Marcelo definiu que a v1 fecha com a Assinatura dos termos (grupo 12) e os refinamentos do design (até a Fundação-5.7), e que da Linha do tempo própria (grupo 13) em diante é a v2.
+- Em 01/11/2026, depois do mapeamento do que o MS Project faz e o FiscoProjects não, Marcelo pediu dois grupos de aprimoramentos do Gantt: o 14, com o que vale fazer primeiro (Excel, data-limite, filtros, dependências com intervalo e horas previstas por tarefa), e o 15, com a segunda leva, na ordem em que uma usa a outra. Cada proposta é aprovada por ele antes da implementação. Custos em reais, campos personalizados, dependências entre projetos, o .mpp e o nivelamento automático de recursos continuam fora (ADR-0016, ADR-0019, ADR-0128, ADR-0135).
 
 ## Marcos
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
-| 1. Fundação | 18 | 17 |
+| 1. Fundação | 21 | 21 |
 | 2. Acesso e administração | 18 | 18 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
@@ -49,7 +50,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
-| **Total** | **102** | **101** |
+| 14. Aprimoramento do Gantt 1 (v2) | 5 | 0 |
+| 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
+| **Total** | **116** | **105** |
 
 ## 1. Fundação
 
@@ -230,3 +233,24 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | Gantt-2 | `sem-chave-do-syncfusion` | A chave do Syncfusion sai do Key Vault, do Terraform, do Codespaces e da API | 0087, 0134 | Concluída em 31/10/2026 ([#118](https://github.com/MarceloMLR/fisco-projects/pull/118)) |
 | Gantt-3 | `importar-do-ms-project` | O "Novo projeto" a partir do XML do MS Project, com as fases, as tarefas, os marcos, as dependências, o progresso e os responsáveis | 0017, 0021, 0134, 0135, 0136 | Concluída em 31/10/2026 ([#119](https://github.com/MarceloMLR/fisco-projects/pull/119)) |
 | Gantt-3.1 | `avisos-da-importacao` | O quadro da importação do MS Project sempre visível, com o que veio do arquivo, o que ficou de fora e as tarefas sem responsável, a pedido de Marcelo | 0135 | Concluída em 31/10/2026 ([#121](https://github.com/MarceloMLR/fisco-projects/pull/121)) |
+
+## 14. Aprimoramento do Gantt 1
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| GanttA-1 | `cronograma-no-excel` | O cronograma em Excel, para quem vê o cronograma: as fases, as tarefas, os marcos, os responsáveis, as datas, o progresso, as dependências, o atraso, o caminho crítico e a linha de base | 0021, 0099 | Em andamento |
+| GanttA-2 | `data-limite-da-tarefa` | A data-limite da tarefa e do marco, que não muda as datas e avisa quando o fim passa dela, como o prazo legal de uma obrigação | 0018, 0020 | Planejada |
+| GanttA-3 | `filtros-do-cronograma` | Filtros no cronograma: atrasadas, caminho crítico, minhas tarefas, por responsável e próximas duas semanas | 0071, 0134 | Planejada |
+| GanttA-4 | `dependencias-com-intervalo` | O intervalo e os tipos "começa junto" e "termina junto" nas dependências, com a ida e volta pelo MS Project sem perdê-los (ADR novo) | 0019, 0135 | Planejada |
+| GanttA-5 | `horas-previstas-por-tarefa` | As horas previstas de cada tarefa contra as apontadas nela, só em horas | 0016, 0128 | Planejada |
+
+## 15. Aprimoramento do Gantt 2
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| GanttB-1 | `folga-das-tarefas` | Quantos dias úteis cada tarefa pode atrasar sem mudar o fim do projeto, tirados do caminho crítico | 0021, 0051 | Planejada |
+| GanttB-2 | `notas-da-tarefa` | Notas em cada tarefa e marco, como "aguardando o cliente mandar os arquivos" | 0019 | Planejada |
+| GanttB-3 | `mover-o-projeto` | Mover o cronograma inteiro em dias úteis quando o início escorrega | 0018, 0051 | Planejada |
+| GanttB-4 | `ausencias-das-pessoas` | As ausências e as férias de cada pessoa, com o aviso da tarefa que cai nelas (ADR novo) | 0018 | Planejada |
+| GanttB-5 | `carga-da-equipe` | A carga de cada pessoa por semana, entre os projetos, pelas horas previstas e pelas ausências, com o aviso de sobrecarga | 0021, 0128 | Planejada |
+| GanttB-6 | `edicao-na-tabela` | Editar o cronograma direto na tabela, como numa planilha: nome, duração, datas, dependências e progresso, pelo teclado | 0021, 0071, 0134 | Planejada |
