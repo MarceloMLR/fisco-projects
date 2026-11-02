@@ -74,7 +74,7 @@ Regras:
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
 | [0036](0036-envio-de-email-pelo-graph-com-caixa-compartilhada.md) | E-mails enviados pelo Microsoft Graph a partir de uma caixa compartilhada, com fila no banco | aceita | 2026-10-14 |
-| [0037](0037-avisos-por-email-imediatos-e-resumo-diario.md) | Avisos por e-mail imediatos só para o que pede ação, com resumo diário para o restante | aceita (por onde chegam os avisos na hora complementado pelo ADR-0149) | 2026-10-14 |
+| [0037](0037-avisos-por-email-imediatos-e-resumo-diario.md) | Avisos por e-mail imediatos só para o que pede ação, com resumo diário para o restante | aceita (por onde chegam os avisos na hora complementado pelo ADR-0149; avisos na hora sempre ligados substituídos pelo ADR-0151) | 2026-10-14 |
 | [0038](0038-sino-de-notificacoes-e-teams-depois.md) | Sino de notificações no FiscoProjects, com avisos pelo Teams depois | aceita (posição do sino substituída pelo ADR-0066; avisos na aba Atividade do Teams substituídos pelo ADR-0149) | 2026-10-15 |
 | [0039](0039-auditoria-automatica-de-alteracoes.md) | Auditoria automática de todas as alterações e dos eventos de segurança | aceita | 2026-10-15 |
 
@@ -211,6 +211,6 @@ Regras:
 | [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147; tela Cores substituída pelo ADR-0150) | 2026-11-01 |
 | [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |
 | [0148](0148-quem-ve-cada-pasta-de-documentos.md) | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto | aceita | 2026-11-02 |
-| [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita | 2026-11-02 |
+| [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151) | 2026-11-02 |
 | [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |
-| [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | proposta | 2026-11-02 |
+| [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | aceita | 2026-11-02 |

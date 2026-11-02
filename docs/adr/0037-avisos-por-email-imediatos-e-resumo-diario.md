@@ -1,5 +1,5 @@
 ---
-status: aceita (por onde chegam os avisos na hora complementado pelo ADR-0149)
+status: aceita (por onde chegam os avisos na hora complementado pelo ADR-0149; avisos na hora sempre ligados substituídos pelo ADR-0151)
 date: 2026-10-14
 decision-makers: Marcelo Ribeiro
 ---

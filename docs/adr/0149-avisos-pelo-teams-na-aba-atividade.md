@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151)
 date: 2026-11-02
 decision-makers: Marcelo Ribeiro
 ---
