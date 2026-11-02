@@ -3,8 +3,8 @@ using FiscoProjects.Projects.Contracts;
 
 namespace FiscoProjects.Documents.Tests;
 
-// Spec: documentos (domain side): "Pastas padrão", "Pastas do projeto", "Nova versão do documento" and "Permissões nos
-// documentos" (ADR-0031, ADR-0045, ADR-0093).
+// Spec: documentos (domain side): "Pastas padrão", "Pastas do projeto", "Nova versão do documento", "Permissões nos
+// documentos" and who sees the folders (ADR-0031, ADR-0045, ADR-0093, ADR-0148).
 public sealed class DocumentRulesTests
 {
     private static readonly DocumentViewer Person = new(Guid.CreateVersion7(), IsAdministrator: false);
@@ -14,18 +14,75 @@ public sealed class DocumentRulesTests
         new(Guid.CreateVersion7(), "ERP-FIN", "Implantação do ERP financeiro", IsClosed: false, role);
 
     [Theory(DisplayName = "Matriz dos documentos")]
-    [InlineData(ProjectMemberRole.Manager, true, true, true, true)]
-    [InlineData(ProjectMemberRole.TechLead, true, true, true, false)]
-    [InlineData(ProjectMemberRole.Contributor, true, false, false, false)]
-    [InlineData(ProjectMemberRole.Developer, true, false, false, false)]
-    [InlineData(ProjectMemberRole.Viewer, false, false, false, false)]
-    public void Permissions_FollowTheRole(ProjectMemberRole role, bool upload, bool approve, bool delete, bool terms) =>
-        DocumentAccess.Of(Person, ProjectWith(role)).Should().Be(new DocumentPermissions(upload, approve, delete, terms));
+    [InlineData(ProjectMemberRole.Manager, true, true, true)]
+    [InlineData(ProjectMemberRole.TechLead, true, true, true)]
+    [InlineData(ProjectMemberRole.Contributor, true, false, false)]
+    [InlineData(ProjectMemberRole.Developer, true, false, false)]
+    [InlineData(ProjectMemberRole.Viewer, false, false, false)]
+    public void Permissions_FollowTheRole(ProjectMemberRole role, bool upload, bool approve, bool delete) =>
+        DocumentAccess.Of(Person, ProjectWith(role)).Should().Be(new DocumentPermissions(upload, approve, delete));
 
     [Fact(DisplayName = "Administrador em qualquer projeto")]
     public void Administrator_DoesEverything_WithoutARole() =>
         DocumentAccess.Of(Person with { IsAdministrator = true }, ProjectWith(null))
-            .Should().Be(new DocumentPermissions(true, true, true, true));
+            .Should().Be(new DocumentPermissions(true, true, true));
+
+    // Spec: documentos, "Permissões nos documentos" and "Quem vê as pastas do projeto" (ADR-0148).
+    [Theory(DisplayName = "Quem vê a pasta por papel")]
+    [InlineData(ProjectMemberRole.Manager, true)]
+    [InlineData(ProjectMemberRole.TechLead, true)]
+    [InlineData(ProjectMemberRole.Contributor, false)]
+    [InlineData(ProjectMemberRole.Developer, false)]
+    [InlineData(ProjectMemberRole.Viewer, false)]
+    public void TheFolder_IsSeenByItsRoles_AndTheManagers(ProjectMemberRole role, bool sees)
+    {
+        var folder = new DocumentFolder(Guid.CreateVersion7(), "01 Gestão do projeto", isAcceptance: false, FolderViewers.TechLead);
+
+        DocumentAccess.SeesFolder(Person, ProjectWith(role), folder).Should().Be(sees);
+        DocumentAccess.SeesFolder(Person with { IsAdministrator = true }, ProjectWith(null), folder).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Gestão vê a pasta sem papéis")]
+    public void AFolderOfNoRole_IsOnlyTheManagers()
+    {
+        var folder = new DocumentFolder(Guid.CreateVersion7(), "01 Gestão do projeto", isAcceptance: false, FolderViewers.None);
+
+        DocumentAccess.SeesFolder(Person, ProjectWith(ProjectMemberRole.Manager), folder).Should().BeTrue();
+        foreach (var role in new[] { ProjectMemberRole.TechLead, ProjectMemberRole.Contributor, ProjectMemberRole.Developer, ProjectMemberRole.Viewer })
+        {
+            DocumentAccess.SeesFolder(Person, ProjectWith(role), folder).Should().BeFalse();
+        }
+    }
+
+    [Fact(DisplayName = "Pasta de termos fixa no domínio")]
+    public void TheFolderOfTheTerms_StaysOnlyTheManagers()
+    {
+        var terms = new DocumentFolder(Guid.CreateVersion7(), "06 Termos de aceite", isAcceptance: true, FolderViewers.Everyone);
+
+        terms.VisibleTo.Should().Be(FolderViewers.None);
+        terms.ChangeVisibility(FolderViewers.TechLead).Should().BeFalse();
+        terms.VisibleTo.Should().Be(FolderViewers.None);
+        DocumentAccess.SeesFolder(Person, ProjectWith(ProjectMemberRole.TechLead), terms).Should().BeFalse();
+        DocumentAccess.SeesFolder(Person, ProjectWith(ProjectMemberRole.Manager), terms).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Papéis de quem vê a pasta")]
+    public void TheRoles_AreKeptAsFlags_InTheirOrder()
+    {
+        FolderVisibility.Of([FolderRole.Viewer, FolderRole.TechLead]).Should().Be(FolderViewers.TechLead | FolderViewers.Viewer);
+        FolderVisibility.Of([]).Should().Be(FolderViewers.None);
+        FolderVisibility.RolesOf(FolderViewers.Viewer | FolderViewers.Contributor)
+            .Should().Equal(FolderRole.Contributor, FolderRole.Viewer);
+        FolderVisibility.RolesOf(FolderViewers.Everyone).Should().HaveCount(4);
+        FolderVisibility.AreValid([FolderRole.Developer, (FolderRole)9]).Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Só o administrador muda quem vê")]
+    public void OnlyTheAdministrator_ChangesWhoSeesAFolder()
+    {
+        DocumentAccess.MayChangeFolderVisibility(Person with { IsAdministrator = true }).Should().BeTrue();
+        DocumentAccess.MayChangeFolderVisibility(Person).Should().BeFalse();
+    }
 
     [Fact(DisplayName = "Quem aprova e quem muda os outros status")]
     public void Approving_IsOfWhoApproves()
@@ -104,6 +161,17 @@ public sealed class DocumentRulesTests
 
         folders.Select(folder => folder.Name).Should().Equal("01 Gestão do projeto", "02 Contratos e compras");
         folders.Should().OnlyContain(folder => folder.ProjectId == project && !folder.IsAcceptance);
+    }
+
+    [Fact(DisplayName = "Pastas de um projeto novo com quem vê")]
+    public void NewProject_GetsWhoSeesEachDefaultFolder()
+    {
+        var management = new DefaultFolder("01 Gestão do projeto");
+        management.ChangeVisibility(FolderViewers.TechLead).Should().BeTrue();
+
+        var folders = DocumentFolder.For(Guid.CreateVersion7(), [management, new DefaultFolder("02 Contratos e compras")]);
+
+        folders.Select(folder => folder.VisibleTo).Should().Equal(FolderViewers.TechLead, FolderViewers.Everyone);
     }
 
     [Fact(DisplayName = "Nome do arquivo")]

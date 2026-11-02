@@ -87,7 +87,7 @@ Regras:
 | [0042](0042-membros-do-projeto.md) | Membros do projeto geridos pelo gerente e pelo líder técnico, com ao menos um gerente | aceita | 2026-10-15 |
 | [0043](0043-permissoes-no-projeto-e-no-cronograma.md) | Permissões no projeto e no cronograma | aceita | 2026-10-15 |
 | [0044](0044-permissoes-nos-chamados.md) | Permissões nos chamados, com todos os membros do projeto vendo todos os chamados | aceita (filas, "Assumir" e troca do responsável por quem atende substituídos pelo ADR-0068) | 2026-10-15 |
-| [0045](0045-permissoes-em-documentos-links-acessos-e-termos.md) | Permissões em documentos, links, acessos e termos de aceite | aceita (termos de aceite substituídos pelo ADR-0129) | 2026-10-15 |
+| [0045](0045-permissoes-em-documentos-links-acessos-e-termos.md) | Permissões em documentos, links, acessos e termos de aceite | aceita (termos de aceite substituídos pelo ADR-0129, e ver os documentos por pasta pelo ADR-0148) | 2026-10-15 |
 | [0046](0046-administracao-so-do-administrador.md) | Administração só do administrador, com cadastro de cliente na criação do projeto | aceita | 2026-10-15 |
 
 ## Arquitetura, infraestrutura e qualidade
@@ -210,3 +210,4 @@ Regras:
 | [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |
 | [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147) | 2026-11-01 |
 | [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |
+| [0148](0148-quem-ve-cada-pasta-de-documentos.md) | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto | aceita | 2026-11-02 |

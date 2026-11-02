@@ -6949,6 +6949,92 @@
         }
       }
     },
+    "/api/projects/{projectId}/documents/folders/{folderId}/visibility": {
+      "put": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "ChangeFolderVisibility",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "folderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderVisibilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{projectId}/documents": {
       "get": {
         "tags": [
@@ -12178,15 +12264,26 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "visibleTo": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FolderRole"
+            }
           }
-        }
+        },
+        "description": "A default folder changed: the name, whether it is active and, when given, the roles that see it."
       },
       "DefaultFolderResponse": {
         "required": [
           "id",
           "name",
           "isAcceptance",
-          "isActive"
+          "isActive",
+          "visibleTo"
         ],
         "type": "object",
         "properties": {
@@ -12202,9 +12299,15 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "visibleTo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolderRole"
+            }
           }
         },
-        "description": "A default folder: the name, whether it is the folder of the acceptance terms, and whether it is active."
+        "description": "A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles\nthat see it in the new projects, besides the Administrator and the manager (ADR-0148)."
       },
       "DeleteProjectRequest": {
         "required": [
@@ -12288,7 +12391,8 @@
           "id",
           "name",
           "isAcceptance",
-          "count"
+          "count",
+          "visibleTo"
         ],
         "type": "object",
         "properties": {
@@ -12305,16 +12409,23 @@
           "count": {
             "type": "integer",
             "format": "int32"
+          },
+          "visibleTo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolderRole"
+            }
           }
         },
-        "description": "A folder of the project with how many documents not obsolete it has."
+        "description": "A folder of the project with how many documents not obsolete it has and the roles that see it, besides the\nAdministrator and the manager (ADR-0148)."
       },
       "DocumentFoldersResponse": {
         "required": [
           "folders",
           "total",
           "permissions",
-          "maxBytes"
+          "maxBytes",
+          "canChangeVisibility"
         ],
         "type": "object",
         "properties": {
@@ -12334,9 +12445,12 @@
           "maxBytes": {
             "type": "integer",
             "format": "int64"
+          },
+          "canChangeVisibility": {
+            "type": "boolean"
           }
         },
-        "description": "The folders the person sees, the total for the tab, the permissions and the size a file may have."
+        "description": "The folders the person sees, the total for the tab, the permissions, the size a file may have and whether the person\nchanges who sees the folders (only the Administrator, with the project open, ADR-0148)."
       },
       "DocumentLinkRequest": {
         "required": [
@@ -12649,6 +12763,30 @@
           }
         },
         "description": "An environment the credentials of the project use, with how many credentials it has."
+      },
+      "FolderRole": {
+        "enum": [
+          "TechLead",
+          "Contributor",
+          "Developer",
+          "Viewer"
+        ],
+        "description": "A role of a project that a folder may leave out (ADR-0148): the Administrator and the manager see every folder, so\nthey are no choice."
+      },
+      "FolderVisibilityRequest": {
+        "required": [
+          "visibleTo"
+        ],
+        "type": "object",
+        "properties": {
+          "visibleTo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolderRole"
+            }
+          }
+        },
+        "description": "Who sees a folder of a project, besides the Administrator and the manager (ADR-0148)."
       },
       "GeneralRulesResponse": {
         "required": [
@@ -14183,8 +14321,18 @@
               "null",
               "string"
             ]
+          },
+          "visibleTo": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FolderRole"
+            }
           }
-        }
+        },
+        "description": "A new default folder: the name and the roles that see it (none given: the four)."
       },
       "NewLinkCategoryRequest": {
         "required": [

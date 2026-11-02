@@ -8,6 +8,7 @@ import { renderApp } from '../test/renderApp';
 import { marina, problem, server } from '../test/server';
 
 const text = ptBR.defaultFolders;
+const visibility = ptBR.folderVisibility;
 const administrator = { ...marina, role: 'Administrator' as const };
 let folders: DefaultFolder[];
 const requests: string[] = [];
@@ -19,20 +20,24 @@ beforeEach(() => {
     http.get('/api/session', () => HttpResponse.json(administrator)),
     http.get('/api/admin/document-folders', () => HttpResponse.json(folders)),
     http.post('/api/admin/document-folders', async ({ request }) => {
-      const body = (await request.json()) as Pick<DefaultFolder, 'name'>;
-      requests.push(`POST ${body.name}`);
+      const body = (await request.json()) as Pick<DefaultFolder, 'name' | 'visibleTo'>;
+      requests.push(`POST ${body.name} ${body.visibleTo.join(',')}`);
       if (folders.some((folder) => folder.name.toLowerCase() === body.name.toLowerCase())) {
         return problem(409, 'urn:fiscoprojects:problem:document-folder-name-in-use');
       }
       const id = '0199f5a2-7c1e-7d40-9a1b-b00000000009';
-      folders = [...folders, { id, name: body.name, isAcceptance: false, isActive: true }].sort(
-        (a, b) => a.name.localeCompare(b.name),
-      );
+      folders = [
+        ...folders,
+        { id, name: body.name, isAcceptance: false, isActive: true, visibleTo: body.visibleTo },
+      ].sort((a, b) => a.name.localeCompare(b.name));
       return HttpResponse.json({ id }, { status: 201 });
     }),
     http.put('/api/admin/document-folders/:id', async ({ params, request }) => {
-      const body = (await request.json()) as Pick<DefaultFolder, 'name' | 'isActive'>;
-      requests.push(`PUT ${body.name} ${String(body.isActive)}`);
+      const body = (await request.json()) as Pick<DefaultFolder, 'name' | 'isActive'> &
+        Partial<Pick<DefaultFolder, 'visibleTo'>>;
+      requests.push(
+        `PUT ${body.name} ${String(body.isActive)}${body.visibleTo === undefined ? '' : ` ${body.visibleTo.join(',')}`}`,
+      );
       folders = folders.map((folder) =>
         folder.id === params.id ? { ...folder, ...body } : folder,
       );
@@ -60,8 +65,15 @@ describe('Pastas padrão na Administração', () => {
       'page',
     );
     expect(screen.getByText(text.note)).toBeVisible();
-    expect(rows()[5]).toBe(`06 Termos de aceite${text.acceptance}${text.statuses.Active}`);
-    expect(rows()[3]).toBe(`04 Atas de reunião${text.regular}${text.statuses.Inactive}`);
+    expect(rows()[5]).toBe(
+      `06 Termos de aceite${visibility.onlyManagement}${text.acceptance}${text.statuses.Active}`,
+    );
+    expect(rows()[3]).toBe(
+      `04 Atas de reunião${visibility.everyone}${text.regular}${text.statuses.Inactive}`,
+    );
+    expect(rows()[0]).toBe(
+      `01 Gestão do projeto${visibility.management} e Líder técnico${text.regular}${text.statuses.Active}`,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: text.newFolder }));
     const dialog = await screen.findByRole('dialog', { name: text.dialog.newTitle });
@@ -73,7 +85,7 @@ describe('Pastas padrão na Administração', () => {
     await waitFor(() => {
       expect(rows()).toHaveLength(7);
     });
-    expect(requests).toEqual(['POST 05a Treinamentos']);
+    expect(requests).toEqual(['POST 05a Treinamentos TechLead,Contributor,Developer,Viewer']);
     expect(
       await screen.findByText(text.messages.added.replace('{{name}}', '05a Treinamentos')),
     ).toBeVisible();
@@ -99,7 +111,59 @@ describe('Pastas padrão na Administração', () => {
     });
     fireEvent.click(within(dialog).getByRole('button', { name: text.dialog.add }));
     expect(await within(dialog).findByText(text.errors.nameRequired)).toBeVisible();
-    expect(requests).toEqual(['POST 03 requisitos e especificações']);
+    expect(requests).toEqual([
+      'POST 03 requisitos e especificações TechLead,Contributor,Developer,Viewer',
+    ]);
+  });
+
+  // Spec: documentos, requirement "Quem vê as pastas pela tela" (ADR-0148).
+  it('Quem vê na pasta padrão pela tela', async () => {
+    await renderApp('/admin/document-folders');
+    await waitFor(() => {
+      expect(rows()).toHaveLength(6);
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: text.menu.button.replace('{{name}}', '02 Contratos e compras'),
+      }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.edit }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.editTitle });
+    expect(within(dialog).getByText(visibility.help)).toBeVisible();
+    const viewer = within(dialog).getByRole('checkbox', { name: ptBR.projects.roles.Viewer });
+    expect(viewer).toBeChecked();
+    fireEvent.click(viewer);
+    fireEvent.click(within(dialog).getByRole('button', { name: text.dialog.save }));
+
+    await waitFor(() => {
+      expect(rows()[1]).toBe(
+        `02 Contratos e compras${visibility.management}, Líder técnico, Colaborador e Desenvolvedor${text.regular}${text.statuses.Active}`,
+      );
+    });
+    expect(requests).toEqual(['PUT 02 Contratos e compras true TechLead,Contributor,Developer']);
+  });
+
+  it('Pasta de termos com quem vê fixo pela tela', async () => {
+    await renderApp('/admin/document-folders');
+    await waitFor(() => {
+      expect(rows()).toHaveLength(6);
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: text.menu.button.replace('{{name}}', '06 Termos de aceite'),
+      }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: text.menu.edit }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.editTitle });
+    expect(within(dialog).getByText(visibility.termsFixed)).toBeVisible();
+    expect(within(dialog).queryByRole('checkbox')).not.toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: text.dialog.save }));
+
+    await waitFor(() => {
+      expect(requests).toEqual(['PUT 06 Termos de aceite true']);
+    });
   });
 
   it('Pasta de termos sempre ativa pela tela', async () => {

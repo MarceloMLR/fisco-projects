@@ -64,8 +64,8 @@ public enum DocumentOutcome
 public sealed record DocumentResult(DocumentOutcome Outcome, Guid? Id = null, int? Version = null, FileRefusal Refusal = FileRefusal.None);
 
 /// <summary>
-/// A project as the person sees it in the documents: the project, the permissions and the folders the person sees; the
-/// folder of the terms only for who manages the terms (ADR-0129).
+/// A project as the person sees it in the documents: the project, the permissions and the folders the person sees, by
+/// who sees each folder (ADR-0148); the folder of the terms only for who manages the terms (ADR-0129).
 /// </summary>
 public sealed record DocumentArea(ProjectAccess Project, DocumentPermissions Permissions, IReadOnlyList<DocumentFolder> Folders)
 {
@@ -84,8 +84,9 @@ public sealed record DocumentArea(ProjectAccess Project, DocumentPermissions Per
 public sealed class DocumentAreas(IProjectAccess projects, ProjectFolders folders)
 {
     /// <summary>
-    /// The area of the project; null when the person does not see the project (404). The folder of the terms is only of
-    /// who manages the terms (ADR-0129).
+    /// The area of the project; null when the person does not see the project (404). A folder the role of the person
+    /// does not see is left out, with its documents (ADR-0148), and the folder of the terms is only of who manages the
+    /// terms (ADR-0129).
     /// </summary>
     public async Task<DocumentArea?> OfAsync(Guid projectId, DocumentViewer viewer, CancellationToken cancellationToken)
     {
@@ -97,9 +98,7 @@ public sealed class DocumentAreas(IProjectAccess projects, ProjectFolders folder
 
         var permissions = DocumentAccess.Of(viewer, project);
         var all = await folders.OfAsync(projectId, cancellationToken);
-        return permissions.SeesAcceptanceFolder
-            ? new(project, permissions, all)
-            : new(project, permissions, [.. all.Where(folder => !folder.IsAcceptance)]);
+        return new(project, permissions, [.. all.Where(folder => DocumentAccess.SeesFolder(viewer, project, folder))]);
     }
 }
 

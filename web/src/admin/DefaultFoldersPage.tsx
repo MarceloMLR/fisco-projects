@@ -3,6 +3,7 @@ import BlockOutlined from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
+import LockOutlined from '@mui/icons-material/LockOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -22,6 +23,7 @@ import { DefaultFolderDialog } from './DefaultFolderDialog';
 import { Button, IconButton } from '../components/Button';
 import { useNotify } from '../notices/notify';
 
+import { isRestricted, visibilityText } from '../documents/folderVisibility';
 /** The default folders fit in one page: an installation keeps a few of them. */
 const pageSize = 100;
 const noFolders: DefaultFolder[] = [];
@@ -38,8 +40,9 @@ const iconButtonSx = {
 /**
  * "Pastas padrão" of the Administration (ADR-0031, ADR-0046), drawn as "Fornecedores", since the canvas has no screen
  * for it: the folders every new project gets, in the order of the name, with the one of the acceptance terms marked
- * (ADR-0093), the situation and "Nova pasta". Each one has a menu to rename, deactivate or reactivate; the folder of
- * the terms is always active. The changes are for the new projects.
+ * (ADR-0093), who sees each one (ADR-0148), the situation and "Nova pasta". Each one has a menu to edit (the name and
+ * who sees it), deactivate or reactivate; the folder of the terms is always active and only of the managers. The
+ * changes are for the new projects.
  */
 export function DefaultFoldersPage() {
   const { t } = useTranslation();
@@ -112,6 +115,36 @@ export function DefaultFoldersPage() {
             }}
           >
             {row.name}
+          </Box>
+        ),
+      },
+      {
+        field: 'visibleTo',
+        headerName: t('defaultFolders.columns.visibleTo'),
+        width: 240,
+        renderCell: ({ row }) => (
+          <Box
+            component="span"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 'var(--space-1)',
+              minWidth: 0,
+              color: isRestricted(row) ? 'var(--text)' : 'var(--text-secondary)',
+            }}
+          >
+            {isRestricted(row) && (
+              <LockOutlined
+                aria-hidden
+                sx={{ fontSize: 'var(--icon-sm)', color: 'var(--text-secondary)' }}
+              />
+            )}
+            <Box
+              component="span"
+              sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
+              {visibilityText(row, t)}
+            </Box>
           </Box>
         ),
       },

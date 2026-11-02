@@ -1557,6 +1557,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{projectId}/documents/folders/{folderId}/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeFolderVisibility"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{projectId}/documents": {
         parameters: {
             query?: never;
@@ -2694,17 +2710,23 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        /** @description A default folder changed: the name, whether it is active and, when given, the roles that see it. */
         DefaultFolderRequest: {
             name: null | string;
             isActive: boolean;
+            visibleTo?: null | components["schemas"]["FolderRole"][];
         };
-        /** @description A default folder: the name, whether it is the folder of the acceptance terms, and whether it is active. */
+        /**
+         * @description A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles
+         *     that see it in the new projects, besides the Administrator and the manager (ADR-0148).
+         */
         DefaultFolderResponse: {
             /** Format: uuid */
             id: string;
             name: string;
             isAcceptance: boolean;
             isActive: boolean;
+            visibleTo: components["schemas"]["FolderRole"][];
         };
         /** @description The code of the project, typed by the Administrator to confirm the deletion (ADR-0041). */
         DeleteProjectRequest: {
@@ -2730,7 +2752,10 @@ export interface components {
             versions: components["schemas"]["DocumentVersionResponse"][];
             permissions: components["schemas"]["DocumentPermissionsResponse"];
         };
-        /** @description A folder of the project with how many documents not obsolete it has. */
+        /**
+         * @description A folder of the project with how many documents not obsolete it has and the roles that see it, besides the
+         *     Administrator and the manager (ADR-0148).
+         */
         DocumentFolderResponse: {
             /** Format: uuid */
             id: string;
@@ -2738,8 +2763,12 @@ export interface components {
             isAcceptance: boolean;
             /** Format: int32 */
             count: number;
+            visibleTo: components["schemas"]["FolderRole"][];
         };
-        /** @description The folders the person sees, the total for the tab, the permissions and the size a file may have. */
+        /**
+         * @description The folders the person sees, the total for the tab, the permissions, the size a file may have and whether the person
+         *     changes who sees the folders (only the Administrator, with the project open, ADR-0148).
+         */
         DocumentFoldersResponse: {
             folders: components["schemas"]["DocumentFolderResponse"][];
             /** Format: int32 */
@@ -2747,6 +2776,7 @@ export interface components {
             permissions: components["schemas"]["DocumentPermissionsResponse"];
             /** Format: int64 */
             maxBytes: number;
+            canChangeVisibility: boolean;
         };
         /** @description The phase, or the task or milestone, the document is linked to; both null take the link away. */
         DocumentLinkRequest: {
@@ -2845,6 +2875,16 @@ export interface components {
             name: string;
             /** Format: int32 */
             count: number;
+        };
+        /**
+         * @description A role of a project that a folder may leave out (ADR-0148): the Administrator and the manager see every folder, so
+         *     they are no choice.
+         * @enum {unknown}
+         */
+        FolderRole: "TechLead" | "Contributor" | "Developer" | "Viewer";
+        /** @description Who sees a folder of a project, besides the Administrator and the manager (ADR-0148). */
+        FolderVisibilityRequest: {
+            visibleTo: components["schemas"]["FolderRole"][];
         };
         /**
          * @description The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
@@ -3319,8 +3359,10 @@ export interface components {
             count: number;
             groups: components["schemas"]["MyWorkGroupResponse"][];
         };
+        /** @description A new default folder: the name and the roles that see it (none given: the four). */
         NewDefaultFolderRequest: {
             name: null | string;
+            visibleTo?: null | components["schemas"]["FolderRole"][];
         };
         NewLinkCategoryRequest: {
             name: null | string;
@@ -10890,6 +10932,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ChangeFolderVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                projectId: string;
+                folderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderVisibilityRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
             };
         };
     };

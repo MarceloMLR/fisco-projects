@@ -29,6 +29,12 @@ public interface IFolderStore
     void AddFolders(IEnumerable<DocumentFolder> folders);
 
     /// <summary>
+    /// Saves who sees a folder of a project with, in the same transaction, the record of the change in the audit: the
+    /// folders of the projects stay out of the automatic audit (ADR-0148).
+    /// </summary>
+    Task SaveVisibilityAsync(DocumentFolder folder, FolderViewers before, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Saves; throws <see cref="DefaultFolderNameInUseException"/> when another default folder took the name, and
     /// <see cref="DocumentChangedException"/> when someone made the same folders or documents at the same time.
     /// </summary>
@@ -45,6 +51,7 @@ public enum FolderOutcome
     Invalid = 3,
     NameInUse = 4,
     AcceptanceAlwaysActive = 5,
+    AcceptanceVisibilityFixed = 6,
 }
 
 /// <summary>What happened to a default folder: its id, or why it was not saved.</summary>
@@ -57,12 +64,16 @@ public sealed class ListDefaultFolders(IFolderStore folders)
         folders.DefaultFoldersAsync(cancellationToken);
 }
 
-/// <summary>The Administrator includes a default folder, active, with a name no other folder has (ADR-0031).</summary>
+/// <summary>
+/// The Administrator includes a default folder, active, with a name no other folder has (ADR-0031), seen by the roles
+/// chosen, or by all four without a choice (ADR-0148).
+/// </summary>
 public sealed class AddDefaultFolder(IFolderStore folders)
 {
-    public async Task<FolderResult> ExecuteAsync(string? name, CancellationToken cancellationToken)
+    public async Task<FolderResult> ExecuteAsync(
+        string? name, IReadOnlyList<FolderRole>? visibleTo, CancellationToken cancellationToken)
     {
-        if (FolderNames.Of(name) is not { } valid)
+        if (FolderNames.Of(name) is not { } valid || (visibleTo is not null && !FolderVisibility.AreValid(visibleTo)))
         {
             return new(FolderOutcome.Invalid);
         }
@@ -72,7 +83,7 @@ public sealed class AddDefaultFolder(IFolderStore folders)
             return new(FolderOutcome.NameInUse);
         }
 
-        var folder = new DefaultFolder(valid);
+        var folder = new DefaultFolder(valid, visibleTo is null ? FolderViewers.Everyone : FolderVisibility.Of(visibleTo));
         folders.AddDefaultFolder(folder);
         return await SaveAsync(folders, folder.Id, cancellationToken);
     }
@@ -93,12 +104,14 @@ public sealed class AddDefaultFolder(IFolderStore folders)
 }
 
 /// <summary>
-/// The Administrator renames, deactivates or reactivates a default folder (ADR-0031): the change is for the new
-/// projects; the folder of the acceptance terms is never deactivated (ADR-0093).
+/// The Administrator renames, deactivates or reactivates a default folder (ADR-0031) and changes who sees it, when the
+/// roles come (ADR-0148): the change is for the new projects; the folder of the acceptance terms is never deactivated
+/// (ADR-0093) and stays only of the managers.
 /// </summary>
 public sealed class ChangeDefaultFolder(IFolderStore folders)
 {
-    public async Task<FolderResult> ExecuteAsync(Guid id, string? name, bool isActive, CancellationToken cancellationToken)
+    public async Task<FolderResult> ExecuteAsync(
+        Guid id, string? name, bool isActive, IReadOnlyList<FolderRole>? visibleTo, CancellationToken cancellationToken)
     {
         var folder = await folders.FindDefaultFolderAsync(id, cancellationToken);
         if (folder is null)
@@ -106,7 +119,7 @@ public sealed class ChangeDefaultFolder(IFolderStore folders)
             return new(FolderOutcome.NotFound);
         }
 
-        if (FolderNames.Of(name) is not { } valid)
+        if (FolderNames.Of(name) is not { } valid || (visibleTo is not null && !FolderVisibility.AreValid(visibleTo)))
         {
             return new(FolderOutcome.Invalid);
         }
@@ -116,9 +129,81 @@ public sealed class ChangeDefaultFolder(IFolderStore folders)
             return new(FolderOutcome.NameInUse);
         }
 
+        // The folder of the terms takes no roles: an empty list says what it already is.
+        if (visibleTo is not null
+            && !folder.ChangeVisibility(FolderVisibility.Of(visibleTo))
+            && FolderVisibility.Of(visibleTo) != FolderViewers.None)
+        {
+            return new(FolderOutcome.AcceptanceVisibilityFixed);
+        }
+
         return folder.Change(valid, isActive)
             ? await AddDefaultFolder.SaveAsync(folders, id, cancellationToken)
             : new(FolderOutcome.AcceptanceAlwaysActive);
+    }
+}
+
+public enum FolderVisibilityOutcome
+{
+    Done = 1,
+    NotFound = 2,
+    Forbidden = 3,
+    AcceptanceFixed = 4,
+    Closed = 5,
+    Invalid = 6,
+}
+
+/// <summary>
+/// The Administrator changes who sees a folder of a project (ADR-0148), with the project open (ADR-0016): the other people
+/// of the project are refused (403) and who does not see the project gets 404; the folder of the terms stays only of the
+/// managers. The change goes to the audit with the project.
+/// </summary>
+public sealed class ChangeFolderVisibility(IProjectAccess projects, ProjectFolders projectFolders, IFolderStore folders)
+{
+    public async Task<FolderVisibilityOutcome> ExecuteAsync(
+        Guid projectId, Guid folderId, IReadOnlyList<FolderRole> visibleTo, DocumentViewer viewer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(visibleTo);
+        ArgumentNullException.ThrowIfNull(viewer);
+        if (await projects.FindAsync(projectId, viewer.UserId, viewer.IsAdministrator, cancellationToken) is not { } project)
+        {
+            return FolderVisibilityOutcome.NotFound;
+        }
+
+        if (!DocumentAccess.MayChangeFolderVisibility(viewer))
+        {
+            return FolderVisibilityOutcome.Forbidden;
+        }
+
+        var folder = (await projectFolders.OfAsync(projectId, cancellationToken)).FirstOrDefault(item => item.Id == folderId);
+        if (folder is null)
+        {
+            return FolderVisibilityOutcome.NotFound;
+        }
+
+        if (!FolderVisibility.AreValid(visibleTo))
+        {
+            return FolderVisibilityOutcome.Invalid;
+        }
+
+        if (folder.IsAcceptance)
+        {
+            return FolderVisibilityOutcome.AcceptanceFixed;
+        }
+
+        if (project.IsClosed)
+        {
+            return FolderVisibilityOutcome.Closed;
+        }
+
+        var before = folder.VisibleTo;
+        folder.ChangeVisibility(FolderVisibility.Of(visibleTo));
+        if (folder.VisibleTo != before)
+        {
+            await folders.SaveVisibilityAsync(folder, before, cancellationToken);
+        }
+
+        return FolderVisibilityOutcome.Done;
     }
 }
 

@@ -1,12 +1,14 @@
 using FiscoProjects.Documents.Application;
 using FiscoProjects.Documents.Domain;
+using FiscoProjects.Persistence.Auditing;
+using FiscoProjects.Projects.Contracts;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace FiscoProjects.Documents.Infrastructure.Persistence;
 
 /// <summary>The folders and the documents, in the tables of the module, saved together.</summary>
-internal sealed class DocumentStores(DocumentsDbContext db) : IFolderStore, IDocumentStore
+internal sealed class DocumentStores(DocumentsDbContext db, IEnumerable<IChangeAuditor> auditors) : IFolderStore, IDocumentStore
 {
     public async Task<IReadOnlyList<DefaultFolder>> DefaultFoldersAsync(CancellationToken cancellationToken) =>
         await db.DefaultFolders.OrderBy(folder => folder.Name).ToListAsync(cancellationToken);
@@ -23,6 +25,47 @@ internal sealed class DocumentStores(DocumentsDbContext db) : IFolderStore, IDoc
         await db.Folders.Where(folder => folder.ProjectId == projectId).OrderBy(folder => folder.Name).ToListAsync(cancellationToken);
 
     public void AddFolders(IEnumerable<DocumentFolder> folders) => db.Folders.AddRange(folders);
+
+    public Task SaveVisibilityAsync(DocumentFolder folder, FolderViewers before, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(folder);
+        var strategy = db.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async token =>
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync(token);
+            // Also on a retry, when the first save was rolled back after the change was taken as saved.
+            db.Entry(folder).Property(item => item.VisibleTo).IsModified = true;
+            await SaveChangesAsync(token);
+            if (auditors.FirstOrDefault() is { } auditor)
+            {
+                await auditor.RecordAsync(db, [VisibilityRecordOf(folder, before)], token);
+            }
+
+            await transaction.CommitAsync(token);
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// The change of who sees a folder of a project, as the audit shows it (ADR-0039, ADR-0148): the folder by its name,
+    /// the roles before and after, and the project, in every record of the item.
+    /// </summary>
+    private static AuditedChange VisibilityRecordOf(DocumentFolder folder, FolderViewers before) =>
+        new(
+            DocumentsDbContext.Schema,
+            nameof(DocumentFolder),
+            folder.Id,
+            AuditedAction.Updated,
+            folder.Name,
+            [
+                new AuditedField(nameof(DocumentFolder.VisibleTo), before.ToString(), folder.VisibleTo.ToString(), false),
+                new AuditedField(
+                    nameof(DocumentFolder.ProjectId),
+                    folder.ProjectId.ToString(),
+                    folder.ProjectId.ToString(),
+                    false,
+                    ProjectsAudit.ProjectReference,
+                    IsContext: true),
+            ]);
 
     public async Task<DocumentRows> ListAsync(DocumentQuery query, CancellationToken cancellationToken)
     {

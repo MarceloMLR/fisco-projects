@@ -902,6 +902,36 @@ describe('Documentos na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Documentos na demonstração" (ADR-0148).
+describe('Pasta da gestão escondida na demonstração', () => {
+  it('Pasta da gestão escondida na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // By the Administrator, after the documents, only the management folder of ERP-FIN, for the tech lead.
+    const changes = callsBy(/ PUT \/api\/projects\/[^/]+\/documents\/folders\/[^/]+\/visibility$/);
+    expect(changes).toHaveLength(1);
+    expect(people(/\/documents\/folders\/[^/]+\/visibility$/)).toEqual(['paulo']);
+    const [change] = changes;
+    expect(change).toContain('/documents/folders/0199f5a2-2222-7000-8000-000000000001/visibility');
+    const saved = [...bodies.entries()]
+      .filter(([path]) => path.endsWith('/visibility'))
+      .flatMap(([, body]) => body);
+    expect(saved).toEqual([{ visibleTo: ['TechLead'] }]);
+    const plan = demoProjects.find((project) => project.code === 'ERP-FIN');
+    expect(plan?.folderVisibility).toEqual([
+      { folder: '01 Gestão do projeto', visibleTo: ['TechLead'] },
+    ]);
+    // After the documents of ERP-FIN, which the plan sends before the projects that follow.
+    const main = created.find((project) => project.code === mainProject)?.id ?? '';
+    const visibility = calls.findIndex((call) => call.includes('/visibility'));
+    const lastUpload = calls.findLastIndex((call) =>
+      call.endsWith(`POST /api/projects/${main}/documents`),
+    );
+    expect(lastUpload).toBeGreaterThan(-1);
+    expect(visibility).toBeGreaterThan(lastUpload);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Links na demonstração".
 describe('Links na demonstração', () => {
   it('Links na demonstração', async () => {

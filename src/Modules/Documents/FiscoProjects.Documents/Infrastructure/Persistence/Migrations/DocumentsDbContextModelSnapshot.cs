@@ -228,6 +228,9 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
+                    b.Property<int>("VisibleTo")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
@@ -244,42 +247,48 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000001"),
                             IsAcceptance = false,
                             IsActive = true,
-                            Name = "01 Gestão do projeto"
+                            Name = "01 Gestão do projeto",
+                            VisibleTo = 15
                         },
                         new
                         {
                             Id = new Guid("019a0a10-0000-7000-8000-000000000002"),
                             IsAcceptance = false,
                             IsActive = true,
-                            Name = "02 Contratos e compras"
+                            Name = "02 Contratos e compras",
+                            VisibleTo = 15
                         },
                         new
                         {
                             Id = new Guid("019a0a10-0000-7000-8000-000000000003"),
                             IsAcceptance = false,
                             IsActive = true,
-                            Name = "03 Requisitos e especificações"
+                            Name = "03 Requisitos e especificações",
+                            VisibleTo = 15
                         },
                         new
                         {
                             Id = new Guid("019a0a10-0000-7000-8000-000000000004"),
                             IsAcceptance = false,
                             IsActive = true,
-                            Name = "04 Atas de reunião"
+                            Name = "04 Atas de reunião",
+                            VisibleTo = 15
                         },
                         new
                         {
                             Id = new Guid("019a0a10-0000-7000-8000-000000000005"),
                             IsAcceptance = false,
                             IsActive = true,
-                            Name = "05 Entregas e manuais"
+                            Name = "05 Entregas e manuais",
+                            VisibleTo = 15
                         },
                         new
                         {
                             Id = new Guid("019a0a10-0000-7000-8000-000000000006"),
                             IsAcceptance = true,
                             IsActive = true,
-                            Name = "06 Termos de aceite"
+                            Name = "06 Termos de aceite",
+                            VisibleTo = 0
                         });
                 });
 
@@ -383,6 +392,9 @@ namespace FiscoProjects.Documents.Infrastructure.Persistence.Migrations
                     b.Property<string>("StorageFolderId")
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
+
+                    b.Property<int>("VisibleTo")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

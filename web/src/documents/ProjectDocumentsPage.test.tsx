@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { DocumentFolders, DocumentRow } from '../api/client';
+import type { DocumentFolders, DocumentRow, FolderRole } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
 import {
   demoDocumentArea,
@@ -15,6 +15,7 @@ import { phoneWidth, renderApp } from '../test/renderApp';
 import { demoProjects, demoSchedule, problem, server, signedInAs } from '../test/server';
 
 const text = ptBR.documents;
+const visibility = ptBR.folderVisibility;
 const requests: { method: string; path: string; body: string }[] = [];
 let area: DocumentFolders;
 let documents: DocumentRow[];
@@ -531,5 +532,73 @@ describe('Botões em andamento nos documentos', () => {
       expect(screen.queryByRole('dialog', { name: text.link.title })).toBeNull();
     });
     expect(requests).toHaveLength(1);
+  });
+});
+
+// Spec: documentos, requirement "Quem vê as pastas pela tela" (ADR-0148).
+describe('Quem vê as pastas na aba Documentos', () => {
+  it('Quem vê esta pasta pela tela', async () => {
+    signedInAs('Administrator');
+    area = { ...area, canChangeVisibility: true };
+    server.use(
+      http.put(
+        '/api/projects/:id/documents/folders/:folderId/visibility',
+        async ({ params, request }) => {
+          const body = (await request.json()) as { visibleTo: FolderRole[] };
+          requests.push({
+            method: 'PUT',
+            path: `folders/${String(params.folderId)}/visibility`,
+            body: body.visibleTo.join(','),
+          });
+          area = {
+            ...area,
+            folders: area.folders.map((folder) =>
+              folder.id === params.folderId ? { ...folder, visibleTo: body.visibleTo } : folder,
+            ),
+          };
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+    await openDocuments();
+
+    fireEvent.click(screen.getByRole('button', { name: /03 Requisitos/ }));
+    await screen.findByRole('heading', { name: /03 Requisitos e especificações/ });
+    expect(screen.queryByText(/Visível para/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: visibility.change }));
+    const dialog = await screen.findByRole('dialog', { name: visibility.dialog.title });
+    for (const role of ['Contributor', 'Developer', 'Viewer'] as const) {
+      fireEvent.click(within(dialog).getByRole('checkbox', { name: ptBR.projects.roles[role] }));
+    }
+    fireEvent.click(within(dialog).getByRole('button', { name: visibility.dialog.save }));
+
+    expect(
+      await screen.findByText(
+        visibility.messages.saved.replace('{{name}}', '03 Requisitos e especificações'),
+      ),
+    ).toBeVisible();
+    expect(
+      await screen.findByText(
+        visibility.restricted.replace('{{who}}', `${visibility.management} e Líder técnico`),
+      ),
+    ).toBeVisible();
+    expect(requests).toEqual([
+      { method: 'PUT', path: `folders/${folderIds.requirements}/visibility`, body: 'TechLead' },
+    ]);
+  });
+
+  it('Quem vê esta pasta só do administrador', async () => {
+    await openDocuments();
+
+    // The management folder is seen only by the tech lead, besides the managers: the manager sees the mark.
+    expect(
+      await screen.findByText(
+        visibility.restricted.replace('{{who}}', `${visibility.management} e Líder técnico`),
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: visibility.change })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /03 Requisitos/ }));
+    await screen.findByRole('heading', { name: /03 Requisitos e especificações/ });
+    expect(screen.queryByRole('button', { name: visibility.change })).not.toBeInTheDocument();
   });
 });

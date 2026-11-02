@@ -14,6 +14,7 @@ type TicketPriority = components['schemas']['TicketPriority'];
 type TicketAction = components['schemas']['TicketAction'];
 type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 type DocumentStatus = components['schemas']['DocumentStatus'];
+type FolderRole = components['schemas']['FolderRole'];
 
 /**
  * The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). Sofia
@@ -247,6 +248,15 @@ export interface DemoDocument {
   link?: { by: DemoPerson; to: string };
 }
 
+/**
+ * Who sees a folder of the project, besides the Administrator and the manager (ADR-0148), changed by the Administrator
+ * once the documents are sent.
+ */
+export interface DemoFolderVisibility {
+  folder: string;
+  visibleTo: readonly FolderRole[];
+}
+
 /** A link of the project, included by a person who keeps links (ADR-0032, ADR-0045), in a category of the migration. */
 export interface DemoLink {
   title: string;
@@ -370,6 +380,8 @@ export interface DemoProject {
   tickets?: readonly DemoTicket[];
   /** The documents sent once the schedule is built, before the project gets its status. */
   documents?: readonly DemoDocument[];
+  /** Who sees the folders, changed by the Administrator after the documents (ADR-0148). */
+  folderVisibility?: readonly DemoFolderVisibility[];
   /** The links included once the schedule is built, before the project gets its status. */
   links?: readonly DemoLink[];
   /** The credentials included once the schedule is built, before the project gets its status. */
@@ -974,6 +986,8 @@ export const demoProjects: readonly DemoProject[] = [
         link: { by: 'diego', to: 'Testes integrados' },
       },
     ],
+    // The management folder of the main project only for the tech lead, besides the managers (ADR-0148).
+    folderVisibility: [{ folder: '01 Gestão do projeto', visibleTo: ['TechLead'] }],
     links: [
       {
         title: 'ERP · Homologação',

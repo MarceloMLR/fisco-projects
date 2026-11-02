@@ -12,24 +12,43 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FiscoProjects.Documents.Endpoints;
 
-/// <summary>A default folder: the name, whether it is the folder of the acceptance terms, and whether it is active.</summary>
-public sealed record DefaultFolderResponse(Guid Id, string Name, bool IsAcceptance, bool IsActive);
+/// <summary>
+/// A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles
+/// that see it in the new projects, besides the Administrator and the manager (ADR-0148).
+/// </summary>
+public sealed record DefaultFolderResponse(
+    Guid Id, string Name, bool IsAcceptance, bool IsActive, IReadOnlyList<FolderRole> VisibleTo);
 
-public sealed record NewDefaultFolderRequest(string? Name);
+/// <summary>A new default folder: the name and the roles that see it (none given: the four).</summary>
+public sealed record NewDefaultFolderRequest(string? Name, IReadOnlyList<FolderRole>? VisibleTo = null);
 
-public sealed record DefaultFolderRequest(string? Name, bool IsActive);
+/// <summary>A default folder changed: the name, whether it is active and, when given, the roles that see it.</summary>
+public sealed record DefaultFolderRequest(string? Name, bool IsActive, IReadOnlyList<FolderRole>? VisibleTo = null);
+
+/// <summary>Who sees a folder of a project, besides the Administrator and the manager (ADR-0148).</summary>
+public sealed record FolderVisibilityRequest(IReadOnlyList<FolderRole> VisibleTo);
 
 public sealed record DefaultFolderCreatedResponse(Guid Id);
 
-/// <summary>A folder of the project with how many documents not obsolete it has.</summary>
-public sealed record DocumentFolderResponse(Guid Id, string Name, bool IsAcceptance, int Count);
+/// <summary>
+/// A folder of the project with how many documents not obsolete it has and the roles that see it, besides the
+/// Administrator and the manager (ADR-0148).
+/// </summary>
+public sealed record DocumentFolderResponse(Guid Id, string Name, bool IsAcceptance, int Count, IReadOnlyList<FolderRole> VisibleTo);
 
 /// <summary>What the person may do with the documents of the project; all false in a completed or cancelled project.</summary>
 public sealed record DocumentPermissionsResponse(bool CanUpload, bool CanApprove, bool CanDelete);
 
-/// <summary>The folders the person sees, the total for the tab, the permissions and the size a file may have.</summary>
+/// <summary>
+/// The folders the person sees, the total for the tab, the permissions, the size a file may have and whether the person
+/// changes who sees the folders (only the Administrator, with the project open, ADR-0148).
+/// </summary>
 public sealed record DocumentFoldersResponse(
-    IReadOnlyList<DocumentFolderResponse> Folders, int Total, DocumentPermissionsResponse Permissions, long MaxBytes);
+    IReadOnlyList<DocumentFolderResponse> Folders,
+    int Total,
+    DocumentPermissionsResponse Permissions,
+    long MaxBytes,
+    bool CanChangeVisibility);
 
 /// <summary>The item of the schedule a document is linked to, with its current name.</summary>
 public sealed record DocumentLinkResponse(Guid Id, ScheduleItemType Type, string Name);
@@ -114,6 +133,10 @@ public static class DocumentEndpoints
             .WithTags("Documents")
             .ProducesProblem(StatusCodes.Status401Unauthorized);
         documents.MapGet("/folders", FoldersAsync).WithName("ListDocumentFolders");
+        documents.MapPut("/folders/{folderId:guid}/visibility", ChangeVisibilityAsync).WithName("ChangeFolderVisibility")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
         documents.MapGet("/", ListAsync).WithName("ListDocuments");
         // The protection against other sites is the X-CSRF header of the application (ADR-0054), not the antiforgery
         // token of ASP.NET Core forms.
@@ -166,10 +189,36 @@ public static class DocumentEndpoints
         }
 
         return TypedResults.Ok(new DocumentFoldersResponse(
-            [.. folders.Folders.Select(item => new DocumentFolderResponse(item.Folder.Id, item.Folder.Name, item.Folder.IsAcceptance, item.Count))],
+            [.. folders.Folders.Select(item => new DocumentFolderResponse(
+                item.Folder.Id, item.Folder.Name, item.Folder.IsAcceptance, item.Count, FolderVisibility.RolesOf(item.Folder.VisibleTo)))],
             folders.Total,
             PermissionsOf(folders.Permissions, folders.IsClosed),
-            folders.MaxBytes));
+            folders.MaxBytes,
+            DocumentAccess.MayChangeFolderVisibility(viewer) && !folders.IsClosed));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangeVisibilityAsync(
+        Guid projectId,
+        Guid folderId,
+        FolderVisibilityRequest request,
+        HttpContext http,
+        IUserAccess access,
+        ChangeFolderVisibility change,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await change.ExecuteAsync(projectId, folderId, request.VisibleTo ?? [], viewer, cancellationToken) switch
+        {
+            FolderVisibilityOutcome.Done => TypedResults.NoContent(),
+            FolderVisibilityOutcome.NotFound => TypedResults.NotFound(),
+            FolderVisibilityOutcome.Forbidden => TypedResults.Forbid(),
+            FolderVisibilityOutcome.Closed => ProjectClosed(),
+            FolderVisibilityOutcome.AcceptanceFixed => AcceptanceVisibilityFixed(),
+            _ => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["visibleTo"] = ["The roles are TechLead, Contributor, Developer and Viewer."],
+            }),
+        };
     }
 
     private static async Task<Results<Ok<DocumentPageResponse>, NotFound>> ListAsync(
@@ -308,12 +357,13 @@ public static class DocumentEndpoints
         ListDefaultFolders list, CancellationToken cancellationToken) =>
         TypedResults.Ok<IReadOnlyList<DefaultFolderResponse>>(
             [.. (await list.ExecuteAsync(cancellationToken)).Select(folder =>
-                new DefaultFolderResponse(folder.Id, folder.Name, folder.IsAcceptance, folder.IsActive))]);
+                new DefaultFolderResponse(
+                    folder.Id, folder.Name, folder.IsAcceptance, folder.IsActive, FolderVisibility.RolesOf(folder.VisibleTo)))]);
 
     private static async Task<Results<Created<DefaultFolderCreatedResponse>, ValidationProblem, ProblemHttpResult>> AddDefaultFolderAsync(
         NewDefaultFolderRequest request, AddDefaultFolder add, CancellationToken cancellationToken)
     {
-        var result = await add.ExecuteAsync(request.Name, cancellationToken);
+        var result = await add.ExecuteAsync(request.Name, request.VisibleTo, cancellationToken);
         return result.Outcome switch
         {
             FolderOutcome.Done => TypedResults.Created((string?)null, new DefaultFolderCreatedResponse(result.Id!.Value)),
@@ -325,7 +375,7 @@ public static class DocumentEndpoints
     private static async Task<Results<NoContent, NotFound, ValidationProblem, ProblemHttpResult>> ChangeDefaultFolderAsync(
         Guid id, DefaultFolderRequest request, ChangeDefaultFolder change, CancellationToken cancellationToken)
     {
-        var result = await change.ExecuteAsync(id, request.Name, request.IsActive, cancellationToken);
+        var result = await change.ExecuteAsync(id, request.Name, request.IsActive, request.VisibleTo, cancellationToken);
         return result.Outcome switch
         {
             FolderOutcome.Done => TypedResults.NoContent(),
@@ -335,6 +385,7 @@ public static class DocumentEndpoints
             {
                 ["isActive"] = ["The folder of the acceptance terms is always active."],
             }),
+            FolderOutcome.AcceptanceVisibilityFixed => AcceptanceVisibilityFixed(),
             _ => FolderNameInUse(),
         };
     }
@@ -369,6 +420,19 @@ public static class DocumentEndpoints
                 type: DocumentProblems.DocumentRefused,
                 extensions: new Dictionary<string, object?> { ["reason"] = result.Refusal.ToString() }),
         };
+
+    private static ProblemHttpResult ProjectClosed() =>
+        TypedResults.Problem(
+            statusCode: StatusCodes.Status409Conflict,
+            title: "Project closed",
+            detail: "A completed or cancelled project is read-only until it is reopened.",
+            type: DocumentProblems.ProjectClosed);
+
+    private static ValidationProblem AcceptanceVisibilityFixed() =>
+        TypedResults.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["visibleTo"] = ["The folder of the acceptance terms is seen only by the Administrator and the manager."],
+        });
 
     private static ValidationProblem InvalidFolderName() =>
         TypedResults.ValidationProblem(new Dictionary<string, string[]>
