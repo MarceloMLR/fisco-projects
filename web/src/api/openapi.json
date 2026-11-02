@@ -9905,6 +9905,229 @@
         }
       }
     },
+    "/api/profile/immediate-notices": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "GetImmediateNotices",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImmediateNoticesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "ChooseImmediateNotices",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseImmediateNoticesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/teams-app": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "GetTeamsApp",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamsAppResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "ChangeTeamsApp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeTeamsAppRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/teams-app/package": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "description": "The manifest of the package of Teams of the installation, with a new version when its content changed; the screen adds the icons.",
+        "operationId": "PackageTeamsApp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamsPackageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamsPackageResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/time-entries": {
       "get": {
         "tags": [
@@ -11828,6 +12051,17 @@
           }
         }
       },
+      "ChangeTeamsAppRequest": {
+        "required": [
+          "noticesOn"
+        ],
+        "type": "object",
+        "properties": {
+          "noticesOn": {
+            "type": "boolean"
+          }
+        }
+      },
       "ChooseDailySummaryRequest": {
         "required": [
           "receives"
@@ -11839,6 +12073,17 @@
           }
         },
         "description": "Whether the person receives the daily summary of e-mails (ADR-0037)."
+      },
+      "ChooseImmediateNoticesRequest": {
+        "required": [
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ImmediateNoticeChannel"
+          }
+        }
       },
       "ChooseThemeRequest": {
         "required": [
@@ -12941,6 +13186,30 @@
         "items": {
           "$ref": "#/components/schemas/IFormFile"
         }
+      },
+      "ImmediateNoticeChannel": {
+        "enum": [
+          "Both",
+          "Email",
+          "Teams"
+        ],
+        "description": "Where the notices sent now reach a person (ADR-0037, ADR-0149)."
+      },
+      "ImmediateNoticesResponse": {
+        "required": [
+          "channel",
+          "teamsAvailable"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ImmediateNoticeChannel"
+          },
+          "teamsAvailable": {
+            "type": "boolean"
+          }
+        },
+        "description": "The channel of the notices sent now of the person (ADR-0149): E-mail, Teams or Both, and whether Teams is there for\nthe person (on in the installation, and the person signs in by Entra ID)."
       },
       "ImportedCredentialRequest": {
         "required": [
@@ -17476,6 +17745,57 @@
           }
         },
         "description": "A week of the load: its Monday, its Sunday and its business days in the calendar of the installation."
+      },
+      "TeamsAppResponse": {
+        "required": [
+          "available",
+          "noticesOn",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "noticesOn": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The application of Teams of the installation (ADR-0149): whether the sending to Teams is configured in the\napplication, whether the notices go to Teams and the version of the last package (null before the first)."
+      },
+      "TeamsPackageRequest": {
+        "required": [
+          "iconSource"
+        ],
+        "type": "object",
+        "properties": {
+          "iconSource": {
+            "type": "string"
+          }
+        },
+        "description": "What the icons of the package show, as the address of the logo with its version or the main color."
+      },
+      "TeamsPackageResponse": {
+        "required": [
+          "manifest",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "manifest": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "description": "The manifest of the package of Teams, as the file manifest.json, and its version."
       },
       "TemplateCreatedResponse": {
         "required": [

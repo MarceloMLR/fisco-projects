@@ -64,6 +64,7 @@ export const queryKeys = {
   ticketDeadlines: ['ticket-deadlines'],
   vendors: ['vendors'],
   email: ['email'],
+  teams: ['teams'],
   notifications: ['notifications'],
   documents: ['documents'],
   defaultFolders: ['default-folders'],
@@ -304,6 +305,17 @@ export function profileQuery() {
   });
 }
 
+/**
+ * The channel of the notices sent now of the person in the session (ADR-0149): E-mail, Teams or Both, and whether
+ * Teams is there for the person, which decides what the card Avisos of My profile shows.
+ */
+export function immediateNoticesQuery() {
+  return queryOptions({
+    queryKey: [...queryKeys.profile, 'immediate-notices'] as const,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/profile/immediate-notices', { signal })),
+  });
+}
+
 /** The brand of the installation (name and logo), read without a session too, as the sign-in page shows it. */
 export function installationQuery() {
   return queryOptions({
@@ -449,6 +461,17 @@ export function emailStatusQuery() {
     queryKey: queryKeys.email,
     queryFn: ({ signal }) => dataOf(api.GET('/api/admin/email', { signal })),
     refetchInterval: (query) => (query.state.data?.lastTest?.status === 'Pending' ? 5000 : false),
+  });
+}
+
+/**
+ * The application of Teams of the installation, for the Administrator (ADR-0149): whether the sending to Teams is
+ * configured, whether the notices go to Teams and the version of the last package.
+ */
+export function teamsAppQuery() {
+  return queryOptions({
+    queryKey: queryKeys.teams,
+    queryFn: ({ signal }) => dataOf(api.GET('/api/admin/teams-app', { signal })),
   });
 }
 

@@ -1527,12 +1527,20 @@ export const handlers = [
     }),
   ),
   http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),
+  // Teams off in the installation: the notices sent now go by e-mail (ADR-0149).
+  http.get('/api/profile/immediate-notices', () =>
+    HttpResponse.json({ channel: 'Both', teamsAvailable: false }),
+  ),
+  http.put('/api/profile/immediate-notices', () => new HttpResponse(null, { status: 204 })),
   // A bell without notifications.
   http.get('/api/notifications/unread-count', () => HttpResponse.json({ unread: 0 })),
   http.get('/api/notifications', () => HttpResponse.json({ items: [], unread: 0, hasMore: false })),
   // The mailbox of the demonstration, never tested.
   http.get('/api/admin/email', () =>
     HttpResponse.json({ mailbox: 'projetos@empresa.example', lastTest: null }),
+  ),
+  http.get('/api/admin/teams-app', () =>
+    HttpResponse.json({ available: false, noticesOn: false, version: null }),
   ),
   http.get('/api/calendar/:year', ({ params }) =>
     HttpResponse.json(calendarYearOf(demoCalendar(), Number(params.year))),
