@@ -24,6 +24,11 @@ internal sealed class TimeEntryStore(TimeTrackingDbContext db) : ITimeEntryStore
         return await entries.ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TimeEntry>> OfTaskAsync(Guid projectId, Guid scheduleItemId, CancellationToken cancellationToken) =>
+        await db.TimeEntries.AsNoTracking()
+            .Where(entry => entry.ProjectId == projectId && entry.ScheduleItemId == scheduleItemId)
+            .ToListAsync(cancellationToken);
+
     public async Task<decimal> HoursOfDayAsync(Guid userId, DateOnly day, Guid? except, CancellationToken cancellationToken) =>
         await db.TimeEntries.AsNoTracking()
             .Where(entry => entry.UserId == userId && entry.Day == day && entry.Id != except)

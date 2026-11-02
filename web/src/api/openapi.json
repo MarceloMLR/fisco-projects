@@ -10539,60 +10539,6 @@
         }
       }
     },
-    "/api/admin/project-hours/{projectId}/tasks": {
-      "get": {
-        "tags": [
-          "TimeTracking"
-        ],
-        "operationId": "GetTaskHours",
-        "parameters": [
-          {
-            "name": "projectId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectTaskHoursResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found"
-          }
-        }
-      }
-    },
     "/api/admin/project-hours/{projectId}/tasks/{itemId}": {
       "put": {
         "tags": [
@@ -10665,6 +10611,123 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/task-hours": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "GetTaskHours",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectTaskHoursResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/task-hours/{itemId}/entries": {
+      "get": {
+        "tags": [
+          "TimeTracking"
+        ],
+        "operationId": "ListTaskTimeEntries",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeEntryListResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -16125,7 +16188,8 @@
           "planned",
           "logged",
           "outside",
-          "items"
+          "items",
+          "canChangePlanned"
         ],
         "type": "object",
         "properties": {
@@ -16146,9 +16210,12 @@
             "items": {
               "$ref": "#/components/schemas/TaskHoursResponse"
             }
+          },
+          "canChangePlanned": {
+            "type": "boolean"
           }
         },
-        "description": "The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged\nones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule."
+        "description": "The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged\nones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule, and\nwhether the person may change the planned hours, only the Administrator (ADR-0144)."
       },
       "ProjectTicketDeadline": {
         "enum": [

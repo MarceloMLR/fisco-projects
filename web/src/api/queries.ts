@@ -713,16 +713,34 @@ export function projectHoursDetailQuery(projectId: string) {
 }
 
 /**
- * The hours of the tasks of a project, only for the Administrator (ADR-0138): the planned and logged hours of each task
- * that has any, and the totals of the project.
+ * The hours of the tasks of a project, for the Administrator and the manager of the project (ADR-0138, ADR-0144): the
+ * planned and logged hours of each task that has any, the totals of the project and whether the person may change the
+ * planned hours. The entries of each task are under its key.
  */
 export function taskHoursQuery(projectId: string) {
   return queryOptions({
     queryKey: [...queryKeys.projectHours, 'tasks', projectId] as const,
     queryFn: ({ signal }) =>
       dataOf(
-        api.GET('/api/admin/project-hours/{projectId}/tasks', {
+        api.GET('/api/projects/{projectId}/task-hours', {
           params: { path: { projectId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
+ * The entries of a task of the schedule, of every person, the newest day first, for the Administrator and the manager
+ * of the project (ADR-0144).
+ */
+export function taskEntriesQuery(projectId: string, itemId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projectHours, 'tasks', projectId, 'entries', itemId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{projectId}/task-hours/{itemId}/entries', {
+          params: { path: { projectId, itemId } },
           signal,
         }),
       ),

@@ -61,6 +61,32 @@ public static class TimeEntryAccess
     }
 
     /// <summary>
+    /// The hours of the tasks of a project and the entries of each task (ADR-0138, ADR-0144): the Administrator, in any
+    /// project, and the manager of the project, in the projects the person manages, of any status.
+    /// </summary>
+    public static bool SeesTaskHours(TimeEntryViewer viewer, ProjectAccess project)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        ArgumentNullException.ThrowIfNull(project);
+        return viewer.IsAdministrator || project.Role == ProjectMemberRole.Manager;
+    }
+
+    /// <summary>The planned hours of the tasks are put, changed and taken out only by the Administrator (ADR-0138).</summary>
+    public static bool ChangesPlannedHours(TimeEntryViewer viewer)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        return viewer.IsAdministrator;
+    }
+
+    /// <summary>
+    /// Whether the person may change and remove an entry of a list: an entry the person sees, of another person only for
+    /// the Administrator, by the rules of logging in its project. A list of a task shows the entries of everyone to its
+    /// manager, who still changes only the own ones (ADR-0144).
+    /// </summary>
+    public static bool MayChange(TimeEntryViewer viewer, TimeEntry entry, ProjectAccess? project) =>
+        SeesEntry(viewer, entry) && RefusalToChange(viewer, entry, project) is null;
+
+    /// <summary>
     /// Why the person may not change or remove an entry the person sees, or null when the person may: the rules of
     /// logging in the project of the entry. Whoever left the project, or became a viewer, no longer changes the
     /// entries in it; they stay (403).

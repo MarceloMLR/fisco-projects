@@ -50,13 +50,15 @@ public sealed record TaskHoursResponse(Guid ItemId, string Name, decimal? Planne
 
 /// <summary>
 /// The hours of the tasks of a project (ADR-0138): the planned hours in the tasks, the logged ones in them, the logged
-/// ones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule.
+/// ones out of the tasks of the schedule and each task with planned or logged hours, in the order of the schedule, and
+/// whether the person may change the planned hours, only the Administrator (ADR-0144).
 /// </summary>
-public sealed record ProjectTaskHoursResponse(decimal Planned, decimal Logged, decimal Outside, IReadOnlyList<TaskHoursResponse> Items);
+public sealed record ProjectTaskHoursResponse(
+    decimal Planned, decimal Logged, decimal Outside, IReadOnlyList<TaskHoursResponse> Items, bool CanChangePlanned);
 
 /// <summary>
-/// The contracted and additional hours of the projects and their balance, and the planned hours of the tasks, only for
-/// the Administrator (ADR-0046, ADR-0128, ADR-0138). Only hours, never values in money.
+/// The contracted and additional hours of the projects and their balance, and the change of the planned hours of the
+/// tasks, only for the Administrator (ADR-0046, ADR-0128, ADR-0138). Only hours, never values in money.
 /// </summary>
 public static class ProjectHoursEndpoints
 {
@@ -77,7 +79,6 @@ public static class ProjectHoursEndpoints
         hours.MapPut("/{projectId:guid}/additional/{id:guid}", ChangeAdditionalAsync).WithName("ChangeAdditionalHours")
             .ProducesProblem(StatusCodes.Status400BadRequest);
         hours.MapDelete("/{projectId:guid}/additional/{id:guid}", DeleteAdditionalAsync).WithName("DeleteAdditionalHours");
-        hours.MapGet("/{projectId:guid}/tasks", TasksAsync).WithName("GetTaskHours");
         hours.MapPut("/{projectId:guid}/tasks/{itemId:guid}", ChangePlannedAsync).WithName("ChangePlannedHours")
             .ProducesProblem(StatusCodes.Status400BadRequest);
         return api;
@@ -162,21 +163,6 @@ public static class ProjectHoursEndpoints
         return result.Outcome == ProjectHoursOutcome.Done ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    private static async Task<Results<Ok<ProjectTaskHoursResponse>, NotFound>> TasksAsync(
-        Guid projectId, GetTaskHours get, CancellationToken cancellationToken)
-    {
-        if (await get.ExecuteAsync(projectId, cancellationToken) is not { } tasks)
-        {
-            return TypedResults.NotFound();
-        }
-
-        return TypedResults.Ok(new ProjectTaskHoursResponse(
-            tasks.Planned,
-            tasks.Logged,
-            tasks.Outside,
-            [.. tasks.Items.Select(task => new TaskHoursResponse(task.ItemId, task.Name, task.Planned, task.Logged, BalanceOf(task.Balance)))]));
-    }
-
     private static async Task<Results<NoContent, ValidationProblem, NotFound>> ChangePlannedAsync(
         Guid projectId, Guid itemId, PlannedHoursRequest request, ChangePlannedHours change, CancellationToken cancellationToken)
     {
@@ -192,7 +178,7 @@ public static class ProjectHoursEndpoints
         };
     }
 
-    private static HoursBalanceResponse BalanceOf(HoursBalance balance) => new(
+    internal static HoursBalanceResponse BalanceOf(HoursBalance balance) => new(
         balance.Contracted, balance.Additional, balance.Logged, balance.Total, balance.Balance, balance.Consumption, balance.State);
 
     private static ProjectHoursResponse ResponseOf(ProjectCard project, HoursBalance balance) => new(

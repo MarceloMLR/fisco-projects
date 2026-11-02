@@ -1,4 +1,5 @@
 import EditOutlined from '@mui/icons-material/EditOutlined';
+import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import { visuallyHidden } from '@mui/utils';
 import { useState } from 'react';
@@ -12,6 +13,7 @@ import { DetailsSection } from '../projects/ScheduleItemProgress';
 import { hoursTableSx } from './hoursTable';
 import { PlannedHoursDialog } from './ProjectHoursDialogs';
 import { balanceLook } from './projectHours';
+import { TaskEntriesDialog } from './TaskEntriesDialog';
 import { needsAttention, taskBalanceText, taskHoursText } from './taskHours';
 
 /** The color of the text of each state of the hours of a task, from the tokens of the status (ADR-0065). */
@@ -51,7 +53,8 @@ export function TaskBalance({ task }: { task: TaskHours }) {
 }
 
 /**
- * The hours of a task in the column "Horas" of the Lista, only for the Administrator (ADR-0138): "52 de 40 h", with the
+ * The hours of a task in the column "Horas" of the Lista, for the Administrator and the manager of the project
+ * (ADR-0138, ADR-0144): "52 de 40 h", with the
  * icon and the color of the state when the task is over or near the planned hours, and the balance for who reads the
  * screen; a dash for a task without planned or logged hours.
  */
@@ -104,13 +107,15 @@ const detailsListSx = {
 } as const;
 
 /**
- * The section "Horas" of the details of a task, only for the Administrator (ADR-0138): the planned hours with
- * "Alterar", the hours logged in the task, the balance and the bar of the consumption.
+ * The section "Horas" of the details of a task, for the Administrator and the manager of the project (ADR-0138,
+ * ADR-0144): the planned hours, with "Alterar" only for who may change them, the hours logged in the task, with "Ver
+ * apontamentos" when there are any, the balance and the bar of the consumption.
  */
 export function TaskHoursSection({
   projectId,
   task,
   hours,
+  canChange,
   onSaved,
 }: {
   projectId: string;
@@ -118,11 +123,15 @@ export function TaskHoursSection({
   task: { id: string; name: string };
   /** The hours of the task; none without planned or logged hours. */
   hours: TaskHours | undefined;
+  /** The person may change the planned hours: only the Administrator. */
+  canChange: boolean;
   onSaved: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const [changing, setChanging] = useState(false);
+  const [seeing, setSeeing] = useState(false);
   const planned = hours?.planned ?? null;
+  const logged = hours?.logged ?? 0;
   const consumption = hours?.balance.consumption ?? null;
   return (
     <DetailsSection title={t('projectHours.tasks.section')}>
@@ -131,21 +140,40 @@ export function TaskHoursSection({
         <dd>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <span>{planned === null ? t('projectHours.none') : formatHours(planned)}</span>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={<EditOutlined />}
-              aria-label={t('projectHours.tasks.changeLabel', { name: task.name })}
-              onClick={() => {
-                setChanging(true);
-              }}
-            >
-              {t('projectHours.details.change')}
-            </Button>
+            {canChange && (
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<EditOutlined />}
+                aria-label={t('projectHours.tasks.changeLabel', { name: task.name })}
+                onClick={() => {
+                  setChanging(true);
+                }}
+              >
+                {t('projectHours.details.change')}
+              </Button>
+            )}
           </Box>
         </dd>
         <dt>{t('projectHours.tasks.logged')}</dt>
-        <dd>{formatHours(hours?.logged ?? 0)}</dd>
+        <dd>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span>{formatHours(logged)}</span>
+            {logged > 0 && (
+              <Button
+                variant="text"
+                size="small"
+                startIcon={<ViewListOutlined />}
+                aria-label={t('projectHours.tasks.viewEntriesLabel', { name: task.name })}
+                onClick={() => {
+                  setSeeing(true);
+                }}
+              >
+                {t('projectHours.tasks.viewEntries')}
+              </Button>
+            )}
+          </Box>
+        </dd>
         {hours !== undefined && (
           <>
             <dt>{t('projectHours.details.balance')}</dt>
@@ -171,6 +199,15 @@ export function TaskHoursSection({
             share: consumption,
           })}
           width="100%"
+        />
+      )}
+      {seeing && (
+        <TaskEntriesDialog
+          projectId={projectId}
+          task={task}
+          onClose={() => {
+            setSeeing(false);
+          }}
         />
       )}
       {changing && (

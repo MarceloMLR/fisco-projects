@@ -27,7 +27,7 @@ import {
 } from '../api/client';
 import { projectScheduleQuery, queryKeys, taskHoursQuery } from '../api/queries';
 import { TaskHoursCell, TaskHoursSection } from '../admin/TaskHours';
-import { taskHoursById } from '../admin/taskHours';
+import { seesTaskHours, taskHoursById } from '../admin/taskHours';
 import { Alert } from '../components/Alert';
 import { CardAvatar } from '../components/PersonCard';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
@@ -196,11 +196,14 @@ export function ProjectSchedulePage() {
   const filter = useMemo(() => filterOf(search), [search]);
   const { session } = useSession();
   const me = session.status === 'signed-in' ? session.user.id : undefined;
-  /** The hours of the tasks are the Administrator's only (ADR-0138). */
-  const isAdministrator = session.status === 'signed-in' && session.user.role === 'Administrator';
+  /** The hours of the tasks are the Administrator's and the manager's of the project (ADR-0138, ADR-0144). */
+  const seesHours = seesTaskHours(
+    project,
+    session.status === 'signed-in' ? session.user : undefined,
+  );
   const { data: taskHours } = useQuery({
     ...taskHoursQuery(project.id),
-    enabled: isAdministrator,
+    enabled: seesHours,
   });
   const hoursById = useMemo(() => taskHoursById(taskHours), [taskHours]);
   const filterContext = useMemo<FilterContext>(
@@ -481,7 +484,7 @@ export function ProjectSchedulePage() {
           );
         },
       },
-      ...(isAdministrator
+      ...(seesHours
         ? [
             {
               field: 'hours',
@@ -519,16 +522,7 @@ export function ProjectSchedulePage() {
         },
       },
     ],
-    [
-      t,
-      schedule,
-      collapsed,
-      toggleSubtasks,
-      project.client,
-      isAdministrator,
-      hoursById,
-      editableColumn,
-    ],
+    [t, schedule, collapsed, toggleSubtasks, project.client, seesHours, hoursById, editableColumn],
   );
 
   const queryClient = useQueryClient();
@@ -1417,7 +1411,7 @@ function ItemEditor({
   );
 }
 
-/** The hours of a task in its details, only for the Administrator (ADR-0138). */
+/** The hours of a task in its details, for the Administrator and the manager of the project (ADR-0138, ADR-0144). */
 function ItemHours({
   project,
   item,
@@ -1429,9 +1423,9 @@ function ItemHours({
 }) {
   const queryClient = useQueryClient();
   const { session } = useSession();
-  const isAdministrator = session.status === 'signed-in' && session.user.role === 'Administrator';
-  const { data } = useQuery({ ...taskHoursQuery(project.id), enabled: isAdministrator });
-  if (!isAdministrator) {
+  const sees = seesTaskHours(project, session.status === 'signed-in' ? session.user : undefined);
+  const { data } = useQuery({ ...taskHoursQuery(project.id), enabled: sees });
+  if (!sees) {
     return null;
   }
   return (
@@ -1439,6 +1433,7 @@ function ItemHours({
       projectId={project.id}
       task={item}
       hours={data?.items.find((task) => task.itemId === item.id)}
+      canChange={data?.canChangePlanned ?? false}
       onSaved={(message) => {
         void queryClient.invalidateQueries({ queryKey: queryKeys.projectHours });
         void queryClient.invalidateQueries({ queryKey: queryKeys.audit });

@@ -444,7 +444,7 @@ describe('Horas por tarefa pela tela', () => {
   beforeEach(() => {
     planned = { [icms]: 40, [nfe]: 20 };
     server.use(
-      http.get('/api/admin/project-hours/:projectId/tasks', () =>
+      http.get('/api/projects/:projectId/task-hours', () =>
         HttpResponse.json(
           taskHoursOf(
             [

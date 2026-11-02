@@ -2828,6 +2828,8 @@
       "title": "Por tarefa",
       "planned": "Previstas",
       "logged": "Apontadas",
+      "viewEntries": "Ver apontamentos",
+      "viewEntriesLabel": "Ver apontamentos de {{name}}",
       "loggedOfPlanned": "{{logged}} de {{planned}}",
       "noPlanned": "Sem horas previstas",
       "changeLabel": "Alterar as horas previstas de {{name}}",
@@ -2843,6 +2845,14 @@
         "task": "Tarefa",
         "planned": "Previstas",
         "logged": "Apontadas"
+      },
+      "entries": {
+        "title": "Apontamentos da tarefa",
+        "table": "Apontamentos de {{name}}",
+        "empty": "Nenhuma hora apontada nesta tarefa.",
+        "total_one": "Total da tarefa: {{hours}} de {{count}} pessoa",
+        "total_other": "Total da tarefa: {{hours}} de {{count}} pessoas",
+        "loadFailed": "Não foi possível carregar os apontamentos da tarefa. Tente de novo."
       }
     },
     "additionalDialog": {
