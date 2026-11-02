@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (por onde chegam os avisos na hora complementado pelo ADR-0149)
 date: 2026-10-14
 decision-makers: Marcelo Ribeiro
 ---
