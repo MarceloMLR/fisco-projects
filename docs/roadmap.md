@@ -47,7 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
-| 6. Avisos | 4 | 3 |
+| 6. Avisos | 4 | 4 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
@@ -57,7 +57,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **117** | **106** |
+| **Total** | **117** | **107** |
 
 ## 1. Fundação
 
@@ -168,7 +168,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | Concluída em 20/10/2026 ([#45](https://github.com/MarceloMLR/fisco-projects/pull/45)) |
 | Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Concluída em 20/10/2026 ([#46](https://github.com/MarceloMLR/fisco-projects/pull/46)) |
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Concluída em 20/10/2026 ([#47](https://github.com/MarceloMLR/fisco-projects/pull/47)) |
-| Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | PR aberto |
+| Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída |
 
 ## 7. Documentos, links, acessos e termos
 
