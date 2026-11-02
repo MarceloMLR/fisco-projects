@@ -38,6 +38,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 02/11/2026, Marcelo pediu que quem vê cada pasta de documentos seja configurável, porque um colaborador via "01 Gestão do projeto"; escolheu configurar nas pastas padrão e em cada projeto, por papel, só pelo administrador, e só ver ou não ver (Documentos-1.1, `visibilidade-das-pastas`, ADR-0148).
 - Em 02/11/2026, depois de ver um esquema da aba Atividade do Teams, Marcelo aprovou os avisos pelo Teams: escolheu a aba Atividade, e não o bot no chat, e que cada pessoa escolha em Meu perfil se os avisos na hora chegam por e-mail, pelo Teams ou pelos dois (Avisos-4, `avisos-pelo-teams`, ADR-0149), com a proposta aprovada por ele antes da implementação.
 - Em 02/11/2026, ao testar os avisos pelo Teams, Marcelo achou as Configurações gerais confusas e pediu cada configuração no lugar do assunto dela: a marca junto com as cores, numa seção Visual, a pasta dos projetos em Pastas padrão, e as Configurações gerais só com as Regras gerais e o Microsoft 365 (Acesso-8.6, `configuracoes-por-assunto`, ADR-0150), com a proposta aprovada por ele antes da implementação.
+- Em 02/11/2026, ao testar o Teams, Marcelo pediu que cada pessoa ligue e desligue os avisos por e-mail e pelo Teams em Meu perfil, inclusive os dois, com o e-mail ligado e o Teams desligado de início, e a escolha registrada na auditoria (Avisos-5, `canais-dos-avisos`, ADR-0151), com a proposta aprovada por ele antes da implementação.
 
 ## Marcos
 
@@ -48,7 +49,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
-| 6. Avisos | 4 | 4 |
+| 6. Avisos | 5 | 4 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
@@ -58,7 +59,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **118** | **108** |
+| **Total** | **119** | **108** |
 
 ## 1. Fundação
 
@@ -170,7 +171,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-1 | `fila-de-emails` | Fila no banco e envio em segundo plano, com implementação local | 0036 | Concluída em 20/10/2026 ([#45](https://github.com/MarceloMLR/fisco-projects/pull/45)) |
 | Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Concluída em 20/10/2026 ([#46](https://github.com/MarceloMLR/fisco-projects/pull/46)) |
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Concluída em 20/10/2026 ([#47](https://github.com/MarceloMLR/fisco-projects/pull/47)) |
-| Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída |
+| Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída em 02/11/2026 ([#143](https://github.com/MarceloMLR/fisco-projects/pull/143)) |
+| Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | Planejada (proposta aguardando a aprovação de Marcelo) |
 
 ## 7. Documentos, links, acessos e termos
 

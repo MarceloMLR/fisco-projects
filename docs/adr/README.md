@@ -213,3 +213,4 @@ Regras:
 | [0148](0148-quem-ve-cada-pasta-de-documentos.md) | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto | aceita | 2026-11-02 |
 | [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita | 2026-11-02 |
 | [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |
+| [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | proposta | 2026-11-02 |
