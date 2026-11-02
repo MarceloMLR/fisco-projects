@@ -33,6 +33,10 @@ A seção Instalação da coluna da Administração MUST ter Configurações ger
 - **WHEN** o administrador escolhe Configurações gerais na coluna da Administração
 - **THEN** a tela mostra as Regras gerais, com o fuso atual e busca, e o Microsoft 365, sem a marca, sem a pasta dos projetos e sem prévia
 
+#### Scenario: Prévia antes de salvar
+- **WHEN** o administrador abre Configurações gerais
+- **THEN** a tela não tem prévia da marca, que fica em Visual, junto com o nome, os logos e as cores
+
 #### Scenario: Descartar alterações
 - **WHEN** o administrador muda o fuso ou o horário do resumo e escolhe Descartar
 - **THEN** o formulário volta aos valores salvos e a barra de ações fica desabilitada
@@ -41,9 +45,13 @@ A seção Instalação da coluna da Administração MUST ter Configurações ger
 
 A seção Instalação da coluna da Administração MUST ter Visual, logo depois de Configurações gerais, com a Marca (o nome exibido, o logo e o logo para o tema escuro) e as Cores (a principal, a secundária e a da barra lateral), a prévia das telas com Claro e Escuro e a barra de ações com Descartar e Salvar alterações, habilitados só quando algo mudou. Salvar MUST gravar o nome, os logos e as cores que mudaram. O endereço antigo de Cores MUST levar a Visual (ADR-0146, ADR-0150).
 
-#### Scenario: Visual na Administração
+#### Scenario: Cores na Administração
 - **WHEN** o administrador escolhe Visual na coluna da Administração
-- **THEN** a tela mostra a Marca, com o nome e os logos (com a dica "PNG ou SVG, até 1 MB"), as três cores, cada uma com a amostra, o valor, "Voltar ao padrão", onde a cor aparece e os avisos de ajuste, e a prévia
+- **THEN** a tela mostra os três campos de cor, cada um com a amostra, o valor, "Voltar ao padrão", onde a cor aparece e os avisos de ajuste, e a prévia
+
+#### Scenario: Marca em Visual
+- **WHEN** o administrador abre Visual
+- **THEN** a Marca vem antes das cores, com o nome exibido, o logo e o logo para o tema escuro, com a dica "PNG ou SVG, até 1 MB"
 
 #### Scenario: Endereço antigo de Cores
 - **WHEN** alguém abre o endereço da antiga seção Cores
