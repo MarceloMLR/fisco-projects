@@ -29,6 +29,8 @@ internal sealed class DefaultFolderConfiguration : IEntityTypeConfiguration<Defa
         folder.ToTable("default_folders");
         folder.Property(f => f.Name).HasMaxLength(FolderNames.MaxLength);
         folder.HasIndex(f => f.Name).IsUnique().HasDatabaseName(NameIndex);
+        // No default value: none (0) is a valid choice, only of the managers (ADR-0148).
+        folder.Property(f => f.VisibleTo).HasConversion<int>();
         folder.HasAuditLabel(f => f.Name);
         folder.HasData(Seed.Select((name, index) => new
         {
@@ -36,11 +38,13 @@ internal sealed class DefaultFolderConfiguration : IEntityTypeConfiguration<Defa
             Name = name,
             IsAcceptance = index == Seed.Length - 1,
             IsActive = true,
+            VisibleTo = index == Seed.Length - 1 ? FolderViewers.None : FolderViewers.Everyone,
         }));
     }
 }
 
-// The folders of each project, copies of the default folders: technical, out of the audit.
+// The folders of each project, copies of the default folders: technical, out of the automatic audit; the change of who
+// sees one is recorded by the store (ADR-0148).
 internal sealed class DocumentFolderConfiguration : IEntityTypeConfiguration<DocumentFolder>
 {
     public void Configure(EntityTypeBuilder<DocumentFolder> folder)
@@ -48,6 +52,8 @@ internal sealed class DocumentFolderConfiguration : IEntityTypeConfiguration<Doc
         folder.ToTable("folders");
         folder.Property(f => f.Name).HasMaxLength(FolderNames.MaxLength);
         folder.Property(f => f.StorageFolderId).HasMaxLength(512);
+        // Who sees the folder (ADR-0148), with no default value; its changes go to the audit by a record of their own.
+        folder.Property(f => f.VisibleTo).HasConversion<int>();
         folder.HasIndex(f => new { f.ProjectId, f.Name }).IsUnique();
         folder.ExcludeFromAudit();
     }

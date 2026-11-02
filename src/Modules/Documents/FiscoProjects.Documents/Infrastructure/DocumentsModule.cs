@@ -37,6 +37,7 @@ public static class DocumentsModule
         services.AddScoped<ListDefaultFolders>();
         services.AddScoped<AddDefaultFolder>();
         services.AddScoped<ChangeDefaultFolder>();
+        services.AddScoped<ChangeFolderVisibility>();
         services.AddScoped<ProjectFolders>();
         // The folders of a new project (ADR-0092).
         services.AddScoped<IProjectSetup, DocumentProjectSetup>();
