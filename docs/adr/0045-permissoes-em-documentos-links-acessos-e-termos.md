@@ -1,5 +1,5 @@
 ---
-status: aceita (termos de aceite substituídos pelo ADR-0129)
+status: aceita (termos de aceite substituídos pelo ADR-0129, e ver os documentos por pasta pelo ADR-0148)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---

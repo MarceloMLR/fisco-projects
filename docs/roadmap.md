@@ -35,6 +35,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 01/11/2026, depois dos grupos 14 e 15, Marcelo pediu a seta de recolher as fases também na Lista (Cronograma-4.2), as horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa (GanttA-5.1, ADR-0144), e o fim digitado no detalhe da tarefa, ao lado da duração (Cronograma-4.3).
 - Em 01/11/2026, Marcelo achou o seletor de cores ruim e pediu que o cliente personalize as cores pela marca da empresa, sem o limite de contraste; escolheu a principal, a secundária e a da barra lateral, o texto ajustado sobre a cor e o seletor próprio em HEX, RGB e HSL, e aprovou o protótipo da seção Cores (Acesso-8.5, `cores-da-instalacao`, ADR-0146), com a proposta aprovada por ele antes da implementação.
 - Em 02/11/2026, no teste da seção Cores, Marcelo viu o fundo da página de entrada ainda azul com o painel em outra cor e pediu o fundo na cor secundária (Acesso-8.5.1, `fundo-da-entrada`, ADR-0147).
+- Em 02/11/2026, Marcelo pediu que quem vê cada pasta de documentos seja configurável, porque um colaborador via "01 Gestão do projeto"; escolheu configurar nas pastas padrão e em cada projeto, por papel, só pelo administrador, e só ver ou não ver (Documentos-1.1, `visibilidade-das-pastas`, ADR-0148).
 
 ## Marcos
 
@@ -46,7 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
 | 6. Avisos | 3 | 3 |
-| 7. Documentos, links, acessos e termos | 5 | 5 |
+| 7. Documentos, links, acessos e termos | 6 | 5 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
 | 10. Governança e operação | 6 | 6 |
@@ -172,6 +173,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
 | Documentos-1 | `documentos`* | Pastas padrão, versões, status, vínculo com o cronograma | 0031, 0045, 0092, 0093 | Concluída em 20/10/2026 ([#48](https://github.com/MarceloMLR/fisco-projects/pull/48)) |
+| Documentos-1.1 | `visibilidade-das-pastas` | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto, mudado só pelo administrador, a pedido de Marcelo | 0045, 0148 | Em andamento |
 | Documentos-2 | `links`* | Links do projeto por categoria | 0032 | Concluída em 20/10/2026 ([#49](https://github.com/MarceloMLR/fisco-projects/pull/49)) |
 | Documentos-3 | `acessos` | Senha cifrada e mascarada | 0033, 0034 | Concluída em 20/10/2026 ([#50](https://github.com/MarceloMLR/fisco-projects/pull/50)) |
 | Documentos-4 | `importacao-de-acessos` | Importação da planilha | 0034, 0094 | Concluída em 20/10/2026 ([#51](https://github.com/MarceloMLR/fisco-projects/pull/51)) |
