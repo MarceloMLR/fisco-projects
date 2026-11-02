@@ -422,6 +422,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/installation/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["RenameInstallation"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/installation/colors": {
         parameters: {
             query?: never;
@@ -431,6 +447,22 @@ export interface paths {
         };
         get?: never;
         put: operations["ChangeInstallationColors"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/installation/projects-folder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["ChangeProjectsFolder"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4079,6 +4111,13 @@ export interface components {
             lateDays: number;
         };
         /**
+         * @description The folder of the projects in the file storage, in Default folders (ADR-0121, ADR-0150), with the folders separated by
+         *     "/", or "" for the root of the storage.
+         */
+        ProjectsFolderRequest: {
+            projectsFolder: null | string;
+        };
+        /**
          * @description Which projects the list shows: the open ones, the closed ones (completed or cancelled) or all.
          * @enum {unknown}
          */
@@ -4122,6 +4161,10 @@ export interface components {
             name: string;
             /** Format: int32 */
             items: number;
+        };
+        /** @description The name shown of the installation, in the Brand of Visual (ADR-0150): up to 60 characters. */
+        RenameInstallationRequest: {
+            name: null | string;
         };
         /**
          * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
@@ -5050,13 +5093,12 @@ export interface components {
             today: string;
         };
         /**
-         * @description The General settings form, saved as a whole: the name shown, the IANA time zone, the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-         *     notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
-         *     folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
-         *     it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142).
+         * @description The General rules of the General settings, saved as a whole (ADR-0150): the IANA time zone, the time of the daily
+         *     summary (HH:mm:ss, in the time zone), how many days the notifications are kept (1 to 365), how many years the audit is
+         *     kept (1 to 10; none keeps the years it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones
+         *     it had, ADR-0142).
          */
         UpdateInstallationRequest: {
-            name: string;
             timeZone: string;
             /** Format: time */
             dailySummaryAt: null | string;
@@ -5064,7 +5106,6 @@ export interface components {
             notificationRetentionDays: null | number;
             /** Format: int32 */
             auditRetentionYears?: null | number;
-            projectsFolder?: null | string;
             /** Format: double */
             workHoursPerDay?: null | number;
         };
@@ -6323,6 +6364,55 @@ export interface operations {
             };
         };
     };
+    RenameInstallation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameInstallationRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ChangeInstallationColors: {
         parameters: {
             query?: never;
@@ -6333,6 +6423,55 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["InstallationColorsRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeProjectsFolder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectsFolderRequest"];
             };
         };
         responses: {

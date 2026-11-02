@@ -10,7 +10,7 @@ import { TemplatesPage } from './admin/TemplatesPage';
 import { VendorsPage } from './admin/VendorsPage';
 import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
-import { ColorsPage } from './admin/ColorsPage';
+import { VisualPage } from './admin/VisualPage';
 import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
@@ -312,14 +312,16 @@ export const routes: RouteObject[] = [
                 } satisfies PageHandle,
               },
               {
-                path: 'colors',
-                element: <ColorsPage />,
+                path: 'visual',
+                element: <VisualPage />,
                 handle: {
                   navigation: 'admin',
-                  titleKey: 'pages.colors.title',
+                  titleKey: 'pages.visual.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },
+              // The old address of Colors, now part of Visual (ADR-0150).
+              { path: 'colors', element: <Navigate to="/admin/visual" replace /> },
               {
                 path: 'calendar',
                 element: <CalendarPage />,

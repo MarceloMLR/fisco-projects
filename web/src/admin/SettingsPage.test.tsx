@@ -1,18 +1,15 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AuditEntry, type Installation, installationProblems } from '../api/client';
+import type { AuditEntry } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { expectBusy, heldAnswer, untilIdle } from '../test/busy';
+import { expectBusy, heldAnswer } from '../test/busy';
 import { renderApp } from '../test/renderApp';
-import { auditPage, marina, problem, server, signedInAs } from '../test/server';
+import { auditPage, server, signedInAs } from '../test/server';
 
 const text = ptBR.settings;
-const logoUrl = '/api/installation/logo?v=1';
-const darkLogoUrl = '/api/installation/logo/dark?v=1';
 
-/** The installation as the simulated API keeps it, changed by the requests as the real one would. */
-let installation: Installation;
+/** The rules as the simulated API keeps them, changed by the requests as the real one would. */
 let timeZone: string;
 let dailySummaryAt: string;
 let notificationRetentionDays: number;
@@ -22,14 +19,6 @@ let workHoursPerDay: number;
 const requests: string[] = [];
 
 beforeEach(() => {
-  installation = {
-    name: 'FiscoProjects',
-    logoUrl: null,
-    mainColor: null,
-    darkLogoUrl: null,
-    secondaryColor: null,
-    sidebarColor: null,
-  };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
   notificationRetentionDays = 90;
@@ -39,7 +28,6 @@ beforeEach(() => {
   requests.length = 0;
   signedInAs('Administrator');
   server.use(
-    http.get('/api/installation', () => HttpResponse.json(installation)),
     http.get('/api/installation/rules', () =>
       HttpResponse.json({
         timeZone,
@@ -51,45 +39,21 @@ beforeEach(() => {
       }),
     ),
     http.put('/api/installation', async ({ request }) => {
-      const body = (await request.json()) as {
-        name: string;
+      const body = (await request.json()) as Record<string, unknown> & {
         timeZone: string;
         dailySummaryAt: string;
         notificationRetentionDays: number;
         auditRetentionYears: number;
-        projectsFolder: string;
         workHoursPerDay: number;
       };
-      requests.push(`PUT ${body.name} ${body.timeZone}`);
-      installation = { ...installation, name: body.name };
+      requests.push(
+        `PUT ${body.timeZone}${'name' in body || 'projectsFolder' in body ? ' and more' : ''}`,
+      );
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
       notificationRetentionDays = body.notificationRetentionDays;
       auditRetentionYears = body.auditRetentionYears;
-      projectsFolder = body.projectsFolder;
       workHoursPerDay = body.workHoursPerDay;
-      return new HttpResponse(null, { status: 204 });
-    }),
-    // The multipart body is not read: the File of the test environment does not cross to the simulated API the same
-    // way in every Node version. The API tests check the file, and the check in the browser checks its name.
-    http.put('/api/installation/logo', ({ request }) => {
-      requests.push(`PUT logo ${request.headers.get('content-type')?.split(';')[0] ?? ''}`);
-      installation = { ...installation, logoUrl };
-      return new HttpResponse(null, { status: 204 });
-    }),
-    http.delete('/api/installation/logo', () => {
-      requests.push('DELETE logo');
-      installation = { ...installation, logoUrl: null };
-      return new HttpResponse(null, { status: 204 });
-    }),
-    http.put('/api/installation/logo/dark', () => {
-      requests.push('PUT dark logo');
-      installation = { ...installation, darkLogoUrl };
-      return new HttpResponse(null, { status: 204 });
-    }),
-    http.delete('/api/installation/logo/dark', () => {
-      requests.push('DELETE dark logo');
-      installation = { ...installation, darkLogoUrl: null };
       return new HttpResponse(null, { status: 204 });
     }),
   );
@@ -99,17 +63,9 @@ async function openSettings() {
   const view = await renderApp('/admin/settings');
   await screen.findByRole('heading', { level: 1, name: ptBR.pages.settings.title });
   await waitFor(() => {
-    expect(nameField()).toHaveValue(installation.name);
+    expect(timeZoneField()).toHaveValue(timeZoneLabel(timeZone));
   });
   return view;
-}
-
-function nameField() {
-  return screen.getByRole('textbox', { name: text.name });
-}
-
-function projectsFolderField() {
-  return screen.getByRole('textbox', { name: text.projectsFolder });
 }
 
 function saveButton() {
@@ -118,16 +74,6 @@ function saveButton() {
 
 function discardButton() {
   return screen.getByRole('button', { name: text.discard });
-}
-
-/** The brand at the top of the sidebar of the application, outside the form and its Preview. */
-function sidebarBrand() {
-  const sidebar = screen.getByRole('navigation', { name: ptBR.shell.mainNavigation });
-  const brand = within(sidebar).getAllByRole('link').at(0);
-  if (brand === undefined) {
-    throw new Error('The sidebar has no brand.');
-  }
-  return brand;
 }
 
 function timeZoneField() {
@@ -149,18 +95,11 @@ async function chooseTimeZone(id: string) {
   fireEvent.click(await screen.findByRole('option', { name: timeZoneLabel(id) }));
 }
 
-function preview() {
-  return screen.getByTestId('preview-sidebar');
+function summaryField() {
+  return within(screen.getByRole('region', { name: text.rules })).getByLabelText(
+    text.dailySummaryAt,
+  );
 }
-
-function chooseLogo(file: File) {
-  fireEvent.change(screen.getByTestId('logo-file'), { target: { files: [file] } });
-}
-
-const png = () =>
-  new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'marca.png', {
-    type: 'image/png',
-  });
 
 // Spec: configuracao-da-instalacao, requirement "Tela Configurações gerais".
 describe('Tela Configurações gerais', () => {
@@ -176,20 +115,19 @@ describe('Tela Configurações gerais', () => {
     const trail = screen.getByRole('navigation', { name: ptBR.shell.breadcrumb });
     expect(within(trail).getByText(ptBR.pages.admin.title)).toBeInTheDocument();
     expect(screen.getByText(ptBR.admin.sections.installation)).toBeInTheDocument();
-    const brand = screen.getByRole('region', { name: text.brand });
+    const rules = screen.getByRole('region', { name: text.rules });
     await waitFor(() => {
-      expect(within(brand).getByRole('textbox', { name: text.name })).toHaveValue('FiscoProjects');
+      expect(within(rules).getByRole('combobox', { name: text.timeZone })).toHaveValue(
+        timeZoneLabel('America/Sao_Paulo'),
+      );
     });
-    expect(within(brand).getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
-    expect(within(brand).getByRole('button', { name: text.sendLogo })).toBeInTheDocument();
-    expect(within(brand).getByText(text.logoHint)).toBeInTheDocument();
-    // The colors have a section of their own (ADR-0146).
-    expect(within(brand).queryByRole('textbox', { name: ptBR.colors.main.value })).toBeNull();
-    expect(screen.getByRole('complementary', { name: text.previewLabel })).toBeInTheDocument();
-    expect(preview()).toHaveTextContent('FiscoProjects');
-    const files = screen.getByRole('region', { name: text.files });
-    expect(within(files).getByRole('textbox', { name: text.projectsFolder })).toHaveValue('');
-    expect(within(files).getByText(text.projectsFolderHint)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: text.m365 })).toBeInTheDocument();
+    // The brand is in Visual and the folder of the projects in Default folders (ADR-0150).
+    expect(screen.queryByRole('region', { name: ptBR.brand.title })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: ptBR.brand.name })).toBeNull();
+    expect(
+      screen.queryByRole('textbox', { name: ptBR.defaultFolders.projectsFolder.field }),
+    ).toBeNull();
     expect(saveButton()).toBeDisabled();
     expect(discardButton()).toBeDisabled();
   });
@@ -197,137 +135,26 @@ describe('Tela Configurações gerais', () => {
   it('Prévia antes de salvar', async () => {
     await openSettings();
 
-    fireEvent.change(nameField(), { target: { value: 'Consultoria Fictícia' } });
-    chooseLogo(png());
-
-    expect(preview()).toHaveTextContent('Consultoria Fictícia');
-    await waitFor(() => {
-      expect(preview().querySelector('img')).toHaveAttribute(
-        'src',
-        expect.stringMatching(/^data:image\/png/),
-      );
-    });
-    expect(screen.getByTestId('logo-tile').querySelector('img')).not.toBeNull();
-    // The rest of the application changes only after saving.
-    expect(sidebarBrand()).toHaveTextContent('FiscoProjects');
-    expect(sidebarBrand().querySelector('img')).toBeNull();
-    expect(requests).toEqual([]);
-    expect(saveButton()).toBeEnabled();
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(screen.queryByTestId('colors-preview-app')).toBeNull();
+    expect(screen.queryByTestId('logo-file')).toBeNull();
   });
 
   it('Descartar alterações', async () => {
     await openSettings();
-    fireEvent.change(nameField(), { target: { value: 'Consultoria Fictícia' } });
-    fireEvent.change(projectsFolderField(), { target: { value: 'Clientes/Projetos' } });
-    chooseLogo(png());
-    await waitFor(() => {
-      expect(screen.getByTestId('logo-tile').querySelector('img')).not.toBeNull();
-    });
+    await chooseTimeZone('Asia/Tokyo');
+    fireEvent.change(summaryField(), { target: { value: '08:00' } });
+    expect(saveButton()).toBeEnabled();
 
     fireEvent.click(discardButton());
 
-    expect(nameField()).toHaveValue('FiscoProjects');
-    expect(projectsFolderField()).toHaveValue('');
-    expect(screen.getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
-    expect(saveButton()).toBeDisabled();
-    expect(discardButton()).toBeDisabled();
-  });
-});
-
-// Spec: configuracao-da-instalacao, requirements "Nome da instalação" and "Logo da instalação" (the screen).
-describe('Nome e logo nas Configurações gerais', () => {
-  it('Trocar o nome', async () => {
-    await openSettings();
-
-    fireEvent.change(nameField(), { target: { value: '  Consultoria Fictícia ' } });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT Consultoria Fictícia America/Sao_Paulo']);
-    await waitFor(() => {
-      expect(sidebarBrand()).toHaveTextContent('Consultoria Fictícia');
-    });
-    await waitFor(() => {
-      expect(document.title).toBe('Consultoria Fictícia');
-    });
+    expect(timeZoneField()).toHaveValue(timeZoneLabel('America/Sao_Paulo'));
+    expect(summaryField()).toHaveValue('07:30');
     await waitFor(() => {
       expect(saveButton()).toBeDisabled();
     });
-  });
-
-  it('Nome inválido', async () => {
-    await openSettings();
-
-    fireEvent.change(nameField(), { target: { value: '   ' } });
-    fireEvent.click(saveButton());
-    expect(await screen.findByText(text.errors.nameRequired)).toBeInTheDocument();
-
-    fireEvent.change(nameField(), { target: { value: 'a'.repeat(61) } });
-    fireEvent.click(saveButton());
-    expect(await screen.findByText(text.errors.nameTooLong)).toBeInTheDocument();
+    expect(discardButton()).toBeDisabled();
     expect(requests).toEqual([]);
-  });
-
-  it('Enviar o logo', async () => {
-    await openSettings();
-
-    chooseLogo(png());
-    await waitFor(() => {
-      expect(screen.getByTestId('logo-tile').querySelector('img')).not.toBeNull();
-    });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT logo multipart/form-data']);
-    await waitFor(() => {
-      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
-    });
-    expect(screen.getByRole('button', { name: text.replaceLogo })).toBeInTheDocument();
-  });
-
-  it('Remover o logo', async () => {
-    installation = { ...installation, logoUrl };
-    await openSettings();
-    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
-
-    fireEvent.click(screen.getByRole('button', { name: text.removeLogo }));
-    expect(screen.getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['DELETE logo']);
-    await waitFor(() => {
-      expect(sidebarBrand().querySelector('img')).toBeNull();
-    });
-  });
-
-  it('Logo recusado', async () => {
-    await openSettings();
-
-    chooseLogo(new File([new Uint8Array([0xff, 0xd8, 0xff])], 'foto.jpg', { type: 'image/jpeg' }));
-    expect(await screen.findByText(text.errors.logoFormat)).toBeInTheDocument();
-
-    chooseLogo(new File([new Uint8Array(1024 * 1024 + 1)], 'grande.png', { type: 'image/png' }));
-    expect(await screen.findByText(text.errors.logoTooLarge)).toBeInTheDocument();
-    expect(screen.getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
-
-    // An SVG with a script is refused by the API, which checks its content.
-    server.use(
-      http.put('/api/installation/logo', () => problem(400, installationProblems.logoUnsafe)),
-    );
-    chooseLogo(
-      new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'marca.svg', {
-        type: 'image/svg+xml',
-      }),
-    );
-    await waitFor(() => {
-      expect(saveButton()).toBeEnabled();
-    });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.errors.logoUnsafe)).toBeInTheDocument();
-    expect(sidebarBrand().querySelector('img')).toBeNull();
-    expect(screen.queryByText(text.saved)).not.toBeInTheDocument();
   });
 });
 
@@ -414,7 +241,7 @@ describe('Fuso nas Configurações gerais', () => {
     fireEvent.click(saveButton());
 
     expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT FiscoProjects Asia/Tokyo']);
+    expect(requests).toEqual(['PUT Asia/Tokyo']);
     await waitFor(() => {
       expect(timeZoneField()).toHaveValue(timeZoneLabel('Asia/Tokyo'));
     });
@@ -469,12 +296,6 @@ describe('Fuso nas Configurações gerais', () => {
 // Colors as the Administrator types them, without "#": the colors in the code come only from tokens.json.
 // Spec: configuracao-da-instalacao, requirement "Horário do resumo diário".
 describe('Horário do resumo diário', () => {
-  function summaryField() {
-    return within(screen.getByRole('region', { name: text.rules })).getByLabelText(
-      text.dailySummaryAt,
-    );
-  }
-
   it('Horário padrão', async () => {
     await openSettings();
 
@@ -630,128 +451,6 @@ describe('Prazo da auditoria', () => {
   });
 });
 
-// Spec: configuracao-da-instalacao, requirement "Pasta dos projetos" (the screen, ADR-0121).
-describe('Pasta dos projetos nas Configurações gerais', () => {
-  it('Escolher a pasta dos projetos', async () => {
-    await openSettings();
-    await waitFor(() => {
-      expect(nameField()).toHaveValue('FiscoProjects');
-    });
-
-    fireEvent.change(projectsFolderField(), { target: { value: ' Clientes/Projetos ' } });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(projectsFolder).toBe('Clientes/Projetos');
-    await waitFor(() => {
-      expect(projectsFolderField()).toHaveValue('Clientes/Projetos');
-    });
-  });
-
-  it('Pasta dos projetos inválida', async () => {
-    server.use(
-      http.put('/api/installation', () =>
-        HttpResponse.json(
-          {
-            type: 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
-            title: 'One or more validation errors occurred.',
-            status: 400,
-            errors: { projectsFolder: ['Separate the folders with /.'] },
-          },
-          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
-        ),
-      ),
-    );
-    await openSettings();
-    await waitFor(() => {
-      expect(nameField()).toHaveValue('FiscoProjects');
-    });
-
-    fireEvent.change(projectsFolderField(), { target: { value: 'Projetos/Fin:2026' } });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.errors.projectsFolderInvalid)).toBeInTheDocument();
-    expect(projectsFolderField()).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.queryByText(text.errors.timeZoneInvalid)).not.toBeInTheDocument();
-  });
-});
-
-/** Marina, the Administrator, has chosen the dark theme in her profile (ADR-0014). */
-function inTheDarkTheme() {
-  server.use(
-    http.get('/api/session', () =>
-      HttpResponse.json({ ...marina, role: 'Administrator', theme: 'Dark' }),
-    ),
-  );
-}
-
-// Spec: configuracao-da-instalacao, requirement "Logo para o tema escuro" (General settings, ADR-0100, ADR-0146).
-describe('Logo escuro nas Configurações gerais', () => {
-  it('Enviar o logo para o tema escuro', async () => {
-    installation = { ...installation, logoUrl };
-    await openSettings();
-
-    fireEvent.change(screen.getByTestId('dark-logo-file'), { target: { files: [png()] } });
-    await waitFor(() => {
-      expect(screen.getByTestId('dark-logo-tile').querySelector('img')).not.toBeNull();
-    });
-    // The tile of the logo for the dark theme is dark, as the sidebar that shows it.
-    expect(screen.getByTestId('dark-logo-tile')).toHaveAttribute('data-theme', 'dark');
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT dark logo']);
-    expect(screen.getByRole('button', { name: text.replaceDarkLogo })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: text.removeDarkLogo }));
-    await untilIdle(saveButton());
-    fireEvent.click(saveButton());
-    await waitFor(() => {
-      expect(requests).toEqual(['PUT dark logo', 'DELETE dark logo']);
-    });
-  });
-
-  it('Logo escuro na barra lateral escura', async () => {
-    installation = { ...installation, logoUrl, darkLogoUrl };
-    inTheDarkTheme();
-    await openSettings();
-
-    await waitFor(() => {
-      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', darkLogoUrl);
-    });
-    // The sign-in page shows the logo on its light badge.
-    expect(screen.getByTestId('preview-sign-in').querySelector('img')).toHaveAttribute(
-      'src',
-      logoUrl,
-    );
-    expect(screen.getByTestId('preview-sidebar').querySelector('img')).toHaveAttribute(
-      'src',
-      darkLogoUrl,
-    );
-  });
-
-  it('Logo claro na barra lateral clara', async () => {
-    installation = { ...installation, logoUrl, darkLogoUrl };
-    await openSettings();
-
-    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
-    expect(screen.getByTestId('preview-sidebar').querySelector('img')).toHaveAttribute(
-      'src',
-      logoUrl,
-    );
-  });
-
-  it('Sem logo escuro', async () => {
-    installation = { ...installation, logoUrl };
-    inTheDarkTheme();
-    await openSettings();
-
-    await waitFor(() => {
-      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
-    });
-  });
-});
-
 // Spec: estrutura-das-telas, requirement "Botões em andamento" (ADR-0131).
 describe('Botões em andamento nas Configurações gerais', () => {
   it('Formulário em andamento ao salvar', async () => {
@@ -763,8 +462,8 @@ describe('Botões em andamento nas Configurações gerais', () => {
       }),
     );
     await openSettings();
-    fireEvent.change(nameField(), { target: { value: 'Consultoria Fictícia' } });
-    // Salvar sits in the header, outside the form, and is busy as well.
+    fireEvent.change(summaryField(), { target: { value: '08:00' } });
+    // Salvar sits in the bar under the page, outside the form, and is busy as well.
     const save = saveButton();
 
     fireEvent.click(save);
@@ -775,6 +474,6 @@ describe('Botões em andamento nas Configurações gerais', () => {
     fireEvent.click(save);
     held.release();
     expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT Consultoria Fictícia America/Sao_Paulo']);
+    expect(requests).toEqual(['PUT America/Sao_Paulo']);
   });
 });

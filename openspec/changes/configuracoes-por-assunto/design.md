@@ -32,7 +32,7 @@ As duas usam a política `SystemPolicies.Administrator`, como as outras rotas de
 
 ### 2. A tela Visual
 
-A `ColorsPage` vira a `VisualPage`, em `/admin/visual`, com o nome "Visual" na coluna da Administração e o mesmo ícone. A coluna da esquerda ganha, antes das cores, o cartão da Marca: o nome exibido, o logo e o logo para o tema escuro, com o `LogoField` que hoje está nas Configurações gerais (ele e o envio dos logos vão para um arquivo próprio, `BrandFields.tsx`). A prévia grande (`ColorsPreview`) já recebe o nome e os logos: passa a receber os digitados e escolhidos, no lugar dos salvos.
+A `ColorsPage` vira a `VisualPage`, em `/admin/visual`, com o nome "Visual" na coluna da Administração e o mesmo ícone. A coluna da esquerda ganha, antes das cores, o cartão da Marca: o nome exibido, o logo e o logo para o tema escuro, com o `LogoField` que hoje está nas Configurações gerais (ele e o envio dos logos vão para um arquivo próprio, `LogoField.tsx`, com as regras dos logos em `logos.ts`). A prévia grande (`ColorsPreview`) já recebe o nome e os logos: passa a receber os digitados e escolhidos, no lugar dos salvos.
 
 Salvar alterações grava, nesta ordem, só o que mudou: os logos (um arquivo recusado para tudo e mostra o motivo no campo), o nome e as cores. Descartar volta o nome, os logos e as cores. A rota `/admin/colors` passa a levar a `/admin/visual`, com `replace`.
 

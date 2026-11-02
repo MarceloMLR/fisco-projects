@@ -68,8 +68,8 @@ const sections = [
         count: null,
       },
       {
-        path: '/admin/colors',
-        labelKey: 'pages.colors.title',
+        path: '/admin/visual',
+        labelKey: 'pages.visual.title',
         icon: PaletteOutlined,
         count: null,
       },
