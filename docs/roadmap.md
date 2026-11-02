@@ -47,7 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
-| 6. Avisos | 4 | 3 |
+| 6. Avisos | 4 | 4 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
@@ -57,7 +57,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **117** | **106** |
+| **Total** | **117** | **107** |
 
 ## 1. Fundação
 
