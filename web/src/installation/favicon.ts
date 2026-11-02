@@ -1,5 +1,5 @@
 import { brandTokens } from '../theme/brandColors';
-import { color, length } from '../theme/tokens';
+import { length } from '../theme/tokens';
 
 /** The two paths of the icon of the timeline (ViewTimelineOutlined of the Material Icons), in a box of 24. */
 const timelinePaths = [
@@ -13,12 +13,11 @@ const iconSize = 18;
 
 /**
  * The badge of the product as the icon of the tab of the browser (ADR-0108): the icon of the timeline in the color of
- * the text over the action, on the main color of the installation (or the one of the design system), with the corners
- * of the badge of the sidebar. A data address, so it needs no file.
+ * the text over the action, white or dark, whichever reads (ADR-0146), on the main color of the installation (or the
+ * one of the design system), with the corners of the badge of the sidebar. A data address, so it needs no file.
  */
 export function badgeIcon(mainColor: string | null): string {
-  const action = brandTokens(mainColor).light.action;
-  const onAction = color('on-action', 'light');
+  const { action, 'on-action': onAction } = brandTokens(mainColor).light;
   const radius = (Number.parseFloat(length('radius-md')) * 24) / badgeSize;
   const scale = iconSize / badgeSize;
   const offset = (24 - 24 * scale) / 2;

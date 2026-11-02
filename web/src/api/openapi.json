@@ -1326,6 +1326,59 @@
         }
       }
     },
+    "/api/installation/colors": {
+      "put": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "ChangeInstallationColors",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationColorsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/installation/logo/dark": {
       "get": {
         "tags": [
@@ -13100,12 +13153,43 @@
         },
         "description": "The schedule converted by the preview, with who each resource is, in the order of the preview."
       },
+      "InstallationColorsRequest": {
+        "required": [
+          "mainColor",
+          "secondaryColor",
+          "sidebarColor"
+        ],
+        "type": "object",
+        "properties": {
+          "mainColor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secondaryColor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sidebarColor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The three colors of the installation (ADR-0146), each #RRGGBB, or null for the default one."
+      },
       "InstallationResponse": {
         "required": [
           "name",
           "logoUrl",
           "mainColor",
-          "darkLogoUrl"
+          "darkLogoUrl",
+          "secondaryColor",
+          "sidebarColor"
         ],
         "type": "object",
         "properties": {
@@ -13129,9 +13213,21 @@
               "null",
               "string"
             ]
+          },
+          "secondaryColor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sidebarColor": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "The brand of the installation: the name shown, the address of the logo (null without one), the main color as\n#RRGGBB (null for the color of the design system) and the address of the logo for the dark theme (null without one,\nand the logo shows, ADR-0100). The address of a logo changes whenever the logo changes, so the browser may keep it."
+        "description": "The brand of the installation: the name shown, the address of the logo (null without one), the main color as\n#RRGGBB (null for the color of the design system), the address of the logo for the dark theme (null without one,\nand the logo shows, ADR-0100) and the secondary color and the color of the sidebar as #RRGGBB (null for the design\nsystem, ADR-0146). The address of a logo changes whenever the logo changes, so the browser may keep it."
       },
       "LinkCategoryCountResponse": {
         "required": [
@@ -18998,7 +19094,6 @@
         "required": [
           "name",
           "timeZone",
-          "mainColor",
           "dailySummaryAt",
           "notificationRetentionDays"
         ],
@@ -19009,12 +19104,6 @@
           },
           "timeZone": {
             "type": "string"
-          },
-          "mainColor": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "dailySummaryAt": {
             "type": [
@@ -19051,7 +19140,7 @@
             "format": "double"
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null\nfor the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the\nnotifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the\nfolder of the projects in the file storage, with the folders separated by \"/\" (\"\" for its root; none keeps the one\nit had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142)."
+        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the time of the daily summary (HH:mm:ss, in the time zone), how many days the\nnotifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the\nfolder of the projects in the file storage, with the folders separated by \"/\" (\"\" for its root; none keeps the one\nit had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142)."
       },
       "UserPageResponse": {
         "required": [

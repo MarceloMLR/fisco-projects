@@ -61,6 +61,8 @@ type SettingsField =
   | 'LogoFileName'
   | 'TimeZone'
   | 'MainColor'
+  | 'SecondaryColor'
+  | 'SidebarColor'
   | 'DailySummaryAt'
   | 'NotificationRetentionDays'
   | 'DarkLogoFileName'
@@ -72,6 +74,8 @@ const settingsFields: readonly string[] = [
   'LogoFileName',
   'TimeZone',
   'MainColor',
+  'SecondaryColor',
+  'SidebarColor',
   'DailySummaryAt',
   'NotificationRetentionDays',
   'DarkLogoFileName',

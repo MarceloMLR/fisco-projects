@@ -1,23 +1,32 @@
 import { color, type ColorScheme, colorSchemes } from './tokens';
 
-// The colors of the brand derived from the main color of the installation (ADR-0082). Every token starts from its
-// value in the design system: the hue moves by the difference of hue between the new color and the default one, and
-// the chroma scales by their ratio, in OKLCH. The lightness stays, except for the tokens that are the main color itself
-// in the light theme. Then the pairs of text and background of the design system are pushed to their minimum
-// contrast. With the default color, every token keeps its value.
+// The colors of the installation (ADR-0082, ADR-0146): the main one, the secondary one and the one of the sidebar, each
+// optional. Any color is accepted: the text over it is white or dark, whichever reads, and only what is text or an
+// outline moves its lightness until the contrast of WCAG AA. The tokens that are no color of the installation start
+// from their value in the design system, with the hue and the chroma of the color, in OKLCH. Without any color, every
+// token keeps its value in the design system, and the status colors never change.
 
-/** The tokens that follow the main color (design system, "Marca da instalação"). */
+/** The tokens the colors of the installation change (design system, "Marca da instalação", and ADR-0146). */
 export const brandTokenNames = [
   'action',
   'action-hover',
   'action-pressed',
+  'on-action',
   'action-text',
   'control-selected',
+  'on-control-selected',
   'focus-ring',
-  'sidebar-active-bg',
-  'sidebar-text-active',
-  'sidebar-indicator',
   'avatar-owner',
+  'bg-selected',
+  'sidebar-bg',
+  'sidebar-hover-bg',
+  'sidebar-active-bg',
+  'sidebar-text',
+  'sidebar-text-active',
+  'sidebar-muted',
+  'sidebar-indicator',
+  'sidebar-divider',
+  'sidebar-border',
   'brand-panel-bg',
   'brand-panel-bg-2',
   'brand-panel-muted',
@@ -27,21 +36,35 @@ export const brandTokenNames = [
 export type BrandTokenName = (typeof brandTokenNames)[number];
 export type BrandTokens = Record<BrandTokenName, string>;
 
-/** In the light theme, these are the main color, with the difference of lightness each has to the default one. */
-const followLightness: ReadonlySet<BrandTokenName> = new Set([
-  'action',
-  'action-hover',
-  'action-pressed',
-  'action-text',
-  'control-selected',
-  'focus-ring',
-  'sidebar-indicator',
-  'avatar-owner',
-  'brand-panel-bg-2',
-]);
+/** The three colors of the installation, each #RRGGBB (any case, with or without #) or null for the default one. */
+export interface BrandColorChoice {
+  main: string | null;
+  secondary: string | null;
+  sidebar: string | null;
+}
 
-/** Contrast the main color needs with white, the label of the main button and the background of links (ADR-0082). */
-export const minimumContrastWithWhite = 4.5;
+/** No color chosen: the design system as it is. */
+export const defaultColors: BrandColorChoice = { main: null, secondary: null, sidebar: null };
+
+/** The colors of the brand as the API gives them. */
+export function colorsOf(
+  brand:
+    | { mainColor: string | null; secondaryColor: string | null; sidebarColor: string | null }
+    | undefined,
+): BrandColorChoice {
+  return {
+    main: brand?.mainColor ?? null,
+    secondary: brand?.secondaryColor ?? null,
+    sidebar: brand?.sidebarColor ?? null,
+  };
+}
+
+/** Contrast of a text over its background (WCAG AA), and of an outline or a large shape. */
+const textContrast = 4.5;
+const outlineContrast = 3;
+
+/** Below this relative luminance a background is dark: the sidebar shows the logo for the dark theme over it. */
+const darkLuminance = 0.18;
 
 interface Oklch {
   l: number;
@@ -146,15 +169,10 @@ export function defaultMainColor(): string {
   return normalizeHex(color('action', 'light')) ?? color('action', 'light');
 }
 
-/**
- * Whether a color may be the main color: #RRGGBB with 4.5:1 with white (the label of the main button), the same rule
- * the server checks (InstallationSettings.TryNormalizeMainColor).
- */
-export function hasContrast(mainColor: string): boolean {
-  const hex = normalizeHex(mainColor);
-  return (
-    hex !== undefined && contrast(hex, color('on-action', 'light')) >= minimumContrastWithWhite
-  );
+/** The lightness of a color moved by a step, in OKLCH. */
+function shifted(hex: string, step: number): string {
+  const value = oklchOf(hex);
+  return hexOfOklch({ ...value, l: value.l + step });
 }
 
 /** Moves the lightness of a color away from the backgrounds until it has the contrast with each of them. */
@@ -162,7 +180,7 @@ function withContrast(hex: string, backgrounds: readonly string[], minimum: numb
   if (backgrounds.every((background) => contrast(hex, background) >= minimum)) {
     return hex;
   }
-  const lighter = luminance(backgrounds[0] ?? hex) < 0.18;
+  const lighter = luminance(backgrounds[0] ?? hex) < darkLuminance;
   const start = oklchOf(hex);
   let candidate = hex;
   for (let step = 1; step <= 100; step += 1) {
@@ -172,52 +190,6 @@ function withContrast(hex: string, backgrounds: readonly string[], minimum: numb
     }
   }
   return candidate;
-}
-
-function derive(mainColor: string, scheme: ColorScheme): BrandTokens {
-  const base = oklchOf(defaultMainColor());
-  const chosen = oklchOf(mainColor);
-  const ratio = base.c > 0 ? chosen.c / base.c : 0;
-  const tokens = {} as BrandTokens;
-  for (const name of brandTokenNames) {
-    const original = color(name, scheme);
-    if (scheme === 'light' && original.toUpperCase() === defaultMainColor()) {
-      // The main color itself, as the Administrator chose it.
-      tokens[name] = mainColor.toLowerCase();
-      continue;
-    }
-    const value = oklchOf(original);
-    tokens[name] = hexOfOklch({
-      l: scheme === 'light' && followLightness.has(name) ? value.l + (chosen.l - base.l) : value.l,
-      c: value.c * ratio,
-      h: value.h + (chosen.h - base.h),
-    });
-  }
-
-  // The pairs of the design system, at their minimum contrast; never the main color in the light theme.
-  const token = (name: string) => color(name, scheme);
-  const keep = (name: BrandTokenName) =>
-    scheme === 'light' && tokens[name] === mainColor.toLowerCase();
-  const adjust = (name: BrandTokenName, backgrounds: string[], minimum: number) => {
-    if (!keep(name)) {
-      tokens[name] = withContrast(tokens[name], backgrounds, minimum);
-    }
-  };
-  for (const name of ['action', 'action-hover', 'action-pressed'] as const) {
-    // The background of the white label: darker until the label has its contrast.
-    if (!keep(name)) {
-      tokens[name] = darkerUntil(tokens[name], token('on-action'), 4.5);
-    }
-  }
-  if (!keep('avatar-owner')) {
-    tokens['avatar-owner'] = darkerUntil(tokens['avatar-owner'], token('on-avatar-role'), 4.5);
-  }
-  adjust('action-text', [token('bg-surface'), token('bg-page')], 4.5);
-  adjust('control-selected', [token('bg-surface')], 3);
-  adjust('focus-ring', [token('bg-page')], 3);
-  adjust('sidebar-text-active', [tokens['sidebar-active-bg']], 4.5);
-  adjust('brand-panel-muted', [tokens['brand-panel-bg']], 4.5);
-  return tokens;
 }
 
 /** Makes a background darker until a light text over it has the contrast. */
@@ -230,28 +202,271 @@ function darkerUntil(background: string, text: string, minimum: number): string 
   return candidate;
 }
 
-/** Whether the sidebar of the design system is dark in a theme, so it shows the logo for the dark theme (ADR-0100). */
-export function sidebarIsDark(scheme: ColorScheme): boolean {
-  return luminance(color('sidebar-bg', scheme)) < 0.18;
+/** The two colors in sRGB, the second one by the share given. */
+function mix(first: string, second: string, share: number): string {
+  const [a, b] = [rgbOf(first), rgbOf(second)];
+  return hexOf(
+    a.map((channel, index) => channel + ((b[index] ?? channel) - channel) * share) as Rgb,
+  );
 }
 
 /**
- * The values of the brand tokens for a main color in each theme; null (or the default color) gives the values of the
- * design system.
+ * The text over a color: the white of the design system when it reads (4.5:1), otherwise its dark text, darker until
+ * it reads, so any background has a readable text (ADR-0146).
  */
-export function brandTokens(mainColor: string | null): Record<ColorScheme, BrandTokens> {
-  const hex = mainColor === null ? undefined : normalizeHex(mainColor);
+export function textOn(background: string): string {
+  const white = color('on-action', 'light');
+  if (contrast(white, background) >= textContrast) {
+    return white;
+  }
+  return withContrast(color('text', 'light'), [background], textContrast);
+}
+
+/**
+ * A token of the design system with the hue of a color and its chroma, scaled by the chroma of the default main
+ * color (at most 1.6 times, so a light surface stays light); the lightness of the token stays.
+ */
+function recolored(token: string, chosen: string, limit = Number.POSITIVE_INFINITY): string {
+  const base = oklchOf(defaultMainColor());
+  const value = oklchOf(token);
+  const target = oklchOf(chosen);
+  const ratio = base.c > 0 ? Math.min(limit, target.c / base.c) : 0;
+  return hexOfOklch({ l: value.l, c: value.c * ratio, h: value.h + (target.h - base.h) });
+}
+
+/** The tokens of a theme in the design system, as they are with no color chosen. */
+function designTokens(scheme: ColorScheme): BrandTokens {
+  return Object.fromEntries(
+    brandTokenNames.map((name) => [name, normalizeHex(color(name, scheme))?.toLowerCase()]),
+  ) as BrandTokens;
+}
+
+/** A color typed by the Administrator, or undefined for the default one. */
+function chosenColor(value: string | null): string | undefined {
+  return value === null ? undefined : normalizeHex(value)?.toLowerCase();
+}
+
+/** The main color (ADR-0146): the buttons, the links, the controls, the focus, the owner and the active item. */
+function applyMain(tokens: BrandTokens, main: string, scheme: ColorScheme) {
+  const design = designTokens(scheme);
+  // The tokens that are no color of the installation: the hue and the chroma of the main color (ADR-0082).
+  for (const name of [
+    'sidebar-active-bg',
+    'sidebar-text-active',
+    'brand-panel-bg',
+    'brand-panel-bg-2',
+    'brand-panel-muted',
+    'brand-panel-accent',
+  ] as const) {
+    tokens[name] = recolored(design[name], main);
+  }
+  const surfaces = [color('bg-surface', scheme), color('bg-page', scheme)];
+  const action =
+    scheme === 'light' ? main : withContrast(main, [color('bg-page', scheme)], outlineContrast);
+  const onAction = textOn(action);
+  const step = (name: 'action-hover' | 'action-pressed') =>
+    oklchOf(design[name]).l - oklchOf(design.action).l;
+  tokens.action = action;
+  tokens['on-action'] = onAction;
+  tokens['action-hover'] = withContrast(
+    shifted(action, step('action-hover')),
+    [onAction],
+    textContrast,
+  );
+  tokens['action-pressed'] = withContrast(
+    shifted(action, step('action-pressed')),
+    [onAction],
+    textContrast,
+  );
+  tokens['action-text'] = withContrast(main, surfaces, textContrast);
+  tokens['control-selected'] = withContrast(main, [color('bg-surface', scheme)], outlineContrast);
+  tokens['on-control-selected'] = textOn(tokens['control-selected']);
+  tokens['focus-ring'] = withContrast(main, [color('bg-page', scheme)], outlineContrast);
+  tokens['avatar-owner'] = darkerUntil(action, color('on-avatar-role', scheme), textContrast);
+  if (scheme === 'light') {
+    tokens['brand-panel-bg-2'] = main;
+  }
+}
+
+/** The secondary color (ADR-0146): the selected row, the unread notification, the mention and the sign-in panel. */
+function applySecondary(tokens: BrandTokens, secondary: string, scheme: ColorScheme) {
+  const design = designTokens(scheme);
+  tokens['bg-selected'] = recolored(design['bg-selected'], secondary, 1.6);
+  tokens['brand-panel-bg'] = recolored(design['brand-panel-bg'], secondary);
+  tokens['brand-panel-bg-2'] =
+    scheme === 'light' ? secondary : recolored(design['brand-panel-bg-2'], secondary);
+  tokens['brand-panel-muted'] = recolored(design['brand-panel-muted'], secondary);
+  tokens['brand-panel-accent'] = recolored(design['brand-panel-accent'], secondary);
+}
+
+/** The color of the sidebar (ADR-0146): the background, and the texts, the hover and the dividers that follow it. */
+function applySidebar(tokens: BrandTokens, sidebar: string, scheme: ColorScheme): string {
+  const chosen = oklchOf(sidebar);
+  // In the dark theme, a dark tone of the hue: a light sidebar does not fit the dark theme.
+  const background =
+    scheme === 'light'
+      ? sidebar
+      : hexOfOklch({ l: 0.215, c: Math.min(chosen.c, 0.04), h: chosen.h });
+  const dark = luminance(background) < darkLuminance;
+  // The design system's own sidebar for a background as dark as this one, then each pair to its contrast.
+  const like = designTokens(dark ? 'dark' : 'light');
+  const step = (name: BrandTokenName) => oklchOf(like[name]).l - oklchOf(like['sidebar-bg']).l;
+  const text = withContrast(like['sidebar-text'], [background], textContrast);
+  // The hover moves away from the text when the design system's way would take the contrast from it.
+  const hover = [step('sidebar-hover-bg'), -step('sidebar-hover-bg')]
+    .map((change) => shifted(background, change))
+    .find((candidate) => contrast(text, candidate) >= textContrast);
+  tokens['sidebar-bg'] = background;
+  tokens['sidebar-hover-bg'] = hover ?? shifted(background, step('sidebar-hover-bg'));
+  tokens['sidebar-text'] = withContrast(
+    text,
+    [background, tokens['sidebar-hover-bg']],
+    textContrast,
+  );
+  tokens['sidebar-muted'] = withContrast(like['sidebar-muted'], [background], textContrast);
+  tokens['sidebar-divider'] = shifted(background, step('sidebar-divider'));
+  tokens['sidebar-border'] = tokens['sidebar-divider'];
+  tokens['sidebar-active-bg'] = mix(
+    shifted(background, dark ? 0.08 : -0.06),
+    tokens.action,
+    dark ? 0.22 : 0.12,
+  );
+  tokens['sidebar-text-active'] = dark
+    ? recolored(like['sidebar-text-active'], tokens.action)
+    : tokens['action-text'];
+  return withContrast(color('text', dark ? 'dark' : 'light'), [background], textContrast);
+}
+
+/** The tokens of a theme for the colors chosen, and the name of the installation over the sidebar, if it changes. */
+function derive(
+  choice: BrandColorChoice,
+  scheme: ColorScheme,
+): { tokens: BrandTokens; sidebarTitle: string | null } {
+  const tokens = designTokens(scheme);
+  const main = chosenColor(choice.main);
+  const secondary = chosenColor(choice.secondary);
+  const sidebar = chosenColor(choice.sidebar);
+  if (main !== undefined && main.toUpperCase() !== defaultMainColor()) {
+    applyMain(tokens, main, scheme);
+  }
+  if (secondary !== undefined) {
+    applySecondary(tokens, secondary, scheme);
+  }
+  const sidebarTitle = sidebar === undefined ? null : applySidebar(tokens, sidebar, scheme);
+  if (main !== undefined || sidebar !== undefined) {
+    // The active item and its outline over the sidebar, whatever painted them.
+    tokens['sidebar-text-active'] = withContrast(
+      tokens['sidebar-text-active'],
+      [tokens['sidebar-active-bg']],
+      textContrast,
+    );
+    tokens['sidebar-indicator'] = withContrast(
+      main === undefined ? tokens['sidebar-indicator'] : tokens['action-text'],
+      [tokens['sidebar-bg']],
+      outlineContrast,
+    );
+  }
+  if (main !== undefined || secondary !== undefined) {
+    // The panel of the sign-in page: its white text and the muted one readable.
+    for (const name of ['brand-panel-bg', 'brand-panel-bg-2'] as const) {
+      tokens[name] = darkerUntil(tokens[name], color('brand-panel-text', scheme), textContrast);
+    }
+    tokens['brand-panel-muted'] = withContrast(
+      tokens['brand-panel-muted'],
+      [tokens['brand-panel-bg']],
+      textContrast,
+    );
+  }
+  return { tokens, sidebarTitle };
+}
+
+function choiceOf(colors: BrandColorChoice | string | null): BrandColorChoice {
+  return typeof colors === 'string' || colors === null
+    ? { ...defaultColors, main: colors }
+    : colors;
+}
+
+/** Whether no color is chosen, so the design system stays as it is. */
+export function isDefaultChoice(colors: BrandColorChoice | string | null): boolean {
+  const choice = choiceOf(colors);
+  return (
+    chosenColor(choice.secondary) === undefined &&
+    chosenColor(choice.sidebar) === undefined &&
+    (chosenColor(choice.main) === undefined ||
+      chosenColor(choice.main)?.toUpperCase() === defaultMainColor())
+  );
+}
+
+/**
+ * The values of the tokens of the installation in each theme for its colors (or only a main color); no color (or the
+ * default main color) gives the values of the design system.
+ */
+export function brandTokens(
+  colors: BrandColorChoice | string | null,
+): Record<ColorScheme, BrandTokens> {
+  const choice = choiceOf(colors);
   const values = {} as Record<ColorScheme, BrandTokens>;
   for (const scheme of colorSchemes) {
-    if (hex === undefined || hex === defaultMainColor()) {
-      values[scheme] = Object.fromEntries(
-        brandTokenNames.map((name) => [name, color(name, scheme)]),
-      ) as BrandTokens;
-    } else {
-      values[scheme] = derive(hex, scheme);
-    }
+    values[scheme] = derive(choice, scheme).tokens;
   }
   return values;
+}
+
+/**
+ * Whether the sidebar is dark in a theme, so it shows the logo for the dark theme (ADR-0100, ADR-0146): the dark
+ * theme, or a dark color of the sidebar in the light one.
+ */
+export function sidebarIsDark(
+  colors: BrandColorChoice | string | null,
+  scheme: ColorScheme,
+): boolean {
+  return luminance(brandTokens(colors)[scheme]['sidebar-bg']) < darkLuminance;
+}
+
+/** What the screens adjusted over a color, told under its field (ADR-0146). */
+export type ColorNote =
+  | 'darkText'
+  | 'darkerLinks'
+  | 'lighterInDark'
+  | 'darkerPanel'
+  | 'lightSidebarText'
+  | 'darkSidebarText'
+  | 'darkSidebarTone'
+  | 'indicator';
+
+/** The adjustments of each color chosen; an empty list for a color used as it is, or for no color. */
+export function colorNotes(colors: BrandColorChoice): Record<keyof BrandColorChoice, ColorNote[]> {
+  const { light, dark } = brandTokens(colors);
+  const main = chosenColor(colors.main);
+  const secondary = chosenColor(colors.secondary);
+  const sidebar = chosenColor(colors.sidebar);
+  const notes: Record<keyof BrandColorChoice, ColorNote[]> = {
+    main: [],
+    secondary: [],
+    sidebar: [],
+  };
+  if (main !== undefined && main.toUpperCase() !== defaultMainColor()) {
+    if (light['on-action'] !== color('on-action', 'light')) {
+      notes.main.push('darkText');
+    }
+    if (light['action-text'] !== main) {
+      notes.main.push('darkerLinks');
+    }
+    if (dark.action !== main) {
+      notes.main.push('lighterInDark');
+    }
+  }
+  if (secondary !== undefined && light['brand-panel-bg-2'] !== secondary) {
+    notes.secondary.push('darkerPanel');
+  }
+  if (sidebar !== undefined) {
+    notes.sidebar.push(sidebarIsDark(colors, 'light') ? 'lightSidebarText' : 'darkSidebarText');
+    notes.sidebar.push('darkSidebarTone');
+    if (light['sidebar-indicator'] !== light['action-text']) {
+      notes.sidebar.push('indicator');
+    }
+  }
+  return notes;
 }
 
 function channels(hex: string): string {
@@ -260,28 +475,33 @@ function channels(hex: string): string {
     .join(' ');
 }
 
-/** The CSS custom properties of a theme for a main color, also those of the primary color of MUI. */
+/**
+ * The CSS custom properties of a theme for the colors of the installation, also those of the primary color of MUI,
+ * and the color of the name of the installation over a sidebar of its own.
+ */
 export function brandVariables(
-  mainColor: string | null,
+  colors: BrandColorChoice | string | null,
   scheme: ColorScheme,
 ): Record<string, string> {
-  const tokens = brandTokens(mainColor)[scheme];
+  const { tokens, sidebarTitle } = derive(choiceOf(colors), scheme);
   return {
     ...Object.fromEntries(brandTokenNames.map((name) => [`--${name}`, tokens[name]])),
+    ...(sidebarTitle === null ? {} : { '--sidebar-title': sidebarTitle }),
     '--mui-palette-primary-main': tokens.action,
     '--mui-palette-primary-dark': tokens['action-hover'],
+    '--mui-palette-primary-contrastText': tokens['on-action'],
     '--mui-palette-primary-mainChannel': channels(tokens.action),
     '--mui-palette-primary-darkChannel': channels(tokens['action-hover']),
   };
 }
 
 /**
- * The style sheet of a main color for both themes. Its selectors weigh more than the ones of the design system
- * (0,2,0), so it wins whatever the order, also on elements that set their own theme with data-theme.
+ * The style sheet of the colors for both themes. Its selectors weigh more than the ones of the design system (0,2,0),
+ * so it wins whatever the order, also on elements that set their own theme with data-theme.
  */
-export function brandStyleSheet(mainColor: string): string {
+export function brandStyleSheet(colors: BrandColorChoice | string | null): string {
   const block = (selector: string, scheme: ColorScheme) =>
-    `${selector} {\n${Object.entries(brandVariables(mainColor, scheme))
+    `${selector} {\n${Object.entries(brandVariables(colors, scheme))
       .map(([name, value]) => `  ${name}: ${value};`)
       .join('\n')}\n}`;
   return [

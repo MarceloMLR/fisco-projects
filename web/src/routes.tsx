@@ -10,6 +10,7 @@ import { TemplatesPage } from './admin/TemplatesPage';
 import { VendorsPage } from './admin/VendorsPage';
 import { RequireAdministrator } from './admin/RequireAdministrator';
 import { SettingsPage } from './admin/SettingsPage';
+import { ColorsPage } from './admin/ColorsPage';
 import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
@@ -304,6 +305,15 @@ export const routes: RouteObject[] = [
                 handle: {
                   navigation: 'admin',
                   titleKey: 'pages.settings.title',
+                  trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
+                } satisfies PageHandle,
+              },
+              {
+                path: 'colors',
+                element: <ColorsPage />,
+                handle: {
+                  navigation: 'admin',
+                  titleKey: 'pages.colors.title',
                   trail: [{ titleKey: 'pages.admin.title', path: '/admin' }],
                 } satisfies PageHandle,
               },
