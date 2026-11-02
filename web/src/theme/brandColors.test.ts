@@ -19,7 +19,7 @@ import { color, colorSchemes } from './tokens';
 // Colors as the Administrator types them, without "#": colors in the code come only from tokens.json, and these are
 // what someone types in Colors, not colors of the screens.
 const typed = (value: string) => `#${value.toLowerCase()}`;
-const rgb = (hex: string) => ({
+const channelsOf = (hex: string) => ({
   r: Number.parseInt(hex.slice(1, 3), 16),
   g: Number.parseInt(hex.slice(3, 5), 16),
   b: Number.parseInt(hex.slice(5, 7), 16),
@@ -271,7 +271,7 @@ describe('Cor secundária', () => {
     // The panel and the background of the sign-in page follow the main color.
     expect(brandTokens(choice('0F766E')).light['brand-panel-bg-2']).toBe(typed('0F766E'));
     for (const scheme of colorSchemes) {
-      const background = rgb(brandTokens(choice('0F766E'))[scheme]['signin-bg']);
+      const background = channelsOf(brandTokens(choice('0F766E'))[scheme]['signin-bg']);
       expect(background.g, scheme).toBeGreaterThan(background.r);
     }
   });
@@ -299,8 +299,8 @@ describe('Cor secundária', () => {
   it('Fundo da entrada na cor secundária', () => {
     for (const scheme of colorSchemes) {
       const brand = brandTokens(choice('0F766E', 'C0395A'))[scheme];
-      const background = rgb(brand['signin-bg']);
-      const glow = rgb(brand['signin-glow']);
+      const background = channelsOf(brand['signin-bg']);
+      const glow = channelsOf(brand['signin-glow']);
 
       expect(brand['signin-bg'], scheme).not.toBe(color('signin-bg', scheme));
       // The hue of the secondary color (a wine red), not the blue of the design nor the main color.
