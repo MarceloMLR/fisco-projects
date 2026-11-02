@@ -7,10 +7,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Instalação | Installation | Uma cópia do sistema para uma empresa (ADR-0003) |
-| Configurações gerais | InstallationSettings | As configurações da instalação na Administração (`/admin/settings`), numa linha só do módulo `Administration` |
+| Configurações gerais | InstallationSettings (`SettingsPage`) | As configurações da instalação, numa linha só do módulo `Administration`; a tela `/admin/settings` tem as Regras gerais e o Microsoft 365 (ADR-0150) |
 | Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
-| Cores | ColorsPage (`/admin/colors`) | Seção da Administração com as três cores da instalação e a prévia (ADR-0146) |
+| Visual | VisualPage (`/admin/visual`) | Seção da Administração com a marca (nome e logos), as três cores da instalação e a prévia; antes, Cores (ADR-0146, ADR-0150) |
 | Cor principal | MainColor | Cor dos botões, links, abas e seleções, em `#RRGGBB`, vazia para a do design system; qualquer cor é aceita, com o texto sobre ela calculado (ADR-0082, ADR-0146) |
 | Cor secundária | SecondaryColor | Cor da linha selecionada, da notificação não lida, da menção e do painel e do fundo da entrada; sem ela, o painel e o fundo seguem a principal (ADR-0146, ADR-0147) |
 | Cor da barra lateral | SidebarColor | Fundo da barra lateral, com os textos calculados; no tema escuro, um tom escuro do matiz (ADR-0146) |
@@ -220,7 +220,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Quem vê (pasta) | `VisibleTo`, FolderRole, FolderViewers | Os papéis do projeto que veem a pasta (Líder técnico, Colaborador, Desenvolvedor, Leitor); o administrador e o gerente sempre veem (ADR-0148) |
 | Quem vê esta pasta | ChangeFolderVisibility | O administrador muda quem vê uma pasta do projeto (ADR-0148) |
 | Pasta do projeto no armazenamento | `Project.StorageFolderId`, IProjectStorage | Uma por projeto, `{código} - {nome}`, criada no primeiro arquivo e renomeada com o projeto (ADR-0121) |
-| Pasta dos projetos | InstallationSettings.ProjectsFolder | Onde as pastas dos projetos são criadas, nas Configurações gerais; vazia, na raiz do armazenamento |
+| Pasta dos projetos | InstallationSettings.ProjectsFolder (`ProjectsFolderDialog`) | Onde as pastas dos projetos são criadas, escolhida em Pastas padrão; vazia, na raiz do armazenamento (ADR-0150) |
 | Renomear pasta | `IFileStorage.RenameFolderAsync` | Mantém o id da pasta e de tudo dentro dela |
 | Pasta escolhida | `Project.StorageFolderChosen`, ChooseFolder | Uma pasta que já existia, escolhida para o projeto; não é renomeada nem apagada (ADR-0122) |
 | Escolher a pasta | `ProjectPermissions.CanChooseFolder`, ProjectFolderChoices (`GET /api/project-folders`) | Administrador e gerente, enquanto o projeto não guardou arquivos |

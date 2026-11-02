@@ -196,3 +196,97 @@ describe('Pastas padrão na Administração', () => {
     });
   });
 });
+
+// Spec: configuracao-da-instalacao, requirement "Pasta dos projetos" (Default folders, ADR-0121, ADR-0150).
+describe('Pasta dos projetos em Pastas padrão', () => {
+  const folderText = text.projectsFolder;
+  let projectsFolder: string;
+
+  beforeEach(() => {
+    projectsFolder = '';
+    server.use(
+      http.get('/api/installation/rules', () =>
+        HttpResponse.json({
+          timeZone: 'America/Sao_Paulo',
+          dailySummaryAt: '07:30:00',
+          notificationRetentionDays: 90,
+          auditRetentionYears: 5,
+          projectsFolder,
+          workHoursPerDay: 8,
+        }),
+      ),
+      http.put('/api/installation/projects-folder', async ({ request }) => {
+        const body = (await request.json()) as { projectsFolder: string };
+        requests.push(`PUT projects folder ${body.projectsFolder}`);
+        projectsFolder = body.projectsFolder;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+  });
+
+  async function openFolders() {
+    await renderApp('/admin/document-folders');
+    const section = await screen.findByRole('region', { name: folderText.label });
+    await waitFor(() => {
+      expect(within(section).getByRole('button', { name: folderText.changeLabel })).toBeEnabled();
+    });
+    return section;
+  }
+
+  function folderField() {
+    return within(screen.getByRole('dialog', { name: folderText.title })).getByRole('textbox', {
+      name: folderText.field,
+    });
+  }
+
+  it('Pasta dos projetos padrão', async () => {
+    const section = await openFolders();
+
+    expect(within(section).getByTestId('projects-folder')).toHaveTextContent(folderText.root);
+  });
+
+  it('Alterar a pasta dos projetos pela tela', async () => {
+    const section = await openFolders();
+
+    fireEvent.click(within(section).getByRole('button', { name: folderText.changeLabel }));
+    expect(folderField()).toHaveValue('');
+    expect(screen.getByText(folderText.hint)).toBeInTheDocument();
+    fireEvent.change(folderField(), { target: { value: ' Clientes/Projetos ' } });
+    fireEvent.click(screen.getByRole('button', { name: folderText.save }));
+
+    expect(await screen.findByText(folderText.saved)).toBeInTheDocument();
+    expect(requests).toEqual(['PUT projects folder Clientes/Projetos']);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: folderText.title })).toBeNull();
+    });
+    await waitFor(() => {
+      expect(within(section).getByTestId('projects-folder')).toHaveTextContent('Clientes/Projetos');
+    });
+  });
+
+  it('Pasta dos projetos inválida', async () => {
+    server.use(
+      http.put('/api/installation/projects-folder', () =>
+        HttpResponse.json(
+          {
+            type: 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
+            title: 'One or more validation errors occurred.',
+            status: 400,
+            errors: { projectsFolder: ['Separate the folders with /.'] },
+          },
+          { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    );
+    const section = await openFolders();
+
+    fireEvent.click(within(section).getByRole('button', { name: folderText.changeLabel }));
+    fireEvent.change(folderField(), { target: { value: 'Projetos/Fin:2026' } });
+    fireEvent.click(screen.getByRole('button', { name: folderText.save }));
+
+    expect(await screen.findByText(folderText.invalid)).toBeInTheDocument();
+    expect(folderField()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('dialog', { name: folderText.title })).toBeInTheDocument();
+    expect(screen.queryByText(folderText.saved)).not.toBeInTheDocument();
+  });
+});

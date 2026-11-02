@@ -183,7 +183,7 @@ Regras:
 | [0118](0118-cartao-da-pessoa.md) | Cartão da pessoa ao clicar no avatar | aceita (fotos do Microsoft 365 substituído pelo ADR-0124) | 2026-10-26 |
 | [0119](0119-diretorio-da-microsoft-pelo-graph.md) | Diretório da empresa pelo Microsoft Graph | aceita | 2026-10-26 |
 | [0120](0120-arquivos-no-sharepoint-na-pratica.md) | Como os arquivos ficam no SharePoint | aceita | 2026-10-26 |
-| [0121](0121-pasta-de-cada-projeto.md) | Uma pasta por projeto no armazenamento, renomeada com o projeto | aceita | 2026-10-26 |
+| [0121](0121-pasta-de-cada-projeto.md) | Uma pasta por projeto no armazenamento, renomeada com o projeto | aceita (lugar da pasta dos projetos substituído pelo ADR-0150) | 2026-10-26 |
 | [0122](0122-escolher-a-pasta-do-projeto.md) | Escolher uma pasta que já existe para o projeto | aceita | 2026-10-27 |
 | [0123](0123-emails-pelo-graph-na-pratica.md) | Como os e-mails saem pelo Microsoft Graph | aceita | 2026-10-27 |
 | [0124](0124-foto-da-pessoa-pelo-microsoft-365.md) | Foto da pessoa no avatar, lida do Microsoft 365 | aceita | 2026-10-27 |
@@ -208,7 +208,8 @@ Regras:
 | [0143](0143-edicao-do-cronograma-na-lista.md) | Edição do cronograma na Lista, num modo de edição pelo teclado | aceita | 2026-11-01 |
 | [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita | 2026-11-01 |
 | [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |
-| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147) | 2026-11-01 |
+| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147; tela Cores substituída pelo ADR-0150) | 2026-11-01 |
 | [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |
 | [0148](0148-quem-ve-cada-pasta-de-documentos.md) | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto | aceita | 2026-11-02 |
 | [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita | 2026-11-02 |
+| [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |

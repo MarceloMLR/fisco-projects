@@ -55,8 +55,8 @@
     "settings": {
       "title": "Configurações gerais"
     },
-    "colors": {
-      "title": "Cores"
+    "visual": {
+      "title": "Visual"
     },
     "calendar": {
       "title": "Calendário e feriados"
@@ -832,20 +832,6 @@
     }
   },
   "settings": {
-    "brand": "Marca",
-    "name": "Nome exibido",
-    "logo": "Logo",
-    "optional": "(opcional)",
-    "logoHint": "PNG ou SVG, até 1 MB",
-    "noLogo": "—",
-    "sendLogo": "Enviar logo",
-    "replaceLogo": "Trocar logo",
-    "removeLogo": "Remover logo",
-    "darkLogo": "Logo para o tema escuro",
-    "darkLogoHint": "PNG ou SVG, até 1 MB. Aparece na barra lateral escura; sem ele, vale o logo.",
-    "sendDarkLogo": "Enviar logo escuro",
-    "replaceDarkLogo": "Trocar logo escuro",
-    "removeDarkLogo": "Remover logo escuro",
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
@@ -857,9 +843,6 @@
     "auditRetentionHint": "De 1 a 10 anos. Uma vez por mês, os registros mais antigos são apagados.",
     "workHoursPerDay": "Horas por dia de trabalho",
     "workHoursPerDayHint": "De 1 a 12 horas, como 8 ou 7,5. A capacidade da carga da equipe conta essas horas em cada dia útil.",
-    "files": "Arquivos",
-    "projectsFolder": "Pasta dos projetos",
-    "projectsFolderHint": "Onde ficam as pastas dos projetos novos, com as pastas separadas por /, como Projetos ou Clientes/Projetos. Vazia, elas ficam na raiz do armazenamento. Os projetos que já têm pasta continuam onde estão.",
     "m365": "Microsoft 365",
     "mailbox": "Caixa de envio",
     "mailboxHint": "Os e-mails do sistema saem por ela.",
@@ -883,28 +866,20 @@
       "package": "Aplicativo do Teams",
       "version": "Versão {{version}}",
       "neverDownloaded": "Pacote ainda não baixado",
-      "packageHint": "Baixe de novo depois de trocar o nome, o logo ou a cor principal e envie a versão nova ao Teams.",
+      "packageHint": "Baixe de novo depois de trocar o nome, o logo ou a cor principal em Visual e envie a versão nova ao Teams.",
       "download": "Baixar pacote do Teams",
       "fileName": "aplicativo-teams-{{version}}.zip",
       "downloaded": "Pacote do Teams baixado, na versão {{version}}.",
       "downloadFailed": "Não foi possível montar o pacote do Teams. Tente de novo."
     },
     "errors": {
-      "nameRequired": "Informe o nome exibido.",
-      "nameTooLong": "Use até 60 caracteres.",
-      "logoFormat": "Envie o logo em PNG ou SVG.",
-      "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor.",
-      "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles.",
       "timeZoneRequired": "Escolha o fuso horário.",
       "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro.",
       "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
       "retentionRange": "Use de 1 a 365 dias.",
       "auditRetentionRange": "Use de 1 a 10 anos.",
-      "workHoursRange": "Use de 1 a 12 horas, em quartos de hora, como 8 ou 7,5.",
-      "projectsFolderInvalid": "Separe as pastas por /, sem pasta vazia, sem . ou .., sem espaço nas pontas de cada uma e sem os caracteres \" * : < > ? \\ |."
+      "workHoursRange": "Use de 1 a 12 horas, em quartos de hora, como 8 ou 7,5."
     },
-    "preview": "Prévia",
-    "previewLabel": "Prévia da marca",
     "discard": "Descartar",
     "save": "Salvar alterações",
     "saved": "Configurações salvas.",
@@ -3186,6 +3161,20 @@
   "defaultFolders": {
     "table": "Pastas padrão",
     "note": "Todo projeto novo recebe as pastas ativas. As mudanças valem só para os projetos criados depois.",
+    "projectsFolder": {
+      "label": "Pasta dos projetos",
+      "root": "Na raiz do armazenamento",
+      "change": "Alterar",
+      "changeLabel": "Alterar a pasta dos projetos",
+      "title": "Pasta dos projetos",
+      "field": "Pasta dos projetos",
+      "hint": "Onde ficam as pastas dos projetos novos, com as pastas separadas por /, como Projetos ou Clientes/Projetos. Vazia, elas ficam na raiz do armazenamento. Os projetos que já têm pasta continuam onde estão.",
+      "invalid": "Separe as pastas por /, sem pasta vazia, sem . ou .., sem espaço nas pontas de cada uma e sem os caracteres \" * : < > ? \\ |.",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "saved": "Pasta dos projetos salva.",
+      "failed": "Não foi possível salvar a pasta dos projetos. Tente de novo."
+    },
     "empty": "Nenhuma pasta padrão.",
     "columns": {
       "name": "Pasta",
@@ -3790,9 +3779,40 @@
     "failed": "Não foi possível concluir. Tente de novo.",
     "loading": "Carregando o termo"
   },
+  "brand": {
+    "title": "Marca",
+    "name": "Nome exibido",
+    "logo": "Logo",
+    "optional": "(opcional)",
+    "logoHint": "PNG ou SVG, até 1 MB",
+    "noLogo": "—",
+    "sendLogo": "Enviar logo",
+    "replaceLogo": "Trocar logo",
+    "removeLogo": "Remover logo",
+    "darkLogo": "Logo para o tema escuro",
+    "darkLogoHint": "PNG ou SVG, até 1 MB. Aparece na barra lateral escura; sem ele, vale o logo.",
+    "sendDarkLogo": "Enviar logo escuro",
+    "replaceDarkLogo": "Trocar logo escuro",
+    "removeDarkLogo": "Remover logo escuro",
+    "errors": {
+      "nameRequired": "Informe o nome exibido.",
+      "nameTooLong": "Use até 60 caracteres.",
+      "logoFormat": "Envie o logo em PNG ou SVG.",
+      "logoTooLarge": "O logo passa de 1 MB. Envie um arquivo menor.",
+      "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles."
+    }
+  },
+  "visual": {
+    "subtitle": "A marca e as cores que todas as pessoas veem nesta instalação: na barra lateral, nas telas e na página de entrada. As cores são opcionais: sem elas, valem as do FiscoProjects.",
+    "formLabel": "Visual da instalação",
+    "colors": "Cores",
+    "discard": "Descartar",
+    "save": "Salvar alterações",
+    "saved": "Visual salvo.",
+    "saveFailed": "Não foi possível salvar o visual. Tente de novo.",
+    "loadFailed": "Não foi possível carregar o visual. Tente de novo."
+  },
   "colors": {
-    "subtitle": "As cores que todas as pessoas veem nesta instalação. Cada uma é opcional: sem ela, vale a do FiscoProjects. O nome e os logos ficam em Configurações gerais.",
-    "fieldsLabel": "Cores da instalação",
     "optional": "(opcional)",
     "main": {
       "label": "Cor principal",
@@ -3877,9 +3897,6 @@
       "mention": "as alíquotas já estão no ambiente de testes.",
       "signInLabel": "Página de entrada",
       "signInTitle": "Entre com a conta da empresa"
-    },
-    "saved": "Cores salvas.",
-    "loadFailed": "Não foi possível carregar as cores. Tente de novo.",
-    "saveFailed": "Não foi possível salvar as cores. Tente de novo."
+    }
   }
 }

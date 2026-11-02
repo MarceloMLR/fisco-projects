@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (lugar da pasta dos projetos substituído pelo ADR-0150)
 date: 2026-10-26
 decision-makers: Marcelo Ribeiro
 ---

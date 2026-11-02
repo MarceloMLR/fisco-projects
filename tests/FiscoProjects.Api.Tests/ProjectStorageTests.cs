@@ -207,14 +207,7 @@ public sealed class ProjectStorageTests(SqlServerFixture sqlServer)
     }
 
     private static Task<HttpResponseMessage> ChangeProjectsFolderAsync(HttpClient admin, string projectsFolder) =>
-        SendAsync(admin, HttpMethod.Put, "/api/installation", new
-        {
-            name = "FiscoProjects",
-            timeZone = "America/Sao_Paulo",
-            dailySummaryAt = "07:30:00",
-            notificationRetentionDays = 90,
-            projectsFolder,
-        });
+        SendAsync(admin, HttpMethod.Put, "/api/installation/projects-folder", new { projectsFolder });
 
     private static async Task<string?> ProjectsFolderAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("projectsFolder").GetString();

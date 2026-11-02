@@ -188,7 +188,6 @@ public sealed class BellTests(SqlServerFixture sqlServer)
         await using var scene = await StartAsync();
         (await SendAsync(scene.Admin, HttpMethod.Put, "/api/installation", new
         {
-            name = "FiscoProjects",
             timeZone = "America/Sao_Paulo",
             dailySummaryAt = "07:30:00",
             notificationRetentionDays = 30,

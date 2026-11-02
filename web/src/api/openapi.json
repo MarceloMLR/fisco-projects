@@ -1326,6 +1326,59 @@
         }
       }
     },
+    "/api/installation/name": {
+      "put": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "RenameInstallation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameInstallationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/installation/colors": {
       "put": {
         "tags": [
@@ -1337,6 +1390,59 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/InstallationColorsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/installation/projects-folder": {
+      "put": {
+        "tags": [
+          "Installation"
+        ],
+        "operationId": "ChangeProjectsFolder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectsFolderRequest"
               }
             }
           },
@@ -16667,6 +16773,21 @@
         },
         "description": "The schedule of a project in the list (ADR-0071): its dates, its progress, how many tasks and milestones are late\n(ADR-0086), the current phase (the first late one or, without delays, the last that has started; none before the\nstart), the day the last task was completed when all are at 100%, the phases with items, the days of the\nmilestones and the business days of delay of the most late task or milestone (ADR-0096)."
       },
+      "ProjectsFolderRequest": {
+        "required": [
+          "projectsFolder"
+        ],
+        "type": "object",
+        "properties": {
+          "projectsFolder": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The folder of the projects in the file storage, in Default folders (ADR-0121, ADR-0150), with the folders separated by\n\"/\", or \"\" for the root of the storage."
+      },
       "ProjectSituation": {
         "enum": [
           "Active",
@@ -16776,6 +16897,21 @@
             "format": "int32"
           }
         }
+      },
+      "RenameInstallationRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The name shown of the installation, in the Brand of Visual (ADR-0150): up to 60 characters."
       },
       "ScheduleAction": {
         "enum": [
@@ -19560,16 +19696,12 @@
       },
       "UpdateInstallationRequest": {
         "required": [
-          "name",
           "timeZone",
           "dailySummaryAt",
           "notificationRetentionDays"
         ],
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
-          },
           "timeZone": {
             "type": "string"
           },
@@ -19594,12 +19726,6 @@
             ],
             "format": "int32"
           },
-          "projectsFolder": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
           "workHoursPerDay": {
             "type": [
               "null",
@@ -19608,7 +19734,7 @@
             "format": "double"
           }
         },
-        "description": "The General settings form, saved as a whole: the name shown, the IANA time zone, the time of the daily summary (HH:mm:ss, in the time zone), how many days the\nnotifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the\nfolder of the projects in the file storage, with the folders separated by \"/\" (\"\" for its root; none keeps the one\nit had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142)."
+        "description": "The General rules of the General settings, saved as a whole (ADR-0150): the IANA time zone, the time of the daily\nsummary (HH:mm:ss, in the time zone), how many days the notifications are kept (1 to 365), how many years the audit is\nkept (1 to 10; none keeps the years it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones\nit had, ADR-0142)."
       },
       "UserPageResponse": {
         "required": [

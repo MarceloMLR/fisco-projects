@@ -301,7 +301,6 @@ public sealed class PersonalDataTests(SqlServerFixture sqlServer)
     private static Task<HttpResponseMessage> SaveRetentionAsync(ProjectTeam team, int years) =>
         ProjectTeam.SendAsync(team.Admin, HttpMethod.Put, "/api/installation", new
         {
-            name = "FiscoProjects",
             timeZone = "America/Sao_Paulo",
             dailySummaryAt = "07:30:00",
             notificationRetentionDays = 90,

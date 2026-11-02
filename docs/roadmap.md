@@ -37,13 +37,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 02/11/2026, no teste da seção Cores, Marcelo viu o fundo da página de entrada ainda azul com o painel em outra cor e pediu o fundo na cor secundária (Acesso-8.5.1, `fundo-da-entrada`, ADR-0147).
 - Em 02/11/2026, Marcelo pediu que quem vê cada pasta de documentos seja configurável, porque um colaborador via "01 Gestão do projeto"; escolheu configurar nas pastas padrão e em cada projeto, por papel, só pelo administrador, e só ver ou não ver (Documentos-1.1, `visibilidade-das-pastas`, ADR-0148).
 - Em 02/11/2026, depois de ver um esquema da aba Atividade do Teams, Marcelo aprovou os avisos pelo Teams: escolheu a aba Atividade, e não o bot no chat, e que cada pessoa escolha em Meu perfil se os avisos na hora chegam por e-mail, pelo Teams ou pelos dois (Avisos-4, `avisos-pelo-teams`, ADR-0149), com a proposta aprovada por ele antes da implementação.
+- Em 02/11/2026, ao testar os avisos pelo Teams, Marcelo achou as Configurações gerais confusas e pediu cada configuração no lugar do assunto dela: a marca junto com as cores, numa seção Visual, a pasta dos projetos em Pastas padrão, e as Configurações gerais só com as Regras gerais e o Microsoft 365 (Acesso-8.6, `configuracoes-por-assunto`, ADR-0150), com a proposta aprovada por ele antes da implementação.
 
 ## Marcos
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 21 | 21 |
-| 2. Acesso e administração | 20 | 20 |
+| 2. Acesso e administração | 21 | 21 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
@@ -57,7 +58,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **117** | **107** |
+| **Total** | **118** | **108** |
 
 ## 1. Fundação
 
@@ -109,6 +110,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-8.4 | `logo-na-aba` | O logo da instalação na aba do navegador, e o selo na cor principal sem logo, a pedido de Marcelo | 0003, 0082, 0108 | Concluída em 21/10/2026 ([#72](https://github.com/MarceloMLR/fisco-projects/pull/72)) |
 | Acesso-8.5 | `cores-da-instalacao` | As cores da instalação numa seção própria, Cores, com a principal, a secundária e a da barra lateral, qualquer cor aceita com o texto ajustado, e o seletor próprio em HEX, RGB e HSL, a pedido de Marcelo | 0082, 0100, 0103, 0146 | Concluída em 02/11/2026 ([#140](https://github.com/MarceloMLR/fisco-projects/pull/140)) |
 | Acesso-8.5.1 | `fundo-da-entrada` | O fundo da página de entrada na cor secundária (ou na principal), como o painel, a pedido de Marcelo | 0146, 0147 | Concluída em 02/11/2026 ([#141](https://github.com/MarceloMLR/fisco-projects/pull/141)) |
+| Acesso-8.6 | `configuracoes-por-assunto` | Configurações gerais só com as Regras gerais e o Microsoft 365, a marca junto com as cores em Visual e a pasta dos projetos em Pastas padrão, a pedido de Marcelo | 0121, 0146, 0150 | Concluída em 02/11/2026 ([#145](https://github.com/MarceloMLR/fisco-projects/pull/145)) |
 
 ## 3. Projetos
 

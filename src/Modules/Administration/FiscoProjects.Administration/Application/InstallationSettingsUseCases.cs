@@ -90,7 +90,7 @@ public sealed class GetGeneralRules(IInstallationSettingsStore store)
     }
 }
 
-/// <summary>A field of the General settings form.</summary>
+/// <summary>A field of the settings of the installation that the screens save.</summary>
 public enum InstallationField
 {
     Name = 1,
@@ -103,37 +103,29 @@ public enum InstallationField
 }
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the time zone, the time of the daily summary, how many days the notifications are kept, how many years the audit is kept (none keeps the years it had,
-/// ADR-0110), the folder of the projects (none keeps the one it had, ADR-0121) and the hours of a working day (none keeps
-/// the ones it had, ADR-0142).
+/// The General rules of the General settings (ADR-0150): the time zone, the time of the daily summary, how many days the
+/// notifications are kept, how many years the audit is kept (none keeps the years it had, ADR-0110) and the hours of a
+/// working day (none keeps the ones it had, ADR-0142).
 /// </summary>
 public sealed record InstallationChanges(
-    string? Name,
     string? TimeZone,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
-    string? ProjectsFolder = null,
     decimal? WorkHoursPerDay = null);
 
 /// <summary>
-/// Saves the General settings form (ADR-0003, ADR-0013): every field valid, or nothing changes. One save,
-/// so one audit record.
+/// Saves the General rules (ADR-0003, ADR-0013, ADR-0150): every field valid, or nothing changes. One save, so one audit
+/// record. The name and the folder of the projects are saved by their own screens.
 /// </summary>
 public sealed class UpdateInstallation(IInstallationSettingsStore store)
 {
-    /// <returns>The invalid fields; empty when the form was saved.</returns>
+    /// <returns>The invalid fields; empty when the rules were saved.</returns>
     public async Task<IReadOnlyList<InstallationField>> ExecuteAsync(
         InstallationChanges changes, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(changes);
-        var name = InstallationSettings.ValidName(changes.Name);
         var invalid = new List<InstallationField>();
-        if (name is null)
-        {
-            invalid.Add(InstallationField.Name);
-        }
-
         if (!InstallationSettings.IsValidTimeZone(changes.TimeZone))
         {
             invalid.Add(InstallationField.TimeZone);
@@ -159,30 +151,18 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
             invalid.Add(InstallationField.WorkHoursPerDay);
         }
 
-        var projectsFolder = ProjectsFolderOf(changes.ProjectsFolder);
-        if (changes.ProjectsFolder is not null && projectsFolder is null)
-        {
-            invalid.Add(InstallationField.ProjectsFolder);
-        }
-
-        if (name is null || invalid.Count > 0)
+        if (invalid.Count > 0)
         {
             return invalid;
         }
 
         var settings = await store.GetAsync(cancellationToken);
-        settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         if (changes.AuditRetentionYears is { } auditYears)
         {
             settings.ChangeAuditRetention(auditYears);
-        }
-
-        if (projectsFolder is not null)
-        {
-            settings.ChangeProjectsFolder(projectsFolder);
         }
 
         if (changes.WorkHoursPerDay is { } hoursPerDay)
@@ -192,6 +172,45 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
 
         await store.SaveChangesAsync(cancellationToken);
         return [];
+    }
+}
+
+/// <summary>Renames the installation, in the Brand of Visual (ADR-0003, ADR-0150): the name shown, trimmed, up to 60 characters.</summary>
+public sealed class RenameInstallation(IInstallationSettingsStore store)
+{
+    /// <returns>False, and nothing changes, when the name is empty or too long.</returns>
+    public async Task<bool> ExecuteAsync(string? name, CancellationToken cancellationToken)
+    {
+        if (InstallationSettings.ValidName(name) is not { } valid)
+        {
+            return false;
+        }
+
+        var settings = await store.GetAsync(cancellationToken);
+        settings.Rename(valid);
+        await store.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+}
+
+/// <summary>
+/// Changes the folder of the projects in the file storage, in Default folders (ADR-0121, ADR-0150): only for the projects
+/// that have no folder yet.
+/// </summary>
+public sealed class ChangeProjectsFolder(IInstallationSettingsStore store)
+{
+    /// <returns>False, and nothing changes, when the storage would not keep the folder as typed.</returns>
+    public async Task<bool> ExecuteAsync(string? typed, CancellationToken cancellationToken)
+    {
+        if (ProjectsFolderOf(typed) is not { } folder)
+        {
+            return false;
+        }
+
+        var settings = await store.GetAsync(cancellationToken);
+        settings.ChangeProjectsFolder(folder);
+        await store.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     /// <summary>

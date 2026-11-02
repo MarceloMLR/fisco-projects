@@ -2,6 +2,7 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import BlockOutlined from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
+import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
@@ -13,13 +14,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MouseEvent, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type DefaultFolder } from '../api/client';
-import { defaultFoldersQuery, queryKeys } from '../api/queries';
+import { defaultFoldersQuery, generalRulesQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { StatusBadge } from '../components/StatusBadge';
 import { Page } from '../shell/Page';
 import { theme } from '../theme/theme';
 import { DefaultFolderDialog } from './DefaultFolderDialog';
+import { ProjectsFolderDialog } from './ProjectsFolderDialog';
 import { Button, IconButton } from '../components/Button';
 import { useNotify } from '../notices/notify';
 
@@ -42,7 +44,8 @@ const iconButtonSx = {
  * for it: the folders every new project gets, in the order of the name, with the one of the acceptance terms marked
  * (ADR-0093), who sees each one (ADR-0148), the situation and "Nova pasta". Each one has a menu to edit (the name and
  * who sees it), deactivate or reactivate; the folder of the terms is always active and only of the managers. The
- * changes are for the new projects.
+ * changes are for the new projects. Above the list, the folder of the projects in the file storage, where the folders of
+ * the new projects are created, with "Alterar" (ADR-0121, ADR-0150).
  */
 export function DefaultFoldersPage() {
   const { t } = useTranslation();
@@ -54,6 +57,8 @@ export function DefaultFoldersPage() {
   const [menu, setMenu] = useState<{ anchor: HTMLElement; folder: DefaultFolder }>();
   // A folder to rename, or null for a new one.
   const [editing, setEditing] = useState<DefaultFolder | null>();
+  const { data: rules } = useQuery(generalRulesQuery());
+  const [changingProjectsFolder, setChangingProjectsFolder] = useState(false);
 
   const changed = useCallback(
     (text: string) => {
@@ -238,6 +243,67 @@ export function DefaultFoldersPage() {
       <Box sx={{ flex: 'none' }}>
         <Alert tone="info">{t('defaultFolders.note')}</Alert>
       </Box>
+      <Box
+        component="section"
+        aria-labelledby="projects-folder-label"
+        sx={{
+          flex: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+          padding: 'var(--space-3) var(--space-4)',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+        }}
+      >
+        <FolderOutlined
+          aria-hidden
+          sx={{ flex: 'none', fontSize: 'var(--icon-md)', color: 'var(--text-secondary)' }}
+        />
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <Box
+            component="span"
+            id="projects-folder-label"
+            sx={{
+              fontSize: 12,
+              lineHeight: '16px',
+              fontWeight: 500,
+              color: 'var(--text-secondary)',
+            }}
+          >
+            {t('defaultFolders.projectsFolder.label')}
+          </Box>
+          <Box
+            component="span"
+            data-testid="projects-folder"
+            sx={{
+              fontSize: 14,
+              lineHeight: '20px',
+              color: 'var(--text)',
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {rules === undefined
+              ? null
+              : rules.projectsFolder === ''
+                ? t('defaultFolders.projectsFolder.root')
+                : rules.projectsFolder}
+          </Box>
+        </Box>
+        <Button
+          variant="outlined"
+          size="small"
+          aria-label={t('defaultFolders.projectsFolder.changeLabel')}
+          disabled={rules === undefined}
+          onClick={() => {
+            setChangingProjectsFolder(true);
+          }}
+          sx={{ flex: 'none' }}
+        >
+          {t('defaultFolders.projectsFolder.change')}
+        </Button>
+      </Box>
       <DataTable
         label={t('defaultFolders.table')}
         rows={folders}
@@ -300,6 +366,20 @@ export function DefaultFoldersPage() {
           </MenuItem>
         )}
       </Menu>
+      {changingProjectsFolder && rules !== undefined && (
+        <ProjectsFolderDialog
+          current={rules.projectsFolder}
+          onClose={() => {
+            setChangingProjectsFolder(false);
+          }}
+          onSaved={() => {
+            setChangingProjectsFolder(false);
+            notify(t('defaultFolders.projectsFolder.saved'));
+            void queryClient.invalidateQueries({ queryKey: queryKeys.installation });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+          }}
+        />
+      )}
       {editing !== undefined && (
         <DefaultFolderDialog
           folder={editing ?? undefined}
