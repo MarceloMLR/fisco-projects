@@ -77,7 +77,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", null, null, 90), Cancellation));
+            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", null, 90), Cancellation));
 
         invalid.Should().Equal(InstallationField.DailySummaryAt);
         (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
@@ -100,7 +100,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", null, new TimeOnly(7, 30), days), Cancellation));
+            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", new TimeOnly(7, 30), days), Cancellation));
 
         invalid.Should().Equal(InstallationField.NotificationRetentionDays);
         (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
@@ -124,7 +124,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges("FiscoProjects", "America/Sao_Paulo", null, new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
+                new InstallationChanges("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
                 Cancellation));
         await UpdateAsync(database, "Outro nome", "America/Sao_Paulo");
 
@@ -146,7 +146,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges("Outro nome", "America/Sao_Paulo", null, new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
+                new InstallationChanges("Outro nome", "America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
                 Cancellation));
 
         invalid.Should().Equal(InstallationField.WorkHoursPerDay);
@@ -185,36 +185,42 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         (await SettingsAsync(database)).TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
     }
 
-    [Fact(DisplayName = "Trocar a cor principal")]
-    public async Task MainColor_IsKeptInCapitals_AndBackToTheDefault()
+    [Fact(DisplayName = "Salvar as cores")]
+    public async Task Colors_AreKeptInCapitals_AndBackToTheDefault()
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        (await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", "#0f766e")).Should().BeEmpty();
-        (await SettingsAsync(database)).MainColor.Should().Be("#0F766E");
-        (await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation)))
-            .MainColor.Should().Be("#0F766E");
+        (await ColorsAsync(database, "#0f766e", "#14b8a6", "#1f2933")).Should().BeEmpty();
+        var settings = await SettingsAsync(database);
+        (settings.MainColor, settings.SecondaryColor, settings.SidebarColor).Should().Be(("#0F766E", "#14B8A6", "#1F2933"));
+        var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
+        (installation.MainColor, installation.SecondaryColor, installation.SidebarColor)
+            .Should().Be(("#0F766E", "#14B8A6", "#1F2933"));
 
-        (await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", null)).Should().BeEmpty();
-        (await SettingsAsync(database)).MainColor.Should().BeNull();
+        (await ColorsAsync(database, null, "", "  ")).Should().BeEmpty();
+        settings = await SettingsAsync(database);
+        (settings.MainColor, settings.SecondaryColor, settings.SidebarColor).Should().Be(((string?)null, (string?)null, (string?)null));
     }
 
-    [Theory(DisplayName = "Cor sem contraste ou fora do formato")]
-    [InlineData("#FFD400")]
-    [InlineData("#9FD3FF")]
-    [InlineData("0F766E")]
-    [InlineData("#0F766")]
-    [InlineData("#GGGGGG")]
-    public async Task InvalidMainColor_ChangesNothing(string mainColor)
+    [Fact(DisplayName = "Cor sem contraste")]
+    public async Task LightColor_IsKept()
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var invalid = await UpdateAsync(database, "Consultoria Fictícia", "America/Sao_Paulo", mainColor);
+        (await ColorsAsync(database, "#F5C400", "#FFFFFF", "#FFFFFF")).Should().BeEmpty();
 
-        invalid.Should().Equal(InstallationField.MainColor);
-        var settings = await SettingsAsync(database);
-        settings.MainColor.Should().BeNull();
-        settings.Name.Should().Be(InstallationSettings.DefaultName);
+        (await SettingsAsync(database)).MainColor.Should().Be("#F5C400");
+    }
+
+    [Fact(DisplayName = "Cor fora do formato pela API")]
+    public async Task MalformedColors_ChangeNothing()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await ColorsAsync(database, "#0F766E", "0F766E", "azul");
+
+        invalid.Should().Equal(InstallationColorField.Secondary, InstallationColorField.Sidebar);
+        (await SettingsAsync(database)).MainColor.Should().BeNull();
     }
 
     [Fact(DisplayName = "Enviar o logo")]
@@ -317,10 +323,15 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     }
 
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
-        AdministrationDatabase database, string? name, string? timeZone, string? mainColor = null, TimeOnly? dailySummaryAt = null) =>
+        AdministrationDatabase database, string? name, string? timeZone, TimeOnly? dailySummaryAt = null) =>
         database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges(name, timeZone, mainColor, dailySummaryAt ?? new TimeOnly(7, 30), 90), Cancellation));
+                new InstallationChanges(name, timeZone, dailySummaryAt ?? new TimeOnly(7, 30), 90), Cancellation));
+
+    private static Task<IReadOnlyList<InstallationColorField>> ColorsAsync(
+        AdministrationDatabase database, string? main, string? secondary, string? sidebar) =>
+        database.RunAsync<ChangeInstallationColors, IReadOnlyList<InstallationColorField>>(change =>
+            change.ExecuteAsync(new InstallationColors(main, secondary, sidebar), Cancellation));
 
     private static Task<LogoRefusal?> SendAsync(AdministrationDatabase database, string fileName, byte[] content) =>
         database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>

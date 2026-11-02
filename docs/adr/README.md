@@ -144,7 +144,7 @@ Regras:
 | [0079](0079-modulo-de-arquivos-com-implementacao-local.md) | Arquivos num módulo próprio, com contrato único e implementação local em disco | aceita | 2026-10-18 |
 | [0080](0080-leituras-da-api-com-tanstack-query.md) | Leituras da API no frontend com TanStack Query, guardadas só na memória da sessão | aceita | 2026-10-18 |
 | [0081](0081-detalhes-em-gaveta-sobreposta.md) | Detalhes de um item da lista numa gaveta sobreposta, com o fundo escurecido | aceita | 2026-10-18 |
-| [0082](0082-tokens-da-marca-derivados-da-cor-principal.md) | Tokens da marca derivados da cor principal em OKLCH, com a cor recusada sem contraste | aceita | 2026-10-18 |
+| [0082](0082-tokens-da-marca-derivados-da-cor-principal.md) | Tokens da marca derivados da cor principal em OKLCH, com a cor recusada sem contraste | aceita (recusa da cor sem contraste substituída pelo ADR-0146) | 2026-10-18 |
 | [0083](0083-pontos-facultativos-calculados-e-feriados-desconsiderados.md) | Pontos facultativos calculados pela portaria federal, contados como dia inteiro e escolhidos para todos os anos | aceita | 2026-10-19 |
 | [0084](0084-referencias-na-auditoria-pelo-nome-atual.md) | Referências a outros itens na auditoria, guardadas pelo identificador e mostradas pelo nome atual | aceita | 2026-10-19 |
 | [0085](0085-gerente-do-projeto-com-papel-no-sistema.md) | Gerente do projeto sempre com o papel no sistema Gerente de projeto ou Administrador | aceita | 2026-10-19 |
@@ -162,10 +162,10 @@ Regras:
 | [0097](0097-lider-tecnico-como-papel-no-sistema.md) | Líder técnico também como papel no sistema, exigido para liderar tecnicamente um projeto | aceita | 2026-10-20 |
 | [0098](0098-iniciar-atendimento-assume-o-chamado.md) | "Iniciar atendimento" torna responsável quem atende o chamado sem responsável | aceita | 2026-10-20 |
 | [0099](0099-relatorio-da-auditoria-em-excel.md) | Relatório da auditoria em Excel, montado na tela e registrado na auditoria | aceita | 2026-10-21 |
-| [0100](0100-cor-secundaria-e-logo-para-o-tema-escuro.md) | Cor secundária da instalação na barra lateral, nos destaques de apoio e no painel da entrada, com logo para o tema escuro | aceita (cor secundária substituída pelo ADR-0103) | 2026-10-21 |
+| [0100](0100-cor-secundaria-e-logo-para-o-tema-escuro.md) | Cor secundária da instalação na barra lateral, nos destaques de apoio e no painel da entrada, com logo para o tema escuro | aceita (cor secundária substituída pelo ADR-0103 e seletor de cores pelo ADR-0146) | 2026-10-21 |
 | [0101](0101-cores-das-mensagens-dos-chamados.md) | Cores das mensagens dos chamados configuráveis por papel, com os tons calculados | substituída pelo ADR-0103 | 2026-10-21 |
 | [0102](0102-cliente-como-responsavel-de-tarefas.md) | O cliente do projeto como responsável de tarefas do cronograma | aceita | 2026-10-21 |
-| [0103](0103-so-a-cor-principal-na-marca.md) | Só a cor principal na marca da instalação, sem cor secundária nem cores das mensagens | aceita | 2026-10-21 |
+| [0103](0103-so-a-cor-principal-na-marca.md) | Só a cor principal na marca da instalação, sem cor secundária nem cores das mensagens | substituída pelo ADR-0146 | 2026-10-21 |
 | [0104](0104-solicitante-em-rosa-na-conversa.md) | Solicitante em rosa na conversa do chamado | aceita | 2026-10-21 |
 | [0105](0105-voltar-do-navegador.md) | O que entra no histórico do navegador | aceita | 2026-10-21 |
 | [0106](0106-primeira-carga-mais-rapida.md) | Primeira abertura das telas mais rápida: aquecimento da API, leituras antes e o código da Linha do tempo carregado antes | aceita | 2026-10-21 |
@@ -208,4 +208,4 @@ Regras:
 | [0143](0143-edicao-do-cronograma-na-lista.md) | Edição do cronograma na Lista, num modo de edição pelo teclado | aceita | 2026-11-01 |
 | [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita | 2026-11-01 |
 | [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |
-| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | proposta | 2026-11-01 |
+| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita | 2026-11-01 |

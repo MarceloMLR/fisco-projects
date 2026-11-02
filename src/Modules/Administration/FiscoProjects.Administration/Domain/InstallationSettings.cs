@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using FiscoProjects.SharedKernel;
 
@@ -13,8 +12,9 @@ public enum LogoTheme
 
 /// <summary>
 /// The settings of the installation the Administrator changes in General settings (ADR-0003, ADR-0011): the name
-/// shown, the logo and the one for the dark theme, the main color, the time zone, the time of the daily summary and how
-/// long the notifications are kept. There is one, created with the database.
+/// shown, the logo and the one for the dark theme, the time zone, the time of the daily summary and how long the
+/// notifications are kept; and the colors the Administrator changes in Colors (ADR-0146). There is one, created with the
+/// database.
 /// </summary>
 public sealed partial class InstallationSettings : Entity
 {
@@ -52,12 +52,6 @@ public sealed partial class InstallationSettings : Entity
 
     public const decimal MaxWorkHoursPerDay = 12m;
 
-    /// <summary>
-    /// Contrast a main color needs with white (ADR-0082): it is the background of the white label of the main button
-    /// and the color of the links over white surfaces (WCAG AA).
-    /// </summary>
-    public const double MinimumContrastWithWhite = 4.5;
-
     /// <summary>Id of the one row, created by the first migration of the module.</summary>
     public static readonly Guid SingleId = new("0199f2a0-6b5c-7d1e-9a42-3c8e5f7a1b20");
 
@@ -88,8 +82,17 @@ public sealed partial class InstallationSettings : Entity
     /// </summary>
     public string ProjectsFolder { get; private set; } = string.Empty;
 
-    /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082).</summary>
+    /// <summary>The main color as #RRGGBB, or null for the color of the design system (ADR-0082, ADR-0146).</summary>
     public string? MainColor { get; private set; }
+
+    /// <summary>
+    /// The secondary color as #RRGGBB, or null: the selected row, the unread notification, the mention and the panel of
+    /// the sign-in page (ADR-0146).
+    /// </summary>
+    public string? SecondaryColor { get; private set; }
+
+    /// <summary>The color of the sidebar as #RRGGBB, or null for the sidebar of the design system (ADR-0146).</summary>
+    public string? SidebarColor { get; private set; }
 
     /// <summary>Id of the logo in the file storage; null without a logo.</summary>
     public string? LogoFileId { get; private set; }
@@ -140,10 +143,10 @@ public sealed partial class InstallationSettings : Entity
             : throw new ArgumentException($"'{timeZone}' is no IANA time zone known to the server.", nameof(timeZone));
 
     /// <summary>
-    /// The main color as it is kept: null (or empty) for the default color, or #RRGGBB in capitals when it has the
-    /// contrast it needs with white; false for anything else.
+    /// A color as it is kept: null (or empty) for the default one, or #RRGGBB in capitals; false for anything else. Any
+    /// color is accepted: the screens work out the text over it (ADR-0146).
     /// </summary>
-    public static bool TryNormalizeMainColor(string? value, out string? color)
+    public static bool TryNormalizeColor(string? value, out string? color)
     {
         color = null;
         if (string.IsNullOrWhiteSpace(value))
@@ -152,7 +155,7 @@ public sealed partial class InstallationSettings : Entity
         }
 
         var trimmed = value.Trim();
-        if (!HexColor().IsMatch(trimmed) || ContrastWithWhite(trimmed) < MinimumContrastWithWhite)
+        if (!HexColor().IsMatch(trimmed))
         {
             return false;
         }
@@ -161,19 +164,13 @@ public sealed partial class InstallationSettings : Entity
         return true;
     }
 
-    /// <summary>Contrast ratio of a #RRGGBB color with white, by the relative luminance of WCAG 2.x.</summary>
-    public static double ContrastWithWhite(string hex)
+    /// <summary>The three colors of the installation, each #RRGGBB or null for the default one (ADR-0146).</summary>
+    public void ChangeColors(string? mainColor, string? secondaryColor, string? sidebarColor)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(hex);
-        var luminance = (0.2126 * Channel(hex, 1)) + (0.7152 * Channel(hex, 3)) + (0.0722 * Channel(hex, 5));
-        return 1.05 / (luminance + 0.05);
+        MainColor = Normalized(mainColor, nameof(mainColor));
+        SecondaryColor = Normalized(secondaryColor, nameof(secondaryColor));
+        SidebarColor = Normalized(sidebarColor, nameof(sidebarColor));
     }
-
-    public void ChangeMainColor(string? color) =>
-        MainColor = TryNormalizeMainColor(color, out var normalized)
-            ? normalized
-            : throw new ArgumentException(
-                $"'{color}' is no #RRGGBB color with a contrast of {MinimumContrastWithWhite}:1 with white.", nameof(color));
 
     /// <summary>The daily summary at the hour and minute, without seconds.</summary>
     public void ChangeDailySummaryAt(TimeOnly at) => DailySummaryAt = new TimeOnly(at.Hour, at.Minute);
@@ -257,11 +254,10 @@ public sealed partial class InstallationSettings : Entity
         LogoChangedAt = null;
     }
 
-    private static double Channel(string hex, int start)
-    {
-        var value = int.Parse(hex.AsSpan(start, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) / 255.0;
-        return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
-    }
+    private static string? Normalized(string? color, string parameter) =>
+        TryNormalizeColor(color, out var normalized)
+            ? normalized
+            : throw new ArgumentException($"'{color}' is no #RRGGBB color.", parameter);
 
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex HexColor();

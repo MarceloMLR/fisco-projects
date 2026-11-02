@@ -1,5 +1,5 @@
 ---
-status: proposta
+status: aceita
 date: 2026-11-01
 decision-makers: Marcelo Ribeiro
 ---

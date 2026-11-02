@@ -1,5 +1,5 @@
 ---
-status: aceita (cor secundária substituída pelo ADR-0103)
+status: aceita (cor secundária substituída pelo ADR-0103 e seletor de cores pelo ADR-0146)
 date: 2026-10-21
 decision-makers: Marcelo Ribeiro
 ---

@@ -95,6 +95,14 @@ namespace FiscoProjects.Administration.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(400)")
                         .HasDefaultValue("");
 
+                    b.Property<string>("SecondaryColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
+                    b.Property<string>("SidebarColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
