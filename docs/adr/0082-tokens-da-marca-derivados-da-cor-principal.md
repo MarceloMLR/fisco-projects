@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (recusa da cor sem contraste substituída pelo ADR-0146)
 date: 2026-10-18
 decision-makers: Marcelo Ribeiro
 ---

@@ -155,6 +155,60 @@ describe('Cor principal da instalação', () => {
   });
 });
 
+// Spec: configuracao-da-instalacao, requirements "Cor secundária", "Cor da barra lateral" and "Logo para o tema
+// escuro" (every screen, ADR-0146).
+describe('Cores da instalação nas telas', () => {
+  it('Trocar a cor secundária', async () => {
+    server.use(
+      http.get('/api/installation', () =>
+        HttpResponse.json({
+          name: 'Consultoria Fictícia',
+          logoUrl: null,
+          mainColor: null,
+          darkLogoUrl: null,
+          secondaryColor: hash('C0395A'),
+          sidebarColor: null,
+        }),
+      ),
+    );
+    signedOut();
+
+    await renderApp('/sign-in');
+
+    await waitFor(() => {
+      expect(brandRules()).toMatch(new RegExp(`--brand-panel-bg-2:\\s*${hash('c0395a')};`));
+    });
+    expect(brandRules()).toMatch(/--bg-selected:/);
+    // The main button stays in the main color of the design system.
+    expect(brandRules()).toMatch(new RegExp(`--action:\\s*${color('action', 'light')};`));
+  });
+
+  it('Logo escuro na barra lateral escura do tema claro', async () => {
+    const darkLogoUrl = '/api/installation/logo/dark?v=1';
+    server.use(
+      http.get('/api/installation', () =>
+        HttpResponse.json({
+          name: 'Consultoria Fictícia',
+          logoUrl,
+          mainColor: null,
+          darkLogoUrl,
+          secondaryColor: null,
+          sidebarColor: hash('1F2933'),
+        }),
+      ),
+    );
+
+    await renderApp('/');
+
+    const brand = await sidebarBrand('Consultoria Fictícia');
+    await waitFor(() => {
+      expect(brand.querySelector('img')).toHaveAttribute('src', darkLogoUrl);
+    });
+    expect(brandRules()).toMatch(new RegExp(`--sidebar-bg:\\s*${hash('1f2933')};`));
+    expect(brandRules()).toMatch(/--sidebar-title:/);
+  });
+});
+
 /** The icon of the tab of the browser, as the page has it. */
 function favicon() {
   return document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.getAttribute('href');

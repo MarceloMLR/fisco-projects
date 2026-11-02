@@ -27,6 +27,8 @@ beforeEach(() => {
     logoUrl: null,
     mainColor: null,
     darkLogoUrl: null,
+    secondaryColor: null,
+    sidebarColor: null,
   };
   timeZone = 'America/Sao_Paulo';
   dailySummaryAt = '07:30:00';
@@ -52,21 +54,14 @@ beforeEach(() => {
       const body = (await request.json()) as {
         name: string;
         timeZone: string;
-        mainColor: string | null;
         dailySummaryAt: string;
         notificationRetentionDays: number;
         auditRetentionYears: number;
         projectsFolder: string;
         workHoursPerDay: number;
       };
-      requests.push(
-        `PUT ${body.name} ${body.timeZone}${body.mainColor === null ? '' : ` ${body.mainColor}`}`,
-      );
-      installation = {
-        ...installation,
-        name: body.name,
-        mainColor: body.mainColor,
-      };
+      requests.push(`PUT ${body.name} ${body.timeZone}`);
+      installation = { ...installation, name: body.name };
       timeZone = body.timeZone;
       dailySummaryAt = body.dailySummaryAt;
       notificationRetentionDays = body.notificationRetentionDays;
@@ -188,6 +183,8 @@ describe('Tela Configurações gerais', () => {
     expect(within(brand).getByTestId('logo-tile')).toHaveTextContent(text.noLogo);
     expect(within(brand).getByRole('button', { name: text.sendLogo })).toBeInTheDocument();
     expect(within(brand).getByText(text.logoHint)).toBeInTheDocument();
+    // The colors have a section of their own (ADR-0146).
+    expect(within(brand).queryByRole('textbox', { name: ptBR.colors.main.value })).toBeNull();
     expect(screen.getByRole('complementary', { name: text.previewLabel })).toBeInTheDocument();
     expect(preview()).toHaveTextContent('FiscoProjects');
     const files = screen.getByRole('region', { name: text.files });
@@ -289,12 +286,7 @@ describe('Nome e logo nas Configurações gerais', () => {
   });
 
   it('Remover o logo', async () => {
-    installation = {
-      name: 'FiscoProjects',
-      logoUrl,
-      mainColor: null,
-      darkLogoUrl: null,
-    };
+    installation = { ...installation, logoUrl };
     await openSettings();
     expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', logoUrl);
 
@@ -475,128 +467,6 @@ describe('Fuso nas Configurações gerais', () => {
 });
 
 // Colors as the Administrator types them, without "#": the colors in the code come only from tokens.json.
-const hash = (value: string) => `#${value}`;
-
-/** The main color in the light theme, as the style sheet has it (written compact by the styling library). */
-const actionIs = (value: string) => new RegExp(`--action:\\s*${hash(value)};`);
-
-function colorField() {
-  return screen.getByRole('textbox', { name: text.mainColorHex });
-}
-
-/** The brand colors applied to the whole application, when the installation has a color of its own. */
-function appliedBrandColors() {
-  const rules = [...document.querySelectorAll('style')]
-    .map((style) => style.textContent)
-    .filter(
-      (css) =>
-        css.includes('[data-theme="light"][data-theme="light"]') ||
-        css.includes('[data-theme="dark"][data-theme="dark"]'),
-    );
-  return rules.length === 0 ? undefined : rules.join('\n');
-}
-
-// Spec: configuracao-da-instalacao, requirement "Cor principal" (General settings).
-describe('Cor principal nas Configurações gerais', () => {
-  it('Prévia antes de salvar com a cor', async () => {
-    await openSettings();
-    expect(
-      within(screen.getByRole('group', { name: text.mainColor })).getByRole('status'),
-    ).toHaveTextContent(text.contrastApproved);
-
-    fireEvent.change(colorField(), { target: { value: '0f766e' } });
-
-    expect(
-      within(screen.getByRole('group', { name: text.mainColor })).getByTestId('color-swatch'),
-    ).toHaveStyle({ backgroundColor: hash('0F766E') });
-    expect(
-      screen
-        .getByRole('complementary', { name: text.previewLabel })
-        .style.getPropertyValue('--action'),
-    ).toBe(hash('0f766e'));
-    expect(screen.getByText(text.contrastApproved)).toBeInTheDocument();
-    // The rest of the application changes only after saving.
-    expect(appliedBrandColors()).toBeUndefined();
-  });
-
-  it('Trocar a cor principal', async () => {
-    await openSettings();
-
-    fireEvent.change(colorField(), { target: { value: '0f766e' } });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual([`PUT FiscoProjects America/Sao_Paulo ${hash('0F766E')}`]);
-    await waitFor(() => {
-      expect(appliedBrandColors()).toMatch(actionIs('0f766e'));
-    });
-    expect(colorField()).toHaveValue(hash('0F766E'));
-  });
-
-  it('Cor sem contraste', async () => {
-    await openSettings();
-
-    fireEvent.change(colorField(), { target: { value: 'FFD400' } });
-
-    expect(screen.getByText(text.contrastLow)).toBeInTheDocument();
-    // The Preview keeps the saved color while the typed one may not be saved.
-    expect(
-      screen
-        .getByRole('complementary', { name: text.previewLabel })
-        .style.getPropertyValue('--action'),
-    ).not.toBe(hash('ffd400'));
-    fireEvent.click(saveButton());
-    expect(await screen.findByText(text.errors.colorContrast)).toBeInTheDocument();
-    expect(requests).toEqual([]);
-  });
-
-  it('Cor fora do formato', async () => {
-    await openSettings();
-
-    fireEvent.change(colorField(), { target: { value: 'verde' } });
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(/^Use uma cor em hexadecimal/)).toBeInTheDocument();
-    expect(requests).toEqual([]);
-  });
-
-  it('Voltar ao padrão', async () => {
-    installation = {
-      name: 'FiscoProjects',
-      logoUrl: null,
-      mainColor: hash('7A1F3D'),
-      darkLogoUrl: null,
-    };
-    await openSettings();
-    await waitFor(() => {
-      expect(colorField()).toHaveValue(hash('7A1F3D'));
-    });
-    expect(appliedBrandColors()).toMatch(actionIs('7a1f3d'));
-
-    fireEvent.click(screen.getByRole('button', { name: text.defaultColor }));
-    expect(colorField()).toHaveValue('');
-    fireEvent.click(saveButton());
-
-    expect(await screen.findByText(text.saved)).toBeInTheDocument();
-    expect(requests).toEqual(['PUT FiscoProjects America/Sao_Paulo']);
-    await waitFor(() => {
-      expect(appliedBrandColors()).toBeUndefined();
-    });
-  });
-
-  it('Descartar a cor', async () => {
-    await openSettings();
-    fireEvent.change(colorField(), { target: { value: '0f766e' } });
-
-    fireEvent.click(discardButton());
-
-    expect(colorField()).toHaveValue('');
-    await waitFor(() => {
-      expect(saveButton()).toBeDisabled();
-    });
-  });
-});
-
 // Spec: configuracao-da-instalacao, requirement "Horário do resumo diário".
 describe('Horário do resumo diário', () => {
   function summaryField() {
@@ -815,20 +685,8 @@ function inTheDarkTheme() {
   );
 }
 
-// Spec: configuracao-da-instalacao, requirements "Logo para o tema escuro" and "Seletor de cores" (General settings,
-// ADR-0100).
-describe('Logo escuro e seletor de cores nas Configurações gerais', () => {
-  it('Escolher a cor pelo seletor', async () => {
-    await openSettings();
-
-    fireEvent.change(screen.getByLabelText('Escolher cor principal no seletor de cores'), {
-      target: { value: hash('0f766e') },
-    });
-
-    expect(colorField()).toHaveValue(hash('0F766E'));
-    expect(saveButton()).toBeEnabled();
-  });
-
+// Spec: configuracao-da-instalacao, requirement "Logo para o tema escuro" (General settings, ADR-0100, ADR-0146).
+describe('Logo escuro nas Configurações gerais', () => {
   it('Enviar o logo para o tema escuro', async () => {
     installation = { ...installation, logoUrl };
     await openSettings();

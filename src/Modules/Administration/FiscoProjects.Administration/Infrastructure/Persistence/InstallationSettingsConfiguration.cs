@@ -21,6 +21,8 @@ internal sealed class InstallationSettingsConfiguration : IEntityTypeConfigurati
         settings.Property(s => s.WorkHoursPerDay).HasPrecision(4, 2).HasDefaultValue(InstallationSettings.DefaultWorkHoursPerDay);
         settings.Property(s => s.ProjectsFolder).HasMaxLength(FileNames.MaxPathLength).HasDefaultValue(string.Empty);
         settings.Property(s => s.MainColor).HasMaxLength(7);
+        settings.Property(s => s.SecondaryColor).HasMaxLength(7);
+        settings.Property(s => s.SidebarColor).HasMaxLength(7);
         settings.Property(s => s.LogoFileId).HasMaxLength(400);
         settings.Property(s => s.LogoFileName).HasMaxLength(200);
         settings.Property(s => s.LogoContentType).HasMaxLength(64);

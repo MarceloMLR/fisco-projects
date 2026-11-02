@@ -10,9 +10,13 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Configurações gerais | InstallationSettings | As configurações da instalação na Administração (`/admin/settings`), numa linha só do módulo `Administration` |
 | Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
-| Cor principal | MainColor | Cor da marca da instalação em `#RRGGBB`, vazia para a do design system; os tokens da marca são derivados dela (ADR-0082) |
+| Cores | ColorsPage (`/admin/colors`) | Seção da Administração com as três cores da instalação e a prévia (ADR-0146) |
+| Cor principal | MainColor | Cor dos botões, links, abas e seleções, em `#RRGGBB`, vazia para a do design system; qualquer cor é aceita, com o texto sobre ela calculado (ADR-0082, ADR-0146) |
+| Cor secundária | SecondaryColor | Cor da linha selecionada, da notificação não lida, da menção e do painel da entrada; sem ela, o painel segue a principal (ADR-0146) |
+| Cor da barra lateral | SidebarColor | Fundo da barra lateral, com os textos calculados; no tema escuro, um tom escuro do matiz (ADR-0146) |
+| Seletor de cores | ColorPicker | Área de saturação e brilho, barra de matiz e o valor em HEX, RGB ou HSL (ADR-0146) |
 | Logo para o tema escuro | DarkLogo | Logo opcional mostrado na barra lateral escura; sem ele, vale o logo (ADR-0100) |
-| Marca da instalação | Installation | Nome e logo, lidos sem sessão (`GET /api/installation`) |
+| Marca da instalação | Installation | Nome, logos e cores, lidos sem sessão (`GET /api/installation`) |
 | Regras gerais | GeneralRules | Configurações da instalação que as telas usam com sessão (`GET /api/installation/rules`); hoje, o fuso |
 | Fuso horário | TimeZone | Identificador IANA da instalação, padrão America/Sao_Paulo; as datas das telas aparecem nele (ADR-0013) |
 | Usuário | User | Módulo `Users`, dono das pessoas, dos vínculos e da sessão; também o papel de menor privilégio (`SystemRole.User`) |

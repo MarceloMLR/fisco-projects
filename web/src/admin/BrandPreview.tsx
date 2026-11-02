@@ -43,9 +43,9 @@ function Bar({
 }
 
 /**
- * The Preview of General settings (canvas AdminConfiguracoes): the brand as it will be, before saving, with the colors
- * of the color being typed. A small picture of the application, the top of the sidebar at its real size and the
- * panel of the sign-in page.
+ * The Preview of General settings (canvas AdminConfiguracoes): the name and the logos as they will be, before saving,
+ * with the colors saved in Colors (ADR-0146). A small picture of the application, the top of the sidebar at its real
+ * size and the panel of the sign-in page.
  */
 export function BrandPreview({
   name,
@@ -57,7 +57,7 @@ export function BrandPreview({
   logo: string | null;
   /** The logo the sidebar shows: the one for the dark theme over a dark sidebar (ADR-0100). */
   sidebarLogo?: string | null;
-  /** The brand tokens of the color being typed, so the Preview shows it before saving. */
+  /** The tokens of the colors of the installation in the theme of the screen. */
   colors?: Record<string, string>;
 }) {
   const { t } = useTranslation();
@@ -128,7 +128,7 @@ export function BrandPreview({
               gap: '4px',
               minWidth: 0,
               padding: '0 var(--space-2)',
-              color: 'var(--text)',
+              color: 'var(--sidebar-title, var(--text))',
               fontSize: 10,
               lineHeight: '14px',
               fontWeight: 500,
@@ -193,7 +193,7 @@ export function BrandPreview({
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'var(--sidebar-bg)',
             border: '1px solid var(--sidebar-border)',
-            color: 'var(--text)',
+            color: 'var(--sidebar-title, var(--text))',
             fontSize: 16,
             lineHeight: '24px',
             fontWeight: 500,

@@ -13,11 +13,16 @@ public interface IInstallationSettingsStore
 }
 
 /// <summary>
-/// The brand of the installation: its name, when each logo last changed (with a logo, ADR-0100) and the main color (null
-/// for the default one).
+/// The brand of the installation: its name, when each logo last changed (with a logo, ADR-0100) and the three colors
+/// (null for the default ones, ADR-0146).
 /// </summary>
 public sealed record Installation(
-    string Name, DateTime? LogoChangedAt, string? MainColor, DateTime? DarkLogoChangedAt = null);
+    string Name,
+    DateTime? LogoChangedAt,
+    string? MainColor,
+    DateTime? DarkLogoChangedAt = null,
+    string? SecondaryColor = null,
+    string? SidebarColor = null);
 
 /// <summary>The logo to serve: the file, its type and when it changed.</summary>
 public sealed record InstallationLogo(FileDownload File, string ContentType, DateTime ChangedAt);
@@ -31,7 +36,9 @@ public sealed class GetInstallation(IInstallationSettingsStore store)
             settings.Name,
             settings.HasLogo ? settings.LogoChangedAt : null,
             settings.MainColor,
-            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null);
+            settings.HasDarkLogo ? settings.DarkLogoChangedAt : null,
+            settings.SecondaryColor,
+            settings.SidebarColor);
     }
 }
 
@@ -88,7 +95,6 @@ public enum InstallationField
 {
     Name = 1,
     TimeZone = 2,
-    MainColor = 3,
     DailySummaryAt = 4,
     NotificationRetentionDays = 5,
     AuditRetentionYears = 6,
@@ -97,15 +103,13 @@ public enum InstallationField
 }
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the time zone, the main color, the time of the daily
-/// summary, how many days the notifications are kept, how many years the audit is kept (none keeps the years it had,
+/// The General settings form, saved as a whole: the name shown, the time zone, the time of the daily summary, how many days the notifications are kept, how many years the audit is kept (none keeps the years it had,
 /// ADR-0110), the folder of the projects (none keeps the one it had, ADR-0121) and the hours of a working day (none keeps
 /// the ones it had, ADR-0142).
 /// </summary>
 public sealed record InstallationChanges(
     string? Name,
     string? TimeZone,
-    string? MainColor,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
@@ -113,7 +117,7 @@ public sealed record InstallationChanges(
     decimal? WorkHoursPerDay = null);
 
 /// <summary>
-/// Saves the General settings form (ADR-0003, ADR-0013, ADR-0082): every field valid, or nothing changes. One save,
+/// Saves the General settings form (ADR-0003, ADR-0013): every field valid, or nothing changes. One save,
 /// so one audit record.
 /// </summary>
 public sealed class UpdateInstallation(IInstallationSettingsStore store)
@@ -133,11 +137,6 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         if (!InstallationSettings.IsValidTimeZone(changes.TimeZone))
         {
             invalid.Add(InstallationField.TimeZone);
-        }
-
-        if (!InstallationSettings.TryNormalizeMainColor(changes.MainColor, out var mainColor))
-        {
-            invalid.Add(InstallationField.MainColor);
         }
 
         if (changes.DailySummaryAt is null)
@@ -174,7 +173,6 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
         var settings = await store.GetAsync(cancellationToken);
         settings.Rename(name);
         settings.ChangeTimeZone(changes.TimeZone!);
-        settings.ChangeMainColor(mainColor);
         settings.ChangeDailySummaryAt(changes.DailySummaryAt!.Value);
         settings.ChangeNotificationRetention(changes.NotificationRetentionDays!.Value);
         if (changes.AuditRetentionYears is { } auditYears)
@@ -204,6 +202,56 @@ public sealed class UpdateInstallation(IInstallationSettingsStore store)
     {
         var folder = (typed ?? string.Empty).Trim().Trim('/').Trim();
         return folder.Length == 0 || FileNames.IsKeptAsTyped(folder) ? folder : null;
+    }
+}
+
+/// <summary>A color of the Colors section (ADR-0146).</summary>
+public enum InstallationColorField
+{
+    Main = 1,
+    Secondary = 2,
+    Sidebar = 3,
+}
+
+/// <summary>The three colors of the installation, each #RRGGBB or null (or empty) for the default one.</summary>
+public sealed record InstallationColors(string? Main, string? Secondary, string? Sidebar);
+
+/// <summary>
+/// Saves the Colors section (ADR-0146): any #RRGGBB color, each one valid or nothing changes. One save, so one audit
+/// record with the colors changed.
+/// </summary>
+public sealed class ChangeInstallationColors(IInstallationSettingsStore store)
+{
+    /// <returns>The invalid colors; empty when the colors were saved.</returns>
+    public async Task<IReadOnlyList<InstallationColorField>> ExecuteAsync(
+        InstallationColors colors, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(colors);
+        var invalid = new List<InstallationColorField>();
+        if (!InstallationSettings.TryNormalizeColor(colors.Main, out var main))
+        {
+            invalid.Add(InstallationColorField.Main);
+        }
+
+        if (!InstallationSettings.TryNormalizeColor(colors.Secondary, out var secondary))
+        {
+            invalid.Add(InstallationColorField.Secondary);
+        }
+
+        if (!InstallationSettings.TryNormalizeColor(colors.Sidebar, out var sidebar))
+        {
+            invalid.Add(InstallationColorField.Sidebar);
+        }
+
+        if (invalid.Count > 0)
+        {
+            return invalid;
+        }
+
+        var settings = await store.GetAsync(cancellationToken);
+        settings.ChangeColors(main, secondary, sidebar);
+        await store.SaveChangesAsync(cancellationToken);
+        return [];
     }
 }
 

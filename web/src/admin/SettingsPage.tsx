@@ -3,7 +3,7 @@ import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import Box from '@mui/material/Box';
 import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ChangeEvent, useId, useRef, useState } from 'react';
+import { type ChangeEvent, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -14,16 +14,9 @@ import { TextField } from '../components/TextField';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { Page } from '../shell/Page';
 import { hoursFieldText, parseHoursUpTo } from '../hours/hours';
-import {
-  brandVariables,
-  defaultMainColor,
-  hasContrast,
-  normalizeHex,
-  sidebarIsDark,
-} from '../theme/brandColors';
+import { brandVariables, colorsOf, sidebarIsDark } from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
 import { EmailSettings } from './EmailSettings';
-import { MainColorField } from './MainColorField';
 import { TimeZoneField } from './TimeZoneField';
 import { Button } from '../components/Button';
 import { Form } from '../components/Form';
@@ -38,8 +31,6 @@ const fieldErrors = {
   nameTooLong: 'settings.errors.nameTooLong',
   timeZoneRequired: 'settings.errors.timeZoneRequired',
   timeZoneInvalid: 'settings.errors.timeZoneInvalid',
-  colorFormat: 'settings.errors.colorFormat',
-  colorContrast: 'settings.errors.colorContrast',
   dailySummaryRequired: 'settings.errors.dailySummaryRequired',
   retentionRange: 'settings.errors.retentionRange',
   auditRetentionRange: 'settings.errors.auditRetentionRange',
@@ -81,15 +72,6 @@ const form = z.object({
     .transform((value) => value ?? 0),
   // Where the folders of the new projects go in the file storage; the server checks the names (ADR-0121).
   projectsFolder: z.string().trim(),
-  // Empty is the default color; typed with or without #, in any case, kept as #RRGGBB (ADR-0082).
-  mainColor: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || normalizeHex(value) !== undefined, {
-      error: fieldErrors.colorFormat,
-    })
-    .refine((value) => value === '' || hasContrast(value), { error: fieldErrors.colorContrast })
-    .transform((value) => (value === '' ? null : (normalizeHex(value) ?? null))),
 });
 
 type LogoError = 'logoFormat' | 'logoTooLarge' | 'logoUnsafe';
@@ -328,7 +310,6 @@ export function SettingsPage() {
     defaultValues: {
       name: '',
       timeZone: '',
-      mainColor: '',
       dailySummaryAt: '',
       notificationRetentionDays: '',
       auditRetentionYears: '',
@@ -341,7 +322,6 @@ export function SettingsPage() {
         : {
             name: installation.name,
             timeZone: rules.timeZone,
-            mainColor: installation.mainColor ?? '',
             dailySummaryAt: rules.dailySummaryAt.slice(0, 5),
             notificationRetentionDays: String(rules.notificationRetentionDays),
             auditRetentionYears: String(rules.auditRetentionYears),
@@ -357,19 +337,13 @@ export function SettingsPage() {
     darkLogo.kind === 'new' ? darkLogo.picture : darkLogo.kind === 'removed' ? null : savedDarkLogo;
   const changed = isDirty || logo.kind !== 'saved' || darkLogo.kind !== 'saved';
   const typedName = useWatch({ control, name: 'name' });
-  const typedColor = useWatch({ control, name: 'mainColor' }).trim();
-  // The Preview shows the color as it is typed once it is a color that may be saved; until then, the saved one.
-  const typedHex = normalizeHex(typedColor);
-  const previewColor =
-    typedColor === ''
-      ? null
-      : typedHex !== undefined && hasContrast(typedHex)
-        ? typedHex
-        : (installation?.mainColor ?? null);
+  // The Preview has the colors saved in Colors (ADR-0146).
+  const colors = useMemo(() => colorsOf(installation), [installation]);
   const { colorScheme } = useColorScheme();
   const scheme = colorScheme ?? 'light';
   // The sidebar of the Preview shows the logo for the dark theme when it is dark, as the real one (ADR-0100).
-  const previewLogo = sidebarIsDark(scheme) && shownDarkLogo !== null ? shownDarkLogo : shownLogo;
+  const previewLogo =
+    sidebarIsDark(colors, scheme) && shownDarkLogo !== null ? shownDarkLogo : shownLogo;
 
   const chooser =
     (choose: (choice: LogoChoice) => void, refuse: (error: LogoError | undefined) => void) =>
@@ -406,7 +380,6 @@ export function SettingsPage() {
     async ({
       name,
       timeZone,
-      mainColor,
       dailySummaryAt,
       notificationRetentionDays,
       auditRetentionYears,
@@ -435,7 +408,6 @@ export function SettingsPage() {
             body: {
               name,
               timeZone,
-              mainColor,
               dailySummaryAt: `${dailySummaryAt}:00`,
               notificationRetentionDays,
               auditRetentionYears,
@@ -448,9 +420,6 @@ export function SettingsPage() {
             const invalid = invalidFields(error);
             if (invalid.includes('name')) {
               setError('name', { message: fieldErrors.nameRequired });
-            }
-            if (invalid.includes('mainColor')) {
-              setError('mainColor', { message: fieldErrors.colorContrast });
             }
             if (invalid.includes('dailySummaryAt')) {
               setError('dailySummaryAt', { message: fieldErrors.dailySummaryRequired });
@@ -496,7 +465,6 @@ export function SettingsPage() {
 
   const nameError = errors.name?.message as FieldError | undefined;
   const timeZoneError = errors.timeZone?.message as FieldError | undefined;
-  const colorError = errors.mainColor?.message as FieldError | undefined;
   const summaryError = errors.dailySummaryAt?.message as FieldError | undefined;
   const retentionError = errors.notificationRetentionDays?.message as FieldError | undefined;
   const auditRetentionError = errors.auditRetentionYears?.message as FieldError | undefined;
@@ -584,22 +552,6 @@ export function SettingsPage() {
                       setDarkLogo(savedDarkLogo === null ? { kind: 'saved' } : { kind: 'removed' });
                       setDarkLogoError(undefined);
                     }}
-                  />
-                  <Controller
-                    control={control}
-                    name="mainColor"
-                    render={({ field }) => (
-                      <MainColorField
-                        value={field.value}
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        error={
-                          colorError === undefined
-                            ? undefined
-                            : t(colorError, { example: defaultMainColor() })
-                        }
-                      />
-                    )}
                   />
                 </Box>
                 <Box component="section" aria-labelledby="settings-rules" sx={sectionSx}>
@@ -694,7 +646,7 @@ export function SettingsPage() {
                 name={typedName.trim() === '' ? (installation?.name ?? '') : typedName.trim()}
                 logo={shownLogo}
                 sidebarLogo={previewLogo}
-                colors={brandVariables(previewColor, scheme)}
+                colors={brandVariables(colors, scheme)}
               />
             </Box>
           )}

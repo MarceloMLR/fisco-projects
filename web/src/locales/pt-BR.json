@@ -55,6 +55,9 @@
     "settings": {
       "title": "Configurações gerais"
     },
+    "colors": {
+      "title": "Cores"
+    },
     "calendar": {
       "title": "Calendário e feriados"
     },
@@ -561,6 +564,8 @@
         "LogoFileName": "Logo",
         "TimeZone": "Fuso horário",
         "MainColor": "Cor principal",
+        "SecondaryColor": "Cor secundária",
+        "SidebarColor": "Cor da barra lateral",
         "DailySummaryAt": "Horário do resumo diário",
         "NotificationRetentionDays": "Guardar notificações por",
         "DarkLogoFileName": "Logo para o tema escuro",
@@ -823,12 +828,6 @@
     "sendDarkLogo": "Enviar logo escuro",
     "replaceDarkLogo": "Trocar logo escuro",
     "removeDarkLogo": "Remover logo escuro",
-    "mainColor": "Cor principal",
-    "mainColorHex": "Cor principal em hexadecimal",
-    "defaultColor": "Voltar ao padrão",
-    "contrastApproved": "Contraste aprovado",
-    "contrastLow": "Contraste insuficiente",
-    "pickColor": "Escolher {{color}} no seletor de cores",
     "rules": "Regras gerais",
     "timeZone": "Fuso horário",
     "noTimeZones": "Nenhum fuso encontrado",
@@ -866,8 +865,6 @@
       "logoUnsafe": "O SVG tem um script ou um link que executa código. Exporte o logo de novo sem eles.",
       "timeZoneRequired": "Escolha o fuso horário.",
       "timeZoneInvalid": "O servidor não conhece esse fuso. Escolha outro.",
-      "colorFormat": "Use uma cor em hexadecimal, como {{example}}.",
-      "colorContrast": "A cor precisa de mais contraste com o branco. Escolha um tom mais escuro.",
       "dailySummaryRequired": "Informe o horário do resumo, como 07:30.",
       "retentionRange": "Use de 1 a 365 dias.",
       "auditRetentionRange": "Use de 1 a 10 anos.",
@@ -3735,5 +3732,97 @@
     "invalidDetail": "O pedido foi respondido, cancelado ou não existe. Se precisar, peça um link novo a quem pediu a assinatura.",
     "failed": "Não foi possível concluir. Tente de novo.",
     "loading": "Carregando o termo"
+  },
+  "colors": {
+    "subtitle": "As cores que todas as pessoas veem nesta instalação. Cada uma é opcional: sem ela, vale a do FiscoProjects. O nome e os logos ficam em Configurações gerais.",
+    "fieldsLabel": "Cores da instalação",
+    "optional": "(opcional)",
+    "main": {
+      "label": "Cor principal",
+      "value": "Cor principal, em qualquer formato",
+      "where": "Botões, links, abas, seleções e o anel de foco.",
+      "placeholder": "Padrão ({{color}})"
+    },
+    "secondary": {
+      "label": "Cor secundária",
+      "value": "Cor secundária, em qualquer formato",
+      "where": "Linha selecionada, notificação não lida, menção e painel da página de entrada.",
+      "placeholder": "Igual à principal"
+    },
+    "sidebar": {
+      "label": "Cor da barra lateral",
+      "value": "Cor da barra lateral, em qualquer formato",
+      "where": "Fundo da barra lateral; os textos e o item ativo acompanham.",
+      "placeholder": "Padrão ({{color}})"
+    },
+    "choose": "Escolher a {{color}}",
+    "defaultColor": "Voltar ao padrão",
+    "invalid": "Não reconheço essa cor. Use #0F766E, rgb(15, 118, 110) ou hsl(175, 77%, 26%).",
+    "notes": {
+      "goodContrast": "Texto branco sobre a cor, com bom contraste.",
+      "secondaryAsIs": "Painel da entrada na própria cor, com o texto branco.",
+      "darkText": "Texto escuro nos botões, porque o branco não daria leitura.",
+      "darkerLinks": "Links e abas um pouco mais escuros que a cor, para ler no fundo da página.",
+      "lighterInDark": "No tema escuro, os botões ficam um pouco mais claros, para se destacar do fundo.",
+      "darkerPanel": "Painel da entrada um pouco mais escuro, para o texto branco.",
+      "lightSidebarText": "Textos claros na barra.",
+      "darkSidebarText": "Textos escuros na barra.",
+      "darkSidebarTone": "No tema escuro, a barra fica num tom escuro da cor.",
+      "indicator": "O filete do item ativo muda de tom, para aparecer sobre a barra."
+    },
+    "picker": {
+      "area": "Saturação e brilho",
+      "areaValue": "Saturação {{saturation}}%, brilho {{value}}%",
+      "hue": "Matiz",
+      "current": "Atual",
+      "new": "Nova",
+      "format": "Formato do valor",
+      "value": "Valor da cor",
+      "hint": "Digite ou cole em qualquer formato: #0F766E, rgb(15, 118, 110) ou hsl(175, 77%, 26%).",
+      "cancel": "Cancelar",
+      "use": "Usar esta cor"
+    },
+    "preview": {
+      "title": "Prévia",
+      "label": "Prévia das cores",
+      "scheme": "Tema da prévia",
+      "light": "Claro",
+      "dark": "Escuro",
+      "legend": "Linha selecionada, menção e painel da entrada usam a secundária. Botões, links, abas e seleções usam a principal. As cores de status não mudam.",
+      "company": "Empresa Exemplo",
+      "home": "Início",
+      "projects": "Projetos",
+      "tickets": "Chamados",
+      "hours": "Minhas horas",
+      "myProjects": "Meus projetos",
+      "project": "Implantação do ERP financeiro",
+      "projectCode": "ERP-FIN",
+      "otherProject": "Adequação do SPED Fiscal",
+      "otherProjectCode": "SPED-27",
+      "trail": "Projetos / ERP-FIN / Cronograma",
+      "overview": "Visão geral",
+      "schedule": "Cronograma",
+      "documents": "Documentos",
+      "newTask": "Nova tarefa",
+      "hovered": "Sob o ponteiro",
+      "newPhase": "Nova fase",
+      "baseline": "Ver a linha de base",
+      "task": "Tarefa",
+      "owner": "Responsável",
+      "progress": "Progresso",
+      "task1": "Parametrizar regras de ICMS",
+      "task2": "Integrar emissão de NF-e",
+      "task3": "Testes integrados",
+      "person1": "Rafael Souza",
+      "person2": "Carla Mendes",
+      "person3": "Diego Torres",
+      "author": "Marina Costa",
+      "mention": "as alíquotas já estão no ambiente de testes.",
+      "signInLabel": "Página de entrada",
+      "signInTitle": "Entre com a conta da empresa"
+    },
+    "saved": "Cores salvas.",
+    "loadFailed": "Não foi possível carregar as cores. Tente de novo.",
+    "saveFailed": "Não foi possível salvar as cores. Tente de novo."
   }
 }

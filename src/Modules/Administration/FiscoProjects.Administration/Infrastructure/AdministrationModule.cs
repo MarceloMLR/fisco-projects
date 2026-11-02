@@ -23,6 +23,7 @@ public static class AdministrationModule
         services.AddScoped<GetInstallationLogo>();
         services.AddScoped<GetGeneralRules>();
         services.AddScoped<UpdateInstallation>();
+        services.AddScoped<ChangeInstallationColors>();
         services.AddScoped<ReplaceInstallationLogo>();
         services.AddScoped<RemoveInstallationLogo>();
         // The main reads, once after the API starts (ADR-0106).

@@ -54,6 +54,7 @@ export type PageTitleKey =
   | 'pages.users.title'
   | 'pages.audit.title'
   | 'pages.settings.title'
+  | 'pages.colors.title'
   | 'pages.calendar.title'
   | 'pages.clients.title'
   | 'pages.templates.title'

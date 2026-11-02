@@ -3,13 +3,14 @@ import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
 import { prefetchProject } from '../api/prefetch';
-import { myProjectsQuery } from '../api/queries';
+import { installationQuery, myProjectsQuery } from '../api/queries';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
-import { sidebarIsDark } from '../theme/brandColors';
+import { colorsOf, sidebarIsDark } from '../theme/brandColors';
 import { useMainNavigation } from './pages';
 
 const transition = 'background-color 150ms ease-out, color 150ms ease-out';
@@ -44,11 +45,14 @@ export function Sidebar({
   const myProjects = useQuery(myProjectsQuery()).data?.items ?? [];
   const queryClient = useQueryClient();
   const { colorScheme } = useColorScheme();
-  // Over a dark sidebar, the logo for the dark theme, when the installation has one (ADR-0100).
+  const brandColors = useQuery(installationQuery()).data;
+  const dark = useMemo(
+    () => sidebarIsDark(colorsOf(brandColors), colorScheme ?? 'light'),
+    [brandColors, colorScheme],
+  );
+  // Over a dark sidebar, the logo for the dark theme, when the installation has one (ADR-0100, ADR-0146).
   const logoUrl =
-    installation.darkLogoUrl !== null && sidebarIsDark(colorScheme ?? 'light')
-      ? installation.darkLogoUrl
-      : installation.logoUrl;
+    installation.darkLogoUrl !== null && dark ? installation.darkLogoUrl : installation.logoUrl;
 
   return (
     <Box
@@ -82,7 +86,8 @@ export function Sidebar({
             height: 'var(--topbar-height)',
             margin: '0 0 calc(var(--space-2) * -1)',
             padding: '0 var(--space-2)',
-            color: 'var(--text)',
+            // The name over a sidebar of the installation's own color has a color of its own (ADR-0146).
+            color: 'var(--sidebar-title, var(--text))',
             textDecoration: 'none',
           }}
         >

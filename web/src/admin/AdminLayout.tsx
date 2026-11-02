@@ -7,6 +7,7 @@ import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
 import HourglassEmptyOutlined from '@mui/icons-material/HourglassEmptyOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
+import PaletteOutlined from '@mui/icons-material/PaletteOutlined';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
@@ -64,6 +65,12 @@ const sections = [
         path: '/admin/settings',
         labelKey: 'pages.settings.title',
         icon: SettingsOutlined,
+        count: null,
+      },
+      {
+        path: '/admin/colors',
+        labelKey: 'pages.colors.title',
+        icon: PaletteOutlined,
         count: null,
       },
       {

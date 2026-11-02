@@ -15,5 +15,11 @@ describe('Logo na aba do navegador', () => {
     expect(icon).toContain(`fill="${color('on-action', 'light')}"`);
     expect(faviconOf('/api/installation/logo?v=1', null)).toBe('/api/installation/logo?v=1');
     expect(faviconOf(null, null)).toBe(badgeIcon(null));
+
+    // Over a light color, the icon is dark, as the text of the buttons (ADR-0146).
+    const light = decodeURIComponent(badgeIcon(typed('F5C400')));
+    expect(light).toContain(`fill="${typed('F5C400')}"`);
+    expect(light).toContain(`fill="${brandTokens(typed('F5C400')).light['on-action']}"`);
+    expect(light).not.toContain(`fill="${color('on-action', 'light')}"`);
   });
 });

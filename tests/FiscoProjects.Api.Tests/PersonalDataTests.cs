@@ -303,7 +303,6 @@ public sealed class PersonalDataTests(SqlServerFixture sqlServer)
         {
             name = "FiscoProjects",
             timeZone = "America/Sao_Paulo",
-            mainColor = (string?)null,
             dailySummaryAt = "07:30:00",
             notificationRetentionDays = 90,
             auditRetentionYears = years,

@@ -56,7 +56,11 @@ export function Avatar({
             ? `var(--avatar-${tone})`
             : 'var(--avatar-bg)',
         border: empty ? '1px dashed var(--border-control)' : 0,
-        color: empty ? 'var(--text-secondary)' : toned ? 'var(--on-action)' : 'var(--avatar-text)',
+        color: empty
+          ? 'var(--text-secondary)'
+          : toned
+            ? 'var(--on-avatar-role)'
+            : 'var(--avatar-text)',
         fontSize,
         lineHeight: 1,
         fontWeight: 500,

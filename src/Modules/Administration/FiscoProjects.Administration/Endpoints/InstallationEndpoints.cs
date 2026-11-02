@@ -12,14 +12,23 @@ namespace FiscoProjects.Administration.Endpoints;
 
 /// <summary>
 /// The brand of the installation: the name shown, the address of the logo (null without one), the main color as
-/// #RRGGBB (null for the color of the design system) and the address of the logo for the dark theme (null without one,
-/// and the logo shows, ADR-0100). The address of a logo changes whenever the logo changes, so the browser may keep it.
+/// #RRGGBB (null for the color of the design system), the address of the logo for the dark theme (null without one,
+/// and the logo shows, ADR-0100) and the secondary color and the color of the sidebar as #RRGGBB (null for the design
+/// system, ADR-0146). The address of a logo changes whenever the logo changes, so the browser may keep it.
 /// </summary>
-public sealed record InstallationResponse(string Name, string? LogoUrl, string? MainColor, string? DarkLogoUrl);
+public sealed record InstallationResponse(
+    string Name,
+    string? LogoUrl,
+    string? MainColor,
+    string? DarkLogoUrl,
+    string? SecondaryColor,
+    string? SidebarColor);
+
+/// <summary>The three colors of the installation (ADR-0146), each #RRGGBB, or null for the default one.</summary>
+public sealed record InstallationColorsRequest(string? MainColor, string? SecondaryColor, string? SidebarColor);
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the IANA time zone, the main color (#RRGGBB, or null
-/// for the color of the design system), the time of the daily summary (HH:mm:ss, in the time zone), how many days the
+/// The General settings form, saved as a whole: the name shown, the IANA time zone, the time of the daily summary (HH:mm:ss, in the time zone), how many days the
 /// notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
 /// folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
 /// it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142).
@@ -27,7 +36,6 @@ public sealed record InstallationResponse(string Name, string? LogoUrl, string? 
 public sealed record UpdateInstallationRequest(
     string Name,
     string TimeZone,
-    string? MainColor,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
@@ -84,6 +92,11 @@ internal static class InstallationEndpoints
             .RequireAuthorization(SystemPolicies.Administrator)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+        // The Colors section, saved on its own (ADR-0146).
+        installation.MapPut("/colors", ChangeColorsAsync).WithName("ChangeInstallationColors")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
         // The protection against other sites is the X-CSRF header of the application (ADR-0054), not the antiforgery
         // token of ASP.NET Core forms.
         installation.MapPut("/logo", ReplaceLogoAsync).WithName("ReplaceInstallationLogo")
@@ -125,7 +138,13 @@ internal static class InstallationEndpoints
         var darkLogoUrl = installation.DarkLogoChangedAt is { } darkChangedAt
             ? links.GetPathByName(http, "GetInstallationDarkLogo", new { v = VersionOf(darkChangedAt) })
             : null;
-        return TypedResults.Ok(new InstallationResponse(installation.Name, logoUrl, installation.MainColor, darkLogoUrl));
+        return TypedResults.Ok(new InstallationResponse(
+            installation.Name,
+            logoUrl,
+            installation.MainColor,
+            darkLogoUrl,
+            installation.SecondaryColor,
+            installation.SidebarColor));
     }
 
     private static Task<Results<FileStreamHttpResult, NotFound>> GetLogoAsync(
@@ -173,7 +192,6 @@ internal static class InstallationEndpoints
             new InstallationChanges(
                 request.Name,
                 request.TimeZone,
-                request.MainColor,
                 request.DailySummaryAt,
                 request.NotificationRetentionDays,
                 request.AuditRetentionYears,
@@ -183,6 +201,23 @@ internal static class InstallationEndpoints
         return invalid.Count == 0
             ? TypedResults.NoContent()
             : TypedResults.ValidationProblem(invalid.ToDictionary(KeyOf, field => new[] { ReasonOf(field) }));
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem>> ChangeColorsAsync(
+        InstallationColorsRequest request, ChangeInstallationColors changeColors, CancellationToken cancellationToken)
+    {
+        var invalid = await changeColors.ExecuteAsync(
+            new InstallationColors(request.MainColor, request.SecondaryColor, request.SidebarColor), cancellationToken);
+        return invalid.Count == 0
+            ? TypedResults.NoContent()
+            : TypedResults.ValidationProblem(invalid.ToDictionary(
+                field => field switch
+                {
+                    InstallationColorField.Secondary => "secondaryColor",
+                    InstallationColorField.Sidebar => "sidebarColor",
+                    _ => "mainColor",
+                },
+                _ => new[] { "Choose a #RRGGBB color, or none for the default color." }));
     }
 
     private static Task<Results<NoContent, ValidationProblem, ProblemHttpResult>> ReplaceLogoAsync(
@@ -237,8 +272,7 @@ internal static class InstallationEndpoints
         InstallationField.NotificationRetentionDays => "notificationRetentionDays",
         InstallationField.AuditRetentionYears => "auditRetentionYears",
         InstallationField.ProjectsFolder => "projectsFolder",
-        InstallationField.WorkHoursPerDay => "workHoursPerDay",
-        _ => "mainColor",
+        _ => "workHoursPerDay",
     };
 
     private static string ReasonOf(InstallationField field) => field switch
@@ -250,8 +284,7 @@ internal static class InstallationEndpoints
         InstallationField.AuditRetentionYears => "Keep the audit from 1 to 10 years.",
         InstallationField.ProjectsFolder =>
             "Separate the folders with /, with no empty folder, no . or .., none of \" * : < > ? \\ | and up to 400 characters.",
-        InstallationField.WorkHoursPerDay => "A working day has from 1 to 12 hours, in quarters of an hour.",
-        _ => "Choose a #RRGGBB color with a contrast of 4.5:1 with white, or none for the default color.",
+        _ => "A working day has from 1 to 12 hours, in quarters of an hour.",
     };
 
     private static ProblemHttpResult Refused(string type, string title, string detail) =>

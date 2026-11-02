@@ -30,7 +30,8 @@ export function MobileTopBar({
         padding: '0 var(--space-2) 0 var(--space-1)',
         backgroundColor: 'var(--topbar-bg)',
         color: 'var(--text)',
-        borderBottom: '1px solid var(--sidebar-border)',
+        // The border of the top bar, not of the sidebar: the sidebar may have a color of its own (ADR-0146).
+        borderBottom: '1px solid var(--border)',
       }}
     >
       <Box

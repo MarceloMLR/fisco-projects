@@ -936,6 +936,8 @@ export const defaultInstallation: Installation = {
   logoUrl: null,
   mainColor: null,
   darkLogoUrl: null,
+  secondaryColor: null,
+  sidebarColor: null,
 };
 
 /** My profile of a person in the session, who signs in locally and last did so at 09:12 of October 19th. */
