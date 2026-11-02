@@ -164,7 +164,7 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
     - O administrador do FiscoProjects baixa o pacote em Configurações gerais → Microsoft 365 → "Baixar pacote do Teams" e o entrega ao Administrador do Teams.
     - O Administrador do Teams sobe o pacote no centro de administração do Teams (`https://admin.teams.microsoft.com`), em Aplicativos do Teams → Gerenciar aplicativos → Carregar novo aplicativo. O aplicativo aparece para as pessoas algumas horas depois.
     - Ele instala o aplicativo para as pessoas por uma política de configuração (Aplicativos do Teams → Políticas de configuração → a política Global ou uma de um grupo → Aplicativos instalados → Adicionar aplicativos) e, se quiser, o fixa na barra do Teams (Aplicativos fixados).
-    - Depois, o administrador do FiscoProjects marca "Avisar pelo Teams" na mesma seção. Cada pessoa escolhe em Meu perfil se os avisos na hora chegam por e-mail, pelo Teams ou pelos dois (os dois, de início).
+    - Depois, o administrador do FiscoProjects marca "Avisar pelo Teams" na mesma seção. Cada pessoa liga em Meu perfil os avisos pelo Teams (de início, só o e-mail vem ligado) e pode desligar o e-mail; com os dois desligados, os avisos ficam no sino e no Meu trabalho.
 
 13. **Combine a rotina**: o backup dos dois arquivos privados, o teste de restauração a cada 3 meses ([roteiro de restauração](restauracao.md)) e quem recebe os alertas.
 
@@ -285,11 +285,11 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 
 ### Teams
 
-- Os avisos que pedem ação também chegam na aba Atividade do Teams, para quem os escolhe em Meu perfil (ADR-0149). Clicar no aviso abre a página do FiscoProjects dentro do Teams, com "Abrir no FiscoProjects", que leva ao item no navegador.
-- O envio é pelo Microsoft Graph, com o aplicativo do Entra e as permissões que o próprio pacote do Teams declara: `TeamsActivity.Send.User`, para avisar a pessoa, e `TeamsAppInstallation.Read.User`, para saber se o aplicativo está instalado para ela. Nada de permissão nova no Entra ID: as duas valem só para as pessoas que têm o aplicativo instalado. Se o tenant desligou o consentimento dessas permissões no escopo pessoal (`isUserPersonalScopeResourceSpecificConsentEnabled`, nas configurações de aplicativos do Teams), os avisos voltam ao e-mail até ele ser ligado.
+- Os avisos que pedem ação também chegam na aba Atividade do Teams, para quem liga "Pelo Teams" em Meu perfil (ADR-0149, ADR-0151). Clicar no aviso abre a página do FiscoProjects dentro do Teams, com "Abrir no FiscoProjects", que leva ao item no navegador.
+- O envio é pelo Microsoft Graph, com o aplicativo do Entra e as permissões que o próprio pacote do Teams declara: `TeamsActivity.Send.User`, para avisar a pessoa, e `TeamsAppInstallation.Read.User`, para saber se o aplicativo está instalado para ela. Nada de permissão nova no Entra ID: as duas valem só para as pessoas que têm o aplicativo instalado. Se o tenant desligou o consentimento dessas permissões no escopo pessoal (`isUserPersonalScopeResourceSpecificConsentEnabled`, nas configurações de aplicativos do Teams), os avisos não chegam pelo Teams até ele ser ligado: ficam no sino e, para quem tem o e-mail ligado, no e-mail.
 - Com a entrada pelo Entra, o Terraform liga o envio pelo Graph (`Teams:Provider` = `Graph`), mas nada sai antes de o administrador marcar "Avisar pelo Teams". Só recebe pelo Teams quem entra pelo Entra ID.
 - O pacote (`aplicativo-teams-<versão>.zip`) é montado pelo FiscoProjects com o nome, o logo ou a cor principal e o endereço da instalação. A identificação do aplicativo não muda; a versão sobe quando o conteúdo muda, como depois de trocar o nome, o logo ou a cor principal, ou numa versão nova do FiscoProjects. Para atualizar, o Administrador do Teams abre o aplicativo em Gerenciar aplicativos e sobe o pacote novo; as políticas continuam valendo.
-- Quando o aplicativo não está instalado para a pessoa ou o Teams recusa o aviso de vez, quem escolheu só o Teams recebe o aviso por e-mail. Os avisos esperam numa fila no banco, com as mesmas novas tentativas dos e-mails, e o conteúdo deles é apagado no mesmo prazo (`Email:KeepDays`).
+- Quando o aplicativo não está instalado para a pessoa ou o Teams recusa o aviso de vez, o aviso fica no sino e, para quem tem o e-mail ligado, no e-mail; quem desligou o e-mail não o recebe no lugar (ADR-0151). Os avisos esperam numa fila no banco, com as mesmas novas tentativas dos e-mails, e o conteúdo deles é apagado no mesmo prazo (`Email:KeepDays`).
 
 ### Assinatura dos termos de aceite
 

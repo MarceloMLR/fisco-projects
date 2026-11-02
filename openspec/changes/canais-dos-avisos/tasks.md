@@ -16,4 +16,4 @@
 
 ## 4. Documentação
 
-- [ ] 4.1 `CLAUDE.md` e `docs/instalacao.md`
+- [x] 4.1 `CLAUDE.md` e `docs/instalacao.md`
