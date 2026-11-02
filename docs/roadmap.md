@@ -172,7 +172,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-2 | `avisos-por-email` | E-mails imediatos e resumo diário | 0037 | Concluída em 20/10/2026 ([#46](https://github.com/MarceloMLR/fisco-projects/pull/46)) |
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Concluída em 20/10/2026 ([#47](https://github.com/MarceloMLR/fisco-projects/pull/47)) |
 | Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída em 02/11/2026 ([#143](https://github.com/MarceloMLR/fisco-projects/pull/143)) |
-| Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | Em andamento (proposta aprovada por Marcelo em 02/11/2026) |
+| Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | PR aberto |
 
 ## 7. Documentos, links, acessos e termos
 
