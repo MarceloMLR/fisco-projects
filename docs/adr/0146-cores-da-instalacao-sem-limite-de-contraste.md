@@ -1,5 +1,5 @@
 ---
-status: aceita (fundo da entrada substituído pelo ADR-0147)
+status: aceita (fundo da entrada substituído pelo ADR-0147; tela Cores substituída pelo ADR-0150)
 date: 2026-11-01
 decision-makers: Marcelo Ribeiro
 ---
