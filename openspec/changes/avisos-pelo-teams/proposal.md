@@ -18,14 +18,13 @@ Os avisos na hora saem só por e-mail (ADR-0037), e quem passa o dia no Teams s�
   - baixa o pacote do aplicativo da instalação, com o nome, o ícone, o endereço e a identificação dela;
   - liga "Avisar pelo Teams" depois que o administrador do Teams da empresa instala o aplicativo.
 - **API:**
-  - `GET /api/admin/teams-app` traz o pacote do aplicativo, sem os ícones, que a tela monta;
-  - `PUT /api/installation` recebe `teamsNotices`;
-  - `PUT /api/profile/immediate-notices` grava o canal da pessoa;
-  - o perfil traz o canal e se o Teams está disponível para a pessoa.
+  - `GET` e `PUT /api/admin/teams-app` trazem e mudam "Avisar pelo Teams", só do administrador;
+  - `POST /api/admin/teams-app/package` traz o manifesto do pacote, com a versão, e a tela o completa com os ícones;
+  - `GET` e `PUT /api/profile/immediate-notices` trazem e gravam o canal da pessoa, com se o Teams está disponível para ela.
 - **Banco:**
   - a fila dos avisos do Teams no schema `notifications`;
-  - o canal de cada pessoa no `users`;
-  - "Avisar pelo Teams" e a identificação do aplicativo nas configurações da instalação.
+  - o canal de cada pessoa no `notifications`;
+  - "Avisar pelo Teams", a identificação e a versão do aplicativo no `notifications`.
 - **Instalação:**
   - o Terraform liga o envio pelo Graph com a entrada pelo Entra;
   - o guia ensina a subir o pacote no centro de administração do Teams e a instalar por política;
@@ -65,8 +64,7 @@ Nenhuma.
   - o pacote do aplicativo;
   - a anonimização e a exclusão do projeto;
   - os textos dos avisos do Teams e a migração.
-- `src/Modules/Users`: o canal dos avisos na hora no perfil, o vínculo com o Entra no contrato das pessoas e a migração.
-- `src/Modules/Administration`: "Avisar pelo Teams" e a identificação do aplicativo nas configurações, com a migração.
+- `src/Modules/Users`: o vínculo com o Entra no contrato das pessoas.
 - `tests/`:
   - as regras do canal;
   - a fila e o envio com o Graph simulado;

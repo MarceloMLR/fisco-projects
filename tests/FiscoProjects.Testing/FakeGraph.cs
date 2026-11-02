@@ -17,6 +17,9 @@ public sealed record FakeGraphUser(
 /// </summary>
 public sealed record FakeGraphPhoto(byte[] Content, string ContentType = "image/jpeg", bool Sized = true);
 
+/// <summary>A notice the simulation accepted for the Activity of Teams of a user: the body the sending gave to Graph.</summary>
+public sealed record FakeGraphActivity(string UserId, JsonElement Body);
+
 /// <summary>An e-mail the simulation accepted from a mailbox: what the sending gave to Graph.</summary>
 public sealed record FakeGraphMail(
     string Mailbox, string Subject, string ContentType, string Content, string ToAddress, string ToName, bool SaveToSentItems);
@@ -24,7 +27,8 @@ public sealed record FakeGraphMail(
 /// <summary>
 /// Microsoft Graph simulated inside the process (ADR-0056, ADR-0119): the list and the search of the users of a
 /// fictitious tenant and one user by id, as the directory of the people asks them, and the sending of e-mails from the
-/// mailboxes the application may send from (ADR-0123), and the photos of the users (ADR-0124). Like the real one, the search finds the beginning of the words
+/// mailboxes the application may send from (ADR-0123), the photos of the users (ADR-0124), and the application of Teams
+/// installed for each user and the notices to its Activity (ADR-0149). Like the real one, the search finds the beginning of the words
 /// of the name and the beginning of the e-mail and of the sign-in name, without telling case apart, and asks for the
 /// header of the advanced queries; and a mailbox outside the scope of Exchange answers 403. Nothing reaches the network.
 /// </summary>
@@ -35,6 +39,7 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
     private readonly ConcurrentQueue<Uri> _requests = new();
     private readonly ConcurrentQueue<FakeGraphMail> _mail = new();
+    private readonly ConcurrentQueue<FakeGraphActivity> _activities = new();
 
     public List<FakeGraphUser> Users { get; } = [];
 
@@ -43,6 +48,15 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
     /// <summary>The mailboxes the application may send from, as the scope of "Application Mail.Send" in Exchange.</summary>
     public List<string> Mailboxes { get; } = [];
+
+    /// <summary>
+    /// The users with the application of Teams installed, with the id of the application in the catalog of the company;
+    /// for the others, the notices of Teams answer 403, as the permission of the application does not exist for them.
+    /// </summary>
+    public Dictionary<string, string> TeamsApps { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The notices of Teams accepted, in order.</summary>
+    public IReadOnlyList<FakeGraphActivity> Activities => [.. _activities];
 
     /// <summary>The e-mails accepted, in order.</summary>
     public IReadOnlyList<FakeGraphMail> Mail => [.. _mail];
@@ -74,6 +88,18 @@ public sealed partial class FakeGraph : HttpMessageHandler
         if (send.Success && request.Method == HttpMethod.Post)
         {
             return await SendMailAsync(Uri.UnescapeDataString(send.Groups[1].Value), request, cancellationToken);
+        }
+
+        var installed = InstalledApps().Match(path);
+        if (installed.Success && request.Method == HttpMethod.Get)
+        {
+            return InstalledAppsOf(Uri.UnescapeDataString(installed.Groups[1].Value), query["$filter"]);
+        }
+
+        var activity = SendActivity().Match(path);
+        if (activity.Success && request.Method == HttpMethod.Post)
+        {
+            return await SendActivityAsync(Uri.UnescapeDataString(activity.Groups[1].Value), request, cancellationToken);
         }
 
         var photo = UserPhoto().Match(path);
@@ -170,6 +196,47 @@ public sealed partial class FakeGraph : HttpMessageHandler
         return new HttpResponseMessage(HttpStatusCode.Accepted);
     }
 
+    /// <summary>
+    /// The application of Teams installed for the user, by the id of its manifest: Graph answers with the application of
+    /// the catalog, or an empty list; without the application installed, its permission does not exist, and the answer is
+    /// 403.
+    /// </summary>
+    private HttpResponseMessage InstalledAppsOf(string userId, string? filter)
+    {
+        if (!TeamsApps.TryGetValue(userId, out var catalogId))
+        {
+            return Forbidden();
+        }
+
+        var externalId = filter is null ? null : ExternalId().Match(filter) is { Success: true } match ? match.Groups[1].Value : null;
+        return Json(new
+        {
+            value = externalId is null
+                ? []
+                : new[] { new { id = $"installation-{userId}", teamsApp = new { id = catalogId, externalId } } },
+        });
+    }
+
+    private async Task<HttpResponseMessage> SendActivityAsync(string userId, HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (!TeamsApps.ContainsKey(userId))
+        {
+            return Forbidden();
+        }
+
+        using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+        _activities.Enqueue(new FakeGraphActivity(userId, body.RootElement.Clone()));
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
+    }
+
+    private static HttpResponseMessage Forbidden() =>
+        new(HttpStatusCode.Forbidden)
+        {
+            Content = JsonContent.Create(
+                new { error = new { code = "Forbidden", message = "Missing role permissions on the request." } },
+                options: JsonSerializerOptions.Web),
+        };
+
     /// <summary>The photo of a user, as Graph answers it: 404 without a photo, or without one in the size asked.</summary>
     private HttpResponseMessage PhotoOf(string userId, bool sized)
     {
@@ -220,6 +287,15 @@ public sealed partial class FakeGraph : HttpMessageHandler
 
     [GeneratedRegex("^/v1\\.0/users/([^/]+)/sendMail$")]
     private static partial Regex SendMail();
+
+    [GeneratedRegex("^/v1\\.0/users/([^/]+)/teamwork/installedApps$")]
+    private static partial Regex InstalledApps();
+
+    [GeneratedRegex("^/v1\\.0/users/([^/]+)/teamwork/sendActivityNotification$")]
+    private static partial Regex SendActivity();
+
+    [GeneratedRegex("externalId eq '([^']+)'")]
+    private static partial Regex ExternalId();
 
     [GeneratedRegex("^/v1\\.0/users/([^/]+)/(photos/96x96|photo)/\\$value$")]
     private static partial Regex UserPhoto();

@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FiscoProjects.Notifications.Infrastructure;
 
 /// <summary>
-/// The notices of a project being deleted (ADR-0041, ADR-0111): the notifications of the bell and the items waiting for
-/// the daily summary; the e-mails already in the queue go out.
+/// The notices of a project being deleted (ADR-0041, ADR-0111): the notifications of the bell, the items waiting for
+/// the daily summary and the notices of Teams (ADR-0149); the e-mails already in the queue go out.
 /// </summary>
 internal sealed class NotificationProjectDeletion : IProjectDeletion
 {
@@ -25,6 +25,7 @@ internal sealed class NotificationProjectDeletion : IProjectDeletion
         await notices.Database.UseTransactionAsync(transaction, cancellationToken);
         await notices.Notifications.Where(item => item.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
         await notices.DigestItems.Where(item => item.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
+        await notices.TeamsNotices.Where(item => item.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
         return [];
     }
 }

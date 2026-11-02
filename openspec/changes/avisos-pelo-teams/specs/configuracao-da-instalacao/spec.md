@@ -26,10 +26,10 @@ Só o administrador MUST baixar o pacote do aplicativo do Teams da instalação,
 
 ### Requirement: Avisar pelo Teams
 
-As Configurações gerais MUST ter "Avisar pelo Teams", desligado de início, na seção Microsoft 365, gravado com as outras configurações e só do administrador. A mudança MUST entrar na auditoria. A opção MUST NOT ser ligada sem o envio pelo Teams na configuração da aplicação (ADR-0039, ADR-0149).
+As Configurações gerais MUST ter "Avisar pelo Teams", desligado de início, na seção Microsoft 365, gravado na hora e só do administrador. A mudança MUST entrar na auditoria. A opção MUST NOT ser ligada sem o envio pelo Teams na configuração da aplicação (ADR-0039, ADR-0149).
 
 #### Scenario: Ligar os avisos pelo Teams
-- **WHEN** o administrador marca "Avisar pelo Teams" e salva
+- **WHEN** o administrador marca "Avisar pelo Teams"
 - **THEN** a opção fica gravada, a auditoria registra a mudança e os próximos avisos na hora vão para o Teams de quem tem o Teams no canal
 
 #### Scenario: Ligar sem o Teams na instalação

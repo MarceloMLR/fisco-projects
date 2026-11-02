@@ -17,6 +17,12 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<TeamsNotice> TeamsNotices => Set<TeamsNotice>();
+
+    public DbSet<TeamsApp> TeamsApps => Set<TeamsApp>();
+
+    public DbSet<NoticePreference> NoticePreferences => Set<NoticePreference>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationsDbContext).Assembly);
 }

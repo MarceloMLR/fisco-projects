@@ -148,5 +148,64 @@
       "Completed": "Concluído",
       "Cancelled": "Cancelado"
     }
+  },
+  "teams": {
+    "app": {
+      "shortDescription": "Avisos dos projetos e chamados do {{installation}}.",
+      "fullDescription": "Mostra na Atividade do Teams os avisos do {{installation}} que pedem a sua ação, como um chamado atribuído a você ou uma menção numa mensagem, e abre cada item no navegador.",
+      "page": "Avisos"
+    },
+    "topic": "{{project}}",
+    "preview": "{{title}}",
+    "activities": {
+      "ticketOpened": {
+        "description": "Chamado novo para o seu time",
+        "template": "{person} abriu o chamado {ticket} para o time {team}"
+      },
+      "ticketMessage": {
+        "description": "Mensagem num chamado que você acompanha",
+        "template": "{person} mandou uma mensagem no chamado {ticket}"
+      },
+      "ticketMentioned": {
+        "description": "Menção a você num chamado",
+        "template": "{person} mencionou você no chamado {ticket}"
+      },
+      "ticketInformationRequested": {
+        "description": "Informações pedidas a você num chamado",
+        "template": "{person} pediu informações a você no chamado {ticket}"
+      },
+      "ticketResolved": {
+        "description": "Chamado seu resolvido",
+        "template": "{person} resolveu o chamado {ticket}"
+      },
+      "ticketAssigned": {
+        "description": "Chamado atribuído a você",
+        "template": "{person} atribuiu o chamado {ticket} a você"
+      },
+      "ticketRequesterChanged": {
+        "description": "Você é o solicitante de um chamado",
+        "template": "{person} colocou você como solicitante do chamado {ticket}"
+      },
+      "ticketTransferred": {
+        "description": "Chamado transferido para o seu time",
+        "template": "{person} transferiu o chamado {ticket} para o time {team}"
+      },
+      "ticketDueSoon": {
+        "description": "Prazo de chamado vencendo",
+        "template": "Prazo de {deadline} do chamado {ticket} vence em {dueOn}"
+      },
+      "ticketOverdue": {
+        "description": "Prazo de chamado vencido",
+        "template": "Prazo de {deadline} do chamado {ticket} venceu em {dueOn}"
+      },
+      "acceptanceRequested": {
+        "description": "Pedido de aceite para você",
+        "template": "{person} pediu o seu aceite do marco {item}"
+      },
+      "acceptanceReminded": {
+        "description": "Lembrete de pedido de aceite",
+        "template": "{person} lembrou o pedido de aceite do marco {item}"
+      }
+    }
   }
 }

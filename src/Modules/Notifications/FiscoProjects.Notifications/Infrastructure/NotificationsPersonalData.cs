@@ -8,7 +8,7 @@ namespace FiscoProjects.Notifications.Infrastructure;
 /// <summary>
 /// Erases an anonymized person from the notices (ADR-0110), in the transaction of the anonymization: the e-mails to the
 /// person are forgotten (one still waiting is not sent), the e-mails still kept for other people name the identifier,
-/// and the notifications of the bell and the items of the daily summary of the person are removed.
+/// and the notifications of the bell, the items of the daily summary and the notices of Teams of the person are removed.
 /// </summary>
 internal sealed class NotificationsPersonalData(TimeProvider clock) : IPersonalDataEraser
 {
@@ -59,6 +59,10 @@ internal sealed class NotificationsPersonalData(TimeProvider clock) : IPersonalD
         await notices.SaveChangesAsync(cancellationToken);
         await notices.Notifications.Where(item => item.UserId == erasure.PersonId).ExecuteDeleteAsync(cancellationToken);
         await notices.DigestItems.Where(item => item.UserId == erasure.PersonId).ExecuteDeleteAsync(cancellationToken);
+        // The notices of Teams keep who did it by the id, so the ones of other people say the identifier when they
+        // leave; the ones to the person, even waiting, go away with the channel the person chose (ADR-0149).
+        await notices.TeamsNotices.Where(item => item.UserId == erasure.PersonId).ExecuteDeleteAsync(cancellationToken);
+        await notices.NoticePreferences.Where(item => item.UserId == erasure.PersonId).ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>The text as a literal in a LIKE pattern.</summary>

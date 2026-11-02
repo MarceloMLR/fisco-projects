@@ -204,6 +204,10 @@ internal sealed class UserStore(UsersDbContext db, IEnumerable<IPersonalDataEras
             {
                 ReceivesDailySummary = user.ReceivesDailySummary,
                 CanBeTechLead = user.IsActive && (user.Role == SystemRole.Administrator || user.Role == SystemRole.TechLead),
+                EntraObjectId = db.IdentityLinks
+                    .Where(link => link.UserId == user.Id && link.Provider == SignInWithEntra.Provider)
+                    .Select(link => link.ExternalId)
+                    .FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 }

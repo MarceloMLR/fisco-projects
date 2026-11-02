@@ -36,11 +36,11 @@ O motivo está na proposta. Este documento cobre o como.
 ### 2. O que o aviso sabe da pessoa
 
 - **`NoticeRecipient`** ganha a escolha do canal e o id do objeto no Entra, quando há.
-- **O contrato de pessoas** (`IUserDirectory` do `Users.Contracts`) passa a trazer os dois.
+- **A escolha** fica no próprio `Notifications`, dono dos canais; **o vínculo com o Entra** vem do contrato de pessoas (`IUserDirectory` do `Users.Contracts`).
 - **Quem pode receber pelo Teams:**
   - com o envio pelo Graph, quem tem o vínculo `entra`;
   - com a implementação local, qualquer pessoa ativa, para o desenvolvimento e a demonstração.
-- **O perfil** pergunta se o Teams está disponível pelo contrato `ITeamsNotices` do `Notifications.Contracts`, que usa a mesma regra do `NoticeRouting`.
+- **O perfil** lê a escolha e se o Teams está disponível numa rota do `Notifications`, que usa a mesma regra do `NoticeRouting`. Assim o `Users` não depende do `Notifications`, que já depende dele.
 
 ### 3. Fila e envio
 
@@ -79,9 +79,9 @@ O erro guardado traz o código HTTP e o `error.code` do Graph, sem a pessoa.
 
 ### 5. O pacote do aplicativo
 
-**O manifesto**, montado pelo servidor (`TeamsAppManifest`, com `System.Text.Json`), servido em `GET /api/admin/teams-app` (só do administrador; 409 `teams-unavailable` sem `Teams:Provider`). Ele traz:
+**O manifesto**, montado pelo servidor (`TeamsAppManifest`, com `System.Text.Json`), servido em `POST /api/admin/teams-app/package` (só do administrador; 409 `teams-unavailable` sem `Teams:Provider`). Ele traz:
 
-- o id da instalação (`InstallationSettings.TeamsAppId`, criado pela migração);
+- o id do aplicativo da instalação (`TeamsApp.ManifestId`, um GUID criado na primeira leitura e que não muda);
 - a versão `1.0.{n}`;
 - os nomes da instalação, cortados no limite do Teams;
 - as descrições e os textos dos tipos de aviso, tirados dos arquivos de tradução do `Notifications`;
@@ -93,7 +93,7 @@ O erro guardado traz o código HTTP e o `error.code` do Graph, sem a pessoa.
 
 A versão do esquema do manifesto fica fixada no código, a estável mais recente na implementação, conferida na documentação.
 
-**A versão:** sobe quando muda o conteúdo que vai no pacote: o manifesto, o logo ou a cor principal. O servidor guarda o resumo (hash) desse conteúdo e o número (`TeamsPackageHash`, `TeamsPackageVersion`), fora da auditoria.
+**A versão:** sobe quando muda o conteúdo que vai no pacote: o manifesto, o logo ou a cor principal. A tela manda, no pedido do pacote, o que desenha nos ícones (o endereço do logo, com a versão dele, ou a cor principal). O servidor guarda o resumo (hash) do manifesto com isso e o número (`TeamsApp.PackageHash`, `TeamsApp.PackageVersion`), fora da auditoria.
 
 **Os ícones e o `.zip`:** montados na tela, como a planilha da auditoria:
 
@@ -112,9 +112,8 @@ A versão do esquema do manifesto fica fixada no código, a estável mais recent
 
 ### 7. Preferência e configurações
 
-- **No `User`:** `ImmediateNotices` (`Email`, `Teams`, `Both`; `Both` para quem nunca escolheu), fora da auditoria, com `PUT /api/profile/immediate-notices`. O perfil passa a trazer `immediateNotices` e `teamsAvailable`.
-- **No `InstallationSettings`:** `TeamsNotices` (falso de início), recebido no `PUT /api/installation` e na auditoria como "Avisar pelo Teams". O valor 400 em `teamsNotices` vale quando ele é ligado sem `Teams:Provider`.
-- **O `InstallationInfo`** traz `TeamsNotices` aos outros módulos.
+- **No `Notifications`:** a escolha de cada pessoa em `notifications.notice_preferences` (`Email`, `Teams`, `Both`; sem linha, `Both`), fora da auditoria, com `GET` e `PUT /api/profile/immediate-notices` (`channel` e `teamsAvailable`), só da pessoa na sessão. O resumo diário continua no `User`.
+- **No `Notifications`:** o `TeamsApp`, uma linha só em `notifications.teams_app`, com "Avisar pelo Teams" (`NoticesOn`, falso de início, na auditoria), o id do manifesto e a versão do pacote. `GET` e `PUT /api/admin/teams-app` trazem e mudam a opção, só do administrador, com 400 em `noticesOn` quando ela é ligada sem `Teams:Provider`. Assim, tudo do Teams fica no módulo dos canais, e o `Administration` não muda.
 - **`TeamsOptionsValidation`:** sem `Teams:Provider`, nada sai pelo Teams. A aplicação não sobe com `Graph` sem a entrada pelo Entra, nem com `Local` em produção.
 - **O Terraform** põe `Teams__Provider = "Graph"` junto com a entrada pelo Entra (`entra_settings`). A instalação só manda avisos depois que o administrador liga "Avisar pelo Teams".
 
@@ -135,7 +134,7 @@ A versão do esquema do manifesto fica fixada no código, a estável mais recent
 
 - **O que as migrações acrescentam:**
   - a tabela da fila no `notifications`;
-  - `ImmediateNotices` no `users`, com Os dois para todos;
-  - `TeamsNotices` (desligado), `TeamsAppId` (um GUID novo), `TeamsPackageVersion` e `TeamsPackageHash` no `administration`.
+  - as escolhas do canal no `notifications`, vazias (Os dois para todos);
+  - o `TeamsApp` no `notifications`, criado desligado na primeira leitura.
 - **Na publicação:** nada muda, porque os avisos pelo Teams começam desligados.
 - **Para voltar atrás:** desligar "Avisar pelo Teams". Os avisos na hora voltam a sair só por e-mail, qualquer que seja a escolha das pessoas.
