@@ -41,7 +41,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 21 | 21 |
-| 2. Acesso e administração | 20 | 19 |
+| 2. Acesso e administração | 20 | 20 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
@@ -106,7 +106,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-8.3 | `so-cor-principal` | Só a cor principal na marca, sem cor secundária nem cores das mensagens, mantendo o logo escuro e o seletor de cores, a pedido de Marcelo | 0100, 0101, 0103 | Concluída em 21/10/2026 ([#65](https://github.com/MarceloMLR/fisco-projects/pull/65)) |
 | Acesso-8.4 | `logo-na-aba` | O logo da instalação na aba do navegador, e o selo na cor principal sem logo, a pedido de Marcelo | 0003, 0082, 0108 | Concluída em 21/10/2026 ([#72](https://github.com/MarceloMLR/fisco-projects/pull/72)) |
 | Acesso-8.5 | `cores-da-instalacao` | As cores da instalação numa seção própria, Cores, com a principal, a secundária e a da barra lateral, qualquer cor aceita com o texto ajustado, e o seletor próprio em HEX, RGB e HSL, a pedido de Marcelo | 0082, 0100, 0103, 0146 | Concluída em 02/11/2026 ([#140](https://github.com/MarceloMLR/fisco-projects/pull/140)) |
-| Acesso-8.5.1 | `fundo-da-entrada` | O fundo da página de entrada na cor secundária (ou na principal), como o painel, a pedido de Marcelo | 0146, 0147 | PR aberto |
+| Acesso-8.5.1 | `fundo-da-entrada` | O fundo da página de entrada na cor secundária (ou na principal), como o painel, a pedido de Marcelo | 0146, 0147 | Concluída em 02/11/2026 ([#141](https://github.com/MarceloMLR/fisco-projects/pull/141)) |
 
 ## 3. Projetos
 
