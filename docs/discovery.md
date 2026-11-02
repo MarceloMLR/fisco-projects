@@ -44,7 +44,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 | Acessos | Login e senha de portais por projeto, senha cifrada e mascarada, importação de planilha | Módulo Acessos | 0033, 0034 |
 | Termos de aceite | Pedido de assinatura do termo de um marco a signatários digitados, por um provedor de assinatura eletrônica trocável, ou termo assinado anexado pela gestão | Módulo Documentos | 0035, 0129 |
 | Membros e permissões | Papéis no sistema e no projeto, membros geridos pelo gerente e pelo líder técnico, matrizes de permissão | Módulo Projetos e regra de autorização compartilhada | 0006, 0040, 0042 a 0046 |
-| Avisos | E-mails imediatos para o que pede ação, resumo diário, sino de notificações | Módulo Notificações, e-mail atrás de `IEmailSender` com fila no banco | 0036, 0037, 0038 |
+| Avisos | E-mails imediatos para o que pede ação, resumo diário, sino de notificações e, na v2, a aba Atividade do Teams | Módulo Notificações, e-mail atrás de `IEmailSender` e Teams pelo Graph, com filas no banco | 0036, 0037, 0038, 0149 |
 | Auditoria e dados pessoais | Registro automático de todas as alterações e eventos de segurança, anonimização a pedido, retenção | Módulo Auditoria, ponto único na camada de dados | 0039, 0058 |
 | Administração | Usuários, auditoria, configurações e cadastros (clientes, fornecedores, feriados, prazos, pastas, categorias, modelos) | Módulo Administração | 0008, 0011, 0046 |
 | Perfil e aparência | Tema claro, escuro e automático salvo no perfil, preferências de e-mail | Módulo de identidade | 0014, 0037 |
@@ -71,13 +71,14 @@ Fora da v1, previstos para depois:
 - Filas compartilhadas, como a TI da empresa, e atendentes de fora do projeto (ADR-0068).
 - Mais de um nível de subtarefas, outros tipos de dependência e intervalo entre tarefas (ADR-0019, ADR-0088).
 - Importar o MS Project num projeto já criado, pela aba Cronograma (ADR-0135).
-- Avisos pelo Teams e atualização em tempo real (ADR-0038).
+- Atualização em tempo real (ADR-0038).
 - Indicadores gerenciais e gráficos de evolução (ADR-0010, ADR-0073).
 - Tradução para inglês (ADR-0013).
 - Busca global (ADR-0011, ADR-0066).
 - Modo sem Microsoft 365 (contas locais, SMTP, arquivos em disco ou blob).
 - Gantt próprio no lugar do Syncfusion (ADR-0051): feito na v2, com a Linha do tempo própria (ADR-0134).
 - Importar o XML do MS Project (ADR-0021): feito na v2, no Novo projeto (ADR-0135).
+- Avisos pelo Teams (ADR-0038): feito na v2, na aba Atividade, com o canal escolhido por cada pessoa (ADR-0149).
 
 ## Critérios de sucesso
 
@@ -281,7 +282,7 @@ Ler antes de implementar a área:
 | Cronograma | ADR-0017 a 0021, 0051, 0071, 0088, 0134, 0135 |
 | Chamados | ADR-0022 a 0029, 0044, 0068, 0069 |
 | Documentos, links, acessos e termos | ADR-0030 a 0035, 0045 |
-| Avisos | ADR-0036 a 0038 |
+| Avisos | ADR-0036 a 0038, ADR-0149 |
 | Papéis e permissões | ADR-0040, 0042 a 0046 |
 | Auditoria e LGPD | ADR-0039, 0058 |
 | Infraestrutura e operação | ADR-0048, 0052, 0053, 0055, 0057, 0059, 0060, [requisitos de instalação](instalacao.md), [custos](custos-estimados.md) |
@@ -299,7 +300,7 @@ Ler antes de implementar a área:
 | Azure | App Service, Azure SQL, Key Vault, Application Insights, armazenamento do estado do Terraform | 0048, 0052, 0053, 0057 |
 | GitHub Actions | Build, testes e deploy, com OIDC no Azure | 0055 |
 | MS Project | Exportação do cronograma e, na v2, importação no Novo projeto, no formato XML (arquivo, sem integração) | 0021, 0135 |
-| Microsoft Teams | Avisos, depois da v1 | 0038 |
+| Microsoft Teams | Avisos na hora na aba Atividade, pelo Graph, com as permissões do próprio aplicativo do Teams (v2) | 0038, 0149 |
 
 ## Modelo de deploy e promoção
 
