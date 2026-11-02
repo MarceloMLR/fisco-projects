@@ -115,7 +115,7 @@ export function ColorsPage() {
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 380px) minmax(0, 1fr)',
+                gridTemplateColumns: 'minmax(0, 360px) minmax(0, 1fr)',
                 gap: 'var(--space-5)',
                 alignItems: 'start',
                 '@media (max-width: 900px)': { gridTemplateColumns: 'minmax(0, 1fr)' },

@@ -20,8 +20,10 @@ type PreviewText = keyof (typeof ptBR)['colors']['preview'];
 
 // When the preview is narrow (on the phone, or beside the fields on a small computer), the sidebar becomes a band on
 // top and the tabs that do not fit are left out, never scrolled.
-const narrow = '@container colors-preview (max-width: 560px)';
-const tight = '@container colors-preview (max-width: 420px)';
+const narrow = '@container colors-preview (max-width: 480px)';
+const tight = '@container colors-preview (max-width: 400px)';
+// Beside the sidebar, the list leaves out the owner when the preview is not wide.
+const compact = '@container colors-preview (max-width: 640px)';
 
 function NavItem({
   icon: Icon,
@@ -155,7 +157,7 @@ const rowSx = {
   padding: '8px var(--space-3)',
   borderTop: '1px solid var(--border)',
   '& > span': { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  [narrow]: {
+  [compact]: {
     gridTemplateColumns: '22px minmax(0, 1fr) 70px',
     '& > span:nth-of-type(3)': { display: 'none' },
   },
@@ -254,7 +256,7 @@ export function ColorsPreview({
         style={variables}
         sx={{
           display: 'grid',
-          gridTemplateColumns: '200px minmax(0, 1fr)',
+          gridTemplateColumns: '168px minmax(0, 1fr)',
           minHeight: 420,
           backgroundColor: 'var(--bg-page)',
           color: 'var(--text)',
@@ -463,7 +465,7 @@ export function ColorsPreview({
                     color: index === 1 ? 'var(--action-text)' : 'var(--text-secondary)',
                     fontWeight: index === 1 ? 500 : 400,
                     boxShadow: index === 1 ? 'inset 0 -2px 0 var(--action-text)' : 'none',
-                    [narrow]: index === 3 ? { display: 'none' } : {},
+                    [compact]: index === 3 ? { display: 'none' } : {},
                     [tight]: index === 2 ? { display: 'none' } : {},
                   }}
                 >

@@ -183,8 +183,9 @@ export function ColorField({
           }}
           sx={{
             height: 36,
-            width: 190,
-            maxWidth: '100%',
+            flex: '1 1 140px',
+            minWidth: 0,
+            maxWidth: 200,
             boxSizing: 'border-box',
             padding: '0 10px',
             border: '1px solid var(--border-control)',
