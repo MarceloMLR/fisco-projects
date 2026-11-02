@@ -47,6 +47,8 @@ module "entra" {
 }
 
 # The sign-in through Entra ID (ADR-0117): the tenant and the application, and the first administrator by the object id.
+# With it, the notices go to Teams through Microsoft Graph (ADR-0149), with the permissions the package of Teams
+# declares and none in the application of Entra; they start only when the Administrator turns them on.
 locals {
   first_administrator_settings = var.first_administrator_object_id == null ? {} : {
     Users__FirstAdministrator__Provider   = "entra"
@@ -56,6 +58,7 @@ locals {
     EntraSignIn__Enabled  = "true"
     EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id
     EntraSignIn__ClientId = module.entra.client_id
+    Teams__Provider       = "Graph"
   }) : {}
   # The files in a site of SharePoint (ADR-0030, ADR-0120); without the site, the settings of the environment decide.
   storage_settings = var.sharepoint_site_url == null ? {} : merge(

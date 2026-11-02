@@ -31,7 +31,7 @@
 
 ## 7. Instalação e documentação
 
-- [ ] 7.1 `Teams__Provider` no `entra_settings` do Terraform, com o `InfrastructureTests`; o passo do aplicativo do Teams e a referência em `docs/instalacao.md`; testes "Teams pelo Terraform" e "Passo do Teams no guia"; `bash scripts/ci/infra.sh` limpo
+- [x] 7.1 `Teams__Provider` no `entra_settings` do Terraform, com o `InfrastructureTests`; o passo do aplicativo do Teams e a referência em `docs/instalacao.md`; testes "Teams pelo Terraform" e "Passo do Teams no guia"; `bash scripts/ci/infra.sh` limpo
 - [ ] 7.2 `CLAUDE.md`, `docs/discovery.md` e `docs/glossario.md`
 
 ## Workflow follow-up

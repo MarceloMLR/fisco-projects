@@ -14,6 +14,7 @@ As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a
 - O site do SharePoint dos arquivos e, se quiser, a biblioteca e uma pasta dentro dela (veja SharePoint, na Referência).
 - A caixa dos e-mails do sistema: uma que a empresa já tem, como um projetos@ que a equipe lê, ou uma compartilhada que o script do Exchange cria (veja Exchange Online, na Referência).
 - Quem será o primeiro administrador do FiscoProjects e o e-mail que recebe os alertas da instalação.
+- Se os avisos forem também pelo Teams, quem é o Administrador do Teams da empresa, que sobe e instala o aplicativo do FiscoProjects (veja Teams, na Referência). Sem ele, os avisos continuam por e-mail.
 - Se os termos de aceite forem assinados pelo sistema, a conta da Autentique, com o plano que couber no volume de termos (veja Assinatura dos termos de aceite, na Referência). Sem ela, a gestão só anexa os termos assinados por fora.
 
 ### Ferramentas de quem instala
@@ -40,6 +41,7 @@ A empresa cria, no próprio tenant, uma conta para o fornecedor (por exemplo, `f
 | Dar o consentimento às permissões do aplicativo (`User.Read.All`, `Sites.Selected`) | Administrador de função privilegiada | Na instalação |
 | Dar ao aplicativo o site do SharePoint | Administrador do SharePoint e, se o tenant ainda não consentiu o Microsoft Graph PowerShell com `Sites.FullControl.All`, Administrador de aplicativos | Na instalação |
 | Liberar o envio pela caixa de e-mail | Administrador do Exchange e, para bloquear a entrada da caixa que o script criar, Administrador de usuários | Na instalação |
+| Subir e instalar o aplicativo do Teams, para os avisos no Teams | Administrador do Teams (em geral, da própria empresa, com o pacote que o administrador do FiscoProjects baixa) | Na instalação e quando a versão do pacote sobe |
 
 Depois da instalação, a empresa pode retirar os papéis do Entra ID, do SharePoint e do Exchange: quem opera fica dono do aplicativo e do grupo dos administradores do banco, o que basta para as atualizações. Se uma versão nova pedir outra permissão do aplicativo, o plano do Terraform mostra, e o consentimento volta a pedir o papel. Os scripts do SharePoint e do Exchange também podem ser rodados pelos administradores da empresa, com as contas deles, em vez de a conta do fornecedor ganhar esses papéis. Eles precisam só do pacote da versão, do Azure CLI no tenant (`az login --tenant <tenant> --allow-no-subscriptions`) e dos valores que quem opera passa: o id do aplicativo (`terraform -chdir=infra/terraform output -raw entra_client_id`), o site e a caixa (veja os passos 6 e 7).
 
@@ -157,7 +159,13 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
     - Calendário e feriados (os feriados locais e os pontos facultativos da empresa), Prazos dos chamados, Pastas padrão, Categorias de links, Fornecedores e Clientes.
     - Usuários: quem é gerente de projeto ou líder técnico, depois que as pessoas entram pela primeira vez.
 
-12. **Combine a rotina**: o backup dos dois arquivos privados, o teste de restauração a cada 3 meses ([roteiro de restauração](restauracao.md)) e quem recebe os alertas.
+12. **Instale o aplicativo do Teams** (opcional; sem ele, os avisos continuam só por e-mail), com o Administrador do Teams da empresa:
+    - O administrador do FiscoProjects baixa o pacote em Configurações gerais → Microsoft 365 → "Baixar pacote do Teams" e o entrega ao Administrador do Teams.
+    - O Administrador do Teams sobe o pacote no centro de administração do Teams (`https://admin.teams.microsoft.com`), em Aplicativos do Teams → Gerenciar aplicativos → Carregar novo aplicativo. O aplicativo aparece para as pessoas algumas horas depois.
+    - Ele instala o aplicativo para as pessoas por uma política de configuração (Aplicativos do Teams → Políticas de configuração → a política Global ou uma de um grupo → Aplicativos instalados → Adicionar aplicativos) e, se quiser, o fixa na barra do Teams (Aplicativos fixados).
+    - Depois, o administrador do FiscoProjects marca "Avisar pelo Teams" na mesma seção. Cada pessoa escolhe em Meu perfil se os avisos na hora chegam por e-mail, pelo Teams ou pelos dois (os dois, de início).
+
+13. **Combine a rotina**: o backup dos dois arquivos privados, o teste de restauração a cada 3 meses ([roteiro de restauração](restauracao.md)) e quem recebe os alertas.
 
 ## Atualizar para uma versão nova
 
@@ -172,6 +180,7 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
    ```
 
 4. Publique: `./infra/scripts/Publish-Version.ps1`. A aplicação reinicia com a versão nova e fica alguns minutos fora do ar: prefira um horário sem uso.
+   Com os avisos pelo Teams, baixe o pacote do Teams de novo depois de publicar: se a versão do pacote subiu (as notas da versão dizem quando os avisos mudam), o Administrador do Teams sobe o pacote novo na página do aplicativo, em Gerenciar aplicativos (veja Teams, na Referência).
 5. Uma vez, numa instalação de antes da Linha do tempo própria (ADR-0134), que guarda a chave do Syncfusion: antes do passo 3, tire a linha `syncfusion_license_in_key_vault` do `local.auto.tfvars` (ou do `.tfvars` do ambiente, numa instalação pelo repositório); depois do `apply`, que tira a configuração da chave do App Service, apague o segredo, que a aplicação não lê mais:
 
    ```bash
@@ -191,7 +200,7 @@ terraform -chdir=infra/terraform destroy
 
 O Key Vault fica recuperável pelo prazo da exclusão reversível (90 dias na produção), sem custo parado, e os backups mensais do banco continuam cobrados até vencerem. A conta do estado sobra e custa centavos por mês; apagado o último ambiente desta instalação, saia com `az group delete --name rg-fiscoprojects-<código>-tfstate`.
 
-O `destroy` não alcança o que os scripts fizeram fora do Azure, que os administradores da empresa apagam: no Exchange Online, a atribuição do papel "Application Mail.Send", o escopo `FiscoProjects - caixa de envio` e a entidade de serviço do aplicativo (`Remove-ManagementRoleAssignment`, `Remove-ManagementScope` e `Remove-ServicePrincipal`) e a caixa, se foi criada pelo script; no SharePoint, a permissão do aplicativo no site, que deixa de valer com o aplicativo apagado, e os arquivos, que ficam no site.
+O `destroy` não alcança o que os scripts fizeram fora do Azure, que os administradores da empresa apagam: no Exchange Online, a atribuição do papel "Application Mail.Send", o escopo `FiscoProjects - caixa de envio` e a entidade de serviço do aplicativo (`Remove-ManagementRoleAssignment`, `Remove-ManagementScope` e `Remove-ServicePrincipal`) e a caixa, se foi criada pelo script; no SharePoint, a permissão do aplicativo no site, que deixa de valer com o aplicativo apagado, e os arquivos, que ficam no site; no Teams, o aplicativo do FiscoProjects, excluído em Gerenciar aplicativos (Ações → Excluir) e tirado das políticas de configuração.
 
 ## Instalação pelo repositório
 
@@ -273,6 +282,14 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Com a caixa em `email_mailbox`, o Terraform liga o envio pelo Graph (`Email:Provider` = `Graph`, `Email:Mailbox`). A permissão do Exchange leva de 30 minutos a 2 horas para valer; até lá, os e-mails falham e voltam para a fila. Depois, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
 - No ambiente de demonstração, os e-mails para o domínio das pessoas fictícias ficam na pasta local do App Service (`Email:Graph:LocalDomains`, no `.tfvars` do ambiente), e só os das pessoas do tenant saem; a aplicação não sobe em produção com domínios locais (ADR-0123).
 
+### Teams
+
+- Os avisos que pedem ação também chegam na aba Atividade do Teams, para quem os escolhe em Meu perfil (ADR-0149). Clicar no aviso abre a página do FiscoProjects dentro do Teams, com "Abrir no FiscoProjects", que leva ao item no navegador.
+- O envio é pelo Microsoft Graph, com o aplicativo do Entra e as permissões que o próprio pacote do Teams declara: `TeamsActivity.Send.User`, para avisar a pessoa, e `TeamsAppInstallation.Read.User`, para saber se o aplicativo está instalado para ela. Nada de permissão nova no Entra ID: as duas valem só para as pessoas que têm o aplicativo instalado. Se o tenant desligou o consentimento dessas permissões no escopo pessoal (`isUserPersonalScopeResourceSpecificConsentEnabled`, nas configurações de aplicativos do Teams), os avisos voltam ao e-mail até ele ser ligado.
+- Com a entrada pelo Entra, o Terraform liga o envio pelo Graph (`Teams:Provider` = `Graph`), mas nada sai antes de o administrador marcar "Avisar pelo Teams". Só recebe pelo Teams quem entra pelo Entra ID.
+- O pacote (`aplicativo-teams-<versão>.zip`) é montado pelo FiscoProjects com o nome, o logo ou a cor principal e o endereço da instalação. A identificação do aplicativo não muda; a versão sobe quando o conteúdo muda, como depois de trocar o nome, o logo ou a cor principal, ou numa versão nova do FiscoProjects. Para atualizar, o Administrador do Teams abre o aplicativo em Gerenciar aplicativos e sobe o pacote novo; as políticas continuam valendo.
+- Quando o aplicativo não está instalado para a pessoa ou o Teams recusa o aviso de vez, quem escolheu só o Teams recebe o aviso por e-mail. Os avisos esperam numa fila no banco, com as mesmas novas tentativas dos e-mails, e o conteúdo deles é apagado no mesmo prazo (`Email:KeepDays`).
+
 ### Assinatura dos termos de aceite
 
 - Os termos de aceite são assinados pela Autentique, com a conta da empresa (ADR-0129, ADR-0130). Em 30/10/2026, o plano gratuito tinha 10 documentos por mês pela API, 10 chamadas por minuto e arquivos de até 5 MB, e o Profissional, cerca de US$ 19 por mês, com 60 chamadas por minuto e arquivos de até 20 MB; confira os valores atuais. Sem a Autentique, a gestão só anexa os termos assinados recebidos por fora.
@@ -317,6 +334,7 @@ O que precisa ser configurado fora do código em cada instalação, com o ADR qu
 - Tempo de sessão sem uso, padrão 8 horas (ADR-0009, ADR-0054).
 - Local dos arquivos no SharePoint (ADR-0030, ADR-0120), com o armazenamento escolhido em `FileStorage:Provider` (`SharePoint`) e o site, a biblioteca e a pasta raiz em `FileStorage:SharePoint:*`, postos pelo Terraform. O armazenamento do SharePoint usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela (ADR-0079).
 - O envio dos e-mails, em `Email:Provider` (`Graph`), e o endereço da caixa de envio, em `Email:Mailbox`, postos pelo Terraform a partir do `email_mailbox`, e o endereço das telas, em `Email:SiteUrl`, base dos links de cada e-mail (ADR-0036, ADR-0123). O envio pelo Graph usa o aplicativo do Entra e precisa da entrada pelo Entra ligada. O conteúdo dos e-mails da fila é apagado depois de `Email:KeepDays` dias (30), ficando a data, o tipo e o status (ADR-0058). A implementação local (`Email:Provider` = `Local`) não é aceita em produção: a aplicação não sobe com ela. Depois de configurar, use "Enviar teste" na seção Microsoft 365 das Configurações gerais.
+- O envio dos avisos pelo Teams, em `Teams:Provider` (`Graph`), posto pelo Terraform junto com a entrada pelo Entra, que ele exige (ADR-0149). "Avisar pelo Teams", nas Configurações gerais, liga os avisos; sem o envio configurado, a opção fica desabilitada. A implementação local (`Local`, que grava cada aviso como `.json` em `Teams:Local:Folder`) não é aceita em produção: a aplicação não sobe com ela.
 - O provedor de assinatura dos termos de aceite, em `Signature:Provider` (`Autentique`), com a chave, o segredo do aviso e o sandbox em `Signature:Autentique:*`, postos pelo Terraform a partir do bloco `autentique` (ADR-0129, ADR-0130). Sem provedor, os termos só são anexados. A implementação local (`Local`) não é aceita em produção: a aplicação não sobe com ela.
 - Tamanho máximo de cada documento enviado, em `Documents:MaxMegabytes`, padrão 25 MB (ADR-0031). As pastas padrão dos projetos novos ficam em "Pastas padrão" na Administração; a migração cria as seis do MVP (ADR-0031, ADR-0093). O mesmo limite vale para os termos de aceite em PDF; os termos para assinar ficam na pasta `{código} - {nome}/Pedidos de aceite` de cada projeto, e os assinados, na pasta de termos dos documentos (ADR-0035, ADR-0095).
 - Horário do resumo diário de e-mails, padrão 07:30 no fuso da instalação, em "Horário do resumo diário" das Configurações gerais (ADR-0037).
