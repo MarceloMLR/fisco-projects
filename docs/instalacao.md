@@ -155,8 +155,9 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 10. **Libere a entrada das pessoas**: no Microsoft Entra, em Aplicativos empresariais → FiscoProjects (<código> prod) → Usuários e grupos, atribua o primeiro administrador e as pessoas que vão usar o sistema (veja Entra ID, na Referência).
 
 11. **Configure o FiscoProjects**: o primeiro administrador entra no endereço da instalação e, na Administração, revê:
-    - Configurações gerais: nome, logos, cor principal, fuso, pasta dos projetos, horário do resumo diário e prazos de guarda das notificações e da auditoria; na seção Microsoft 365, "Enviar teste".
-    - Calendário e feriados (os feriados locais e os pontos facultativos da empresa), Prazos dos chamados, Pastas padrão, Categorias de links, Fornecedores e Clientes.
+    - Configurações gerais: fuso, horário do resumo diário, prazos de guarda das notificações e da auditoria e horas por dia de trabalho; na seção Microsoft 365, "Enviar teste".
+    - Visual: nome, logos e cores da instalação.
+    - Calendário e feriados (os feriados locais e os pontos facultativos da empresa), Prazos dos chamados, Pastas padrão (com a pasta dos projetos no armazenamento), Categorias de links, Fornecedores e Clientes.
     - Usuários: quem é gerente de projeto ou líder técnico, depois que as pessoas entram pela primeira vez.
 
 12. **Instale o aplicativo do Teams** (opcional; sem ele, os avisos continuam só por e-mail), com o Administrador do Teams da empresa:
