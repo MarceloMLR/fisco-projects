@@ -79,6 +79,7 @@ public static class ProjectsModule
         services.AddScoped<AddSchedulePhase>();
         services.AddScoped<RenameSchedulePhase>();
         services.AddScoped<RemoveSchedulePhase>();
+        services.AddScoped<PreviewScheduleItemDates>();
         services.AddScoped<AddScheduleItem>();
         services.AddScoped<ChangeScheduleItem>();
         services.AddScoped<RemoveScheduleItem>();
