@@ -6,7 +6,7 @@ Hoje a instalação troca só a cor principal, e só uma cor com 4,5:1 de contra
 
 - **Três cores opcionais:** a principal, a secundária e a da barra lateral, em `#RRGGBB`. Sem uma delas, vale o design system.
   - **Principal:** botões, links, abas, controles marcados, anel de foco, avatar do responsável, selo e item ativo da barra lateral.
-  - **Secundária:** linha selecionada, notificação não lida, menção e painel da entrada. Sem ela, o painel segue a principal, como hoje.
+  - **Secundária:** linha selecionada, notificação não lida, menção, e o painel e o fundo da entrada. Sem ela, o painel e o fundo da entrada seguem a principal.
   - **Barra lateral:** o fundo dela; os textos, o item ativo e as divisórias acompanham.
 - **Sem limite de contraste:** a cor sem 4,5:1 com o branco passa a ser aceita (**BREAKING** para a regra do ADR-0082, não para a API).
   - O texto sobre a cor fica branco ou escuro, o que tiver contraste.
@@ -47,7 +47,7 @@ Nenhuma.
 - **Tirar as cores do logo** e o conta-gotas: não foram escolhidos.
 - **Cores por papel na conversa dos chamados:** continuam as do design system (ADR-0069, ADR-0103).
 - **E-mails:** continuam com as cores do `tokens.json` no tema claro (ADR-0036).
-- **Cores de status, superfícies, textos neutros e o fundo atrás do painel da entrada:** não mudam (ADR-0065).
+- **Cores de status, superfícies e textos neutros:** não mudam (ADR-0065).
 - **Formatos na API:** ela recebe só `#RRGGBB`; a leitura dos outros formatos é da tela.
 - **Mudar o design system publicado:** a regra "nunca cor de marca" na barra lateral passa a valer só sem a cor da barra lateral, como no ADR-0100.
 

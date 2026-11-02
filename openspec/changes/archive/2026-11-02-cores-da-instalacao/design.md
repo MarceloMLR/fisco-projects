@@ -153,7 +153,7 @@
 - **Formulário:** com o `Form` e a barra de ações com "Descartar" e "Salvar alterações", como Configurações gerais; o envio pelo `PUT /api/installation/colors`, invalidando a marca e a auditoria, com o aviso pelo `useNotify`.
 - **Layout:** os campos à esquerda (até 380px) e a prévia (`ColorsPreview`) à direita, presa enquanto a área rola. Abaixo de 900px, a prévia vai para baixo dos campos.
 - **Prévia:**
-  - redesenha, em pequeno e só com os tokens, a barra lateral, o cabeçalho, as abas, os botões, a lista com a linha selecionada, a menção e o painel da entrada;
+  - redesenha, em pequeno e só com os tokens, a barra lateral, o cabeçalho, as abas, os botões, a lista com a linha selecionada, a menção e o painel da entrada sobre o fundo dela;
   - o Claro e o Escuro dela, no `SegmentedControl`, não mudam o tema da pessoa;
   - as variáveis do tema escolhido e da cor sendo editada vão no próprio elemento;
   - as abas que não cabem saem, sem rolagem.

@@ -68,7 +68,7 @@ O nome, o logo, o logo para o tema escuro e as três cores da instalação MUST 
 
 #### Scenario: Marca na página de entrada
 - **WHEN** alguém sem sessão abre a página de entrada
-- **THEN** a página mostra o nome, o logo e o painel na cor secundária da instalação ou, sem ela, na cor principal
+- **THEN** a página mostra o nome, o logo, e o painel e o fundo na cor secundária da instalação ou, sem ela, na cor principal
 
 ### Requirement: Mudança das configurações na auditoria
 
@@ -300,15 +300,19 @@ O administrador MUST poder escolher, nas Regras gerais das Configurações gerai
 
 ### Requirement: Cor secundária
 
-O administrador MUST poder escolher uma cor secundária, opcional, em hexadecimal, ou voltar ao padrão. Com ela MUST mudar, nos dois temas, a linha selecionada, a notificação não lida, a menção e o painel da página de entrada. Sem ela, esses destaques MUST ficar os do design system e o painel MUST seguir a cor principal (ADR-0146).
+O administrador MUST poder escolher uma cor secundária, opcional, em hexadecimal, ou voltar ao padrão. Com ela MUST mudar, nos dois temas, a linha selecionada, a notificação não lida, a menção e o painel e o fundo da página de entrada. Sem ela, esses destaques MUST ficar os do design system, e o painel e o fundo da entrada MUST seguir a cor principal (ADR-0146).
 
 #### Scenario: Sem cor secundária
 - **WHEN** a instalação não tem cor secundária
-- **THEN** a linha selecionada, a notificação não lida e a menção usam as cores do design system, e o painel da entrada usa a cor principal
+- **THEN** a linha selecionada, a notificação não lida e a menção usam as cores do design system, e o painel e o fundo da entrada usam a cor principal
 
 #### Scenario: Trocar a cor secundária
 - **WHEN** o administrador escolhe uma cor secundária e salva
 - **THEN** a linha selecionada, a notificação não lida, a menção e o painel da entrada passam a usar o matiz dela, nos dois temas, e o botão principal continua na cor principal
+
+#### Scenario: Fundo da entrada na cor secundária
+- **WHEN** o administrador escolhe uma cor secundária e salva
+- **THEN** o fundo da página de entrada, atrás do cartão e do painel, fica num tom escuro do matiz dela, nos dois temas, no lugar do azul do design system
 
 #### Scenario: Painel da entrada legível
 - **WHEN** a cor secundária é clara, como um amarelo
@@ -368,7 +372,7 @@ A seção Instalação da coluna da Administração MUST ter Cores, logo depois 
 
 #### Scenario: Prévia das cores antes de salvar
 - **WHEN** o administrador digita ou escolhe uma cor
-- **THEN** a prévia mostra a barra lateral, o cabeçalho, os botões, a lista, a menção e o painel da entrada com a cor na hora, e o resto da aplicação só muda depois de salvar
+- **THEN** a prévia mostra a barra lateral, o cabeçalho, os botões, a lista, a menção e o painel e o fundo da entrada com a cor na hora, e o resto da aplicação só muda depois de salvar
 
 #### Scenario: Prévia nos dois temas
 - **WHEN** o administrador escolhe Escuro na prévia

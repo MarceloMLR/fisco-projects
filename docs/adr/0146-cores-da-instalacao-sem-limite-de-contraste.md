@@ -54,7 +54,7 @@ Opções escolhidas: **A**, **C**, **F** e **H**, todas por escolha de Marcelo.
 As três são opcionais, em `#RRGGBB`. Sem uma delas, vale o que o design system define para o que ela pinta.
 
 - **Principal:** o botão principal, os links, as abas, os controles marcados, o anel de foco, o avatar do responsável, o selo sem logo (da barra lateral e da aba) e o item ativo da barra lateral.
-- **Secundária:** a linha selecionada, a notificação não lida e a menção (`bg-selected`), e o painel da página de entrada. Sem ela, `bg-selected` fica a do design system e o painel segue a principal, como hoje.
+- **Secundária:** a linha selecionada, a notificação não lida e a menção (`bg-selected`), e o painel e o fundo da página de entrada. Sem ela, `bg-selected` fica a do design system, e o painel e o fundo da entrada seguem a principal.
 - **Barra lateral:** o fundo da barra lateral. Os textos, o item sob o ponteiro, as divisórias, o item ativo e o nome da instalação acompanham o fundo. Sem ela, a barra lateral é a do design system, e só o item ativo segue a principal, como hoje. A regra do design system "nunca cor de marca" na barra lateral vale só sem essa cor.
 
 ### Qualquer cor aceita, com o que fica sobre ela ajustado
@@ -73,8 +73,9 @@ O servidor confere só o formato. A derivação continua num lugar só do fronte
   - o botão principal é a cor escolhida, mais clara só até ter 3:1 com o fundo da página, como a cor padrão;
   - a barra lateral é um tom escuro do matiz escolhido, porque uma barra clara não cabe no tema escuro;
   - a linha selecionada e o painel mantêm a claridade do design system, com o matiz da secundária.
+- **Fundo da página de entrada:** mantém a claridade escura do design system, nos dois temas, com o matiz da secundária (ou da principal, sem ela), atrás do cartão e do painel. Nenhum texto fica direto sobre ele.
 - **Logo escuro:** a barra lateral é escura quando o fundo efetivo dela é escuro, no tema escuro ou com uma cor da barra lateral escura no tema claro, e então mostra o logo para o tema escuro (ADR-0100).
-- **Fora da troca:** as cores de status, as superfícies, os textos neutros e o fundo atrás do painel da entrada não mudam.
+- **Fora da troca:** as cores de status, as superfícies e os textos neutros não mudam.
 
 ### Seletor próprio
 
