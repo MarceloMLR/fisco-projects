@@ -26,18 +26,23 @@ internal sealed class SessionApp : IAsyncDisposable
     private readonly WebApplication _app;
     private readonly string _connectionString;
 
-    private SessionApp(WebApplication app, string connectionString, FakeTimeProvider clock, RecordingEmailSender emails)
+    private SessionApp(
+        WebApplication app, string connectionString, FakeTimeProvider clock, RecordingEmailSender emails, RecordingTeamsSender teams)
     {
         _app = app;
         _connectionString = connectionString;
         Clock = clock;
         Emails = emails;
+        Teams = teams;
     }
 
     public FakeTimeProvider Clock { get; }
 
     /// <summary>The e-mails the queue sent, kept in memory instead of leaving (ADR-0036).</summary>
     public RecordingEmailSender Emails { get; }
+
+    /// <summary>The notices the queue of Teams sent, kept in memory instead of leaving (ADR-0149).</summary>
+    public RecordingTeamsSender Teams { get; }
 
     public IServiceProvider Services => _app.Services;
 
@@ -48,14 +53,16 @@ internal sealed class SessionApp : IAsyncDisposable
 
     /// <summary>
     /// The application on a database of its own; without <paramref name="recordEmails"/>, the e-mails leave by the sending
-    /// the configuration chooses, as the one of Microsoft Graph simulated by a test.
+    /// the configuration chooses, as the one of Microsoft Graph simulated by a test; the same for the notices of Teams
+    /// without <paramref name="recordTeams"/>.
     /// </summary>
     public static async Task<SessionApp> StartAsync(
-        SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null, bool recordEmails = true)
+        SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null, bool recordEmails = true, bool recordTeams = true)
     {
         var connectionString = sqlServer.NewDatabase();
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero));
         var emails = new RecordingEmailSender();
+        var teams = new RecordingTeamsSender();
         SessionApp? session = null;
 
         // Development, so the API creates the database and applies the migrations when it starts.
@@ -83,9 +90,14 @@ internal sealed class SessionApp : IAsyncDisposable
             {
                 builder.Services.TryAddSingleton<IEmailSender>(emails);
             }
+
+            if (recordTeams)
+            {
+                builder.Services.TryAddSingleton<ITeamsSender>(teams);
+            }
         });
 
-        session = new SessionApp(app, connectionString, clock, emails);
+        session = new SessionApp(app, connectionString, clock, emails, teams);
         return session;
     }
 
@@ -239,6 +251,33 @@ internal sealed class SessionApp : IAsyncDisposable
 
         return await EmailsAsync();
     }
+
+    /// <summary>
+    /// The notices of Teams sent so far, once the queue of Teams sent the ones waiting; with a condition, waits up to 30
+    /// seconds for the ones that the background process, woken by the clock, may be sending.
+    /// </summary>
+    public async Task<IReadOnlyList<TeamsDelivery>> TeamsAsync(Func<IReadOnlyList<TeamsDelivery>, bool>? until = null)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (true)
+        {
+            await using (var scope = _app.Services.CreateAsyncScope())
+            {
+                await scope.ServiceProvider.GetRequiredService<DispatchTeamsNotices>().ExecuteAsync(TestContext.Current.CancellationToken);
+            }
+
+            var sent = Teams.Sent;
+            if (until is null || until(sent) || DateTime.UtcNow > deadline)
+            {
+                return sent;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+    }
+
+    /// <summary>Turns the notices of Teams of the installation on, straight in the database, to set up a scene.</summary>
+    public Task TurnTeamsOnAsync() => ExecuteAsync("UPDATE [notifications].[teams_app] SET NoticesOn = 1");
 
     /// <summary>The e-mails sent to the address.</summary>
     public async Task<IReadOnlyList<EmailMessage>> EmailsToAsync(string address) =>

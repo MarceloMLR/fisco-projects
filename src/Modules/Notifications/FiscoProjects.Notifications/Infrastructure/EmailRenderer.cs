@@ -65,7 +65,7 @@ internal sealed partial class EmailRenderer(string? siteUrl) : IEmailRenderer
     /// The values as the reader sees them: a code with a text of its own in the section "values" of the texts (a team,
     /// a status, a role) is translated, a day (2026-10-21) is written as 21/10/2026, and the installation is added.
     /// </summary>
-    private static Dictionary<string, string> Shown(IReadOnlyDictionary<string, string> values, string installationName)
+    internal static Dictionary<string, string> Shown(IReadOnlyDictionary<string, string> values, string installationName)
     {
         var shown = new Dictionary<string, string>(StringComparer.Ordinal) { ["installation"] = installationName };
         foreach (var (name, value) in values)

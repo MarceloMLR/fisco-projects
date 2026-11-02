@@ -6,12 +6,21 @@ using FiscoProjects.Users.Contracts;
 
 namespace FiscoProjects.Notifications.Application;
 
-/// <summary>A person who hears about a notice, with what the channels need.</summary>
-public sealed record NoticeRecipient(Guid UserId, string Name, string Email);
+/// <summary>
+/// A person who hears about a notice, with what the channels need: the channel the person chose for the notices sent
+/// now and the id of the person in Entra ID, which Teams needs (ADR-0149).
+/// </summary>
+public sealed record NoticeRecipient(Guid UserId, string Name, string Email)
+{
+    public ImmediateNoticeChannel Channel { get; init; }
+
+    public string? EntraObjectId { get; init; }
+}
 
 /// <summary>
-/// A way the notices reach people (ADR-0038): the e-mail now, the bell and the Teams later. The rules of who hears about
-/// what never know the channels; each channel decides how the notice goes, as the e-mail between now and the summary.
+/// A way the notices reach people (ADR-0038): the e-mail, the bell and Teams (ADR-0149). The rules of who hears about
+/// what never know the channels; each channel decides how the notice goes, as the e-mail between now and the summary,
+/// and the channel of each person for the notices sent now is decided by the <see cref="NoticeRouting"/>.
 /// </summary>
 public interface INoticeChannel
 {
@@ -49,6 +58,7 @@ public sealed class DeliverNotices(
     IUserAccess access,
     IProjectAccess projects,
     IEnumerable<INoticeChannel> channels,
+    INoticePreferenceStore preferences,
     IOutboxStore store)
 {
     public async Task ExecuteAsync(IReadOnlyCollection<Notice> notices, CancellationToken cancellationToken)
@@ -64,6 +74,7 @@ public sealed class DeliverNotices(
             .Select(member => (member.ProjectId, member.UserId))
             .ToHashSet();
         var administrators = new Dictionary<Guid, bool>();
+        var chosen = await preferences.ChannelsAsync([.. notices.SelectMany(notice => notice.Recipients).Distinct()], cancellationToken);
 
         foreach (var notice in notices)
         {
@@ -81,7 +92,11 @@ public sealed class DeliverNotices(
                     continue;
                 }
 
-                recipients.Add(new NoticeRecipient(userId, person.Name, person.Email));
+                recipients.Add(new NoticeRecipient(userId, person.Name, person.Email)
+                {
+                    Channel = chosen.GetValueOrDefault(userId),
+                    EntraObjectId = person.EntraObjectId,
+                });
             }
 
             if (recipients.Count == 0)
@@ -115,7 +130,7 @@ public sealed class DeliverNotices(
 /// The e-mail channel (ADR-0037): what asks for an action of the person goes to the queue now; the rest waits for the
 /// daily summary of the person, one item per item when the notice has a key.
 /// </summary>
-public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, TimeProvider clock) : INoticeChannel
+public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, NoticeRouting routing, TimeProvider clock) : INoticeChannel
 {
     /// <summary>The kinds that go now; the others go to the daily summary.</summary>
     public static readonly IReadOnlySet<NoticeKind> Immediate = new HashSet<NoticeKind>
@@ -143,6 +158,12 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, TimeProv
         {
             foreach (var person in recipients)
             {
+                // Who chose only Teams, with Teams there for the person, receives no e-mail (ADR-0149).
+                if (!(await routing.RouteAsync(person, cancellationToken)).Email)
+                {
+                    continue;
+                }
+
                 await queue.EnqueueAsync(
                     notice.Kind.ToString(), person.Email, person.Name, NoticeEmails.ContentOf(notice, person.Name, actorName), cancellationToken);
             }

@@ -17,7 +17,7 @@ namespace FiscoProjects.Notifications.Infrastructure;
 /// <summary>
 /// Services of the Notifications module: the board of the notices of the other modules (ADR-0038), the queue of the
 /// e-mails, sent in the background by the implementation the configuration chooses (ADR-0036), the daily summary
-/// (ADR-0037) and the bell (ADR-0038).
+/// (ADR-0037), the bell (ADR-0038) and the Activity of Teams, with the channel each person chose (ADR-0149).
 /// </summary>
 public static class NotificationsModule
 {
@@ -70,6 +70,7 @@ public static class NotificationsModule
         services.AddScoped<INoticeChannel, EmailChannel>();
         services.AddScoped<INotificationStore, NotificationStore>();
         services.AddScoped<INoticeChannel, BellChannel>();
+        AddTeams(services, configuration);
         services.AddScoped<ListNotifications>();
         services.AddScoped<CountUnreadNotifications>();
         services.AddScoped<ReadNotification>();
@@ -82,14 +83,65 @@ public static class NotificationsModule
         services.AddMetrics();
         services.AddSingleton<EmailQueueMetrics>();
         services.AddHostedService<EmailDispatcher>();
+        services.AddHostedService<TeamsDispatcher>();
         services.AddHostedService<DailySummaryScheduler>();
         services.AddHostedService<NotificationCleanup>();
-        // LGPD (ADR-0110): the e-mails, the bell and the daily summary of an anonymized person.
+        // LGPD (ADR-0110): the e-mails, the bell, the daily summary and the notices of Teams of an anonymized person.
         services.AddScoped<IPersonalDataEraser, NotificationsPersonalData>();
         services.AddScoped<IProjectDeletion, NotificationProjectDeletion>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, NotificationsWarmUp>();
         return services;
+    }
+
+    /// <summary>
+    /// The Activity of Teams (ADR-0149): the channel, the queue sent in the background by the implementation the
+    /// configuration chooses, the channel each person chose and the application of Teams of the installation.
+    /// </summary>
+    private static void AddTeams(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<TeamsOptions>()
+            .Bind(configuration.GetSection(TeamsOptions.Section))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<TeamsOptions>, TeamsOptionsValidation>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TeamsOptions>>().Value;
+            var site = provider.GetRequiredService<IOptions<EmailOptions>>().Value.SiteUrl;
+            var client = configuration["EntraSignIn:ClientId"];
+            return new TeamsSettings(
+                options.Kind,
+                string.IsNullOrWhiteSpace(site) ? null : site.Trim(),
+                string.IsNullOrWhiteSpace(client) ? null : client.Trim());
+        });
+        // Graph is asked again by the queue when it throttles or is out of service.
+        services.AddHttpClient(GraphTeamsSender.ClientName, client => client.Timeout = TimeSpan.FromSeconds(30));
+        services.TryAddSingleton<ITeamsSender>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<TeamsOptions>>().Value;
+            return options.Kind switch
+            {
+                TeamsProvider.Graph => new GraphTeamsSender(
+                    provider.GetRequiredService<IHttpClientFactory>(), provider.GetRequiredService<IGraphTokens>()),
+                TeamsProvider.Local => new LocalTeamsSender(
+                    Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, options.Local.Folder)),
+                _ => new NoTeamsSender(),
+            };
+        });
+        services.AddSingleton<ITeamsTexts, TeamsTexts>();
+        services.AddSingleton<ITeamsManifest, TeamsAppManifest>();
+        services.AddScoped<ITeamsNoticeStore, TeamsNoticeStore>();
+        services.AddScoped<ITeamsAppStore, TeamsAppStore>();
+        services.AddScoped<INoticePreferenceStore, NoticePreferenceStore>();
+        services.AddScoped<NoticeRouting>();
+        services.AddScoped<INoticeChannel, TeamsChannel>();
+        services.AddScoped<DispatchTeamsNotices>();
+        services.AddScoped<ForgetOldTeamsNotices>();
+        services.AddScoped<GetImmediateNotices>();
+        services.AddScoped<ChooseImmediateNotices>();
+        services.AddScoped<GetTeamsApp>();
+        services.AddScoped<ChangeTeamsNotices>();
+        services.AddScoped<PackageTeamsApp>();
     }
 }
 

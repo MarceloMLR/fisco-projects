@@ -2103,6 +2103,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/immediate-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetImmediateNotices"];
+        put: operations["ChooseImmediateNotices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/teams-app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTeamsApp"];
+        put: operations["ChangeTeamsApp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/teams-app/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The manifest of the package of Teams of the installation, with a new version when its content changed; the screen adds the icons. */
+        post: operations["PackageTeamsApp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time-entries": {
         parameters: {
             query?: never;
@@ -2597,9 +2646,15 @@ export interface components {
         ChangeRoleRequest: {
             role: components["schemas"]["SystemRole"];
         };
+        ChangeTeamsAppRequest: {
+            noticesOn: boolean;
+        };
         /** @description Whether the person receives the daily summary of e-mails (ADR-0037). */
         ChooseDailySummaryRequest: {
             receives: boolean;
+        };
+        ChooseImmediateNoticesRequest: {
+            channel: components["schemas"]["ImmediateNoticeChannel"];
         };
         ChooseThemeRequest: {
             theme: components["schemas"]["ThemePreference"];
@@ -2942,6 +2997,19 @@ export interface components {
         /** Format: binary */
         IFormFile: string;
         IFormFileCollection: components["schemas"]["IFormFile"][];
+        /**
+         * @description Where the notices sent now reach a person (ADR-0037, ADR-0149).
+         * @enum {unknown}
+         */
+        ImmediateNoticeChannel: "Both" | "Email" | "Teams";
+        /**
+         * @description The channel of the notices sent now of the person (ADR-0149): E-mail, Teams or Both, and whether Teams is there for
+         *     the person (on in the installation, and the person signs in by Entra ID).
+         */
+        ImmediateNoticesResponse: {
+            channel: components["schemas"]["ImmediateNoticeChannel"];
+            teamsAvailable: boolean;
+        };
         /** @description A credential mapped from a line of the spreadsheet, with the number of the line. */
         ImportedCredentialRequest: {
             /** Format: int32 */
@@ -4418,6 +4486,24 @@ export interface components {
             end: string;
             /** Format: int32 */
             businessDays: number;
+        };
+        /**
+         * @description The application of Teams of the installation (ADR-0149): whether the sending to Teams is configured in the
+         *     application, whether the notices go to Teams and the version of the last package (null before the first).
+         */
+        TeamsAppResponse: {
+            available: boolean;
+            noticesOn: boolean;
+            version: null | string;
+        };
+        /** @description What the icons of the package show, as the address of the logo with its version or the main color. */
+        TeamsPackageRequest: {
+            iconSource: string;
+        };
+        /** @description The manifest of the package of Teams, as the file manifest.json, and its version. */
+        TeamsPackageResponse: {
+            manifest: string;
+            version: string;
         };
         TemplateCreatedResponse: {
             /** Format: uuid */
@@ -13290,6 +13376,213 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetImmediateNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImmediateNoticesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChooseImmediateNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChooseImmediateNoticesRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetTeamsApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamsAppResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTeamsApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeTeamsAppRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    PackageTeamsApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamsPackageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamsPackageResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

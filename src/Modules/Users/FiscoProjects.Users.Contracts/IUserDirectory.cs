@@ -15,6 +15,12 @@ public sealed record PersonInfo(Guid Id, string Name, string Email, DateTime? La
     /// (<see cref="SystemRoles.LeadsTechnically"/>, ADR-0097).
     /// </summary>
     public bool CanBeTechLead { get; init; }
+
+    /// <summary>
+    /// The id of the object of the person in Entra ID, from the link of the sign-in by Entra (ADR-0117); null for who
+    /// signs in another way. The notices in Teams reach the person by it (ADR-0149).
+    /// </summary>
+    public string? EntraObjectId { get; init; }
 }
 
 /// <summary>Names and data of the people of the installation, for modules that show who did something.</summary>

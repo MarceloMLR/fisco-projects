@@ -1,5 +1,5 @@
 ---
-status: aceita (posição do sino substituída pelo ADR-0066)
+status: aceita (posição do sino substituída pelo ADR-0066; avisos na aba Atividade do Teams substituídos pelo ADR-0149)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---

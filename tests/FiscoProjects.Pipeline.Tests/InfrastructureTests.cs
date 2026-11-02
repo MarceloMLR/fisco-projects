@@ -240,6 +240,20 @@ public sealed partial class InfrastructureTests
             .And.NotContain("Application Mail Full Access").And.NotContain("Application Exchange Full Access");
     }
 
+    // Spec: infraestrutura, requirement "Avisos pelo Teams na instalação" (ADR-0149).
+    [Fact(DisplayName = "Teams pelo Terraform")]
+    public void Teams_GoesByGraphWithTheSignIn_WithoutAPermissionOfEntra()
+    {
+        var main = Read("main.tf");
+        var entraSettings = main[main.IndexOf("entra_settings = var.entra_sign_in ?", StringComparison.Ordinal)..];
+        entraSettings = entraSettings[..entraSettings.IndexOf("}) : {}", StringComparison.Ordinal)];
+
+        entraSettings.Should().Contain("Teams__Provider       = \"Graph\"", "the notices by Teams need the application of Entra");
+        AllCode().Should().NotContain("TeamsActivity").And.NotContain("TeamsAppInstallation")
+            .And.NotContain("Teams__Provider       = \"Local\"");
+        Read("modules", "entra", "main.tf").Should().NotContain("Teams", "the permissions come from the package of Teams, for the person");
+    }
+
     [Fact(DisplayName = "Caixa que a empresa já tem")]
     public void ExchangeScript_UsesTheMailboxTheCompanyHas_AsItIs()
     {
@@ -273,6 +287,26 @@ public sealed partial class InfrastructureTests
         string[] parts = ["Antes de começar", "Quem instala", "Pacote da versão", "Instalar", "Atualizar para uma versão nova"];
         var positions = parts.Select(part => headings.IndexOf(part)).ToList();
         positions.Should().NotContain(-1, $"the guide has the parts {string.Join(", ", parts)}").And.BeInAscendingOrder();
+    }
+
+    [Fact(DisplayName = "Passo do Teams no guia")]
+    public void Guide_TeachesTheApplicationOfTeams_AfterTheMailbox()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+        var exchange = guide.IndexOf("**Prepare a caixa dos e-mails**", StringComparison.Ordinal);
+        var teams = guide.IndexOf("**Instale o aplicativo do Teams**", StringComparison.Ordinal);
+
+        exchange.Should().BePositive();
+        teams.Should().BeGreaterThan(exchange, "the step of Teams comes after the one of Exchange");
+        var step = guide[teams..guide.IndexOf("**Combine a rotina**", teams, StringComparison.Ordinal)];
+        step.Should().Contain("Administrador do Teams")
+            .And.Contain("\"Baixar pacote do Teams\"")
+            .And.Contain("Carregar novo aplicativo")
+            .And.Contain("Políticas de configuração")
+            .And.Contain("\"Avisar pelo Teams\"");
+        step.IndexOf("Políticas de configuração", StringComparison.Ordinal)
+            .Should().BeLessThan(step.IndexOf("\"Avisar pelo Teams\"", StringComparison.Ordinal), "the notices are turned on after the installation");
+        guide.Should().Contain("| Subir e instalar o aplicativo do Teams, para os avisos no Teams | Administrador do Teams");
     }
 
     [Fact(DisplayName = "E-mails da demonstração no ambiente dev")]

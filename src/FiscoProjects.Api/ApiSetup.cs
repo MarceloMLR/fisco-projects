@@ -113,6 +113,7 @@ public static class ApiSetup
             .MapDocumentsEndpoints()
             .MapCredentialsEndpoints()
             .MapNotificationsEndpoints()
+            .MapTeamsEndpoints()
             .MapMyWorkEndpoints()
             .MapTimeTrackingEndpoints()
             .MapProjectHoursEndpoints()

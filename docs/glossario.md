@@ -270,11 +270,16 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Português | Código | Observação |
 | --- | --- | --- |
 | Aviso, notificação | Notice (`INoticeBoard`, `NoticeKind`) | O que um módulo conta que aconteceu; o `Notifications` decide quem recebe e por qual canal (ADR-0038) |
-| Canal de aviso | INoticeChannel (`EmailChannel`, `BellChannel`) | E-mail e sino; Teams depois |
+| Canal de aviso | INoticeChannel (`EmailChannel`, `BellChannel`, `TeamsChannel`) | E-mail, sino e Teams (ADR-0149) |
 | Sino, notificação do sino | NotificationBell, Notification (`notifications.notifications`) | Os mesmos avisos do e-mail, na hora; lida ou não lida (ADR-0038) |
 | Marcar como lida, marcar todas como lidas | ReadNotification, ReadAllNotifications | |
 | Guardar notificações por | InstallationSettings.NotificationRetentionDays | Padrão 90 dias, de 1 a 365; as mais antigas são apagadas a cada hora |
-| Aviso na hora | `EmailChannel.Immediate` | O que pede ação da pessoa, por e-mail logo (ADR-0037); não se desliga |
+| Aviso na hora | `EmailChannel.Immediate` | O que pede ação da pessoa, por e-mail ou pelo Teams logo (ADR-0037, ADR-0149); não se desliga |
+| Por onde chegam os avisos na hora: E-mail, Teams, Os dois | ImmediateNoticeChannel: Email, Teams, Both (`NoticePreference`, `notifications.notice_preferences`) | Escolha da pessoa em Meu perfil, só com o Teams disponível para ela; Os dois de início (ADR-0149) |
+| Avisar pelo Teams | TeamsApp.NoticesOn (`notifications.teams_app`) | Opção do administrador na seção Microsoft 365 das Configurações gerais, desligada de início |
+| Aplicativo do Teams, pacote do Teams | TeamsApp (`TeamsAppManifest`, `PackageTeamsApp`) | O `.zip` com o manifesto e os ícones da instalação, que o Administrador do Teams sobe; a versão sobe quando o conteúdo muda |
+| Aviso do Teams | TeamsNotice (`notifications.teams_notices`, `DispatchTeamsNotices`) | Fila dos avisos da aba Atividade, com novas tentativas; volta ao e-mail para quem escolheu só o Teams |
+| Página do FiscoProjects no Teams | TeamsPage (`/teams`) | Abre o item do aviso no navegador, sem sessão |
 | Resumo diário | DailySummary (`SendDailySummaries`, `DigestItem`) | Um e-mail por dia com o restante e as tarefas que vencem; a pessoa desliga em Meu perfil (`ReceivesDailySummary`) |
 | Horário do resumo diário | InstallationSettings.DailySummaryAt | Padrão 07:30, no fuso da instalação |
 | Alerta de prazo | TicketDeadlineAlert (`AlertTicketDeadlines`) | Prazo de chamado vencendo (hoje ou no próximo dia útil) ou vencido, uma vez por estado |

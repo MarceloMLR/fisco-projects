@@ -238,7 +238,7 @@
     },
     "themeFailed": "Não foi possível salvar o tema. Tente de novo.",
     "notices": {
-      "title": "Avisos por e-mail",
+      "title": "Avisos",
       "summary": "Resumo diário",
       "receiveSummary": "Receber às {{time}}, com as novidades do dia e as tarefas que vencem",
       "now": "Na hora",
@@ -248,6 +248,14 @@
         "deadlines": "Prazos dos meus chamados vencendo ou vencidos"
       },
       "alwaysOn": "Os avisos que pedem a sua ação não podem ser desligados.",
+      "channel": "Por onde chegam os avisos na hora",
+      "channels": {
+        "Email": "E-mail",
+        "Teams": "Teams",
+        "Both": "Os dois"
+      },
+      "channelHelp": "Menções, respostas, chamados atribuídos a você e prazos vencendo. Esses avisos não podem ser desligados, só mudar de lugar.",
+      "channelFailed": "Não foi possível salvar por onde chegam os avisos. Tente de novo.",
       "failed": "Não foi possível salvar o resumo diário. Tente de novo."
     },
     "account": "Conta",
@@ -866,6 +874,20 @@
       "queued": "E-mail de teste na fila para {{to}}. O resultado aparece aqui depois do envio.",
       "noAddress": "Sua conta não tem e-mail para receber o teste.",
       "failed": "Não foi possível pedir o teste. Tente de novo."
+    },
+    "teams": {
+      "noticesOn": "Avisar pelo Teams",
+      "noticesOnHint": "Os avisos que pedem ação chegam na aba Atividade do Teams de quem escolher o Teams em Meu perfil. Instale antes o aplicativo pelo centro de administração do Teams.",
+      "unavailable": "O Teams não está disponível nesta instalação.",
+      "turnFailed": "Não foi possível salvar os avisos pelo Teams. Tente de novo.",
+      "package": "Aplicativo do Teams",
+      "version": "Versão {{version}}",
+      "neverDownloaded": "Pacote ainda não baixado",
+      "packageHint": "Baixe de novo depois de trocar o nome, o logo ou a cor principal e envie a versão nova ao Teams.",
+      "download": "Baixar pacote do Teams",
+      "fileName": "aplicativo-teams-{{version}}.zip",
+      "downloaded": "Pacote do Teams baixado, na versão {{version}}.",
+      "downloadFailed": "Não foi possível montar o pacote do Teams. Tente de novo."
     },
     "errors": {
       "nameRequired": "Informe o nome exibido.",
@@ -3741,6 +3763,10 @@
       "today": "hoje",
       "tomorrow": "amanhã"
     }
+  },
+  "teamsPage": {
+    "open": "Abrir no {{name}}",
+    "inBrowser": "Abre no navegador, com a sua conta."
   },
   "localSigning": {
     "title": "Assinatura do termo",
