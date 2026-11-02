@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (fundo da entrada substituído pelo ADR-0147)
 date: 2026-11-01
 decision-makers: Marcelo Ribeiro
 ---

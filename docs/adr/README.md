@@ -208,4 +208,5 @@ Regras:
 | [0143](0143-edicao-do-cronograma-na-lista.md) | Edição do cronograma na Lista, num modo de edição pelo teclado | aceita | 2026-11-01 |
 | [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita | 2026-11-01 |
 | [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |
-| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita | 2026-11-01 |
+| [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147) | 2026-11-01 |
+| [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |

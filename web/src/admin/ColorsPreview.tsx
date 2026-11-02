@@ -584,24 +584,35 @@ export function ColorsPreview({
             </Box>
           </Box>
           <Box
-            data-testid="colors-preview-sign-in"
+            data-testid="colors-preview-sign-in-page"
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
               margin: '0 var(--space-4) var(--space-4)',
-              padding: 'var(--space-4)',
+              padding: 'var(--space-3)',
               borderRadius: 'var(--radius-lg)',
-              backgroundImage:
-                'linear-gradient(135deg, var(--brand-panel-bg), var(--brand-panel-bg-2))',
-              color: 'var(--brand-panel-text)',
+              // The background of the sign-in page, with its glow, around the panel.
+              background:
+                'radial-gradient(260px 160px at 12% 8%, var(--signin-glow), transparent 62%), var(--signin-bg)',
             }}
           >
-            <Box component="span" sx={{ fontSize: 12, color: 'var(--brand-panel-muted)' }}>
-              {p('signInLabel')}
-            </Box>
-            <Box component="strong" sx={{ fontSize: 15, fontWeight: 500 }}>
-              {p('signInTitle')}
+            <Box
+              data-testid="colors-preview-sign-in"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                padding: 'var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                backgroundImage:
+                  'linear-gradient(135deg, var(--brand-panel-bg), var(--brand-panel-bg-2))',
+                color: 'var(--brand-panel-text)',
+              }}
+            >
+              <Box component="span" sx={{ fontSize: 12, color: 'var(--brand-panel-muted)' }}>
+                {p('signInLabel')}
+              </Box>
+              <Box component="strong" sx={{ fontSize: 15, fontWeight: 500 }}>
+                {p('signInTitle')}
+              </Box>
             </Box>
           </Box>
         </Box>

@@ -12,7 +12,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
 | Cores | ColorsPage (`/admin/colors`) | Seção da Administração com as três cores da instalação e a prévia (ADR-0146) |
 | Cor principal | MainColor | Cor dos botões, links, abas e seleções, em `#RRGGBB`, vazia para a do design system; qualquer cor é aceita, com o texto sobre ela calculado (ADR-0082, ADR-0146) |
-| Cor secundária | SecondaryColor | Cor da linha selecionada, da notificação não lida, da menção e do painel da entrada; sem ela, o painel segue a principal (ADR-0146) |
+| Cor secundária | SecondaryColor | Cor da linha selecionada, da notificação não lida, da menção e do painel e do fundo da entrada; sem ela, o painel e o fundo seguem a principal (ADR-0146, ADR-0147) |
 | Cor da barra lateral | SidebarColor | Fundo da barra lateral, com os textos calculados; no tema escuro, um tom escuro do matiz (ADR-0146) |
 | Seletor de cores | ColorPicker | Área de saturação e brilho, barra de matiz e o valor em HEX, RGB ou HSL (ADR-0146) |
 | Logo para o tema escuro | DarkLogo | Logo opcional mostrado na barra lateral escura; sem ele, vale o logo (ADR-0100) |

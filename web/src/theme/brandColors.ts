@@ -31,6 +31,8 @@ export const brandTokenNames = [
   'brand-panel-bg-2',
   'brand-panel-muted',
   'brand-panel-accent',
+  'signin-bg',
+  'signin-glow',
 ] as const;
 
 export type BrandTokenName = (typeof brandTokenNames)[number];
@@ -257,6 +259,8 @@ function applyMain(tokens: BrandTokens, main: string, scheme: ColorScheme) {
     'brand-panel-bg-2',
     'brand-panel-muted',
     'brand-panel-accent',
+    'signin-bg',
+    'signin-glow',
   ] as const) {
     tokens[name] = recolored(design[name], main);
   }
@@ -288,7 +292,10 @@ function applyMain(tokens: BrandTokens, main: string, scheme: ColorScheme) {
   }
 }
 
-/** The secondary color (ADR-0146): the selected row, the unread notification, the mention and the sign-in panel. */
+/**
+ * The secondary color (ADR-0146): the selected row, the unread notification, the mention, and the panel and the
+ * background of the sign-in page.
+ */
 function applySecondary(tokens: BrandTokens, secondary: string, scheme: ColorScheme) {
   const design = designTokens(scheme);
   tokens['bg-selected'] = recolored(design['bg-selected'], secondary, 1.6);
@@ -297,6 +304,9 @@ function applySecondary(tokens: BrandTokens, secondary: string, scheme: ColorSch
     scheme === 'light' ? secondary : recolored(design['brand-panel-bg-2'], secondary);
   tokens['brand-panel-muted'] = recolored(design['brand-panel-muted'], secondary);
   tokens['brand-panel-accent'] = recolored(design['brand-panel-accent'], secondary);
+  // The background of the sign-in page around the panel keeps its darkness, with the hue of the color.
+  tokens['signin-bg'] = recolored(design['signin-bg'], secondary);
+  tokens['signin-glow'] = recolored(design['signin-glow'], secondary);
 }
 
 /** The color of the sidebar (ADR-0146): the background, and the texts, the hover and the dividers that follow it. */
