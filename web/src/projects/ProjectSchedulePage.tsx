@@ -1361,7 +1361,6 @@ function ItemEditor({
           schedule={schedule}
           project={project}
           itemId={item.id}
-          endsOn={item.kind === 'Task' ? item.end : undefined}
           summary={item.hasSubtasks}
         />
         {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}

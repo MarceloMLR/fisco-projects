@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import { useQuery } from '@tanstack/react-query';
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import {
   type Control,
   Controller,
@@ -11,13 +11,13 @@ import {
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Project, Schedule, ScheduleItemKind } from '../api/client';
-import { emailsOf, projectMembersQuery } from '../api/queries';
+import { ApiError, emailsOf, itemDatesQuery, projectMembersQuery } from '../api/queries';
 import { FormField } from '../components/FormField';
 import { MultiSelect } from '../components/MultiSelect';
 import { Select } from '../components/Select';
 import { TextArea } from '../components/TextArea';
 import { TextField } from '../components/TextField';
-import { formatDayText, maskTypedDay } from '../format/dates';
+import { formatDayText, maskTypedDay, parseTypedDay } from '../format/dates';
 import { itemsOf, linkTypes, predecessorChoices } from './schedule';
 import {
   isScheduleItemError,
@@ -25,6 +25,7 @@ import {
   noOwner,
   noParent,
   noteMaxLength,
+  scheduleItemErrors,
   type ScheduleItemValues,
   clientOwner,
 } from './scheduleItemValues';
@@ -44,9 +45,10 @@ const rowSx = (columns: string) =>
  * business days, the deadline (optional, also of a task with subtasks, which never moves the dates, GanttA-2), the
  * owner (a person of the project who is not a viewer, ADR-0043); the items it depends on,
  * without the ones that already depend on it, which would make a cycle (ADR-0019), nor the tasks with subtasks; and the
- * note, plain text up to 2,000 characters (ADR-0139). The end
- * is computed by the API, with the calendar of the installation; the progress changes by its own action (ADR-0086). A
- * task with subtasks (`summary`) has only the name, the phase and the owner: the rest comes from its subtasks.
+ * note, plain text up to 2,000 characters (ADR-0139). A task has the end beside the duration, each computed from the
+ * other by the API, with the calendar of the installation, as the person types: the last one typed rules, and a new
+ * start keeps it (ADR-0145). The progress changes by its own action (ADR-0086). A task with subtasks (`summary`) has
+ * only the name, the phase and the owner: the rest comes from its subtasks.
  */
 export function ScheduleItemFields({
   control,
@@ -55,7 +57,6 @@ export function ScheduleItemFields({
   schedule,
   project,
   itemId,
-  endsOn,
   summary = false,
 }: {
   control: Control<ScheduleItemValues>;
@@ -65,8 +66,6 @@ export function ScheduleItemFields({
   project: Project;
   /** The item being changed; none for a new one. */
   itemId?: string;
-  /** The end the API computed for the item as saved. */
-  endsOn?: string;
   /** The item has subtasks, and its dates and progress come from them (ADR-0088). */
   summary?: boolean;
 }) {
@@ -121,10 +120,7 @@ export function ScheduleItemFields({
     parent !== undefined && !parent.hasSubtasks && parent.id !== current?.parentId;
   // Only the items with dates of their own have dependencies, never the task the item goes into (ADR-0088).
   const predecessorOptions = predecessorChoices(schedule, itemId, parent?.id);
-  const durationHelp =
-    endsOn === undefined
-      ? t('projects.schedule.form.durationHelp')
-      : t('projects.schedule.form.endsOn', { day: formatDayText(endsOn) });
+  const dates = useTaskDates(control, project.id, task && !summary);
 
   return (
     <>
@@ -192,7 +188,7 @@ export function ScheduleItemFields({
         </FormField>
       )}
       {!summary && (
-        <Box sx={rowSx('1fr 1fr')}>
+        <Box sx={rowSx(task ? '1fr 1fr 1fr' : '1fr 1fr')}>
           <Controller
             control={control}
             name="start"
@@ -205,10 +201,32 @@ export function ScheduleItemFields({
                 {...field}
                 onChange={(event) => {
                   field.onChange(maskTypedDay(event.target.value));
+                  dates.typed();
                 }}
               />
             )}
           />
+          {task && (
+            <Controller
+              control={control}
+              name="end"
+              render={({ field }) => (
+                <TextField
+                  label={t('projects.schedule.form.end')}
+                  placeholder={t('projects.schedule.form.dayPlaceholder')}
+                  inputMode="numeric"
+                  error={errorText(errors.end?.message) ?? dates.endError}
+                  {...field}
+                  onChange={(event) => {
+                    const typed = maskTypedDay(event.target.value);
+                    field.onChange(typed);
+                    // An end taken out leaves the duration ruling again.
+                    dates.typed(typed.trim() === '' ? 'duration' : 'end');
+                  }}
+                />
+              )}
+            />
+          )}
           {task && (
             <Controller
               control={control}
@@ -218,8 +236,12 @@ export function ScheduleItemFields({
                   label={t('projects.schedule.form.duration')}
                   inputMode="numeric"
                   error={errorText(errors.duration?.message)}
-                  helper={durationHelp}
+                  helper={t('projects.schedule.form.durationHelp')}
                   {...field}
+                  onChange={(event) => {
+                    field.onChange(event.target.value);
+                    dates.typed('duration');
+                  }}
                 />
               )}
             />
@@ -315,6 +337,73 @@ export function ScheduleItemFields({
       />
     </>
   );
+}
+
+/** A duration as typed: a whole number of business days from 1 to 999. */
+const typedDuration = (value: string) => {
+  const duration = value.trim();
+  return /^\d{1,3}$/.test(duration) && Number(duration) >= 1 ? Number(duration) : undefined;
+};
+
+/**
+ * The end and the duration of a task computed from each other by the API, with the calendar of the installation
+ * (ADR-0051, ADR-0145), once the person changes the start, the end or the duration: the end typed gives the duration,
+ * and the duration, or a new start, gives the end. Each answer goes into the other field, never into the one that
+ * rules. An end the API refuses is told on its field.
+ */
+function useTaskDates(control: Control<ScheduleItemValues>, projectId: string, enabled: boolean) {
+  const { t } = useTranslation();
+  const [asked, setAsked] = useState(false);
+  const start = parseTypedDay(useWatch({ control, name: 'start' }));
+  const { field: durationField } = useController({ control, name: 'duration' });
+  const { field: endField } = useController({ control, name: 'end' });
+  const { field: datesFromField } = useController({ control, name: 'datesFrom' });
+  const byEnd = datesFromField.value === 'end';
+  const end = parseTypedDay(endField.value);
+  const duration = typedDuration(durationField.value);
+  const by = byEnd
+    ? end === undefined
+      ? undefined
+      : { end }
+    : duration === undefined
+      ? undefined
+      : { duration };
+  const shown = enabled && asked && start !== undefined && by !== undefined;
+  const { data, error } = useQuery({
+    ...itemDatesQuery(projectId, start ?? '', by ?? { duration: 1 }),
+    enabled: shown,
+  });
+  const setDuration = durationField.onChange;
+  const setEnd = endField.onChange;
+  const currentDuration = durationField.value;
+  const currentEnd = endField.value;
+
+  useEffect(() => {
+    if (!shown || data === undefined) {
+      return;
+    }
+    if (byEnd) {
+      if (currentDuration !== String(data.duration)) {
+        setDuration(String(data.duration));
+      }
+    } else if (currentEnd !== formatDayText(data.end)) {
+      setEnd(formatDayText(data.end));
+    }
+  }, [shown, data, byEnd, currentDuration, currentEnd, setDuration, setEnd]);
+
+  return {
+    /** The person changed the start, or the field that now rules. */
+    typed: (ruling?: 'duration' | 'end') => {
+      setAsked(true);
+      if (ruling !== undefined && ruling !== datesFromField.value) {
+        datesFromField.onChange(ruling);
+      }
+    },
+    endError:
+      shown && byEnd && error instanceof ApiError && error.status === 400
+        ? t(scheduleItemErrors.endInvalid)
+        : undefined,
+  };
 }
 
 /**

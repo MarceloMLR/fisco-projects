@@ -3774,6 +3774,86 @@
         }
       }
     },
+    "/api/projects/{id}/schedule/item-dates": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The dates of a task by the calendar of the installation, without saving anything: the end from the start and the duration, or the duration from the start and the end (ADR-0145).",
+        "operationId": "PreviewScheduleItemDates",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDatesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/projects/{id}/schedule/phases": {
       "post": {
         "tags": [
@@ -14168,6 +14248,14 @@
               "string"
             ],
             "description": "The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139)."
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The end of a task, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).",
+            "format": "date"
           }
         },
         "description": "A new task or milestone: the kind, the phase, the name, the start, the duration in business days (zero or none for a\nmilestone), the owner (a person of the project who is not a viewer; none for a milestone), the progress from 0 to\n100 (zero for a milestone), the items it depends on, and the task it goes into, right in the same phase (none for\nright in the phase). The first subtask of a task takes the dependencies of the task (ADR-0088)."
@@ -16302,6 +16390,14 @@
               "string"
             ],
             "description": "The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139)."
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The end of a task with dates of its own, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).",
+            "format": "date"
           }
         },
         "description": "A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is\nin, it goes right in the phase. A task with subtasks changes only its phase, name and owner: its start and duration\nare not looked at, and it has no dependencies (ADR-0088)."
@@ -16957,6 +17053,29 @@
           "TechLead"
         ],
         "description": "Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a\nvalid role."
+      },
+      "TaskDatesResponse": {
+        "required": [
+          "start",
+          "end",
+          "duration"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The dates of a task before it is saved: the start on a business day, the end and the duration in business days."
       },
       "TaskHoursResponse": {
         "required": [

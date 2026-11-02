@@ -877,6 +877,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/item-dates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The dates of a task by the calendar of the installation, without saving anything: the end from the start and the duration, or the duration from the start and the end (ADR-0145). */
+        get: operations["PreviewScheduleItemDates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/schedule/phases": {
         parameters: {
             query?: never;
@@ -3340,6 +3357,11 @@ export interface components {
             links?: null | components["schemas"]["ScheduleLinkRequest"][];
             /** @description The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139). */
             note?: null | string;
+            /**
+             * Format: date
+             * @description The end of a task, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).
+             */
+            end?: null | string;
         };
         /** @description A new model from a schedule: its name and, optionally, its description. */
         NewTemplateRequest: {
@@ -4025,6 +4047,11 @@ export interface components {
             links?: null | components["schemas"]["ScheduleLinkRequest"][];
             /** @description The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139). */
             note?: null | string;
+            /**
+             * Format: date
+             * @description The end of a task with dates of its own, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).
+             */
+            end?: null | string;
         };
         /**
          * @description A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a
@@ -4266,6 +4293,15 @@ export interface components {
          * @enum {unknown}
          */
         SystemRole: "User" | "ProjectManager" | "Administrator" | "TechLead";
+        /** @description The dates of a task before it is saved: the start on a business day, the end and the duration in business days. */
+        TaskDatesResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            duration: number;
+        };
         /**
          * @description A task with its hours (ADR-0138): the id of the item of the schedule, the current name, the planned hours (null
          *     without them), the hours logged in it and the balance, whose contracted hours are the planned ones.
@@ -8166,6 +8202,57 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PreviewScheduleItemDates: {
+        parameters: {
+            query: {
+                start: string;
+                duration?: number;
+                end?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDatesResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

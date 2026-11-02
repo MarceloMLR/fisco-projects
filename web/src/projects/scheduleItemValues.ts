@@ -12,6 +12,7 @@ export const scheduleItemErrors = {
   phaseRequired: 'projects.schedule.errors.phaseRequired',
   startInvalid: 'projects.schedule.errors.startInvalid',
   durationInvalid: 'projects.schedule.errors.durationInvalid',
+  endInvalid: 'projects.schedule.errors.endInvalid',
   progressInvalid: 'projects.schedule.errors.progressInvalid',
   ownerInvalid: 'projects.schedule.errors.ownerInvalid',
   predecessorsInvalid: 'projects.schedule.errors.predecessorsInvalid',
@@ -50,8 +51,9 @@ export const noteMaxLength = 2000;
  * The form of a task or milestone, checked as the API checks it: a task lasts from 1 to 999 business days; a milestone
  * has no duration (ADR-0018). The progress is not in it: it changes by its own action (ADR-0086). A task with
  * subtasks (`summary`) takes its dates from them, so its duration is not checked (ADR-0088). The deadline is optional,
- * any task or milestone may have one (GanttA-2), and so is the note, up to 2,000 characters (ADR-0139). The fields are
- * kept as typed.
+ * any task or milestone may have one (GanttA-2), and so is the note, up to 2,000 characters (ADR-0139). A task with
+ * dates of its own has the end beside the duration, and the last one typed rules (`datesFrom`, ADR-0145): with the
+ * end, it is a day on or after the start, and the duration is not checked. The fields are kept as typed.
  */
 export const scheduleItemSchema = z
   .object({
@@ -66,6 +68,10 @@ export const scheduleItemSchema = z
       error: scheduleItemErrors.startInvalid,
     }),
     duration: z.string(),
+    /** The end of a task, typed or computed from the duration by the API (ADR-0145). */
+    end: z.string(),
+    /** Which of the duration and the end the person typed last, the one that rules. */
+    datesFrom: z.enum(['duration', 'end']),
     ownerId: z.string(),
     predecessorIds: z.array(z.string()),
     parentId: z.string(),
@@ -96,6 +102,14 @@ export const scheduleItemSchema = z
       });
     }
     if (values.kind === 'Milestone' || values.summary === true) {
+      return;
+    }
+    if (values.datesFrom === 'end') {
+      const end = parseTypedDay(values.end);
+      const start = parseTypedDay(values.start);
+      if (end === undefined || (start !== undefined && end < start)) {
+        context.addIssue({ code: 'custom', path: ['end'], message: scheduleItemErrors.endInvalid });
+      }
       return;
     }
     const duration = values.duration.trim();
@@ -139,6 +153,8 @@ export function newItemValues(phaseId: string, parentId: string = noParent): Sch
     phaseId,
     start: '',
     duration: '1',
+    end: '',
+    datesFrom: 'duration',
     ownerId: noOwner,
     predecessorIds: [],
     parentId,
@@ -156,6 +172,8 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
     phaseId: item.phaseId,
     start: formatDayText(item.start),
     duration: String(item.duration),
+    end: item.kind === 'Task' ? formatDayText(item.end) : '',
+    datesFrom: 'duration',
     ownerId: item.ownedByClient ? clientOwner : (item.owner?.id ?? noOwner),
     predecessorIds: item.predecessorIds,
     parentId: item.parentId ?? noParent,
@@ -171,16 +189,19 @@ export function valuesOfItem(item: ScheduleItem): ScheduleItemValues {
 /**
  * The fields of a task or milestone as the API takes them, without the progress: a new item starts at 0%, and a
  * change keeps the progress as it is (ADR-0086). A task with subtasks sends no dependencies nor task it is in: the API
- * looks only at its phase, name and owner (ADR-0088).
+ * looks only at its phase, name and owner (ADR-0088). The end goes only when it rules, and the API then takes the
+ * duration from it (ADR-0145).
  */
 export function bodyOf(values: ScheduleItemValues) {
   const task = values.kind === 'Task';
   const summary = values.summary === true;
+  const byEnd = task && !summary && values.datesFrom === 'end';
   return {
     phaseId: values.phaseId,
     name: values.name.trim(),
     start: parseTypedDay(values.start) ?? '',
-    duration: task ? Number(values.duration.trim()) : 0,
+    duration: task && !byEnd ? Number(values.duration.trim()) : 0,
+    ...(byEnd ? { end: parseTypedDay(values.end) ?? null } : {}),
     ownerId:
       task && values.ownerId !== noOwner && values.ownerId !== clientOwner ? values.ownerId : null,
     ownedByClient: task && values.ownerId === clientOwner,
@@ -210,6 +231,7 @@ const apiFields = {
   phaseId: 'phaseId',
   start: 'start',
   duration: 'duration',
+  end: 'end',
   ownerId: 'ownerId',
   predecessorIds: 'predecessorIds',
   parentId: 'parentId',
@@ -223,6 +245,7 @@ const fieldErrors = {
   phaseId: scheduleItemErrors.phaseRequired,
   start: scheduleItemErrors.startInvalid,
   duration: scheduleItemErrors.durationInvalid,
+  end: scheduleItemErrors.endInvalid,
   ownerId: scheduleItemErrors.ownerInvalid,
   predecessorIds: scheduleItemErrors.predecessorsInvalid,
   parentId: scheduleItemErrors.parentInvalid,
