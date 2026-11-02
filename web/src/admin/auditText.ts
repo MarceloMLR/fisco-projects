@@ -30,6 +30,7 @@ import { formatDayText } from '../format/dates';
 import { formatHours } from '../hours/hours';
 import { linkTypes } from '../projects/schedule';
 import { calculatedHolidayName } from './calendarText';
+import { rolesOfAudit, visibilityText } from '../documents/folderVisibility';
 
 /** How the Audit screen tells a record (canvas AdminAuditoria). */
 export interface AuditDescription {
@@ -287,14 +288,23 @@ const scheduleBaselineFields: readonly string[] = [
 const isScheduleBaselineField = (field: string): field is ScheduleBaselineField =>
   scheduleBaselineFields.includes(field);
 
-type DefaultFolderField = 'Name' | 'IsAcceptance' | 'IsActive';
+type DefaultFolderField = 'Name' | 'IsAcceptance' | 'IsActive' | 'VisibleTo';
 const defaultFolderFields: readonly string[] = [
   'Name',
   'IsAcceptance',
   'IsActive',
+  'VisibleTo',
 ] satisfies DefaultFolderField[];
 const isDefaultFolderField = (field: string): field is DefaultFolderField =>
   defaultFolderFields.includes(field);
+
+type DocumentFolderField = 'VisibleTo' | 'ProjectId';
+const documentFolderFields: readonly string[] = [
+  'VisibleTo',
+  'ProjectId',
+] satisfies DocumentFolderField[];
+const isDocumentFolderField = (field: string): field is DocumentFolderField =>
+  documentFolderFields.includes(field);
 
 type DocumentField =
   'ProjectId' | 'FolderId' | 'Name' | 'Status' | 'Version' | 'SchedulePhaseId' | 'ScheduleItemId';
@@ -567,6 +577,13 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'DefaultFolder' && field === 'IsAcceptance') {
     return t(value === 'true' ? 'audit.details.yes' : 'audit.details.no');
   }
+  // Who sees a folder (ADR-0148): "Todos do projeto", "Só a gestão" or the roles besides the management.
+  if (
+    (entry.itemType === 'DefaultFolder' || entry.itemType === 'DocumentFolder') &&
+    field === 'VisibleTo'
+  ) {
+    return visibilityText({ isAcceptance: false, visibleTo: rolesOfAudit(value) }, t);
+  }
   if (entry.itemType === 'Document' && field === 'Status' && isDocumentStatus(value)) {
     return t(`documents.statuses.${value}`);
   }
@@ -664,6 +681,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   }
   if (entry.itemType === 'DefaultFolder' && isDefaultFolderField(field)) {
     return t(`audit.fields.DefaultFolder.${field}`);
+  }
+  if (entry.itemType === 'DocumentFolder' && isDocumentFolderField(field)) {
+    return t(`audit.fields.DocumentFolder.${field}`);
   }
   if (entry.itemType === 'Document' && isDocumentField(field)) {
     return t(`audit.fields.Document.${field}`);
@@ -798,6 +818,10 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
     return t(
       `audit.actions.DefaultFolder.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
+  }
+  // Who sees a folder of a project, changed by the Administrator (ADR-0148).
+  if (entry.itemType === 'DocumentFolder') {
+    return t('audit.actions.DocumentFolder.Updated');
   }
   if (entry.itemType === 'Document') {
     return documentTitleOf(entry, t);
@@ -1249,6 +1273,13 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   }
   if (entry.itemType === 'DefaultFolder') {
     return [{ label: t('audit.details.item.DefaultFolder'), value: label }];
+  }
+  // A folder of a project says the project (ADR-0148).
+  if (entry.itemType === 'DocumentFolder') {
+    return [
+      { label: t('audit.details.item.DocumentFolder'), value: label },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
+    ];
   }
   if (entry.itemType === 'Document') {
     return [

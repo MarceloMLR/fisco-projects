@@ -1,6 +1,8 @@
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
+import LockOutlined from '@mui/icons-material/LockOutlined';
 import SearchOutlined from '@mui/icons-material/SearchOutlined';
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +14,7 @@ import { Alert } from '../components/Alert';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { Select } from '../components/Select';
 import { SideNav } from '../components/SideNav';
+import { StatusBadge } from '../components/StatusBadge';
 import { TextField } from '../components/TextField';
 import { sizeText } from '../format/size';
 import { useDates } from '../format/useDates';
@@ -21,6 +24,8 @@ import { theme } from '../theme/theme';
 import { DocumentDrawer } from './DocumentDrawer';
 import { DocumentStatusBadge } from './DocumentStatusBadge';
 import { FileIcon } from './FileIcon';
+import { FolderVisibilityDialog } from './FolderVisibilityDialog';
+import { isRestricted, visibilityText } from './folderVisibility';
 import { uploadDocuments, type UploadOutcome } from './uploadDocuments';
 import { Button } from '../components/Button';
 
@@ -67,6 +72,7 @@ export function ProjectDocumentsPage() {
   const [chosen, setChosen] = useState<string>();
   const [progress, setProgress] = useState<{ current: number; total: number }>();
   const [dragging, setDragging] = useState(false);
+  const [visibilityOpen, setVisibilityOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const searched = useDebounced(search, searchDelay).trim();
   const searching = searched !== '';
@@ -86,6 +92,12 @@ export function ProjectDocumentsPage() {
   const permissions = area?.permissions;
   const takesFiles =
     permissions?.canUpload === true && folder !== undefined && !folder.isAcceptance && !searching;
+  // Who sees the folder, only for the Administrator, with the project open (ADR-0148).
+  const changesVisibility =
+    area?.canChangeVisibility === true &&
+    folder !== undefined &&
+    !folder.isAcceptance &&
+    !searching;
 
   const tell = useCallback(
     (outcome: UploadOutcome) => {
@@ -243,6 +255,20 @@ export function ProjectDocumentsPage() {
     </>
   ) : undefined;
 
+  const visibilityButton = changesVisibility ? (
+    <Button
+      variant="outlined"
+      startIcon={<VisibilityOutlined />}
+      fullWidth={!desktop}
+      onClick={() => {
+        setVisibilityOpen(true);
+      }}
+      sx={{ flex: 'none' }}
+    >
+      {t('folderVisibility.change')}
+    </Button>
+  ) : undefined;
+
   const tools = (
     <Box
       sx={{
@@ -393,9 +419,37 @@ export function ProjectDocumentsPage() {
           </Box>
         )}
       </Box>
+      {desktop && visibilityButton}
       {desktop && upload}
     </Box>
   );
+
+  // A folder some role does not see says who sees it (ADR-0148), with icon, color and text.
+  const restriction =
+    folder !== undefined && !searching && isRestricted(folder) ? (
+      <Box sx={{ flex: 'none', display: 'flex' }}>
+        <StatusBadge tone="neutral" icon={LockOutlined}>
+          {t('folderVisibility.restricted', { who: visibilityText(folder, t) })}
+        </StatusBadge>
+      </Box>
+    ) : null;
+
+  const visibilityDialog =
+    visibilityOpen && folder !== undefined ? (
+      <FolderVisibilityDialog
+        projectId={project.id}
+        folder={folder}
+        onClose={() => {
+          setVisibilityOpen(false);
+        }}
+        onSaved={(message) => {
+          setVisibilityOpen(false);
+          notify(message);
+          void queryClient.invalidateQueries({ queryKey: [...queryKeys.documents, project.id] });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.audit });
+        }}
+      />
+    ) : null;
 
   const note =
     folder?.isAcceptance === true && !searching ? (
@@ -429,11 +483,14 @@ export function ProjectDocumentsPage() {
           onChange={chooseFolder}
         />
         {tools}
+        {visibilityButton}
         {upload}
         {heading}
+        {restriction}
         {note}
         {table}
         {drawer}
+        {visibilityDialog}
       </Box>
     );
   }
@@ -453,7 +510,7 @@ export function ProjectDocumentsPage() {
         items={folders.map((item) => ({
           key: item.id,
           label: item.name,
-          icon: FolderOutlined,
+          icon: isRestricted(item) ? LockOutlined : FolderOutlined,
           count: item.count,
         }))}
         current={searching ? undefined : folder?.id}
@@ -471,11 +528,13 @@ export function ProjectDocumentsPage() {
         }}
       >
         {heading}
+        {restriction}
         {tools}
         {note}
         {table}
       </Box>
       {drawer}
+      {visibilityDialog}
     </Box>
   );
 }

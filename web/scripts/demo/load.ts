@@ -753,6 +753,10 @@ async function loadProject(
     await loadDocuments(project, id, ids, phaseIds, builder, personOf, log);
   }
 
+  if ((project.folderVisibility ?? []).length > 0) {
+    await loadFolderVisibility(project, id, personOf(administrator).api, log);
+  }
+
   if ((project.links ?? []).length > 0) {
     await loadLinks(project, id, builder, personOf, log);
   }
@@ -897,6 +901,40 @@ async function loadDocuments(
         `Vínculo de ${document.name}`,
       );
     }
+  }
+}
+
+/**
+ * Who sees the folders of the project, changed by the Administrator once the documents are sent (ADR-0148). A folder the
+ * project does not have is said and left out.
+ */
+async function loadFolderVisibility(
+  project: DemoProject,
+  projectId: string,
+  admin: Api,
+  log: (line: string) => void,
+): Promise<void> {
+  const area = must(
+    await admin.GET('/api/projects/{projectId}/documents/folders', {
+      params: { path: { projectId } },
+    }),
+    `Pastas de ${project.code}`,
+  );
+  for (const visibility of project.folderVisibility ?? []) {
+    const folder = area.folders.find(
+      (item) => item.name === visibility.folder && !item.isAcceptance,
+    );
+    if (folder === undefined) {
+      log(`${project.code} não tem a pasta ${visibility.folder}: quem vê fica como estava.`);
+      continue;
+    }
+    done(
+      await admin.PUT('/api/projects/{projectId}/documents/folders/{folderId}/visibility', {
+        params: { path: { projectId, folderId: folder.id } },
+        body: { visibleTo: [...visibility.visibleTo] },
+      }),
+      `Quem vê ${folder.name} em ${project.code}`,
+    );
   }
 }
 

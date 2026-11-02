@@ -299,6 +299,7 @@
       "Vendor": "Fornecedores",
       "VendorTicket": "Chamados em fornecedores",
       "DefaultFolder": "Pastas padrão",
+      "DocumentFolder": "Pastas dos projetos",
       "Document": "Documentos",
       "LinkCategory": "Categorias de links",
       "ProjectLink": "Links",
@@ -428,6 +429,9 @@
         "Deactivated": "Inativou uma pasta padrão",
         "Reactivated": "Reativou uma pasta padrão"
       },
+      "DocumentFolder": {
+        "Updated": "Mudou quem vê uma pasta do projeto"
+      },
       "Document": {
         "Created": "Enviou um documento",
         "Updated": "Alterou um documento",
@@ -535,6 +539,7 @@
         "Vendor": "Fornecedor",
         "VendorTicket": "Chamado no fornecedor",
         "DefaultFolder": "Pasta",
+        "DocumentFolder": "Pasta",
         "Document": "Documento",
         "LinkCategory": "Categoria",
         "ProjectLink": "Link",
@@ -680,7 +685,12 @@
       "DefaultFolder": {
         "Name": "Nome",
         "IsAcceptance": "Pasta de termos",
-        "IsActive": "Situação"
+        "IsActive": "Situação",
+        "VisibleTo": "Quem vê"
+      },
+      "DocumentFolder": {
+        "VisibleTo": "Quem vê",
+        "ProjectId": "Projeto"
       },
       "Document": {
         "ProjectId": "Projeto",
@@ -3157,6 +3167,7 @@
     "empty": "Nenhuma pasta padrão.",
     "columns": {
       "name": "Pasta",
+      "visibleTo": "Quem vê",
       "use": "Uso",
       "status": "Situação",
       "actions": "Ações"
@@ -3173,13 +3184,13 @@
     "newFolder": "Nova pasta",
     "menu": {
       "button": "Ações da pasta {{name}}",
-      "edit": "Renomear",
+      "edit": "Editar",
       "deactivate": "Inativar",
       "reactivate": "Reativar"
     },
     "dialog": {
       "newTitle": "Nova pasta padrão",
-      "editTitle": "Renomear pasta padrão",
+      "editTitle": "Editar pasta padrão",
       "name": "Nome",
       "nameHelp": "Use um número no começo para a ordem, como 07 Treinamentos.",
       "add": "Incluir",
@@ -3197,6 +3208,26 @@
       "reactivated": "Pasta {{name}} reativada.",
       "acceptanceAlwaysActive": "A pasta de termos de aceite fica sempre ativa.",
       "failed": "Não foi possível salvar a pasta. Tente de novo."
+    }
+  },
+  "folderVisibility": {
+    "label": "Quem vê",
+    "help": "O administrador e o gerente do projeto sempre veem todas as pastas.",
+    "management": "Gestão",
+    "everyone": "Todos do projeto",
+    "onlyManagement": "Só a gestão",
+    "termsFixed": "Só o administrador e o gerente veem a pasta de termos de aceite.",
+    "restricted": "Visível para: {{who}}",
+    "change": "Quem vê esta pasta",
+    "dialog": {
+      "title": "Quem vê a pasta",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "messages": {
+      "saved": "Quem vê a pasta {{name}} foi alterado.",
+      "closed": "O projeto está encerrado: reabra-o para mudar quem vê as pastas.",
+      "failed": "Não foi possível mudar quem vê a pasta. Tente de novo."
     }
   },
   "links": {

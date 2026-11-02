@@ -77,6 +77,7 @@ export type EmailTest = components['schemas']['EmailTestResponse'];
 export type DefaultFolder = components['schemas']['DefaultFolderResponse'];
 export type DocumentFolders = components['schemas']['DocumentFoldersResponse'];
 export type DocumentFolder = components['schemas']['DocumentFolderResponse'];
+export type FolderRole = components['schemas']['FolderRole'];
 export type DocumentRow = components['schemas']['DocumentResponse'];
 export type DocumentDetails = components['schemas']['DocumentDetailsResponse'];
 export type DocumentStatus = components['schemas']['DocumentStatus'];
@@ -194,6 +195,7 @@ export const auditItemTypes = [
   'Vendor',
   'VendorTicket',
   'DefaultFolder',
+  'DocumentFolder',
   'Document',
   'LinkCategory',
   'ProjectLink',

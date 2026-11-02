@@ -4,6 +4,7 @@ import type {
   DocumentFolders,
   DocumentRow,
   DocumentStatus,
+  FolderRole,
 } from '../api/client';
 
 // The documents of ERP-FIN for the screen tests, as the canvas ProjetoDocumentos (ADR-0031).
@@ -25,15 +26,48 @@ const beatriz = { id: '0199f5a2-7c1e-7d40-9a1b-000000000003', name: 'Beatriz Lim
 const rafael = { id: '0199f5a2-7c1e-7d40-9a1b-000000000004', name: 'Rafael Souza' };
 const carla = { id: '0199f5a2-7c1e-7d40-9a1b-000000000005', name: 'Carla Mendes' };
 
+/** The four roles that may see a folder, besides the Administrator and the manager (ADR-0148). */
+export const everyone: FolderRole[] = ['TechLead', 'Contributor', 'Developer', 'Viewer'];
+
 /** The default folders of the installation: the six of the migration, the last for the terms. */
 export function demoDefaultFolders(): DefaultFolder[] {
   return [
-    { id: id('b', 1), name: '01 Gestão do projeto', isAcceptance: false, isActive: true },
-    { id: id('b', 2), name: '02 Contratos e compras', isAcceptance: false, isActive: true },
-    { id: id('b', 3), name: '03 Requisitos e especificações', isAcceptance: false, isActive: true },
-    { id: id('b', 4), name: '04 Atas de reunião', isAcceptance: false, isActive: false },
-    { id: id('b', 5), name: '05 Entregas e manuais', isAcceptance: false, isActive: true },
-    { id: id('b', 6), name: '06 Termos de aceite', isAcceptance: true, isActive: true },
+    {
+      id: id('b', 1),
+      name: '01 Gestão do projeto',
+      isAcceptance: false,
+      isActive: true,
+      visibleTo: ['TechLead'],
+    },
+    {
+      id: id('b', 2),
+      name: '02 Contratos e compras',
+      isAcceptance: false,
+      isActive: true,
+      visibleTo: everyone,
+    },
+    {
+      id: id('b', 3),
+      name: '03 Requisitos e especificações',
+      isAcceptance: false,
+      isActive: true,
+      visibleTo: everyone,
+    },
+    {
+      id: id('b', 4),
+      name: '04 Atas de reunião',
+      isAcceptance: false,
+      isActive: false,
+      visibleTo: everyone,
+    },
+    {
+      id: id('b', 5),
+      name: '05 Entregas e manuais',
+      isAcceptance: false,
+      isActive: true,
+      visibleTo: everyone,
+    },
+    { id: id('b', 6), name: '06 Termos de aceite', isAcceptance: true, isActive: true, visibleTo: [] },
   ];
 }
 
@@ -143,7 +177,10 @@ export function demoDocuments(): DocumentRow[] {
   ];
 }
 
-/** The folders of ERP-FIN as Marina, the manager, sees them, with the counts of the documents not obsolete. */
+/**
+ * The folders of ERP-FIN as Marina, the manager, sees them, with the counts of the documents not obsolete; the
+ * management folder is seen only by the tech lead, besides the managers.
+ */
 export function demoDocumentArea(): DocumentFolders {
   const documents = demoDocuments().filter((document) => document.status !== 'Obsolete');
   const count = (folderId: string) =>
@@ -155,21 +192,42 @@ export function demoDocumentArea(): DocumentFolders {
         name: '01 Gestão do projeto',
         isAcceptance: false,
         count: count(folderIds.management),
+        visibleTo: ['TechLead'],
       },
-      { id: folderIds.contracts, name: '02 Contratos e compras', isAcceptance: false, count: 0 },
+      {
+        id: folderIds.contracts,
+        name: '02 Contratos e compras',
+        isAcceptance: false,
+        count: 0,
+        visibleTo: everyone,
+      },
       {
         id: folderIds.requirements,
         name: requirements,
         isAcceptance: false,
         count: count(folderIds.requirements),
+        visibleTo: everyone,
       },
-      { id: folderIds.minutes, name: '04 Atas de reunião', isAcceptance: false, count: 0 },
-      { id: folderIds.deliveries, name: '05 Entregas e manuais', isAcceptance: false, count: 0 },
-      { id: folderIds.terms, name: '06 Termos de aceite', isAcceptance: true, count: 0 },
+      {
+        id: folderIds.minutes,
+        name: '04 Atas de reunião',
+        isAcceptance: false,
+        count: 0,
+        visibleTo: everyone,
+      },
+      {
+        id: folderIds.deliveries,
+        name: '05 Entregas e manuais',
+        isAcceptance: false,
+        count: 0,
+        visibleTo: everyone,
+      },
+      { id: folderIds.terms, name: '06 Termos de aceite', isAcceptance: true, count: 0, visibleTo: [] },
     ],
     total: documents.length,
     permissions: { canUpload: true, canApprove: true, canDelete: true },
     maxBytes: 25 * 1024 * 1024,
+    canChangeVisibility: false,
   };
 }
 

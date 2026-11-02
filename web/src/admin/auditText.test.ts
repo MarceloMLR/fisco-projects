@@ -1162,6 +1162,68 @@ describe('Mudanças do cronograma na auditoria', () => {
     });
   });
 
+  // Spec: documentos, "Quem vê as pastas do projeto" and "Quem vê as pastas padrão" (ADR-0148).
+  it('Quem vê a pasta na auditoria', () => {
+    const project = {
+      field: 'ProjectId',
+      before: 'Implantação do ERP financeiro',
+      after: 'Implantação do ERP financeiro',
+      secret: false,
+      reference: 'Project',
+    };
+    const changed = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'DocumentFolder',
+        itemLabel: '01 Gestão do projeto',
+        changes: [
+          {
+            field: 'VisibleTo',
+            before: 'Everyone',
+            after: 'TechLead',
+            secret: false,
+            reference: null,
+          },
+          project,
+        ],
+      }),
+      t,
+    );
+    const defaultFolder = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'DefaultFolder',
+        itemLabel: '02 Contratos e compras',
+        changes: [
+          {
+            field: 'VisibleTo',
+            before: 'TechLead, Contributor, Developer',
+            after: 'None',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(changed.title).toBe('Mudou quem vê uma pasta do projeto');
+    expect(changed.summary).toBe(
+      '01 Gestão do projeto · quem vê Todos do projeto → Gestão e Líder técnico',
+    );
+    expect(changed.properties).toContainEqual({
+      label: 'Projeto',
+      value: 'Implantação do ERP financeiro',
+    });
+    expect(defaultFolder.changes).toEqual([
+      {
+        field: 'Quem vê',
+        before: 'Gestão, Líder técnico, Colaborador e Desenvolvedor',
+        after: 'Só a gestão',
+      },
+    ]);
+  });
+
   it('Link incluído e alterado na auditoria', () => {
     const project = {
       field: 'ProjectId',

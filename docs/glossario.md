@@ -217,6 +217,8 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Status do documento: Rascunho, Em revisão, Aprovado, Obsoleto | DocumentStatus: Draft, InReview, Approved, Obsolete | A nova versão de um aprovado volta para Em revisão (ADR-0093) |
 | Pasta padrão | DefaultFolder | Lista da Administração, copiada para cada projeto novo |
 | Pasta do projeto | DocumentFolder | Cópia de uma pasta padrão, com a pasta no armazenamento |
+| Quem vê (pasta) | `VisibleTo`, FolderRole, FolderViewers | Os papéis do projeto que veem a pasta (Líder técnico, Colaborador, Desenvolvedor, Leitor); o administrador e o gerente sempre veem (ADR-0148) |
+| Quem vê esta pasta | ChangeFolderVisibility | O administrador muda quem vê uma pasta do projeto (ADR-0148) |
 | Pasta do projeto no armazenamento | `Project.StorageFolderId`, IProjectStorage | Uma por projeto, `{código} - {nome}`, criada no primeiro arquivo e renomeada com o projeto (ADR-0121) |
 | Pasta dos projetos | InstallationSettings.ProjectsFolder | Onde as pastas dos projetos são criadas, nas Configurações gerais; vazia, na raiz do armazenamento |
 | Renomear pasta | `IFileStorage.RenameFolderAsync` | Mantém o id da pasta e de tudo dentro dela |
