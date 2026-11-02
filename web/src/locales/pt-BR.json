@@ -3746,7 +3746,7 @@
     "secondary": {
       "label": "Cor secundária",
       "value": "Cor secundária, em qualquer formato",
-      "where": "Linha selecionada, notificação não lida, menção e painel da página de entrada.",
+      "where": "Linha selecionada, notificação não lida, menção, e o painel e o fundo da página de entrada.",
       "placeholder": "Igual à principal"
     },
     "sidebar": {
@@ -3788,7 +3788,7 @@
       "scheme": "Tema da prévia",
       "light": "Claro",
       "dark": "Escuro",
-      "legend": "Linha selecionada, menção e painel da entrada usam a secundária. Botões, links, abas e seleções usam a principal. As cores de status não mudam.",
+      "legend": "Linha selecionada, menção, painel e fundo da entrada usam a secundária. Botões, links, abas e seleções usam a principal. As cores de status não mudam.",
       "company": "Empresa Exemplo",
       "home": "Início",
       "projects": "Projetos",

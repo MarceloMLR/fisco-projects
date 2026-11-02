@@ -34,13 +34,14 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 01/11/2026, depois do mapeamento do que o MS Project faz e o FiscoProjects não, Marcelo pediu dois grupos de aprimoramentos do Gantt: o 14, com o que vale fazer primeiro (Excel, data-limite, filtros, dependências com intervalo e horas previstas por tarefa), e o 15, com a segunda leva, na ordem em que uma usa a outra. Cada proposta é aprovada por ele antes da implementação. Custos em reais, campos personalizados, dependências entre projetos, o .mpp e o nivelamento automático de recursos continuam fora (ADR-0016, ADR-0019, ADR-0128, ADR-0135).
 - Em 01/11/2026, depois dos grupos 14 e 15, Marcelo pediu a seta de recolher as fases também na Lista (Cronograma-4.2), as horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa (GanttA-5.1, ADR-0144), e o fim digitado no detalhe da tarefa, ao lado da duração (Cronograma-4.3).
 - Em 01/11/2026, Marcelo achou o seletor de cores ruim e pediu que o cliente personalize as cores pela marca da empresa, sem o limite de contraste; escolheu a principal, a secundária e a da barra lateral, o texto ajustado sobre a cor e o seletor próprio em HEX, RGB e HSL, e aprovou o protótipo da seção Cores (Acesso-8.5, `cores-da-instalacao`, ADR-0146), com a proposta aprovada por ele antes da implementação.
+- Em 02/11/2026, no teste da seção Cores, Marcelo viu o fundo da página de entrada ainda azul com o painel em outra cor e pediu o fundo na cor secundária (Acesso-8.5.1, `fundo-da-entrada`, ADR-0147).
 
 ## Marcos
 
 | Grupo | Changes | Concluídas |
 | --- | --- | --- |
 | 1. Fundação | 21 | 21 |
-| 2. Acesso e administração | 19 | 19 |
+| 2. Acesso e administração | 20 | 20 |
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
@@ -105,6 +106,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Acesso-8.3 | `so-cor-principal` | Só a cor principal na marca, sem cor secundária nem cores das mensagens, mantendo o logo escuro e o seletor de cores, a pedido de Marcelo | 0100, 0101, 0103 | Concluída em 21/10/2026 ([#65](https://github.com/MarceloMLR/fisco-projects/pull/65)) |
 | Acesso-8.4 | `logo-na-aba` | O logo da instalação na aba do navegador, e o selo na cor principal sem logo, a pedido de Marcelo | 0003, 0082, 0108 | Concluída em 21/10/2026 ([#72](https://github.com/MarceloMLR/fisco-projects/pull/72)) |
 | Acesso-8.5 | `cores-da-instalacao` | As cores da instalação numa seção própria, Cores, com a principal, a secundária e a da barra lateral, qualquer cor aceita com o texto ajustado, e o seletor próprio em HEX, RGB e HSL, a pedido de Marcelo | 0082, 0100, 0103, 0146 | Concluída em 02/11/2026 ([#140](https://github.com/MarceloMLR/fisco-projects/pull/140)) |
+| Acesso-8.5.1 | `fundo-da-entrada` | O fundo da página de entrada na cor secundária (ou na principal), como o painel, a pedido de Marcelo | 0146, 0147 | Concluída em 02/11/2026 ([#141](https://github.com/MarceloMLR/fisco-projects/pull/141)) |
 
 ## 3. Projetos
 

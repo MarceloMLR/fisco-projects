@@ -19,6 +19,11 @@ import { color, colorSchemes } from './tokens';
 // Colors as the Administrator types them, without "#": colors in the code come only from tokens.json, and these are
 // what someone types in Colors, not colors of the screens.
 const typed = (value: string) => `#${value.toLowerCase()}`;
+const channelsOf = (hex: string) => ({
+  r: Number.parseInt(hex.slice(1, 3), 16),
+  g: Number.parseInt(hex.slice(3, 5), 16),
+  b: Number.parseInt(hex.slice(5, 7), 16),
+});
 
 /**
  * Colors of every kind, as a company brand may have them: dark (teal, wine, violet, brown, graphite, black, red), light
@@ -263,8 +268,12 @@ describe('Cor secundária', () => {
       const brand = brandTokens(choice('0F766E'))[scheme];
       expect(brand['bg-selected'], scheme).toBe(color('bg-selected', scheme));
     }
-    // The panel of the sign-in page follows the main color.
+    // The panel and the background of the sign-in page follow the main color.
     expect(brandTokens(choice('0F766E')).light['brand-panel-bg-2']).toBe(typed('0F766E'));
+    for (const scheme of colorSchemes) {
+      const background = channelsOf(brandTokens(choice('0F766E'))[scheme]['signin-bg']);
+      expect(background.g, scheme).toBeGreaterThan(background.r);
+    }
   });
 
   it('Trocar a cor secundária', () => {
@@ -285,6 +294,27 @@ describe('Cor secundária', () => {
       contrast(color('brand-panel-text', 'light'), light['brand-panel-bg-2']),
     ).toBeGreaterThanOrEqual(4.5);
     expect(colorNotes(choice(null, 'F5C400')).secondary).toEqual(['darkerPanel']);
+  });
+
+  it('Fundo da entrada na cor secundária', () => {
+    for (const scheme of colorSchemes) {
+      const brand = brandTokens(choice('0F766E', 'C0395A'))[scheme];
+      const background = channelsOf(brand['signin-bg']);
+      const glow = channelsOf(brand['signin-glow']);
+
+      expect(brand['signin-bg'], scheme).not.toBe(color('signin-bg', scheme));
+      // The hue of the secondary color (a wine red), not the blue of the design nor the main color.
+      expect(background.r, scheme).toBeGreaterThan(background.b);
+      expect(background.r, scheme).toBeGreaterThan(background.g);
+      expect(glow.r, scheme).toBeGreaterThan(glow.b);
+      // As dark as the background of the design system, behind the white card and the panel.
+      expect(
+        contrast(color('brand-panel-text', 'light'), brand['signin-bg']),
+        scheme,
+      ).toBeGreaterThanOrEqual(
+        contrast(color('brand-panel-text', 'light'), color('signin-bg', scheme)) - 1,
+      );
+    }
   });
 
   it('Contraste de qualquer cor secundária', () => {
