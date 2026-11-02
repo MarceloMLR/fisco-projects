@@ -97,13 +97,15 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Channel")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                    b.Property<bool>("ByEmail")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ByTeams")
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
 
                     b.HasKey("Id");
 
@@ -112,7 +114,9 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
 
                     b.ToTable("notice_preferences", "notifications");
 
-                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                    b
+                        .HasAnnotation("FiscoProjects:Audit:Label", "UserId")
+                        .HasAnnotation("FiscoProjects:Audit:LabelReference", "User");
                 });
 
             modelBuilder.Entity("FiscoProjects.Notifications.Domain.Notification", b =>
@@ -278,17 +282,11 @@ namespace FiscoProjects.Notifications.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ActorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("AlsoByEmail")
-                        .HasColumnType("bit");
-
                     b.Property<int>("Attempts")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("EmailedInstead")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("FailedAt")
                         .HasColumnType("datetime2");

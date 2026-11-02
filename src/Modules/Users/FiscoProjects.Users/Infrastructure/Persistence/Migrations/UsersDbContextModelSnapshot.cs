@@ -89,8 +89,7 @@ namespace FiscoProjects.Users.Infrastructure.Persistence.Migrations
                     b.Property<bool>("ReceivesDailySummary")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
-                        .HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Role")
                         .IsRequired()

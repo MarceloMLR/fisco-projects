@@ -42,8 +42,8 @@ public interface ITeamsAppStore
 /// <summary>Where the channels the people chose are kept.</summary>
 public interface INoticePreferenceStore
 {
-    /// <summary>The channel each person chose; who never chose is left out.</summary>
-    Task<IReadOnlyDictionary<Guid, ImmediateNoticeChannel>> ChannelsAsync(
+    /// <summary>The channels each person chose; who never chose is left out, and has <see cref="NoticePreference.Default"/>.</summary>
+    Task<IReadOnlyDictionary<Guid, NoticeChannels>> ChannelsAsync(
         IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken);
 
     /// <summary>The choice of the person, tracked, or null.</summary>
@@ -129,9 +129,9 @@ public sealed record TeamsAppTexts(string ShortDescription, string FullDescripti
 public readonly record struct ImmediateRoute(bool Email, bool Teams);
 
 /// <summary>
-/// The rule of the channel of the notices sent now (ADR-0149), in one place for the e-mail, Teams and the profile: Teams
-/// counts only with the notices of Teams on and for who may receive them (with Graph, who signs in by Entra ID); then the
-/// choice of the person decides. Otherwise, the e-mail.
+/// The rule of the channels of the notices sent now (ADR-0149, ADR-0151), in one place for the e-mail, Teams and the
+/// profile: each channel the person turned on receives; Teams only with the notices of Teams on and for who may receive
+/// them (with Graph, who signs in by Entra ID). With both off, the notice stays in the bell only.
 /// </summary>
 public sealed class NoticeRouting(TeamsSettings settings, ITeamsAppStore apps)
 {
@@ -157,23 +157,18 @@ public sealed class NoticeRouting(TeamsSettings settings, ITeamsAppStore apps)
     public async Task<ImmediateRoute> RouteAsync(NoticeRecipient person, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(person);
-        return RouteOf(person.Channel, await AvailableForAsync(person.EntraObjectId, cancellationToken));
+        return person.Channels.ByTeams
+            ? RouteOf(person.Channels, await AvailableForAsync(person.EntraObjectId, cancellationToken))
+            : RouteOf(person.Channels, teamsAvailable: false);
     }
 
-    public static ImmediateRoute RouteOf(ImmediateNoticeChannel choice, bool teamsAvailable) =>
-        !teamsAvailable
-            ? new ImmediateRoute(Email: true, Teams: false)
-            : choice switch
-            {
-                ImmediateNoticeChannel.Email => new ImmediateRoute(Email: true, Teams: false),
-                ImmediateNoticeChannel.Teams => new ImmediateRoute(Email: false, Teams: true),
-                _ => new ImmediateRoute(Email: true, Teams: true),
-            };
+    public static ImmediateRoute RouteOf(NoticeChannels channels, bool teamsAvailable) =>
+        new(Email: channels.ByEmail, Teams: channels.ByTeams && teamsAvailable);
 }
 
 /// <summary>
-/// The channel of Teams (ADR-0149): the notices sent now go to the queue of Teams of the people whose channel has Teams;
-/// the rest, which waits for the daily summary, never goes to Teams.
+/// The channel of Teams (ADR-0149, ADR-0151): the notices sent now go to the queue of Teams of the people who have Teams
+/// on and there; the rest, which waits for the daily summary, never goes to Teams.
 /// </summary>
 public sealed class TeamsChannel(ITeamsNoticeStore store, NoticeRouting routing, TimeProvider clock) : INoticeChannel
 {
@@ -194,8 +189,7 @@ public sealed class TeamsChannel(ITeamsNoticeStore store, NoticeRouting routing,
             var route = await routing.RouteAsync(person, cancellationToken);
             if (route.Teams)
             {
-                store.Add(new TeamsNotice(
-                    person.UserId, notice.Kind, notice.ActorId, notice.ProjectId, notice.Path, values, route.Email, now));
+                store.Add(new TeamsNotice(person.UserId, notice.Kind, notice.ActorId, notice.ProjectId, notice.Path, values, now));
             }
         }
     }
@@ -205,12 +199,12 @@ public sealed class TeamsChannel(ITeamsNoticeStore store, NoticeRouting routing,
 public sealed record TeamsFailure(Guid NoticeId, int Attempts, bool Final, string Error);
 
 /// <summary>What one round of the sending to Teams did.</summary>
-public sealed record TeamsDispatchResult(int Sent, int EmailedInstead, IReadOnlyList<TeamsFailure> Failures);
+public sealed record TeamsDispatchResult(int Sent, IReadOnlyList<TeamsFailure> Failures);
 
 /// <summary>
 /// Sends the notices of Teams whose turn came (ADR-0149), as the e-mails (ADR-0036): each one is reserved, sent with the
-/// current name of who did it and marked sent, or failed with the wait for the next try. When Teams does not take it
-/// for good, or after the last try, the person who chose only Teams receives the e-mail of the same notice.
+/// current name of who did it and marked sent, or failed with the wait for the next try. A notice Teams does not take
+/// stays failed, with no e-mail in its place (ADR-0151).
 /// </summary>
 public sealed class DispatchTeamsNotices(
     ITeamsNoticeStore store,
@@ -219,7 +213,6 @@ public sealed class DispatchTeamsNotices(
     ITeamsAppStore apps,
     IUserDirectory users,
     IInstallationSettings installation,
-    EmailQueue emails,
     TimeProvider clock)
 {
     /// <summary>The most notices of one round; the next round takes the rest.</summary>
@@ -230,7 +223,7 @@ public sealed class DispatchTeamsNotices(
         var due = await store.DueAsync(clock.GetUtcNow().UtcDateTime, BatchSize, cancellationToken);
         if (due.Count == 0)
         {
-            return new TeamsDispatchResult(0, 0, []);
+            return new TeamsDispatchResult(0, []);
         }
 
         var app = await apps.GetAsync(cancellationToken);
@@ -240,7 +233,6 @@ public sealed class DispatchTeamsNotices(
             [.. due.Where(notice => notice.ActorId is not null).Select(notice => notice.ActorId!.Value).Distinct()], cancellationToken);
         var installationName = (await installation.GetAsync(cancellationToken)).Name;
         var sent = 0;
-        var emailed = 0;
         var failures = new List<TeamsFailure>();
         foreach (var notice in due)
         {
@@ -285,19 +277,10 @@ public sealed class DispatchTeamsNotices(
                     break;
             }
 
-            if (notice.NeedsEmail && person.Email.Length > 0)
-            {
-                var content = NoticeEmails.ContentOf(
-                    new Notice(notice.Kind, [person.Id], notice.ActorId, notice.ProjectId, notice.Path, values), person.Name, actorName);
-                await emails.EnqueueAsync(notice.Kind.ToString(), person.Email, person.Name, content, cancellationToken);
-                notice.MarkEmailedInstead();
-                emailed++;
-            }
-
             await store.TrySaveAsync(notice, cancellationToken);
         }
 
-        return new TeamsDispatchResult(sent, emailed, failures);
+        return new TeamsDispatchResult(sent, failures);
     }
 
     private async Task<TeamsSendResult> SendAsync(
@@ -329,32 +312,36 @@ public sealed class ForgetOldTeamsNotices(ITeamsNoticeStore store, EmailSettings
         store.RemoveOldAsync(clock.GetUtcNow().UtcDateTime.AddDays(-settings.KeepDays), cancellationToken);
 }
 
-/// <summary>The channel of the notices sent now of the person, and whether Teams is there for the person.</summary>
-public sealed record ImmediateNotices(ImmediateNoticeChannel Channel, bool TeamsAvailable);
+/// <summary>The channels of the notices sent now of the person, and whether Teams is there for the person.</summary>
+public sealed record ImmediateNotices(NoticeChannels Channels, bool TeamsAvailable);
 
-/// <summary>The channel the person in the session chose (ADR-0149); both for who never chose.</summary>
+/// <summary>The channels the person in the session chose (ADR-0151): the e-mail on and Teams off for who never chose.</summary>
 public sealed class GetImmediateNotices(INoticePreferenceStore preferences, NoticeRouting routing, IUserDirectory users)
 {
     public async Task<ImmediateNotices> ExecuteAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var channel = (await preferences.ChannelsAsync([userId], cancellationToken)).GetValueOrDefault(userId);
+        var channels = (await preferences.ChannelsAsync([userId], cancellationToken))
+            .GetValueOrDefault(userId, NoticePreference.Default);
         var person = (await users.PeopleAsync([userId], cancellationToken)).SingleOrDefault();
-        return new ImmediateNotices(channel, await routing.AvailableForAsync(person?.EntraObjectId, cancellationToken));
+        return new ImmediateNotices(channels, await routing.AvailableForAsync(person?.EntraObjectId, cancellationToken));
     }
 }
 
-/// <summary>Keeps the channel the person in the session chose for the notices sent now (ADR-0149).</summary>
+/// <summary>
+/// Keeps the channels the person in the session chose for the notices sent now (ADR-0151), in the audit. Choosing what
+/// the person already has changes nothing, so the audit has no record of it.
+/// </summary>
 public sealed class ChooseImmediateNotices(INoticePreferenceStore preferences)
 {
-    public async Task ExecuteAsync(Guid userId, ImmediateNoticeChannel channel, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(Guid userId, NoticeChannels channels, CancellationToken cancellationToken)
     {
         if (await preferences.FindAsync(userId, cancellationToken) is { } preference)
         {
-            preference.Choose(channel);
+            preference.Choose(channels);
         }
-        else
+        else if (channels != NoticePreference.Default)
         {
-            preferences.Add(new NoticePreference(userId, channel));
+            preferences.Add(new NoticePreference(userId, channels));
         }
 
         await preferences.SaveChangesAsync(cancellationToken);

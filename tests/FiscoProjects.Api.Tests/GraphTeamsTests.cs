@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace FiscoProjects.Api.Tests;
 
-// Spec: avisos, requirements "Aviso na aba Atividade", "Canal dos avisos na hora", "Volta ao e-mail", "Fila dos avisos do
-// Teams" and "Configuração do Teams conferida", with the sending by Microsoft Graph simulated (ADR-0056, ADR-0149).
+// Spec: avisos, requirements "Aviso na aba Atividade", "Canal dos avisos na hora", "Fila dos avisos do Teams" and
+// "Configuração do Teams conferida", with the sending by Microsoft Graph simulated (ADR-0056, ADR-0149, ADR-0151).
 public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
 {
     private const string DiegoObject = "0f3c8a12-5b7e-4d21-9c44-7a1e2b3c4d5e";
@@ -30,10 +30,10 @@ public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
                 .StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
-        public async Task ChooseAsync(string channel)
+        public async Task ChooseAsync(bool email, bool teams)
         {
             using var diego = await App.SignInAsync(Diego);
-            (await SendAsync(diego, HttpMethod.Put, "/api/profile/immediate-notices", new { channel }))
+            (await SendAsync(diego, HttpMethod.Put, "/api/profile/immediate-notices", new { email, teams }))
                 .StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
@@ -42,7 +42,7 @@ public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
 
     /// <summary>
     /// ERP-FIN, managed by Marina, with Diego as developer, who signs in by Entra unless told otherwise; Carla opens #1 for
-    /// Desenvolvimento; the notices of Teams on, sent by the simulation of Graph.
+    /// Desenvolvimento; the notices of Teams on, sent by the simulation of Graph, and Diego with the e-mail and Teams on.
     /// </summary>
     private async Task<Scene> StartAsync(bool diegoByEntra = true)
     {
@@ -89,6 +89,7 @@ public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
 
         await app.EmailsAsync();
         await app.TurnTeamsOnAsync();
+        await app.ChooseNoticesAsync(diego, email: true, teams: true);
         return new Scene(app, entra, marina, diego);
     }
 
@@ -124,7 +125,6 @@ public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
     public async Task WithoutEntra_TheEmail_AndNothingForTeams()
     {
         await using var scene = await StartAsync(diegoByEntra: false);
-        await scene.ChooseAsync("Teams");
 
         await scene.AssignToDiegoAsync();
 
@@ -135,19 +135,34 @@ public sealed class GraphTeamsTests(SqlServerFixture sqlServer)
             .GetProperty("teamsAvailable").GetBoolean().Should().BeFalse();
     }
 
-    [Fact(DisplayName = "Aplicativo não instalado para a pessoa pelo Graph")]
-    public async Task NotInstalled_ByGraph_TheEmailInstead()
+    [Fact(DisplayName = "Teams ligado sem o Teams disponível")]
+    public async Task OnlyTeams_WithoutEntra_OnlyTheBell()
+    {
+        await using var scene = await StartAsync(diegoByEntra: false);
+        await scene.ChooseAsync(email: false, teams: true);
+
+        await scene.AssignToDiegoAsync();
+
+        (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices]")).Should().Be(0);
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().NotContain(Assigned);
+        using var diego = await scene.App.SignInAsync(scene.Diego);
+        var bell = await diego.GetFromJsonAsync<JsonElement>("/api/notifications", Cancellation);
+        bell.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("kind").GetString()).Should().Contain("TicketAssigned");
+    }
+
+    [Fact(DisplayName = "Aplicativo não instalado pelo Graph")]
+    public async Task NotInstalled_ByGraph_FailedWithoutEmail()
     {
         await using var scene = await StartAsync();
-        await scene.ChooseAsync("Teams");
+        await scene.ChooseAsync(email: false, teams: true);
 
         await scene.AssignToDiegoAsync();
         await scene.App.TeamsAsync();
 
         scene.Graph.Activities.Should().BeEmpty();
-        (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed' AND EmailedInstead = 1"))
+        (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed'"))
             .Should().Be(1);
-        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().Contain(Assigned);
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().NotContain(Assigned);
     }
 
     [Fact(DisplayName = "Teams fora do ar")]

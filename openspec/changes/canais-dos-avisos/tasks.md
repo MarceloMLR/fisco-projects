@@ -4,9 +4,9 @@
 
 ## 2. API
 
-- [ ] 2.1 A `NoticePreference` com `ByEmail` e `ByTeams`, o padrão e a migração das escolhas gravadas; a rota pelos dois campos; testes "Só por e-mail", "Só pelo Teams", "Pelos dois", "Pessoa sem o Entra ID", "Sino com qualquer canal", "Canais de quem nunca escolheu", "Os dois canais desligados", "Teams ligado sem o Teams disponível" e "Teams desligado na instalação"
-- [ ] 2.2 A fila do Teams sem a volta ao e-mail; teste "Teams sem volta ao e-mail" e os testes da volta ao e-mail retirados
-- [ ] 2.3 `GET` e `PUT /api/profile/immediate-notices` com `email` e `teams`; a preferência e o resumo diário na auditoria; testes "E-mail desligado na auditoria", "Teams ligado na auditoria", "Resumo diário na auditoria" e "Escolha sem mudança fora da auditoria"
+- [x] 2.1 A `NoticePreference` com `ByEmail` e `ByTeams`, o padrão e a migração das escolhas gravadas; a rota pelos dois campos; testes "Só por e-mail", "Só pelo Teams", "Pelos dois", "Pessoa sem o Entra ID", "Sino com qualquer canal", "Canais de quem nunca escolheu", "Os dois canais desligados", "Teams ligado sem o Teams disponível" e "Teams desligado na instalação"
+- [x] 2.2 A fila do Teams sem a volta ao e-mail; teste "Teams sem volta ao e-mail" e os testes da volta ao e-mail retirados
+- [x] 2.3 `GET` e `PUT /api/profile/immediate-notices` com `email` e `teams`; a preferência e o resumo diário na auditoria; testes "E-mail desligado na auditoria", "Teams ligado na auditoria", "Resumo diário na auditoria" e "Escolha sem mudança fora da auditoria"
 
 ## 3. Telas
 

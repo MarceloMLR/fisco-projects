@@ -279,6 +279,11 @@ internal sealed class SessionApp : IAsyncDisposable
     /// <summary>Turns the notices of Teams of the installation on, straight in the database, to set up a scene.</summary>
     public Task TurnTeamsOnAsync() => ExecuteAsync("UPDATE [notifications].[teams_app] SET NoticesOn = 1");
 
+    /// <summary>Turns the channels of the notices sent now of a person on or off in the database, out of the audit (ADR-0151).</summary>
+    public Task ChooseNoticesAsync(Guid userId, bool email, bool teams) => ExecuteAsync(
+        "INSERT INTO [notifications].[notice_preferences] (Id, UserId, ByEmail, ByTeams) VALUES (@id, @user, @email, @teams)",
+        ("@id", Guid.CreateVersion7()), ("@user", userId), ("@email", email), ("@teams", teams));
+
     /// <summary>The e-mails sent to the address.</summary>
     public async Task<IReadOnlyList<EmailMessage>> EmailsToAsync(string address) =>
         [.. (await EmailsAsync()).Where(email => email.ToAddress == address)];
