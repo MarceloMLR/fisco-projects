@@ -67,7 +67,13 @@ export function demoDefaultFolders(): DefaultFolder[] {
       isActive: true,
       visibleTo: everyone,
     },
-    { id: id('b', 6), name: '06 Termos de aceite', isAcceptance: true, isActive: true, visibleTo: [] },
+    {
+      id: id('b', 6),
+      name: '06 Termos de aceite',
+      isAcceptance: true,
+      isActive: true,
+      visibleTo: [],
+    },
   ];
 }
 
@@ -222,7 +228,13 @@ export function demoDocumentArea(): DocumentFolders {
         count: 0,
         visibleTo: everyone,
       },
-      { id: folderIds.terms, name: '06 Termos de aceite', isAcceptance: true, count: 0, visibleTo: [] },
+      {
+        id: folderIds.terms,
+        name: '06 Termos de aceite',
+        isAcceptance: true,
+        count: 0,
+        visibleTo: [],
+      },
     ],
     total: documents.length,
     permissions: { canUpload: true, canApprove: true, canDelete: true },
