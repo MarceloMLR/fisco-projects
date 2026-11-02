@@ -1,6 +1,6 @@
 ## 1. Decisão e roadmap
 
-- [ ] 1.1 ADR-0149, os ADR-0037 e 0038 apontando para ele, o índice dos ADRs, a Avisos-4 em andamento no roadmap e o Teams no `openspec/config.yaml`; `openspec validate --all --strict` sem erros
+- [x] 1.1 ADR-0149, os ADR-0037 e 0038 apontando para ele, o índice dos ADRs, a Avisos-4 em andamento no roadmap e o Teams no `openspec/config.yaml`; `openspec validate --all --strict` sem erros
 
 ## 2. Canal de cada pessoa
 
