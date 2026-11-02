@@ -94,21 +94,7 @@ export function TeamsSettings() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-        <Checkbox
-          label={t('settings.teams.noticesOn')}
-          checked={app?.noticesOn ?? false}
-          disabled={!available || turn.isPending}
-          onChange={(noticesOn) => {
-            turn.mutate(noticesOn);
-          }}
-        />
-        <Box component="span" sx={{ ...help, paddingLeft: 'calc(18px + var(--space-2))' }}>
-          {app === undefined || available
-            ? t('settings.teams.noticesOnHint')
-            : t('settings.teams.unavailable')}
-        </Box>
-      </Box>
+      {/* The package first: the application is installed in Teams before the notices are turned on. */}
       {available && (
         <Box
           sx={{
@@ -146,6 +132,21 @@ export function TeamsSettings() {
           </Box>
         </Box>
       )}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+        <Checkbox
+          label={t('settings.teams.noticesOn')}
+          checked={app?.noticesOn ?? false}
+          disabled={!available || turn.isPending}
+          onChange={(noticesOn) => {
+            turn.mutate(noticesOn);
+          }}
+        />
+        <Box component="span" sx={{ ...help, paddingLeft: 'calc(18px + var(--space-2))' }}>
+          {app === undefined || available
+            ? t('settings.teams.noticesOnHint')
+            : t('settings.teams.unavailable')}
+        </Box>
+      </Box>
     </Box>
   );
 }
