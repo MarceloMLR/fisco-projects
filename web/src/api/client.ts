@@ -75,7 +75,6 @@ export type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 export type EmailStatus = components['schemas']['EmailStatusResponse'];
 export type EmailTest = components['schemas']['EmailTestResponse'];
 export type ImmediateNotices = components['schemas']['ImmediateNoticesResponse'];
-export type ImmediateNoticeChannel = components['schemas']['ImmediateNoticeChannel'];
 export type TeamsApp = components['schemas']['TeamsAppResponse'];
 export type DefaultFolder = components['schemas']['DefaultFolderResponse'];
 export type DocumentFolders = components['schemas']['DocumentFoldersResponse'];
@@ -181,6 +180,7 @@ export const themePreferences = [
 export const auditItemTypes = [
   'SignIn',
   'User',
+  'NoticePreference',
   'InstallationSettings',
   'WorkCalendar',
   'CalculatedHoliday',

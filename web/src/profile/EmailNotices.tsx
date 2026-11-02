@@ -1,12 +1,7 @@
 import Box from '@mui/material/Box';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import {
-  api,
-  type ImmediateNoticeChannel,
-  type ImmediateNotices,
-  type Profile,
-} from '../api/client';
+import { api, type ImmediateNotices, type Profile } from '../api/client';
 import {
   ApiError,
   generalRulesQuery,
@@ -15,20 +10,21 @@ import {
   queryKeys,
 } from '../api/queries';
 import { Checkbox } from '../components/Checkbox';
-import { SegmentedControl } from '../components/SegmentedControl';
 import { useNotify } from '../notices/notify';
 import { ProfileCard, ProfileRow } from './ProfileCard';
 
-const immediate = ['messages', 'assigned', 'deadlines'] as const;
-const channels = ['Email', 'Teams', 'Both'] as const satisfies readonly ImmediateNoticeChannel[];
+/** The channels of the notices sent now, as the API takes them. */
+type Channels = Pick<ImmediateNotices, 'email' | 'teams'>;
 
 const help = { fontSize: 12, lineHeight: '16px', color: 'var(--text-secondary)' } as const;
 
+const column = { display: 'flex', flexDirection: 'column', gap: '10px' } as const;
+
 /**
- * The card "Avisos" of My profile, as in the canvas (ADR-0037, ADR-0149): the daily summary, at the time of the
- * installation, which the person turns on and off, kept at once in the profile; and the notices sent now, which cannot
- * be turned off: with Teams there for the person, the choice of where they arrive (E-mail, Teams or both), kept at
- * once too; without it, the e-mails always on.
+ * The card "Avisos" of My profile (ADR-0037, ADR-0151): the daily summary, at the time of the installation, and the
+ * channels of the notices that ask for an action, each turned on and off by the person and kept at once: "Por e-mail",
+ * on for who never chose, and "Pelo Teams", off for who never chose and only with Teams there for the person. With both
+ * off, the card says the notices stay in the bell and in My work.
  */
 export function EmailNotices() {
   const { t } = useTranslation();
@@ -61,19 +57,19 @@ export function EmailNotices() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.profile }),
   });
 
-  const chooseChannel = useMutation({
-    mutationFn: async (channel: ImmediateNoticeChannel) => {
+  const chooseChannels = useMutation({
+    mutationFn: async (channels: Channels) => {
       const { error, response } = await api.PUT('/api/profile/immediate-notices', {
-        body: { channel },
+        body: channels,
       });
       if (!response.ok) {
         throw new ApiError(response.status, error);
       }
     },
-    onMutate: (channel) => {
-      // The choice follows the click; a refusal puts it back.
+    onMutate: (channels) => {
+      // The boxes follow the click; a refusal puts them back.
       queryClient.setQueryData<ImmediateNotices>(noticesKey, (current) =>
-        current === undefined ? current : { ...current, channel },
+        current === undefined ? current : { ...current, ...channels },
       );
     },
     onError: () => {
@@ -82,10 +78,16 @@ export function EmailNotices() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: noticesKey }),
   });
 
+  const channels: Channels = { email: notices?.email ?? true, teams: notices?.teams ?? false };
+  const teamsShown = notices?.teamsAvailable === true;
+  const busy = notices === undefined || chooseChannels.isPending;
+  // Teams off for the person, or off in the installation: only the e-mail counts.
+  const onlyInBell = !channels.email && !(teamsShown && channels.teams);
+
   return (
     <ProfileCard id="profile-notices" title={t('profile.notices.title')}>
       <ProfileRow label={t('profile.notices.summary')}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <Box sx={column}>
           <Checkbox
             label={t('profile.notices.receiveSummary', { time })}
             checked={profile?.receivesDailySummary ?? true}
@@ -97,41 +99,39 @@ export function EmailNotices() {
         </Box>
       </ProfileRow>
       <ProfileRow label={t('profile.notices.now')}>
-        {notices?.teamsAvailable === true ? (
-          <Box
-            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}
-          >
-            <SegmentedControl
-              label={t('profile.notices.channel')}
-              value={notices.channel}
-              options={channels.map((channel) => ({
-                value: channel,
-                label: t(`profile.notices.channels.${channel}`),
-              }))}
-              onChange={(channel) => {
-                chooseChannel.mutate(channel);
-              }}
-            />
-            <Box component="span" sx={help}>
-              {t('profile.notices.channelHelp')}
-            </Box>
+        <Box sx={column}>
+          <Box component="span" sx={help}>
+            {t('profile.notices.nowHelp')}
           </Box>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {immediate.map((item) => (
+          <Checkbox
+            label={t('profile.notices.byEmail')}
+            checked={channels.email}
+            disabled={busy}
+            onChange={(email) => {
+              chooseChannels.mutate({ ...channels, email });
+            }}
+          />
+          {teamsShown && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
               <Checkbox
-                key={item}
-                label={t(`profile.notices.immediate.${item}`)}
-                checked
-                disabled
-                onChange={() => undefined}
+                label={t('profile.notices.byTeams')}
+                checked={channels.teams}
+                disabled={busy}
+                onChange={(teams) => {
+                  chooseChannels.mutate({ ...channels, teams });
+                }}
               />
-            ))}
-            <Box component="span" sx={help}>
-              {t('profile.notices.alwaysOn')}
+              <Box component="span" sx={{ ...help, paddingLeft: 'calc(18px + var(--space-2))' }}>
+                {t('profile.notices.teamsHelp')}
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
+          {notices !== undefined && onlyInBell && (
+            <Box component="span" role="status" sx={help}>
+              {t('profile.notices.onlyInBell')}
+            </Box>
+          )}
+        </Box>
       </ProfileRow>
     </ProfileCard>
   );

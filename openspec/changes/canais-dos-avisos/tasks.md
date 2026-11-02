@@ -10,9 +10,9 @@
 
 ## 3. Telas
 
-- [ ] 3.1 `npm run api:update`; o cartão Avisos com "Por e-mail", "Pelo Teams" e o resumo diário; testes de tela "Desligar o resumo", "Desligar o e-mail", "Escolher o Teams", "Canal de quem nunca escolheu", "Ajuda do aplicativo do Teams", "Teams fora do cartão" e "Falha ao gravar"
-- [ ] 3.2 Os textos da Auditoria para as três escolhas (`describeAuditEntry`), com os testes
-- [ ] 3.3 Conferência no navegador do cartão Avisos e da Auditoria, no computador e no celular, nos temas claro e escuro
+- [x] 3.1 `npm run api:update`; o cartão Avisos com "Por e-mail", "Pelo Teams" e o resumo diário; testes de tela "Desligar o resumo", "Desligar o e-mail", "Escolher o Teams", "Canal de quem nunca escolheu", "Ajuda do aplicativo do Teams", "Teams fora do cartão" e "Falha ao gravar"
+- [x] 3.2 Os textos da Auditoria para as três escolhas (`describeAuditEntry`), com os testes
+- [x] 3.3 Conferência no navegador do cartão Avisos e da Auditoria, no computador e no celular, nos temas claro e escuro
 
 ## 4. Documentação
 

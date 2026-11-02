@@ -1729,3 +1729,91 @@ describe('Exclusão de projeto na auditoria', () => {
     );
   });
 });
+
+// Spec: perfil, requirement "Escolhas dos avisos na auditoria" (ADR-0151).
+describe('Escolhas dos avisos na auditoria', () => {
+  const diego = { id: '0199f5a2-7c1e-7d40-9a1b-000000000003', name: 'Diego Torres' };
+
+  it('E-mail desligado na auditoria', () => {
+    const off = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'NoticePreference',
+        actor: diego,
+        itemLabel: 'Diego Torres',
+        changes: [
+          { field: 'ByEmail', before: null, after: 'false', secret: false, reference: null },
+          { field: 'ByTeams', before: null, after: 'false', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(off.title).toBe('Desligou os avisos por e-mail');
+    expect(off.summary).toBe('Diego Torres');
+    expect(off.sentence).toBe('Diego Torres desligou os avisos por e-mail');
+    expect(off.properties).toEqual([{ label: 'Pessoa', value: 'Diego Torres' }]);
+    expect(off.changes).toContainEqual({ field: 'Avisos por e-mail', before: '—', after: 'Não' });
+  });
+
+  it('Teams ligado na auditoria', () => {
+    const on = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'NoticePreference',
+        actor: diego,
+        itemLabel: 'Diego Torres',
+        changes: [
+          { field: 'ByTeams', before: 'false', after: 'true', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(on.title).toBe('Ligou os avisos pelo Teams');
+    expect(on.changes).toEqual([{ field: 'Avisos pelo Teams', before: 'Não', after: 'Sim' }]);
+  });
+
+  it('Resumo diário na auditoria', () => {
+    const off = describeAuditEntry(
+      entry({
+        action: 'Updated',
+        itemType: 'User',
+        actor: diego,
+        itemLabel: 'Diego Torres',
+        changes: [
+          {
+            field: 'ReceivesDailySummary',
+            before: 'true',
+            after: 'false',
+            secret: false,
+            reference: null,
+          },
+        ],
+      }),
+      t,
+    );
+
+    expect(off.title).toBe('Desligou o resumo diário');
+    expect(off.summary).toBe('Diego Torres');
+    expect(off.changes).toEqual([{ field: 'Resumo diário', before: 'Sim', after: 'Não' }]);
+  });
+
+  it('Os dois canais mudados de uma vez', () => {
+    const both = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'NoticePreference',
+        actor: diego,
+        itemLabel: 'Diego Torres',
+        changes: [
+          { field: 'ByEmail', before: null, after: 'false', secret: false, reference: null },
+          { field: 'ByTeams', before: null, after: 'true', secret: false, reference: null },
+        ],
+      }),
+      t,
+    );
+
+    expect(both.title).toBe('Mudou os avisos');
+  });
+});

@@ -7,27 +7,32 @@ import { marina, problem, profileOf, server, signedInAs } from '../test/server';
 
 const text = ptBR.profile.notices;
 
+interface Channels {
+  email: boolean;
+  teams: boolean;
+}
+
 let receives: boolean;
 let requests: boolean[];
-let channel: string;
+let chosen: Channels;
 let teamsAvailable: boolean;
-let channels: string[];
+let saved: Channels[];
 
 beforeEach(() => {
   receives = true;
   requests = [];
-  channel = 'Both';
+  chosen = { email: true, teams: false };
   teamsAvailable = false;
-  channels = [];
+  saved = [];
   signedInAs('User');
   server.use(
     http.get('/api/profile/immediate-notices', () =>
-      HttpResponse.json({ channel, teamsAvailable }),
+      HttpResponse.json({ ...chosen, teamsAvailable }),
     ),
     http.put('/api/profile/immediate-notices', async ({ request }) => {
-      const body = (await request.json()) as { channel: string };
-      channels.push(body.channel);
-      channel = body.channel;
+      const body = (await request.json()) as Channels;
+      saved.push(body);
+      chosen = body;
       return new HttpResponse(null, { status: 204 });
     }),
     http.get('/api/profile', () =>
@@ -53,8 +58,16 @@ function summaryBox(card: HTMLElement) {
   });
 }
 
-// Spec: perfil, requirement "Avisos no perfil".
-describe('Avisos no perfil', () => {
+async function emailBox(card: HTMLElement) {
+  const box = await within(card).findByRole('checkbox', { name: text.byEmail });
+  await waitFor(() => {
+    expect(box).toBeEnabled();
+  });
+  return box;
+}
+
+// Spec: perfil, requirement "Canais dos avisos no perfil" (ADR-0151).
+describe('Canais dos avisos no perfil', () => {
   it('Desligar o resumo', async () => {
     const card = await openCard();
     await waitFor(() => {
@@ -72,56 +85,93 @@ describe('Avisos no perfil', () => {
     });
   });
 
-  it('Avisos na hora sempre ligados', async () => {
+  it('Desligar o e-mail', async () => {
     const card = await openCard();
+    const email = await emailBox(card);
+    expect(within(card).queryByText(text.onlyInBell)).not.toBeInTheDocument();
 
-    for (const label of Object.values(text.immediate)) {
-      const box = within(card).getByRole('checkbox', { name: label });
-      expect(box).toBeChecked();
-      expect(box).toBeDisabled();
-    }
-    expect(within(card).getByText(text.alwaysOn)).toBeInTheDocument();
-    expect(within(card).queryByRole('radiogroup', { name: text.channel })).not.toBeInTheDocument();
+    fireEvent.click(email);
+
+    await waitFor(() => {
+      expect(saved).toEqual([{ email: false, teams: false }]);
+    });
+    await waitFor(() => {
+      expect(email).not.toBeChecked();
+    });
+    expect(within(card).getByRole('status')).toHaveTextContent(text.onlyInBell);
+  });
+
+  it('Escolher o Teams', async () => {
+    teamsAvailable = true;
+    const card = await openCard();
+    const email = await emailBox(card);
+    const teams = within(card).getByRole('checkbox', { name: text.byTeams });
+
+    fireEvent.click(teams);
+    await waitFor(() => {
+      expect(teams).toBeChecked();
+    });
+    await waitFor(() => {
+      expect(email).toBeEnabled();
+    });
+    fireEvent.click(email);
+
+    await waitFor(() => {
+      expect(saved).toEqual([
+        { email: true, teams: true },
+        { email: false, teams: true },
+      ]);
+    });
+    await waitFor(() => {
+      expect(email).not.toBeChecked();
+    });
+    expect(teams).toBeChecked();
+    expect(within(card).queryByText(text.onlyInBell)).not.toBeInTheDocument();
   });
 
   it('Canal de quem nunca escolheu', async () => {
     teamsAvailable = true;
     const card = await openCard();
 
-    const group = await within(card).findByRole('radiogroup', { name: text.channel });
-    expect(within(group).getByRole('radio', { name: text.channels.Both })).toBeChecked();
-    expect(within(card).getByText(text.channelHelp)).toBeInTheDocument();
-    expect(
-      within(card).queryByRole('checkbox', { name: text.immediate.messages }),
-    ).not.toBeInTheDocument();
+    expect(await emailBox(card)).toBeChecked();
+    expect(within(card).getByRole('checkbox', { name: text.byTeams })).not.toBeChecked();
+    expect(within(card).getByText(text.nowHelp)).toBeInTheDocument();
   });
 
-  it('Escolher o Teams', async () => {
+  it('Ajuda do aplicativo do Teams', async () => {
     teamsAvailable = true;
     const card = await openCard();
-    const group = await within(card).findByRole('radiogroup', { name: text.channel });
+    await emailBox(card);
 
-    fireEvent.click(within(group).getByRole('radio', { name: text.channels.Teams }));
-
-    await waitFor(() => {
-      expect(channels).toEqual(['Teams']);
-    });
-    await waitFor(() => {
-      expect(within(group).getByRole('radio', { name: text.channels.Teams })).toBeChecked();
-    });
+    expect(within(card).getByText(text.teamsHelp)).toBeInTheDocument();
   });
 
-  it('Falha ao salvar o canal', async () => {
-    teamsAvailable = true;
+  it('Teams fora do cartão', async () => {
+    const card = await openCard();
+    await emailBox(card);
+
+    expect(within(card).queryByRole('checkbox', { name: text.byTeams })).not.toBeInTheDocument();
+    expect(within(card).queryByText(text.teamsHelp)).not.toBeInTheDocument();
+    expect(summaryBox(card)).toBeInTheDocument();
+  });
+
+  it('Teams ligado fora do cartão não conta', async () => {
+    chosen = { email: false, teams: true };
+    const card = await openCard();
+
+    expect(await within(card).findByRole('status')).toHaveTextContent(text.onlyInBell);
+  });
+
+  it('Falha ao gravar', async () => {
     server.use(http.put('/api/profile/immediate-notices', () => problem(500)));
     const card = await openCard();
-    const group = await within(card).findByRole('radiogroup', { name: text.channel });
+    const email = await emailBox(card);
 
-    fireEvent.click(within(group).getByRole('radio', { name: text.channels.Email }));
+    fireEvent.click(email);
 
     expect(await screen.findByText(text.channelFailed)).toBeInTheDocument();
     await waitFor(() => {
-      expect(within(group).getByRole('radio', { name: text.channels.Both })).toBeChecked();
+      expect(email).toBeChecked();
     });
   });
 

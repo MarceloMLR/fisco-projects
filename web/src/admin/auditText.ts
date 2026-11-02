@@ -46,16 +46,25 @@ export interface AuditDescription {
   changes: { field: string; before: string; after: string }[];
 }
 
-type UserField = 'Name' | 'Email' | 'Role' | 'IsActive' | 'AnonymousNumber';
+type UserField =
+  'Name' | 'Email' | 'Role' | 'IsActive' | 'AnonymousNumber' | 'ReceivesDailySummary';
 const userFields: readonly string[] = [
   'Name',
   'Email',
   'Role',
   'IsActive',
   'AnonymousNumber',
+  'ReceivesDailySummary',
 ] satisfies UserField[];
 
 const isUserField = (field: string): field is UserField => userFields.includes(field);
+
+/** The channels of the notices sent now of a person (ADR-0151), and their values for who never chose. */
+type NoticePreferenceField = 'ByEmail' | 'ByTeams';
+const noticeDefaults: Record<NoticePreferenceField, string> = { ByEmail: 'true', ByTeams: 'false' };
+
+const isNoticePreferenceField = (field: string): field is NoticePreferenceField =>
+  field === 'ByEmail' || field === 'ByTeams';
 
 type SettingsField =
   | 'Name'
@@ -493,6 +502,12 @@ function valueOf(entry: AuditEntry, field: string, value: string | null, t: TFun
   if (entry.itemType === 'User' && field === 'IsActive') {
     return t(value === 'true' ? 'users.status.Active' : 'users.status.Inactive');
   }
+  if (
+    (entry.itemType === 'User' && field === 'ReceivesDailySummary') ||
+    (entry.itemType === 'NoticePreference' && isNoticePreferenceField(field))
+  ) {
+    return t(value === 'true' ? 'audit.details.yes' : 'audit.details.no');
+  }
   // The days of the week as the API names them ("Monday, Tuesday"), in words of the screen.
   if (entry.itemType === 'WorkCalendar' && field === 'WorkingDays') {
     return value
@@ -718,7 +733,37 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'PersonAbsence' && isPersonAbsenceField(field)) {
     return t(`audit.fields.PersonAbsence.${field}`);
   }
+  if (entry.itemType === 'NoticePreference' && isNoticePreferenceField(field)) {
+    return t(`audit.fields.NoticePreference.${field}`);
+  }
   return field;
+}
+
+/**
+ * The one channel a person turned on or off (ADR-0151): the first choice of a person is compared with the channels of
+ * who never chose, so it says only what changed from them. Null when more than one changed.
+ */
+function noticeChannelOf(entry: AuditEntry): { field: NoticePreferenceField; on: boolean } | null {
+  const changed = entry.changes.filter(
+    (change): change is AuditField & { field: NoticePreferenceField } =>
+      isNoticePreferenceField(change.field) &&
+      change.after !== (entry.action === 'Created' ? noticeDefaults[change.field] : change.before),
+  );
+  const [only, ...others] = changed;
+  return only === undefined || others.length > 0
+    ? null
+    : { field: only.field, on: only.after === 'true' };
+}
+
+/** A change of a person whose only field is the daily summary, turned on or off by the person (ADR-0151). */
+function dailySummaryOf(entry: AuditEntry): AuditField | undefined {
+  const [only, ...others] = entry.changes;
+  return entry.itemType === 'User' &&
+    entry.action === 'Updated' &&
+    only?.field === 'ReceivesDailySummary' &&
+    others.length === 0
+    ? only
+    : undefined;
 }
 
 /**
@@ -753,6 +798,15 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   }
   if (entry.itemType === 'InstallationSettings' && entry.action === 'Updated') {
     return t('audit.actions.InstallationSettings.Updated');
+  }
+  // A channel of the notices of a person, turned on or off by the person (ADR-0151).
+  if (entry.itemType === 'NoticePreference') {
+    const channel = noticeChannelOf(entry);
+    return channel === null
+      ? t('audit.actions.NoticePreference.Updated')
+      : t(
+          `audit.actions.NoticePreference.${channel.field === 'ByEmail' ? 'Email' : 'Teams'}${channel.on ? 'On' : 'Off'}`,
+        );
   }
   if (entry.itemType === 'WorkCalendar' && entry.action === 'Updated') {
     return t('audit.actions.WorkCalendar.Updated');
@@ -924,6 +978,14 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
       situation.after === 'false'
         ? 'audit.actions.User.Deactivated'
         : 'audit.actions.User.Reactivated',
+    );
+  }
+  const summary = dailySummaryOf(entry);
+  if (summary !== undefined) {
+    return t(
+      summary.after === 'true'
+        ? 'audit.actions.User.DailySummaryOn'
+        : 'audit.actions.User.DailySummaryOff',
     );
   }
   return t('audit.actions.User.Updated');
@@ -1138,7 +1200,12 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'Project' && entry.action === 'Deleted') {
     return join(label, changeOf(entry, 'Code')?.before ?? '');
   }
-  if (entry.action !== 'Updated') {
+  // The channels of the notices and the daily summary are said by the title (ADR-0151).
+  if (
+    entry.action !== 'Updated' ||
+    entry.itemType === 'NoticePreference' ||
+    dailySummaryOf(entry) !== undefined
+  ) {
     return label;
   }
   // The anonymization is said by the title, with the identifier as the label (ADR-0110).
@@ -1342,6 +1409,10 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
   // An absence is of the person, its label; the dates stay out (ADR-0141).
   if (entry.itemType === 'PersonAbsence') {
     return [{ label: t('audit.details.item.PersonAbsence'), value: label }];
+  }
+  // The channels of the notices are of the person, its label (ADR-0151).
+  if (entry.itemType === 'NoticePreference') {
+    return [{ label: t('audit.details.item.NoticePreference'), value: label }];
   }
   if (entry.itemType === 'Ticket') {
     return [

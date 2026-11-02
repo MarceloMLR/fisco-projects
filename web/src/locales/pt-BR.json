@@ -242,19 +242,11 @@
       "summary": "Resumo diário",
       "receiveSummary": "Receber às {{time}}, com as novidades do dia e as tarefas que vencem",
       "now": "Na hora",
-      "immediate": {
-        "messages": "Menções, respostas e pedidos de informação",
-        "assigned": "Chamados novos, transferidos e atribuídos a mim",
-        "deadlines": "Prazos dos meus chamados vencendo ou vencidos"
-      },
-      "alwaysOn": "Os avisos que pedem a sua ação não podem ser desligados.",
-      "channel": "Por onde chegam os avisos na hora",
-      "channels": {
-        "Email": "E-mail",
-        "Teams": "Teams",
-        "Both": "Os dois"
-      },
-      "channelHelp": "Menções, respostas, chamados atribuídos a você e prazos vencendo. Esses avisos não podem ser desligados, só mudar de lugar.",
+      "nowHelp": "Menções, respostas, pedidos de informação, chamados atribuídos a você e prazos vencendo.",
+      "byEmail": "Por e-mail",
+      "byTeams": "Pelo Teams",
+      "teamsHelp": "Só chegam com o aplicativo do FiscoProjects no seu Teams.",
+      "onlyInBell": "Sem e-mail nem Teams, esses avisos ficam só no sino e no Meu trabalho.",
       "channelFailed": "Não foi possível salvar por onde chegam os avisos. Tente de novo.",
       "failed": "Não foi possível salvar o resumo diário. Tente de novo."
     },
@@ -290,6 +282,7 @@
     "itemTypes": {
       "SignIn": "Entradas",
       "User": "Usuários",
+      "NoticePreference": "Avisos de uma pessoa",
       "InstallationSettings": "Configurações",
       "WorkCalendar": "Dias de trabalho",
       "CalculatedHoliday": "Feriados calculados",
@@ -333,7 +326,16 @@
         "RoleChanged": "Trocou um papel",
         "Deactivated": "Desativou um usuário",
         "Reactivated": "Reativou um usuário",
-        "Anonymized": "Anonimizou um usuário"
+        "Anonymized": "Anonimizou um usuário",
+        "DailySummaryOn": "Ligou o resumo diário",
+        "DailySummaryOff": "Desligou o resumo diário"
+      },
+      "NoticePreference": {
+        "EmailOn": "Ligou os avisos por e-mail",
+        "EmailOff": "Desligou os avisos por e-mail",
+        "TeamsOn": "Ligou os avisos pelo Teams",
+        "TeamsOff": "Desligou os avisos pelo Teams",
+        "Updated": "Mudou os avisos"
       },
       "SignIn": {
         "SignedIn": "Entrou no sistema",
@@ -557,7 +559,8 @@
         "TimeEntry": "Apontamento",
         "AdditionalHours": "Motivo",
         "PlannedHours": "Tarefa",
-        "PersonAbsence": "Pessoa"
+        "PersonAbsence": "Pessoa",
+        "NoticePreference": "Pessoa"
       },
       "secret": "Alterado",
       "none": "—",
@@ -570,7 +573,12 @@
         "Email": "E-mail",
         "Role": "Papel no sistema",
         "IsActive": "Situação",
-        "AnonymousNumber": "Número da anonimização"
+        "AnonymousNumber": "Número da anonimização",
+        "ReceivesDailySummary": "Resumo diário"
+      },
+      "NoticePreference": {
+        "ByEmail": "Avisos por e-mail",
+        "ByTeams": "Avisos pelo Teams"
       },
       "InstallationSettings": {
         "Name": "Nome exibido",

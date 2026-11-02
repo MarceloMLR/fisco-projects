@@ -2685,8 +2685,10 @@ export interface components {
         ChooseDailySummaryRequest: {
             receives: boolean;
         };
+        /** @description The channels the person turns on: the e-mail and Teams; both off leave the notices in the bell only. */
         ChooseImmediateNoticesRequest: {
-            channel: components["schemas"]["ImmediateNoticeChannel"];
+            email: boolean;
+            teams: boolean;
         };
         ChooseThemeRequest: {
             theme: components["schemas"]["ThemePreference"];
@@ -3030,16 +3032,12 @@ export interface components {
         IFormFile: string;
         IFormFileCollection: components["schemas"]["IFormFile"][];
         /**
-         * @description Where the notices sent now reach a person (ADR-0037, ADR-0149).
-         * @enum {unknown}
-         */
-        ImmediateNoticeChannel: "Both" | "Email" | "Teams";
-        /**
-         * @description The channel of the notices sent now of the person (ADR-0149): E-mail, Teams or Both, and whether Teams is there for
-         *     the person (on in the installation, and the person signs in by Entra ID).
+         * @description The channels of the notices sent now of the person (ADR-0151): the e-mail and Teams, each on or off, and whether
+         *     Teams is there for the person (on in the installation, and the person signs in by Entra ID).
          */
         ImmediateNoticesResponse: {
-            channel: components["schemas"]["ImmediateNoticeChannel"];
+            email: boolean;
+            teams: boolean;
             teamsAvailable: boolean;
         };
         /** @description A credential mapped from a line of the spreadsheet, with the number of the line. */
@@ -13572,15 +13570,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
-                };
             };
             /** @description Unauthorized */
             401: {
