@@ -38,8 +38,10 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var invalid = await UpdateAsync(database, "  Consultoria Fictícia ", "America/Manaus");
+        var renamed = await RenameAsync(database, "  Consultoria Fictícia ");
+        var invalid = await UpdateAsync(database, "America/Manaus");
 
+        renamed.Should().BeTrue();
         invalid.Should().BeEmpty();
         var settings = await SettingsAsync(database);
         settings.Name.Should().Be("Consultoria Fictícia");
@@ -63,7 +65,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var invalid = await UpdateAsync(database, "FiscoProjects", "America/Sao_Paulo", dailySummaryAt: new TimeOnly(8, 0, 42));
+        var invalid = await UpdateAsync(database, "America/Sao_Paulo", dailySummaryAt: new TimeOnly(8, 0, 42));
 
         invalid.Should().BeEmpty();
         (await SettingsAsync(database)).DailySummaryAt.Should().Be(new TimeOnly(8, 0));
@@ -77,7 +79,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", null, 90), Cancellation));
+            update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", null, 90), Cancellation));
 
         invalid.Should().Equal(InstallationField.DailySummaryAt);
         (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
@@ -100,7 +102,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
-            update.ExecuteAsync(new InstallationChanges("Outro nome", "America/Sao_Paulo", new TimeOnly(7, 30), days), Cancellation));
+            update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), days), Cancellation));
 
         invalid.Should().Equal(InstallationField.NotificationRetentionDays);
         (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
@@ -124,9 +126,9 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
+                new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
                 Cancellation));
-        await UpdateAsync(database, "Outro nome", "America/Sao_Paulo");
+        await UpdateAsync(database, "America/Sao_Paulo");
 
         invalid.Should().BeEmpty();
         (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
@@ -146,7 +148,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges("Outro nome", "America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
+                new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
                 Cancellation));
 
         invalid.Should().Equal(InstallationField.WorkHoursPerDay);
@@ -162,9 +164,9 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var invalid = await UpdateAsync(database, name, "America/Manaus");
+        var renamed = await RenameAsync(database, name);
 
-        invalid.Should().Equal(InstallationField.Name);
+        renamed.Should().BeFalse();
         var settings = await SettingsAsync(database);
         settings.Name.Should().Be(InstallationSettings.DefaultName);
         settings.TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
@@ -179,9 +181,9 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
-        var invalid = await UpdateAsync(database, "", timeZone);
+        var invalid = await UpdateAsync(database, timeZone);
 
-        invalid.Should().Equal(InstallationField.Name, InstallationField.TimeZone);
+        invalid.Should().Equal(InstallationField.TimeZone);
         (await SettingsAsync(database)).TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
     }
 
@@ -323,10 +325,13 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     }
 
     private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
-        AdministrationDatabase database, string? name, string? timeZone, TimeOnly? dailySummaryAt = null) =>
+        AdministrationDatabase database, string? timeZone, TimeOnly? dailySummaryAt = null) =>
         database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
             update.ExecuteAsync(
-                new InstallationChanges(name, timeZone, dailySummaryAt ?? new TimeOnly(7, 30), 90), Cancellation));
+                new InstallationChanges(timeZone, dailySummaryAt ?? new TimeOnly(7, 30), 90), Cancellation));
+
+    private static Task<bool> RenameAsync(AdministrationDatabase database, string? name) =>
+        database.RunAsync<RenameInstallation, bool>(rename => rename.ExecuteAsync(name, Cancellation));
 
     private static Task<IReadOnlyList<InstallationColorField>> ColorsAsync(
         AdministrationDatabase database, string? main, string? secondary, string? sidebar) =>

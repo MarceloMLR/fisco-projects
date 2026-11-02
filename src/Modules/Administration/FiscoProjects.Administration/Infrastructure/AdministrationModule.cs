@@ -23,6 +23,8 @@ public static class AdministrationModule
         services.AddScoped<GetInstallationLogo>();
         services.AddScoped<GetGeneralRules>();
         services.AddScoped<UpdateInstallation>();
+        services.AddScoped<RenameInstallation>();
+        services.AddScoped<ChangeProjectsFolder>();
         services.AddScoped<ChangeInstallationColors>();
         services.AddScoped<ReplaceInstallationLogo>();
         services.AddScoped<RemoveInstallationLogo>();

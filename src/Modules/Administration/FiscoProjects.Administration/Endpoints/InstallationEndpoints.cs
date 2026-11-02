@@ -28,19 +28,26 @@ public sealed record InstallationResponse(
 public sealed record InstallationColorsRequest(string? MainColor, string? SecondaryColor, string? SidebarColor);
 
 /// <summary>
-/// The General settings form, saved as a whole: the name shown, the IANA time zone, the time of the daily summary (HH:mm:ss, in the time zone), how many days the
-/// notifications are kept (1 to 365), how many years the audit is kept (1 to 10; none keeps the years it had) and the
-/// folder of the projects in the file storage, with the folders separated by "/" ("" for its root; none keeps the one
-/// it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones it had, ADR-0142).
+/// The General rules of the General settings, saved as a whole (ADR-0150): the IANA time zone, the time of the daily
+/// summary (HH:mm:ss, in the time zone), how many days the notifications are kept (1 to 365), how many years the audit is
+/// kept (1 to 10; none keeps the years it had) and the hours of a working day (1 to 12, in quarters; none keeps the ones
+/// it had, ADR-0142).
 /// </summary>
 public sealed record UpdateInstallationRequest(
-    string Name,
     string TimeZone,
     TimeOnly? DailySummaryAt,
     int? NotificationRetentionDays,
     int? AuditRetentionYears = null,
-    string? ProjectsFolder = null,
     decimal? WorkHoursPerDay = null);
+
+/// <summary>The name shown of the installation, in the Brand of Visual (ADR-0150): up to 60 characters.</summary>
+public sealed record RenameInstallationRequest(string? Name);
+
+/// <summary>
+/// The folder of the projects in the file storage, in Default folders (ADR-0121, ADR-0150), with the folders separated by
+/// "/", or "" for the root of the storage.
+/// </summary>
+public sealed record ProjectsFolderRequest(string? ProjectsFolder);
 
 /// <summary>
 /// The rules of the installation for the screens: the IANA time zone of dates and times (ADR-0013) and the time of the
@@ -92,8 +99,17 @@ internal static class InstallationEndpoints
             .RequireAuthorization(SystemPolicies.Administrator)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
-        // The Colors section, saved on its own (ADR-0146).
+        // Each screen saves what it shows (ADR-0150): the name and the colors in Visual (ADR-0146), the folder of the
+        // projects in Default folders.
+        installation.MapPut("/name", RenameAsync).WithName("RenameInstallation")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
         installation.MapPut("/colors", ChangeColorsAsync).WithName("ChangeInstallationColors")
+            .RequireAuthorization(SystemPolicies.Administrator)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+        installation.MapPut("/projects-folder", ChangeProjectsFolderAsync).WithName("ChangeProjectsFolder")
             .RequireAuthorization(SystemPolicies.Administrator)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
@@ -190,18 +206,31 @@ internal static class InstallationEndpoints
     {
         var invalid = await updateInstallation.ExecuteAsync(
             new InstallationChanges(
-                request.Name,
                 request.TimeZone,
                 request.DailySummaryAt,
                 request.NotificationRetentionDays,
                 request.AuditRetentionYears,
-                request.ProjectsFolder,
                 request.WorkHoursPerDay),
             cancellationToken);
         return invalid.Count == 0
             ? TypedResults.NoContent()
             : TypedResults.ValidationProblem(invalid.ToDictionary(KeyOf, field => new[] { ReasonOf(field) }));
     }
+
+    private static async Task<Results<NoContent, ValidationProblem>> RenameAsync(
+        RenameInstallationRequest request, RenameInstallation rename, CancellationToken cancellationToken) =>
+        await rename.ExecuteAsync(request.Name, cancellationToken)
+            ? TypedResults.NoContent()
+            : Invalid(InstallationField.Name);
+
+    private static async Task<Results<NoContent, ValidationProblem>> ChangeProjectsFolderAsync(
+        ProjectsFolderRequest request, ChangeProjectsFolder change, CancellationToken cancellationToken) =>
+        await change.ExecuteAsync(request.ProjectsFolder, cancellationToken)
+            ? TypedResults.NoContent()
+            : Invalid(InstallationField.ProjectsFolder);
+
+    private static ValidationProblem Invalid(InstallationField field) =>
+        TypedResults.ValidationProblem(new Dictionary<string, string[]> { [KeyOf(field)] = [ReasonOf(field)] });
 
     private static async Task<Results<NoContent, ValidationProblem>> ChangeColorsAsync(
         InstallationColorsRequest request, ChangeInstallationColors changeColors, CancellationToken cancellationToken)

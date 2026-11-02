@@ -32,7 +32,10 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             [SystemRole.Administrator, SystemRole.ProjectManager, SystemRole.User]),
         new("Read the general rules", client => client.GetAsync("/api/installation/rules", Cancellation), HttpStatusCode.OK,
             [SystemRole.Administrator, SystemRole.ProjectManager, SystemRole.User]),
-        new("Change the name", client => SendAsync(client, HttpMethod.Put, "/api/installation", Form(NewName)),
+        new("Change the name", client => RenameAsync(client, NewName), HttpStatusCode.NoContent, [SystemRole.Administrator]),
+        new("Change the general rules", client => SendAsync(client, HttpMethod.Put, "/api/installation", Rules("America/Manaus")),
+            HttpStatusCode.NoContent, [SystemRole.Administrator]),
+        new("Change the folder of the projects", client => ProjectsFolderAsync(client, "Projetos"),
             HttpStatusCode.NoContent, [SystemRole.Administrator]),
         new("Send the logo", client => SendLogoAsync(client, Png, "marca.png"), HttpStatusCode.NoContent,
             [SystemRole.Administrator]),
@@ -79,11 +82,15 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         await using var app = await StartAsync();
         using var anonymous = app.NewClient();
 
-        var rename = await SendAsync(anonymous, HttpMethod.Put, "/api/installation", Form(NewName));
+        var rename = await RenameAsync(anonymous, NewName);
+        var rules = await SendAsync(anonymous, HttpMethod.Put, "/api/installation", Rules("America/Manaus"));
+        var folder = await ProjectsFolderAsync(anonymous, "Projetos");
         var logo = await SendLogoAsync(anonymous, Png, "marca.png");
         var remove = await SendAsync(anonymous, HttpMethod.Delete, "/api/installation/logo");
 
         rename.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        rules.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        folder.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         logo.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         remove.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         (await BrandAsync(anonymous)).Should().Be(("FiscoProjects", null));
@@ -98,7 +105,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 
         foreach (var name in new[] { "", "   ", new string('a', 61) })
         {
-            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(name));
+            var response = await RenameAsync(admin, name);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
@@ -117,7 +124,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
 
         foreach (var timeZone in new[] { "Mars/Olympus_Mons", "E. South America Standard Time", "" })
         {
-            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName, timeZone));
+            var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules(timeZone));
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
@@ -137,7 +144,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (marina, _) = await app.SignedInClientAsync("Marina Costa", SystemRole.User);
         using var _marina = marina;
 
-        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", "America/Manaus"));
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules("America/Manaus"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await RulesAsync(marina)).Should().Be("America/Manaus");
@@ -165,7 +172,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         using var anonymous = app.NewClient();
         (await BrandAsync(anonymous)).Should().Be(("FiscoProjects", null));
 
-        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName));
+        await RenameAsync(admin, NewName);
         await SendLogoAsync(admin, Png, "marca.png");
 
         var brand = await anonymous.GetFromJsonAsync<JsonElement>("/api/installation", Cancellation);
@@ -270,7 +277,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         using var _admin = admin;
 
-        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", "America/Manaus"));
+        await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules("America/Manaus"));
 
         var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=100", Cancellation);
         var entry = page.GetProperty("items").EnumerateArray().Should().ContainSingle().Subject;
@@ -286,7 +293,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (user, _) = await app.SignedInClientAsync();
         using var _user = user;
 
-        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("FiscoProjects", dailySummaryAt: "08:00:00"));
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules(dailySummaryAt: "08:00:00"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await user.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("dailySummaryAt").GetString()
@@ -303,7 +310,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         using var _admin = admin;
 
-        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Form("Outro nome", dailySummaryAt: null));
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules(dailySummaryAt: null));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
@@ -322,7 +329,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             admin,
             HttpMethod.Put,
             "/api/installation",
-            new { name = "FiscoProjects", timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 7.5m });
+            new { timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 7.5m });
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await admin.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation)).GetProperty("workHoursPerDay").GetDecimal()
@@ -343,7 +350,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             admin,
             HttpMethod.Put,
             "/api/installation",
-            new { name = "FiscoProjects", timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 12.5m });
+            new { timeZone = "America/Sao_Paulo", dailySummaryAt = "07:30:00", notificationRetentionDays = 90, workHoursPerDay = 12.5m });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
@@ -485,7 +492,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (admin, adminId) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         using var _admin = admin;
 
-        await SendAsync(admin, HttpMethod.Put, "/api/installation", Form(NewName));
+        await RenameAsync(admin, NewName);
         app.Clock.Advance(TimeSpan.FromMinutes(1));
         await SendLogoAsync(admin, Png, "marca.png");
 
@@ -499,6 +506,77 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         });
         Fields(entries[1]).Should().Equal(("Name", "FiscoProjects", NewName));
         Fields(entries[0]).Should().Equal(("LogoFileName", null, "marca.png"));
+    }
+
+    // Spec: configuracao-da-instalacao, requirement "Cada tela grava o que mostra" (ADR-0150).
+    [Fact(DisplayName = "Regras sem mudar a marca")]
+    public async Task TheGeneralRules_KeepTheNameAndTheFolderOfTheProjects()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        (await RenameAsync(admin, NewName)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProjectsFolderAsync(admin, "Clientes/Projetos")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules("America/Manaus", "08:00:00"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await BrandAsync(admin)).Name.Should().Be(NewName);
+        var rules = await admin.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation);
+        rules.GetProperty("timeZone").GetString().Should().Be("America/Manaus");
+        rules.GetProperty("dailySummaryAt").GetString().Should().Be("08:00:00");
+        rules.GetProperty("projectsFolder").GetString().Should().Be("Clientes/Projetos");
+    }
+
+    [Fact(DisplayName = "Nome sem mudar as regras")]
+    public async Task TheName_KeepsTheRules()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        (await SendAsync(admin, HttpMethod.Put, "/api/installation", new
+        {
+            timeZone = "America/Manaus",
+            dailySummaryAt = "08:00:00",
+            notificationRetentionDays = 30,
+            auditRetentionYears = 3,
+            workHoursPerDay = 7.5m,
+        })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProjectsFolderAsync(admin, "Projetos")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var before = await admin.GetStringAsync("/api/installation/rules", Cancellation);
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        var response = await RenameAsync(admin, $"  {NewName} ");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await BrandAsync(admin)).Name.Should().Be(NewName);
+        (await admin.GetStringAsync("/api/installation/rules", Cancellation)).Should().Be(before);
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=1", Cancellation);
+        Fields(page.GetProperty("items")[0]).Should().Equal(("Name", "FiscoProjects", NewName));
+    }
+
+    [Fact(DisplayName = "Pasta dos projetos sem mudar o resto")]
+    public async Task TheFolderOfTheProjects_KeepsTheNameAndTheRules()
+    {
+        await using var app = await StartAsync();
+        var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
+        using var _admin = admin;
+        (await RenameAsync(admin, NewName)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await SendAsync(admin, HttpMethod.Put, "/api/installation", Rules("America/Manaus"))).StatusCode
+            .Should().Be(HttpStatusCode.NoContent);
+        app.Clock.Advance(TimeSpan.FromMinutes(1));
+
+        var response = await ProjectsFolderAsync(admin, " /Clientes/Projetos/ ");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await BrandAsync(admin)).Name.Should().Be(NewName);
+        var rules = await admin.GetFromJsonAsync<JsonElement>("/api/installation/rules", Cancellation);
+        rules.GetProperty("projectsFolder").GetString().Should().Be("Clientes/Projetos");
+        rules.GetProperty("timeZone").GetString().Should().Be("America/Manaus");
+        var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=1", Cancellation);
+        var change = Fields(page.GetProperty("items")[0]).Should().ContainSingle().Subject;
+        (change.Field, change.After).Should().Be(("ProjectsFolder", "Clientes/Projetos"));
+        change.Before.Should().BeNullOrEmpty();
     }
 
     public void Dispose()
@@ -533,12 +611,17 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         (await BrandAsync(client)).Name.Should().Be(role == SystemRole.Administrator ? NewName : "FiscoProjects");
     }
 
-    /// <summary>The General settings form, with the default time zone unless another is given.</summary>
-    private static object Form(
-        string name,
-        string timeZone = "America/Sao_Paulo",
-        string? dailySummaryAt = "07:30:00") =>
-        new { name, timeZone, dailySummaryAt, notificationRetentionDays = 90 };
+    /// <summary>The General rules (ADR-0150), with the default time zone unless another is given.</summary>
+    private static object Rules(string timeZone = "America/Sao_Paulo", string? dailySummaryAt = "07:30:00") =>
+        new { timeZone, dailySummaryAt, notificationRetentionDays = 90 };
+
+    /// <summary>The name shown, in the Brand of Visual (ADR-0150).</summary>
+    private static Task<HttpResponseMessage> RenameAsync(HttpClient client, string name) =>
+        SendAsync(client, HttpMethod.Put, "/api/installation/name", new { name });
+
+    /// <summary>The folder of the projects, in Default folders (ADR-0150).</summary>
+    private static Task<HttpResponseMessage> ProjectsFolderAsync(HttpClient client, string projectsFolder) =>
+        SendAsync(client, HttpMethod.Put, "/api/installation/projects-folder", new { projectsFolder });
 
     /// <summary>The Colors section (ADR-0146): the colors not given go back to the default ones.</summary>
     private static object Colors(string? mainColor, string? secondaryColor = null, string? sidebarColor = null) =>

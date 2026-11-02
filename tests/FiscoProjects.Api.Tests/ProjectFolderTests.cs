@@ -244,14 +244,7 @@ public sealed class ProjectFolderTests(SqlServerFixture sqlServer)
 
     private static async Task AreaAsync(ProjectTeam team, string projectsFolder)
     {
-        var saved = await SendAsync(team.Admin, HttpMethod.Put, "/api/installation", new
-        {
-            name = "FiscoProjects",
-            timeZone = "America/Sao_Paulo",
-            dailySummaryAt = "07:30:00",
-            notificationRetentionDays = 90,
-            projectsFolder,
-        });
+        var saved = await SendAsync(team.Admin, HttpMethod.Put, "/api/installation/projects-folder", new { projectsFolder });
         saved.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
