@@ -17,6 +17,7 @@ import { hoursFieldText, parseHoursUpTo } from '../hours/hours';
 import { brandVariables, colorsOf, sidebarIsDark } from '../theme/brandColors';
 import { BrandPreview } from './BrandPreview';
 import { EmailSettings } from './EmailSettings';
+import { TeamsSettings } from './TeamsSettings';
 import { TimeZoneField } from './TimeZoneField';
 import { Button } from '../components/Button';
 import { Form } from '../components/Form';
@@ -640,6 +641,7 @@ export function SettingsPage() {
                     {t('settings.m365')}
                   </Box>
                   <EmailSettings />
+                  <TeamsSettings />
                 </Box>
               </Form>
               <BrandPreview

@@ -875,6 +875,20 @@
       "noAddress": "Sua conta não tem e-mail para receber o teste.",
       "failed": "Não foi possível pedir o teste. Tente de novo."
     },
+    "teams": {
+      "noticesOn": "Avisar pelo Teams",
+      "noticesOnHint": "Os avisos que pedem ação chegam na aba Atividade do Teams de quem escolher o Teams em Meu perfil. Instale antes o aplicativo pelo centro de administração do Teams.",
+      "unavailable": "O Teams não está disponível nesta instalação.",
+      "turnFailed": "Não foi possível salvar os avisos pelo Teams. Tente de novo.",
+      "package": "Aplicativo do Teams",
+      "version": "Versão {{version}}",
+      "neverDownloaded": "Pacote ainda não baixado",
+      "packageHint": "Baixe de novo depois de trocar o nome, o logo ou a cor principal e envie a versão nova ao Teams.",
+      "download": "Baixar pacote do Teams",
+      "fileName": "aplicativo-teams-{{version}}.zip",
+      "downloaded": "Pacote do Teams baixado, na versão {{version}}.",
+      "downloadFailed": "Não foi possível montar o pacote do Teams. Tente de novo."
+    },
     "errors": {
       "nameRequired": "Informe o nome exibido.",
       "nameTooLong": "Use até 60 caracteres.",
