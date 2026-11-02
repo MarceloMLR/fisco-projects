@@ -9,7 +9,7 @@ namespace FiscoProjects.Projects.Tests;
 // "Responsável da tarefa", "Dependências", "Dependências que empurram", "Cronograma de um projeto encerrado",
 // "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Novas datas pela API", "Dias não úteis
 // no cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Excluir tarefa-resumo"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos: "Cronograma na lista de
-// projetos" and "Cabeçalho do projeto".
+// projetos" and "Cabeçalho do projeto"; "Datas da tarefa antes de salvar" (ADR-0145).
 public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLifetime
 {
     private ProjectsDatabase _database = null!;
@@ -103,6 +103,12 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
     private Task<ScheduleResult> RescheduleAsync(ProjectViewer viewer, Guid itemId, DateOnly start, DateOnly? end = null) =>
         _database.RunAsync<RescheduleScheduleItem, ScheduleResult>(reschedule =>
             reschedule.ExecuteAsync(_project, itemId, new ScheduleItemDates(start, end), viewer, Cancellation));
+
+    private ProjectViewer Carla => new(_carla, IsAdministrator: false);
+
+    private Task<TaskDatesResult> PreviewAsync(ProjectViewer viewer, DateOnly start, int? duration, DateOnly? end) =>
+        _database.RunAsync<PreviewScheduleItemDates, TaskDatesResult>(preview =>
+            preview.ExecuteAsync(_project, start, duration, end, viewer, Cancellation));
 
     private Task<ScheduleView?> GetAsync(ProjectViewer viewer) =>
         _database.RunAsync<GetSchedule, ScheduleView?>(get => get.ExecuteAsync(_project, viewer, Cancellation));
@@ -270,6 +276,71 @@ public sealed class ScheduleUseCaseTests(SqlServerFixture sqlServer) : IAsyncLif
 
         var item = (await ItemAsync(id)).Item;
         (item.Name, item.Start, item.End, item.Duration, item.Kind).Should().Be(("Levantar cadastros", D(10, 8), D(10, 13), 3, ScheduleItemKind.Task));
+    }
+
+    [Fact(DisplayName = "Criar tarefa pelo fim")]
+    public async Task Task_TakesItsDuration_FromTheEnd()
+    {
+        // From Thursday 08/10 to Tuesday 13/10, with the holiday of 12/10: 3 business days.
+        var id = (await AddItemAsync(Marina, TaskForm("Levantar cadastros", D(10, 8), 0) with { End = D(10, 13) })).Id!.Value;
+        (await ItemAsync(id)).Item.Duration.Should().Be(3);
+
+        var changed = await ChangeItemAsync(Marina, id, TaskForm("Levantar cadastros", D(10, 8), 3) with { End = D(10, 15) });
+
+        changed.Outcome.Should().Be(ScheduleOutcome.Done);
+        var item = (await ItemAsync(id)).Item;
+        (item.Start, item.End, item.Duration).Should().Be((D(10, 8), D(10, 15), 5));
+    }
+
+    [Fact(DisplayName = "Fim inválido")]
+    public async Task TheEnd_BeforeTheStart_OfAMilestone_OrOfASummaryTask_IsRefused()
+    {
+        var parent = await AddTaskAsync("Configurar o ERP", D(10, 13), 3);
+        await AddSubtaskAsync("Plano de contas", D(10, 13), 2, parent);
+        var milestone = await AddMilestoneAsync("Aceite", D(10, 20));
+
+        (await AddItemAsync(Marina, TaskForm("Levantar cadastros", D(10, 14), 3) with { End = D(10, 13) }))
+            .Invalid.Should().Equal(ScheduleField.End);
+        (await ChangeItemAsync(Marina, milestone, Form(_phase, "Aceite", D(10, 20), 0) with { End = D(10, 21) }))
+            .Invalid.Should().Equal(ScheduleField.End);
+        (await ChangeItemAsync(Marina, parent, SubtaskForm("Configurar o ERP", D(10, 13), 3, null) with { End = D(10, 22) }))
+            .Invalid.Should().Equal(ScheduleField.End);
+        (await ItemAsync(milestone)).Item.End.Should().Be(D(10, 20));
+    }
+
+    [Fact(DisplayName = "Fim pela duração")]
+    public async Task Preview_GivesTheEnd_FromTheDuration()
+    {
+        // Saturday 10/10 moves to Tuesday 13/10, after the holiday of 12/10.
+        var result = await PreviewAsync(Carla, D(10, 10), 3, null);
+
+        (result.Found, result.Dates, result.Invalid.Count).Should().Be((true, new TaskDates(D(10, 13), D(10, 15), 3), 0));
+    }
+
+    [Fact(DisplayName = "Duração pelo fim")]
+    public async Task Preview_GivesTheDuration_FromTheEnd()
+    {
+        // From Thursday 08/10 to Saturday 17/10: 6 business days, ending on Friday 16/10.
+        var result = await PreviewAsync(Carla, D(10, 8), 1, D(10, 17));
+
+        (result.Found, result.Dates, result.Invalid.Count).Should().Be((true, new TaskDates(D(10, 8), D(10, 16), 6), 0));
+    }
+
+    [Fact(DisplayName = "Datas inválidas")]
+    public async Task Preview_RefusesTheInvalidFields()
+    {
+        (await PreviewAsync(Carla, D(10, 14), null, D(10, 13))).Invalid.Should().Equal(ScheduleField.End);
+        (await PreviewAsync(Carla, D(10, 14), 1000, null)).Invalid.Should().Equal(ScheduleField.Duration);
+        (await PreviewAsync(Carla, D(10, 14), null, null)).Invalid.Should().Equal(ScheduleField.Duration);
+        (await PreviewAsync(Carla, new DateOnly(1999, 12, 31), 3, null)).Invalid.Should().Equal(ScheduleField.Start);
+    }
+
+    [Fact(DisplayName = "Datas de um projeto de fora")]
+    public async Task Preview_OfAProjectOutside_IsNotFound()
+    {
+        (await PreviewAsync(new ProjectViewer(_beatriz, IsAdministrator: false), D(10, 14), 3, null)).Found.Should().BeFalse();
+        (await PreviewAsync(Paulo, D(10, 14), 3, null)).Found.Should().BeTrue();
+        (await PreviewAsync(new ProjectViewer(_lucas, IsAdministrator: false), D(10, 14), 3, null)).Found.Should().BeTrue();
     }
 
     [Fact(DisplayName = "Responsável do projeto")]

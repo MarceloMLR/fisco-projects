@@ -207,3 +207,4 @@ Regras:
 | [0142](0142-carga-da-equipe.md) | Carga da equipe por semana, pelas horas previstas e pelas ausências | aceita | 2026-11-01 |
 | [0143](0143-edicao-do-cronograma-na-lista.md) | Edição do cronograma na Lista, num modo de edição pelo teclado | aceita | 2026-11-01 |
 | [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita | 2026-11-01 |
+| [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |

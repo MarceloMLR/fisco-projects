@@ -559,9 +559,7 @@ describe('Editar o cronograma pela tela', () => {
     await openSchedule();
 
     const drawer = await chooseItem('Mapear processos fiscais');
-    expect(within(drawer).getByLabelText(text.form.duration)).toHaveAccessibleDescription(
-      text.form.endsOn.replace('{{day}}', '09/10/2026'),
-    );
+    expect(within(drawer).getByLabelText(text.form.end)).toHaveValue('09/10/2026');
     fireEvent.change(within(drawer).getByLabelText(text.form.duration), {
       target: { value: '5' },
     });
@@ -598,9 +596,7 @@ describe('Editar o cronograma pela tela', () => {
     ]);
     // The details start again from what the API computed.
     await waitFor(() => {
-      expect(within(drawer).getByLabelText(text.form.duration)).toHaveAccessibleDescription(
-        text.form.endsOn.replace('{{day}}', '13/10/2026'),
-      );
+      expect(within(drawer).getByLabelText(text.form.end)).toHaveValue('13/10/2026');
     });
     fireEvent.click(within(drawer).getByRole('button', { name: ptBR.details.close }));
     await waitFor(() => {
@@ -1952,5 +1948,111 @@ describe('Responsável ausente pela tela', () => {
         ptBR.projects.absences.duringTask.replace('{{periods}}', '26/10, 05/11 a 14/11'),
       ),
     ).toBeVisible();
+  });
+});
+
+// Spec: cronograma, requirement "Fim e duração pela tela" (ADR-0145).
+describe('Fim e duração pela tela', () => {
+  /** The dates the screen asked the API to compute, as the query of each request. */
+  const asked: string[] = [];
+
+  beforeEach(() => {
+    asked.length = 0;
+    server.events.on('request:start', ({ request }) => {
+      const url = new URL(request.url);
+      if (url.pathname.endsWith('/schedule/item-dates')) {
+        asked.push(url.search);
+      }
+    });
+    return () => {
+      server.events.removeAllListeners('request:start');
+    };
+  });
+
+  it('Duração pelo fim digitado', async () => {
+    await openSchedule();
+    const drawer = await chooseItem('Mapear processos fiscais');
+    const duration = within(drawer).getByLabelText(text.form.duration);
+    expect(duration).toHaveValue('4');
+
+    fireEvent.change(within(drawer).getByLabelText(text.form.end), {
+      target: { value: '15102026' },
+    });
+
+    // From Tuesday 06/10 to Thursday 15/10, with the holiday of 12/10: 7 business days.
+    await waitFor(() => {
+      expect(duration).toHaveValue('7');
+    });
+    expect(within(drawer).getByLabelText(text.form.end)).toHaveValue('15/10/2026');
+    expect(asked).toEqual(['?start=2026-10-06&end=2026-10-15']);
+  });
+
+  it('Fim pela duração digitada', async () => {
+    await openSchedule();
+    fireEvent.click(screen.getByRole('button', { name: text.newItem }));
+    const dialog = await screen.findByRole('dialog', { name: text.form.title });
+    const end = within(dialog).getByLabelText(text.form.end);
+    expect(end).toHaveValue('');
+
+    fireEvent.change(within(dialog).getByLabelText(text.form.start), {
+      target: { value: '10102026' },
+    });
+    // Saturday 10/10 moves to Tuesday 13/10, after the holiday: one business day ends on it.
+    await waitFor(() => {
+      expect(end).toHaveValue('13/10/2026');
+    });
+    fireEvent.change(within(dialog).getByLabelText(text.form.duration), {
+      target: { value: '5' },
+    });
+
+    await waitFor(() => {
+      expect(end).toHaveValue('19/10/2026');
+    });
+    expect(within(dialog).getByLabelText(text.form.start)).toHaveValue('10/10/2026');
+  });
+
+  it('Salvar com o fim digitado', async () => {
+    const changes: Record<string, unknown>[] = [];
+    server.use(
+      http.put('/api/projects/:id/schedule/items/:itemId', async ({ request }) => {
+        changes.push((await request.json()) as Record<string, unknown>);
+        Object.assign(itemNamed('Mapear processos fiscais'), { duration: 7, end: '2026-10-15' });
+        schedule = { ...schedule };
+        return HttpResponse.json({ pushed: 0 });
+      }),
+    );
+    await openSchedule();
+    const drawer = await chooseItem('Mapear processos fiscais');
+
+    fireEvent.change(within(drawer).getByLabelText(text.form.end), {
+      target: { value: '15102026' },
+    });
+    // Saved before the computation comes back: the end rules.
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+
+    await waitFor(() => {
+      expect(changes).toHaveLength(1);
+    });
+    expect(changes[0]).toMatchObject({ start: '2026-10-06', duration: 0, end: '2026-10-15' });
+    await waitFor(() => {
+      expect(within(drawer).getByLabelText(text.form.duration)).toHaveValue('7');
+    });
+    expect(within(drawer).getByLabelText(text.form.end)).toHaveValue('15/10/2026');
+  });
+
+  it('Fim recusado pela tela', async () => {
+    await openSchedule();
+    const drawer = await chooseItem('Mapear processos fiscais');
+    const end = within(drawer).getByLabelText(text.form.end);
+
+    fireEvent.change(end, { target: { value: '01102026' } });
+
+    await waitFor(() => {
+      expect(end).toHaveAccessibleDescription(text.errors.endInvalid);
+    });
+    fireEvent.click(within(drawer).getByRole('button', { name: text.form.save }));
+    await waitFor(() => {
+      expect(end).toHaveAttribute('aria-invalid', 'true');
+    });
   });
 });

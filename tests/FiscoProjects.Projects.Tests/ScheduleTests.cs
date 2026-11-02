@@ -4,8 +4,8 @@ namespace FiscoProjects.Projects.Tests;
 
 // Spec: cronograma (domain side): "Fases do cronograma", "Tarefas e marcos", "Início em dia útil", "Dependências",
 // "Dependências que empurram", "Excluir sem mover", "Progresso das tarefas", "Datas e progresso das fases e do
-// projeto", "Tarefa atrasada", "Marco atingido", "Marco atrasado", "Novas datas pela API" and "Dias não úteis no
-// cronograma".
+// projeto", "Tarefa atrasada", "Marco atingido", "Marco atrasado", "Novas datas pela API", "Dias não úteis no
+// cronograma" and "Datas da tarefa antes de salvar" (ADR-0145).
 public sealed class ScheduleTests
 {
     private static readonly TestBusinessDays Days = TestBusinessDays.Of2026;
@@ -546,6 +546,17 @@ public sealed class ScheduleTests
         (milestone.Start, milestone.End).Should().Be((D(10, 23), D(10, 23)));
         // From Saturday 10/10, moved to the next business day: Tuesday 13/10, after the holiday of 12/10.
         Schedule.DurationBetween(D(10, 10), D(10, 13), Days).Should().Be(1);
+    }
+
+    [Fact(DisplayName = "Datas pela duração")]
+    public void DatesOf_PlaceTheTask_AsTheSchedule()
+    {
+        // From Saturday 10/10, moved to Tuesday 13/10, after the holiday of 12/10.
+        Schedule.DatesOf(D(10, 10), 3, Days).Should().Be((D(10, 13), D(10, 15)));
+        Schedule.DatesOf(D(10, 8), 1, Days).Should().Be((D(10, 8), D(10, 8)));
+        Schedule.DatesOf(D(10, 8), 0, Days).Should().BeNull();
+        Schedule.DatesOf(D(10, 8), 1000, Days).Should().BeNull();
+        Schedule.DatesOf(new DateOnly(1999, 12, 31), 3, Days).Should().BeNull();
     }
 
     [Fact(DisplayName = "Fim antes do início")]

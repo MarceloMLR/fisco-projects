@@ -246,6 +246,29 @@ export function projectScheduleQuery(id: string) {
 }
 
 /**
+ * The dates of a task before it is saved, by the calendar of the installation (ADR-0145): from the start and the
+ * duration, the end; from the start and the end, the duration. A refused field answers 400, which is not asked again.
+ */
+export function itemDatesQuery(
+  projectId: string,
+  start: string,
+  by: { duration: number } | { end: string },
+) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, projectId, 'item-dates', start, by] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{id}/schedule/item-dates', {
+          params: { path: { id: projectId }, query: { start, ...by } },
+          signal,
+        }),
+      ),
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
+/**
  * The people of the company to choose, such as the manager or the tech lead of a project or a person to include in
  * it: the active users and the people of the directory who never signed in (ADR-0005).
  */

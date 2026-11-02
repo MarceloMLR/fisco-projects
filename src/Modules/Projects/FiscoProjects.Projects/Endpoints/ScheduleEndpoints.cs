@@ -129,7 +129,8 @@ public sealed record NewScheduleItemRequest(
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
     [property: Description("The day the item has to be done by, which never moves the dates; none without one (GanttA-2).")] DateOnly? Deadline = null,
     [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null,
-    [property: Description("The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139).")] string? Note = null);
+    [property: Description("The note of the item, in plain text up to 2,000 characters; none or empty without one (ADR-0139).")] string? Note = null,
+    [property: Description("The end of a task, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).")] DateOnly? End = null);
 
 /// <summary>
 /// A change of a task or a milestone, whose kind stays; without the progress, it stays as it is. Without the task it is
@@ -148,7 +149,11 @@ public sealed record ScheduleItemRequest(
     [property: Description("The client of the project is in charge of the task, without an owner (ADR-0102).")] bool OwnedByClient = false,
     [property: Description("The day the item has to be done by, which never moves the dates; none takes it out (GanttA-2).")] DateOnly? Deadline = null,
     [property: Description("The dependencies with their kinds and lags; when given, predecessorIds is not looked at, and without it each dependency kept keeps its kind and lag (ADR-0137).")] IReadOnlyList<ScheduleLinkRequest>? Links = null,
-    [property: Description("The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139).")] string? Note = null);
+    [property: Description("The note of the item, in plain text up to 2,000 characters; empty takes it out, and none keeps it as it is (ADR-0139).")] string? Note = null,
+    [property: Description("The end of a task with dates of its own, in place of the duration: the task lasts the business days from the start to it, and duration is not looked at (ADR-0145).")] DateOnly? End = null);
+
+/// <summary>The dates of a task before it is saved: the start on a business day, the end and the duration in business days.</summary>
+public sealed record TaskDatesResponse(DateOnly Start, DateOnly End, int Duration);
 
 /// <summary>The progress of a task, from 0 to 100.</summary>
 public sealed record ScheduleProgressRequest(int Progress);
@@ -187,6 +192,9 @@ internal static class ScheduleEndpoints
         projects.MapGet("/{id:guid}/schedule/ms-project", ExportToMsProjectAsync).WithName("ExportScheduleToMsProject")
             .Produces<string>(StatusCodes.Status200OK, "application/xml")
             .ProducesProblem(StatusCodes.Status403Forbidden);
+        projects.MapGet("/{id:guid}/schedule/item-dates", ItemDatesAsync).WithName("PreviewScheduleItemDates")
+            .WithDescription("The dates of a task by the calendar of the installation, without saving anything: the end from the start and the duration, or the duration from the start and the end (ADR-0145).")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         projects.MapPost("/{id:guid}/schedule/phases", AddPhaseAsync).WithName("AddSchedulePhase")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -229,6 +237,28 @@ internal static class ScheduleEndpoints
         projects.MapPost("/{id:guid}/schedule/redo", RedoAsync).WithName("RedoScheduleChange")
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
+    }
+
+    private static async Task<Results<Ok<TaskDatesResponse>, ValidationProblem, NotFound>> ItemDatesAsync(
+        Guid id,
+        DateOnly start,
+        int? duration,
+        DateOnly? end,
+        HttpContext http,
+        IUserAccess access,
+        PreviewScheduleItemDates preview,
+        CancellationToken cancellationToken)
+    {
+        var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
+        var result = await preview.ExecuteAsync(id, start, duration, end, viewer, cancellationToken);
+        if (!result.Found)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return result.Dates is { } dates
+            ? TypedResults.Ok(new TaskDatesResponse(dates.Start, dates.End, dates.Duration))
+            : Invalid(result.Invalid);
     }
 
     private static async Task<Results<Ok<ScheduleResponse>, NotFound>> GetAsync(
@@ -386,7 +416,8 @@ internal static class ScheduleEndpoints
                 request.OwnedByClient,
                 request.Deadline,
                 request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))],
-                request.Note),
+                request.Note,
+                request.End),
             viewer,
             cancellationToken);
         return result.Outcome switch
@@ -424,7 +455,8 @@ internal static class ScheduleEndpoints
                 request.OwnedByClient,
                 request.Deadline,
                 request.Links is null ? null : [.. request.Links.Select(link => new ScheduleLink(link.PredecessorId, link.Type, link.Lag))],
-                request.Note),
+                request.Note,
+                request.End),
             viewer,
             cancellationToken);
         return result.Outcome switch

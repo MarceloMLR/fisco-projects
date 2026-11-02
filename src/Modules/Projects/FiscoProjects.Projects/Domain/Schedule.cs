@@ -306,6 +306,23 @@ public sealed class Schedule : Entity
     }
 
     /// <summary>
+    /// The dates of a task from a start and a duration, as the schedule places it: the start moved to a business day and
+    /// the end that many business days later, the start included; null when the start or the duration is not valid
+    /// (ADR-0018, ADR-0145).
+    /// </summary>
+    public static (DateOnly Start, DateOnly End)? DatesOf(DateOnly start, int duration, IBusinessDays days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        if (!IsValidDay(start) || !IsValidDuration(ScheduleItemKind.Task, duration))
+        {
+            return null;
+        }
+
+        var first = OnABusinessDay(start, days);
+        return (first, days.AddBusinessDays(first, duration - 1));
+    }
+
+    /// <summary>
     /// The non-business days from the first day of the month before <paramref name="start"/> to the last day of the
     /// month after <paramref name="end"/>, for the timeline to shade them without the rule of the calendar (ADR-0051).
     /// </summary>

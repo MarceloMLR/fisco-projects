@@ -524,7 +524,8 @@ public sealed class RemoveSchedulePhase(IProjectStore projects, IScheduleStore s
 /// new item), the items it depends on, the task it is in (ADR-0088) and whether the client of the project is in charge
 /// instead of a person (ADR-0102). A task with subtasks takes only the phase, the name and the owner; its start and
 /// duration are not looked at. The note, when it comes, replaces the one of the item, empty to take it out; none keeps
-/// it as it is (ADR-0139).
+/// it as it is (ADR-0139). The end, when it comes, says the duration of a task with dates of its own: the business days
+/// from the start to it, and the duration of the form is not looked at (ADR-0145).
 /// </summary>
 public sealed record ScheduleItemForm(
     Guid PhaseId,
@@ -538,14 +539,15 @@ public sealed record ScheduleItemForm(
     bool OwnedByClient = false,
     DateOnly? Deadline = null,
     IReadOnlyList<ScheduleLink>? Links = null,
-    string? Note = null);
+    string? Note = null,
+    DateOnly? End = null);
 
 /// <summary>The checks of the form of an item against the schedule and the people of the project.</summary>
 internal static class ScheduleItemChecks
 {
     /// <summary>The plan the form asks for, or the invalid fields.</summary>
     public static (ScheduleItemPlan? Plan, List<ScheduleField> Invalid) Check(
-        Project project, Schedule schedule, ScheduleItemKind kind, ScheduleItemForm form, Guid? itemId)
+        Project project, Schedule schedule, ScheduleItemKind kind, ScheduleItemForm form, Guid? itemId, IBusinessDays days)
     {
         var invalid = new List<ScheduleField>();
         // A task with subtasks takes its dates and progress from them (ADR-0088).
@@ -567,7 +569,20 @@ internal static class ScheduleItemChecks
             invalid.Add(ScheduleField.Start);
         }
 
-        if (!summary && !Schedule.IsValidDuration(kind, form.Duration))
+        // With the end, a task with dates of its own lasts the business days from the start to it (ADR-0145).
+        var duration = form.Duration;
+        if (form.End is { } end)
+        {
+            if (kind != ScheduleItemKind.Task || summary || Schedule.DurationBetween(form.Start, end, days) is not { } between)
+            {
+                invalid.Add(ScheduleField.End);
+            }
+            else
+            {
+                duration = between;
+            }
+        }
+        else if (!summary && !Schedule.IsValidDuration(kind, form.Duration))
         {
             invalid.Add(ScheduleField.Duration);
         }
@@ -624,7 +639,7 @@ internal static class ScheduleItemChecks
                 form.PhaseId,
                 name!,
                 form.Start,
-                form.Duration,
+                duration,
                 form.OwnerId,
                 form.Progress,
                 [.. predecessors.Distinct()],
@@ -633,6 +648,44 @@ internal static class ScheduleItemChecks
                 form.Deadline,
                 form.Links is null ? null : [.. form.Links.DistinctBy(link => link.PredecessorId)],
                 form.Note), invalid);
+    }
+}
+
+/// <summary>The dates of a task before it is saved: the start on a business day, the end and the duration (ADR-0145).</summary>
+public sealed record TaskDates(DateOnly Start, DateOnly End, int Duration);
+
+/// <summary>The dates of a task, or the fields that are not valid; not found when the person does not see the project.</summary>
+public sealed record TaskDatesResult(bool Found, TaskDates? Dates, IReadOnlyList<ScheduleField> Invalid);
+
+/// <summary>
+/// The dates of a task by the calendar of the installation, without saving anything, for who sees the project, as the
+/// details compute the end and the duration from each other while the person types (ADR-0051, ADR-0145): from the start
+/// and the duration, the end; from the start and the end, the duration and the end on the last business day of it. With
+/// both, the end rules, as in the form of an item.
+/// </summary>
+public sealed class PreviewScheduleItemDates(IProjectStore projects, IWorkCalendar calendar)
+{
+    public async Task<TaskDatesResult> ExecuteAsync(
+        Guid projectId, DateOnly start, int? duration, DateOnly? end, ProjectViewer viewer, CancellationToken cancellationToken)
+    {
+        var project = await projects.FindAsync(projectId, cancellationToken);
+        if (project is null || !ProjectPermissions.Of(viewer, project.RoleOf(viewer.UserId)).CanView)
+        {
+            return new TaskDatesResult(false, null, []);
+        }
+
+        if (!Schedule.IsValidDay(start))
+        {
+            return new TaskDatesResult(true, null, [ScheduleField.Start]);
+        }
+
+        var days = await calendar.GetAsync(cancellationToken);
+        var (lasting, field) = end is { } last
+            ? (Schedule.DurationBetween(start, last, days), ScheduleField.End)
+            : (duration, ScheduleField.Duration);
+        return lasting is { } businessDays && Schedule.DatesOf(start, businessDays, days) is { } dates
+            ? new TaskDatesResult(true, new TaskDates(dates.Start, dates.End, businessDays), [])
+            : new TaskDatesResult(true, null, [field]);
     }
 }
 
@@ -651,7 +704,7 @@ public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore sched
         var today = await clock.TodayAsync(cancellationToken);
         return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
         {
-            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, kind, form, itemId: null);
+            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, kind, form, itemId: null, days);
             if (plan is null)
             {
                 return ScheduleResult.InvalidFields(invalid);
@@ -691,7 +744,7 @@ public sealed class ChangeScheduleItem(
                 return ScheduleResult.Of(ScheduleOutcome.NotFound);
             }
 
-            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, item.Kind, form, itemId);
+            var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, item.Kind, form, itemId, days);
             if (plan is null)
             {
                 return ScheduleResult.InvalidFields(invalid);

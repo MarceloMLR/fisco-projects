@@ -1452,6 +1452,53 @@ export function ticketsPage(tickets: TicketRow[], url: URL) {
   return { items, total: items.length };
 }
 
+/** The holidays of the calendar of the tests, in October and November 2026. */
+const testHolidays = new Set(['2026-10-12', '2026-11-02', '2026-11-20']);
+
+const isBusinessDay = (day: string) => {
+  const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
+  return weekday !== 0 && weekday !== 6 && !testHolidays.has(day);
+};
+
+const nextDay = (day: string) =>
+  new Date(Date.parse(`${day}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * The dates of a task as the API computes them with the calendar of the tests (ADR-0145): the start moved to a
+ * business day, and the end from the duration or the duration from the end; nothing for an end before the start.
+ */
+export function taskDatesOf(
+  start: string,
+  by: { duration: number } | { end: string },
+): { start: string; end: string; duration: number } | undefined {
+  let first = start;
+  while (!isBusinessDay(first)) {
+    first = nextDay(first);
+  }
+  if ('end' in by) {
+    let duration = 0;
+    let last = first;
+    for (let day = first; day <= by.end; day = nextDay(day)) {
+      if (isBusinessDay(day)) {
+        duration += 1;
+        last = day;
+      }
+    }
+    return duration === 0 ? undefined : { start: first, end: last, duration };
+  }
+  if (!Number.isInteger(by.duration) || by.duration < 1 || by.duration > 999) {
+    return undefined;
+  }
+  let end = first;
+  for (let left = by.duration - 1; left > 0; left -= 1) {
+    end = nextDay(end);
+    while (!isBusinessDay(end)) {
+      end = nextDay(end);
+    }
+  }
+  return { start: first, end, duration: by.duration };
+}
+
 export const handlers = [
   http.get('/api/session', () => HttpResponse.json(marina)),
   http.get('/api/users', ({ request }) =>
@@ -1536,6 +1583,21 @@ export const handlers = [
     HttpResponse.json({ absences: [], canManage: false }),
   ),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
+  // The dates of a task by the calendar of the tests (ADR-0145).
+  http.get('/api/projects/:id/schedule/item-dates', ({ request }) => {
+    const query = new URL(request.url).searchParams;
+    const dates = taskDatesOf(
+      query.get('start') ?? '',
+      query.has('end')
+        ? { end: query.get('end') ?? '' }
+        : { duration: Number(query.get('duration')) },
+    );
+    return dates === undefined
+      ? problem(400, undefined, {
+          errors: { [query.has('end') ? 'end' : 'duration']: ['Not valid.'] },
+        })
+      : HttpResponse.json(dates);
+  }),
   http.get('/api/projects/:id/overview', () => HttpResponse.json(emptyOverview)),
   http.get('/api/projects/:id/closing', () =>
     HttpResponse.json({ openTickets: 0, incompleteTasks: 0, pendingAcceptances: 0 }),

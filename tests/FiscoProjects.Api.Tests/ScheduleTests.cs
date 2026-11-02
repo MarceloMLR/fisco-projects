@@ -10,7 +10,7 @@ namespace FiscoProjects.Api.Tests;
 // que empurram", "Tarefa atrasada", "Cronograma de um projeto encerrado", "Mudanças do cronograma na auditoria",
 // "Progresso das tarefas", "Quem atualiza o progresso", "Marco atingido", "Marco atrasado", "Novas datas pela API",
 // "Dias não úteis no cronograma", "Subtarefas", "Tarefa-resumo", "Dependências com subtarefas" and "Subtarefas na
-// auditoria"; "Data-limite de tarefas e marcos"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos:
+// auditoria"; "Data-limite de tarefas e marcos"; "Datas da tarefa antes de salvar"; membros-do-projeto: "Tarefas de quem sai ou passa a leitor"; projetos:
 // "Cronograma na lista de projetos" and "Cabeçalho do projeto".
 public sealed class ScheduleTests(SqlServerFixture sqlServer)
 {
@@ -44,16 +44,18 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         public bool Changes => !Reads.Contains(Name);
 
         /// <summary>Only the Administrator and the manager do it: every change, and the XML with the e-mails (ADR-0136).</summary>
-        public bool ManagersOnly => Name != "See the schedule";
+        public bool ManagersOnly => Name is not ("See the schedule" or "See the dates of a task");
     }
 
-    /// <summary>What the people of the project read of the schedule, without changing it (ADR-0043, ADR-0136).</summary>
-    private static readonly HashSet<string> Reads = ["See the schedule", "Export to MS Project"];
+    /// <summary>What the people of the project read of the schedule, without changing it (ADR-0043, ADR-0136, ADR-0145).</summary>
+    private static readonly HashSet<string> Reads = ["See the schedule", "Export to MS Project", "See the dates of a task"];
 
     private static readonly Action[] Actions =
     [
         new("See the schedule", (client, scene) => client.GetAsync(scene.Path, Cancellation), HttpStatusCode.OK),
         new("Export to MS Project", (client, scene) => client.GetAsync($"{scene.Path}/ms-project", Cancellation), HttpStatusCode.OK),
+        new("See the dates of a task", (client, scene) => client.GetAsync($"{scene.Path}/item-dates?start=2026-10-10&duration=3", Cancellation),
+            HttpStatusCode.OK),
         new("Add a phase", (client, scene) => SendAsync(client, HttpMethod.Post, $"{scene.Path}/phases", new { name = "Entrada em produção" }),
             HttpStatusCode.Created),
         new("Rename a phase", (client, scene) => SendAsync(client, HttpMethod.Put, $"{scene.Path}/phases/{scene.Phase}", new { name = "Parametrização" }),
@@ -314,6 +316,44 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         (await ErrorFieldsAsync(task)).Should().Equal("end");
         (await ErrorFieldsAsync(milestone)).Should().Equal("end");
         (await ScheduleOfAsync(scene)).Should().Be(before);
+    }
+
+    [Fact(DisplayName = "Datas da tarefa pela API")]
+    public async Task TheDatesOfATask_ComeFromTheDuration_OrFromTheEnd()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        static async Task<(string?, string?, int)> DatesOf(HttpResponseMessage response)
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Cancellation));
+            var dates = await response.Content.ReadFromJsonAsync<JsonElement>(Cancellation);
+            return (dates.GetProperty("start").GetString(), dates.GetProperty("end").GetString(), dates.GetProperty("duration").GetInt32());
+        }
+
+        // Saturday 10/10 moves to Tuesday 13/10, after the holiday of 12/10; to Saturday 17/10 is 4 business days.
+        (await DatesOf(await scene.Admin.GetAsync($"{scene.Path}/item-dates?start=2026-10-10&duration=3", Cancellation)))
+            .Should().Be(("2026-10-13", "2026-10-15", 3));
+        (await DatesOf(await scene.Admin.GetAsync($"{scene.Path}/item-dates?start=2026-10-10&end=2026-10-17", Cancellation)))
+            .Should().Be(("2026-10-13", "2026-10-16", 4));
+        var refused = await scene.Admin.GetAsync($"{scene.Path}/item-dates?start=2026-10-14&end=2026-10-13", Cancellation);
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(refused)).Should().Equal("end");
+
+        var created = await SendAsync(scene.Admin, HttpMethod.Post, $"{scene.Path}/items", new
+        {
+            kind = "Task",
+            phaseId = scene.Phase,
+            name = "Configurar plano de contas",
+            start = "2026-10-08",
+            duration = 0,
+            progress = 0,
+            predecessorIds = Array.Empty<Guid>(),
+            end = "2026-10-13",
+        });
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync(Cancellation));
+        var task = await ItemAsync(scene, (await created.Content.ReadFromJsonAsync<JsonElement>(Cancellation)).GetProperty("id").GetGuid());
+        (task.GetProperty("end").GetString(), task.GetProperty("duration").GetInt32()).Should().Be(("2026-10-13", 3));
     }
 
     [Fact(DisplayName = "Dias não úteis no cronograma")]
