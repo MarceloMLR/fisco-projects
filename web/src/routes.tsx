@@ -17,6 +17,7 @@ import { ProjectLinksPage } from './links/ProjectLinksPage';
 import { MyHoursPage } from './hours/MyHoursPage';
 import { MyWorkPage } from './my-work/MyWorkPage';
 import { LocalSigningPage } from './acceptances/LocalSigningPage';
+import { TeamsPage } from './teams/TeamsPage';
 import { ProjectAcceptancesPage } from './acceptances/ProjectAcceptancesPage';
 import { ProjectCredentialsPage } from './credentials/ProjectCredentialsPage';
 import { LinkCategoriesPage } from './admin/LinkCategoriesPage';
@@ -52,6 +53,8 @@ export const routes: RouteObject[] = [
       { path: 'sign-in', element: <SignInPage /> },
       // The page of the local provider of signatures, where a signer signs by the link, without a session (ADR-0129).
       { path: 'sign/:token', element: <LocalSigningPage /> },
+      // The page of the installation in Teams, which opens the item of a notice in the browser, without a session (ADR-0149).
+      { path: 'teams', element: <TeamsPage /> },
       // The print page of a schedule, for paper, outside the shell (ADR-0021).
       {
         path: 'projects/:projectId/schedule/print',

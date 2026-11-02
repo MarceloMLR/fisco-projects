@@ -3764,6 +3764,10 @@
       "tomorrow": "amanhã"
     }
   },
+  "teamsPage": {
+    "open": "Abrir no {{name}}",
+    "inBrowser": "Abre no navegador, com a sua conta."
+  },
   "localSigning": {
     "title": "Assinatura do termo",
     "greeting": "Olá, {{name}}.",

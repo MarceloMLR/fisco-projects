@@ -26,7 +26,7 @@
 
 - [x] 6.1 `npm run api:update`; o cartão "Avisos" de Meu perfil com o canal dos avisos na hora; testes de tela "Escolher o Teams", "Avisos na hora sempre ligados" e "Desligar o resumo"
 - [x] 6.2 "Avisos pelo Teams" na seção Microsoft 365 das Configurações gerais, com "Avisar pelo Teams", a versão e "Baixar pacote do Teams", que monta os ícones e o `.zip` na tela; testes de tela "Pacote do administrador" e "Ligar os avisos pelo Teams"
-- [ ] 6.3 A página `/teams`, fora da estrutura e sem sessão, com o `safeItemPath`; testes "Abrir o item no navegador", "Página sem item" e "Endereço de fora recusado"
+- [x] 6.3 A página `/teams`, fora da estrutura e sem sessão, com o `safeItemPath`; testes "Abrir o item no navegador", "Página sem item" e "Endereço de fora recusado"
 - [ ] 6.4 Conferência no navegador do cartão Avisos, da seção Microsoft 365 e da página `/teams`, no computador e no celular, nos temas claro e escuro
 
 ## 7. Instalação e documentação
