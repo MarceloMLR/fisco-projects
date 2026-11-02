@@ -52,7 +52,7 @@ O cronograma MUST ter dois níveis: fases e, dentro delas, tarefas e marcos. Uma
 
 ### Requirement: Tarefas e marcos
 
-Uma tarefa MUST ter a fase, o nome, com até 200 caracteres, o início e a duração em dias úteis, de 1 a 999, ou o fim no lugar dela, que dá a duração do início até ele. O sistema MUST calcular o fim contando o início e pulando os dias não úteis do calendário da instalação; o fim antes do início, longe demais, num marco ou numa tarefa com subtarefas MUST receber 400. Um marco MUST ser uma data, sem duração, responsável ou progresso, e o tipo não muda depois da criação (ADR-0018, ADR-0019, ADR-0145).
+Uma tarefa MUST ter a fase, o nome, com até 200 caracteres, o início e a duração em dias úteis, de 1 a 999, ou o fim no lugar dela, que dá a duração do início até ele. O sistema MUST calcular o fim contando o início e pulando os dias não úteis do calendário da instalação; o fim antes do início, longe demais, num marco ou numa tarefa com subtarefas MUST receber 400. Um marco MUST ser uma data, sem duração, responsável ou progresso, e o tipo não muda (ADR-0018, ADR-0019, ADR-0145).
 
 #### Scenario: Criar tarefa
 - **WHEN** o gerente inclui a tarefa "Levantar cadastros" começando na quinta-feira 08/10/2026, com 3 dias úteis, e 12/10/2026 é feriado
