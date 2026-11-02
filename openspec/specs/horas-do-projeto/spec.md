@@ -336,7 +336,7 @@ As horas previstas MUST NOT mudar as datas, o progresso, o desfazer, a linha de 
 
 ### Requirement: Horas das tarefas
 
-O administrador, em qualquer projeto, e o gerente do projeto, nos projetos que gerencia, MUST ver as tarefas com horas previstas ou apontadas, na ordem do cronograma, cada uma com o nome atual, as previstas, as apontadas nela por qualquer pessoa, o saldo, o consumo e o estado, e os totais do projeto: as previstas nas tarefas, as apontadas nelas e as apontadas fora das tarefas do cronograma, sem tarefa ou numa tarefa excluída. A resposta MUST dizer se quem pede pode mudar as previstas (ADR-0128, ADR-0138, ADR-0144).
+O administrador e o gerente do projeto MUST ver as tarefas com horas previstas ou apontadas, na ordem do cronograma, cada uma com o nome atual, as previstas, as apontadas nela por qualquer pessoa, o saldo, o consumo e o estado, e os totais: as previstas nas tarefas, as apontadas nelas e as apontadas fora das tarefas do cronograma, sem tarefa ou numa tarefa excluída. A resposta MUST dizer se quem pede pode mudar as previstas (ADR-0128, ADR-0138, ADR-0144).
 
 #### Scenario: Horas fora das tarefas
 - **WHEN** um projeto tem horas apontadas sem tarefa e numa tarefa que foi excluída do cronograma
