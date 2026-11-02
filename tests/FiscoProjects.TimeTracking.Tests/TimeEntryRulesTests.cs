@@ -4,7 +4,8 @@ using FiscoProjects.TimeTracking.Domain;
 namespace FiscoProjects.TimeTracking.Tests;
 
 // Spec: horas-do-projeto (domain side): "Apontamento de horas", "Tarefa ou chamado do apontamento", "Horas de cada
-// pessoa", "Horas de quem saiu do projeto" and "Permissões nas horas" (ADR-0128).
+// pessoa", "Horas de quem saiu do projeto", "Permissões nas horas", "Permissões nas horas previstas" and "Apontamentos da
+// tarefa" (ADR-0128, ADR-0144).
 public sealed class TimeEntryRulesTests
 {
     private static readonly DateOnly Today = new(2026, 10, 29);
@@ -116,6 +117,39 @@ public sealed class TimeEntryRulesTests
         TimeEntryAccess.RefusalToChange(Person, entry, ProjectWith(null)).Should().Be(TimeEntryRefusal.Forbidden);
         TimeEntryAccess.RefusalToChange(Person, entry, ProjectWith(ProjectMemberRole.Viewer)).Should().Be(TimeEntryRefusal.Forbidden);
         TimeEntryAccess.RefusalToChange(Person, entry, ProjectWith(ProjectMemberRole.Contributor)).Should().BeNull();
+    }
+
+    [Theory(DisplayName = "Quem vê as horas das tarefas")]
+    [InlineData(null, false)]
+    [InlineData(ProjectMemberRole.Manager, true)]
+    [InlineData(ProjectMemberRole.TechLead, false)]
+    [InlineData(ProjectMemberRole.Contributor, false)]
+    [InlineData(ProjectMemberRole.Developer, false)]
+    [InlineData(ProjectMemberRole.Viewer, false)]
+    public void TheHoursOfTheTasks_AreSeenByTheAdministratorAndTheManager(ProjectMemberRole? role, bool sees)
+    {
+        TimeEntryAccess.SeesTaskHours(Person, ProjectWith(role)).Should().Be(sees);
+        TimeEntryAccess.SeesTaskHours(Person, ProjectWith(role, closed: true)).Should().Be(sees, "also of a closed project");
+        TimeEntryAccess.SeesTaskHours(Person with { IsAdministrator = true }, ProjectWith(role)).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Previstas só pelo administrador")]
+    public void ThePlannedHours_ChangeOnlyByTheAdministrator()
+    {
+        TimeEntryAccess.ChangesPlannedHours(Person).Should().BeFalse();
+        TimeEntryAccess.ChangesPlannedHours(Person with { IsAdministrator = true }).Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Correção pelos apontamentos da tarefa")]
+    public void TheManager_MayChangeOnlyTheOwnEntries_OfTheTask()
+    {
+        var manager = ProjectWith(ProjectMemberRole.Manager);
+        var others = EntryOf(Guid.CreateVersion7());
+
+        TimeEntryAccess.MayChange(Person, others, manager).Should().BeFalse();
+        TimeEntryAccess.MayChange(Person, EntryOf(Person.UserId), manager).Should().BeTrue();
+        TimeEntryAccess.MayChange(Person with { IsAdministrator = true }, others, manager).Should().BeTrue();
+        TimeEntryAccess.MayChange(Person, EntryOf(Person.UserId), ProjectWith(ProjectMemberRole.Manager, closed: true)).Should().BeFalse();
     }
 
     [Fact(DisplayName = "Corrigir o apontamento")]

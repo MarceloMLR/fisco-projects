@@ -207,6 +207,8 @@ describe('Aba Cronograma', () => {
       days(3),
       'RSRafael Souza',
       '80%',
+      // The hours of the task, which the manager of the project sees (ADR-0144).
+      ptBR.projectHours.none,
       'Mapear processos fiscais',
     ]);
     expect(within(rowOf('Validar cadastro de produtos')).getByText(oneDayLate)).toHaveStyle({
@@ -224,6 +226,7 @@ describe('Aba Cronograma', () => {
       text.kinds.Milestone,
       '',
       text.milestone.pending,
+      '',
       'Testes com a equipe do cliente',
     ]);
     // The summary above the list and the trail.
@@ -915,7 +918,7 @@ describe('Subtarefas pela tela', () => {
     expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Executar testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Integrar emissão de NF-e')).toBe('var(--space-6)');
-    expect(cellsOf('Executar testes')[7]).toBe('Roteiro de testes');
+    expect(cellsOf('Executar testes')[8]).toBe('Roteiro de testes');
     // The summary has the arrow of its subtasks, shown at first; the other tasks have none.
     expect(
       within(rowOf('Testes integrados')).getByRole('button', {
@@ -1492,7 +1495,7 @@ describe('Tipo e intervalo pela tela', () => {
     expect(sent[0]?.links).toEqual([{ predecessorId: icms.id, type: 'StartToStart', lag: 1 }]);
     await closeDrawer(drawer);
     await waitFor(() => {
-      expect(cellsOf('Testes integrados')[7]).toBe(
+      expect(cellsOf('Testes integrados')[8]).toBe(
         `Parametrizar regras de ICMS (${links.short.StartToStart}, +1)`,
       );
     });
@@ -1552,8 +1555,8 @@ describe('Folga pela tela', () => {
   });
 });
 
-// Spec: horas-do-projeto, requirements "Horas na Lista do cronograma pela tela" and "Horas no detalhe da tarefa pela
-// tela" (ADR-0138).
+// Spec: horas-do-projeto, requirements "Horas na Lista do cronograma pela tela", "Horas no detalhe da tarefa pela
+// tela" and "Apontamentos da tarefa pela tela" (ADR-0138, ADR-0144).
 describe('Horas das tarefas pela tela', () => {
   const hoursText = ptBR.projectHours.tasks;
   /** The planned hours of each task as the simulated API keeps them, and the hours logged in each one. */
@@ -1567,13 +1570,16 @@ describe('Horas das tarefas pela tela', () => {
 
   function answerTaskHours() {
     server.use(
-      http.get('/api/admin/project-hours/:projectId/tasks', ({ params }) => {
+      http.get('/api/projects/:projectId/task-hours', ({ params }) => {
         asked.push(String(params.projectId));
         return HttpResponse.json(
           taskHoursOf(
             Object.entries(logged).map(([name, hours]) =>
               taskHoursRow(itemNamed(name).id, name, planned[name] ?? null, hours),
             ),
+            0,
+            // Only the Administrator changes the planned hours (ADR-0144).
+            session === 'Administrator',
           ),
         );
       }),
@@ -1589,15 +1595,22 @@ describe('Horas das tarefas pela tela', () => {
     );
   }
 
+  let session: 'Administrator' | 'ProjectManager' | 'TechLead';
+  function signIn(role: typeof session) {
+    session = role;
+    signedInAs(role);
+  }
+
   beforeEach(() => {
     planned = { 'Parametrizar regras de ICMS': 40, 'Integrar emissão de NF-e': null };
     asked.length = 0;
     sent.length = 0;
+    session = 'ProjectManager';
     answerTaskHours();
   });
 
   it('Horas na Lista do administrador', async () => {
-    signedInAs('Administrator');
+    signIn('Administrator');
     await openSchedule();
 
     expect(
@@ -1617,7 +1630,7 @@ describe('Horas das tarefas pela tela', () => {
   });
 
   it('Alterar as previstas pelo detalhe da tarefa', async () => {
-    signedInAs('Administrator');
+    signIn('Administrator');
     await openSchedule();
     await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h');
 
@@ -1655,7 +1668,140 @@ describe('Horas das tarefas pela tela', () => {
     expect(within(rowOf('Parametrizar regras de ICMS')).getByText('52 de 48 h')).toBeVisible();
   });
 
+  it('Horas na Lista da gerente', async () => {
+    // Marina is the manager of the ERP-FIN.
+    await openSchedule();
+
+    expect(
+      within(table()).getByRole('columnheader', { name: text.columns.hours }),
+    ).toBeInTheDocument();
+    expect(
+      await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h'),
+    ).toBeVisible();
+    expect(within(rowOf('Integrar emissão de NF-e')).getByText('6 h')).toBeVisible();
+    expect(asked).toContain(project.id);
+  });
+
+  it('Horas no detalhe para a gerente', async () => {
+    await openSchedule();
+    await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h');
+
+    const drawer = await chooseItem('Parametrizar regras de ICMS');
+    const section = within(drawer).getByRole('region', { name: hoursText.section });
+    expect(within(section).getByText('40 h')).toBeVisible();
+    expect(within(section).getByText('52 h')).toBeVisible();
+    expect(within(section).getByText('12 h acima')).toBeVisible();
+    expect(
+      within(section).getByRole('progressbar', {
+        name: hoursText.consumptionLabel.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByRole('button', {
+        name: hoursText.viewEntriesLabel.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    ).toBeVisible();
+    expect(
+      within(section).queryByRole('button', {
+        name: hoursText.changeLabel.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    ).toBeNull();
+  });
+
+  it('Ver apontamentos pelo detalhe da tarefa', async () => {
+    const task = itemNamed('Parametrizar regras de ICMS');
+    const entryOf = (
+      id: string,
+      day: string,
+      hours: number,
+      description: string,
+      person: { id: string; name: string },
+      canChange: boolean,
+    ) => ({
+      id,
+      day,
+      hours,
+      description,
+      person,
+      project: { id: project.id, code: project.code, name: project.name },
+      task: { id: task.id, name: task.name },
+      ticket: null,
+      canChange,
+    });
+    const asks: string[] = [];
+    server.use(
+      http.get('/api/projects/:projectId/task-hours/:itemId/entries', ({ params }) => {
+        asks.push(String(params.itemId));
+        return HttpResponse.json({
+          items: [
+            entryOf(
+              '0199f5a2-7c1e-7d40-9a1b-e00000000501',
+              '2026-10-16',
+              8,
+              'Cadastro das alíquotas interestaduais',
+              demoPeople.carla,
+              false,
+            ),
+            entryOf(
+              '0199f5a2-7c1e-7d40-9a1b-e00000000502',
+              '2026-10-15',
+              3,
+              'Revisão das regras com o cliente',
+              demoPeople.marina,
+              true,
+            ),
+          ],
+          total: 11,
+        });
+      }),
+    );
+    await openSchedule();
+    await within(rowOf('Parametrizar regras de ICMS')).findByText('52 de 40 h');
+    const drawer = await chooseItem('Parametrizar regras de ICMS');
+    const section = within(drawer).getByRole('region', { name: hoursText.section });
+
+    fireEvent.click(
+      within(section).getByRole('button', {
+        name: hoursText.viewEntriesLabel.replace('{{name}}', 'Parametrizar regras de ICMS'),
+      }),
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: hoursText.entries.title });
+    const entries = within(dialog).getByRole('grid', {
+      name: hoursText.entries.table.replace('{{name}}', 'Parametrizar regras de ICMS'),
+    });
+    expect(await within(entries).findByText('Cadastro das alíquotas interestaduais')).toBeVisible();
+    expect(within(entries).getByText('Carla Mendes')).toBeVisible();
+    expect(within(entries).getByText('Revisão das regras com o cliente')).toBeVisible();
+    expect(within(entries).getByText('Marina Costa')).toBeVisible();
+    // Each day has one entry: the hours of the day and of the entry.
+    expect(within(entries).getAllByText('8 h')).toHaveLength(2);
+    expect(within(entries).getAllByText('3 h')).toHaveLength(2);
+    // Every entry is of the task: no column of the task or the ticket.
+    expect(
+      within(entries).queryByRole('columnheader', { name: ptBR.hours.columns.work }),
+    ).toBeNull();
+    expect(within(dialog).getByText('Total da tarefa: 11 h de 2 pessoas')).toBeVisible();
+    // The "⋮" only on the entry she may correct, her own.
+    expect(within(entries).getAllByRole('button', { name: /^Ações do apontamento/ })).toHaveLength(
+      1,
+    );
+    expect(asks).toEqual([task.id]);
+  });
+
   it('Cronograma sem horas para a gestão', async () => {
+    // Marina as the tech lead of the project, and Rafael its manager.
+    project = {
+      ...project,
+      members: project.members.map((member) =>
+        member.id === demoPeople.marina.id
+          ? { ...member, role: 'TechLead' as const }
+          : member.role === 'TechLead'
+            ? { ...member, role: 'Manager' as const }
+            : member,
+      ),
+    };
+    signIn('TechLead');
     await openSchedule();
 
     expect(

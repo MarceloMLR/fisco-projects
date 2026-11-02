@@ -15,6 +15,9 @@ public interface ITimeEntryStore
     /// </summary>
     Task<IReadOnlyList<TimeEntry>> InPeriodAsync(Guid? userId, Guid? projectId, DateOnly from, DateOnly to, CancellationToken cancellationToken);
 
+    /// <summary>The entries of a task of the schedule of a project, of every person, not tracked (ADR-0144).</summary>
+    Task<IReadOnlyList<TimeEntry>> OfTaskAsync(Guid projectId, Guid scheduleItemId, CancellationToken cancellationToken);
+
     /// <summary>The hours of the person on the day, in every project, without the entry being changed.</summary>
     Task<decimal> HoursOfDayAsync(Guid userId, DateOnly day, Guid? except, CancellationToken cancellationToken);
 
@@ -143,8 +146,7 @@ public sealed class TimeEntryTargets(IScheduleItems schedule, IProjectTicketList
 /// (ADR-0128): the person sees only the own entries; the Administrator, the entries of anyone and of every person of a
 /// project.
 /// </summary>
-public sealed class ListTimeEntries(
-    ITimeEntryStore store, TimeEntryProjects projects, IScheduleItems schedule, IProjectTicketList tickets, IUserDirectory people)
+public sealed class ListTimeEntries(ITimeEntryStore store, TimeEntryProjects projects, TimeEntryRows rows)
 {
     /// <summary>The longest period a list takes, in days.</summary>
     public const int MaxDays = 93;
@@ -172,6 +174,25 @@ public sealed class ListTimeEntries(
         }
 
         var entries = await store.InPeriodAsync(person, projectId, from, to, cancellationToken);
+        return (await rows.ListAsync(entries, all, viewer, cancellationToken), TimeEntryOutcome.Done);
+    }
+}
+
+/// <summary>
+/// The entries of a list as the screens show them, in one place: the newest day first, each with who logged it by the
+/// current name, its project, its task or ticket and whether the viewer may change it, and their total (ADR-0128).
+/// </summary>
+public sealed class TimeEntryRows(IScheduleItems schedule, IProjectTicketList tickets, IUserDirectory people)
+{
+    /// <summary>The rows of the entries of the projects given; the entries of other projects are left out.</summary>
+    public async Task<TimeEntryList> ListAsync(
+        IReadOnlyList<TimeEntry> entries,
+        IReadOnlyDictionary<Guid, ProjectAccess> projects,
+        TimeEntryViewer viewer,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        ArgumentNullException.ThrowIfNull(projects);
         var names = await people.NamesAsync([.. entries.Select(entry => entry.UserId).Distinct()], cancellationToken);
         var tasks = new Dictionary<Guid, string>();
         foreach (var withTasks in entries.Where(entry => entry.ScheduleItemId is not null).Select(entry => entry.ProjectId).Distinct())
@@ -185,13 +206,13 @@ public sealed class ListTimeEntries(
         var ticketIds = entries.Where(entry => entry.TicketId is not null).Select(entry => entry.TicketId!.Value).Distinct().ToList();
         var ticketsById = (await tickets.FindAsync(ticketIds, cancellationToken)).ToDictionary(ticket => ticket.Id);
         var rows = entries
-            .Where(entry => all.ContainsKey(entry.ProjectId))
+            .Where(entry => projects.ContainsKey(entry.ProjectId))
             .OrderByDescending(entry => entry.Day)
             .ThenBy(entry => entry.CreatedAt)
             .ThenBy(entry => entry.Id)
             .Select(entry =>
             {
-                var project = all[entry.ProjectId];
+                var project = projects[entry.ProjectId];
                 var task = entry.ScheduleItemId is { } itemId ? new TimeEntryTask(itemId, tasks.GetValueOrDefault(itemId)) : null;
                 var ticket = entry.TicketId is { } ticketId && ticketsById.TryGetValue(ticketId, out var found)
                     ? new TimeEntryTicket(found.Id, found.Number, found.Title)
@@ -202,10 +223,10 @@ public sealed class ListTimeEntries(
                     new TimeEntryProject(project.Id, project.Code, project.Name),
                     task,
                     ticket,
-                    TimeEntryAccess.RefusalToChange(viewer, entry, project) is null);
+                    TimeEntryAccess.MayChange(viewer, entry, project));
             })
             .ToList();
-        return (new TimeEntryList(rows, rows.Sum(row => row.Entry.Hours)), TimeEntryOutcome.Done);
+        return new TimeEntryList(rows, rows.Sum(row => row.Entry.Hours));
     }
 }
 

@@ -1510,9 +1510,12 @@ export const handlers = [
   ),
   // Horas dos projetos without projects by default (ADR-0128).
   http.get('/api/admin/project-hours', () => HttpResponse.json([])),
-  // No task with planned or logged hours by default (ADR-0138).
-  http.get('/api/admin/project-hours/:projectId/tasks', () =>
-    HttpResponse.json({ planned: 0, logged: 0, outside: 0, items: [] }),
+  // No task with planned or logged hours by default (ADR-0138, ADR-0144).
+  http.get('/api/projects/:projectId/task-hours', () =>
+    HttpResponse.json({ planned: 0, logged: 0, outside: 0, items: [], canChangePlanned: true }),
+  ),
+  http.get('/api/projects/:projectId/task-hours/:itemId/entries', () =>
+    HttpResponse.json({ items: [], total: 0 }),
   ),
   http.get('/api/people', () => HttpResponse.json([])),
   // The card of a person (ADR-0118): the users of the Users screen and the people of the tickets and projects.
