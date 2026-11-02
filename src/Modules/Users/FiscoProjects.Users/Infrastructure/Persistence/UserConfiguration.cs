@@ -29,9 +29,9 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         // People who signed in before the daily summary existed receive it (ADR-0037).
         user.Property(u => u.ReceivesDailySummary).HasDefaultValue(true).HasSentinel(true);
 
-        // Personal preferences, not data of the business: changing them is no audit record.
+        // The theme is a personal preference, not data of the business: changing it is no audit record. Turning the daily
+        // summary on or off is, as the channels of the notices (ADR-0151).
         user.Property(u => u.Theme).ExcludeFromAudit();
-        user.Property(u => u.ReceivesDailySummary).ExcludeFromAudit();
 
         // Anonymization (ADR-0110): the number is unique and goes in the record, which says when it happened.
         user.HasIndex(u => u.AnonymousNumber).IsUnique().HasFilter("[AnonymousNumber] IS NOT NULL");

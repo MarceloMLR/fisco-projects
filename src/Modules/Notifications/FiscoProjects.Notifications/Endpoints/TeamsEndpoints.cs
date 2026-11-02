@@ -9,12 +9,13 @@ using Microsoft.AspNetCore.Routing;
 namespace FiscoProjects.Notifications.Endpoints;
 
 /// <summary>
-/// The channel of the notices sent now of the person (ADR-0149): E-mail, Teams or Both, and whether Teams is there for
-/// the person (on in the installation, and the person signs in by Entra ID).
+/// The channels of the notices sent now of the person (ADR-0151): the e-mail and Teams, each on or off, and whether
+/// Teams is there for the person (on in the installation, and the person signs in by Entra ID).
 /// </summary>
-public sealed record ImmediateNoticesResponse(ImmediateNoticeChannel Channel, bool TeamsAvailable);
+public sealed record ImmediateNoticesResponse(bool Email, bool Teams, bool TeamsAvailable);
 
-public sealed record ChooseImmediateNoticesRequest(ImmediateNoticeChannel Channel);
+/// <summary>The channels the person turns on: the e-mail and Teams; both off leave the notices in the bell only.</summary>
+public sealed record ChooseImmediateNoticesRequest(bool Email, bool Teams);
 
 /// <summary>
 /// The application of Teams of the installation (ADR-0149): whether the sending to Teams is configured in the
@@ -46,7 +47,7 @@ public static class TeamsEndpoints
     {
         var profile = api.MapGroup("/profile").WithTags("Profile").ProducesProblem(StatusCodes.Status401Unauthorized);
         profile.MapGet("/immediate-notices", GetChannelAsync).WithName("GetImmediateNotices");
-        profile.MapPut("/immediate-notices", ChooseChannelAsync).WithName("ChooseImmediateNotices").ProducesValidationProblem();
+        profile.MapPut("/immediate-notices", ChooseChannelAsync).WithName("ChooseImmediateNotices");
 
         var teams = api.MapGroup("/admin/teams-app")
             .WithTags("Notifications")
@@ -65,21 +66,14 @@ public static class TeamsEndpoints
         HttpContext http, GetImmediateNotices get, CancellationToken cancellationToken)
     {
         var notices = await get.ExecuteAsync(UserOf(http), cancellationToken);
-        return TypedResults.Ok(new ImmediateNoticesResponse(notices.Channel, notices.TeamsAvailable));
+        return TypedResults.Ok(new ImmediateNoticesResponse(
+            notices.Channels.ByEmail, notices.Channels.ByTeams, notices.TeamsAvailable));
     }
 
-    private static async Task<Results<NoContent, ValidationProblem>> ChooseChannelAsync(
+    private static async Task<NoContent> ChooseChannelAsync(
         ChooseImmediateNoticesRequest request, HttpContext http, ChooseImmediateNotices choose, CancellationToken cancellationToken)
     {
-        if (!Enum.IsDefined(request.Channel))
-        {
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["channel"] = ["Choose Email, Teams or Both."],
-            });
-        }
-
-        await choose.ExecuteAsync(UserOf(http), request.Channel, cancellationToken);
+        await choose.ExecuteAsync(UserOf(http), new NoticeChannels(request.Email, request.Teams), cancellationToken);
         return TypedResults.NoContent();
     }
 

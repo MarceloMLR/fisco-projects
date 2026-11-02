@@ -1,5 +1,6 @@
 using FiscoProjects.Notifications.Domain;
 using FiscoProjects.Persistence.Auditing;
+using FiscoProjects.Users.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,7 +21,6 @@ internal sealed class TeamsNoticeConfiguration : IEntityTypeConfiguration<TeamsN
         notice.HasIndex(n => new { n.Status, n.NextAttemptAt });
         notice.HasIndex(n => n.UserId);
         notice.HasIndex(n => n.ProjectId);
-        notice.Ignore(n => n.NeedsEmail);
         notice.ExcludeFromAudit();
     }
 }
@@ -41,14 +41,17 @@ internal sealed class TeamsAppConfiguration : IEntityTypeConfiguration<TeamsApp>
     }
 }
 
-// The channel each person chose (ADR-0149): a personal preference, out of the audit, as the daily summary.
+// The channels each person chose (ADR-0151): turning the e-mail or Teams on or off is a record of the audit, shown by
+// the person.
 internal sealed class NoticePreferenceConfiguration : IEntityTypeConfiguration<NoticePreference>
 {
     public void Configure(EntityTypeBuilder<NoticePreference> preference)
     {
         preference.ToTable("notice_preferences");
-        preference.Property(p => p.Channel).HasConversion<string>().HasMaxLength(16);
+        preference.Ignore(p => p.Channels);
         preference.HasIndex(p => p.UserId).IsUnique();
-        preference.ExcludeFromAudit();
+        preference.HasAuditLabelReference(p => p.UserId, UserAudit.Reference);
+        // The person is the label; the id never changes.
+        preference.Property(p => p.UserId).ExcludeFromAudit();
     }
 }

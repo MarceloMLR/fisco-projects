@@ -7,12 +7,12 @@ using FiscoProjects.Users.Contracts;
 namespace FiscoProjects.Notifications.Application;
 
 /// <summary>
-/// A person who hears about a notice, with what the channels need: the channel the person chose for the notices sent
-/// now and the id of the person in Entra ID, which Teams needs (ADR-0149).
+/// A person who hears about a notice, with what the channels need: the channels the person chose for the notices sent
+/// now and the id of the person in Entra ID, which Teams needs (ADR-0149, ADR-0151).
 /// </summary>
 public sealed record NoticeRecipient(Guid UserId, string Name, string Email)
 {
-    public ImmediateNoticeChannel Channel { get; init; }
+    public NoticeChannels Channels { get; init; } = NoticePreference.Default;
 
     public string? EntraObjectId { get; init; }
 }
@@ -94,7 +94,7 @@ public sealed class DeliverNotices(
 
                 recipients.Add(new NoticeRecipient(userId, person.Name, person.Email)
                 {
-                    Channel = chosen.GetValueOrDefault(userId),
+                    Channels = chosen.GetValueOrDefault(userId, NoticePreference.Default),
                     EntraObjectId = person.EntraObjectId,
                 });
             }
@@ -158,7 +158,7 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, NoticeRo
         {
             foreach (var person in recipients)
             {
-                // Who chose only Teams, with Teams there for the person, receives no e-mail (ADR-0149).
+                // Only who has the e-mail on receives it (ADR-0151); the bell has the notice anyway.
                 if (!(await routing.RouteAsync(person, cancellationToken)).Email)
                 {
                     continue;

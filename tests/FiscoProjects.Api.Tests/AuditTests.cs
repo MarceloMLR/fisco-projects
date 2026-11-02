@@ -52,6 +52,7 @@ public sealed class AuditTests(SqlServerFixture sqlServer)
             ("Email", (string?)null, (string?)MarinaEmail),
             ("IsActive", null, "true"),
             ("Name", null, "Marina Costa"),
+            ("ReceivesDailySummary", null, "true"),
             ("Role", null, "User"),
         ]);
     }

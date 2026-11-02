@@ -1527,9 +1527,9 @@ export const handlers = [
     }),
   ),
   http.put('/api/profile/daily-summary', () => new HttpResponse(null, { status: 204 })),
-  // Teams off in the installation: the notices sent now go by e-mail (ADR-0149).
+  // Teams off in the installation, and the channels of who never chose: the e-mail on and Teams off (ADR-0151).
   http.get('/api/profile/immediate-notices', () =>
-    HttpResponse.json({ channel: 'Both', teamsAvailable: false }),
+    HttpResponse.json({ email: true, teams: false, teamsAvailable: false }),
   ),
   http.put('/api/profile/immediate-notices', () => new HttpResponse(null, { status: 204 })),
   // A bell without notifications.

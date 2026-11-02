@@ -18,8 +18,8 @@ public enum TeamsNoticeStatus
 /// <summary>
 /// A notice of the queue of Teams (ADR-0149): written with the action that causes it, as the e-mails (ADR-0036), and
 /// sent in the background to the Activity of Teams of the person. It keeps who did it by the id, never by the name, so
-/// the text says the current name when it leaves. When Teams does not take it, and the person chose only Teams, the
-/// e-mail of the same notice goes in its place.
+/// the text says the current name when it leaves. When Teams does not take it, it stays failed: the e-mail goes only to
+/// who has the e-mail on, and the bell has it anyway (ADR-0151).
 /// </summary>
 public sealed class TeamsNotice : Entity
 {
@@ -33,7 +33,7 @@ public sealed class TeamsNotice : Entity
     }
 
     public TeamsNotice(
-        Guid userId, NoticeKind kind, Guid? actorId, Guid? projectId, string path, string values, bool alsoByEmail, DateTime now)
+        Guid userId, NoticeKind kind, Guid? actorId, Guid? projectId, string path, string values, DateTime now)
     {
         UserId = userId;
         Kind = kind;
@@ -41,7 +41,6 @@ public sealed class TeamsNotice : Entity
         ProjectId = projectId;
         Path = path;
         Values = values;
-        AlsoByEmail = alsoByEmail;
         Status = TeamsNoticeStatus.Pending;
         CreatedAt = now;
         NextAttemptAt = now;
@@ -61,9 +60,6 @@ public sealed class TeamsNotice : Entity
     /// <summary>The data of the item, in JSON, as the notice brought it.</summary>
     public string Values { get; private init; }
 
-    /// <summary>Whether the e-mail of the same notice also went to the person, who then needs no e-mail in its place.</summary>
-    public bool AlsoByEmail { get; private init; }
-
     public TeamsNoticeStatus Status { get; private set; }
 
     /// <summary>How many times it was taken to be sent.</summary>
@@ -81,13 +77,7 @@ public sealed class TeamsNotice : Entity
     /// <summary>The error of the last failure, without the person nor the texts.</summary>
     public string? LastError { get; private set; }
 
-    /// <summary>Whether the e-mail of the notice went in its place, as Teams did not take it.</summary>
-    public bool EmailedInstead { get; private set; }
-
     public bool IsDue(DateTime now) => Status == TeamsNoticeStatus.Pending && NextAttemptAt <= now;
-
-    /// <summary>Whether the person needs the e-mail in its place: Teams gave up, and the e-mail did not go already.</summary>
-    public bool NeedsEmail => Status == TeamsNoticeStatus.Failed && !AlsoByEmail && !EmailedInstead;
 
     /// <summary>Takes the notice to send it: one more try, and no other process takes it while the reservation lasts.</summary>
     public void Reserve(DateTime now)
@@ -128,16 +118,6 @@ public sealed class TeamsNotice : Entity
         LastError = Cut(error);
         Status = TeamsNoticeStatus.Failed;
         FailedAt = now;
-    }
-
-    public void MarkEmailedInstead()
-    {
-        if (!NeedsEmail)
-        {
-            throw new InvalidOperationException("The e-mail goes in place only of a notice that Teams did not take.");
-        }
-
-        EmailedInstead = true;
     }
 
     private static string Cut(string error) => error.Length <= ErrorMaxLength ? error : error[..ErrorMaxLength];

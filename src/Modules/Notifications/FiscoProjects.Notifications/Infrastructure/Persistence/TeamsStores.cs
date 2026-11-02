@@ -48,13 +48,16 @@ internal sealed class TeamsAppStore(NotificationsDbContext db) : ITeamsAppStore
 
 internal sealed class NoticePreferenceStore(NotificationsDbContext db) : INoticePreferenceStore
 {
-    public async Task<IReadOnlyDictionary<Guid, ImmediateNoticeChannel>> ChannelsAsync(
+    public async Task<IReadOnlyDictionary<Guid, NoticeChannels>> ChannelsAsync(
         IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken) =>
         userIds.Count == 0
-            ? new Dictionary<Guid, ImmediateNoticeChannel>()
+            ? new Dictionary<Guid, NoticeChannels>()
             : await db.NoticePreferences.AsNoTracking()
                 .Where(preference => userIds.Contains(preference.UserId))
-                .ToDictionaryAsync(preference => preference.UserId, preference => preference.Channel, cancellationToken);
+                .ToDictionaryAsync(
+                    preference => preference.UserId,
+                    preference => new NoticeChannels(preference.ByEmail, preference.ByTeams),
+                    cancellationToken);
 
     public Task<NoticePreference?> FindAsync(Guid userId, CancellationToken cancellationToken) =>
         db.NoticePreferences.SingleOrDefaultAsync(preference => preference.UserId == userId, cancellationToken);

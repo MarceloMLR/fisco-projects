@@ -60,41 +60,39 @@ public sealed class TeamsApp : Entity
     private string VersionText => $"1.0.{PackageVersion}";
 }
 
-/// <summary>Where the notices sent now reach a person (ADR-0037, ADR-0149).</summary>
-public enum ImmediateNoticeChannel
-{
-    /// <summary>By e-mail and in Teams; for who never chose.</summary>
-    Both = 0,
+/// <summary>The channels of the notices sent now of a person (ADR-0151): the e-mail and Teams, each on or off.</summary>
+public readonly record struct NoticeChannels(bool ByEmail, bool ByTeams);
 
-    Email = 1,
-
-    Teams = 2,
-}
-
-/// <summary>The channel a person chose for the notices sent now (ADR-0149); a person without one has both.</summary>
+/// <summary>
+/// The channels a person chose for the notices sent now (ADR-0151): the e-mail and Teams, each turned on or off by the
+/// person, in the audit. Who never chose has <see cref="Default"/>: the e-mail on and Teams off.
+/// </summary>
 public sealed class NoticePreference : Entity
 {
+    /// <summary>The channels of who never chose: the e-mail on and Teams off (ADR-0151).</summary>
+    public static readonly NoticeChannels Default = new(ByEmail: true, ByTeams: false);
+
     private NoticePreference()
     {
     }
 
-    public NoticePreference(Guid userId, ImmediateNoticeChannel channel)
+    public NoticePreference(Guid userId, NoticeChannels channels)
     {
         UserId = userId;
-        Choose(channel);
+        Choose(channels);
     }
 
     public Guid UserId { get; private init; }
 
-    public ImmediateNoticeChannel Channel { get; private set; }
+    public bool ByEmail { get; private set; }
 
-    public void Choose(ImmediateNoticeChannel channel)
+    public bool ByTeams { get; private set; }
+
+    public NoticeChannels Channels => new(ByEmail, ByTeams);
+
+    public void Choose(NoticeChannels channels)
     {
-        if (!Enum.IsDefined(channel))
-        {
-            throw new ArgumentOutOfRangeException(nameof(channel), channel, "Unknown channel.");
-        }
-
-        Channel = channel;
+        ByEmail = channels.ByEmail;
+        ByTeams = channels.ByTeams;
     }
 }

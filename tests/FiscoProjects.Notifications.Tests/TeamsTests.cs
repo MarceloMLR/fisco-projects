@@ -6,21 +6,28 @@ using FiscoProjects.Notifications.Infrastructure;
 
 namespace FiscoProjects.Notifications.Tests;
 
-// Spec: avisos, requirements "Canal dos avisos na hora", "Volta ao e-mail", "Aviso na aba Atividade" and "Implementação
-// local do Teams"; configuracao-da-instalacao, "Aplicativo do Teams" (ADR-0149).
+// Spec: avisos, requirements "Canal dos avisos na hora", "Aviso na aba Atividade" and "Implementação local do Teams";
+// configuracao-da-instalacao, "Aplicativo do Teams" (ADR-0149, ADR-0151).
 public sealed class TeamsTests : IDisposable
 {
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "fiscoprojects-teams-" + Guid.NewGuid().ToString("N"));
 
-    [Theory(DisplayName = "Canal de cada pessoa")]
-    [InlineData(ImmediateNoticeChannel.Email, true, true, false)]
-    [InlineData(ImmediateNoticeChannel.Teams, true, false, true)]
-    [InlineData(ImmediateNoticeChannel.Both, true, true, true)]
-    [InlineData(ImmediateNoticeChannel.Teams, false, true, false)]
-    [InlineData(ImmediateNoticeChannel.Both, false, true, false)]
-    public void TheChoice_DecidesOnlyWithTeamsThere(ImmediateNoticeChannel choice, bool teams, bool byEmail, bool byTeams)
+    [Theory(DisplayName = "Canais de cada pessoa")]
+    [InlineData(true, false, true, true, false)]
+    [InlineData(false, true, true, false, true)]
+    [InlineData(true, true, true, true, true)]
+    [InlineData(false, false, true, false, false)]
+    [InlineData(false, true, false, false, false)]
+    [InlineData(true, true, false, true, false)]
+    public void EachChannelOn_Receives_TeamsOnlyWhenThere(bool email, bool teams, bool teamsThere, bool byEmail, bool byTeams)
     {
-        NoticeRouting.RouteOf(choice, teams).Should().Be(new ImmediateRoute(byEmail, byTeams));
+        NoticeRouting.RouteOf(new NoticeChannels(email, teams), teamsThere).Should().Be(new ImmediateRoute(byEmail, byTeams));
+    }
+
+    [Fact(DisplayName = "Canais de quem nunca escolheu no domínio")]
+    public void WhoNeverChose_TheEmailOnAndTeamsOff()
+    {
+        NoticePreference.Default.Should().Be(new NoticeChannels(ByEmail: true, ByTeams: false));
     }
 
     [Theory(DisplayName = "Quem o Teams alcança")]
@@ -51,7 +58,7 @@ public sealed class TeamsTests : IDisposable
     public void ATryAgain_WaitsAndFailsAfterTheLast()
     {
         var now = new DateTime(2026, 11, 2, 12, 0, 0, DateTimeKind.Utc);
-        var notice = Notice(alsoByEmail: false, now);
+        var notice = Notice(now);
 
         for (var attempt = 1; attempt <= OutboxEmail.MaxAttempts; attempt++)
         {
@@ -61,20 +68,19 @@ public sealed class TeamsTests : IDisposable
         }
 
         notice.Status.Should().Be(TeamsNoticeStatus.Failed);
-        notice.NeedsEmail.Should().BeTrue();
     }
 
     [Fact]
-    public void ARefusal_WithTheEmailAlready_NeedsNoEmail()
+    public void ARefusal_FailsWithoutAnotherTry()
     {
         var now = new DateTime(2026, 11, 2, 12, 0, 0, DateTimeKind.Utc);
-        var notice = Notice(alsoByEmail: true, now);
+        var notice = Notice(now);
         notice.Reserve(now);
 
         notice.Refuse(now, "The application of Teams is not installed for the person.");
 
         notice.Status.Should().Be(TeamsNoticeStatus.Failed);
-        notice.NeedsEmail.Should().BeFalse();
+        notice.IsDue(now.AddDays(1)).Should().BeFalse();
     }
 
     [Fact]
@@ -144,8 +150,8 @@ public sealed class TeamsTests : IDisposable
         }
     }
 
-    private static TeamsNotice Notice(bool alsoByEmail, DateTime now) =>
-        new(Guid.CreateVersion7(), NoticeKind.TicketAssigned, Guid.CreateVersion7(), Guid.CreateVersion7(), "/tickets/104", "{}", alsoByEmail, now);
+    private static TeamsNotice Notice(DateTime now) =>
+        new(Guid.CreateVersion7(), NoticeKind.TicketAssigned, Guid.CreateVersion7(), Guid.CreateVersion7(), "/tickets/104", "{}", now);
 
     private sealed class NoApps : ITeamsAppStore
     {

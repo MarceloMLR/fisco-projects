@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FiscoProjects.Api.Tests;
 
-// Spec: avisos, requirements "Avisos na hora pelo Teams", "Canal dos avisos na hora", "Volta ao e-mail", "Fila dos
-// avisos do Teams" and "Aviso na aba Atividade"; perfil, "Avisos no perfil"; configuracao-da-instalacao, "Aplicativo do
-// Teams" and "Avisar pelo Teams"; dados-pessoais, "Avisos do Teams na anonimização" (ADR-0149). The local sending of the
-// development, with the notices kept in memory by the test.
+// Spec: avisos, requirements "Avisos na hora pelo Teams", "Canal dos avisos na hora", "Fila dos avisos do Teams" and
+// "Aviso na aba Atividade"; perfil, "Canais dos avisos no perfil" and "Escolhas dos avisos na auditoria";
+// configuracao-da-instalacao, "Aplicativo do Teams" and "Avisar pelo Teams"; dados-pessoais, "Avisos do Teams na
+// anonimização" (ADR-0149, ADR-0151). The local sending of the development, with the notices kept in memory by the test.
 public sealed class TeamsTests(SqlServerFixture sqlServer)
 {
     private const string DiegoEmail = "diego.torres@empresa.example";
@@ -35,11 +35,17 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
                 .StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
-        public async Task ChooseAsync(Guid person, string channel)
+        public async Task ChooseAsync(Guid person, bool email, bool teams)
         {
             using var client = await App.SignInAsync(person);
-            (await SendAsync(client, HttpMethod.Put, "/api/profile/immediate-notices", new { channel }))
+            (await SendAsync(client, HttpMethod.Put, "/api/profile/immediate-notices", new { email, teams }))
                 .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+
+        public async Task<IReadOnlyList<JsonElement>> AuditOfAsync(string itemType)
+        {
+            var audit = await Admin.GetFromJsonAsync<JsonElement>("/api/audit?pageSize=100", Cancellation);
+            return [.. audit.GetProperty("items").EnumerateArray().Where(entry => entry.GetProperty("itemType").GetString() == itemType)];
         }
 
         public async Task<IReadOnlyList<TeamsDelivery>> TeamsToAsync(Guid person) =>
@@ -48,7 +54,10 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
         public ValueTask DisposeAsync() => App.DisposeAsync();
     }
 
-    private async Task<Scene> StartAsync(bool teamsOn = true, Action<WebApplicationBuilder>? configure = null)
+    /// <param name="teamsOn">The notices of Teams on in the installation.</param>
+    /// <param name="configure">More configuration of the application.</param>
+    /// <param name="teamsChosen">Carla and Diego have the e-mail and Teams on, out of the audit; otherwise nobody chose.</param>
+    private async Task<Scene> StartAsync(bool teamsOn = true, Action<WebApplicationBuilder>? configure = null, bool teamsChosen = true)
     {
         var app = await SessionApp.StartAsync(sqlServer, configure);
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
@@ -85,6 +94,12 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
         if (teamsOn)
         {
             await app.TurnTeamsOnAsync();
+        }
+
+        if (teamsChosen)
+        {
+            await app.ChooseNoticesAsync(carla, email: true, teams: true);
+            await app.ChooseNoticesAsync(diego, email: true, teams: true);
         }
 
         return new Scene(app, admin, marina, rafael, carla, diego, erp);
@@ -150,7 +165,7 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
     public async Task TeamsOff_OnlyTheEmail()
     {
         await using var scene = await StartAsync(teamsOn: false);
-        await scene.ChooseAsync(scene.Diego, "Teams");
+        await scene.ChooseAsync(scene.Diego, email: true, teams: true);
 
         await scene.AssignToDiegoAsync();
 
@@ -162,7 +177,7 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
     public async Task EmailChosen_NothingInTeams()
     {
         await using var scene = await StartAsync();
-        await scene.ChooseAsync(scene.Diego, "Email");
+        await scene.ChooseAsync(scene.Diego, email: true, teams: false);
 
         await scene.AssignToDiegoAsync();
 
@@ -174,7 +189,7 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
     public async Task TeamsChosen_NoEmail()
     {
         await using var scene = await StartAsync();
-        await scene.ChooseAsync(scene.Diego, "Teams");
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
 
         await scene.AssignToDiegoAsync();
 
@@ -183,9 +198,10 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
     }
 
     [Fact(DisplayName = "Pelos dois")]
-    public async Task NeverChose_BothChannels()
+    public async Task BothOn_BothChannels()
     {
-        await using var scene = await StartAsync();
+        await using var scene = await StartAsync(teamsChosen: false);
+        await scene.ChooseAsync(scene.Diego, email: true, teams: true);
 
         await scene.AssignToDiegoAsync();
 
@@ -193,17 +209,39 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
         (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().Contain(Assigned);
     }
 
+    [Fact(DisplayName = "Canais de quem nunca escolheu")]
+    public async Task NeverChose_TheEmail_NothingInTeams()
+    {
+        await using var scene = await StartAsync(teamsChosen: false);
+
+        await scene.AssignToDiegoAsync();
+
+        (await scene.TeamsToAsync(scene.Diego)).Should().BeEmpty();
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().Contain(Assigned);
+    }
+
     [Fact(DisplayName = "Sino com qualquer canal")]
     public async Task TeamsChosen_TheBellStill()
     {
         await using var scene = await StartAsync();
-        await scene.ChooseAsync(scene.Diego, "Teams");
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
 
         await scene.AssignToDiegoAsync();
 
-        using var diego = await scene.App.SignInAsync(scene.Diego);
-        var bell = await diego.GetFromJsonAsync<JsonElement>("/api/notifications", Cancellation);
-        bell.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("kind").GetString()).Should().Contain("TicketAssigned");
+        (await BellKindsAsync(scene, scene.Diego)).Should().Contain("TicketAssigned");
+    }
+
+    [Fact(DisplayName = "Os dois canais desligados")]
+    public async Task BothOff_OnlyTheBell()
+    {
+        await using var scene = await StartAsync();
+        await scene.ChooseAsync(scene.Diego, email: false, teams: false);
+
+        await scene.AssignToDiegoAsync();
+
+        (await scene.TeamsToAsync(scene.Diego)).Should().BeEmpty();
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().NotContain(Assigned);
+        (await BellKindsAsync(scene, scene.Diego)).Should().Contain("TicketAssigned");
     }
 
     [Fact(DisplayName = "Ação sem esperar o Teams")]
@@ -221,49 +259,33 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
             .Should().Be(1);
     }
 
-    [Fact(DisplayName = "Aplicativo não instalado para a pessoa")]
-    public async Task NotInstalled_TheEmailInstead()
+    [Fact(DisplayName = "Teams sem volta ao e-mail")]
+    public async Task Refused_FailedAndNoEmail()
     {
         await using var scene = await StartAsync();
-        await scene.ChooseAsync(scene.Diego, "Teams");
-        scene.App.Teams.NotInstalled[scene.Diego] = true;
-
-        await scene.AssignToDiegoAsync();
-        await scene.App.TeamsAsync();
-
-        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().Contain(Assigned);
-        (await scene.App.CountAsync(
-                "SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed' AND EmailedInstead = 1"))
-            .Should().Be(1);
-    }
-
-    [Fact(DisplayName = "Teams recusa o envio")]
-    public async Task Refused_FailedAndTheEmailInstead()
-    {
-        await using var scene = await StartAsync();
-        await scene.ChooseAsync(scene.Diego, "Teams");
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
         scene.App.Teams.Refusing = true;
 
         await scene.AssignToDiegoAsync();
         await scene.App.TeamsAsync();
 
         (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed'")).Should().Be(1);
-        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().Contain(Assigned);
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().NotContain(Assigned);
+        (await BellKindsAsync(scene, scene.Diego)).Should().Contain("TicketAssigned");
     }
 
-    [Fact(DisplayName = "Recusa com os dois canais")]
-    public async Task RefusedWithBoth_OnlyTheEmailThatWent()
+    [Fact(DisplayName = "Aplicativo não instalado sem e-mail")]
+    public async Task NotInstalled_FailedAndNoEmail()
     {
         await using var scene = await StartAsync();
-        scene.App.Teams.Refusing = true;
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
+        scene.App.Teams.NotInstalled[scene.Diego] = true;
 
         await scene.AssignToDiegoAsync();
         await scene.App.TeamsAsync();
 
-        (await scene.App.CountAsync(
-                "SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed' AND EmailedInstead = 0"))
-            .Should().Be(1);
-        (await scene.App.EmailsToAsync(DiegoEmail)).Count(email => email.Subject == Assigned).Should().Be(1);
+        (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE Status = 'Failed'")).Should().Be(1);
+        (await scene.App.EmailsToAsync(DiegoEmail)).Select(email => email.Subject).Should().NotContain(Assigned);
     }
 
     [Fact(DisplayName = "Fila limpa com o tempo")]
@@ -301,35 +323,85 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
     {
         await using var scene = await StartAsync();
 
-        await scene.ChooseAsync(scene.Diego, "Teams");
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
 
         using var diego = await scene.App.SignInAsync(scene.Diego);
         var notices = await diego.GetFromJsonAsync<JsonElement>("/api/profile/immediate-notices", Cancellation);
-        notices.GetProperty("channel").GetString().Should().Be("Teams");
+        notices.GetProperty("email").GetBoolean().Should().BeFalse();
+        notices.GetProperty("teams").GetBoolean().Should().BeTrue();
         notices.GetProperty("teamsAvailable").GetBoolean().Should().BeTrue();
     }
 
     [Fact(DisplayName = "Canal de quem nunca escolheu")]
-    public async Task NeverChose_Both()
+    public async Task NeverChose_TheEmailOnly()
     {
-        await using var scene = await StartAsync();
+        await using var scene = await StartAsync(teamsChosen: false);
         using var diego = await scene.App.SignInAsync(scene.Diego);
 
         var notices = await diego.GetFromJsonAsync<JsonElement>("/api/profile/immediate-notices", Cancellation);
 
-        notices.GetProperty("channel").GetString().Should().Be("Both");
+        notices.GetProperty("email").GetBoolean().Should().BeTrue();
+        notices.GetProperty("teams").GetBoolean().Should().BeFalse();
         notices.GetProperty("teamsAvailable").GetBoolean().Should().BeTrue();
     }
 
-    [Fact(DisplayName = "Canal fora da lista")]
-    public async Task UnknownChannel_IsRefused()
+    [Fact(DisplayName = "E-mail desligado na auditoria")]
+    public async Task EmailOff_InTheAudit()
+    {
+        await using var scene = await StartAsync(teamsChosen: false);
+
+        await scene.ChooseAsync(scene.Diego, email: false, teams: false);
+
+        var record = (await scene.AuditOfAsync("NoticePreference")).Should().ContainSingle().Subject;
+        (record.GetProperty("action").GetString(), record.GetProperty("itemLabel").GetString(), record.GetProperty("actor").GetProperty("id").GetGuid())
+            .Should().Be(("Created", "Diego Torres", scene.Diego));
+        ChangeOf(record, "ByEmail").GetProperty("after").GetString().Should().Be("false");
+    }
+
+    [Fact(DisplayName = "Teams ligado na auditoria")]
+    public async Task TeamsOn_InTheAudit()
+    {
+        await using var scene = await StartAsync(teamsChosen: false);
+        await scene.ChooseAsync(scene.Diego, email: false, teams: false);
+
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
+
+        var record = (await scene.AuditOfAsync("NoticePreference")).Single(entry => entry.GetProperty("action").GetString() == "Updated");
+        record.GetProperty("itemLabel").GetString().Should().Be("Diego Torres");
+        var change = ChangeOf(record, "ByTeams");
+        (change.GetProperty("before").GetString(), change.GetProperty("after").GetString()).Should().Be(("false", "true"));
+        record.GetProperty("changes").EnumerateArray().Select(entry => entry.GetProperty("field").GetString()).Should().Equal("ByTeams");
+    }
+
+    [Fact(DisplayName = "Resumo diário na auditoria")]
+    public async Task DailySummaryOff_InTheAudit()
     {
         await using var scene = await StartAsync();
         using var diego = await scene.App.SignInAsync(scene.Diego);
 
-        var chosen = await SendAsync(diego, HttpMethod.Put, "/api/profile/immediate-notices", new { channel = 7 });
+        (await SendAsync(diego, HttpMethod.Put, "/api/profile/daily-summary", new { receives = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        chosen.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var record = (await scene.AuditOfAsync("User"))
+            .Single(entry => entry.GetProperty("action").GetString() == "Updated"
+                && entry.GetProperty("changes").EnumerateArray().Any(change => change.GetProperty("field").GetString() == "ReceivesDailySummary"));
+        (record.GetProperty("action").GetString(), record.GetProperty("itemLabel").GetString(), record.GetProperty("actor").GetProperty("id").GetGuid())
+            .Should().Be(("Updated", "Diego Torres", scene.Diego));
+        var change = ChangeOf(record, "ReceivesDailySummary");
+        (change.GetProperty("before").GetString(), change.GetProperty("after").GetString()).Should().Be(("true", "false"));
+    }
+
+    [Fact(DisplayName = "Escolha sem mudança fora da auditoria")]
+    public async Task SameChoice_NoNewRecord()
+    {
+        await using var scene = await StartAsync(teamsChosen: false);
+
+        await scene.ChooseAsync(scene.Diego, email: true, teams: false);
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
+        await scene.ChooseAsync(scene.Diego, email: false, teams: true);
+
+        (await scene.AuditOfAsync("NoticePreference")).Should().ContainSingle()
+            .Which.GetProperty("action").GetString().Should().Be("Created");
     }
 
     [Fact(DisplayName = "Ligar os avisos pelo Teams")]
@@ -482,6 +554,16 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
         person.Should().Be("Pessoa removida nº 1");
         (await scene.App.CountAsync("SELECT COUNT(*) FROM [notifications].[teams_notices] WHERE [Values] LIKE '%Marina%'")).Should().Be(0);
     }
+
+    private static async Task<IReadOnlyList<string?>> BellKindsAsync(Scene scene, Guid person)
+    {
+        using var client = await scene.App.SignInAsync(person);
+        var bell = await client.GetFromJsonAsync<JsonElement>("/api/notifications", Cancellation);
+        return [.. bell.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("kind").GetString())];
+    }
+
+    private static JsonElement ChangeOf(JsonElement record, string field) =>
+        record.GetProperty("changes").EnumerateArray().Single(change => change.GetProperty("field").GetString() == field);
 
     private static async Task<JsonElement> PackageAsync(HttpClient admin, string iconSource)
     {
