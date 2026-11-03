@@ -214,3 +214,4 @@ Regras:
 | [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151) | 2026-11-02 |
 | [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |
 | [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | aceita | 2026-11-02 |
+| [0152](0152-chamado-no-teams-com-a-entrada-unica.md) | Chamado no Teams pela entrada única do Teams, só para ler | proposta | 2026-11-03 |
