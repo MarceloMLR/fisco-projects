@@ -56,8 +56,8 @@ public sealed class TeamsSignInTests(SqlServerFixture sqlServer)
         await using var scene = await TeamsScene.StartAsync(sqlServer);
         var users = await scene.App.CountAsync("SELECT COUNT(*) FROM [users].[users]");
 
-        var asGuest = await scene.ReadWithTokenAsync(
-            scene.Entra.TeamsToken("7d6c5b4a-3e2f-4a1b-9c8d-7e6f5a4b3c2d", new TeamsTokenShape { AccountStatus = 1 }), Ticket);
+        // The object of Diego, who has the link: refused only for being a guest.
+        var asGuest = await scene.ReadAsync(scene.Team.Diego, Ticket, new TeamsTokenShape { AccountStatus = 1 });
         var fromElsewhere = await scene.ReadAsync(
             scene.Team.Diego, Ticket, new TeamsTokenShape { IdentityProvider = "https://sts.windows.net/9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d/" });
 

@@ -121,9 +121,11 @@ public sealed class MonitoringTests(SqlServerFixture sqlServer)
         logs.Entries.Should().NotBeEmpty("every log, of every level, was kept");
         foreach (var token in new[] { accepted, refused, unknown })
         {
-            // The signature, the part that only the token has.
-            var signature = token.Split('.')[2];
-            logs.Entries.Should().NotContain(entry => entry.Contains(signature, StringComparison.Ordinal));
+            // The claims and the signature, each part that only the token has, as a log of IdentityModel would cut it.
+            foreach (var part in token.Split('.')[1..])
+            {
+                logs.Entries.Should().NotContain(entry => entry.Contains(part, StringComparison.Ordinal));
+            }
         }
     }
 
