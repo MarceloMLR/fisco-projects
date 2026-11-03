@@ -10,6 +10,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Toda change com tela entrega as versões de computador e celular, nos temas claro e escuro. Os dados fictícios de demonstração crescem a cada change: cada uma acrescenta os dela ao plano de `web/scripts/demo/plan.ts`, carregado por `npm run demo:data` (ADR-0089).
 - Changes marcadas com * usam telas de cadastro da Administração ainda não desenhadas; a tela é desenhada antes da change.
 - Status: Planejada, Em andamento, PR aberto, Concluída, Adiada (com o motivo).
+- A tabela "Marcos" conta todas as linhas de cada grupo, com os subnúmeros, e muda junto com a linha da change.
 - Em 18/10/2026, Marcelo adiou a Fundação-6 e a Fundação-7 até existir a assinatura do Azure, e o login pelo Entra foi para o grupo 9 (M365-1): sem tenant, desenvolvimento e demonstrações usam a entrada local (ADR-0078).
 - Em 19/10/2026, Marcelo pediu a Fundação-3.2 (`verificacao-mais-rapida`), para a verificação do PR ficar mais rápida sem deixar de existir (ADR-0090).
 - Em 19/10/2026, Marcelo trouxe as subtarefas para a v1 (ADR-0088): a Cronograma-4 (`subtarefas`) entrou logo depois da Linha do tempo, para a linha de base, o caminho crítico, o desfazer e a exportação já nascerem com elas, e as changes seguintes do grupo foram renumeradas (as propostas arquivadas citam a numeração antiga).
@@ -47,7 +48,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 21 | 21 |
 | 2. Acesso e administração | 21 | 21 |
 | 3. Projetos | 6 | 6 |
-| 4. Cronograma | 14 | 14 |
+| 4. Cronograma | 16 | 16 |
 | 5. Chamados | 14 | 14 |
 | 6. Avisos | 5 | 5 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
@@ -57,9 +58,9 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
-| 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
-| 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **119** | **109** |
+| 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
+| 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
+| **Total** | **125** | **125** |
 
 ## 1. Fundação
 
