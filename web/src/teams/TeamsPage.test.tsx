@@ -78,6 +78,9 @@ describe('Página do FiscoProjects no Teams', () => {
     ['/\\outro.example', '/'],
     ['/\t/outro.example', '/'],
     ['javascript:alert(1)', '/'],
+    ['/.//outro.example', '/'],
+    ['/..//outro.example/tickets', '/'],
+    ['/%2e//outro.example', '/'],
     ['https://outro.example', '/'],
   ])('Caminho do item %j', (item, path) => {
     expect(safeItemPath(item)).toBe(path);

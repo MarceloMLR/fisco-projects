@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { connectToTeams, insideAFrame } from './teamsHost';
+import { connectToTeams } from './teamsHost';
 
 // The library of Teams, simulated: the page never talks to a real Teams in the tests (ADR-0056, ADR-0152).
 const library = vi.hoisted(() => ({
@@ -17,11 +17,6 @@ vi.mock('@microsoft/teams-js', () => ({
   authentication: { getAuthToken: library.getAuthToken },
 }));
 
-function inAFrame() {
-  // Teams opens the page in a frame of its own: the parent is another window.
-  vi.stubGlobal('parent', {});
-}
-
 beforeEach(() => {
   library.initialize.mockResolvedValue(undefined);
   library.getContext.mockResolvedValue({ app: { theme: 'dark' } });
@@ -29,23 +24,21 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
 
 // Spec: avisos, requirements "Página do FiscoProjects no Teams" and "Token do Teams só na memória da página" (ADR-0152).
 describe('Teams em volta da página', () => {
-  it('Fora de um quadro, sem a biblioteca do Teams', async () => {
-    expect(insideAFrame()).toBe(false);
+  it('Fora do Teams, sem pedir token', async () => {
+    // Outside Teams, nobody answers the library.
+    library.initialize.mockReturnValue(new Promise(() => undefined));
 
-    expect(await connectToTeams()).toBeNull();
-    expect(library.initialize).not.toHaveBeenCalled();
+    expect(await connectToTeams(20)).toBeNull();
+    expect(library.getContext).not.toHaveBeenCalled();
     expect(library.getAuthToken).not.toHaveBeenCalled();
   });
 
   it('Dentro do Teams', async () => {
-    inAFrame();
-
     const host = await connectToTeams();
 
     expect(host?.scheme).toBe('dark');
@@ -57,15 +50,7 @@ describe('Teams em volta da página', () => {
     expect(listener).toHaveBeenCalledWith('light');
   });
 
-  it('Teams que não responde', async () => {
-    inAFrame();
-    library.initialize.mockReturnValue(new Promise(() => undefined));
-
-    expect(await connectToTeams(20)).toBeNull();
-  });
-
   it('Teams que recusa', async () => {
-    inAFrame();
     library.initialize.mockRejectedValue(new Error('Not in Teams'));
 
     expect(await connectToTeams()).toBeNull();

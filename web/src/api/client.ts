@@ -383,3 +383,17 @@ export const api = createClient<paths>({
   },
 });
 api.use(sessionEnded);
+
+/**
+ * Client of the readings of the page in Teams (ADR-0152), which carry the token of Teams in their own header and no
+ * session: a 401 there is the token refused, not the end of a session, so it does not reach the listeners of the
+ * session, and the cookie does not go.
+ */
+export const teamsApi = createClient<paths>({
+  baseUrl: window.location.origin,
+  credentials: 'omit',
+  fetch: (request) => {
+    noteRequest();
+    return globalThis.fetch(request);
+  },
+});

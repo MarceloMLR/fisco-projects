@@ -109,12 +109,9 @@ function BrandCard({ path, status }: { path: string; status: string | null }) {
  * Teams, from "theme" and from Teams itself.
  */
 export function TeamsPage() {
-  const { t } = useTranslation();
   const [search] = useSearchParams();
-  const { name } = useInstallation();
   const [scheme, setScheme] = useState<TeamsScheme>(() => schemeOfTeams(search.get('theme')));
   const path = safeItemPath(search.get('item'));
-  const state = useTeamsTicket(ticketNumberOf(path), setScheme);
 
   return (
     <Box
@@ -129,22 +126,31 @@ export function TeamsPage() {
         lineHeight: '20px',
       }}
     >
-      {state.kind === 'ticket' ? (
-        <TeamsTicketView ticket={state.ticket} name={name} />
-      ) : state.kind === 'noAccess' ? (
-        <TeamsNoAccess path={path} name={name} />
-      ) : (
-        <BrandCard
-          path={path}
-          status={
-            state.kind === 'loading'
-              ? t('teamsPage.opening')
-              : state.failed
-                ? t('teamsPage.failed')
-                : null
-          }
-        />
-      )}
+      {/* Another item starts again, from its own reading. */}
+      <TeamsItem key={path} path={path} onScheme={setScheme} />
     </Box>
+  );
+}
+
+/** What the page shows for the item: the ticket, the ticket the person does not see, or the brand. */
+function TeamsItem({ path, onScheme }: { path: string; onScheme: (scheme: TeamsScheme) => void }) {
+  const { t } = useTranslation();
+  const { name } = useInstallation();
+  const state = useTeamsTicket(ticketNumberOf(path), onScheme);
+  return state.kind === 'ticket' ? (
+    <TeamsTicketView ticket={state.ticket} name={name} />
+  ) : state.kind === 'noAccess' ? (
+    <TeamsNoAccess path={path} name={name} />
+  ) : (
+    <BrandCard
+      path={path}
+      status={
+        state.kind === 'loading'
+          ? t('teamsPage.opening')
+          : state.failed
+            ? t('teamsPage.failed')
+            : null
+      }
+    />
   );
 }

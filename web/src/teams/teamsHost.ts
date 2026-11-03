@@ -20,11 +20,6 @@ export const teamsWaitMs = 3000;
 /** How long the page waits for the token, which may need the consent of the person. */
 export const tokenWaitMs = 10000;
 
-/** Whether the page is inside a frame, as in Teams; outside one, the library of Teams is not even loaded. */
-export function insideAFrame(): boolean {
-  return window.parent !== window;
-}
-
 function within<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -44,13 +39,12 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 /**
- * Teams around the page, or null: outside a frame, when the library does not load, or when Teams does not answer in
- * time. The library of Teams (@microsoft/teams-js) is imported only here, and only when the page needs it (ADR-0152).
+ * Teams around the page, or null: when the library does not load or when Teams does not answer in time, as outside
+ * Teams. The page is in a frame of Teams on the computer and on the web, and in a window of its own in Teams on the
+ * phone, so only the answer of Teams tells. The library of Teams (@microsoft/teams-js) is imported only here, and only
+ * when the page needs it, for the notice of a ticket (ADR-0152).
  */
 export async function connectToTeams(waitMs = teamsWaitMs): Promise<TeamsHost | null> {
-  if (!insideAFrame()) {
-    return null;
-  }
   try {
     const { app, authentication } = await within(import('@microsoft/teams-js'), waitMs);
     await within(app.initialize(), waitMs);

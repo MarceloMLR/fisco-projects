@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type TeamsTicket } from '../api/client';
+import { type TeamsTicket, teamsApi } from '../api/client';
 import { connectToTeams, type TeamsHost, type TeamsScheme } from './teamsHost';
 
 /** The number of the ticket of a path of the application, only "/tickets/{number}"; anything else is no ticket. */
@@ -34,7 +34,7 @@ export async function readTeamsTicket(host: TeamsHost, number: number): Promise<
       return brand;
     }
     try {
-      const { data, response } = await api.GET('/api/teams/tickets/{number}', {
+      const { data, response } = await teamsApi.GET('/api/teams/tickets/{number}', {
         params: { path: { number } },
         headers: { Authorization: `Bearer ${token}` },
       });
