@@ -1,6 +1,6 @@
 ## 1. Decisão e roadmap
 
-- [ ] 1.1 ADR-0152 aceito, os ADR-0054 e 0149 apontando para ele, o índice dos ADRs e a Avisos-6 no roadmap; `openspec validate --all --strict` sem erros
+- [x] 1.1 ADR-0152 aceito, os ADR-0054 e 0149 apontando para ele, o índice dos ADRs e a Avisos-6 no roadmap; `openspec validate --all --strict` sem erros
 
 ## 2. Entrada pelo Teams
 
