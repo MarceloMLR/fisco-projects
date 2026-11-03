@@ -194,6 +194,31 @@ public sealed partial class InfrastructureTests
             .And.NotContain("Files.").And.NotContain("ReadWrite");
     }
 
+    // Spec: infraestrutura, requirement "Aplicativo do Entra pronto para o Teams" (ADR-0117, ADR-0152).
+    [Fact(DisplayName = "Aplicativo do Entra para o Teams")]
+    public void EntraApplication_ExposesItsApiToTheSingleSignOnOfTeams()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        entra.Should().Contain("requested_access_token_version = 2")
+            .And.Contain("teams_scope    = \"access_as_user\"")
+            .And.Contain("value                      = local.teams_scope")
+            .And.Contain("type                       = \"Admin\"")
+            .And.Contain("identifier_uri = \"api://${var.site_host}/${azuread_application.main.client_id}\"")
+            .And.Contain("ignore_changes = [identifier_uris]")
+            .And.Contain("desktop_and_mobile = \"1fec8e78-bce4-4aaf-ab1b-5451cc387264\"")
+            .And.Contain("web                = \"5e3ce6c0-2b1f-4285-8d4b-75ee78787346\"")
+            .And.Contain("authorized_client_id = each.value")
+            .And.Contain("permission_ids       = [local.teams_scope_id]")
+            .And.Contain("access_token {\n      name = \"acct\"\n    }");
+        Regex.Matches(entra, "resource \"azuread_application_pre_authorized\"").Should().HaveCount(1);
+        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "no new permission of Microsoft Graph");
+        Read("main.tf").Should().Contain("site_host                 = local.host");
+        // The resource of the package of Teams is the same identifier, with the host of the address of the screens.
+        Read("..", "..", "src", "Modules", "Notifications", "FiscoProjects.Notifications", "Infrastructure", "TeamsTexts.cs")
+            .Should().Contain("[\"resource\"] = $\"api://{host}/{settings.EntraClientId}\"");
+    }
+
     // Spec: infraestrutura, requirement "Arquivos no site do SharePoint" (ADR-0120).
     [Fact(DisplayName = "Arquivos no site do SharePoint")]
     public void SharePointSite_IsPersonal_AndGivenOnlyToWrite()
@@ -251,7 +276,10 @@ public sealed partial class InfrastructureTests
         entraSettings.Should().Contain("Teams__Provider       = \"Graph\"", "the notices by Teams need the application of Entra");
         AllCode().Should().NotContain("TeamsActivity").And.NotContain("TeamsAppInstallation")
             .And.NotContain("Teams__Provider       = \"Local\"");
-        Read("modules", "entra", "main.tf").Should().NotContain("Teams", "the permissions come from the package of Teams, for the person");
+        // The permissions to send come from the package of Teams, for the person; the application of Entra only exposes its
+        // API to the single sign-on of Teams (ADR-0152), with no permission of Teams.
+        Regex.IsMatch(Read("modules", "entra", "main.tf"), @"Teams\w*\.\w+").Should()
+            .BeFalse("the permissions come from the package of Teams, for the person");
     }
 
     [Fact(DisplayName = "Caixa que a empresa já tem")]
