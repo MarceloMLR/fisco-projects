@@ -8,6 +8,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <!-- The sign-in through Entra ID, with the managed identity as the credential (ADR-0117). -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <!-- The token Teams gives the page of FiscoProjects in Teams, only for its readings (ADR-0152). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Azure.Identity" />
   </ItemGroup>
 

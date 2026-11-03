@@ -98,6 +98,35 @@ public sealed class MonitoringTests(SqlServerFixture sqlServer)
             .And.NotContain(entry => entry.Contains(cookie, StringComparison.Ordinal));
     }
 
+    // Spec: entrada-e-sessao, requirement "Token do Teams só nas leituras do Teams" (ADR-0152).
+    [Fact(DisplayName = "Token do Teams fora dos registros")]
+    public async Task NoLog_HasTheTokenOfTeams_AcceptedOrRefused()
+    {
+        var logs = new CapturingLoggerProvider();
+        await using var scene = await TeamsScene.StartAsync(sqlServer, configure: builder =>
+        {
+            builder.Logging.SetMinimumLevel(LogLevel.Trace);
+            builder.Logging.AddProvider(logs);
+            builder.Logging.AddFilter<CapturingLoggerProvider>(category: null, LogLevel.Trace);
+        });
+        var accepted = scene.Entra.TeamsToken(TeamsScene.ObjectOf(scene.Team.Diego));
+        var refused = scene.Entra.TeamsToken(TeamsScene.ObjectOf(scene.Team.Diego), new TeamsTokenShape { Audience = "api://outro" });
+        var unknown = scene.Entra.TeamsToken("5c4b3a29-1807-4f6e-8d5c-4b3a29180f6e");
+
+        (await scene.ReadWithTokenAsync(accepted, "/api/teams/tickets/1")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await scene.ReadWithTokenAsync(refused, "/api/teams/tickets/1")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await scene.ReadWithTokenAsync(unknown, "/api/teams/tickets/1")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await scene.ReadWithTokenAsync(accepted, "/api/tickets/1")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        logs.Entries.Should().NotBeEmpty("every log, of every level, was kept");
+        foreach (var token in new[] { accepted, refused, unknown })
+        {
+            // The signature, the part that only the token has.
+            var signature = token.Split('.')[2];
+            logs.Entries.Should().NotContain(entry => entry.Contains(signature, StringComparison.Ordinal));
+        }
+    }
+
     private static DefaultHttpContext RequestTo(string path)
     {
         var http = new DefaultHttpContext();

@@ -22,6 +22,7 @@ using FiscoProjects.Tickets.Endpoints;
 using FiscoProjects.Tickets.Infrastructure;
 using FiscoProjects.TimeTracking.Endpoints;
 using FiscoProjects.TimeTracking.Infrastructure;
+using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Endpoints;
 using FiscoProjects.Users.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -120,6 +121,10 @@ public static class ApiSetup
             .MapTaskHoursEndpoints()
             .MapTeamLoadEndpoints();
 
+        // The readings of the page in Teams, only with the token of Teams (ADR-0152).
+        _ = app.MapTeamsApiGroup()
+            .MapTeamsTicketEndpoints();
+
         // The notices of the provider of signatures, outside /api: no session nor X-CSRF (ADR-0130).
         app.MapSignatureNoticeEndpoints();
 
@@ -134,4 +139,11 @@ public static class ApiSetup
     /// </summary>
     public static RouteGroupBuilder MapApiGroup(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapGroup(ApiPrefix).RequireAuthorization();
+
+    /// <summary>
+    /// Route group of the readings of the page in Teams (ADR-0152), under /api/teams: only the token of Teams, never the
+    /// session cookie, and only GET. Outside <see cref="MapApiGroup"/>, whose default policy is the session.
+    /// </summary>
+    public static RouteGroupBuilder MapTeamsApiGroup(this IEndpointRouteBuilder endpoints) =>
+        endpoints.MapGroup(ApiPrefix + TeamsAccess.Prefix).RequireAuthorization(TeamsAccess.Policy);
 }
