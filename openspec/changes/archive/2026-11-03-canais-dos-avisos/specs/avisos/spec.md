@@ -2,7 +2,7 @@
 
 ### Requirement: Avisos dos chamados na hora
 
-Os eventos que pedem ação MUST gerar o aviso na hora, que vai por e-mail e pelo Teams conforme os canais ligados de cada pessoa (ADR-0037, ADR-0151): o chamado aberto ou transferido para quem atende o time dele; a mensagem para quem acompanha o chamado; a menção para quem foi mencionado; o pedido de informação e a resolução para o solicitante; a troca de responsável para o novo responsável; e a troca de solicitante para o novo solicitante. Quem recebe um aviso mais específico da mesma ação (a menção, o pedido de informação, a resolução) MUST NOT receber também o da mensagem.
+Os eventos que pedem ação MUST gerar o aviso na hora (ADR-0037): o chamado aberto ou transferido para quem atende o time dele; a mensagem para quem acompanha o chamado; a menção para quem foi mencionado; o pedido de informação e a resolução para o solicitante; a troca de responsável para o novo responsável; e a troca de solicitante para o novo solicitante. Quem recebe um aviso mais específico da mesma ação (a menção, o pedido de informação, a resolução) MUST NOT receber também o da mensagem.
 
 #### Scenario: Chamado aberto para o time
 - **WHEN** uma pessoa abre um chamado para o time Desenvolvimento
@@ -58,7 +58,7 @@ Com os avisos pelo Teams ligados na instalação, cada aviso que sai na hora MUS
 
 ### Requirement: Canal dos avisos na hora
 
-Cada pessoa MUST receber os avisos na hora pelos canais que ligou: o e-mail e o Teams, cada um ligado ou desligado por ela, independentes. Quem nunca escolheu MUST ficar com o e-mail ligado e o Teams desligado. O Teams MUST valer só com os avisos pelo Teams ligados e para quem pode recebê-los: com o envio pelo Graph, quem entra pelo Entra ID; com a implementação local, qualquer pessoa ativa. Fora disso, a escolha do Teams MUST ficar guardada, sem efeito. Com os dois canais desligados, o aviso MUST ficar só no sino. O sino MUST receber o aviso qualquer que seja a escolha (ADR-0037, ADR-0149, ADR-0151).
+Cada pessoa MUST receber os avisos na hora pelos canais que ligou, o e-mail e o Teams; quem nunca escolheu MUST ficar com o e-mail ligado e o Teams desligado. O Teams MUST valer só com os avisos pelo Teams ligados e para quem pode recebê-los (com o Graph, quem entra pelo Entra ID; com a implementação local, qualquer pessoa ativa); fora disso, a escolha MUST ficar guardada, sem efeito. O sino MUST receber todo aviso, e com os dois canais desligados o aviso MUST ficar só nele (ADR-0151).
 
 #### Scenario: Só por e-mail
 - **WHEN** um chamado é atribuído a uma pessoa com o e-mail ligado e o Teams desligado
