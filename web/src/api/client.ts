@@ -53,6 +53,8 @@ export type ScheduleLinkType = components['schemas']['ScheduleLinkType'];
 export type ScheduleLink = components['schemas']['ScheduleLinkResponse'];
 export type TicketRow = components['schemas']['TicketListItemResponse'];
 export type Ticket = components['schemas']['TicketResponse'];
+/** A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152). */
+export type TeamsTicket = components['schemas']['TeamsTicketResponse'];
 export type TicketCounts = components['schemas']['TicketCountsResponse'];
 export type TicketChoice = components['schemas']['TicketProjectChoiceResponse'];
 export type TicketTeam = components['schemas']['TicketTeam'];

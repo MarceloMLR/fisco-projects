@@ -12,6 +12,17 @@ const syncfusionImports = {
     'The timeline is our own (ADR-0134): use the ScheduleGantt component, without Syncfusion.',
 };
 
+const teamsMessage =
+  'The library of Teams is loaded only by src/teams/teamsHost.ts, on the page in Teams (ADR-0152).';
+const teamsImports = {
+  group: ['@microsoft/teams-js', '@microsoft/teams-js/*'],
+  message: teamsMessage,
+};
+const teamsDynamicImports = {
+  selector: 'ImportExpression[source.value=/^@microsoft\\/teams-js/]',
+  message: teamsMessage,
+};
+
 const buttonMessage =
   'Use the Button and the IconButton of src/components/Button, busy while what they send runs (ADR-0131).';
 const muiButtonImports = [
@@ -48,14 +59,18 @@ export default defineConfig([
   {
     // ADR-0134: the timeline is our own, with no Syncfusion anywhere. ADR-0131: every button comes from
     // src/components/Button, busy while what it sends runs. ADR-0133: one notice for all the screens, the one of
-    // src/notices.
+    // src/notices. ADR-0152: the library of Teams only in src/teams/teamsHost.ts.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/components/Button.tsx'],
+    ignores: ['src/components/Button.tsx', 'src/teams/teamsHost.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [syncfusionImports], paths: [...muiButtonImports, ...muiSnackbarImports] },
+        {
+          patterns: [syncfusionImports, teamsImports],
+          paths: [...muiButtonImports, ...muiSnackbarImports],
+        },
       ],
+      'no-restricted-syntax': ['error', teamsDynamicImports],
     },
   },
   {
@@ -63,7 +78,17 @@ export default defineConfig([
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [syncfusionImports], paths: muiSnackbarImports },
+        { patterns: [syncfusionImports, teamsImports], paths: muiSnackbarImports },
+      ],
+      'no-restricted-syntax': ['error', teamsDynamicImports],
+    },
+  },
+  {
+    files: ['src/teams/teamsHost.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [syncfusionImports], paths: [...muiButtonImports, ...muiSnackbarImports] },
       ],
     },
   },

@@ -7,7 +7,7 @@ import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import Box from '@mui/material/Box';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ticket } from '../api/client';
 import { Avatar } from '../components/Avatar';
@@ -25,6 +25,7 @@ import {
   shownInteractions,
   toneOf,
 } from './conversation';
+import { useConversationDays } from './conversationDays';
 import { sizeText } from '../format/size';
 import { Button } from '../components/Button';
 
@@ -32,59 +33,102 @@ type Attachment = Ticket['attachments'][number];
 type Participant = Ticket['participants'][number];
 type TicketEvent = Ticket['events'][number];
 
+/** A person of the conversation, as the page of the ticket and the page in Teams know it (without the e-mail). */
+export interface ConversationPerson {
+  id: string;
+  name: string;
+  role: ParticipantRole;
+}
+
+/** A ticket at a vendor, for the text of its events (ADR-0028). */
+export interface ConversationVendorTicket {
+  id: string;
+  vendor: string;
+  code: string;
+}
+
+/** The look of a file of the conversation (Message.Attachment): the frame of the chip. */
+const chipSx = {
+  display: 'inline-flex',
+  alignItems: 'stretch',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  height: 32,
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-md)',
+  backgroundColor: 'var(--bg-surface)',
+  overflow: 'hidden',
+  fontSize: 13,
+  '& > a': { color: 'var(--text)', textDecoration: 'none' },
+  '& > a:hover': { backgroundColor: 'var(--bg-hover)' },
+  '& > a:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
+  '& svg': { fontSize: 18, color: 'var(--text-secondary)', flex: 'none' },
+} as const;
+
+const chipLabelSx = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 'var(--space-2)',
+  minWidth: 0,
+  padding: '0 var(--space-3)',
+} as const;
+
+/** The icon, the name and the size of a file of the conversation. */
+function FileLabel({ file }: { file: { name: string; size: number; contentType: string } }) {
+  const Icon = isImage(file.contentType) ? ImageOutlined : DescriptionOutlined;
+  return (
+    <>
+      <Icon aria-hidden />
+      <Box
+        component="span"
+        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
+        {file.name}
+      </Box>
+      <Box
+        component="span"
+        sx={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+      >
+        {sizeText(file.size)}
+      </Box>
+    </>
+  );
+}
+
+/**
+ * A file of the conversation only by its name, which opens nowhere: in the page of Teams, where the files open only in
+ * FiscoProjects (ADR-0152).
+ */
+export function FileNameChip({
+  file,
+}: {
+  file: { name: string; size: number; contentType: string };
+}) {
+  return (
+    <Box component="span" sx={chipSx}>
+      <Box component="span" sx={chipLabelSx}>
+        <FileLabel file={file} />
+      </Box>
+    </Box>
+  );
+}
+
 /**
  * A file of the conversation (Message.Attachment): the name opens it in a new tab, images and PDF in the browser, and
  * "Baixar" downloads it with its name (Chamados-2.1).
  */
 export function AttachmentChip({ number, attachment }: { number: number; attachment: Attachment }) {
   const { t } = useTranslation();
-  const Icon = isImage(attachment.contentType) ? ImageOutlined : DescriptionOutlined;
   return (
-    <Box
-      component="span"
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'stretch',
-        maxWidth: '100%',
-        boxSizing: 'border-box',
-        height: 32,
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        backgroundColor: 'var(--bg-surface)',
-        overflow: 'hidden',
-        fontSize: 13,
-        '& > a': { color: 'var(--text)', textDecoration: 'none' },
-        '& > a:hover': { backgroundColor: 'var(--bg-hover)' },
-        '& > a:focus-visible': { outline: '2px solid var(--focus-ring)', outlineOffset: -2 },
-        '& svg': { fontSize: 18, color: 'var(--text-secondary)', flex: 'none' },
-      }}
-    >
+    <Box component="span" sx={chipSx}>
       <Box
         component="a"
         href={attachmentUrl(number, attachment.id)}
         target="_blank"
         rel="noopener noreferrer"
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 'var(--space-2)',
-          minWidth: 0,
-          padding: '0 var(--space-3)',
-        }}
+        sx={chipLabelSx}
       >
-        <Icon aria-hidden />
-        <Box
-          component="span"
-          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-        >
-          {attachment.name}
-        </Box>
-        <Box
-          component="span"
-          sx={{ flex: 'none', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}
-        >
-          {sizeText(attachment.size)}
-        </Box>
+        <FileLabel file={attachment} />
       </Box>
       <Box
         component="a"
@@ -136,7 +180,8 @@ export function RoleTag({ role }: { role: ParticipantRole }) {
 
 /**
  * The avatar of a person in the color of the part (ADR-0069, ADR-0104), whoever has no color of a part in the neutral
- * one, which opens the card of the person with the part in the ticket (ADR-0118).
+ * one, which opens the card of the person with the part in the ticket (ADR-0118); only the avatar with
+ * <code>plain</code>, where the card cannot be read, as in the page of Teams (ADR-0152).
  */
 export function PersonAvatar({
   id,
@@ -144,16 +189,18 @@ export function PersonAvatar({
   tone,
   role,
   size = 'md',
+  plain = false,
 }: {
   id: string;
   name: string;
   tone: MessageTone;
   role?: ParticipantRole;
   size?: 'sm' | 'md';
+  plain?: boolean;
 }) {
   const { t } = useTranslation();
   const color = tone === 'neutral' ? undefined : tone;
-  return name === '' ? (
+  return name === '' || plain ? (
     <Avatar name={name} size={size} tone={color} />
   ) : (
     <CardAvatar
@@ -169,15 +216,15 @@ export function PersonAvatar({
  * An event of the conversation (Message.Event, fp-event): a discreet line with who did it, what and when; the
  * changes of status keep the action and the two statuses, so the text tells it without the icon.
  */
-function EventLine({
+export function EventLine({
   event,
   personOf,
   vendorTickets,
 }: {
   event: TicketEvent;
-  personOf: (id: string) => Participant;
+  personOf: (id: string) => ConversationPerson;
   /** The tickets at vendors of the ticket, for the number and the vendor of their events (ADR-0028). */
-  vendorTickets: Ticket['vendorTickets'];
+  vendorTickets: readonly ConversationVendorTicket[];
 }) {
   const { t } = useTranslation();
   const { formatTime } = useDates();
@@ -320,6 +367,128 @@ function Files({ number, files }: { number: number; files: readonly Attachment[]
   );
 }
 
+/** The line of a day in the conversation (fp-timeline-day). */
+export function DaySeparator({ children }: { children: ReactNode }) {
+  return (
+    <Box
+      component="li"
+      aria-hidden={false}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-3)',
+        fontSize: 12,
+        color: 'var(--text-secondary)',
+        '&::before, &::after': {
+          content: '""',
+          flex: 1,
+          height: '1px',
+          backgroundColor: 'var(--border)',
+        },
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+/**
+ * A message of the conversation (Message): the requester at the left and everyone else at the right, in the color and
+ * with the tag of the part, "(você)" on the person, the time, the text and the files.
+ */
+export function ConversationMessage({
+  at,
+  author,
+  me,
+  body,
+  files,
+  plainAvatar = false,
+}: {
+  /** When it was sent. */
+  at: string;
+  author: ConversationPerson;
+  me: string;
+  /** The text, as the person wrote it. */
+  body: ReactNode;
+  files: ReactNode;
+  /** Only the avatar, without the card of the person, as in the page of Teams (ADR-0152). */
+  plainAvatar?: boolean;
+}) {
+  const { t } = useTranslation();
+  const { formatTime } = useDates();
+  const tone = toneOf[author.role];
+  const left = author.role === 'Requester';
+  return (
+    <Box
+      component="li"
+      data-side={left ? 'requester' : 'team'}
+      data-tone={tone}
+      sx={{
+        display: 'flex',
+        flexDirection: left ? 'row' : 'row-reverse',
+        alignItems: 'flex-start',
+        gap: 'var(--space-3)',
+        paddingLeft: left ? 0 : 'var(--space-8)',
+        paddingRight: left ? 'var(--space-8)' : 0,
+      }}
+    >
+      <PersonAvatar
+        id={author.id}
+        name={author.name}
+        tone={tone}
+        role={author.role}
+        plain={plainAvatar}
+      />
+      <Box
+        component="article"
+        aria-label={t('tickets.conversation.message', { name: author.name })}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          padding: 'var(--space-3) var(--space-4) var(--space-4)',
+          backgroundColor: `var(--msg-${tone}-bg)`,
+          border: `1px solid var(--msg-${tone}-border)`,
+          borderRadius: 'var(--radius-lg)',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'var(--space-2)',
+            marginBottom: 'var(--space-2)',
+          }}
+        >
+          <Box component="span" sx={{ fontWeight: 500 }}>
+            {author.name}
+          </Box>
+          {author.id === me && (
+            <Box component="span" sx={{ color: 'var(--text-secondary)' }}>
+              {t('tickets.conversation.you')}
+            </Box>
+          )}
+          <RoleTag role={author.role} />
+          <Box
+            component="time"
+            dateTime={at}
+            sx={{
+              marginLeft: 'auto',
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {formatTime(at)}
+          </Box>
+        </Box>
+        {body}
+        {files}
+      </Box>
+    </Box>
+  );
+}
+
 /**
  * The conversation of a ticket (canvas Chamado, ADR-0069): the description on top, then the messages, the requester
  * at the left and everyone else at the right, each in the color and with the tag of its part and "(você)" on the
@@ -335,10 +504,9 @@ export function TicketConversation({
   filter?: ConversationFilter;
 }) {
   const { t } = useTranslation();
-  const { timeZone, formatDateTime, formatTime } = useDates();
+  const { formatDateTime } = useDates();
   const [unfolded, setUnfolded] = useState(false);
-  // The day of today is read once, when the conversation opens.
-  const [now] = useState(() => Date.now());
+  const { dayOf, dayText } = useConversationDays();
   const people = useMemo(
     () => new Map<string, Participant>(ticket.participants.map((person) => [person.id, person])),
     [ticket.participants],
@@ -351,34 +519,6 @@ export function TicketConversation({
   const items = conversationItems(ticket, filter);
   const hidden = unfolded ? 0 : Math.max(0, items.length - shownInteractions);
   const shown = items.slice(hidden);
-  const dayOf = useMemo(() => {
-    const format = new Intl.DateTimeFormat('pt-BR', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    return (moment: string) => format.format(new Date(moment));
-  }, [timeZone]);
-  const dayText = useMemo(() => {
-    const format = new Intl.DateTimeFormat('pt-BR', {
-      timeZone,
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-    const today = dayOf(new Date(now).toISOString());
-    const yesterday = dayOf(new Date(now - 24 * 60 * 60 * 1000).toISOString());
-    return (moment: string) => {
-      const day = dayOf(moment);
-      const text = format.format(new Date(moment));
-      return day === today
-        ? t('tickets.conversation.today', { day: text })
-        : day === yesterday
-          ? t('tickets.conversation.yesterday', { day: text })
-          : text.charAt(0).toUpperCase() + text.slice(1);
-    };
-  }, [dayOf, now, t, timeZone]);
 
   return (
     <Box
@@ -485,27 +625,7 @@ export function TicketConversation({
         {shown.map((item, index) => {
           const previous = shown[index - 1];
           const newDay = previous === undefined || dayOf(previous.at) !== dayOf(item.at);
-          const separator = newDay && (
-            <Box
-              component="li"
-              aria-hidden={false}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-                fontSize: 12,
-                color: 'var(--text-secondary)',
-                '&::before, &::after': {
-                  content: '""',
-                  flex: 1,
-                  height: '1px',
-                  backgroundColor: 'var(--border)',
-                },
-              }}
-            >
-              {dayText(item.at)}
-            </Box>
-          );
+          const separator = newDay && <DaySeparator>{dayText(item.at)}</DaySeparator>;
           if (item.kind === 'event') {
             return (
               <Fragment key={item.event.id}>
@@ -519,73 +639,16 @@ export function TicketConversation({
             );
           }
           const { message } = item;
-          const author = personOf(message.authorId);
-          const tone = toneOf[author.role];
-          const left = author.role === 'Requester';
           return (
             <Fragment key={message.id}>
               {separator}
-              <Box
-                component="li"
-                data-side={left ? 'requester' : 'team'}
-                data-tone={tone}
-                sx={{
-                  display: 'flex',
-                  flexDirection: left ? 'row' : 'row-reverse',
-                  alignItems: 'flex-start',
-                  gap: 'var(--space-3)',
-                  paddingLeft: left ? 0 : 'var(--space-8)',
-                  paddingRight: left ? 'var(--space-8)' : 0,
-                }}
-              >
-                <PersonAvatar id={author.id} name={author.name} tone={tone} role={author.role} />
-                <Box
-                  component="article"
-                  aria-label={t('tickets.conversation.message', { name: author.name })}
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    padding: 'var(--space-3) var(--space-4) var(--space-4)',
-                    backgroundColor: `var(--msg-${tone}-bg)`,
-                    border: `1px solid var(--msg-${tone}-border)`,
-                    borderRadius: 'var(--radius-lg)',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: 'var(--space-2)',
-                      marginBottom: 'var(--space-2)',
-                    }}
-                  >
-                    <Box component="span" sx={{ fontWeight: 500 }}>
-                      {author.name}
-                    </Box>
-                    {author.id === me && (
-                      <Box component="span" sx={{ color: 'var(--text-secondary)' }}>
-                        {t('tickets.conversation.you')}
-                      </Box>
-                    )}
-                    <RoleTag role={author.role} />
-                    <Box
-                      component="time"
-                      dateTime={message.sentAt}
-                      sx={{
-                        marginLeft: 'auto',
-                        fontSize: 12,
-                        color: 'var(--text-secondary)',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {formatTime(message.sentAt)}
-                    </Box>
-                  </Box>
-                  <RichText value={message.body} />
-                  <Files number={ticket.number} files={filesOf(message.id)} />
-                </Box>
-              </Box>
+              <ConversationMessage
+                at={message.sentAt}
+                author={personOf(message.authorId)}
+                me={me}
+                body={<RichText value={message.body} />}
+                files={<Files number={ticket.number} files={filesOf(message.id)} />}
+              />
             </Fragment>
           );
         })}

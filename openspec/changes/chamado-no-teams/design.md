@@ -32,7 +32,7 @@ O `SignInFromTeams` lê o `EntraIdentity` do token, recusa o convidado pela mesm
 
 ### 2. O grupo `/api/teams` no host
 
-O `ApiSetup` ganha o `MapTeamsApiGroup()`: `/api/teams`, fora do `MapApiGroup` (cuja política padrão é a do cookie), com `RequireAuthorization(TeamsAccess.Policy)`. A política (`TeamsAccess.Policy`, no `Users.Contracts`) só aceita o esquema `teams` e pede a pessoa autenticada; o cookie não é lido. Como as outras rotas usam a política padrão, do cookie, o token do Teams não vale nelas. O grupo só recebe `GET`; o `CsrfHeaderCheck` não muda. O OpenAPI descreve o esquema `Bearer` nas rotas do Teams.
+O `ApiSetup` ganha o `MapTeamsApiGroup()`: `/api/teams`, fora do `MapApiGroup` (cuja política padrão é a do cookie), com `RequireAuthorization(TeamsAccess.Policy)`. A política (`TeamsAccess.Policy`, no `Users.Contracts`) só aceita o esquema `teams` e pede a pessoa autenticada; o cookie não é lido. Como as outras rotas usam a política padrão, do cookie, o token do Teams não vale nelas. O grupo só recebe `GET`; o `CsrfHeaderCheck` não muda. Como o cookie, o token não é descrito no OpenAPI: as rotas do Teams aparecem com o 401 em Problem Details, e a tela manda o cabeçalho.
 
 ### 3. A rota do chamado no `Tickets`
 
@@ -51,7 +51,7 @@ A `TeamsPage` decide pelo caminho do item (`ticketNumberOf`, só `/tickets/{núm
 
 - **Outro item, sem item ou fora de um quadro** (`window.parent === window`): a página de hoje, sem carregar a biblioteca do Teams.
 - **Um chamado num quadro:** o `teamsHost.ts`, o único arquivo que importa `@microsoft/teams-js` (a regra do lint reprova o import em outro lugar), carrega a biblioteca sob demanda, chama `app.initialize()` com um limite de 3 segundos, segue o tema do Teams (`app.getContext` e `registerOnThemeChangeHandler`, além do `theme` do endereço) e entrega o `getAuthToken()`.
-- **A leitura:** o `teamsTicketQuery` (`queries.ts`) chama a rota pelo cliente da API com o cabeçalho `Authorization: Bearer`, com a chave só com o número, sem o token, `gcTime: 0` e sem novas tentativas automáticas; um 401 pede o token de novo uma vez.
+- **A leitura:** o `useTeamsTicket` (`teamsTicket.ts`) chama a rota pelo cliente da API com o cabeçalho `Authorization: Bearer` e guarda o chamado só no estado da página, fora do cache das consultas: o token é da página, e não de uma sessão, e o fim de uma sessão limpa esse cache (`SessionProvider`); um 401 pede o token de novo uma vez.
 - **Os estados:** carregando; o chamado (`TeamsTicket.tsx`, desenhado como o canvas "Chamado no Teams"); "Você não vê este chamado" no 404 (`TeamsNoAccess`); e, no 401 repetido, no fim do limite ou na falha da biblioteca, a página de hoje, com a frase de que não foi possível mostrar o chamado quando a leitura falhou por outro erro.
 
 O `TeamsTicket` reaproveita o que a página do chamado já tem: o `TicketStatusBadge`, o `PriorityTag`, o `TicketDue`, o `RoleTag`, o `PersonAvatar` e o `RichText`, e a linha de evento e a mensagem da `TicketConversation`, que passam a ser exportadas e a aceitar os anexos só pelo nome (sem o `AttachmentChip`, que abre e baixa). No computador, o cabeçalho com "Responder no FiscoProjects", a conversa e a coluna das pessoas, dos prazos e do chamado; até 600px, uma coluna, com o botão no pé. As datas pelo `useDates()`, no fuso da instalação, que vem da marca pública. Os textos em `teamsPage.ticket.*`.
