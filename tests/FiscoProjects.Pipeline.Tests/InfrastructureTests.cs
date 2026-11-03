@@ -202,6 +202,7 @@ public sealed partial class InfrastructureTests
 
         entra.Should().Contain("requested_access_token_version = 2")
             .And.Contain("teams_scope    = \"access_as_user\"")
+            .And.MatchRegex("teams_scope_id = \"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"")
             .And.Contain("value                      = local.teams_scope")
             .And.Contain("type                       = \"Admin\"")
             .And.Contain("identifier_uri = \"api://${var.site_host}/${azuread_application.main.client_id}\"")

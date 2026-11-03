@@ -48,10 +48,10 @@ locals {
   # SharePoint sites an administrator gives it (ADR-0120), nowhere else.
   directory_role = "User.Read.All"
   sites_role     = "Sites.Selected"
-  # The single sign-on of Teams (ADR-0152): the scope the page asks, with an id fixed by the host, and the clients of
-  # Microsoft that ask it, Teams on the computer and on the phone, and Teams on the web.
+  # The single sign-on of Teams (ADR-0152): the scope the page asks, with a fixed id (the same if the host changes), and
+  # the clients of Microsoft that ask it, Teams on the computer and on the phone, and Teams on the web.
   teams_scope    = "access_as_user"
-  teams_scope_id = uuidv5("url", "https://${var.site_host}/${local.teams_scope}")
+  teams_scope_id = "802cece3-7c0f-4563-b5bd-0ca2b5bdc06f"
   teams_clients = {
     desktop_and_mobile = "1fec8e78-bce4-4aaf-ab1b-5451cc387264"
     web                = "5e3ce6c0-2b1f-4285-8d4b-75ee78787346"
