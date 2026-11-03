@@ -18,12 +18,12 @@
 - [x] 4.1 `@microsoft/teams-js` com a versão fixada (de pelo menos duas semanas), o `teamsHost.ts` como o único import dela (regra do lint, com teste), o limite de 3 segundos e o tema do Teams; testes do `teamsHost` com a biblioteca simulada; o `frontend.sh` passa (licenças e vulnerabilidades)
 - [x] 4.2 O `useTeamsTicket` com o token só no cabeçalho, fora do cache das consultas, e um novo pedido no 401; a `TeamsPage` com os estados; testes "Abrir o item no navegador", "Página sem item", "Endereço de fora recusado", "Aviso de outro item no Teams", "Página do Teams fora do Teams", "Token só na memória da página", "Token recusado uma vez" e "Token recusado de novo"
 - [x] 4.3 O `TeamsTicket` como o canvas "Chamado no Teams", reaproveitando as peças da `TicketConversation` (exportadas, com os anexos só pelo nome), e o `TeamsNoAccess`; os textos em `teamsPage.ticket.*`; testes "Chamado do aviso no Teams", "Menção no chamado do Teams", "Interações anteriores no Teams", "Responder no FiscoProjects", "Chamado no Teams do celular", "Tema escuro do Teams no chamado", "Chamado de outro projeto no Teams" e "Falha ao ler o chamado no Teams"; a página do chamado continua passando nos testes dela
-- [ ] 4.4 Conferência no navegador da página do Teams com o chamado, o chamado que a pessoa não vê e a volta à página de hoje, no computador e no celular, nos temas claro e escuro, contra o canvas
+- [x] 4.4 Conferência no navegador da página do Teams com o chamado, o chamado que a pessoa não vê e a volta à página de hoje, no computador e no celular, nos temas claro e escuro, contra o canvas
 
 ## 5. Aplicativo do Entra
 
-- [ ] 5.1 O módulo `entra` com o `site_host`, o identificador, o escopo `access_as_user`, os tokens v2, os dois clientes do Teams pré-autorizados e o `acct` no token de acesso; teste "Aplicativo do Entra para o Teams" no `InfrastructureTests`; `bash scripts/ci/infra.sh` sem erros
-- [ ] 5.2 `docs/instalacao.md` (o que muda na versão, a isenção dos identificadores quando o tenant a exige) e o `CLAUDE.md`
+- [x] 5.1 O módulo `entra` com o `site_host`, o identificador, o escopo `access_as_user`, os tokens v2, os dois clientes do Teams pré-autorizados e o `acct` no token de acesso; teste "Aplicativo do Entra para o Teams" no `InfrastructureTests`; `bash scripts/ci/infra.sh` sem erros
+- [x] 5.2 `docs/instalacao.md` (o que muda na versão, a isenção dos identificadores quando o tenant a exige) e o `CLAUDE.md`
 
 ## Workflow follow-up
 
