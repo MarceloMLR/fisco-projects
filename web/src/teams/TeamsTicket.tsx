@@ -80,7 +80,15 @@ function ReplyButton({
 }
 
 /** The last interactions of the conversation, with how many stay in FiscoProjects (Message.Gap, Message.Timeline). */
-function TeamsConversation({ ticket, name }: { ticket: Ticket; name: string }) {
+function TeamsConversation({
+  ticket,
+  name,
+  narrow = false,
+}: {
+  ticket: Ticket;
+  name: string;
+  narrow?: boolean;
+}) {
   const { t } = useTranslation();
   const { dayOf, dayText } = useConversationDays();
   const { conversation } = ticket;
@@ -163,6 +171,7 @@ function TeamsConversation({ ticket, name }: { ticket: Ticket; name: string }) {
               body={<RichText value={item.message.body} />}
               files={filesOf(item.message.id)}
               plainAvatar
+              inset={narrow ? 'var(--space-6)' : undefined}
             />
           );
         } else {
@@ -183,6 +192,7 @@ function TeamsConversation({ ticket, name }: { ticket: Ticket; name: string }) {
               }
               files={filesOf(null)}
               plainAvatar
+              inset={narrow ? 'var(--space-6)' : undefined}
             />
           );
         }
@@ -405,7 +415,7 @@ export function TeamsTicketView({ ticket, name }: { ticket: Ticket; name: string
               [t('teamsPage.ticket.team'), team],
             ]}
           />
-          <TeamsConversation ticket={ticket} name={name} />
+          <TeamsConversation ticket={ticket} name={name} narrow />
         </Box>
         <Box
           component="footer"

@@ -403,6 +403,7 @@ export function ConversationMessage({
   body,
   files,
   plainAvatar = false,
+  inset = 'var(--space-8)',
 }: {
   /** When it was sent. */
   at: string;
@@ -413,6 +414,8 @@ export function ConversationMessage({
   files: ReactNode;
   /** Only the avatar, without the card of the person, as in the page of Teams (ADR-0152). */
   plainAvatar?: boolean;
+  /** The space on the side of the other part, smaller in the narrow page of Teams. */
+  inset?: string;
 }) {
   const { t } = useTranslation();
   const { formatTime } = useDates();
@@ -428,8 +431,8 @@ export function ConversationMessage({
         flexDirection: left ? 'row' : 'row-reverse',
         alignItems: 'flex-start',
         gap: 'var(--space-3)',
-        paddingLeft: left ? 0 : 'var(--space-8)',
-        paddingRight: left ? 'var(--space-8)' : 0,
+        paddingLeft: left ? 0 : inset,
+        paddingRight: left ? inset : 0,
       }}
     >
       <PersonAvatar
