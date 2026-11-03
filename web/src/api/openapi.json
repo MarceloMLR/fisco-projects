@@ -11189,6 +11189,50 @@
           }
         }
       }
+    },
+    "/api/teams/tickets/{number}": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "operationId": "GetTeamsTicket",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamsTicketResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -17924,6 +17968,244 @@
         },
         "description": "The manifest of the package of Teams, as the file manifest.json, and its version."
       },
+      "TeamsTicketAttachmentResponse": {
+        "required": [
+          "messageId",
+          "name",
+          "size",
+          "contentType"
+        ],
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The message of the file, or null for the description.",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contentType": {
+            "type": "string"
+          }
+        },
+        "description": "A file of the conversation in Teams, only by the name: it opens only in FiscoProjects (ADR-0152)."
+      },
+      "TeamsTicketConversationResponse": {
+        "required": [
+          "earlier",
+          "description",
+          "messages",
+          "events",
+          "attachments",
+          "participants",
+          "vendorTickets"
+        ],
+        "type": "object",
+        "properties": {
+          "earlier": {
+            "type": "integer",
+            "description": "How many interactions came before the ones shown, which stay in FiscoProjects.",
+            "format": "int32"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TeamsTicketDescriptionResponse"
+              }
+            ]
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMessageResponse"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketEventResponse"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamsTicketAttachmentResponse"
+            }
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamsTicketParticipantResponse"
+            }
+          },
+          "vendorTickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamsTicketVendorResponse"
+            }
+          }
+        },
+        "description": "The last interactions of the conversation, the description counted as the first one (ADR-0152)."
+      },
+      "TeamsTicketDescriptionResponse": {
+        "required": [
+          "text",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The description with its formatting, as the JSON of the editor; null for one written as plain text."
+          }
+        },
+        "description": "The description of the ticket, when it is among the interactions shown."
+      },
+      "TeamsTicketParticipantResponse": {
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TicketParticipantRole"
+          }
+        },
+        "description": "A person of the ticket in Teams, with the part in it and without the e-mail (ADR-0152)."
+      },
+      "TeamsTicketResponse": {
+        "required": [
+          "number",
+          "title",
+          "project",
+          "team",
+          "priority",
+          "status",
+          "requester",
+          "assignee",
+          "managers",
+          "openedAt",
+          "attachmentCount",
+          "deadlines",
+          "viewerId",
+          "conversation"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/TicketProjectResponse"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TicketTeam"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TicketPriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/TicketPersonResponse"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketPersonResponse"
+              }
+            ]
+          },
+          "managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketPersonResponse"
+            }
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attachmentCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadlines": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TicketDeadlinesResponse"
+              }
+            ]
+          },
+          "viewerId": {
+            "type": "string",
+            "description": "The person of the token, for the page to say \"(você)\".",
+            "format": "uuid"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/TeamsTicketConversationResponse"
+          }
+        },
+        "description": "A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152): the header, the people, the\ndeadlines, how many attachments it has and the last interactions; no e-mails, no permissions."
+      },
+      "TeamsTicketVendorResponse": {
+        "required": [
+          "id",
+          "vendor",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vendor": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "description": "A ticket at a vendor, for the text of its events in the conversation (ADR-0028)."
+      },
       "TemplateCreatedResponse": {
         "required": [
           "id"
@@ -20158,6 +20440,9 @@
     },
     {
       "name": "Notifications"
+    },
+    {
+      "name": "Teams"
     }
   ]
 }

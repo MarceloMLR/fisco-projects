@@ -525,26 +525,8 @@ public static class TicketEndpoints
             [.. details.TechLeads.Select(PersonOf)],
             ticket.OpenedAt,
             ticket.UpdatedAt,
-            [.. details.Messages.Select(message => new TicketMessageResponse(message.Id, message.AuthorId, message.Body, message.SentAt))],
-            [.. details.Events.Select(item => new TicketEventResponse(
-                item.Id,
-                item.Kind,
-                item.ActorId,
-                item.FromStatus,
-                item.ToStatus,
-                item.Action,
-                item.AssigneeId,
-                item.FromPriority,
-                item.ToPriority,
-                item.FromTeam,
-                item.ToTeam,
-                item.FromPersonId,
-                item.ToPersonId,
-                item.VendorTicketId,
-                item.FromVendorStatus,
-                item.ToVendorStatus,
-                item.Note,
-                item.At))],
+            [.. details.Messages.Select(MessageOf)],
+            [.. details.Events.Select(EventOf)],
             [.. details.Attachments.Select(attachment => new TicketAttachmentResponse(
                 attachment.Id, attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType, attachment.UploadedAt))],
             details.Followers,
@@ -1026,7 +1008,7 @@ public static class TicketEndpoints
         };
 
     /// <summary>The person of the session, and whether the person is the Administrator, read from the database now.</summary>
-    private static async Task<TicketViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
+    internal static async Task<TicketViewer> ViewerOfAsync(HttpContext http, IUserAccess access, CancellationToken cancellationToken)
     {
         var userId = UserSession.UserIdOf(http.User)
             ?? throw new InvalidOperationException("The tickets are read in a session.");
@@ -1072,7 +1054,7 @@ public static class TicketEndpoints
 
     private static TicketDueResponse DueOf(TicketDue due) => new(due.State, due.DueOn, due.DaysLate);
 
-    private static TicketDeadlinesResponse DeadlinesOf(TicketDeadlineFigures figures) =>
+    internal static TicketDeadlinesResponse DeadlinesOf(TicketDeadlineFigures figures) =>
         new(
             figures.FirstResponse is { } first ? DueOf(first) : null,
             figures.FirstRespondedAt,
@@ -1081,9 +1063,33 @@ public static class TicketEndpoints
             figures.TotalDays,
             figures.PausedDays);
 
-    private static TicketProjectResponse ProjectOf(TicketProject project) => new(project.Id, project.Code, project.Name);
+    internal static TicketProjectResponse ProjectOf(TicketProject project) => new(project.Id, project.Code, project.Name);
 
-    private static TicketPersonResponse PersonOf(TicketPerson person) => new(person.Id, person.Name);
+    internal static TicketPersonResponse PersonOf(TicketPerson person) => new(person.Id, person.Name);
+
+    internal static TicketMessageResponse MessageOf(TicketMessage message) =>
+        new(message.Id, message.AuthorId, message.Body, message.SentAt);
+
+    internal static TicketEventResponse EventOf(TicketEvent item) =>
+        new(
+            item.Id,
+            item.Kind,
+            item.ActorId,
+            item.FromStatus,
+            item.ToStatus,
+            item.Action,
+            item.AssigneeId,
+            item.FromPriority,
+            item.ToPriority,
+            item.FromTeam,
+            item.ToTeam,
+            item.FromPersonId,
+            item.ToPersonId,
+            item.VendorTicketId,
+            item.FromVendorStatus,
+            item.ToVendorStatus,
+            item.Note,
+            item.At);
 
     private static ValidationProblem Invalid(IReadOnlyList<TicketField> fields) =>
         TypedResults.ValidationProblem(fields.Distinct().ToDictionary(

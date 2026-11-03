@@ -2376,6 +2376,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/tickets/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetTeamsTicket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4545,6 +4561,79 @@ export interface components {
         TeamsPackageResponse: {
             manifest: string;
             version: string;
+        };
+        /** @description A file of the conversation in Teams, only by the name: it opens only in FiscoProjects (ADR-0152). */
+        TeamsTicketAttachmentResponse: {
+            /**
+             * Format: uuid
+             * @description The message of the file, or null for the description.
+             */
+            messageId: null | string;
+            name: string;
+            /** Format: int64 */
+            size: number;
+            contentType: string;
+        };
+        /** @description The last interactions of the conversation, the description counted as the first one (ADR-0152). */
+        TeamsTicketConversationResponse: {
+            /**
+             * Format: int32
+             * @description How many interactions came before the ones shown, which stay in FiscoProjects.
+             */
+            earlier: number;
+            description: null | components["schemas"]["TeamsTicketDescriptionResponse"];
+            messages: components["schemas"]["TicketMessageResponse"][];
+            events: components["schemas"]["TicketEventResponse"][];
+            attachments: components["schemas"]["TeamsTicketAttachmentResponse"][];
+            participants: components["schemas"]["TeamsTicketParticipantResponse"][];
+            vendorTickets: components["schemas"]["TeamsTicketVendorResponse"][];
+        };
+        /** @description The description of the ticket, when it is among the interactions shown. */
+        TeamsTicketDescriptionResponse: {
+            text: string;
+            /** @description The description with its formatting, as the JSON of the editor; null for one written as plain text. */
+            body: null | string;
+        };
+        /** @description A person of the ticket in Teams, with the part in it and without the e-mail (ADR-0152). */
+        TeamsTicketParticipantResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: components["schemas"]["TicketParticipantRole"];
+        };
+        /**
+         * @description A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152): the header, the people, the
+         *     deadlines, how many attachments it has and the last interactions; no e-mails, no permissions.
+         */
+        TeamsTicketResponse: {
+            /** Format: int32 */
+            number: number;
+            title: string;
+            project: components["schemas"]["TicketProjectResponse"];
+            team: components["schemas"]["TicketTeam"];
+            priority: components["schemas"]["TicketPriority"];
+            status: components["schemas"]["TicketStatus"];
+            requester: components["schemas"]["TicketPersonResponse"];
+            assignee: null | components["schemas"]["TicketPersonResponse"];
+            managers: components["schemas"]["TicketPersonResponse"][];
+            /** Format: date-time */
+            openedAt: string;
+            /** Format: int32 */
+            attachmentCount: number;
+            deadlines: null | components["schemas"]["TicketDeadlinesResponse"];
+            /**
+             * Format: uuid
+             * @description The person of the token, for the page to say "(você)".
+             */
+            viewerId: string;
+            conversation: components["schemas"]["TeamsTicketConversationResponse"];
+        };
+        /** @description A ticket at a vendor, for the text of its events in the conversation (ADR-0028). */
+        TeamsTicketVendorResponse: {
+            /** Format: uuid */
+            id: string;
+            vendor: string;
+            code: string;
         };
         TemplateCreatedResponse: {
             /** Format: uuid */
@@ -14496,6 +14585,44 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetTeamsTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamsTicketResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
