@@ -12,7 +12,7 @@ O aviso de um chamado no Teams abre a página do FiscoProjects no Teams, que só
   - No Teams estreito (celular ou janela pequena), tudo numa coluna, com o botão no pé.
 - **Chamado que a pessoa não vê:** "Você não vê este chamado", com "Abrir no FiscoProjects".
 - **Sem a entrada única:** fora do Teams, sem a entrada pelo Entra, com o token recusado, com falha ou com aviso de outro item, a página continua como hoje.
-- **Entrada pelo Teams:** a página pede ao Teams o token da pessoa para o aplicativo da instalação (`@microsoft/teams-js`), guardado só na memória da página. A API confere o token e acha a pessoa pelo vínculo `entra`; recusa o convidado, quem nunca entrou e o desativado, sem criar usuário nem sessão.
+- **Entrada pelo Teams:** a página pede ao Teams o token da pessoa para o aplicativo da instalação (`@microsoft/teams-js`), guardado só na memória da página. A API confere o token e acha a pessoa pelo vínculo `entra`; recusa o convidado, quem não tem o vínculo `entra` e o desativado, sem criar usuário nem sessão.
 - **Rota de leitura:** `GET /api/teams/tickets/{número}`, só com o token do Teams, nunca com o cookie, com as regras de quem vê o chamado (ADR-0044), sem e-mails e com `no-store`; 404 para quem não vê. O token do Teams não vale em nenhuma outra rota.
 - **Aplicativo do Entra (Terraform):** o identificador `api://{endereço do site}/{cliente}`, o escopo `access_as_user`, os tokens v2, os clientes do Teams pré-autorizados e a declaração de conta convidada no token de acesso. Nenhuma permissão do Graph muda; o manifesto do Teams não muda.
 - **Dependências novas:** `@microsoft/teams-js` (MIT), carregada só na página do Teams, e `Microsoft.AspNetCore.Authentication.JwtBearer` (MIT).

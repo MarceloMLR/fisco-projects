@@ -39,7 +39,7 @@ O `ApiSetup` ganha o `MapTeamsApiGroup()`: `/api/teams`, fora do `MapApiGroup` (
 `GET /api/teams/tickets/{number}` (`GetTeamsTicket`, nos `TicketEndpoints`, recebendo o grupo do Teams) monta o `TicketViewer` como as outras rotas (o usuário da sessão e o papel de administrador pelo `IUserAccess`), chama o `GetTicket` e transforma o resultado pelo `TeamsTicketView.Of` (Application), sem consulta nova:
 
 - **A conversa:** a descrição (pelo solicitante, na abertura, com os anexos dela), as mensagens e os eventos, na ordem da conversa da página do chamado; as últimas `TeamsTicketView.RecentInteractions` (5) e `earlier`, quantas vieram antes. Os anexos vão pelo nome e pelo tamanho, sem id.
-- **As pessoas:** só o id, o nome e o papel na conversa (`TicketAccess.RoleIn`, já nos participantes do `GetTicket`), sem e-mail; o `viewerId` para a página dizer "(você)".
+- **As pessoas:** só as do cabeçalho e das interações mostradas, com o id, o nome e o papel na conversa (`TicketAccess.RoleIn`, já nos participantes do `GetTicket`), sem e-mail; o `viewerId` para a página dizer "(você)".
 - **Os prazos:** os mesmos números da página do chamado (`TicketDeadlineFigures`), com o estado de hoje.
 - **Fora:** as permissões, quem acompanha, os chamados em fornecedores e as opções de troca.
 
@@ -49,9 +49,9 @@ A resposta sai com `Cache-Control: no-store`. Quem não vê, e o número que nã
 
 A `TeamsPage` decide pelo caminho do item (`ticketNumberOf`, só `/tickets/{número}`, depois do `safeItemPath`):
 
-- **Outro item, sem item ou fora de um quadro** (`window.parent === window`): a página de hoje, sem carregar a biblioteca do Teams.
-- **Um chamado num quadro:** o `teamsHost.ts`, o único arquivo que importa `@microsoft/teams-js` (a regra do lint reprova o import em outro lugar), carrega a biblioteca sob demanda, chama `app.initialize()` com um limite de 3 segundos, segue o tema do Teams (`app.getContext` e `registerOnThemeChangeHandler`, além do `theme` do endereço) e entrega o `getAuthToken()`.
-- **A leitura:** o `useTeamsTicket` (`teamsTicket.ts`) chama a rota pelo cliente da API com o cabeçalho `Authorization: Bearer` e guarda o chamado só no estado da página, fora do cache das consultas: o token é da página, e não de uma sessão, e o fim de uma sessão limpa esse cache (`SessionProvider`); um 401 pede o token de novo uma vez.
+- **Outro item ou sem item:** a página de hoje, sem carregar a biblioteca do Teams.
+- **Um chamado:** o `teamsHost.ts`, o único arquivo que importa `@microsoft/teams-js` (a regra do lint reprova o import, também o dinâmico, em outro lugar), carrega a biblioteca sob demanda, chama `app.initialize()` com um limite de 3 segundos (fora do Teams, ninguém responde, e a página volta à de hoje sem pedir token; no Teams do celular a página não fica num quadro, então só a resposta do Teams diz onde ela está), segue o tema do Teams (`app.getContext` e `registerOnThemeChangeHandler`, além do `theme` do endereço) e entrega o `getAuthToken()`.
+- **A leitura:** o `useTeamsTicket` (`teamsTicket.ts`) chama a rota por um cliente próprio (`teamsApi`, sem o cookie e sem o aviso de sessão encerrada, porque um 401 ali é o token recusado) com o cabeçalho `Authorization: Bearer` e guarda o chamado só no estado da página, fora do cache das consultas: o token é da página, e não de uma sessão, e o fim de uma sessão limpa esse cache (`SessionProvider`); um 401 pede o token de novo uma vez.
 - **Os estados:** carregando; o chamado (`TeamsTicket.tsx`, desenhado como o canvas "Chamado no Teams"); "Você não vê este chamado" no 404 (`TeamsNoAccess`); e, no 401 repetido, no fim do limite ou na falha da biblioteca, a página de hoje, com a frase de que não foi possível mostrar o chamado quando a leitura falhou por outro erro.
 
 O `TeamsTicket` reaproveita o que a página do chamado já tem: o `TicketStatusBadge`, o `PriorityTag`, o `TicketDue`, o `RoleTag`, o `PersonAvatar` e o `RichText`, e a linha de evento e a mensagem da `TicketConversation`, que passam a ser exportadas e a aceitar os anexos só pelo nome (sem o `AttachmentChip`, que abre e baixa). No computador, o cabeçalho com "Responder no FiscoProjects", a conversa e a coluna das pessoas, dos prazos e do chamado; até 600px, uma coluna, com o botão no pé. As datas pelo `useDates()`, no fuso da instalação, que vem da marca pública. Os textos em `teamsPage.ticket.*`.
@@ -60,7 +60,7 @@ O `TeamsTicket` reaproveita o que a página do chamado já tem: o `TicketStatusB
 
 O módulo `entra` recebe o `site_host` (o `local.host`, o mesmo do `Email:SiteUrl` e do manifesto) e passa a ter:
 
-- `api { requested_access_token_version = 2 }`, com o escopo `access_as_user` (tipo administrador, ativo, com o id fixo por `uuidv5` a partir do host, sem provedor novo);
+- `api { requested_access_token_version = 2 }`, com o escopo `access_as_user` (tipo administrador, ativo, com um id fixo no código, que não muda se o host mudar);
 - o identificador `api://{site_host}/{client_id}`, pelo `azuread_application_identifier_uri`, porque o `client_id` só existe depois do aplicativo;
 - os dois clientes do Teams pré-autorizados no escopo, pelo `azuread_application_pre_authorized`;
 - a declaração `acct` também no `access_token`;
@@ -71,7 +71,7 @@ Os tokens v2 também liberam o identificador com o host do App Service, que não
 ### 6. Testes
 
 - **API:** o `FakeEntra` passa a emitir o token do Teams (`TeamsTokenAsync`, com a audiência, o emissor, o escopo, o cliente, o `acct`, a assinatura e a validade trocáveis), com as mesmas chaves do emissor simulado; os testes da rota e das recusas seguem os cenários das specs pelo nome. O `MonitoringTests` ganha o caso do token do Teams, aceito e recusado, fora dos registros.
-- **Tela:** o `teamsHost` simulado nos testes da `TeamsPage` (dentro e fora de um quadro, token, recusa, limite) e a biblioteca simulada nos testes do próprio `teamsHost`; o MSW confere o cabeçalho `Authorization`; o chamado simulado fica em `web/src/test/demoTeamsTicket.ts`.
+- **Tela:** o `teamsHost` simulado nos testes da `TeamsPage` (dentro e fora do Teams, token, recusa, limite) e a biblioteca simulada nos testes do próprio `teamsHost`; o MSW confere o cabeçalho `Authorization`; o chamado simulado fica em `web/src/test/demoTeamsTicket.ts`.
 
 ## Risks / Trade-offs
 

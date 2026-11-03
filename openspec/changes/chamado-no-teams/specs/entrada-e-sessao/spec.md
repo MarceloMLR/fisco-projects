@@ -36,7 +36,7 @@ A sessão MUST ficar só num cookie `HttpOnly`, `Secure` e `SameSite=Lax`, sem n
 
 ### Requirement: Entrada pelo Teams
 
-Com a entrada pelo Entra ligada, as leituras do Teams MUST aceitar o token que o Teams entrega à página: assinado pelo Entra ID, do tenant da instalação, para o aplicativo dela, no prazo, com o escopo `access_as_user` e de um cliente do Teams. A pessoa MUST ser achada pelo vínculo `entra` do identificador do objeto. O convidado, quem nunca entrou e o desativado MUST receber 401, sem criar usuário nem sessão (ADR-0005, ADR-0007, ADR-0008, ADR-0152).
+Com a entrada pelo Entra ligada, as leituras do Teams MUST aceitar o token que o Teams entrega à página: assinado pelo Entra ID, do tenant da instalação, para o aplicativo dela, no prazo, com o escopo `access_as_user` e de um cliente do Teams. A pessoa MUST ser achada pelo vínculo `entra` do identificador do objeto. O convidado, quem não tem o vínculo `entra` e o desativado MUST receber 401, sem criar usuário nem sessão (ADR-0005, ADR-0007, ADR-0008, ADR-0152).
 
 #### Scenario: Token do Teams aceito
 - **WHEN** uma pessoa ativa que já entrou pelo Entra lê um chamado pela rota do Teams com o token do Teams
