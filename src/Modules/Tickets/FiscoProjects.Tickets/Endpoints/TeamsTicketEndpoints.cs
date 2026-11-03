@@ -85,6 +85,16 @@ public static class TeamsTicketEndpoints
 
         var view = TeamsTicketView.Of(details);
         var ticket = details.Ticket;
+        // Only the people the page shows: the ones of the header and of the interactions shown.
+        HashSet<Guid> shown =
+        [
+            ticket.RequesterId,
+            .. details.Assignee is { } owner ? [owner.Id] : Array.Empty<Guid>(),
+            .. details.Managers.Select(manager => manager.Id),
+            .. view.Messages.Select(message => message.AuthorId),
+            .. view.Events.SelectMany(item => new[] { item.ActorId, item.AssigneeId, item.FromPersonId, item.ToPersonId })
+                .OfType<Guid>(),
+        ];
         return TypedResults.Ok(new TeamsTicketResponse(
             ticket.Number,
             ticket.Title,
@@ -106,7 +116,9 @@ public static class TeamsTicketEndpoints
                 [.. view.Events.Select(TicketEndpoints.EventOf)],
                 [.. view.Attachments.Select(attachment => new TeamsTicketAttachmentResponse(
                     attachment.MessageId, attachment.Name, attachment.Size, attachment.ContentType))],
-                [.. details.Participants.Select(person => new TeamsTicketParticipantResponse(person.Id, person.Name, person.Role))],
+                [.. details.Participants
+                    .Where(person => shown.Contains(person.Id))
+                    .Select(person => new TeamsTicketParticipantResponse(person.Id, person.Name, person.Role))],
                 [.. details.VendorTickets
                     .Where(item => view.Events.Any(shown => shown.VendorTicketId == item.Record.Id))
                     .Select(item => new TeamsTicketVendorResponse(item.Record.Id, item.VendorName, item.Record.Code))])));
