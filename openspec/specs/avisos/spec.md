@@ -84,7 +84,7 @@ Os módulos MUST avisar pelo contrato dos avisos, sem conhecer os canais (ADR-00
 
 ### Requirement: Avisos dos chamados na hora
 
-Os eventos que pedem ação MUST gerar e-mail na hora (ADR-0037): o chamado aberto ou transferido para quem atende o time dele; a mensagem para quem acompanha o chamado; a menção para quem foi mencionado; o pedido de informação e a resolução para o solicitante; a troca de responsável para o novo responsável; e a troca de solicitante para o novo solicitante. Quem recebe um aviso mais específico da mesma ação (a menção, o pedido de informação, a resolução) MUST NOT receber também o da mensagem.
+Os eventos que pedem ação MUST gerar o aviso na hora (ADR-0037): o chamado aberto ou transferido para quem atende o time dele; a mensagem para quem acompanha o chamado; a menção para quem foi mencionado; o pedido de informação e a resolução para o solicitante; a troca de responsável para o novo responsável; e a troca de solicitante para o novo solicitante. Quem recebe um aviso mais específico da mesma ação (a menção, o pedido de informação, a resolução) MUST NOT receber também o da mensagem.
 
 #### Scenario: Chamado aberto para o time
 - **WHEN** uma pessoa abre um chamado para o time Desenvolvimento
@@ -300,10 +300,10 @@ Fora da produção, com o envio pelo Graph, os e-mails para os domínios de `Ema
 
 ### Requirement: Avisos na hora pelo Teams
 
-Com os avisos pelo Teams ligados na instalação, cada aviso que sai por e-mail na hora MUST ir também para a aba Atividade do Teams de cada pessoa que o recebe e tem o Teams no canal dos avisos na hora. Valem as mesmas regras de quem recebe (ADR-0038, ADR-0149). Os avisos que por e-mail vão para o resumo diário MUST NOT ir para o Teams.
+Com os avisos pelo Teams ligados na instalação, cada aviso que sai na hora MUST ir para a aba Atividade do Teams de cada pessoa que o recebe e tem o Teams ligado e disponível. Valem as mesmas regras de quem recebe (ADR-0038, ADR-0149, ADR-0151). Os avisos que por e-mail vão para o resumo diário MUST NOT ir para o Teams.
 
 #### Scenario: Chamado atribuído no Teams
-- **WHEN** o gerente passa um chamado para uma pessoa que tem o Teams no canal
+- **WHEN** o gerente passa um chamado para uma pessoa que tem o Teams ligado
 - **THEN** a pessoa recebe na aba Atividade o aviso do chamado atribuído
 
 #### Scenario: Quem fez a ação não recebe no Teams
@@ -315,48 +315,48 @@ Com os avisos pelo Teams ligados na instalação, cada aviso que sai por e-mail 
 - **THEN** a pessoa não recebe nada no Teams, e o aviso fica no sino e no resumo diário
 
 #### Scenario: Teams desligado na instalação
-- **WHEN** um chamado é atribuído com os avisos pelo Teams desligados
+- **WHEN** um chamado é atribuído, com os avisos pelo Teams desligados, a uma pessoa com os dois canais ligados
 - **THEN** a pessoa recebe só o e-mail, e nada vai para o Teams
 
 ### Requirement: Canal dos avisos na hora
 
-Cada pessoa MUST receber os avisos na hora pelo canal que escolheu: E-mail, Teams ou Os dois. Quem nunca escolheu MUST ficar com Os dois. O Teams MUST valer só com os avisos pelo Teams ligados e para quem pode recebê-los: com o envio pelo Graph, quem entra pelo Entra ID; com a implementação local, qualquer pessoa ativa. Para os outros, os avisos na hora MUST ir por e-mail, qualquer que seja a escolha (ADR-0037, ADR-0149).
+Cada pessoa MUST receber os avisos na hora pelos canais que ligou, o e-mail e o Teams; quem nunca escolheu MUST ficar com o e-mail ligado e o Teams desligado. O Teams MUST valer só com os avisos pelo Teams ligados e para quem pode recebê-los (com o Graph, quem entra pelo Entra ID; com a implementação local, qualquer pessoa ativa); fora disso, a escolha MUST ficar guardada, sem efeito. O sino MUST receber todo aviso, e com os dois canais desligados o aviso MUST ficar só nele (ADR-0151).
 
 #### Scenario: Só por e-mail
-- **WHEN** um chamado é atribuído a uma pessoa que escolheu E-mail
+- **WHEN** um chamado é atribuído a uma pessoa com o e-mail ligado e o Teams desligado
 - **THEN** a pessoa recebe o e-mail, e nada vai para o Teams
 
 #### Scenario: Só pelo Teams
-- **WHEN** um chamado é atribuído a uma pessoa que escolheu Teams
+- **WHEN** um chamado é atribuído a uma pessoa com o Teams ligado e o e-mail desligado
 - **THEN** a pessoa recebe o aviso no Teams e não recebe o e-mail
 
 #### Scenario: Pelos dois
-- **WHEN** um chamado é atribuído a uma pessoa que nunca escolheu o canal
+- **WHEN** um chamado é atribuído a uma pessoa com os dois canais ligados
 - **THEN** a pessoa recebe o e-mail e o aviso no Teams
 
 #### Scenario: Pessoa sem o Entra ID
-- **WHEN** um chamado é atribuído, com o envio pelo Graph, a uma pessoa que escolheu Teams e entra sem o Entra ID
-- **THEN** a pessoa recebe o e-mail, e nada vai para o Teams
+- **WHEN** um chamado é atribuído, com o envio pelo Graph, a uma pessoa com os dois canais ligados que entra sem o Entra ID
+- **THEN** a pessoa recebe só o e-mail, e nada vai para o Teams
 
 #### Scenario: Sino com qualquer canal
-- **WHEN** um chamado é atribuído a uma pessoa que escolheu Teams
+- **WHEN** um chamado é atribuído a uma pessoa com o Teams ligado e o e-mail desligado
 - **THEN** a notificação também aparece no sino do FiscoProjects
 
-### Requirement: Volta ao e-mail
+#### Scenario: Canais de quem nunca escolheu
+- **WHEN** um chamado é atribuído, com os avisos pelo Teams ligados, a uma pessoa que nunca escolheu os canais
+- **THEN** a pessoa recebe o e-mail, e nada vai para o Teams
 
-Quem escolheu só o Teams MUST receber o aviso por e-mail quando o aplicativo do Teams não está instalado para ela, quando o Teams recusa o envio de vez ou quando as tentativas acabam. O aviso MUST NOT ficar sem chegar por nenhum dos dois (ADR-0149).
+#### Scenario: Os dois canais desligados
+- **WHEN** um chamado é atribuído a uma pessoa com o e-mail e o Teams desligados
+- **THEN** nada vai por e-mail nem pelo Teams, e a notificação aparece no sino
 
-#### Scenario: Aplicativo não instalado para a pessoa
-- **WHEN** um chamado é atribuído a uma pessoa que escolheu Teams e não tem o aplicativo do Teams instalado
-- **THEN** o aviso não vai para o Teams, e a pessoa recebe o e-mail
+#### Scenario: Teams ligado sem o Teams disponível
+- **WHEN** um chamado é atribuído, com o envio pelo Graph, a uma pessoa que entra sem o Entra ID e tem só o Teams ligado
+- **THEN** nada vai por e-mail nem pelo Teams, e a notificação aparece no sino
 
-#### Scenario: Teams recusa o envio
-- **WHEN** o Graph recusa de vez o aviso para uma pessoa que escolheu Teams
-- **THEN** o aviso fica como Falhou, e a pessoa recebe o e-mail
-
-#### Scenario: Recusa com os dois canais
-- **WHEN** o Graph recusa de vez o aviso para uma pessoa que escolheu Os dois
-- **THEN** o aviso fica como Falhou, e a pessoa recebe só o e-mail que já tinha saído
+#### Scenario: Teams sem volta ao e-mail
+- **WHEN** o Graph recusa de vez o aviso para uma pessoa com o Teams ligado e o e-mail desligado
+- **THEN** o aviso do Teams fica como Falhou, e a pessoa não recebe o e-mail
 
 ### Requirement: Fila dos avisos do Teams
 
