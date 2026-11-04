@@ -38,6 +38,7 @@ export const clientSigners = {
   bruno: { name: 'Bruno Lima', email: 'bruno.lima@cliente.example' },
   otavio: { name: 'Otávio Ramos', email: 'otavio.ramos@cliente.example' },
   paula: { name: 'Paula Freitas', email: 'paula.freitas@cliente.example' },
+  helena: { name: 'Helena Duarte', email: 'helena.duarte@cliente.example' },
 } satisfies Record<string, DemoSigner>;
 
 export type DemoPerson = keyof typeof demoPeople;
@@ -1212,9 +1213,63 @@ export const demoProjects: readonly DemoProject[] = [
       {
         name: 'Validação',
         items: [
-          task('Validar no PVA', 22, 6, { after: ['Ajustar registros do bloco K'] }),
-          milestone('Arquivo validado', 29, { after: ['Validar no PVA'] }),
+          task('Validar no PVA', 22, 6, {
+            after: ['Ajustar registros do bloco K'],
+            note: 'Validar com a versão do PVA publicada para o leiaute de 2027.',
+          }),
+          // The day the client has to send the file, two days after the planned one (GanttA-2).
+          milestone('Arquivo validado', 29, { after: ['Validar no PVA'], deadline: 31 }),
         ],
+      },
+    ],
+    documents: [
+      {
+        folder: '03 Requisitos e especificações',
+        name: 'Mudanças do leiaute 2027.pdf',
+        by: 'carla',
+        lines: [
+          'Mudanças do leiaute da EFD ICMS/IPI para 2027',
+          'Bloco K: novos campos no registro K200.',
+          'Bloco H: inventário com o motivo em todos os meses.',
+        ],
+        status: { by: 'marina', to: 'Approved' },
+        link: { by: 'carla', to: 'Levantar mudanças do leiaute' },
+      },
+      {
+        folder: '05 Entregas e manuais',
+        name: 'Divergências do bloco K.csv',
+        by: 'diego',
+        lines: [
+          'Item;Registro;Saldo do ERP;Saldo do arquivo',
+          'TEC-0412;K200;1250;-35',
+          'TEC-0977;K200;480;-12',
+          'FIO-1033;K200;2100;-8',
+        ],
+      },
+    ],
+    links: [
+      {
+        title: 'Guia prático da EFD ICMS/IPI',
+        url: 'https://sped.fazenda.example/guia-pratico',
+        category: 'Outros',
+        description: 'Versão do leiaute de 2027.',
+        by: 'carla',
+      },
+      {
+        title: 'ERP · Homologação',
+        url: 'https://erp-hml.gamatextil.example',
+        category: 'Ambientes',
+        by: 'diego',
+      },
+    ],
+    credentials: [
+      {
+        portal: 'ERP',
+        environment: 'Homologação',
+        url: 'https://erp-hml.gamatextil.example',
+        username: 'consultoria.sped',
+        notes: 'Base com os dados de setembro.',
+        by: 'diego',
       },
     ],
   },
@@ -1373,14 +1428,57 @@ export const demoProjects: readonly DemoProject[] = [
     ],
     status: 'InProgress',
     // Hours of the people of the project in the last two weeks (ADR-0128).
-    // Within: 10 logged of 120 contracted and 16 additional.
+    // Within: 50 logged of 120 contracted and 16 additional.
     contractedHours: 120,
     additionalHours: [
       { daysAgo: 3, hours: 16, reason: 'Integração com a transportadora parceira, fora do escopo' },
     ],
-    // The week before the holidays of Diego, with the migration of the ERP-FIN: over his capacity (ADR-0142).
-    plannedHours: [{ task: 'Testes de emissão de CT-e', hours: 40 }],
+    plannedHours: [
+      // Against the logged ones, as the manager sees them in the Lista (ADR-0144): over in the tables, near in the
+      // integration and within in the routes, done.
+      { task: 'Mapear rotas e tabelas de frete', hours: 8 },
+      { task: 'Cadastrar tabelas de frete', hours: 7 },
+      { task: 'Integrar CT-e com o TMS', hours: 17 },
+      { task: 'Validar cálculo de frete com o cliente', hours: 6 },
+      { task: 'Revisar regras de ICMS do frete', hours: 9 },
+      // The week before the holidays of Diego, with the migration of the ERP-FIN: over his capacity (ADR-0142).
+      { task: 'Testes de emissão de CT-e', hours: 40 },
+      { task: 'Virada do TMS', hours: 16 },
+    ],
+    // The manager registers a short absence of the viewer, who also follows the project (ADR-0141).
+    absences: [{ of: 'marina', start: 36, end: 37 }],
     hours: [
+      { by: 'beatriz', daysAgo: 0, hours: 2, description: 'Acompanhamento com a transportadora' },
+      {
+        by: 'beatriz',
+        daysAgo: 1,
+        hours: 3,
+        description: 'Validação do cálculo de frete com o cliente',
+        task: 'Validar cálculo de frete com o cliente',
+      },
+      { by: 'beatriz', daysAgo: 3, hours: 4, description: 'Revisão do cronograma com o cliente' },
+      { by: 'beatriz', daysAgo: 6, hours: 3, description: 'Reunião semanal com a transportadora' },
+      {
+        by: 'carla',
+        daysAgo: 1,
+        hours: 2.5,
+        description: 'Cadastro das tabelas de frete fracionado',
+        task: 'Cadastrar tabelas de frete',
+      },
+      {
+        by: 'carla',
+        daysAgo: 4,
+        hours: 3,
+        description: 'Cadastro das tabelas de frete lotação',
+        task: 'Cadastrar tabelas de frete',
+      },
+      {
+        by: 'carla',
+        daysAgo: 5,
+        hours: 2,
+        description: 'Correção das faixas de peso',
+        task: 'Cadastrar tabelas de frete',
+      },
       {
         by: 'carla',
         daysAgo: 6,
@@ -1389,11 +1487,47 @@ export const demoProjects: readonly DemoProject[] = [
         task: 'Mapear rotas e tabelas de frete',
       },
       {
+        by: 'carla',
+        daysAgo: 8,
+        hours: 3,
+        description: 'Levantamento das rotas com a transportadora',
+        task: 'Mapear rotas e tabelas de frete',
+      },
+      {
         by: 'diego',
         daysAgo: 3,
         hours: 6,
         description: 'Integração do CT-e',
         task: 'Integrar CT-e com o TMS',
+      },
+      {
+        by: 'diego',
+        daysAgo: 6,
+        hours: 4,
+        description: 'Ajustes do XML do CT-e',
+        task: 'Integrar CT-e com o TMS',
+      },
+      {
+        by: 'diego',
+        daysAgo: 7,
+        hours: 6,
+        description: 'Integração do CT-e com o emissor',
+        task: 'Integrar CT-e com o TMS',
+      },
+      {
+        by: 'diego',
+        daysAgo: 8,
+        hours: 2,
+        description: 'Análise da rejeição do CT-e',
+        ticket: 'CT-e rejeitado por divergência no valor do frete',
+      },
+      { by: 'rafael', daysAgo: 2, hours: 3, description: 'Revisão técnica da integração do CT-e' },
+      {
+        by: 'rafael',
+        daysAgo: 4,
+        hours: 2.5,
+        description: 'Análise da lentidão do manifesto',
+        ticket: 'Lentidão ao gerar o manifesto (MDF-e)',
       },
     ],
     baseline: true,
@@ -1416,11 +1550,13 @@ export const demoProjects: readonly DemoProject[] = [
       {
         name: 'Configuração',
         items: [
-          // Late in the week it is loaded: it should have ended the day before.
+          // Late in the week it is loaded: it should have ended the day before, past the deadline the client asked
+          // for (GanttA-2).
           task('Cadastrar tabelas de frete', 7, 6, {
             owner: 'carla',
             progress: 70,
             after: ['Rotas mapeadas'],
+            deadline: 11,
           }),
           // One day later than planned, after the baseline.
           task('Integrar CT-e com o TMS', 8, 10, {
@@ -1428,13 +1564,19 @@ export const demoProjects: readonly DemoProject[] = [
             progress: 40,
             after: ['Rotas mapeadas'],
             movedTo: 9,
+            note: 'A transportadora libera o ambiente de homologação do CT-e só às terças e quintas.',
           }),
           // Late in the Meu trabalho of the second manager, and one of her week.
           task('Validar cálculo de frete com o cliente', 10, 3, {
             owner: 'beatriz',
             progress: 30,
           }),
-          task('Revisar regras de ICMS do frete', 16, 3, { owner: 'beatriz' }),
+          // It starts two business days after the validation starts, without waiting for its end (ADR-0137).
+          task('Revisar regras de ICMS do frete', 16, 3, {
+            owner: 'beatriz',
+            after: ['Validar cálculo de frete com o cliente'],
+            links: { 'Validar cálculo de frete com o cliente': { type: 'StartToStart', lag: 2 } },
+          }),
           milestone('Fretes configurados', 21, {
             after: ['Cadastrar tabelas de frete', 'Integrar CT-e com o TMS'],
           }),
@@ -1458,7 +1600,8 @@ export const demoProjects: readonly DemoProject[] = [
         name: 'Entrada em produção',
         items: [
           task('Virada do TMS', 35, 2, { owner: 'rafael', after: ['Homologação aprovada'] }),
-          milestone('TMS em produção', 37, { after: ['Virada do TMS'] }),
+          // The date the client fixed for the start of the new TMS (GanttA-2).
+          milestone('TMS em produção', 37, { after: ['Virada do TMS'], deadline: 39 }),
         ],
       },
     ],
@@ -1717,6 +1860,118 @@ export const demoProjects: readonly DemoProject[] = [
       ['diego', 'Developer'],
     ],
     status: 'InProgress',
+    // Within: 39,5 logged of 80 contracted (ADR-0128).
+    contractedHours: 80,
+    plannedHours: [
+      { task: 'Parametrizar retenções de serviços', hours: 20 },
+      { task: 'Gerar eventos R-4000', hours: 16 },
+      { task: 'Conferir a DCTFWeb com o cliente', hours: 12 },
+    ],
+    hours: [
+      {
+        by: 'marina',
+        daysAgo: 1,
+        hours: 2,
+        description: 'Reunião de acompanhamento com o cliente',
+      },
+      {
+        by: 'marina',
+        daysAgo: 4,
+        hours: 3,
+        description: 'Preparação da conferência da DCTFWeb',
+        task: 'Conferir a DCTFWeb com o cliente',
+      },
+      {
+        by: 'carla',
+        daysAgo: 0,
+        hours: 3,
+        description: 'Retenções de PIS, COFINS e CSLL',
+        task: 'Parametrizar retenções de serviços',
+      },
+      {
+        by: 'carla',
+        daysAgo: 6,
+        hours: 3,
+        description: 'Conferência das retenções com o fiscal',
+        task: 'Parametrizar retenções de serviços',
+      },
+      {
+        by: 'carla',
+        daysAgo: 9,
+        hours: 7,
+        description: 'Cadastro das naturezas de rendimento',
+        task: 'Parametrizar retenções de serviços',
+      },
+      {
+        by: 'diego',
+        daysAgo: 0,
+        hours: 2.5,
+        description: 'Geração dos eventos R-4020',
+        task: 'Gerar eventos R-4000',
+      },
+      {
+        by: 'diego',
+        daysAgo: 2,
+        hours: 3.5,
+        description: 'Correção do CNPJ do beneficiário',
+        task: 'Gerar eventos R-4000',
+      },
+      {
+        by: 'diego',
+        daysAgo: 5,
+        hours: 6,
+        description: 'Leitura do leiaute dos eventos R-4000',
+        task: 'Gerar eventos R-4000',
+      },
+      { by: 'rafael', daysAgo: 0, hours: 2.5, description: 'Revisão dos eventos gerados' },
+      {
+        by: 'rafael',
+        daysAgo: 1,
+        hours: 4,
+        description: 'Revisão técnica do leiaute da EFD-Reinf',
+      },
+      {
+        by: 'rafael',
+        daysAgo: 3,
+        hours: 3,
+        description: 'Análise da rejeição com o desenvolvimento',
+        ticket: 'Evento R-4020 rejeitado por CNPJ do beneficiário',
+      },
+    ],
+    credentials: [
+      {
+        portal: 'EFD-Reinf',
+        environment: 'Produção restrita',
+        url: 'https://reinf.receita.example',
+        username: 'epsilon.fiscal',
+        notes: 'Ambiente de testes da Receita.',
+        by: 'carla',
+      },
+      {
+        portal: 'e-CAC',
+        environment: 'Produção',
+        url: 'https://cav.receita.example',
+        username: '98.765.432/0001-10',
+        notes: 'Procuração eletrônica até dezembro de 2027.',
+        by: 'marina',
+      },
+    ],
+    acceptances: [
+      {
+        milestone: 'Diagnóstico entregue',
+        title: 'Aceite do diagnóstico da EFD-Reinf',
+        by: 'marina',
+        message: 'Segue o diagnóstico dos eventos da EFD-Reinf para o aceite.',
+        file: 'termo-diagnostico-reinf.pdf',
+        lines: [
+          'Termo de aceite - Diagnóstico da EFD-Reinf',
+          'Projeto FARMA-REINF - EFD-Reinf e DCTFWeb',
+          'Assinatura: ____________________',
+        ],
+        signers: [clientSigners.helena],
+        answers: [{ signer: 0, signs: true }],
+      },
+    ],
     phases: [
       {
         name: 'Diagnóstico',
@@ -1743,8 +1998,11 @@ export const demoProjects: readonly DemoProject[] = [
       {
         name: 'Entrega',
         items: [
+          // The legal deadline of the first period, as an obligation has (GanttA-2).
           milestone('Primeira transmissão', 25, {
             after: ['Gerar eventos R-4000', 'Conferir a DCTFWeb com o cliente'],
+            deadline: 28,
+            note: 'A EFD-Reinf vence no dia 15 do mês seguinte ao dos pagamentos.',
           }),
         ],
       },
@@ -1993,6 +2251,58 @@ export const demoProjects: readonly DemoProject[] = [
       ['beatriz', 'Contributor'],
     ],
     status: 'InProgress',
+    // Internal, without contracted hours: the hours and the planned hours only show the effort (ADR-0128).
+    plannedHours: [
+      { task: 'Mapear impactos nos clientes', hours: 24 },
+      { task: 'Ajustar o cadastro de NCM', hours: 8 },
+      // With the tests of the ERP-FIN in the same week and her absence: near her capacity (ADR-0142).
+      { task: 'Testar as alíquotas de teste', hours: 22 },
+      { task: 'Treinar a equipe', hours: 12 },
+    ],
+    // By the manager (ADR-0141): two days of Carla during the tests of the rates, and two of Beatriz later on.
+    absences: [
+      { of: 'carla', start: 23, end: 24 },
+      { of: 'beatriz', start: 42, end: 43 },
+    ],
+    hours: [
+      { by: 'marina', daysAgo: 3, hours: 1, description: 'Alinhamento interno da reforma' },
+      {
+        by: 'beatriz',
+        daysAgo: 0,
+        hours: 3,
+        description: 'Impactos nos clientes do varejo',
+        task: 'Mapear impactos nos clientes',
+      },
+      {
+        by: 'beatriz',
+        daysAgo: 2,
+        hours: 4,
+        description: 'Planilha de impactos por cliente',
+        task: 'Mapear impactos nos clientes',
+      },
+      { by: 'beatriz', daysAgo: 5, hours: 2, description: 'Reunião interna sobre a reforma' },
+      {
+        by: 'carla',
+        daysAgo: 8,
+        hours: 5,
+        description: 'Estudo das regras de transição',
+        task: 'Estudar as regras do IBS e da CBS',
+      },
+      {
+        by: 'diego',
+        daysAgo: 1,
+        hours: 2,
+        description: 'Ajuste do cadastro de NCM',
+        task: 'Ajustar o cadastro de NCM',
+      },
+      {
+        by: 'diego',
+        daysAgo: 3,
+        hours: 1.5,
+        description: 'Conferência das classificações',
+        task: 'Ajustar o cadastro de NCM',
+      },
+    ],
     phases: [
       {
         name: 'Estudo',
@@ -2022,6 +2332,7 @@ export const demoProjects: readonly DemoProject[] = [
             owner: 'carla',
             inside: 'Adaptar o cálculo para a CBS',
             after: ['Ajustar o cadastro de NCM'],
+            note: 'Em 2026, as alíquotas de teste são de 0,9% de CBS e 0,1% de IBS.',
           }),
         ],
       },
