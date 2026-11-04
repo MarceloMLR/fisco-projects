@@ -215,3 +215,4 @@ Regras:
 | [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |
 | [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | aceita | 2026-11-02 |
 | [0152](0152-chamado-no-teams-com-a-entrada-unica.md) | Chamado no Teams pela entrada única do Teams, só para ler | aceita | 2026-11-03 |
+| [0153](0153-abrir-pelo-teams-direto-na-entrada-da-microsoft.md) | Abrir pelo Teams direto na entrada da Microsoft | proposta | 2026-11-03 |
