@@ -42,7 +42,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 02/11/2026, ao testar o Teams, Marcelo pediu que cada pessoa ligue e desligue os avisos por e-mail e pelo Teams em Meu perfil, inclusive os dois, com o e-mail ligado e o Teams desligado de início, e a escolha registrada na auditoria (Avisos-5, `canais-dos-avisos`, ADR-0151), com a proposta aprovada por ele antes da implementação.
 - Em 03/11/2026, ao testar os avisos pelo Teams, Marcelo pediu que o aviso de um chamado mostre mais do que "Abrir no FiscoProjects" e, depois de ver o canvas "Chamado no Teams", pediu o chamado só para ler na página do Teams, pela entrada única do Teams (Avisos-6, `chamado-no-teams`, ADR-0152), com a proposta aprovada por ele antes da implementação.
 - Em 03/11/2026, Marcelo pediu para zerar a demonstração do `dev` e recarregá-la com as novidades da v2 também fora do ERP-FIN (Cronograma-3.5, `demonstracao-atualizada`), mantendo o aplicativo do Teams e as Configurações gerais.
-- Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153).
+- Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153), com a proposta aprovada por ele antes da implementação.
 
 ## Marcos
 
@@ -179,7 +179,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída em 02/11/2026 ([#143](https://github.com/MarceloMLR/fisco-projects/pull/143)) |
 | Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | Concluída em 03/11/2026 ([#146](https://github.com/MarceloMLR/fisco-projects/pull/146)) |
 | Avisos-6 | `chamado-no-teams` | O chamado do aviso só para ler na página do FiscoProjects no Teams, pela entrada única do Teams, com "Responder no FiscoProjects", a pedido de Marcelo | 0044, 0054, 0149, 0152 | Concluída em 03/11/2026 ([#149](https://github.com/MarceloMLR/fisco-projects/pull/149)) |
-| Avisos-6.1 | `entrada-direta-pelo-teams` | O link do Teams abre o item direto, indo à entrada da Microsoft quando não há sessão, salvo depois de Sair no navegador, a pedido de Marcelo | 0054, 0117, 0152, 0153 | Planejada (proposta aguardando a aprovação de Marcelo) |
+| Avisos-6.1 | `entrada-direta-pelo-teams` | O link do Teams abre o item direto, indo à entrada da Microsoft quando não há sessão, salvo depois de Sair no navegador, a pedido de Marcelo | 0054, 0117, 0152, 0153 | Em andamento |
 
 ## 7. Documentos, links, acessos e termos
 
