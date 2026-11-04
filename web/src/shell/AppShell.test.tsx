@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import ptBR from '../locales/pt-BR.json';
 import { phoneWidth, renderApp } from '../test/renderApp';
+import { signedOutHere } from '../session/signedOut';
 import { marina, problem, server } from '../test/server';
 
 const navigationName = ptBR.shell.mainNavigation;
@@ -210,6 +211,39 @@ describe('Conta no cabeçalho', () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
+    });
+  });
+  // Spec: entrada-e-sessao, requirement "Sair" (ADR-0153).
+  it('Sair lembrado até a próxima entrada', async () => {
+    server.use(
+      http.post('/api/session/sign-out', () => {
+        server.use(http.get('/api/session', () => problem(401)));
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    await renderApp('/projects');
+    expect(signedOutHere()).toBe(false);
+    fireEvent.click(
+      screen.getByRole('button', { name: ptBR.shell.account.replace('{{name}}', marina.name) }),
+    );
+    fireEvent.click(await screen.findByRole('menuitem', { name: ptBR.shell.signOut }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: ptBR.signIn.title }),
+    ).toBeInTheDocument();
+
+    // Only the mark that the person left, never a token, until the next sign-in.
+    expect(signedOutHere()).toBe(true);
+    expect(Object.keys(localStorage)).toEqual(['fiscoProjects.signedOut']);
+    server.use(
+      http.post('/api/session/local', () => new HttpResponse(null, { status: 204 })),
+      http.get('/api/session', () => HttpResponse.json(marina)),
+    );
+    fireEvent.change(screen.getByLabelText(ptBR.signIn.email), {
+      target: { value: marina.email },
+    });
+    fireEvent.click(screen.getByRole('button', { name: ptBR.signIn.submit }));
+    await waitFor(() => {
+      expect(signedOutHere()).toBe(false);
     });
   });
 });

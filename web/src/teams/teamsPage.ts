@@ -25,3 +25,11 @@ export function schemeOfTeams(theme: string | null): 'light' | 'dark' | undefine
   }
   return theme === 'dark' || theme === 'contrast' ? 'dark' : undefined;
 }
+
+/**
+ * The page of passage of the links of the page in Teams (ADR-0153), with the path of the item, which it checks again:
+ * it opens the item, goes straight to the sign-in of Microsoft or shows the sign-in page.
+ */
+export function teamsOpenPath(path: string): string {
+  return `/teams/open?item=${encodeURIComponent(path)}`;
+}

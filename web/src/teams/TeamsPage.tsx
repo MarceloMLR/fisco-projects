@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
 import type { TeamsScheme } from './teamsHost';
-import { safeItemPath, schemeOfTeams } from './teamsPage';
+import { safeItemPath, schemeOfTeams, teamsOpenPath } from './teamsPage';
 import { TeamsNoAccess, TeamsTicketView } from './TeamsTicket';
 import { ticketNumberOf, useTeamsTicket } from './teamsTicket';
 
@@ -82,7 +82,7 @@ function BrandCard({ path, status }: { path: string; status: string | null }) {
           <Button
             variant="contained"
             startIcon={<OpenInNewOutlined />}
-            href={path}
+            href={teamsOpenPath(path)}
             target="_blank"
             rel="noopener noreferrer"
           >

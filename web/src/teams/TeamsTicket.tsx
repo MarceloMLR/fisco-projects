@@ -20,6 +20,7 @@ import {
 import { useConversationDays } from '../tickets/conversationDays';
 import { TicketDue } from '../tickets/TicketDue';
 import { PriorityTag, TicketStatusBadge } from '../tickets/TicketTags';
+import { teamsOpenPath } from './teamsPage';
 
 type Conversation = Ticket['conversation'];
 type Item =
@@ -68,7 +69,7 @@ function ReplyButton({
     <Button
       variant="contained"
       endIcon={<OpenInNewOutlined />}
-      href={`/tickets/${String(number)}`}
+      href={teamsOpenPath(`/tickets/${String(number)}`)}
       target="_blank"
       rel="noopener noreferrer"
       fullWidth={block}
@@ -610,7 +611,7 @@ export function TeamsNoAccess({ path, name }: { path: string; name: string }) {
       <Button
         variant="outlined"
         endIcon={<OpenInNewOutlined />}
-        href={path}
+        href={teamsOpenPath(path)}
         target="_blank"
         rel="noopener noreferrer"
       >
