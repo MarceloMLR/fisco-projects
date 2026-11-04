@@ -50,7 +50,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 14 | 14 |
 | 5. Chamados | 14 | 14 |
-| 6. Avisos | 6 | 5 |
+| 6. Avisos | 6 | 6 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
@@ -60,7 +60,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 5 | 1 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 0 |
-| **Total** | **120** | **109** |
+| **Total** | **120** | **110** |
 
 ## 1. Fundação
 
@@ -174,7 +174,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-3 | `sino-de-notificacoes` | Sino com contador e painel de notificações | 0038 | Concluída em 20/10/2026 ([#47](https://github.com/MarceloMLR/fisco-projects/pull/47)) |
 | Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída em 02/11/2026 ([#143](https://github.com/MarceloMLR/fisco-projects/pull/143)) |
 | Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | Concluída em 03/11/2026 ([#146](https://github.com/MarceloMLR/fisco-projects/pull/146)) |
-| Avisos-6 | `chamado-no-teams` | O chamado do aviso só para ler na página do FiscoProjects no Teams, pela entrada única do Teams, com "Responder no FiscoProjects", a pedido de Marcelo | 0044, 0054, 0149, 0152 | PR aberto |
+| Avisos-6 | `chamado-no-teams` | O chamado do aviso só para ler na página do FiscoProjects no Teams, pela entrada única do Teams, com "Responder no FiscoProjects", a pedido de Marcelo | 0044, 0054, 0149, 0152 | Concluída em 03/11/2026 ([#149](https://github.com/MarceloMLR/fisco-projects/pull/149)) |
 
 ## 7. Documentos, links, acessos e termos
 
