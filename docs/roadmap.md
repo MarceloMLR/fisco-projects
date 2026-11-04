@@ -41,6 +41,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 02/11/2026, ao testar os avisos pelo Teams, Marcelo achou as Configurações gerais confusas e pediu cada configuração no lugar do assunto dela: a marca junto com as cores, numa seção Visual, a pasta dos projetos em Pastas padrão, e as Configurações gerais só com as Regras gerais e o Microsoft 365 (Acesso-8.6, `configuracoes-por-assunto`, ADR-0150), com a proposta aprovada por ele antes da implementação.
 - Em 02/11/2026, ao testar o Teams, Marcelo pediu que cada pessoa ligue e desligue os avisos por e-mail e pelo Teams em Meu perfil, inclusive os dois, com o e-mail ligado e o Teams desligado de início, e a escolha registrada na auditoria (Avisos-5, `canais-dos-avisos`, ADR-0151), com a proposta aprovada por ele antes da implementação.
 - Em 03/11/2026, ao testar os avisos pelo Teams, Marcelo pediu que o aviso de um chamado mostre mais do que "Abrir no FiscoProjects" e, depois de ver o canvas "Chamado no Teams", pediu o chamado só para ler na página do Teams, pela entrada única do Teams (Avisos-6, `chamado-no-teams`, ADR-0152), com a proposta aprovada por ele antes da implementação.
+- Em 03/11/2026, Marcelo pediu para zerar a demonstração do `dev` e recarregá-la com as novidades da v2 também fora do ERP-FIN (Cronograma-3.5, `demonstracao-atualizada`), mantendo o aplicativo do Teams e as Configurações gerais.
 
 ## Marcos
 
@@ -49,7 +50,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 1. Fundação | 21 | 21 |
 | 2. Acesso e administração | 21 | 21 |
 | 3. Projetos | 6 | 6 |
-| 4. Cronograma | 16 | 16 |
+| 4. Cronograma | 17 | 17 |
 | 5. Chamados | 14 | 14 |
 | 6. Avisos | 6 | 6 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
@@ -61,7 +62,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| **Total** | **126** | **126** |
+| **Total** | **127** | **127** |
 
 ## 1. Fundação
 
@@ -138,6 +139,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Cronograma-3.2 | `mais-dados-de-demonstracao` | Chamados em todos os projetos e status, com conversas longas, anexos, prioridade, quem acompanha e fornecedores, a pedido de Marcelo | 0089 | Concluída em 20/10/2026 ([#55](https://github.com/MarceloMLR/fisco-projects/pull/55)) |
 | Cronograma-3.3 | `demonstracao-mais-rica` | Mais clientes e projetos na demonstração, em todos os status, de uma segunda gerente e a partir de um modelo, com chamados e os demais itens, e a carga só do que falta, a pedido de Marcelo | 0017, 0043, 0089 | Concluída em 21/10/2026 ([#74](https://github.com/MarceloMLR/fisco-projects/pull/74)) |
 | Cronograma-3.4 | `demonstracao-no-codespaces` | Demonstração no GitHub Codespaces, preparada e carregada sozinha, com o link para compartilhar, a pedido de Marcelo | 0089, 0113 | Concluída em 25/10/2026 ([#81](https://github.com/MarceloMLR/fisco-projects/pull/81)) |
+| Cronograma-3.5 | `demonstracao-atualizada` | As novidades da v2 também fora do projeto principal: horas apontadas, contratadas e previstas, carga da equipe, ausências, datas-limite, notas e dependências, para zerar e recarregar o `dev`, a pedido de Marcelo | 0089, 0128, 0137, 0138, 0139, 0141, 0142 | Concluída em 03/11/2026 ([#150](https://github.com/MarceloMLR/fisco-projects/pull/150)) |
 | Cronograma-4 | `subtarefas` | Subtarefas em um nível, tarefa-resumo calculada, dependências entre quem faz o trabalho | 0019, 0088 | Concluída em 19/10/2026 ([#29](https://github.com/MarceloMLR/fisco-projects/pull/29)) |
 | Cronograma-4.1 | `ajustes-das-telas` | Ajustes pedidos por Marcelo: barra de rolagem extra nas abas do projeto, dias úteis de atraso de tarefas e marcos, reabrir a mesma linha da Linha do tempo, motivo exato do CNPJ inválido, subtarefas mais claras na Lista e no detalhe e o endereço das telas no fim da carga de demonstração | 0015, 0020, 0065, 0071, 0086, 0088, 0089 | Concluída em 19/10/2026 ([#30](https://github.com/MarceloMLR/fisco-projects/pull/30)) |
 | Cronograma-4.2 | `recolher-fases-na-lista` | Recolher e mostrar as fases na Lista, como na Linha do tempo, com o mesmo estado nas duas visões, a pedido de Marcelo | 0071, 0088 | Concluída em 01/11/2026 ([#136](https://github.com/MarceloMLR/fisco-projects/pull/136)) |
