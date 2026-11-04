@@ -9,7 +9,7 @@
 
 ## 2. Conferência
 
-- [ ] 2.1 `npm test`, `npm run lint` e `npm run typecheck` em `web/` sem falhas.
+- [x] 2.1 `npm test`, `npm run lint` e `npm run typecheck` em `web/` sem falhas.
 - [x] 2.2 Banco e API locais com o `npm run demo:data` do plano novo: a Carga da equipe, as horas das tarefas do TMS-DELTA, os saldos e as ausências conferidos pela API, sem erro na carga.
 
 ## Workflow follow-up
