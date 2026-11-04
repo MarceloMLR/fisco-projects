@@ -392,7 +392,7 @@ O aviso no Teams MUST dizer o que aconteceu e quem fez, pelo nome atual. Embaixo
 
 ### Requirement: Página do FiscoProjects no Teams
 
-A página do FiscoProjects no Teams MUST abrir sem sessão. Com o aviso de um chamado e a entrada pelo Teams, MUST mostrar o chamado. Nos outros casos (fora do Teams, sem a entrada pelo Teams, outro item ou sem item), MUST mostrar só a marca da instalação e "Abrir no FiscoProjects", que MUST levar ao item no navegador, ou ao Início sem item. A página MUST aceitar só caminhos do próprio FiscoProjects (ADR-0149, ADR-0152).
+A página do FiscoProjects no Teams MUST abrir sem sessão. Com o aviso de um chamado e a entrada pelo Teams, MUST mostrar o chamado. Nos outros casos (fora do Teams, sem a entrada pelo Teams, outro item ou sem item), MUST mostrar só a marca da instalação e "Abrir no FiscoProjects", que MUST levar ao item no navegador, ou ao Início sem item, pela entrada direta do link do Teams (ADR-0153). A página MUST aceitar só caminhos do próprio FiscoProjects (ADR-0149, ADR-0152, ADR-0153).
 
 #### Scenario: Abrir o item no navegador
 - **WHEN** a entrada pelo Teams falha no aviso do chamado #104 e a pessoa escolhe "Abrir no FiscoProjects"

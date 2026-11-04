@@ -53,7 +53,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 3. Projetos | 6 | 6 |
 | 4. Cronograma | 17 | 17 |
 | 5. Chamados | 14 | 14 |
-| 6. Avisos | 7 | 6 |
+| 6. Avisos | 7 | 7 |
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
@@ -63,7 +63,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| **Total** | **128** | **127** |
+| **Total** | **128** | **128** |
 
 ## 1. Fundação
 
@@ -179,7 +179,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | Avisos-4 | `avisos-pelo-teams` | Os avisos na hora também na aba Atividade do Teams, com o aplicativo da instalação e o canal escolhido por cada pessoa em Meu perfil, a pedido de Marcelo | 0037, 0038, 0149 | Concluída em 02/11/2026 ([#143](https://github.com/MarceloMLR/fisco-projects/pull/143)) |
 | Avisos-5 | `canais-dos-avisos` | Os avisos que pedem ação por e-mail e pelo Teams ligados e desligados por cada pessoa em Meu perfil, com o e-mail ligado e o Teams desligado de início e as escolhas na auditoria, a pedido de Marcelo | 0037, 0149, 0151 | Concluída em 03/11/2026 ([#146](https://github.com/MarceloMLR/fisco-projects/pull/146)) |
 | Avisos-6 | `chamado-no-teams` | O chamado do aviso só para ler na página do FiscoProjects no Teams, pela entrada única do Teams, com "Responder no FiscoProjects", a pedido de Marcelo | 0044, 0054, 0149, 0152 | Concluída em 03/11/2026 ([#149](https://github.com/MarceloMLR/fisco-projects/pull/149)) |
-| Avisos-6.1 | `entrada-direta-pelo-teams` | O link do Teams abre o item direto, indo à entrada da Microsoft quando não há sessão, salvo depois de Sair no navegador, a pedido de Marcelo | 0054, 0117, 0152, 0153 | PR aberto ([#151](https://github.com/MarceloMLR/fisco-projects/pull/151)) |
+| Avisos-6.1 | `entrada-direta-pelo-teams` | O link do Teams abre o item direto, indo à entrada da Microsoft quando não há sessão, salvo depois de Sair no navegador, a pedido de Marcelo | 0054, 0117, 0152, 0153 | Concluída em 04/11/2026 ([#151](https://github.com/MarceloMLR/fisco-projects/pull/151)) |
 
 ## 7. Documentos, links, acessos e termos
 
