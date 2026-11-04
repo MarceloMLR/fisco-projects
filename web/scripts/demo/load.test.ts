@@ -11,6 +11,7 @@ import {
   demoVendors,
   formerColleague,
   mainProject,
+  manager,
 } from './plan.ts';
 
 /**
@@ -1005,7 +1006,13 @@ describe('Horas na demonstração', () => {
     // Each entry logged by its person, with the task or the ticket of the plan by its id.
     const planned = demoProjects.flatMap((project) => project.hours ?? []);
     expect(callsBy(/ POST \/api\/time-entries$/)).toHaveLength(planned.length);
-    expect(people(/ POST \/api\/time-entries$/)).toEqual(['carla', 'diego', 'marina', 'rafael']);
+    expect(people(/ POST \/api\/time-entries$/)).toEqual([
+      'beatriz',
+      'carla',
+      'diego',
+      'marina',
+      'rafael',
+    ]);
     const sent = (bodies.get('/api/time-entries') ?? []) as {
       day: string;
       scheduleItemId: string | null;
@@ -1058,11 +1065,23 @@ describe('Ausências na demonstração', () => {
   it('Ausências na demonstração', async () => {
     await loadDemo(base, () => undefined);
 
-    // The manager registers the absences of the plan, by the person, after the members.
+    // The manager of each project registers its absences of the plan, by the person, after the members.
     const absences = demoProjects.flatMap((project) => project.absences ?? []);
     const pattern = / POST \/api\/projects\/[^/]+\/members\/[^/]+\/absences$/;
     expect(callsBy(pattern)).toHaveLength(absences.length);
-    expect(people(pattern)).toEqual(['marina']);
+    expect(people(pattern)).toEqual(['beatriz', 'marina']);
+    const managerOf = new Map(
+      created.map(({ code, id }) => [
+        id,
+        demoProjects.find((project) => project.code === code)?.manager ?? manager,
+      ]),
+    );
+    expect(
+      callsBy(pattern).filter((call) => {
+        const [person, , path = ''] = call.split(' ');
+        return managerOf.get(path.split('/')[3] ?? '') !== person;
+      }),
+    ).toEqual([]);
     const paths = callsBy(pattern).map((call) => call.split(' ')[2] ?? '');
     expect(paths.map((path) => path.split('/')[5])).toEqual(
       absences.map((absence) => idOf(absence.of)),

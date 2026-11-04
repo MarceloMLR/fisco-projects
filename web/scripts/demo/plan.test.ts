@@ -301,3 +301,294 @@ describe('Carga na demonstração', () => {
     expect(loaded.map((absence) => absence.of)).toContain('diego');
   });
 });
+
+type PlanProject = (typeof demoProjects)[number];
+type PlanItem = PlanProject['phases'][number]['items'][number];
+
+/** The people of a project and their roles, the manager and the tech lead included. */
+const rolesOf = (project: PlanProject) =>
+  new Map<string, string>([
+    [project.manager ?? manager, 'Manager'],
+    ...(project.techLead === undefined ? [] : [[project.techLead, 'TechLead'] as const]),
+    ...(project.members ?? []),
+  ]);
+
+/**
+ * The state of the hours of each task with planned hours of a project, as the TimeTracking module computes it, with
+ * the task done at 100% (ADR-0138).
+ */
+const taskHoursStates = (project: PlanProject) => {
+  const tasks = new Map(
+    project.phases.flatMap((phase) => phase.items).map((item) => [item.name, item] as const),
+  );
+  return (project.plannedHours ?? []).map(({ task, hours }) => {
+    const item = tasks.get(task);
+    expect(item?.kind, `${project.code} ${task}`).toBe('Task');
+    expect(Number.isInteger(hours * 4) && hours > 0 && hours <= 9999).toBe(true);
+    const logged = (project.hours ?? [])
+      .filter((entry) => entry.task === task)
+      .reduce((sum, entry) => sum + entry.hours, 0);
+    return logged > hours
+      ? 'Over'
+      : item?.progress !== 100 && logged * 100 >= hours * 90
+        ? 'NearLimit'
+        : 'Within';
+  });
+};
+
+/** Monday to Friday, the day 0 being a Monday; the holidays of the day it is loaded are not known here. */
+const isWorkday = (day: number) => ((day % 7) + 7) % 7 < 5;
+const workdayFrom = (day: number): number => (isWorkday(day) ? day : workdayFrom(day + 1));
+/** The working day `count` working days after (or before, when negative) a working day. */
+const workdaysAfter = (day: number, count: number): number => {
+  let current = day;
+  for (let left = Math.abs(count); left > 0;) {
+    current += Math.sign(count);
+    if (isWorkday(current)) {
+      left -= 1;
+    }
+  }
+  return current;
+};
+
+/**
+ * The working days of the items of a project, roughly as the server schedules them (ADR-0051, ADR-0088, ADR-0137): the
+ * start of the plan (or where the manager moved it), pushed by the dependencies, and the first subtask with the
+ * dependencies of its task.
+ */
+const scheduleOf = (project: PlanProject) => {
+  const items = project.phases.flatMap((phase) => phase.items);
+  const byName = new Map(items.map((item) => [item.name, item] as const));
+  const dates = new Map<string, { start: number; end: number }>();
+  const parents = new Set(
+    items.flatMap((item) => (item.inside === undefined ? [] : [item.inside])),
+  );
+  for (const item of items) {
+    const parent = item.inside === undefined ? undefined : byName.get(item.inside);
+    const first = parent !== undefined && items.find((one) => one.inside === parent.name) === item;
+    const source: PlanItem = first && (item.after ?? []).length === 0 ? parent : item;
+    const span = Math.max(item.duration - 1, 0);
+    let start = workdayFrom(item.movedTo ?? item.day);
+    for (const name of source.after ?? []) {
+      const before = dates.get(name);
+      if (before === undefined) {
+        continue;
+      }
+      const link = source.links?.[name];
+      const lag = link?.lag ?? 0;
+      const earliest =
+        link?.type === 'StartToStart'
+          ? workdaysAfter(before.start, lag)
+          : link?.type === 'FinishToFinish'
+            ? workdaysAfter(workdaysAfter(before.end, lag), -span)
+            : workdaysAfter(before.end, item.duration === 0 ? lag : 1 + lag);
+      start = Math.max(start, earliest);
+    }
+    if (!parents.has(item.name)) {
+      dates.set(item.name, { start, end: workdaysAfter(start, span) });
+    }
+  }
+  return dates;
+};
+
+// Spec: dados-de-demonstracao, requirement "Novidades fora do projeto principal" (ADR-0128, ADR-0137 to ADR-0142).
+describe('Novidades fora do projeto principal', () => {
+  const others = demoProjects.filter(
+    (project) => project.code !== mainProject && project.status === 'InProgress',
+  );
+
+  it('Horas de todas as pessoas', () => {
+    const workers = new Set(
+      demoProjects.flatMap((project) =>
+        [...rolesOf(project)].filter(([, role]) => role !== 'Viewer').map(([person]) => person),
+      ),
+    );
+    for (const person of workers) {
+      const entries = demoProjects.flatMap((project) =>
+        (project.hours ?? [])
+          .filter((entry) => entry.by === person)
+          .map((entry) => ({ code: project.code, entry })),
+      );
+      // Loaded on a Monday: today, and days of the week before.
+      expect(
+        entries.some(({ entry }) => entry.daysAgo === 0),
+        person,
+      ).toBe(true);
+      expect(
+        entries.some(({ entry }) => entry.daysAgo >= 1 && entry.daysAgo <= 5),
+        person,
+      ).toBe(true);
+      // Never more than a working day in a day.
+      const daily = new Map<number, number>();
+      for (const { entry } of entries) {
+        daily.set(entry.daysAgo, (daily.get(entry.daysAgo) ?? 0) + entry.hours);
+      }
+      expect(Math.max(...daily.values()), person).toBeLessThanOrEqual(9);
+    }
+    // The second manager and the tech lead, in more than one project.
+    for (const person of ['beatriz', 'rafael']) {
+      const projects = demoProjects.filter((project) =>
+        (project.hours ?? []).some((entry) => entry.by === person),
+      );
+      expect(projects.length, person).toBeGreaterThan(1);
+    }
+  });
+
+  it('Horas das tarefas da segunda gerente', () => {
+    const ofBeatriz = others.filter(
+      (project) => project.manager === 'beatriz' && (project.plannedHours ?? []).length > 0,
+    );
+    expect(ofBeatriz.map((project) => project.code)).toEqual(['TMS-DELTA']);
+    expect(new Set(ofBeatriz.flatMap(taskHoursStates))).toEqual(
+      new Set(['Over', 'NearLimit', 'Within']),
+    );
+    for (const project of demoProjects) {
+      taskHoursStates(project);
+    }
+  });
+
+  it('Carga da equipe com todos os estados', () => {
+    // Loaded on a Monday, the day 14: the eight weeks from it, with 8 hours a working day (ADR-0142).
+    const weeks = Array.from({ length: 8 }, (_, index) => 14 + index * 7);
+    const open = demoProjects.filter(
+      (project) => !['Completed', 'Cancelled'].includes(project.status ?? 'Planning'),
+    );
+    const people = new Set(open.flatMap((project) => [...rolesOf(project).keys()]));
+    const absences = demoProjects.flatMap((project) => project.absences ?? []);
+    const load = new Map<string, number>();
+    for (const project of open) {
+      const dates = scheduleOf(project);
+      const items = new Map(
+        project.phases.flatMap((phase) => phase.items).map((item) => [item.name, item] as const),
+      );
+      for (const { task, hours } of project.plannedHours ?? []) {
+        const item = items.get(task);
+        const span = dates.get(task);
+        if (item?.owner === undefined || item.progress === 100 || span === undefined) {
+          continue;
+        }
+        for (let day = span.start; day <= span.end; day += 1) {
+          const week = weeks.find((first) => first <= day && day < first + 7);
+          if (isWorkday(day) && week !== undefined) {
+            const key = `${item.owner} ${String(week)}`;
+            load.set(key, (load.get(key) ?? 0) + hours / item.duration);
+          }
+        }
+      }
+    }
+    const states = new Map<string, Set<string>>();
+    for (const person of people) {
+      for (const week of weeks) {
+        const away = Array.from({ length: 5 }, (_, index) => week + index).filter((day) =>
+          absences.some(
+            (absence) => absence.of === person && absence.start <= day && day <= absence.end,
+          ),
+        ).length;
+        const capacity = 8 * (5 - away);
+        const hours = load.get(`${person} ${String(week)}`) ?? 0;
+        const state =
+          capacity === 0
+            ? 'Away'
+            : hours > capacity
+              ? 'Over'
+              : hours * 100 >= capacity * 90
+                ? 'NearLimit'
+                : hours > 0
+                  ? 'Within'
+                  : 'Free';
+        states.set(state, new Set([...(states.get(state) ?? []), person]));
+      }
+    }
+    expect(states.get('Over')).toContain('diego');
+    expect(states.get('NearLimit')?.size).toBeGreaterThan(0);
+    expect(states.get('Within')?.size).toBeGreaterThan(1);
+    expect(states.get('Free')?.size).toBeGreaterThan(0);
+    // The absences of at least four people in the eight weeks.
+    const away = new Set(
+      absences
+        .filter((absence) => absence.end >= 14 && absence.start < 14 + 8 * 7)
+        .map((absence) => absence.of),
+    );
+    expect(away.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it('Ausências em outros projetos', () => {
+    const all = demoProjects.flatMap((project) =>
+      (project.absences ?? []).map((absence) => ({ project, absence })),
+    );
+    for (const { project, absence } of all) {
+      // For a person of the project, after the week it is loaded and told in Membros (ADR-0141).
+      expect(rolesOf(project).has(absence.of), `${project.code} ${absence.of}`).toBe(true);
+      expect(absence.end).toBeGreaterThanOrEqual(absence.start);
+      expect(absence.start).toBeGreaterThan(20);
+      expect(absence.start).toBeLessThanOrEqual(14 + 30);
+    }
+    // Never over another absence of the same person, in any project (409 absence-overlap).
+    const people = new Set(all.map(({ absence }) => absence.of));
+    for (const person of people) {
+      const own = all
+        .map(({ absence }) => absence)
+        .filter((absence) => absence.of === person)
+        .sort((one, other) => one.start - other.start);
+      own.slice(1).forEach((absence, index) => {
+        expect(absence.start, person).toBeGreaterThan(own[index]?.end ?? 0);
+      });
+    }
+    // One outside the main project over an open task of the person in that project.
+    expect(
+      all.some(({ project, absence }) => {
+        if (project.code === mainProject) {
+          return false;
+        }
+        const dates = scheduleOf(project);
+        return project.phases
+          .flatMap((phase) => phase.items)
+          .some((item) => {
+            const span = dates.get(item.name);
+            return (
+              item.kind === 'Task' &&
+              item.owner === absence.of &&
+              item.progress !== 100 &&
+              span !== undefined &&
+              span.start <= absence.end &&
+              absence.start <= span.end
+            );
+          });
+      }),
+    ).toBe(true);
+  });
+
+  it('Datas-limite, notas e dependências em outros projetos', () => {
+    const itemsOf = (project: PlanProject) => project.phases.flatMap((phase) => phase.items);
+    const withDeadlines = others.filter((project) =>
+      itemsOf(project).some((item) => item.deadline !== undefined),
+    );
+    expect(withDeadlines.length).toBeGreaterThan(1);
+    // Loaded on the day 14, an open task already past its deadline, before its own end.
+    expect(
+      others.some((project) => {
+        const dates = scheduleOf(project);
+        return itemsOf(project).some((item) => {
+          const end = dates.get(item.name)?.end ?? 0;
+          return (
+            (item.progress ?? 0) < 100 &&
+            item.deadline !== undefined &&
+            item.deadline < 14 &&
+            item.deadline < end
+          );
+        });
+      }),
+    ).toBe(true);
+    const noted = others.filter((project) =>
+      itemsOf(project).some((item) => (item.note ?? '').trim().length > 0),
+    );
+    expect(noted.length).toBeGreaterThan(1);
+    expect(
+      others.some((project) =>
+        itemsOf(project).some((item) =>
+          Object.values(item.links ?? {}).some((link) => link?.type === 'StartToStart'),
+        ),
+      ),
+    ).toBe(true);
+  });
+});
