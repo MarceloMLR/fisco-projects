@@ -6,7 +6,7 @@ import { demoTeamsTicket, diego, marina } from '../test/demoTeamsTicket';
 import { phoneWidth, renderApp } from '../test/renderApp';
 import { defaultInstallation, problem, server, signedOut } from '../test/server';
 import type { TeamsHost } from './teamsHost';
-import { safeItemPath, schemeOfTeams } from './teamsPage';
+import { safeItemPath, schemeOfTeams, teamsOpenPath } from './teamsPage';
 
 // Teams around the page, as each test wants it: null is outside Teams (ADR-0152).
 const teams = vi.hoisted(() => ({ host: null as TeamsHost | null }));
@@ -33,7 +33,7 @@ describe('Página do FiscoProjects no Teams', () => {
   it('Abrir o item no navegador', async () => {
     const link = await openLink(`/teams?item=${encodeURIComponent('/tickets/104')}&theme=default`);
 
-    expect(link).toHaveAttribute('href', '/tickets/104');
+    expect(link).toHaveAttribute('href', teamsOpenPath('/tickets/104'));
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     expect(screen.getByRole('heading', { level: 1, name: 'FiscoProjects' })).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('Página do FiscoProjects no Teams', () => {
     // Teams leaves the place of the item empty when the person opens the page by its bar.
     const link = await openLink('/teams?item=&theme=dark');
 
-    expect(link).toHaveAttribute('href', '/');
+    expect(link).toHaveAttribute('href', teamsOpenPath('/'));
   });
 
   it('Endereço de fora recusado', async () => {
@@ -51,7 +51,7 @@ describe('Página do FiscoProjects no Teams', () => {
       `/teams?item=${encodeURIComponent('https://outro.example/tickets/104')}`,
     );
 
-    expect(link).toHaveAttribute('href', '/');
+    expect(link).toHaveAttribute('href', teamsOpenPath('/'));
   });
 
   it('Marca da instalação e tema do Teams', async () => {
@@ -140,7 +140,7 @@ describe('Página do Teams sem o chamado', () => {
 
     const link = await openLink(`/teams?item=${encodeURIComponent(item)}`);
 
-    expect(link).toHaveAttribute('href', item);
+    expect(link).toHaveAttribute('href', teamsOpenPath(item));
     expect(token).not.toHaveBeenCalled();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
@@ -148,7 +148,7 @@ describe('Página do Teams sem o chamado', () => {
   it('Página do Teams fora do Teams', async () => {
     const link = await openLink(ticketPath);
 
-    expect(link).toHaveAttribute('href', '/tickets/6');
+    expect(link).toHaveAttribute('href', teamsOpenPath('/tickets/6'));
     await waitFor(() => {
       expect(screen.queryByText(text.opening)).not.toBeInTheDocument();
     });
@@ -220,7 +220,7 @@ describe('Chamado na página do Teams', () => {
 
     const link = screen.getByRole('link', { name: reply });
 
-    expect(link).toHaveAttribute('href', '/tickets/6');
+    expect(link).toHaveAttribute('href', teamsOpenPath('/tickets/6'));
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
@@ -257,7 +257,10 @@ describe('Chamado que a pessoa não vê no Teams', () => {
     await renderApp(ticketPath);
 
     expect(await screen.findByRole('heading', { name: text.noAccess.title })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: open })).toHaveAttribute('href', '/tickets/6');
+    expect(screen.getByRole('link', { name: open })).toHaveAttribute(
+      'href',
+      teamsOpenPath('/tickets/6'),
+    );
     expect(screen.queryByText(demoTeamsTicket.title)).not.toBeInTheDocument();
   });
 
@@ -267,7 +270,10 @@ describe('Chamado que a pessoa não vê no Teams', () => {
     await renderApp(ticketPath);
 
     expect(await screen.findByText(text.failed)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: open })).toHaveAttribute('href', '/tickets/6');
+    expect(screen.getByRole('link', { name: open })).toHaveAttribute(
+      'href',
+      teamsOpenPath('/tickets/6'),
+    );
   });
 });
 
@@ -316,7 +322,10 @@ describe('Token do Teams só na memória da página', () => {
     await waitFor(() => {
       expect(received).toHaveLength(2);
     });
-    expect(await screen.findByRole('link', { name: open })).toHaveAttribute('href', '/tickets/6');
+    expect(await screen.findByRole('link', { name: open })).toHaveAttribute(
+      'href',
+      teamsOpenPath('/tickets/6'),
+    );
     await waitFor(() => {
       expect(screen.queryByText(text.opening)).not.toBeInTheDocument();
     });

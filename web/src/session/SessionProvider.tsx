@@ -4,6 +4,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { api, onUnauthorized, type ThemePreference } from '../api/client';
 import { queryKeys } from '../api/queries';
 import { type Session, SessionContext } from './SessionContext';
+import { forgetSignOut, rememberSignOut } from './signedOut';
 
 /** Queries of public data, read with or without a session: only the brand, not the rules under its key. */
 const publicQueries: readonly string[] = [JSON.stringify(queryKeys.installation)];
@@ -50,6 +51,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [session.status, queryClient]);
 
+  // "Sair" lasts in the browser only until the next sign-in (ADR-0153).
+  useEffect(() => {
+    if (session.status === 'signed-in') {
+      forgetSignOut();
+    }
+  }, [session.status]);
+
   useEffect(() => {
     let active = true;
     void currentSession().then((current) => {
@@ -84,6 +92,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       await api.POST('/api/session/sign-out');
     } finally {
+      rememberSignOut();
       setSession({ status: 'signed-out', ended: { by: 'signOut' } });
     }
   }, []);
