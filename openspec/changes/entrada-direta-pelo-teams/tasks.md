@@ -11,5 +11,5 @@
 
 ## 3. Documentação e conferência
 
-- [ ] 3.1 ADR-0153 aceito, `CLAUDE.md` (Teams na tela) e roadmap.
-- [ ] 3.2 `npm test`, `npm run lint` e `npm run typecheck` em `web/` sem falhas, e `openspec validate --all --strict`.
+- [x] 3.1 ADR-0153 aceito, `CLAUDE.md` (Teams na tela) e roadmap.
+- [x] 3.2 `npm test`, `npm run lint` e `npm run typecheck` em `web/` sem falhas, e `openspec validate --all --strict`.
