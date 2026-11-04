@@ -1,36 +1,31 @@
 import OpenInNewOutlined from '@mui/icons-material/OpenInNewOutlined';
 import Box from '@mui/material/Box';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { Button } from '../components/Button';
 import { InstallationLogo } from '../installation/InstallationLogo';
 import { useInstallation } from '../installation/useInstallation';
+import type { TeamsScheme } from './teamsHost';
 import { safeItemPath, schemeOfTeams } from './teamsPage';
+import { TeamsNoAccess, TeamsTicketView } from './TeamsTicket';
+import { ticketNumberOf, useTeamsTicket } from './teamsTicket';
 
 /**
- * The page of the installation in Teams (ADR-0149), outside the structure of the screens and without a session: the
- * brand of the installation and "Abrir no {name}", which opens in the browser the item of the notice the person
- * chose in the tab Activity (the path in "item", only of the application itself) or the home page. The theme follows
- * the one of Teams, in "theme".
+ * The brand of the installation and "Abrir no {name}", which opens the item in the browser (ADR-0149): the page when
+ * the ticket is not shown, with a line while the ticket is read or when its reading failed.
  */
-export function TeamsPage() {
+function BrandCard({ path, status }: { path: string; status: string | null }) {
   const { t } = useTranslation();
-  const [search] = useSearchParams();
   const { name, logoUrl } = useInstallation();
-  const scheme = schemeOfTeams(search.get('theme'));
-  const path = safeItemPath(search.get('item'));
-
   return (
     <Box
-      data-theme={scheme}
       sx={{
-        minHeight: '100vh',
+        minHeight: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'var(--bg-page)',
-        color: 'var(--text)',
-        fontFamily: 'var(--font-sans)',
         paddingBlock: 'var(--space-6)',
         paddingInline: 'var(--space-4)',
       }}
@@ -68,6 +63,14 @@ export function TeamsPage() {
           {logoUrl !== null && <InstallationLogo src={logoUrl} maxHeight={40} />}
           {name}
         </Box>
+        {status !== null && (
+          <Box
+            role="status"
+            sx={{ margin: 0, fontSize: 14, lineHeight: '20px', color: 'var(--text-secondary)' }}
+          >
+            {status}
+          </Box>
+        )}
         <Box
           sx={{
             display: 'flex',
@@ -94,5 +97,60 @@ export function TeamsPage() {
         </Box>
       </Box>
     </Box>
+  );
+}
+
+/**
+ * The page of the installation in Teams (ADR-0149, ADR-0152), outside the structure of the screens and without a
+ * session. With the notice of a ticket, inside Teams, it shows the ticket only to read, as the person of the token
+ * Teams gives the page, with "Responder no FiscoProjects"; the ticket the person does not see says so. Otherwise (outside
+ * Teams, another item, no item, the token refused or a failure), the brand and "Abrir no {name}", which opens the item
+ * (the path in "item", only of the application itself) or the home page in the browser. The theme follows the one of
+ * Teams, from "theme" and from Teams itself.
+ */
+export function TeamsPage() {
+  const [search] = useSearchParams();
+  const [scheme, setScheme] = useState<TeamsScheme>(() => schemeOfTeams(search.get('theme')));
+  const path = safeItemPath(search.get('item'));
+
+  return (
+    <Box
+      data-theme={scheme}
+      sx={{
+        height: '100vh',
+        overflow: 'auto',
+        backgroundColor: 'var(--bg-page)',
+        color: 'var(--text)',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 14,
+        lineHeight: '20px',
+      }}
+    >
+      {/* Another item starts again, from its own reading. */}
+      <TeamsItem key={path} path={path} onScheme={setScheme} />
+    </Box>
+  );
+}
+
+/** What the page shows for the item: the ticket, the ticket the person does not see, or the brand. */
+function TeamsItem({ path, onScheme }: { path: string; onScheme: (scheme: TeamsScheme) => void }) {
+  const { t } = useTranslation();
+  const { name } = useInstallation();
+  const state = useTeamsTicket(ticketNumberOf(path), onScheme);
+  return state.kind === 'ticket' ? (
+    <TeamsTicketView ticket={state.ticket} name={name} />
+  ) : state.kind === 'noAccess' ? (
+    <TeamsNoAccess path={path} name={name} />
+  ) : (
+    <BrandCard
+      path={path}
+      status={
+        state.kind === 'loading'
+          ? t('teamsPage.opening')
+          : state.failed
+            ? t('teamsPage.failed')
+            : null
+      }
+    />
   );
 }

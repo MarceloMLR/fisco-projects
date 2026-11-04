@@ -42,6 +42,7 @@ module "entra" {
   owners                    = var.operator_object_ids
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   redirect_uri              = "https://${local.host}/signin-oidc"
+  site_host                 = local.host
   app_identity_principal_id = module.app.principal_id
   assignment_required       = var.entra_assignment_required
 }

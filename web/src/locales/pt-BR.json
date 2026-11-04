@@ -3763,7 +3763,37 @@
   },
   "teamsPage": {
     "open": "Abrir no {{name}}",
-    "inBrowser": "Abre no navegador, com a sua conta."
+    "inBrowser": "Abre no navegador, com a sua conta.",
+    "opening": "Abrindo o chamado…",
+    "failed": "Não foi possível mostrar o chamado no Teams.",
+    "ticket": {
+      "reply": "Responder no {{name}}",
+      "earlier_one": "{{count}} interação anterior no {{name}}",
+      "earlier_other": "{{count}} interações anteriores no {{name}}",
+      "conversation": "Últimas interações",
+      "description": "Descrição do chamado",
+      "people": "Pessoas",
+      "requester": "Solicitante",
+      "assignee": "Responsável",
+      "noAssignee": "Sem responsável",
+      "manager": "Gerente do projeto",
+      "you": "(você)",
+      "deadlines": "Prazos",
+      "firstResponse": "Primeira resposta",
+      "resolution": "Resolução",
+      "noDeadlines": "Chamado aberto antes dos prazos.",
+      "about": "Chamado",
+      "team": "Time",
+      "openedAt": "Aberto em",
+      "attachments": "Anexos",
+      "noAttachments": "Nenhum",
+      "attachmentCount_one": "{{count}} arquivo",
+      "attachmentCount_other": "{{count}} arquivos"
+    },
+    "noAccess": {
+      "title": "Você não vê este chamado",
+      "text": "Ele não existe ou é de um projeto em que você não está."
+    }
   },
   "localSigning": {
     "title": "Assinatura do termo",

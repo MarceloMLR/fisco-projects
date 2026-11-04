@@ -7,6 +7,7 @@ using FiscoProjects.Testing;
 using FiscoProjects.Users.Application;
 using FiscoProjects.Users.Contracts;
 using FiscoProjects.Users.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
@@ -21,7 +22,7 @@ namespace FiscoProjects.Api.Tests;
 /// <summary>
 /// Entra ID simulated inside the process (ADR-0056, ADR-0117): the issuer of a fictitious tenant with its own key, the
 /// address of the sign-in and the token endpoint, which answers the exchange of the code with an ID token of the person
-/// the test chose. Nothing reaches the network.
+/// the test chose. Nothing reaches the network. It also gives the token Teams asks for the page in Teams (ADR-0152).
 /// </summary>
 internal sealed class FakeEntra : HttpMessageHandler
 {
@@ -32,6 +33,12 @@ internal sealed class FakeEntra : HttpMessageHandler
     public const string ManagedIdentityProof = "proof-of-the-managed-identity";
 
     public const string Host = "login.microsoftonline.com";
+
+    /// <summary>Teams on the computer and on the phone, which asks the token of the page in Teams.</summary>
+    public const string TeamsDesktop = "1fec8e78-bce4-4aaf-ab1b-5451cc387264";
+
+    /// <summary>Teams on the web.</summary>
+    public const string TeamsWeb = "5e3ce6c0-2b1f-4285-8d4b-75ee78787346";
 
     private readonly RsaSecurityKey _key = new(RSA.Create(2048)) { KeyId = "fake-entra-key" };
 
@@ -82,6 +89,53 @@ internal sealed class FakeEntra : HttpMessageHandler
             options.Configuration = configuration;
             options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
             options.Backchannel = new HttpClient(this);
+        });
+        builder.Services.PostConfigure<JwtBearerOptions>(TeamsAccess.Scheme, options =>
+        {
+            var configuration = new OpenIdConnectConfiguration { Issuer = Issuer };
+            configuration.SigningKeys.Add(_key);
+            options.Configuration = configuration;
+            options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
+        });
+    }
+
+    /// <summary>
+    /// The access token Teams gives the page in Teams for the person of the object id (ADR-0152), as Entra issues it: v2,
+    /// for the application, with the scope of the page and Teams as the client, signed by the tenant. The shape changes
+    /// it, to test the refusals.
+    /// </summary>
+    public string TeamsToken(string objectId, TeamsTokenShape? shape = null)
+    {
+        shape ??= new TeamsTokenShape();
+        var claims = new Dictionary<string, object>
+        {
+            ["oid"] = objectId,
+            ["sub"] = $"sub-{objectId}",
+            ["tid"] = TenantId,
+            ["ver"] = "2.0",
+            ["azp"] = shape.Client,
+            ["scp"] = shape.Scope,
+            ["acct"] = shape.AccountStatus,
+            ["name"] = "Pessoa do Teams",
+            ["preferred_username"] = "pessoa@empresa.example",
+        };
+        if (shape.IdentityProvider is { } identityProvider)
+        {
+            claims["idp"] = identityProvider;
+        }
+
+        var now = DateTime.UtcNow;
+        var issuedAt = shape.Expired ? now.AddHours(-3) : now;
+        return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = shape.Issuer,
+            Audience = shape.Audience,
+            Claims = claims,
+            IssuedAt = issuedAt,
+            NotBefore = issuedAt,
+            Expires = issuedAt.AddHours(1),
+            SigningCredentials = new SigningCredentials(
+                shape.OtherKey ? new RsaSecurityKey(RSA.Create(2048)) { KeyId = _key.KeyId } : _key, SecurityAlgorithms.RsaSha256),
         });
     }
 
@@ -161,6 +215,28 @@ internal sealed class FakeEntra : HttpMessageHandler
     {
         public Task<string> GetAsync(CancellationToken cancellationToken) => Task.FromResult(FakeGraph.Token);
     }
+}
+
+/// <summary>How a token of Teams differs from the one Teams gives the page (ADR-0152); by default, it does not.</summary>
+internal sealed record TeamsTokenShape
+{
+    public string Audience { get; init; } = FakeEntra.ClientId;
+
+    public string Issuer { get; init; } = FakeEntra.Issuer;
+
+    public string Scope { get; init; } = "access_as_user";
+
+    public string Client { get; init; } = FakeEntra.TeamsDesktop;
+
+    public int AccountStatus { get; init; }
+
+    public string? IdentityProvider { get; init; }
+
+    /// <summary>Signed by another key, with the same key id.</summary>
+    public bool OtherKey { get; init; }
+
+    /// <summary>Expired two hours ago.</summary>
+    public bool Expired { get; init; }
 }
 
 /// <summary>The answer of the start of a sign-in through Entra ID, with the address of Microsoft and its query.</summary>

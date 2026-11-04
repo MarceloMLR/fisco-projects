@@ -31,8 +31,12 @@ internal static class SessionAuthentication
             .Validate(options => options.IdleTimeout > TimeSpan.Zero, "Session:IdleTimeout must be greater than zero.")
             .ValidateOnStart();
 
-        // The sign-in through Entra ID, when on, opens the same session at the end (ADR-0117).
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie().AddEntraSignIn(configuration);
+        // The sign-in through Entra ID, when on, opens the same session at the end (ADR-0117). The token of Teams is only
+        // for the readings of the page in Teams, never a session (ADR-0152).
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie()
+            .AddEntraSignIn(configuration)
+            .AddTeamsSignIn(configuration);
         services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
             .Configure<IOptions<UserSessionOptions>>((cookie, session) =>
             {

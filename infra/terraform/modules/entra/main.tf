@@ -2,7 +2,8 @@
 # the way back to the application, the claims that tell a guest, the consent of the administrator only for the sign-in,
 # the assignment of the people and the trust in the managed identity of the App Service as its only credential, the
 # reading of the directory for the people search (ADR-0119) and the files in the SharePoint sites an administrator
-# chooses (ADR-0120). The permission for the e-mails comes with M365-4.
+# chooses (ADR-0120). The permission for the e-mails comes with M365-4. It also exposes its API to the single sign-on of
+# Teams, only for the readings of the page in Teams (ADR-0152).
 
 variable "display_name" {
   description = "Name of the application in Entra ID."
@@ -24,6 +25,11 @@ variable "redirect_uri" {
   type        = string
 }
 
+variable "site_host" {
+  description = "Host of the address of the screens, the one the package of Teams declares in its webApplicationInfo."
+  type        = string
+}
+
 variable "app_identity_principal_id" {
   description = "Object ID of the managed identity of the App Service, which proves the application to Entra ID."
   type        = string
@@ -42,6 +48,14 @@ locals {
   # SharePoint sites an administrator gives it (ADR-0120), nowhere else.
   directory_role = "User.Read.All"
   sites_role     = "Sites.Selected"
+  # The single sign-on of Teams (ADR-0152): the scope the page asks, with a fixed id (the same if the host changes), and
+  # the clients of Microsoft that ask it, Teams on the computer and on the phone, and Teams on the web.
+  teams_scope    = "access_as_user"
+  teams_scope_id = "802cece3-7c0f-4563-b5bd-0ca2b5bdc06f"
+  teams_clients = {
+    desktop_and_mobile = "1fec8e78-bce4-4aaf-ab1b-5451cc387264"
+    web                = "5e3ce6c0-2b1f-4285-8d4b-75ee78787346"
+  }
 }
 
 data "azuread_service_principal" "graph" {
@@ -52,6 +66,21 @@ resource "azuread_application" "main" {
   display_name     = var.display_name
   sign_in_audience = "AzureADMyOrg"
   owners           = var.owners
+
+  # Access tokens v2 for the API of the application: the audience is the client, and the identifier with the host of the
+  # site, which is not a verified domain of the tenant, is allowed (ADR-0152).
+  api {
+    requested_access_token_version = 2
+
+    oauth2_permission_scope {
+      id                         = local.teams_scope_id
+      value                      = local.teams_scope
+      type                       = "Admin"
+      enabled                    = true
+      admin_consent_display_name = "Ler o FiscoProjects pelo Teams"
+      admin_consent_description  = "Permite que a página do FiscoProjects no Teams leia, como a pessoa, o que ela vê."
+    }
+  }
 
   web {
     redirect_uris = [var.redirect_uri]
@@ -70,6 +99,11 @@ resource "azuread_application" "main" {
 
     id_token {
       name = "email"
+    }
+
+    # The guest also in the token Teams gives the page (ADR-0007, ADR-0152).
+    access_token {
+      name = "acct"
     }
   }
 
@@ -95,6 +129,28 @@ resource "azuread_application" "main" {
       type = "Role"
     }
   }
+
+  # The identifier is its own resource, since it carries the client id of the application itself.
+  lifecycle {
+    ignore_changes = [identifier_uris]
+  }
+}
+
+# The identifier of the API, the resource the package of Teams declares: api://{host}/{client} (ADR-0152).
+resource "azuread_application_identifier_uri" "teams" {
+  application_id = azuread_application.main.id
+  identifier_uri = "api://${var.site_host}/${azuread_application.main.client_id}"
+
+  depends_on = [azuread_service_principal.main]
+}
+
+# Teams asks the token of the page without consent: its clients are authorized beforehand, only for the scope of the page.
+resource "azuread_application_pre_authorized" "teams" {
+  for_each = local.teams_clients
+
+  application_id       = azuread_application.main.id
+  authorized_client_id = each.value
+  permission_ids       = [local.teams_scope_id]
 }
 
 resource "azuread_service_principal" "main" {

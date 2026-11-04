@@ -1,5 +1,5 @@
 ---
-status: aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151)
+status: aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151; página do Teams complementada pelo ADR-0152)
 date: 2026-11-02
 decision-makers: Marcelo Ribeiro
 ---

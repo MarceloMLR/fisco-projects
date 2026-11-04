@@ -53,6 +53,9 @@ public sealed record EntraIdentity(
     /// </summary>
     public bool IsGuest => AccountStatus == "1" || !string.IsNullOrWhiteSpace(IdentityProvider);
 
+    /// <summary>The key of the link "entra": the object id, the same in every token of the person (ADR-0117).</summary>
+    public string? ExternalId => string.IsNullOrWhiteSpace(ObjectId) ? null : ObjectId.Trim().ToLowerInvariant();
+
     /// <summary>The e-mail of the token, or the sign-in name when the person has no mailbox.</summary>
     public string EmailOrUsername => (string.IsNullOrWhiteSpace(Email) ? PreferredUsername : Email)?.Trim() ?? string.Empty;
 
@@ -92,14 +95,13 @@ public sealed class SignInWithEntra(SignInWithIdentity signIn, ISecurityEvents s
             return new EntraSignInResult.Guest();
         }
 
-        if (string.IsNullOrWhiteSpace(identity.ObjectId))
+        if (identity.ExternalId is not { } externalId)
         {
             return new EntraSignInResult.Unrecognized();
         }
 
         var name = string.IsNullOrWhiteSpace(identity.Name) ? email : identity.Name.Trim();
-        var result = await signIn.ExecuteAsync(
-            new ProviderIdentity(Provider, identity.ObjectId.Trim().ToLowerInvariant(), name, email), cancellationToken);
+        var result = await signIn.ExecuteAsync(new ProviderIdentity(Provider, externalId, name, email), cancellationToken);
         return result switch
         {
             SignInResult.SignedIn signedIn => new EntraSignInResult.SignedIn(signedIn.UserId),

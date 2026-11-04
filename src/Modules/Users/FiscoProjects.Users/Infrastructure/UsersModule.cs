@@ -54,7 +54,11 @@ public static class UsersModule
                 .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)))
             .AddPolicy(SystemPolicies.ProjectCreators, policy => policy
                 .RequireAuthenticatedUser()
-                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator, SystemRole.ProjectManager)));
+                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator, SystemRole.ProjectManager)))
+            // The readings of the page in Teams: only the token of Teams, never the session cookie (ADR-0152).
+            .AddPolicy(TeamsAccess.Policy, policy => policy
+                .AddAuthenticationSchemes(TeamsAccess.Scheme)
+                .RequireAuthenticatedUser());
 
         services.AddOptions<FirstAdministratorOptions>()
             .Bind(configuration.GetSection(FirstAdministratorOptions.Section))
@@ -83,6 +87,8 @@ public static class UsersModule
         services.TryAddSingleton<IEntraClientAssertion, ManagedIdentityClientAssertion>();
         services.TryAddSingleton<IGraphTokens, ClientAssertionGraphTokens>();
         services.AddScoped<SignInWithEntra>();
+        // The token of Teams, for the readings of the page in Teams (ADR-0152); the scheme is added with the session.
+        services.AddScoped<SignInFromTeams>();
         // The main reads, once after the API starts (ADR-0106).
         services.AddScoped<IWarmUp, UsersWarmUp>();
         return services;

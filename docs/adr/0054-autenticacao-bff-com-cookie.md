@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (autenticação por token do cliente Teams, só para as leituras do Teams, definida pelo ADR-0152)
 date: 2026-10-15
 decision-makers: Marcelo Ribeiro
 ---

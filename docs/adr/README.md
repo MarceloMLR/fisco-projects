@@ -101,7 +101,7 @@ Regras:
 | [0051](0051-gantt-syncfusion-isolado-com-gantt-proprio-depois.md) | Gantt com Syncfusion na v1, isolado num componente próprio, com Gantt próprio como evolução | substituída pelo ADR-0134 (nome do componente substituído antes pelo ADR-0074: `ScheduleGantt`) | 2026-10-15 |
 | [0052](0052-hospedagem-no-app-service-linux.md) | Hospedagem no Azure App Service Linux, com Key Vault e identidade gerenciada | aceita (certificado do aplicativo no Entra substituído pelo ADR-0117) | 2026-10-15 |
 | [0053](0053-infraestrutura-como-codigo-com-terraform.md) | Infraestrutura como código com Terraform | aceita | 2026-10-15 |
-| [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita | 2026-10-15 |
+| [0054](0054-autenticacao-bff-com-cookie.md) | Autenticação do React na API pelo padrão BFF, com cookie de sessão | aceita (autenticação por token do cliente Teams definida pelo ADR-0152) | 2026-10-15 |
 | [0055](0055-ci-cd-com-github-actions.md) | CI/CD com GitHub Actions, preparado para migrar ao Azure DevOps | aceita (linha "Em todo pull request" substituída pelo ADR-0090; linha "Produção" substituída pelo ADR-0125) | 2026-10-15 |
 | [0056](0056-estrategia-de-testes.md) | Pirâmide de testes ligada às specs, com matrizes de permissão 100% cobertas | aceita | 2026-10-15 |
 | [0057](0057-monitoramento-com-application-insights.md) | Monitoramento com Application Insights e instrumentação OpenTelemetry | aceita | 2026-10-15 |
@@ -211,6 +211,7 @@ Regras:
 | [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147; tela Cores substituída pelo ADR-0150) | 2026-11-01 |
 | [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |
 | [0148](0148-quem-ve-cada-pasta-de-documentos.md) | Quem vê cada pasta de documentos, por papel, nas pastas padrão e em cada projeto | aceita | 2026-11-02 |
-| [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151) | 2026-11-02 |
+| [0149](0149-avisos-pelo-teams-na-aba-atividade.md) | Avisos pelo Teams na aba Atividade, com o canal escolhido por cada pessoa | aceita (escolha do canal, volta ao e-mail e escolha fora da auditoria substituídas pelo ADR-0151; página do Teams complementada pelo ADR-0152) | 2026-11-02 |
 | [0150](0150-configuracoes-da-instalacao-por-assunto.md) | Configurações da instalação por assunto, com a marca em Visual e a pasta dos projetos em Pastas padrão | aceita | 2026-11-02 |
 | [0151](0151-avisos-ligados-por-cada-pessoa.md) | Avisos na hora por e-mail e pelo Teams ligados por cada pessoa, com a escolha na auditoria | aceita | 2026-11-02 |
+| [0152](0152-chamado-no-teams-com-a-entrada-unica.md) | Chamado no Teams pela entrada única do Teams, só para ler | aceita | 2026-11-03 |

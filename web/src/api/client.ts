@@ -53,6 +53,8 @@ export type ScheduleLinkType = components['schemas']['ScheduleLinkType'];
 export type ScheduleLink = components['schemas']['ScheduleLinkResponse'];
 export type TicketRow = components['schemas']['TicketListItemResponse'];
 export type Ticket = components['schemas']['TicketResponse'];
+/** A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152). */
+export type TeamsTicket = components['schemas']['TeamsTicketResponse'];
 export type TicketCounts = components['schemas']['TicketCountsResponse'];
 export type TicketChoice = components['schemas']['TicketProjectChoiceResponse'];
 export type TicketTeam = components['schemas']['TicketTeam'];
@@ -381,3 +383,17 @@ export const api = createClient<paths>({
   },
 });
 api.use(sessionEnded);
+
+/**
+ * Client of the readings of the page in Teams (ADR-0152), which carry the token of Teams in their own header and no
+ * session: a 401 there is the token refused, not the end of a session, so it does not reach the listeners of the
+ * session, and the cookie does not go.
+ */
+export const teamsApi = createClient<paths>({
+  baseUrl: window.location.origin,
+  credentials: 'omit',
+  fetch: (request) => {
+    noteRequest();
+    return globalThis.fetch(request);
+  },
+});
