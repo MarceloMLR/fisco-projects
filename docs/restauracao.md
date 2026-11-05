@@ -158,4 +158,4 @@ A cada 3 meses, restaure o banco de produção num banco de teste e confira que 
 
 | Data | Quem | Ponto restaurado (UTC) | Tempo da restauração | Resultado |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| 05/11/2026 | Claude, a pedido de Marcelo (ambiente `dev`, Basic, West US 3) | 2026-11-05 22:48:42 | 2 min 10 s | Certo: projetos, chamados e documentos iguais aos do banco atual e o último registro da auditoria anterior ao ponto. O `dev` não guarda backups mensais, de propósito (ADR-0114). O banco de teste foi apagado com a trava no banco do ambiente (Operação-4.1). |
