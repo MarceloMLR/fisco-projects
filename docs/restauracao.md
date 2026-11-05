@@ -8,17 +8,19 @@ Metas: perder no máximo alguns minutos de dados e voltar ao ar em até 4 horas.
 
 | O quê | Onde fica | Como volta |
 | --- | --- | --- |
-| Banco (projetos, chamados, documentos registrados, acessos, auditoria, chaves dos acessos) | Azure SQL, com restauração a qualquer ponto em 14 dias (Basic: 7) e um backup por mês guardado por 12 meses, com redundância por zona na Brazil South | Restauração a um ponto no tempo ou de um backup mensal |
+| Banco (projetos, chamados, documentos registrados, acessos, auditoria, chaves dos acessos) | Azure SQL, com restauração a qualquer ponto em 14 dias (Basic: 7) e um backup por mês guardado por 12 meses, com redundância por zona na Brazil South, e a trava do Azure contra exclusão (`nao-apagar-banco`) | Restauração a um ponto no tempo ou de um backup mensal |
 | Arquivos (anexos, documentos, termos, logos) | SharePoint da empresa, na pasta da instalação (ADR-0030) | Histórico de versões e lixeira do Microsoft 365 |
 | Segredos e certificados (chave da Autentique, certificado das chaves dos acessos) | Key Vault, com exclusão reversível e proteção contra exclusão definitiva | Recuperar o item excluído |
 | Infraestrutura e configuração | Terraform, com o estado versionado, e os arquivos privados da instalação (ADR-0053, ADR-0127) | `terraform apply` com os parâmetros da instalação |
 | Versão da aplicação | Pacote da versão (`fiscoprojects-vX.Y.Z.zip`), na página da versão no GitHub | Nova publicação pelo `Publish-Version.ps1` ou pelo workflow de produção (ADR-0055, ADR-0127) |
 
+A trava contra exclusão fica no banco (Operação-4.1): enquanto ela existe, o Azure recusa apagar o banco, o servidor e o grupo de recursos, pelo portal, pela CLI ou por um script, e apagar o servidor levaria junto a restauração a qualquer ponto. Ela não impede restaurar num banco novo nem apagar esse banco depois, e não protege os dados dentro do banco, que voltam pela restauração. Só o Cenário 2 a tira, e o `terraform apply` a põe de volta.
+
 As chaves que cifram as senhas dos acessos ficam no próprio banco (`credentials.data_protection_keys`) e voltam com ele; quando a instalação usa o certificado de `Credentials:KeyCertificate`, ele precisa estar no Key Vault, senão as senhas não abrem (ADR-0033).
 
 ## Antes de começar
 
-- Quem restaura: o responsável pela instalação, com acesso de colaborador ao grupo de recursos e ao Key Vault.
+- Quem restaura: o responsável pela instalação, com acesso de colaborador ao grupo de recursos e ao Key Vault. Tirar e pôr a trava do banco (Cenário 2) pede o papel de Proprietário ou de Administrador de Acesso do Usuário.
 - Ferramentas: Azure CLI (`az login` e `az account set --subscription <assinatura>`) ou o portal do Azure.
 - Anote a hora (em UTC) do ponto que quer recuperar: o último momento em que os dados estavam certos. A Auditoria do FiscoProjects ajuda a achar quando a mudança errada aconteceu.
 - Avise as pessoas: durante a troca do banco, a aplicação fica fora do ar.
@@ -63,15 +65,21 @@ Use quando a aplicação está no ar e só parte dos dados se perdeu, como um pr
    az webapp stop --resource-group <grupo> --name <app>
    ```
 
-3. Troque os bancos pelo nome, para a aplicação continuar com a mesma configuração: renomeie o banco ruim e dê ao restaurado o nome original.
+3. Tire a trava do banco ruim, que impede renomeá-lo e apagá-lo depois:
+
+   ```bash
+   az lock delete --ids $(az lock list --resource-group <grupo> --query "[?name=='nao-apagar-banco'].id" --output tsv)
+   ```
+
+4. Troque os bancos pelo nome, para a aplicação continuar com a mesma configuração: renomeie o banco ruim e dê ao restaurado o nome original.
 
    ```bash
    az sql db rename --resource-group <grupo> --server <servidor> --name <banco> --new-name <banco>-antigo
    az sql db rename --resource-group <grupo> --server <servidor> --name <banco>-restaurado --new-name <banco>
    ```
 
-4. Rode o `terraform plan` da instalação e confira que ele não quer mudar o banco; se quiser (retenção, redundância, backup mensal), aplique, para o banco restaurado voltar às definições do ADR-0059.
-5. Suba a aplicação e confira:
+5. Rode o `terraform plan` da instalação. Ele quer criar a trava de novo, agora no banco restaurado, e pode querer acertar a retenção, a redundância e o backup mensal: aplique, para o banco restaurado voltar às definições do ADR-0059 e à trava.
+6. Suba a aplicação e confira:
 
    ```bash
    az webapp start --resource-group <grupo> --name <app>
@@ -79,7 +87,7 @@ Use quando a aplicação está no ar e só parte dos dados se perdeu, como um pr
    ```
 
    Depois, entre como administrador e veja a Auditoria: o último registro deve ser do ponto restaurado.
-6. Depois de alguns dias, apague o `<banco>-antigo`.
+7. Depois de alguns dias, apague o `<banco>-antigo`, que ficou sem trava.
 
 ### Depois da troca
 
@@ -115,7 +123,7 @@ Com a redundância por zona (o padrão do ADR-0059), os backups ficam na Brazil 
 
 ## Teste trimestral
 
-A cada 3 meses, restaure o banco de produção num banco de teste e confira que ele abre. Leva menos de uma hora e não mexe na aplicação.
+A cada 3 meses, restaure o banco de produção num banco de teste e confira que ele abre. Leva menos de uma hora e não mexe na aplicação. O banco de teste não tem a trava, então é apagado no fim sem tirá-la do banco da instalação.
 
 1. Restaure o ponto de uma hora atrás num banco de teste:
 
