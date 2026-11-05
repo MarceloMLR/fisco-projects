@@ -102,6 +102,7 @@ module "database" {
   restore_days          = var.database_restore_days
   monthly_backup_months = var.database_monthly_backup_months
   backup_redundancy     = var.database_backup_redundancy
+  delete_lock           = var.database_delete_lock
   tenant_id             = data.azurerm_client_config.current.tenant_id
   tags                  = local.tags
 }

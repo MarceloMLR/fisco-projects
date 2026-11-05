@@ -90,6 +90,30 @@ public sealed partial class InfrastructureTests
         Read("modules", "database", "main.tf").Should().Contain("for_each = var.monthly_backup_months > 0 ? [var.monthly_backup_months] : []");
     }
 
+    // Spec: infraestrutura, requirement "Banco protegido contra exclusão" (Operação-4.1).
+    [Fact(DisplayName = "Banco travado por padrão")]
+    public void Database_IsLockedAgainstDeletionByDefault()
+    {
+        Default(Read("variables.tf"), "database_delete_lock").Should().Be("true");
+        Read("main.tf").Should().Contain("delete_lock           = var.database_delete_lock");
+        Read("environments", "dev.tfvars").Should().NotContain("database_delete_lock", "the dev keeps the default of production");
+        var module = Read("modules", "database", "main.tf");
+        module.Should().Contain("resource \"azurerm_management_lock\" \"database\"")
+            .And.Contain("lock_level = \"CanNotDelete\"")
+            .And.Contain("count      = var.delete_lock ? 1 : 0");
+    }
+
+    [Fact(DisplayName = "Destroy com a trava")]
+    public void DatabaseLock_DependsOnTheDatabase()
+    {
+        // The lock is on the database itself, so Terraform destroys it before the database, and the test database of
+        // the restore guide, a sibling in the same server, stays deletable.
+        var module = Read("modules", "database", "main.tf");
+        module.Should().Contain("scope      = azurerm_mssql_database.main.id");
+        module.Should().NotContain("scope      = azurerm_mssql_server.main.id");
+        Repository.Read("docs", "restauracao.md").Should().Contain("az lock delete");
+    }
+
     [Fact(DisplayName = "Alertas da instalação")]
     public void Alerts_CoverDownErrorsQueueAndDatabase()
     {

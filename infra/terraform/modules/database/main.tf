@@ -50,6 +50,11 @@ variable "backup_redundancy" {
   type = string
 }
 
+variable "delete_lock" {
+  description = "Whether Azure refuses to delete the database, its server and its resource group until the lock is taken off on purpose."
+  type        = bool
+}
+
 variable "tags" {
   type = map(string)
 }
@@ -119,6 +124,18 @@ resource "azurerm_mssql_database" "main" {
       error_message = "The Basic plan keeps at most 7 days of restore and 2 GB."
     }
   }
+}
+
+# The lock on the database, and not on the server or the resource group (Operação-4.1): a lock on a parent holds its
+# children too, and the quarterly test of the restore guide deletes the test database it restores in the same server.
+# Azure refuses to delete the resource group of a locked resource, and the server with it. Terraform takes the lock off
+# before the database on destroy, because the lock depends on it.
+resource "azurerm_management_lock" "database" {
+  count      = var.delete_lock ? 1 : 0
+  name       = "nao-apagar-banco"
+  scope      = azurerm_mssql_database.main.id
+  lock_level = "CanNotDelete"
+  notes      = "Protege o banco e os backups dos últimos dias contra exclusão por engano. Para trocar o banco, siga o roteiro de restauração (docs/restauracao.md)."
 }
 
 output "server_fqdn" {
