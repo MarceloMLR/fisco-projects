@@ -185,6 +185,12 @@ variable "database_backup_redundancy" {
   }
 }
 
+variable "database_delete_lock" {
+  description = "Whether the database gets the Azure lock against deletion (Operação-4.1): Azure then refuses to delete the database, its server and its resource group, and terraform destroy takes the lock off first."
+  type        = bool
+  default     = true
+}
+
 variable "key_vault_soft_delete_days" {
   description = "Days a deleted secret or vault can be recovered (7 to 90)."
   type        = number

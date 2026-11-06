@@ -43,6 +43,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 03/11/2026, ao testar os avisos pelo Teams, Marcelo pediu que o aviso de um chamado mostre mais do que "Abrir no FiscoProjects" e, depois de ver o canvas "Chamado no Teams", pediu o chamado só para ler na página do Teams, pela entrada única do Teams (Avisos-6, `chamado-no-teams`, ADR-0152), com a proposta aprovada por ele antes da implementação.
 - Em 03/11/2026, Marcelo pediu para zerar a demonstração do `dev` e recarregá-la com as novidades da v2 também fora do ERP-FIN (Cronograma-3.5, `demonstracao-atualizada`), mantendo o aplicativo do Teams e as Configurações gerais.
 - Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153), com a proposta aprovada por ele antes da implementação.
+- Em 05/11/2026, ao pensar num cliente em produção hospedado na nuvem do fornecedor, Marcelo perguntou como está o backup do banco num incidente e pediu a trava contra exclusão, o primeiro teste de restauração e a proposta de uma cópia fora da assinatura (Operação-4.1, `protecao-do-banco`, ADR-0154).
 
 ## Marcos
 
@@ -57,13 +58,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
-| 10. Governança e operação | 6 | 6 |
+| 10. Governança e operação | 7 | 7 |
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| **Total** | **128** | **128** |
+| **Total** | **129** | **129** |
 
 ## 1. Fundação
 
@@ -221,6 +222,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | Operação-2 | `exclusao-de-projeto` | Exclusão definitiva pelo administrador (no fim, porque apaga dados de todos os módulos) | 0041, 0111 | Concluída em 21/10/2026 ([#76](https://github.com/MarceloMLR/fisco-projects/pull/76)) |
 | Operação-3 | `monitoramento-e-alertas` | OpenTelemetry, Application Insights, saúde e as métricas dos alertas; o recurso, o teste de disponibilidade e os alertas ficam na Fundação-6 | 0057, 0112 | Concluída em 21/10/2026 ([#77](https://github.com/MarceloMLR/fisco-projects/pull/77)) |
 | Operação-4 | `backup-e-restauracao` | Roteiro de restauração e teste trimestral; as definições dos backups ficam na Fundação-6 | 0059 | Concluída em 21/10/2026 ([#78](https://github.com/MarceloMLR/fisco-projects/pull/78)) |
+| Operação-4.1 | `protecao-do-banco` | Trava do Azure contra exclusão no banco, o primeiro teste de restauração e a proposta da cópia fora da assinatura, a pedido de Marcelo | 0059, 0154 | Concluída em 05/11/2026 ([#152](https://github.com/MarceloMLR/fisco-projects/pull/152)) |
 | Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | Concluída em 28/10/2026 ([#103](https://github.com/MarceloMLR/fisco-projects/pull/103)) |
 | Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint, a partir do pacote de cada versão | 0030, 0036, 0053, 0127 | Concluída em 29/10/2026 ([#105](https://github.com/MarceloMLR/fisco-projects/pull/105)) |
 
