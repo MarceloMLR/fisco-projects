@@ -58,13 +58,13 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 7. Documentos, links, acessos e termos | 6 | 6 |
 | 8. Telas de síntese | 2 | 2 |
 | 9. Microsoft 365 real | 7 | 7 |
-| 10. Governança e operação | 7 | 6 |
+| 10. Governança e operação | 7 | 7 |
 | 11. Horas do projeto | 2 | 2 |
 | 12. Assinatura dos termos de aceite | 3 | 3 |
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| **Total** | **129** | **128** |
+| **Total** | **129** | **129** |
 
 ## 1. Fundação
 
@@ -222,7 +222,7 @@ Até aqui, tudo roda com as implementações locais, sem depender de tenant lice
 | Operação-2 | `exclusao-de-projeto` | Exclusão definitiva pelo administrador (no fim, porque apaga dados de todos os módulos) | 0041, 0111 | Concluída em 21/10/2026 ([#76](https://github.com/MarceloMLR/fisco-projects/pull/76)) |
 | Operação-3 | `monitoramento-e-alertas` | OpenTelemetry, Application Insights, saúde e as métricas dos alertas; o recurso, o teste de disponibilidade e os alertas ficam na Fundação-6 | 0057, 0112 | Concluída em 21/10/2026 ([#77](https://github.com/MarceloMLR/fisco-projects/pull/77)) |
 | Operação-4 | `backup-e-restauracao` | Roteiro de restauração e teste trimestral; as definições dos backups ficam na Fundação-6 | 0059 | Concluída em 21/10/2026 ([#78](https://github.com/MarceloMLR/fisco-projects/pull/78)) |
-| Operação-4.1 | `protecao-do-banco` | Trava do Azure contra exclusão no banco, o primeiro teste de restauração e a proposta da cópia fora da assinatura, a pedido de Marcelo | 0059, 0154 | PR aberto ([#152](https://github.com/MarceloMLR/fisco-projects/pull/152)) |
+| Operação-4.1 | `protecao-do-banco` | Trava do Azure contra exclusão no banco, o primeiro teste de restauração e a proposta da cópia fora da assinatura, a pedido de Marcelo | 0059, 0154 | Concluída em 05/11/2026 ([#152](https://github.com/MarceloMLR/fisco-projects/pull/152)) |
 | Operação-5 | `deploy-de-producao` | Workflow manual de produção | 0055, 0125 | Concluída em 28/10/2026 ([#103](https://github.com/MarceloMLR/fisco-projects/pull/103)) |
 | Operação-6 | `guia-de-instalacao` | `docs/instalacao.md` completo, com os scripts do Exchange e do SharePoint, a partir do pacote de cada versão | 0030, 0036, 0053, 0127 | Concluída em 29/10/2026 ([#105](https://github.com/MarceloMLR/fisco-projects/pull/105)) |
 
