@@ -122,6 +122,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Quadro (visualização do cronograma) | ScheduleBoard, `?view=board` | As tarefas com datas próprias nas colunas A fazer, Em andamento e Concluída, pelo progresso; quem atualiza o progresso move o cartão (ADR-0155) |
 | A fazer, Em andamento, Concluída (colunas do quadro) | BoardColumnId: todo, doing, done | 0%, de 1% a 99% e 100% (ADR-0155) |
 | Mover (cartão do quadro) | `moveOf`, `progressOf` | Concluída salva 100%, A fazer salva 0% e Em andamento pede o percentual (ADR-0086, ADR-0155) |
+| Tarefa atribuída (aviso) | NoticeKind.TaskAssigned | O aviso na hora a quem passa a ser responsável por uma tarefa, por e-mail, pelo Teams e no sino (ADR-0156) |
 | Data-limite estourada | MissedDeadline | Item em aberto que passou da data-limite |
 | Filtro do cronograma | ScheduleFilter, `filter` | Um filtro por vez da Lista, da Linha do tempo e do Expandir (GanttA-3) |
 | Próximas duas semanas | NextTwoWeeks | Itens em aberto que acontecem de hoje até 13 dias corridos depois |
