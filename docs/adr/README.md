@@ -218,3 +218,4 @@ Regras:
 | [0153](0153-abrir-pelo-teams-direto-na-entrada-da-microsoft.md) | Abrir pelo Teams direto na entrada da Microsoft | aceita | 2026-11-03 |
 | [0154](0154-copia-do-banco-fora-da-assinatura.md) | Cópia do banco fora da assinatura da instalação | proposta | 2026-11-05 |
 | [0155](0155-quadro-das-tarefas-pelo-progresso.md) | Quadro das tarefas do cronograma, com as colunas pelo progresso | aceita | 2026-11-10 |
+| [0156](0156-aviso-na-hora-da-tarefa-atribuida.md) | Aviso na hora da tarefa atribuída | aceita | 2026-11-10 |
