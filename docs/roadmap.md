@@ -44,7 +44,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 03/11/2026, Marcelo pediu para zerar a demonstração do `dev` e recarregá-la com as novidades da v2 também fora do ERP-FIN (Cronograma-3.5, `demonstracao-atualizada`), mantendo o aplicativo do Teams e as Configurações gerais.
 - Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153), com a proposta aprovada por ele antes da implementação.
 - Em 05/11/2026, ao pensar num cliente em produção hospedado na nuvem do fornecedor, Marcelo perguntou como está o backup do banco num incidente e pediu a trava contra exclusão, o primeiro teste de restauração e a proposta de uma cópia fora da assinatura (Operação-4.1, `protecao-do-banco`, ADR-0154).
-- Em 10/11/2026, ao comparar o FiscoProjects com o Jira e o monday.com, Marcelo pediu o quadro das tarefas, os avisos das tarefas também pelo Teams e os comentários na tarefa, que formam o grupo 16, e liberou a implementação na ordem do grupo, com a aprovação no PR de cada change.
+- Em 10/11/2026, ao comparar o FiscoProjects com o Jira e o monday.com, Marcelo pediu o quadro das tarefas, os avisos das tarefas também pelo Teams e os comentários na tarefa, que formam o grupo 16, com a proposta de cada change aprovada por ele antes da implementação, como no resto da v2; a Tarefas-1 foi implementada junto com a proposta, e ele aceitou revisá-la no PR.
 
 ## Marcos
 
