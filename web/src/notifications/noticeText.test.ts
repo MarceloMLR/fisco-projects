@@ -105,6 +105,25 @@ describe('Texto das notificações', () => {
     ).toBe('Marina Costa incluiu você no projeto ERP-FIN como Líder técnico');
   });
 
+  // Spec: avisos, requirement "Aviso de tarefa atribuída" (ADR-0156).
+  it('Tarefa atribuída', () => {
+    expect(
+      noticeText(
+        notification(
+          'TaskAssigned',
+          {
+            project: 'ERP-FIN',
+            item: 'Parametrizar regras de ICMS',
+            title: 'Parametrizar regras de ICMS',
+            end: '2026-10-28',
+          },
+          'Marina Costa',
+        ),
+        t,
+      ),
+    ).toBe('Marina Costa passou a tarefa Parametrizar regras de ICMS para você');
+  });
+
   it('Fornecedor, com o status em minúsculas', () => {
     expect(
       noticeText(

@@ -56,6 +56,7 @@ const icons: Record<NoticeKind, typeof SvgIcon> = {
   ProjectRoleChanged: BadgeOutlined,
   ProjectStatusChanged: FolderOutlined,
   ScheduleDatesChanged: EventOutlined,
+  TaskAssigned: AssignmentIndOutlined,
   AcceptanceRequested: TaskAltOutlined,
   AcceptanceReminded: TaskAltOutlined,
   AcceptanceSigned: TaskAltOutlined,

@@ -3079,6 +3079,7 @@
       "projectRoleChanged": "Seu papel no projeto {{project}} mudou para {{role}}",
       "projectStatusChanged": "O projeto {{project}} passou para {{status}}",
       "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}",
+      "taskAssigned": "{{actor}} passou a tarefa {{item}} para você",
       "acceptanceRequested": "{{actor}} pediu o seu aceite: {{title}}",
       "acceptanceReminded": "{{actor}} lembrou o pedido de aceite: {{title}}",
       "acceptanceSigned": "{{actor}} enviou o termo assinado: {{title}}",

@@ -6,8 +6,8 @@ namespace FiscoProjects.Projects.Application;
 
 /// <summary>
 /// What the projects tell the notices (ADR-0037, ADR-0038), after the change is saved: the person included in a
-/// project or with another role, the people of a project whose status changed, and the owners of the tasks whose dates
-/// changed, one item per task.
+/// project or with another role, the people of a project whose status changed, the owners of the tasks whose dates
+/// changed, one item per task, and the new owner of a task (ADR-0156).
 /// </summary>
 public sealed class ProjectNotices(IEnumerable<INoticeBoard> boards)
 {
@@ -74,6 +74,38 @@ public sealed class ProjectNotices(IEnumerable<INoticeBoard> boards)
                     [NoticeValues.End] = item.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 },
                 $"schedule-item:{item.Id}"))
+            .ToList();
+        return boards.PostAsync(notices, cancellationToken);
+    }
+
+    /// <summary>
+    /// The people who became the owners of tasks (ADR-0156): of a task included with an owner, or whose owner changed to
+    /// them, also from the client or from nobody. Only the new owner hears about it, and the link opens the task.
+    /// </summary>
+    public Task AssignedAsync(
+        Project project, ScheduleSnapshot before, ScheduleSnapshot after, Guid actorId, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(after);
+        var old = before.Items.ToDictionary(item => item.Id);
+        var notices = after.Items
+            .Where(item => item.Kind == ScheduleItemKind.Task
+                && item.OwnerId is not null
+                && (!old.TryGetValue(item.Id, out var was) || was.OwnerId != item.OwnerId))
+            .Select(item => new Notice(
+                NoticeKind.TaskAssigned,
+                [item.OwnerId!.Value],
+                actorId,
+                project.Id,
+                $"/projects/{project.Id}/schedule?item={item.Id}",
+                new Dictionary<string, string>
+                {
+                    [NoticeValues.Project] = project.Code,
+                    [NoticeValues.Item] = item.Name,
+                    [NoticeValues.Title] = item.Name,
+                    [NoticeValues.End] = item.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                }))
             .ToList();
         return boards.PostAsync(notices, cancellationToken);
     }

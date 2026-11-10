@@ -62,6 +62,9 @@ public enum NoticeKind
 
     /// <summary>A term the person asked for, or of a project the person manages, was refused.</summary>
     AcceptanceRefused = 20,
+
+    /// <summary>The person became the owner of a task (ADR-0156).</summary>
+    TaskAssigned = 21,
 }
 
 /// <summary>

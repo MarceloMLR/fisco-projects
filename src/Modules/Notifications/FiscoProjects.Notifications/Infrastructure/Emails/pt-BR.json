@@ -70,6 +70,11 @@
       "subject": "Lembrete do pedido de aceite: {{title}}",
       "body": "{{actor}} lembrou o pedido de aceite \"{{title}}\", do marco {{item}}, no projeto {{project}}, que espera a sua resposta.",
       "action": "Abrir o termo"
+    },
+    "taskAssigned": {
+      "subject": "Tarefa atribuída a você: {{item}}",
+      "body": "{{actor}} passou para você a tarefa {{item}}, do projeto {{project}}, que termina em {{end}}.",
+      "action": "Abrir a tarefa"
     }
   },
   "summary": {
@@ -205,6 +210,10 @@
       "acceptanceReminded": {
         "description": "Lembrete de pedido de aceite",
         "template": "{person} lembrou o pedido de aceite do marco {item}"
+      },
+      "taskAssigned": {
+        "description": "Tarefa atribuída a você",
+        "template": "{person} passou a tarefa {item} para você"
       }
     }
   }

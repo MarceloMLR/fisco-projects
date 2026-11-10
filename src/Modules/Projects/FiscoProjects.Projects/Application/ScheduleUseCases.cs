@@ -304,8 +304,8 @@ internal static class ScheduleEditing
         RunAsync(projects, schedules, notices: null, projectId, viewer, mayChange, change, cancellationToken);
 
     /// <summary>
-    /// A change that may move dates: once it is saved, the owners of the tasks whose dates changed hear about it, also
-    /// when the change pushed them in chain (ADR-0037).
+    /// A change that may move dates or owners: once it is saved, the owners of the tasks whose dates changed hear about
+    /// it, also when the change pushed them in chain (ADR-0037), and the new owners of tasks, now (ADR-0156).
     /// </summary>
     public static async Task<ScheduleResult> RunAsync(
         IProjectStore projects,
@@ -353,6 +353,7 @@ internal static class ScheduleEditing
             return result;
         }, cancellationToken);
         await TellAsync(notices, moved, outcome, viewer, cancellationToken);
+        await TellAssignedAsync(notices, moved, outcome, viewer, cancellationToken);
         return outcome;
     }
 
@@ -442,6 +443,16 @@ internal static class ScheduleEditing
         ProjectNotices? notices, Moved? moved, ScheduleResult outcome, ProjectViewer viewer, CancellationToken cancellationToken) =>
         notices is not null && moved is not null && outcome.Outcome == ScheduleOutcome.Done
             ? notices.DatesChangedAsync(moved.Project, moved.Before, moved.After, viewer.UserId, cancellationToken)
+            : Task.CompletedTask;
+
+    /// <summary>
+    /// Once the change is saved, the new owners of tasks hear about it (ADR-0156); never in undo and redo, which only give
+    /// back what was there.
+    /// </summary>
+    private static Task TellAssignedAsync(
+        ProjectNotices? notices, Moved? moved, ScheduleResult outcome, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        notices is not null && moved is not null && outcome.Outcome == ScheduleOutcome.Done
+            ? notices.AssignedAsync(moved.Project, moved.Before, moved.After, viewer.UserId, cancellationToken)
             : Task.CompletedTask;
 
     /// <summary>The schedule of a project before and after a change saved.</summary>
@@ -692,9 +703,10 @@ public sealed class PreviewScheduleItemDates(IProjectStore projects, IWorkCalend
 /// <summary>
 /// Includes a task or a milestone (ADR-0018, ADR-0019): it starts on a business day, after the items it depends on, and
 /// a task ends as many business days later as its duration says. The first subtask of a task takes its dependencies
-/// (ADR-0088).
+/// (ADR-0088). The owner of the task hears about it (ADR-0156).
 /// </summary>
-public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock)
+public sealed class AddScheduleItem(
+    IProjectStore projects, IScheduleStore schedules, IWorkCalendar calendar, InstallationClock clock, ProjectNotices notices)
 {
     public async Task<ScheduleResult> ExecuteAsync(
         Guid projectId, ScheduleItemKind kind, ScheduleItemForm form, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -702,7 +714,7 @@ public sealed class AddScheduleItem(IProjectStore projects, IScheduleStore sched
         ArgumentNullException.ThrowIfNull(form);
         var days = await calendar.GetAsync(cancellationToken);
         var today = await clock.TodayAsync(cancellationToken);
-        return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (project, schedule) =>
+        return await ScheduleEditing.RunAsync(projects, schedules, notices, projectId, viewer, mayChange: null, (project, schedule) =>
         {
             var (plan, invalid) = ScheduleItemChecks.Check(project, schedule, kind, form, itemId: null, days);
             if (plan is null)
