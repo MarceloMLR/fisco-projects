@@ -1784,7 +1784,8 @@
       "views": {
         "label": "Visualização",
         "timeline": "Linha do tempo",
-        "list": "Lista"
+        "list": "Lista",
+        "board": "Quadro"
       },
       "scales": {
         "label": "Escala",
@@ -2135,6 +2136,22 @@
     "tableEdit": {
       "button": "Editar na tabela",
       "help": "Editando na tabela: Enter, F2 ou digite para editar a célula; Enter salva e desce, Tab salva e vai para a próxima, Esc desiste. O responsável, a data-limite e a nota ficam no detalhe."
+    },
+    "board": {
+      "label": "Quadro de tarefas",
+      "columns": {
+        "todo": "A fazer",
+        "doing": "Em andamento",
+        "done": "Concluída"
+      },
+      "column_zero": "{{name}}: nenhuma tarefa",
+      "column_one": "{{name}}: {{count}} tarefa",
+      "column_other": "{{name}}: {{count}} tarefas",
+      "columnEmpty": "Nenhuma tarefa",
+      "endsOn": "Termina em {{day}}",
+      "move": "Mover {{name}}",
+      "moveTo": "Mover para {{column}}",
+      "restarted": "Tarefa {{name}} voltou para A fazer."
     }
   },
   "templates": {

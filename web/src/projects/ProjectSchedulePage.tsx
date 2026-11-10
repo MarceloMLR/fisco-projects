@@ -8,6 +8,7 @@ import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import OpenInFullOutlined from '@mui/icons-material/OpenInFullOutlined';
 import TimelineOutlined from '@mui/icons-material/TimelineOutlined';
 import TodayOutlined from '@mui/icons-material/TodayOutlined';
+import ViewKanbanOutlined from '@mui/icons-material/ViewKanbanOutlined';
 import ViewListOutlined from '@mui/icons-material/ViewListOutlined';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -90,6 +91,7 @@ import {
   OwnerAway,
   OwnerAwayLine,
 } from './ScheduleStatus';
+import { ScheduleBoard } from './ScheduleBoard';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import {
   DependsOnEditCell,
@@ -138,11 +140,11 @@ const emptySchedule: Schedule = {
   missedDeadlines: 0,
 };
 
-/** The views of the tab (ADR-0071). */
-type ScheduleView = 'timeline' | 'list';
+/** The views of the tab (ADR-0071, ADR-0155). */
+type ScheduleView = 'timeline' | 'list' | 'board';
 
 const isView = (value: string | null): value is ScheduleView =>
-  value === 'timeline' || value === 'list';
+  value === 'timeline' || value === 'list' || value === 'board';
 const isScale = (value: string | null): value is GanttScale =>
   ganttScales.some((scale) => scale === value);
 
@@ -152,7 +154,7 @@ const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: '
 type PhaseDialogState = { phase?: SchedulePhase } | undefined;
 
 /**
- * The tab Cronograma of a project, with the Linha do tempo and the Lista (ADR-0071). The Linha do tempo draws the
+ * The tab Cronograma of a project, with the Linha do tempo, the Lista (ADR-0071) and the Quadro (ADR-0155). The Linha do tempo draws the
  * phases, tasks, milestones and dependencies in the time, in days, weeks or months, filling the width, and who edits
  * the schedule drags, stretches and links the bars on a computer; Expandir opens it over almost the whole screen, with
  * the full table. The Lista has the phases as group rows with their dates and progress, and under each one its tasks
@@ -802,6 +804,7 @@ export function ProjectSchedulePage() {
               icon: TimelineOutlined,
             },
             { value: 'list', label: t('projects.timeline.views.list'), icon: ViewListOutlined },
+            { value: 'board', label: t('projects.timeline.views.board'), icon: ViewKanbanOutlined },
           ]}
           onChange={(value) => {
             setParam('view', value);
@@ -840,7 +843,32 @@ export function ProjectSchedulePage() {
         {moreMenu}
       </Box>
       {editingTable && <TableEditHelp />}
-      {view === 'timeline' ? (
+      {view === 'board' ? (
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-3)',
+          }}
+        >
+          {summary}
+          <ScheduleBoard
+            project={project}
+            schedule={shown}
+            selectedId={chosen?.item.id}
+            emptyText={
+              shownCount === 0
+                ? t('projects.schedule.filter.empty')
+                : itemCount === 0
+                  ? t('projects.schedule.empty')
+                  : undefined
+            }
+            onChoose={setChosenId}
+          />
+        </Box>
+      ) : view === 'timeline' ? (
         <ScheduleTimeline
           project={project}
           schedule={shown}

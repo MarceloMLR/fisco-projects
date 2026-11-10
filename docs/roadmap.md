@@ -1,6 +1,6 @@
 # Roadmap
 
-As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15 e as tarefas no grupo 16. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -44,6 +44,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 03/11/2026, Marcelo pediu para zerar a demonstração do `dev` e recarregá-la com as novidades da v2 também fora do ERP-FIN (Cronograma-3.5, `demonstracao-atualizada`), mantendo o aplicativo do Teams e as Configurações gerais.
 - Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153), com a proposta aprovada por ele antes da implementação.
 - Em 05/11/2026, ao pensar num cliente em produção hospedado na nuvem do fornecedor, Marcelo perguntou como está o backup do banco num incidente e pediu a trava contra exclusão, o primeiro teste de restauração e a proposta de uma cópia fora da assinatura (Operação-4.1, `protecao-do-banco`, ADR-0154).
+- Em 10/11/2026, ao comparar o FiscoProjects com o Jira e o monday.com, Marcelo pediu o quadro das tarefas, os avisos das tarefas também pelo Teams e os comentários na tarefa, que formam o grupo 16, com a proposta de cada change aprovada por ele antes da implementação, como no resto da v2; a Tarefas-1 foi implementada junto com a proposta, e ele aceitou revisá-la no PR.
 
 ## Marcos
 
@@ -64,7 +65,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| **Total** | **129** | **129** |
+| 16. Tarefas (v2) | 3 | 1 |
+| **Total** | **132** | **130** |
 
 ## 1. Fundação
 
@@ -279,3 +281,11 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | GanttB-4 | `ausencias-das-pessoas` | As ausências e as férias de cada pessoa, com o aviso da tarefa que cai nelas | 0018, 0058, 0141 | Concluída em 01/11/2026 ([#132](https://github.com/MarceloMLR/fisco-projects/pull/132)) |
 | GanttB-5 | `carga-da-equipe` | A carga de cada pessoa por semana, entre os projetos, pelas horas previstas e pelas ausências, com o aviso de sobrecarga | 0021, 0128, 0142 | Concluída em 01/11/2026 ([#133](https://github.com/MarceloMLR/fisco-projects/pull/133)) |
 | GanttB-6 | `edicao-na-tabela` | Editar o cronograma direto na tabela, como numa planilha: nome, duração, datas, dependências e progresso, pelo teclado | 0021, 0071, 0134, 0143 | Concluída em 01/11/2026 ([#134](https://github.com/MarceloMLR/fisco-projects/pull/134)) |
+
+## 16. Tarefas
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Tarefas-1 | `quadro-de-tarefas` | O Quadro na aba Cronograma: as tarefas nas colunas A fazer, Em andamento e Concluída, pelo progresso, movidas por quem atualiza o progresso, com os filtros do cronograma | 0020, 0071, 0086, 0155 | Concluída em 10/11/2026 ([#153](https://github.com/MarceloMLR/fisco-projects/pull/153)) |
+| Tarefas-2 | `aviso-de-tarefa-atribuida` | O aviso na hora a quem passa a ser responsável por uma tarefa, por e-mail, pelo Teams e no sino, como o do chamado atribuído | 0037, 0038, 0149, 0151 | Planejada |
+| Tarefas-3 | `comentarios-da-tarefa` | Comentários em cada tarefa e marco, com menções, e o aviso na hora a quem foi mencionado e ao responsável, também pelo Teams | 0026, 0069, 0149 | Planejada |
