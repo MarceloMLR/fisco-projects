@@ -126,6 +126,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Comentário da tarefa | ScheduleComment, `schedule_comments` | A conversa de uma tarefa ou marco, com o texto formatado e as menções dos chamados, no detalhe do item; fora da auditoria (ADR-0157) |
 | Menção num comentário (aviso) | NoticeKind.TaskMentioned | O aviso na hora a quem foi mencionado num comentário de tarefa ou marco (ADR-0157) |
 | Comentário na tarefa (aviso) | NoticeKind.TaskCommented | O aviso na hora ao responsável de uma tarefa a cada comentário novo, salvo quando ele escreve ou é mencionado (ADR-0157) |
+| Minhas tarefas | MyTasks, `GET /api/my-tasks`, `MyTasksPage` | A página com as tarefas de que a pessoa é responsável nos projetos em aberto em que ela está, por projeto ou por data, em Lista e Quadro (ADR-0158) |
 | Data-limite estourada | MissedDeadline | Item em aberto que passou da data-limite |
 | Filtro do cronograma | ScheduleFilter, `filter` | Um filtro por vez da Lista, da Linha do tempo e do Expandir (GanttA-3) |
 | Próximas duas semanas | NextTwoWeeks | Itens em aberto que acontecem de hoje até 13 dias corridos depois |

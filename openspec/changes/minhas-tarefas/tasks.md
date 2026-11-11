@@ -9,11 +9,11 @@
 
 ## 3. Tela
 
-- [ ] 3.1 O Quadro aberto a cartões de vários projetos (`TaskBoard`), sem mudar o do cronograma
-- [ ] 3.2 A página Minhas tarefas: a barra lateral, a rota, os agrupamentos, a Lista, o Quadro e "Mostrar concluídas"
-- [ ] 3.3 O detalhe na própria página, com o progresso, a nota, os comentários e "Abrir no cronograma"
-- [ ] 3.4 O contrato da API, os textos e os testes de tela e das regras
+- [x] 3.1 O Quadro aberto a cartões de vários projetos (`TaskBoard`), sem mudar o do cronograma
+- [x] 3.2 A página Minhas tarefas: a barra lateral, a rota, os agrupamentos, a Lista, o Quadro e "Mostrar concluídas"
+- [x] 3.3 O detalhe na própria página, com o progresso, a nota, os comentários e "Abrir no cronograma"
+- [x] 3.4 O contrato da API, os textos e os testes de tela e das regras
 
 ## 4. Documentação
 
-- [ ] 4.1 `CLAUDE.md` e `docs/glossario.md`
+- [x] 4.1 `CLAUDE.md` e `docs/glossario.md`
