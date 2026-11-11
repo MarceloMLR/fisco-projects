@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { type DragEvent, type MouseEvent, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Project, Schedule, ScheduleItem } from '../api/client';
+import { CodeChip } from '../components/Card';
 import { queryKeys } from '../api/queries';
 import { IconButton } from '../components/Button';
 import { DueDate } from '../components/DueDate';
@@ -26,7 +27,8 @@ import {
   type BoardCard,
   type BoardColumnId,
   boardColumnIds,
-  boardColumns,
+  cardsOf,
+  columnsOf,
   moveOf,
   progressOf,
 } from './scheduleBoard';
@@ -50,11 +52,8 @@ const captionSx = {
 const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const;
 
 /**
- * The Quadro of the tab Cronograma (ADR-0155): the tasks with their own dates in the columns A fazer, Em andamento and
- * Concluída, by their progress, with the count of each column; a card opens the details of its task. Who updates the
- * progress of a task (`canUpdateProgress`, ADR-0043) moves its card: dragging it, on a computer, or by "Mover", on any
- * screen. Concluída and A fazer save 100% and 0% at once; Em andamento asks for the percentage (ADR-0086). While the
- * progress is saved, the card stays in the new column; a refusal takes it back, with the notice.
+ * The Quadro of the Schedule tab (ADR-0155): the tasks with their own dates of the schedule, each with its owner, in
+ * the columns of the progress.
  */
 export function ScheduleBoard({
   project,
@@ -72,6 +71,45 @@ export function ScheduleBoard({
   emptyText: string | undefined;
   onChoose: (itemId: string) => void;
 }) {
+  return (
+    <TaskBoard
+      cards={cardsOf(schedule, project.id)}
+      owner={{ clientName: project.client?.name ?? null, clientLogo: project.client?.logoUrl }}
+      selectedId={selectedId}
+      emptyText={emptyText}
+      onChoose={onChoose}
+    />
+  );
+}
+
+/** How the cards show who is in charge of a task: the client of the project when it is in charge (ADR-0102). */
+interface OwnerLook {
+  clientName: string | null;
+  clientLogo: string | null | undefined;
+}
+
+/**
+ * The board of the tasks (ADR-0155): the cards in the columns A fazer, Em andamento and Concluída, by the progress;
+ * who updates the progress of a task drags its card on a computer or uses "Mover", and the progress goes to the project
+ * of the card. With the owner, as in a schedule; without it, as in Minhas tarefas, each card shows the code of its
+ * project (ADR-0158).
+ */
+export function TaskBoard({
+  cards,
+  owner,
+  selectedId,
+  emptyText,
+  onChoose,
+}: {
+  cards: readonly BoardCard[];
+  /** How the cards show the owner; none shows the code of the project instead. */
+  owner: OwnerLook | undefined;
+  /** The task whose details are open. */
+  selectedId: string | undefined;
+  /** What the board says without cards. */
+  emptyText: string | undefined;
+  onChoose: (itemId: string) => void;
+}) {
   const { t } = useTranslation();
   const notify = useNotify();
   const queryClient = useQueryClient();
@@ -82,8 +120,8 @@ export function ScheduleBoard({
   const dragged = useRef<BoardCard>(undefined);
   const [over, setOver] = useState<BoardColumnId>();
   const [menu, setMenu] = useState<{ anchor: HTMLElement; card: BoardCard }>();
-  const [asking, setAsking] = useState<ScheduleItem>();
-  const columns = boardColumns(schedule, drafts);
+  const [asking, setAsking] = useState<BoardCard>();
+  const columns = columnsOf(cards, drafts);
   const cardCount = columns.reduce((count, column) => count + column.cards.length, 0);
 
   const refresh = () =>
@@ -100,11 +138,11 @@ export function ScheduleBoard({
     }
     const progress = progressOf(how);
     if (progress === undefined) {
-      setAsking(item);
+      setAsking(card);
       return;
     }
     setDrafts((current) => new Map(current).set(item.id, to));
-    const failed = await saveTaskProgress(project.id, item.id, progress, t);
+    const failed = await saveTaskProgress(card.projectId, item.id, progress, t);
     if (failed === undefined) {
       notify(
         t(
@@ -166,8 +204,7 @@ export function ScheduleBoard({
             selectedId={selectedId}
             drafts={drafts}
             draggable={desktop}
-            clientName={project.client?.name ?? null}
-            clientLogo={project.client?.logoUrl}
+            owner={owner}
             onChoose={onChoose}
             onMenu={(anchor, card) => {
               setMenu({ anchor, card });
@@ -245,8 +282,8 @@ export function ScheduleBoard({
       </Menu>
       {asking !== undefined && (
         <ProgressDialog
-          projectId={project.id}
-          item={asking}
+          projectId={asking.projectId}
+          item={asking.item}
           onClose={() => {
             setAsking(undefined);
           }}
@@ -269,8 +306,7 @@ function BoardColumnView({
   selectedId,
   drafts,
   draggable,
-  clientName,
-  clientLogo,
+  owner,
   onChoose,
   onMenu,
   onDragStart,
@@ -286,8 +322,7 @@ function BoardColumnView({
   selectedId: string | undefined;
   drafts: ReadonlyMap<string, BoardColumnId>;
   draggable: boolean;
-  clientName: string | null;
-  clientLogo: string | null | undefined;
+  owner: OwnerLook | undefined;
   onChoose: (itemId: string) => void;
   onMenu: (anchor: HTMLElement, card: BoardCard) => void;
   onDragStart: (card: BoardCard) => void;
@@ -376,8 +411,7 @@ function BoardColumnView({
             selected={card.item.id === selectedId}
             saving={drafts.has(card.item.id)}
             draggable={draggable}
-            clientName={clientName}
-            clientLogo={clientLogo}
+            owner={owner}
             onChoose={onChoose}
             onMenu={onMenu}
             onDragStart={onDragStart}
@@ -400,8 +434,7 @@ function BoardCardView({
   selected,
   saving,
   draggable,
-  clientName,
-  clientLogo,
+  owner,
   onChoose,
   onMenu,
   onDragStart,
@@ -412,8 +445,7 @@ function BoardCardView({
   selected: boolean;
   saving: boolean;
   draggable: boolean;
-  clientName: string | null;
-  clientLogo: string | null | undefined;
+  owner: OwnerLook | undefined;
   onChoose: (itemId: string) => void;
   onMenu: (anchor: HTMLElement, card: BoardCard) => void;
   onDragStart: (card: BoardCard) => void;
@@ -557,7 +589,11 @@ function BoardCardView({
           minWidth: 0,
         }}
       >
-        <CardOwner item={item} clientName={clientName} clientLogo={clientLogo} />
+        {owner === undefined ? (
+          <CodeChip code={card.projectCode ?? ''} />
+        ) : (
+          <CardOwner item={item} clientName={owner.clientName} clientLogo={owner.clientLogo} />
+        )}
         <CardDate item={item} column={column} />
       </Box>
       {missesDeadline(item) && (

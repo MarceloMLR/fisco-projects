@@ -79,7 +79,7 @@ export function TaskProgress({
   onDone,
   subtasks = 0,
 }: {
-  project: Project;
+  project: Pick<Project, 'id'>;
   item: ScheduleItem;
   onDone: (message: string) => void;
   /** How many subtasks the task has: its progress is computed from them, and nobody updates it (ADR-0088). */
