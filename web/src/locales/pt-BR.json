@@ -16,6 +16,7 @@
   },
   "nav": {
     "home": "Início",
+    "myTasks": "Minhas tarefas",
     "projects": "Projetos",
     "tickets": "Chamados",
     "hours": "Minhas horas",
@@ -24,6 +25,9 @@
   "pages": {
     "home": {
       "title": "Meu trabalho"
+    },
+    "myTasks": {
+      "title": "Minhas tarefas"
     },
     "projects": {
       "title": "Projetos"
@@ -3976,6 +3980,53 @@
       "mention": "as alíquotas já estão no ambiente de testes.",
       "signInLabel": "Página de entrada",
       "signInTitle": "Entre com a conta da empresa"
+    }
+  },
+  "myTasks": {
+    "openTasks_zero": "Nenhuma tarefa em aberto",
+    "openTasks_one": "1 tarefa em aberto",
+    "openTasks_other": "{{count}} tarefas em aberto",
+    "inProjects_one": "em 1 projeto",
+    "inProjects_other": "em {{count}} projetos",
+    "summary": "{{tasks}} {{projects}}",
+    "views": {
+      "label": "Visualização",
+      "list": "Lista",
+      "board": "Quadro"
+    },
+    "grouping": {
+      "label": "Agrupar",
+      "project": "Por projeto",
+      "date": "Por data"
+    },
+    "showDone": "Mostrar concluídas",
+    "dateGroups": {
+      "late": "Atrasadas",
+      "today": "Hoje",
+      "thisWeek": "Esta semana",
+      "nextWeek": "Próxima semana",
+      "later": "Depois",
+      "done": "Concluídas nos últimos 30 dias"
+    },
+    "columns": {
+      "task": "Tarefa",
+      "phase": "Fase",
+      "end": "Fim",
+      "progress": "Progresso",
+      "deadline": "Data-limite"
+    },
+    "table": "Minhas tarefas",
+    "tasks_one": "1 tarefa",
+    "tasks_other": "{{count}} tarefas",
+    "openSchedule": "Abrir cronograma",
+    "openScheduleOf": "Abrir cronograma de {{code}}",
+    "empty": "Nenhuma tarefa sua em aberto.",
+    "emptyWithDone": "Nenhuma tarefa sua em aberto nem concluída nos últimos 30 dias.",
+    "loadFailed": "Não foi possível carregar as suas tarefas.",
+    "details": {
+      "label": "Tarefa escolhida",
+      "parent": "Dentro de",
+      "openInSchedule": "Abrir no cronograma"
     }
   }
 }

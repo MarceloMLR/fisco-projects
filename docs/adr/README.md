@@ -220,3 +220,4 @@ Regras:
 | [0155](0155-quadro-das-tarefas-pelo-progresso.md) | Quadro das tarefas do cronograma, com as colunas pelo progresso | aceita | 2026-11-10 |
 | [0156](0156-aviso-na-hora-da-tarefa-atribuida.md) | Aviso na hora da tarefa atribuída | aceita | 2026-11-10 |
 | [0157](0157-comentarios-da-tarefa.md) | Comentários da tarefa, com menções e avisos na hora | aceita | 2026-11-10 |
+| [0158](0158-pagina-minhas-tarefas.md) | Página Minhas tarefas, com as tarefas da pessoa de todos os projetos | aceita | 2026-11-11 |

@@ -9,7 +9,7 @@ namespace FiscoProjects.Projects.Infrastructure;
 
 /// <summary>
 /// The reads of the screens of projects (ADR-0106), as the manager of the first open project sees them: the lists, the
-/// project with its header, the overview, the schedule, the members, the next milestones and Meu trabalho.
+/// project with its header, the overview, the schedule, the members, the next milestones, Meu trabalho and Minhas tarefas.
 /// </summary>
 internal sealed class ProjectsWarmUp(
     ProjectsDbContext db,
@@ -20,6 +20,7 @@ internal sealed class ProjectsWarmUp(
     GetSchedule schedule,
     ListProjectMembers members,
     ListUpcomingMilestones milestones,
+    ListMyTasks myTasks,
     InstallationClock clock,
     IEnumerable<IMyWorkSource> work) : IWarmUp
 {
@@ -50,6 +51,7 @@ internal sealed class ProjectsWarmUp(
         await schedule.ExecuteAsync(sample.ProjectId, viewer, cancellationToken);
         await members.ExecuteAsync(sample.ProjectId, viewer, cancellationToken);
         await milestones.ExecuteAsync(sample.UserId, cancellationToken);
+        await myTasks.ExecuteAsync(viewer, withDone: false, cancellationToken);
         var today = await clock.TodayAsync(cancellationToken);
         foreach (var source in work.OfType<ScheduleWorkSource>())
         {

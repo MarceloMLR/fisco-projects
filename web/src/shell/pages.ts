@@ -3,12 +3,21 @@ import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOu
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
+import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import { useMatches } from 'react-router';
 import { useSession } from '../session/SessionContext';
 
 /** The main navigation, in the order of the sidebar (ADR-0011, ADR-0066). */
 export const mainNavigation = [
   { key: 'home', path: '/', labelKey: 'nav.home', icon: HomeOutlined, administratorOnly: false },
+  // The tasks of the person in the open projects (ADR-0158).
+  {
+    key: 'myTasks',
+    path: '/my-tasks',
+    labelKey: 'nav.myTasks',
+    icon: TaskAltOutlined,
+    administratorOnly: false,
+  },
   {
     key: 'projects',
     path: '/projects',
@@ -45,6 +54,7 @@ export type NavigationKey = (typeof mainNavigation)[number]['key'];
 
 export type PageTitleKey =
   | 'pages.home.title'
+  | 'pages.myTasks.title'
   | 'pages.projects.title'
   | 'pages.tickets.title'
   | 'pages.hours.title'

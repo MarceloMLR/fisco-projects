@@ -15,6 +15,7 @@ import { UsersPage } from './admin/UsersPage';
 import { ProjectDocumentsPage } from './documents/ProjectDocumentsPage';
 import { ProjectLinksPage } from './links/ProjectLinksPage';
 import { MyHoursPage } from './hours/MyHoursPage';
+import { MyTasksPage } from './my-tasks/MyTasksPage';
 import { MyWorkPage } from './my-work/MyWorkPage';
 import { LocalSigningPage } from './acceptances/LocalSigningPage';
 import { TeamsOpenPage } from './teams/TeamsOpenPage';
@@ -80,6 +81,11 @@ export const routes: RouteObject[] = [
             index: true,
             element: <MyWorkPage />,
             handle: { navigation: 'home', titleKey: 'pages.home.title' } satisfies PageHandle,
+          },
+          {
+            path: 'my-tasks',
+            element: <MyTasksPage />,
+            handle: { navigation: 'myTasks', titleKey: 'pages.myTasks.title' } satisfies PageHandle,
           },
           {
             path: 'projects',

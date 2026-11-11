@@ -228,6 +228,18 @@ export function memberAbsencesQuery(projectId: string, userId: string) {
 }
 
 /**
+ * Minhas tarefas (ADR-0158): the tasks of the person in the session by project and, with `done`, also the ones
+ * completed in the last 30 days; under the projects, so a change of a schedule refreshes them.
+ */
+export function myTasksQuery(done: boolean) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, 'my-tasks', done] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/my-tasks', { params: { query: { done } }, signal })),
+  });
+}
+
+/**
  * The comments of a task or a milestone, the oldest first, and whether the person in the session comments now
  * (ADR-0157); under the schedule of the project, so a change of the schedule refreshes them.
  */

@@ -48,7 +48,13 @@ function refusalOf(status: number, problem: unknown, t: TFunction): string {
  * author, when and the text with its formatting; "Apagar" with a confirmation where the person may remove it; and the
  * editor of the tickets, with the mentions of the people of the project, for who comments while the project is open.
  */
-export function CommentSection({ project, item }: { project: Project; item: ScheduleItem }) {
+export function CommentSection({
+  project,
+  item,
+}: {
+  project: Pick<Project, 'id'>;
+  item: ScheduleItem;
+}) {
   const { t } = useTranslation();
   const headingId = useId();
   const comments = useQuery(scheduleCommentsQuery(project.id, item.id));
@@ -186,7 +192,7 @@ function CommentLine({
 }
 
 /** The editor of a new comment, with the mentions of the people of the project but the person in the session. */
-function CommentComposer({ project, item }: { project: Project; item: ScheduleItem }) {
+function CommentComposer({ project, item }: { project: Pick<Project, 'id'>; item: ScheduleItem }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { session } = useSession();
@@ -274,7 +280,7 @@ function RemoveCommentDialog({
   comment,
   onClose,
 }: {
-  project: Project;
+  project: Pick<Project, 'id'>;
   item: ScheduleItem;
   comment: Comment | undefined;
   onClose: () => void;

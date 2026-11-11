@@ -1,15 +1,20 @@
-import type { Schedule, ScheduleItem, SchedulePhase } from '../api/client';
+import type { Schedule, ScheduleItem } from '../api/client';
 
 /** The columns of the board of the tasks, by the progress (ADR-0155). */
 export const boardColumnIds = ['todo', 'doing', 'done'] as const;
 
 export type BoardColumnId = (typeof boardColumnIds)[number];
 
-/** A card of the board: a task with its own dates, its phase and, for a subtask, the task it is in (ADR-0088). */
+/**
+ * A card of the board: a task with its own dates, its phase and, for a subtask, the task it is in (ADR-0088), and the
+ * project whose progress it changes; in Minhas tarefas, with the code of the project, shown on the card (ADR-0158).
+ */
 export interface BoardCard {
   item: ScheduleItem;
-  phase: SchedulePhase;
-  parent: ScheduleItem | undefined;
+  phase: { name: string };
+  parent: { name: string } | undefined;
+  projectId: string;
+  projectCode?: string;
 }
 
 export interface BoardColumn {
@@ -33,39 +38,51 @@ export function hasCard(item: Pick<ScheduleItem, 'kind' | 'hasSubtasks'>): boole
   return item.kind === 'Task' && !item.hasSubtasks;
 }
 
-/**
- * The columns of the board, each with its cards in order (ADR-0155): A fazer and Em andamento by the end, from the
- * earliest; Concluída by the day of completion, from the latest; on a tie, the order of the schedule. A card drafted to
- * another column (`drafts`, while its progress is being saved) shows in that column.
- */
-export function boardColumns(
-  schedule: Schedule,
-  drafts: ReadonlyMap<string, BoardColumnId> = new Map(),
-): BoardColumn[] {
+/** The cards of the schedule of a project, in the order of the schedule: the tasks with their own dates. */
+export function cardsOf(schedule: Schedule, projectId: string): BoardCard[] {
   const byId = new Map(
     schedule.phases.flatMap((phase) => phase.items.map((item) => [item.id, item])),
   );
+  return schedule.phases.flatMap((phase) =>
+    phase.items.filter(hasCard).map((item) => ({
+      item,
+      phase,
+      parent: item.parentId === null ? undefined : byId.get(item.parentId),
+      projectId,
+    })),
+  );
+}
+
+/**
+ * The columns of the board, each with its cards in order (ADR-0155): A fazer and Em andamento by the end, from the
+ * earliest; Concluída by the day of completion, from the latest; on a tie, the order the cards come in. A card drafted
+ * to another column (`drafts`, while its progress is being saved) shows in that column.
+ */
+export function columnsOf(
+  cards: readonly BoardCard[],
+  drafts: ReadonlyMap<string, BoardColumnId> = new Map(),
+): BoardColumn[] {
   const placed = new Map<BoardColumnId, { card: BoardCard; order: number }[]>(
     boardColumnIds.map((id) => [id, []]),
   );
-  let order = 0;
-  for (const phase of schedule.phases) {
-    for (const item of phase.items) {
-      order += 1;
-      if (!hasCard(item)) {
-        continue;
-      }
-      const parent = item.parentId === null ? undefined : byId.get(item.parentId);
-      const column = drafts.get(item.id) ?? columnOf(item);
-      placed.get(column)?.push({ card: { item, phase, parent }, order });
-    }
-  }
+  cards.forEach((card, order) => {
+    placed.get(drafts.get(card.item.id) ?? columnOf(card.item))?.push({ card, order });
+  });
   return boardColumnIds.map((id) => ({
     id,
     cards: (placed.get(id) ?? [])
       .sort((one, other) => compare(id, one.card.item, other.card.item) || one.order - other.order)
       .map(({ card }) => card),
   }));
+}
+
+/** The columns of the board of a schedule (ADR-0155), in the order of the schedule on a tie. */
+export function boardColumns(
+  schedule: Schedule,
+  drafts: ReadonlyMap<string, BoardColumnId> = new Map(),
+  projectId = '',
+): BoardColumn[] {
+  return columnsOf(cardsOf(schedule, projectId), drafts);
 }
 
 /** The order of two cards in a column: the end ascending, or the completion descending in Concluída. */

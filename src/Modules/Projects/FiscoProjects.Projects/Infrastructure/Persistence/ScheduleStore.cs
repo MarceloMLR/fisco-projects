@@ -118,6 +118,22 @@ internal sealed class ScheduleStore(ProjectsDbContext db) : IScheduleStore
         return [.. rows.Select(row => new OwnedTask(row.item.ProjectId, row.Code, row.PhaseName, row.item))];
     }
 
+    public async Task<IReadOnlyList<TaskProject>> ProjectsWithTasksOfAsync(
+        Guid ownerId, bool isAdministrator, DateOnly? completedFrom, CancellationToken cancellationToken) =>
+        await (
+            from project in db.Projects.AsNoTracking()
+            where project.Status != ProjectStatus.Completed
+                && project.Status != ProjectStatus.Cancelled
+                && (isAdministrator || db.ProjectMembers.Any(member => member.ProjectId == project.Id && member.UserId == ownerId))
+                && db.ScheduleItems.Any(item => item.ProjectId == project.Id
+                    && item.Kind == ScheduleItemKind.Task
+                    && item.OwnerId == ownerId
+                    && !db.ScheduleItems.Any(child => child.ParentId == item.Id)
+                    && (item.Progress < 100 || (completedFrom != null && item.CompletedOn >= completedFrom)))
+            orderby project.Code
+            select new TaskProject(project.Id, project.Code, project.Name))
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<UpcomingMilestone>> UpcomingMilestonesAsync(
         Guid userId, DateOnly firstDay, int count, CancellationToken cancellationToken)
     {
