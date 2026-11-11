@@ -31,6 +31,8 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<PersonAbsence> PersonAbsences => Set<PersonAbsence>();
 
+    public DbSet<ScheduleComment> ScheduleComments => Set<ScheduleComment>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }

@@ -203,6 +203,9 @@ public static class ProjectProblems
 
     /// <summary>Someone changed the items of the change after it, so it is not undone nor redone (ADR-0091); status 409.</summary>
     public const string ScheduleUndoBlocked = "urn:fiscoprojects:problem:schedule-undo-blocked";
+
+    /// <summary>A comment mentions a person who is not in the project (ADR-0157); status 400.</summary>
+    public const string CommentMentionRefused = "urn:fiscoprojects:problem:comment-mention-refused";
 }
 
 /// <summary>
@@ -252,6 +255,7 @@ internal static class ProjectEndpoints
         projects.MapMsProjectImportEndpoints();
         projects.MapProjectMemberEndpoints();
         projects.MapScheduleEndpoints();
+        projects.MapScheduleCommentEndpoints();
         projects.MapOverviewEndpoints();
     }
 

@@ -29,6 +29,9 @@ public sealed record ProjectViewer(Guid UserId, bool IsAdministrator);
 /// <param name="CanManageAbsences">
 /// Registers and removes the absences of the people of the project: the Administrator and the manager (ADR-0141).
 /// </param>
+/// <param name="CanComment">
+/// Comments on the tasks and the milestones: everyone in the project but the viewer, and the Administrator (ADR-0157).
+/// </param>
 public sealed record ProjectPermissions(
     bool CanView,
     bool CanEditData,
@@ -40,9 +43,10 @@ public sealed record ProjectPermissions(
     bool CanDelete = false,
     bool CanChooseFolder = false,
     bool CanExportSchedule = false,
-    bool CanManageAbsences = false)
+    bool CanManageAbsences = false,
+    bool CanComment = false)
 {
-    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true, true, true);
+    private static readonly ProjectPermissions All = new(true, true, true, true, true, true, true, true, true, true, true, true);
     private static readonly ProjectPermissions None = new(false, false, false, false, false, false, false);
 
     public static ProjectPermissions Of(ProjectViewer viewer, ProjectRole? role)
@@ -62,8 +66,9 @@ public sealed record ProjectPermissions(
                 CanEditData = true,
                 CanManagePeople = true,
                 CanUpdateOwnProgress = true,
+                CanComment = true,
             },
-            ProjectRole.Contributor or ProjectRole.Developer => None with { CanView = true, CanUpdateOwnProgress = true },
+            ProjectRole.Contributor or ProjectRole.Developer => None with { CanView = true, CanUpdateOwnProgress = true, CanComment = true },
             ProjectRole.Viewer => None with { CanView = true },
             _ => None,
         };
@@ -81,4 +86,10 @@ public sealed record ProjectPermissions(
     /// lead, the contributor and the developer only of the ones they are in charge of (ADR-0043).
     /// </summary>
     public bool MayUpdateProgress(bool isOwner) => CanEditSchedule || (CanUpdateOwnProgress && isOwner);
+
+    /// <summary>
+    /// Whether the person may remove a comment of the schedule: the Administrator and the manager, who edit the schedule,
+    /// any of them; who comments, only the own ones (ADR-0157).
+    /// </summary>
+    public bool MayRemoveComment(bool isAuthor) => CanEditSchedule || (CanComment && isAuthor);
 }

@@ -148,6 +148,8 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, NoticeRo
         NoticeKind.AcceptanceRequested,
         NoticeKind.AcceptanceReminded,
         NoticeKind.TaskAssigned,
+        NoticeKind.TaskMentioned,
+        NoticeKind.TaskCommented,
     };
 
     public async Task DeliverAsync(

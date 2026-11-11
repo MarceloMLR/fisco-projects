@@ -102,7 +102,8 @@ public sealed record ScheduleView(
     int MissedDeadlines = 0,
     IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null,
     IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null,
-    IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>? OwnerAbsences = null);
+    IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>? OwnerAbsences = null,
+    IReadOnlyDictionary<Guid, int>? CommentCounts = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -111,7 +112,8 @@ public sealed class GetSchedule(
     IUserDirectory users,
     IWorkCalendar calendar,
     InstallationClock clock,
-    IAbsenceStore absences)
+    IAbsenceStore absences,
+    IScheduleCommentStore comments)
 {
     /// <returns>The schedule, empty while the project has none, or null when the project does not exist for the person.</returns>
     public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -167,7 +169,9 @@ public sealed class GetSchedule(
                     group => (IReadOnlyList<ScheduleLink>)[.. group.Select(dependency =>
                         new ScheduleLink(dependency.PredecessorId, dependency.Type, dependency.Lag))]),
             analysis?.Slack,
-            ownerAbsences);
+            ownerAbsences,
+            // How many comments each item has, for the Lista and the Quadro (ADR-0157).
+            schedule.Items.Count == 0 ? null : await comments.CountsAsync(projectId, cancellationToken));
     }
 
     /// <summary>

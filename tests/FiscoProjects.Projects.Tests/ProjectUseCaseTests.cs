@@ -65,7 +65,8 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
 
         details!.Members.Should().Equal(new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager));
         details.Permissions.Should().Be(new ProjectPermissions(
-            true, true, true, true, true, true, true, CanChooseFolder: true, CanExportSchedule: true, CanManageAbsences: true));
+            true, true, true, true, true, true, true, CanChooseFolder: true, CanExportSchedule: true, CanManageAbsences: true,
+            CanComment: true));
     }
 
     [Fact(DisplayName = "Projeto para outro gerente")]
@@ -103,7 +104,7 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         details!.Members.Should().Equal(
             new ProjectPerson(_marina, "Marina Costa", ProjectRole.Manager),
             new ProjectPerson(_rafael, "Rafael Souza", ProjectRole.TechLead));
-        details.Permissions.Should().Be(new ProjectPermissions(true, true, false, true, false, false, true));
+        details.Permissions.Should().Be(new ProjectPermissions(true, true, false, true, false, false, true, CanComment: true));
     }
 
     [Fact(DisplayName = "Líder técnico sem o papel no sistema")]
@@ -182,7 +183,8 @@ public sealed class ProjectUseCaseTests(SqlServerFixture sqlServer) : IAsyncLife
         var rafael = new ProjectViewer(_rafael, false);
 
         (await GetAsync(created.Id!.Value, rafael))!.Permissions.Should()
-            .Be(new ProjectPermissions(true, false, false, false, false, false, role != ProjectRole.Viewer));
+            .Be(new ProjectPermissions(
+                true, false, false, false, false, false, role != ProjectRole.Viewer, CanComment: role != ProjectRole.Viewer));
         (await ChangeAsync(created.Id!.Value, new ProjectChanges("ERP-FIN", "Outro", null, null), rafael))
             .Outcome.Should().Be(ProjectSaveOutcome.Forbidden);
         (await ChangeStatusAsync(created.Id!.Value, ProjectStatus.Paused, rafael)).Should().Be(ProjectStatusOutcome.Forbidden);

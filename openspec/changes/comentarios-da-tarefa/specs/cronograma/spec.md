@@ -29,7 +29,7 @@ Todos do projeto menos o Leitor, e o administrador, MUST poder comentar com o te
 - **THEN** ele vê os comentários sem o editor, e a API responde 403 ao comentário dele
 
 #### Scenario: Projeto encerrado sem comentários novos
-- **WHEN** alguém comenta numa tarefa de um projeto concluído
+- **WHEN** alguém comenta numa tarefa de um projeto cancelado
 - **THEN** a API responde 409, e a tela mostra os comentários sem o editor
 
 ### Requirement: Apagar um comentário

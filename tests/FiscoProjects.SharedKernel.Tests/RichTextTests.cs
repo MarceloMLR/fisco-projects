@@ -1,9 +1,6 @@
-using FiscoProjects.Files.Contracts;
-using FiscoProjects.Tickets.Domain;
+namespace FiscoProjects.SharedKernel.Tests;
 
-namespace FiscoProjects.Tickets.Tests;
-
-// Spec: chamados, "Mensagens do chamado" and "Anexos do chamado" (ADR-0026).
+// Spec: chamados, "Mensagens do chamado" (ADR-0026), and cronograma, "Comentar um item" (ADR-0157): the same text.
 public sealed class RichTextTests
 {
     private const string Person = "0199f5a2-7c1e-7d40-9a1b-000000000006";
@@ -73,14 +70,4 @@ public sealed class RichTextTests
         RichText.Parse(json)!.RenameMention(Guid.CreateVersion7(), "Pessoa removida nº 1").Text
             .Should().Be("@Carla Mendes e @Diego Torres, Carla Mendes pediu.\n@Carla Mendes");
     }
-
-    [Theory(DisplayName = "Anexos recusados")]
-    [InlineData("nota.xml", 10, "<nfe/>", FileRefusal.None)]
-    [InlineData("nota.xml", 0, "", FileRefusal.Empty)]
-    [InlineData("nota.xml", 2048, "<nfe/>", FileRefusal.TooLarge)]
-    [InlineData("setup.EXE", 10, "abc", FileRefusal.Dangerous)]
-    [InlineData("script.ps1", 10, "abc", FileRefusal.Dangerous)]
-    [InlineData("foto.png", 10, "MZ", FileRefusal.Dangerous)]
-    public void Attachments_AreCheckedByNameSizeAndStart(string name, long size, string start, FileRefusal refusal) =>
-        FileTypes.Check(name, size, System.Text.Encoding.ASCII.GetBytes(start), maxBytes: 1024).Should().Be(refusal);
 }
