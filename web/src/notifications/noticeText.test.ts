@@ -124,6 +124,21 @@ describe('Texto das notificações', () => {
     ).toBe('Marina Costa passou a tarefa Parametrizar regras de ICMS para você');
   });
 
+  // Spec: avisos, requirements "Aviso de menção num comentário" and "Aviso de comentário ao responsável" (ADR-0157).
+  it('Menção e comentário na tarefa', () => {
+    const values = {
+      project: 'ERP-FIN',
+      item: 'Parametrizar regras de ICMS',
+      title: 'Parametrizar regras de ICMS',
+    };
+    expect(noticeText(notification('TaskMentioned', values, 'Carla Mendes'), t)).toBe(
+      'Carla Mendes mencionou você em Parametrizar regras de ICMS',
+    );
+    expect(noticeText(notification('TaskCommented', values, 'Marina Costa'), t)).toBe(
+      'Marina Costa comentou na tarefa Parametrizar regras de ICMS',
+    );
+  });
+
   it('Fornecedor, com o status em minúsculas', () => {
     expect(
       noticeText(

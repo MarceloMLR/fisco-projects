@@ -277,3 +277,11 @@ A carga de demonstração MUST mostrar as horas apontadas e previstas, a carga d
 #### Scenario: Datas-limite, notas e dependências em outros projetos
 - **WHEN** o comando carrega os dados de demonstração e alguém abre o cronograma de outro projeto em andamento
 - **THEN** há datas-limite em mais de um projeto, uma delas estourada, notas em mais de um projeto e uma dependência "começa junto" fora do projeto principal
+
+### Requirement: Comentários na demonstração
+
+A carga de demonstração MUST escrever, pelas pessoas do projeto principal, comentários em tarefas dele, um deles com uma menção (ADR-0089, ADR-0157).
+
+#### Scenario: Comentários na demonstração
+- **WHEN** o comando carrega os dados de demonstração e alguém abre o Quadro do projeto principal
+- **THEN** pelo menos um cartão mostra a quantidade de comentários, e o detalhe da tarefa mostra a menção

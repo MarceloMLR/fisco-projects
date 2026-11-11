@@ -7,7 +7,8 @@ namespace FiscoProjects.Projects.Application;
 /// <summary>
 /// What the projects tell the notices (ADR-0037, ADR-0038), after the change is saved: the person included in a
 /// project or with another role, the people of a project whose status changed, the owners of the tasks whose dates
-/// changed, one item per task, and the new owner of a task (ADR-0156).
+/// changed, one item per task, the new owner of a task (ADR-0156), and the people mentioned in a comment and the owner
+/// of the task commented on (ADR-0157).
 /// </summary>
 public sealed class ProjectNotices(IEnumerable<INoticeBoard> boards)
 {
@@ -109,6 +110,47 @@ public sealed class ProjectNotices(IEnumerable<INoticeBoard> boards)
             .ToList();
         return boards.PostAsync(notices, cancellationToken);
     }
+
+    /// <summary>
+    /// A new comment on a task or a milestone (ADR-0157): the people mentioned hear about the mention, then the person in
+    /// charge of the task about the comment, unless already told; who wrote it, never. The link opens the item.
+    /// </summary>
+    public Task CommentedAsync(
+        Project project, CommentedItem item, Guid actorId, IReadOnlyCollection<Guid> mentioned, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(mentioned);
+        var told = new HashSet<Guid> { actorId };
+        var notices = new List<Notice>();
+        var people = mentioned.Where(told.Add).ToList();
+        if (people.Count > 0)
+        {
+            notices.Add(CommentNotice(NoticeKind.TaskMentioned, project, item, people, actorId));
+        }
+
+        if (item.OwnerId is { } owner && told.Add(owner))
+        {
+            notices.Add(CommentNotice(NoticeKind.TaskCommented, project, item, [owner], actorId));
+        }
+
+        return boards.PostAsync(notices, cancellationToken);
+    }
+
+    private static Notice CommentNotice(
+        NoticeKind kind, Project project, CommentedItem item, IReadOnlyList<Guid> people, Guid actorId) =>
+        new(
+            kind,
+            people,
+            actorId,
+            project.Id,
+            $"/projects/{project.Id}/schedule?item={item.Id}",
+            new Dictionary<string, string>
+            {
+                [NoticeValues.Project] = project.Code,
+                [NoticeValues.Item] = item.Name,
+                [NoticeValues.Title] = item.Name,
+            });
 
     private static string PathOf(Project project) => $"/projects/{project.Id}";
 

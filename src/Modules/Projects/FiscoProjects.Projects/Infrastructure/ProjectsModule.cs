@@ -52,6 +52,10 @@ public static class ProjectsModule
         services.AddScoped<RemoveMemberAbsence>();
         services.AddScoped<CleanUpAbsences>();
         services.AddScoped<IPersonalDataEraser, ProjectsPersonalData>();
+        services.AddScoped<IScheduleCommentStore, ScheduleCommentStore>();
+        services.AddScoped<ListScheduleComments>();
+        services.AddScoped<AddScheduleComment>();
+        services.AddScoped<RemoveScheduleComment>();
         services.AddHostedService<AbsenceCleanup>();
         services.AddScoped<AddProjectMember>();
         services.AddScoped<ChangeProjectMemberRole>();

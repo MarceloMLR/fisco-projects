@@ -4,13 +4,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Unicode;
 
-namespace FiscoProjects.Tickets.Domain;
+namespace FiscoProjects.SharedKernel;
 
 /// <summary>
-/// A text with basic formatting (ADR-0026): the document of the editor (Tiptap, ProseMirror) as JSON, with only
+/// A text with basic formatting (ADR-0026, ADR-0157): the document of the editor (Tiptap, ProseMirror) as JSON, with only
 /// paragraphs, line breaks, lists, mentions of people, bold and links to http, https or mailto. Anything else is
 /// refused, so the screen draws it without HTML. Keeps the plain text, for the search and the e-mails, and the people
-/// mentioned.
+/// mentioned. The same rule for the conversation of the tickets and the comments of the schedule.
 /// </summary>
 public sealed class RichText
 {

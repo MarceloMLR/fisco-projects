@@ -1,5 +1,6 @@
 using FiscoProjects.Files.Contracts;
 using FiscoProjects.Projects.Contracts;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Tickets.Domain;
 
 namespace FiscoProjects.Tickets.Application;

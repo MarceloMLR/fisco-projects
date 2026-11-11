@@ -65,6 +65,12 @@ public enum NoticeKind
 
     /// <summary>The person became the owner of a task (ADR-0156).</summary>
     TaskAssigned = 21,
+
+    /// <summary>The person was mentioned in a comment on a task or a milestone (ADR-0157).</summary>
+    TaskMentioned = 22,
+
+    /// <summary>Someone commented on a task the person is in charge of (ADR-0157).</summary>
+    TaskCommented = 23,
 }
 
 /// <summary>

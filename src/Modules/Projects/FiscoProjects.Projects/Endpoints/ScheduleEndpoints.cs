@@ -52,7 +52,8 @@ public sealed record ScheduleItemResponse(
     [property: Description("The business days the item may end later without moving the end of the project; null for a task with subtasks (GanttB-1).")] int? Float,
     [property: Description("The latest day the item may end without moving the end of the project; null for a task with subtasks (GanttB-1).")] DateOnly? LatestEnd,
     [property: Description("What the team needs to know of the item, in plain text with line breaks; null without one (ADR-0139).")] string? Note,
-    [property: Description("The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141).")] IReadOnlyList<AbsencePeriodResponse> OwnerAbsences);
+    [property: Description("The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141).")] IReadOnlyList<AbsencePeriodResponse> OwnerAbsences,
+    [property: Description("How many comments the item has (ADR-0157).")] int CommentCount);
 
 /// <summary>
 /// A dependency of an item (ADR-0137): the item it depends on, the kind ("finishes, then starts", "starts with" or
@@ -592,7 +593,8 @@ internal static class ScheduleEndpoints
             item.Note,
             view.OwnerAbsences is not null && view.OwnerAbsences.TryGetValue(item.Id, out var away)
                 ? [.. away.Select(period => new AbsencePeriodResponse(period.Start, period.End))]
-                : []);
+                : [],
+            view.CommentCounts is not null && view.CommentCounts.TryGetValue(item.Id, out var comments) ? comments : 0);
     }
 
     /// <summary>The answer to a change without a body of its own.</summary>

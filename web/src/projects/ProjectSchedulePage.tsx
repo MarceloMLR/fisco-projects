@@ -81,8 +81,10 @@ import {
 } from './ScheduleBaseline';
 import { UndoButton } from './ScheduleSteps';
 import { SchedulePhaseDialog } from './SchedulePhaseDialog';
+import { CommentSection } from './ScheduleComments';
 import { SubtaskSection } from './ScheduleSubtasks';
 import {
+  CommentCount,
   DeadlineStatus,
   LateCounts,
   MilestoneStatus,
@@ -332,6 +334,7 @@ export function ProjectSchedulePage() {
                 {row.item.name}
               </Box>
               <NoteMark note={row.item.note} />
+              <CommentCount count={row.item.commentCount} />
             </Box>
           ),
       },
@@ -1403,6 +1406,7 @@ function ItemEditor({
           </Button>
         </Box>
       </Form>
+      <CommentSection project={project} item={item} />
       <Dialog
         open={removing}
         alert
@@ -1598,6 +1602,7 @@ function ItemDetails({
           </>
         )}
       </Box>
+      <CommentSection project={project} item={item} />
     </Box>
   );
 }

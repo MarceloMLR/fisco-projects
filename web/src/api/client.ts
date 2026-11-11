@@ -39,6 +39,8 @@ export type ProjectScheduleSummary = components['schemas']['ProjectScheduleSumma
 export type Schedule = components['schemas']['ScheduleResponse'];
 export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
 export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
+/** A comment on a task or a milestone (ADR-0157). */
+export type ScheduleComment = components['schemas']['ScheduleCommentResponse'];
 export type ProjectTemplate = components['schemas']['TemplateResponse'];
 export type MsProjectPreview = components['schemas']['MsProjectPreviewResponse'];
 export type MsProjectResource = components['schemas']['MsProjectResourceResponse'];
@@ -288,6 +290,7 @@ export const projectProblems = {
   ticketsChanged: 'urn:fiscoprojects:problem:project-tickets-changed',
   hasFiles: 'urn:fiscoprojects:problem:project-has-files',
   absenceOverlap: 'urn:fiscoprojects:problem:absence-overlap',
+  commentMentionRefused: 'urn:fiscoprojects:problem:comment-mention-refused',
 } as const;
 
 /** Problem types of the tickets (TicketProblems in the Tickets module). */

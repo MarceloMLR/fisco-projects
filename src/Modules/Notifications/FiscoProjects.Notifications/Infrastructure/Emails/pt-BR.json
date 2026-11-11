@@ -75,6 +75,16 @@
       "subject": "Tarefa atribuída a você: {{item}}",
       "body": "{{actor}} passou para você a tarefa {{item}}, do projeto {{project}}, que termina em {{end}}.",
       "action": "Abrir a tarefa"
+    },
+    "taskMentioned": {
+      "subject": "{{actor}} mencionou você em {{item}}",
+      "body": "{{actor}} mencionou você num comentário de {{item}}, do projeto {{project}}.",
+      "action": "Ler o comentário"
+    },
+    "taskCommented": {
+      "subject": "Novo comentário na tarefa {{item}}",
+      "body": "{{actor}} comentou na tarefa {{item}}, do projeto {{project}}, de que você é responsável.",
+      "action": "Ler o comentário"
     }
   },
   "summary": {
@@ -214,6 +224,14 @@
       "taskAssigned": {
         "description": "Tarefa atribuída a você",
         "template": "{person} passou a tarefa {item} para você"
+      },
+      "taskMentioned": {
+        "description": "Menção a você num comentário de tarefa",
+        "template": "{person} mencionou você em {item}"
+      },
+      "taskCommented": {
+        "description": "Comentário numa tarefa sua",
+        "template": "{person} comentou na tarefa {item}"
       }
     }
   }

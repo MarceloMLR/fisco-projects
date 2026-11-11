@@ -1119,6 +1119,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/schedule/items/{itemId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListScheduleComments"];
+        put?: never;
+        post: operations["AddScheduleComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{id}/schedule/items/{itemId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RemoveScheduleComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/{id}/overview": {
         parameters: {
             query?: never;
@@ -2747,6 +2779,12 @@ export interface components {
         };
         /** @enum {unknown} */
         ClientStatus: "Active" | "Inactive";
+        /** @description The author of a comment, by the current name. */
+        CommentAuthorResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         /** @description Many dates considered or disregarded at once: the keys of calculated holidays and the ids of local ones. */
         ConsiderHolidaysRequest: {
             isConsidered: boolean;
@@ -3587,7 +3625,7 @@ export interface components {
          * @description What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037.
          * @enum {unknown}
          */
-        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged" | "AcceptanceRequested" | "AcceptanceReminded" | "AcceptanceSigned" | "AcceptanceRefused" | "TaskAssigned";
+        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged" | "AcceptanceRequested" | "AcceptanceReminded" | "AcceptanceSigned" | "AcceptanceRefused" | "TaskAssigned" | "TaskMentioned" | "TaskCommented";
         /** @description A page of the bell, the newest first, with how many are not read and whether there are older ones. */
         NotificationPageResponse: {
             items: components["schemas"]["NotificationResponse"][];
@@ -4199,6 +4237,29 @@ export interface components {
             /** Format: int32 */
             deviation: null | number;
         };
+        /** @description A new comment: the text with its formatting, as the JSON of the editor. */
+        ScheduleCommentRequest: {
+            body: null | string;
+        };
+        /**
+         * @description A comment on a task or a milestone (ADR-0157): the author, the text with its formatting as the JSON of the editor, the
+         *     moment it was sent and whether the person who asks may remove it now.
+         */
+        ScheduleCommentResponse: {
+            /** Format: uuid */
+            id: string;
+            author: components["schemas"]["CommentAuthorResponse"];
+            /** @description The text with its formatting, as the JSON of the editor (ADR-0026). */
+            body: string;
+            /** Format: date-time */
+            sentAt: string;
+            canRemove: boolean;
+        };
+        /** @description The comments of an item, the oldest first, and whether the person who asks may comment now. */
+        ScheduleCommentsResponse: {
+            items: components["schemas"]["ScheduleCommentResponse"][];
+            canComment: boolean;
+        };
         ScheduleCreatedResponse: {
             /** Format: uuid */
             id: string;
@@ -4337,6 +4398,11 @@ export interface components {
             note: null | string;
             /** @description The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141). */
             ownerAbsences: components["schemas"]["AbsencePeriodResponse"][];
+            /**
+             * Format: int32
+             * @description How many comments the item has (ADR-0157).
+             */
+            commentCount: number;
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
@@ -9530,6 +9596,171 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleStepResponse"];
                 };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListScheduleComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleCommentsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AddScheduleComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    RemoveScheduleComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unauthorized */
             401: {

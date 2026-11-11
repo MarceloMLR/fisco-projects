@@ -1,5 +1,6 @@
 using FiscoProjects.Persistence.Auditing;
 using FiscoProjects.Projects.Contracts;
+using FiscoProjects.SharedKernel;
 using FiscoProjects.Tickets.Contracts;
 using FiscoProjects.Tickets.Domain;
 using FiscoProjects.Users.Contracts;

@@ -440,6 +440,42 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
                 });
 
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "ItemId", "SentAt");
+
+                    b.ToTable("schedule_comments", "projects");
+
+                    b.HasAnnotation("FiscoProjects:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleDependency", b =>
                 {
                     b.Property<Guid>("Id")
@@ -660,6 +696,15 @@ namespace FiscoProjects.Projects.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleChange", b =>
                 {
                     b.HasOne("FiscoProjects.Projects.Domain.Schedule", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FiscoProjects.Projects.Domain.ScheduleComment", b =>
+                {
+                    b.HasOne("FiscoProjects.Projects.Domain.Project", null)
                         .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)

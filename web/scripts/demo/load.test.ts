@@ -1100,6 +1100,36 @@ describe('Ausências na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Comentários na demonstração" (ADR-0157).
+describe('Comentários na demonstração', () => {
+  it('Comentários na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Each comment of the plan by its person, on an item of the schedule, with the mention in the text.
+    const comments = demoProjects.flatMap((project) => project.comments ?? []);
+    const pattern = / POST \/api\/projects\/[^/]+\/schedule\/items\/[^/]+\/comments$/;
+    expect(callsBy(pattern).map((call) => call.split(' ')[0])).toEqual(
+      comments.map((comment) => comment.by),
+    );
+    const sent = callsBy(pattern).flatMap((call) => bodies.get(call.split(' ')[2] ?? '') ?? []) as {
+      body: string;
+    }[];
+    const mentioned = comments.filter((comment) => comment.mention !== undefined);
+    expect(mentioned.length).toBeGreaterThan(0);
+    for (const comment of mentioned) {
+      expect(sent.some(({ body }) => body.includes(idOf(comment.mention ?? '')))).toBe(true);
+    }
+    // Once the schedule of the project is built: after its last item.
+    const first = calls.findIndex((call) => pattern.test(call));
+    const project = (calls[first] ?? '').split(' ')[2]?.split('/')[3] ?? '';
+    const lastItem = calls.findLastIndex((call) =>
+      call.endsWith(` POST /api/projects/${project}/schedule/items`),
+    );
+    expect(lastItem).toBeGreaterThan(-1);
+    expect(first).toBeGreaterThan(lastItem);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Termos na demonstração".
 describe('Termos na demonstração', () => {
   it('Termos na demonstração', async () => {

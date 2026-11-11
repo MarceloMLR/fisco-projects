@@ -103,17 +103,17 @@ public sealed class ProjectTests
 
     // The matrix of ADR-0043 for the project: viewing, changing the data, changing the status, managing the people,
     // editing the schedule, updating the progress of one's own tasks, deleting it (ADR-0041), choosing its folder
-    // (ADR-0122), downloading the XML of the MS Project with the e-mails (ADR-0136) and registering the absences of its
-    // people (ADR-0141).
+    // (ADR-0122), downloading the XML of the MS Project with the e-mails (ADR-0136), registering the absences of its
+    // people (ADR-0141) and commenting on its tasks and milestones (ADR-0157).
     [Theory(DisplayName = "Permissões no projeto")]
-    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true, false, true, true, true)]
-    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true, false, false, false, false)]
-    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true, false, false, false, false)]
-    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true, false, false, false, false)]
-    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false, false, false, false, false)]
-    [InlineData(false, null, false, false, false, false, false, false, false, false, false, false, false)]
-    [InlineData(true, null, true, true, true, true, true, true, true, true, true, true, true)]
-    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true, true, true, true, true)]
+    [InlineData(false, ProjectRole.Manager, true, true, true, true, true, true, true, false, true, true, true, true)]
+    [InlineData(false, ProjectRole.TechLead, true, true, false, true, false, false, true, false, false, false, false, true)]
+    [InlineData(false, ProjectRole.Contributor, true, false, false, false, false, false, true, false, false, false, false, true)]
+    [InlineData(false, ProjectRole.Developer, true, false, false, false, false, false, true, false, false, false, false, true)]
+    [InlineData(false, ProjectRole.Viewer, true, false, false, false, false, false, false, false, false, false, false, false)]
+    [InlineData(false, null, false, false, false, false, false, false, false, false, false, false, false, false)]
+    [InlineData(true, null, true, true, true, true, true, true, true, true, true, true, true, true)]
+    [InlineData(true, ProjectRole.Viewer, true, true, true, true, true, true, true, true, true, true, true, true)]
     public void Permissions_FollowTheMatrix(
         bool administrator,
         ProjectRole? role,
@@ -127,13 +127,33 @@ public sealed class ProjectTests
         bool canDelete,
         bool canChooseFolder,
         bool canExportSchedule,
-        bool canManageAbsences)
+        bool canManageAbsences,
+        bool canComment)
     {
         var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
 
         permissions.Should().Be(new ProjectPermissions(
             canView, canEditData, canChangeStatus, canManagePeople, canManageManagers, canEditSchedule, canUpdateOwnProgress,
-            canDelete, canChooseFolder, canExportSchedule, canManageAbsences));
+            canDelete, canChooseFolder, canExportSchedule, canManageAbsences, canComment));
+    }
+
+    // ADR-0157: the Administrator and the manager remove any comment; who comments, only the own ones; the viewer, none.
+    [Theory(DisplayName = "Quem apaga cada comentário")]
+    [InlineData(true, null, false, true)]
+    [InlineData(false, ProjectRole.Manager, false, true)]
+    [InlineData(false, ProjectRole.TechLead, true, true)]
+    [InlineData(false, ProjectRole.TechLead, false, false)]
+    [InlineData(false, ProjectRole.Contributor, true, true)]
+    [InlineData(false, ProjectRole.Contributor, false, false)]
+    [InlineData(false, ProjectRole.Developer, true, true)]
+    [InlineData(false, ProjectRole.Developer, false, false)]
+    [InlineData(false, ProjectRole.Viewer, true, false)]
+    [InlineData(false, null, true, false)]
+    public void WhoRemovesAComment(bool administrator, ProjectRole? role, bool isAuthor, bool allowed)
+    {
+        var permissions = ProjectPermissions.Of(new ProjectViewer(Guid.CreateVersion7(), administrator), role);
+
+        permissions.MayRemoveComment(isAuthor).Should().Be(allowed);
     }
 
     // ADR-0043: the Administrator and the manager update the progress of any task; the tech lead, the contributor and

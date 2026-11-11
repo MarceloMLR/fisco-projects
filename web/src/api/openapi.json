@@ -5053,6 +5053,225 @@
         }
       }
     },
+    "/api/projects/{id}/schedule/items/{itemId}/comments": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "ListScheduleComments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCommentsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "AddScheduleComment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCommentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCreatedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/schedule/items/{itemId}/comments/{commentId}": {
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "operationId": "RemoveScheduleComment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{id}/overview": {
       "get": {
         "tags": [
@@ -12377,6 +12596,23 @@
           "Inactive"
         ]
       },
+      "CommentAuthorResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "The author of a comment, by the current name."
+      },
       "ConsiderHolidaysRequest": {
         "required": [
           "isConsidered",
@@ -15100,7 +15336,9 @@
           "AcceptanceReminded",
           "AcceptanceSigned",
           "AcceptanceRefused",
-          "TaskAssigned"
+          "TaskAssigned",
+          "TaskMentioned",
+          "TaskCommented"
         ],
         "description": "What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037."
       },
@@ -16999,6 +17237,71 @@
         },
         "description": "The baseline of the project (ADR-0021): the day it was saved, the start and the end of the project then, and the\nbusiness days the end of the project now is after (positive) or before (negative) it, null without items now."
       },
+      "ScheduleCommentRequest": {
+        "required": [
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A new comment: the text with its formatting, as the JSON of the editor."
+      },
+      "ScheduleCommentResponse": {
+        "required": [
+          "id",
+          "author",
+          "body",
+          "sentAt",
+          "canRemove"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author": {
+            "$ref": "#/components/schemas/CommentAuthorResponse"
+          },
+          "body": {
+            "type": "string",
+            "description": "The text with its formatting, as the JSON of the editor (ADR-0026)."
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canRemove": {
+            "type": "boolean"
+          }
+        },
+        "description": "A comment on a task or a milestone (ADR-0157): the author, the text with its formatting as the JSON of the editor, the\nmoment it was sent and whether the person who asks may remove it now."
+      },
+      "ScheduleCommentsResponse": {
+        "required": [
+          "items",
+          "canComment"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleCommentResponse"
+            }
+          },
+          "canComment": {
+            "type": "boolean"
+          }
+        },
+        "description": "The comments of an item, the oldest first, and whether the person who asks may comment now."
+      },
       "ScheduleCreatedResponse": {
         "required": [
           "id"
@@ -17184,7 +17487,8 @@
           "float",
           "latestEnd",
           "note",
-          "ownerAbsences"
+          "ownerAbsences",
+          "commentCount"
         ],
         "type": "object",
         "properties": {
@@ -17349,6 +17653,11 @@
               "$ref": "#/components/schemas/AbsencePeriodResponse"
             },
             "description": "The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141)."
+          },
+          "commentCount": {
+            "type": "integer",
+            "description": "How many comments the item has (ADR-0157).",
+            "format": "int32"
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."

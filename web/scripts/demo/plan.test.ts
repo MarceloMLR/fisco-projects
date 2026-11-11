@@ -271,6 +271,39 @@ describe('Ausências na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Comentários na demonstração" (ADR-0157).
+describe('Comentários na demonstração', () => {
+  it('Comentários na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    if (main === undefined) {
+      throw new Error('No main project.');
+    }
+    const comments = main.comments ?? [];
+    const members = main.members ?? [];
+    const people = new Set([
+      main.manager ?? manager,
+      main.techLead,
+      ...members.map(([person]) => person),
+    ]);
+    // Who comments: everyone in the project but the viewer.
+    const viewers = new Set(
+      members.filter(([, role]) => role === 'Viewer').map(([person]) => person),
+    );
+    const items = new Set(main.phases.flatMap((phase) => phase.items).map((item) => item.name));
+    expect(comments.length).toBeGreaterThan(0);
+    for (const comment of comments) {
+      expect(items.has(comment.item)).toBe(true);
+      expect(people.has(comment.by)).toBe(true);
+      expect(viewers.has(comment.by)).toBe(false);
+      if (comment.mention !== undefined) {
+        expect(people.has(comment.mention)).toBe(true);
+        expect(comment.mention).not.toBe(comment.by);
+      }
+    }
+    expect(comments.some((comment) => comment.mention !== undefined)).toBe(true);
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Carga na demonstração" (ADR-0142).
 describe('Carga na demonstração', () => {
   it('Carga na demonstração', () => {

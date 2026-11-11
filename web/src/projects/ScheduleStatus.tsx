@@ -1,3 +1,4 @@
+import ChatBubbleOutlineOutlined from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import StickyNote2Outlined from '@mui/icons-material/StickyNote2Outlined';
 import Box from '@mui/material/Box';
@@ -117,6 +118,38 @@ export function NoteMark({ note }: { note: string | null }) {
         aria-label={t('projects.schedule.noteMark', { note })}
         sx={{ fontSize: 16, color: 'var(--text-secondary)' }}
       />
+    </Box>
+  );
+}
+
+/**
+ * How many comments the item has (ADR-0157): the icon and the number, with "3 comentários" on hover and for who reads
+ * the screen, in the Lista and on the card of the Quadro; nothing without comments.
+ */
+export function CommentCount({ count }: { count: number }) {
+  const { t } = useTranslation();
+  if (count === 0) {
+    return null;
+  }
+  const text = t('projects.schedule.comments.count', { count });
+  return (
+    <Box
+      component="span"
+      role="img"
+      aria-label={text}
+      title={text}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '2px',
+        flex: 'none',
+        fontSize: 12,
+        lineHeight: '16px',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      <ChatBubbleOutlineOutlined aria-hidden sx={{ fontSize: 16 }} />
+      <span aria-hidden>{count}</span>
     </Box>
   );
 }
