@@ -1778,7 +1778,28 @@
       "clientOwner": "{{name}} (cliente)",
       "clientOwnerWithoutClient": "O cliente",
       "clientTag": "Cliente",
-      "noteMark": "Notas: {{note}}"
+      "noteMark": "Notas: {{note}}",
+      "comments": {
+        "title": "Comentários",
+        "count_one": "{{count}} comentário",
+        "count_other": "{{count}} comentários",
+        "list": "Comentários de {{name}}",
+        "empty": "Nenhum comentário ainda.",
+        "label": "Comentário",
+        "placeholder": "Escreva um comentário. Use @ para mencionar alguém do projeto.",
+        "send": "Comentar",
+        "remove": "Apagar o comentário de {{name}}",
+        "removeTitle": "Apagar o comentário?",
+        "removeText": "O comentário de {{name}} sai de vez e não pode ser recuperado.",
+        "removeBack": "Voltar",
+        "removeConfirm": "Apagar comentário",
+        "removed": "Comentário apagado.",
+        "emptyText": "Escreva o comentário antes de enviar.",
+        "mentionRefused": "Só as pessoas do projeto podem ser mencionadas.",
+        "closed": "O projeto está encerrado: os comentários ficam como estão.",
+        "failed": "Não foi possível salvar. Tente de novo.",
+        "loadFailed": "Não foi possível carregar os comentários."
+      }
     },
     "timeline": {
       "views": {
@@ -3080,6 +3101,8 @@
       "projectStatusChanged": "O projeto {{project}} passou para {{status}}",
       "scheduleDatesChanged": "As datas de {{item}} mudaram para {{start}} a {{end}}",
       "taskAssigned": "{{actor}} passou a tarefa {{item}} para você",
+      "taskMentioned": "{{actor}} mencionou você em {{item}}",
+      "taskCommented": "{{actor}} comentou na tarefa {{item}}",
       "acceptanceRequested": "{{actor}} pediu o seu aceite: {{title}}",
       "acceptanceReminded": "{{actor}} lembrou o pedido de aceite: {{title}}",
       "acceptanceSigned": "{{actor}} enviou o termo assinado: {{title}}",

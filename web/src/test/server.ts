@@ -375,6 +375,8 @@ function demoItem(
     latestEnd: null,
     note: null,
     ownerAbsences: [],
+    // How many comments each item has (ADR-0157); none in the screens that do not look at them.
+    commentCount: 0,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,
@@ -1593,6 +1595,10 @@ export const handlers = [
     HttpResponse.json({ absences: [], canManage: false }),
   ),
   http.get('/api/projects/:id/schedule', () => HttpResponse.json(emptySchedule)),
+  // The comments of a task or a milestone (ADR-0157): none, and nobody comments.
+  http.get('/api/projects/:id/schedule/items/:itemId/comments', () =>
+    HttpResponse.json({ items: [], canComment: false }),
+  ),
   // The dates of a task by the calendar of the tests (ADR-0145).
   http.get('/api/projects/:id/schedule/item-dates', ({ request }) => {
     const query = new URL(request.url).searchParams;

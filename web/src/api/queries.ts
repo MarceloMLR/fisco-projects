@@ -228,6 +228,23 @@ export function memberAbsencesQuery(projectId: string, userId: string) {
 }
 
 /**
+ * The comments of a task or a milestone, the oldest first, and whether the person in the session comments now
+ * (ADR-0157); under the schedule of the project, so a change of the schedule refreshes them.
+ */
+export function scheduleCommentsQuery(projectId: string, itemId: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, projectId, 'schedule', 'comments', itemId] as const,
+    queryFn: ({ signal }) =>
+      dataOf(
+        api.GET('/api/projects/{id}/schedule/items/{itemId}/comments', {
+          params: { path: { id: projectId, itemId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
  * The e-mail of each person of a project by the id, from its members, to tell apart people of the same name in a
  * list to choose; an anonymized person has none.
  */

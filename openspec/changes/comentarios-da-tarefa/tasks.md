@@ -17,9 +17,9 @@
 
 ## 4. Tela
 
-- [ ] 4.1 Seção Comentários no detalhe da tarefa e do marco, com o editor, as menções e o apagar
-- [ ] 4.2 Quantidade de comentários na Lista e no cartão do Quadro
-- [ ] 4.3 Textos dos avisos no sino, o contrato da API e os testes de tela
+- [x] 4.1 Seção Comentários no detalhe da tarefa e do marco, com o editor, as menções e o apagar
+- [x] 4.2 Quantidade de comentários na Lista e no cartão do Quadro
+- [x] 4.3 Textos dos avisos no sino, o contrato da API e os testes de tela
 
 ## 5. Demonstração e documentação
 
