@@ -15099,7 +15099,8 @@
           "AcceptanceRequested",
           "AcceptanceReminded",
           "AcceptanceSigned",
-          "AcceptanceRefused"
+          "AcceptanceRefused",
+          "TaskAssigned"
         ],
         "description": "What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037."
       },

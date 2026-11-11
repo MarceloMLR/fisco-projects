@@ -147,6 +147,7 @@ public sealed class EmailChannel(EmailQueue queue, IDigestStore digest, NoticeRo
         NoticeKind.TicketOverdue,
         NoticeKind.AcceptanceRequested,
         NoticeKind.AcceptanceReminded,
+        NoticeKind.TaskAssigned,
     };
 
     public async Task DeliverAsync(

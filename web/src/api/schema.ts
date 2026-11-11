@@ -3587,7 +3587,7 @@ export interface components {
          * @description What happened, for the notices (ADR-0037, ADR-0038): one kind per event of the table of ADR-0037.
          * @enum {unknown}
          */
-        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged" | "AcceptanceRequested" | "AcceptanceReminded" | "AcceptanceSigned" | "AcceptanceRefused";
+        NoticeKind: "TicketOpened" | "TicketMessage" | "TicketMentioned" | "TicketInformationRequested" | "TicketResolved" | "TicketAssigned" | "TicketRequesterChanged" | "TicketTransferred" | "TicketDueSoon" | "TicketOverdue" | "TicketStatusChanged" | "VendorTicketUpdated" | "ProjectMemberAdded" | "ProjectRoleChanged" | "ProjectStatusChanged" | "ScheduleDatesChanged" | "AcceptanceRequested" | "AcceptanceReminded" | "AcceptanceSigned" | "AcceptanceRefused" | "TaskAssigned";
         /** @description A page of the bell, the newest first, with how many are not read and whether there are older ones. */
         NotificationPageResponse: {
             items: components["schemas"]["NotificationResponse"][];

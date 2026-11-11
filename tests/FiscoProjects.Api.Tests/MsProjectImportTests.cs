@@ -430,6 +430,28 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
             .Should().BeEquivalentTo([("Marina Costa", "Manager"), ("Carla Mendes", "Contributor")]);
     }
 
+    // Spec: avisos, requirement "Tarefa sem aviso de atribuição" (ADR-0156).
+    [Fact(DisplayName = "Projeto do MS Project")]
+    public async Task ANewProjectFromTheMsProject_TellsNoOwnerOfTheTasks()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+        var preview = await PreviewOfAsync(marina, Configuration(CarlaEmail), start: "2026-10-19");
+
+        var created = await SendAsync(marina, HttpMethod.Post, "/api/projects", new
+        {
+            code = "ERP-RH",
+            name = "Implantação do ERP de RH",
+            scheduleStart = "2026-10-19",
+            importedSchedule = ImportedSchedule(preview, new { directoryId = CarlaInTheDirectory, role = "Contributor" }),
+        });
+
+        var schedule = await marina.GetFromJsonAsync<JsonElement>($"/api/projects/{await IdOfAsync(created)}/schedule", Cancellation);
+        ItemsOf(schedule)[0].GetProperty("owner").GetProperty("name").GetString().Should().Be("Carla Mendes");
+        (await app.EmailsAsync()).Should().NotContain(email => email.Subject.StartsWith("Tarefa atribuída", StringComparison.Ordinal));
+    }
+
     [Fact(DisplayName = "Progresso do arquivo")]
     public async Task TheProgressOfTheFile_CompletesTheTaskOnItsEnd_AndReachesTheMilestoneToday()
     {
