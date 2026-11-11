@@ -39,6 +39,8 @@ export type ProjectScheduleSummary = components['schemas']['ProjectScheduleSumma
 export type Schedule = components['schemas']['ScheduleResponse'];
 export type SchedulePhase = components['schemas']['SchedulePhaseResponse'];
 export type ScheduleItem = components['schemas']['ScheduleItemResponse'];
+/** The tasks of the person in the session, by project (ADR-0158). */
+export type MyTasks = components['schemas']['MyTasksResponse'];
 /** A comment on a task or a milestone (ADR-0157). */
 export type ScheduleComment = components['schemas']['ScheduleCommentResponse'];
 export type ProjectTemplate = components['schemas']['TemplateResponse'];

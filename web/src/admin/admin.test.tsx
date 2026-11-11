@@ -22,6 +22,7 @@ describe('Barra lateral no computador', () => {
       expect(sidebarItems()).toEqual([
         defaultInstallation.name,
         ptBR.nav.home,
+        ptBR.nav.myTasks,
         ptBR.nav.projects,
         ptBR.nav.tickets,
         ptBR.nav.hours,

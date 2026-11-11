@@ -26,6 +26,7 @@ describe('Barra lateral no computador', () => {
     expect(items).toEqual([
       'Consultoria Fictícia',
       ptBR.nav.home,
+      ptBR.nav.myTasks,
       ptBR.nav.projects,
       ptBR.nav.tickets,
       ptBR.nav.hours,
@@ -35,6 +36,7 @@ describe('Barra lateral no computador', () => {
   it('Item da página atual', async () => {
     for (const [path, item] of [
       ['/', ptBR.nav.home],
+      ['/my-tasks', ptBR.nav.myTasks],
       ['/projects', ptBR.nav.projects],
       ['/tickets', ptBR.nav.tickets],
       ['/hours', ptBR.nav.hours],
@@ -95,6 +97,7 @@ describe('Estrutura no celular', () => {
       .map((link) => link.textContent);
     expect(items).toEqual([
       ptBR.nav.home,
+      ptBR.nav.myTasks,
       ptBR.nav.projects,
       ptBR.nav.tickets,
       ptBR.nav.hours,

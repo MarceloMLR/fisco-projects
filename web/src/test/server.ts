@@ -347,7 +347,7 @@ function withSchedule(
  * A task or milestone of the demonstration schedule, as the manager sees it: the progress of every task may be
  * updated.
  */
-function demoItem(
+export function demoItem(
   index: number,
   phaseId: string,
   item: Pick<ScheduleItem, 'name' | 'start' | 'end'> & Partial<ScheduleItem>,
@@ -1561,6 +1561,8 @@ export const handlers = [
     HttpResponse.json({ items: [], today: demoToday }),
   ),
   http.get('/api/my-work', () => HttpResponse.json(emptyMyWork)),
+  // Minhas tarefas without tasks by default (ADR-0158).
+  http.get('/api/my-tasks', () => HttpResponse.json({ today: demoToday, projects: [] })),
   // Minhas horas without hours and without projects to log in (ADR-0128).
   http.get('/api/time-entries', () => HttpResponse.json({ items: [], total: 0 })),
   http.get('/api/time-entries/projects', () => HttpResponse.json([])),
