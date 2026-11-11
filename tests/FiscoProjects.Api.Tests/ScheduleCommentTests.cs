@@ -425,8 +425,10 @@ public sealed class ScheduleCommentTests(SqlServerFixture sqlServer)
             "SELECT COUNT(*) FROM [projects].[schedule_comments] WHERE Body LIKE '%Diego%' OR Text LIKE '%Diego%'")).Should().Be(0);
         var comments = Items(await scene.ListAsync(team.Carla, scene.Task)).ToList();
         comments.Should().HaveCount(2);
-        TextOf(comments[0]).Should().NotContain("Diego").And.Contain(team.Diego.ToString());
-        comments[1].GetProperty("author").GetProperty("name").GetString().Should().NotContain("Diego");
+        var mention = comments.Should().ContainSingle(comment => comment.GetProperty("author").GetProperty("id").GetGuid() == team.Carla).Subject;
+        TextOf(mention).Should().NotContain("Diego").And.Contain(team.Diego.ToString());
+        var own = comments.Should().ContainSingle(comment => comment.GetProperty("author").GetProperty("id").GetGuid() == team.Diego).Subject;
+        own.GetProperty("author").GetProperty("name").GetString().Should().NotContain("Diego");
     }
 
     private static async Task<Guid> IdOfAsync(HttpResponseMessage response)

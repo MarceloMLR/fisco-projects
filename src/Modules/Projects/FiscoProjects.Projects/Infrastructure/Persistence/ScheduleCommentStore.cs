@@ -16,12 +16,15 @@ internal sealed class ScheduleCommentStore(ProjectsDbContext db) : IScheduleComm
             .Select(item => new CommentedItem(item.Id, item.Name, item.Kind, item.OwnerId))
             .SingleOrDefaultAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<ScheduleComment>> OfItemAsync(Guid projectId, Guid itemId, CancellationToken cancellationToken) =>
-        await db.ScheduleComments.AsNoTracking()
+    public async Task<IReadOnlyList<ScheduleComment>> OfItemAsync(Guid projectId, Guid itemId, CancellationToken cancellationToken)
+    {
+        var comments = await db.ScheduleComments.AsNoTracking()
             .Where(comment => comment.ProjectId == projectId && comment.ItemId == itemId)
-            .OrderBy(comment => comment.SentAt)
-            .ThenBy(comment => comment.Id)
             .ToListAsync(cancellationToken);
+        // By the moment, then by the id, a version 7 GUID in the order it was made: sorted here, because SQL Server
+        // sorts the GUIDs by other bytes first.
+        return [.. comments.OrderBy(comment => comment.SentAt).ThenBy(comment => comment.Id)];
+    }
 
     public async Task<IReadOnlyDictionary<Guid, int>> CountsAsync(Guid projectId, CancellationToken cancellationToken) =>
         await db.ScheduleComments.AsNoTracking()
