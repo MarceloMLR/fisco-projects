@@ -23,5 +23,5 @@
 
 ## 5. Demonstração e documentação
 
-- [ ] 5.1 Comentários no plano da demonstração, com os testes do plano
-- [ ] 5.2 `CLAUDE.md` e `docs/glossario.md`
+- [x] 5.1 Comentários no plano da demonstração, com os testes do plano
+- [x] 5.2 `CLAUDE.md` e `docs/glossario.md`

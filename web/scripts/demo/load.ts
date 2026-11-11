@@ -617,6 +617,17 @@ async function loadProject(
     );
   }
 
+  // The comments on the tasks and the milestones, each by its person, once the schedule is built (ADR-0157).
+  for (const comment of project.comments ?? []) {
+    must(
+      await personOf(comment.by).api.POST('/api/projects/{id}/schedule/items/{itemId}/comments', {
+        params: { path: { id, itemId: idOf(comment.item, 'Comentário') } },
+        body: { body: JSON.stringify(documentOf(comment, personOf)) },
+      }),
+      `Comentário de ${demoPeople[comment.by]} em ${comment.item}`,
+    );
+  }
+
   // The ids of the tickets by title, for the hours worked on them (ADR-0128).
   const ticketIds = new Map<string, string>();
   // Each ticket opened by its person, while the project is open (ADR-0022), then what happens to it, in order.

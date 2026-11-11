@@ -170,6 +170,15 @@ export interface DemoMessage {
 }
 
 /**
+ * A comment on a task or a milestone of the project, by a person who comments (ADR-0157): the text, with a mention of a
+ * person of the project at the start, as the messages of the tickets.
+ */
+export interface DemoComment extends Omit<DemoMessage, 'file'> {
+  /** The name of the task or the milestone, of the same project. */
+  item: string;
+}
+
+/**
  * What happens to a ticket after it is opened, in order, each by the person who may do it:
  * - a message (ADR-0026, ADR-0069): the first of who serves the team makes the person the assignee and the ticket Em
  *   andamento, and the answer of the requester in Aguardando solicitante takes it back;
@@ -399,6 +408,8 @@ export interface DemoProject {
   plannedHours?: readonly DemoPlannedHours[];
   /** The absences of the people of the project, registered by the manager after the members (ADR-0141). */
   absences?: readonly DemoAbsence[];
+  /** The comments on the tasks and the milestones, in order, written once the schedule is built (ADR-0157). */
+  comments?: readonly DemoComment[];
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -464,6 +475,32 @@ export const demoProjects: readonly DemoProject[] = [
     absences: [
       { of: 'diego', start: 31, end: 45 },
       { of: 'rafael', start: 25, end: 25 },
+    ],
+    // The conversation of the chart of accounts, with a mention, and a question on the ICMS (ADR-0157): the Quadro
+    // and the Lista show how many comments each task has.
+    comments: [
+      {
+        item: 'Configurar plano de contas',
+        by: 'carla',
+        text: 'o cliente mandou o plano de contas de 2025 só da matriz. Faltam as filiais incluídas em setembro.',
+        mention: 'marina',
+      },
+      {
+        item: 'Configurar plano de contas',
+        by: 'marina',
+        text: 'Pedi as filiais ao financeiro do cliente; devem chegar até sexta.',
+      },
+      {
+        item: 'Configurar plano de contas',
+        by: 'carla',
+        text: 'Combinado. Sigo com a matriz enquanto isso.',
+      },
+      {
+        item: 'Parametrizar regras de ICMS',
+        by: 'diego',
+        text: 'as alíquotas interestaduais de 2026 já estão na tabela ou entram depois?',
+        mention: 'rafael',
+      },
     ],
     hours: [
       {
