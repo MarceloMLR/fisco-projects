@@ -842,6 +842,37 @@
         }
       }
     },
+    "/api/my-tasks": {
+      "get": {
+        "tags": [
+          "MyTaskEndpoints"
+        ],
+        "operationId": "ListMyTasks",
+        "parameters": [
+          {
+            "name": "done",
+            "in": "query",
+            "description": "Also the tasks completed in the last 30 days.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTasksResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/link-categories": {
       "get": {
         "tags": [
@@ -14597,6 +14628,78 @@
         },
         "description": "A change of the conversion, with the names of the lines or resources it touched (\"A → B\" for a dependency) and how\nmany: the names, but for the blank lines, which have none."
       },
+      "MyTaskResponse": {
+        "required": [
+          "item",
+          "phase",
+          "parent"
+        ],
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ScheduleItemResponse"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "parent": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The task the subtask is in; null for a task right in the phase (ADR-0088)."
+          }
+        },
+        "description": "A task of the person in Minhas tarefas: the item as the Schedule tab shows it, its phase and its parent task."
+      },
+      "MyTasksProjectResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "tasks"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyTaskResponse"
+            }
+          }
+        },
+        "description": "A project with the tasks of the person, the open ones by the end and then the completed ones."
+      },
+      "MyTasksResponse": {
+        "required": [
+          "today",
+          "projects"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyTasksProjectResponse"
+            }
+          }
+        },
+        "description": "The tasks of the person by project, by the code, and today in the time zone of the installation."
+      },
       "MyWorkAcceptanceResponse": {
         "required": [
           "recipient",
@@ -20705,6 +20808,9 @@
     },
     {
       "name": "Templates"
+    },
+    {
+      "name": "MyTaskEndpoints"
     },
     {
       "name": "Links"

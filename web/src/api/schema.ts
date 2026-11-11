@@ -292,6 +292,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/my-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListMyTasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/link-categories": {
         parameters: {
             query?: never;
@@ -3396,6 +3412,27 @@ export interface components {
             /** Format: int32 */
             count: number;
         };
+        /** @description A task of the person in Minhas tarefas: the item as the Schedule tab shows it, its phase and its parent task. */
+        MyTaskResponse: {
+            item: components["schemas"]["ScheduleItemResponse"];
+            phase: string;
+            /** @description The task the subtask is in; null for a task right in the phase (ADR-0088). */
+            parent: null | string;
+        };
+        /** @description A project with the tasks of the person, the open ones by the end and then the completed ones. */
+        MyTasksProjectResponse: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            tasks: components["schemas"]["MyTaskResponse"][];
+        };
+        /** @description The tasks of the person by project, by the code, and today in the time zone of the installation. */
+        MyTasksResponse: {
+            /** Format: date */
+            today: string;
+            projects: components["schemas"]["MyTasksProjectResponse"][];
+        };
         /**
          * @description A request of acceptance of the queue: the names of the signers or, in a request asked before, the person of the
          *     project; who asked, when and the milestone (ADR-0129).
@@ -6102,6 +6139,29 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListMyTasks: {
+        parameters: {
+            query?: {
+                /** @description Also the tasks completed in the last 30 days. */
+                done?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTasksResponse"];
                 };
             };
         };
