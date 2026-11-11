@@ -65,8 +65,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 13. Linha do tempo própria (v2) | 4 | 4 |
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
-| 16. Tarefas (v2) | 3 | 1 |
-| **Total** | **132** | **130** |
+| 16. Tarefas (v2) | 3 | 2 |
+| **Total** | **132** | **131** |
 
 ## 1. Fundação
 
