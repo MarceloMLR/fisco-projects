@@ -46,6 +46,13 @@ public interface IScheduleStore
         Guid ownerId, bool isAdministrator, DateOnly until, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The projects not completed nor cancelled the person is in (any project, for the Administrator) with a task of the
+    /// person with dates of its own below 100% or, with the day given, completed on it or later, by the code (ADR-0158).
+    /// </summary>
+    Task<IReadOnlyList<TaskProject>> ProjectsWithTasksOfAsync(
+        Guid ownerId, bool isAdministrator, DateOnly? completedFrom, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The milestones not reached, from the day on, of the projects not completed nor cancelled the person is in, by the
     /// day and the code of the project, as many as asked (ADR-0096).
     /// </summary>

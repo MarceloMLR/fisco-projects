@@ -555,7 +555,7 @@ internal static class ScheduleEndpoints
         return Answer(await saveBaseline.ExecuteAsync(id, viewer, cancellationToken));
     }
 
-    private static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view)
+    internal static ScheduleItemResponse ItemOf(ScheduleItem item, ScheduleView view)
     {
         var baseline = view.Baseline is not null && view.Baseline.Items.TryGetValue(item.Id, out var saved) ? saved : null;
         return new(

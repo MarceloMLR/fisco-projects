@@ -4,8 +4,8 @@
 
 ## 2. Servidor
 
-- [ ] 2.1 `ProjectsWithTasksOfAsync` no `IScheduleStore`, `ListMyTasks` e `GET /api/my-tasks`, com o aquecimento
-- [ ] 2.2 Testes da API: as tarefas da pessoa e só as dela, os projetos encerrados e de fora, a tarefa-resumo e os marcos, as concluídas dos últimos 30 dias
+- [x] 2.1 `ProjectsWithTasksOfAsync` no `IScheduleStore`, `ListMyTasks` e `GET /api/my-tasks`, com o aquecimento
+- [x] 2.2 Testes da API: as tarefas da pessoa e só as dela, os projetos encerrados e de fora, a tarefa-resumo e os marcos, as concluídas dos últimos 30 dias
 
 ## 3. Tela
 

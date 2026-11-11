@@ -619,6 +619,7 @@ public static class ProjectsEndpoints
         api.MapProjectFolderEndpoints();
         api.MapTemplateEndpoints();
         api.MapScheduleRecalculationEndpoints();
+        api.MapMyTaskEndpoints();
         return api;
     }
 }

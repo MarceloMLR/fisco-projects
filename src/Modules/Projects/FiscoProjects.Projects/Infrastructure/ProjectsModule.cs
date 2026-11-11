@@ -68,6 +68,7 @@ public static class ProjectsModule
         // The tasks of the person in Meu trabalho and the next milestones of the projects of the person (ADR-0096).
         services.AddScoped<IMyWorkSource, ScheduleWorkSource>();
         services.AddScoped<ListUpcomingMilestones>();
+        services.AddScoped<ListMyTasks>();
         services.AddScoped<IScheduleItems, ScheduleItemDirectory>();
         // The milestones reached by the signed acceptance terms (ADR-0035).
         services.AddScoped<IScheduleMilestones, ScheduleMilestones>();
