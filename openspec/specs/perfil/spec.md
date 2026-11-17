@@ -80,7 +80,7 @@ O cartão "Avisos" de Meu perfil MUST mostrar três caixas, cada uma gravada na 
 
 #### Scenario: Ajuda do aplicativo do Teams
 - **WHEN** a pessoa com o Teams disponível abre o cartão Avisos
-- **THEN** "Pelo Teams" diz que os avisos só chegam com o aplicativo do FiscoProjects no Teams dela
+- **THEN** "Pelo Teams" diz que os avisos só chegam com o aplicativo do GerenWare no Teams dela
 
 #### Scenario: Teams fora do cartão
 - **WHEN** a pessoa abre o cartão Avisos com os avisos pelo Teams desligados na instalação

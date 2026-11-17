@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define como a pessoa entra no FiscoProjects, como o sistema a reconhece, quanto dura e como é protegida a sessão e como ela sai (ADR-0005, ADR-0009, ADR-0054, ADR-0078).
+Define como a pessoa entra no GerenWare, como o sistema a reconhece, quanto dura e como é protegida a sessão e como ela sai (ADR-0005, ADR-0009, ADR-0054, ADR-0078).
 
 ## Requirements
 
@@ -100,7 +100,7 @@ A sessão MUST ficar só num cookie `HttpOnly`, `Secure` e `SameSite=Lax`, sem n
 
 ### Requirement: Sair
 
-"Sair" MUST encerrar só a sessão do FiscoProjects e levar à página de entrada; a entrada seguinte MUST levar ao Início, seja quem for (ADR-0009). O navegador MUST guardar que a pessoa saiu, só essa marca, até a próxima entrada, para o link do Teams mostrar a página de entrada (ADR-0153).
+"Sair" MUST encerrar só a sessão do GerenWare e levar à página de entrada; a entrada seguinte MUST levar ao Início, seja quem for (ADR-0009). O navegador MUST guardar que a pessoa saiu, só essa marca, até a próxima entrada, para o link do Teams mostrar a página de entrada (ADR-0153).
 
 #### Scenario: Sair
 - **WHEN** a pessoa escolhe Sair
@@ -116,17 +116,17 @@ A sessão MUST ficar só num cookie `HttpOnly`, `Secure` e `SameSite=Lax`, sem n
 
 ### Requirement: Entrada pelo Entra ID
 
-Com a entrada pelo Entra ID ligada, o e-mail informado MUST levar a pessoa à página da Microsoft, com o e-mail como dica e sem passar por endereços do FiscoProjects; senha e MFA ficam na Microsoft. Na volta, a sessão MUST ser aberta para o usuário do vínculo `entra` pelo identificador do objeto, criado no primeiro login, e a pessoa MUST voltar à tela pedida dentro do FiscoProjects. Os tokens da Microsoft MUST NOT chegar ao navegador nem ser guardados (ADR-0009, ADR-0054, ADR-0117).
+Com a entrada pelo Entra ID ligada, o e-mail informado MUST levar a pessoa à página da Microsoft, com o e-mail como dica e sem passar por endereços do GerenWare; senha e MFA ficam na Microsoft. Na volta, a sessão MUST ser aberta para o usuário do vínculo `entra` pelo identificador do objeto, criado no primeiro login, e a pessoa MUST voltar à tela pedida dentro do GerenWare. Os tokens da Microsoft MUST NOT chegar ao navegador nem ser guardados (ADR-0009, ADR-0054, ADR-0117).
 
 #### Scenario: Entrada pelo Entra com a dica do e-mail
 - **WHEN** a pessoa informa o e-mail na página de entrada, com a entrada pelo Entra ligada
-- **THEN** a API devolve o endereço da Microsoft com o e-mail como dica, e o e-mail não aparece em nenhum endereço do FiscoProjects
+- **THEN** a API devolve o endereço da Microsoft com o e-mail como dica, e o e-mail não aparece em nenhum endereço do GerenWare
 
 #### Scenario: Primeira entrada pelo Entra
 - **WHEN** uma pessoa da empresa volta da Microsoft pela primeira vez
 - **THEN** o usuário é criado com o nome e o e-mail do token e o vínculo `entra` pelo identificador do objeto, a sessão é aberta só com o cookie, sem tokens, e a pessoa vai para a tela que tinha pedido
 
-#### Scenario: Volta só para dentro do FiscoProjects
+#### Scenario: Volta só para dentro do GerenWare
 - **WHEN** a tela pedida na entrada aponta para outro site
 - **THEN** depois de entrar, a pessoa vai para o Início
 
@@ -151,7 +151,7 @@ A conta convidada MUST ser recusada, sem criar usuário, mesmo autenticada no En
 - **THEN** a sessão não é aberta e a página de entrada diz que a pessoa precisa ser liberada pelo administrador do Entra
 
 #### Scenario: Desativado na entrada pelo Entra
-- **WHEN** uma pessoa desativada no FiscoProjects volta da Microsoft
+- **WHEN** uma pessoa desativada no GerenWare volta da Microsoft
 - **THEN** a sessão não é aberta e a página de entrada diz que a conta está desativada
 
 #### Scenario: Falha na volta da Microsoft
@@ -175,11 +175,11 @@ Com a entrada pelo Entra ligada, as leituras do Teams MUST aceitar o token que o
 - **THEN** a resposta é 401, e nenhum usuário é criado
 
 #### Scenario: Quem nunca entrou recusado pelo Teams
-- **WHEN** a rota do Teams recebe o token de uma pessoa sem o vínculo `entra` no FiscoProjects
+- **WHEN** a rota do Teams recebe o token de uma pessoa sem o vínculo `entra` no GerenWare
 - **THEN** a resposta é 401, e nenhum usuário é criado
 
 #### Scenario: Desativado recusado pelo Teams
-- **WHEN** a rota do Teams recebe o token de uma pessoa desativada no FiscoProjects
+- **WHEN** a rota do Teams recebe o token de uma pessoa desativada no GerenWare
 - **THEN** a resposta é 401
 
 #### Scenario: Teams sem a entrada pelo Entra
@@ -204,26 +204,26 @@ O token do Teams MUST valer só nas rotas sob `/api/teams`, que só leem (`GET`)
 
 ### Requirement: Entrada direta pelo link do Teams
 
-Os links da página do Teams MUST levar ao item por uma página de passagem, sem sessão e só com caminhos do FiscoProjects: com sessão, ao item; sem sessão, com a entrada pelo Entra e sem "Sair" neste navegador desde a última entrada, direto à entrada da Microsoft, com o último e-mail como dica e a volta ao item; nos outros casos, à página de entrada, que leva ao item depois de entrar (ADR-0054, ADR-0117, ADR-0153).
+Os links da página do Teams MUST levar ao item por uma página de passagem, sem sessão e só com caminhos do GerenWare: com sessão, ao item; sem sessão, com a entrada pelo Entra e sem "Sair" neste navegador desde a última entrada, direto à entrada da Microsoft, com o último e-mail como dica e a volta ao item; nos outros casos, à página de entrada, que leva ao item depois de entrar (ADR-0054, ADR-0117, ADR-0153).
 
 #### Scenario: Link do Teams com sessão
-- **WHEN** Diego, com a sessão aberta no navegador, escolhe "Responder no FiscoProjects" no chamado #6 do Teams
+- **WHEN** Diego, com a sessão aberta no navegador, escolhe "Responder no GerenWare" no chamado #6 do Teams
 - **THEN** o chamado #6 abre, sem a página de entrada
 
 #### Scenario: Link do Teams sem sessão
-- **WHEN** Diego, sem sessão no navegador e com a entrada pelo Entra, escolhe "Responder no FiscoProjects" no chamado #6 do Teams
+- **WHEN** Diego, sem sessão no navegador e com a entrada pelo Entra, escolhe "Responder no GerenWare" no chamado #6 do Teams
 - **THEN** o navegador vai direto à entrada da Microsoft, com o último e-mail dele como dica, e, depois de entrar, o chamado #6 abre
 
 #### Scenario: Link do Teams sem e-mail lembrado
-- **WHEN** o navegador não tem o último e-mail e Diego, sem sessão, escolhe "Responder no FiscoProjects"
+- **WHEN** o navegador não tem o último e-mail e Diego, sem sessão, escolhe "Responder no GerenWare"
 - **THEN** o navegador vai à entrada da Microsoft sem dica
 
 #### Scenario: Link do Teams depois de Sair
-- **WHEN** Diego escolheu Sair neste navegador e depois escolhe "Responder no FiscoProjects" no Teams
+- **WHEN** Diego escolheu Sair neste navegador e depois escolhe "Responder no GerenWare" no Teams
 - **THEN** a página de entrada aparece e, depois de entrar, o chamado #6 abre
 
 #### Scenario: Link do Teams sem a entrada pelo Entra
-- **WHEN** a instalação só tem a entrada local e a pessoa, sem sessão, escolhe "Abrir no FiscoProjects"
+- **WHEN** a instalação só tem a entrada local e a pessoa, sem sessão, escolhe "Abrir no GerenWare"
 - **THEN** a página de entrada aparece e, depois de entrar, o item abre
 
 #### Scenario: Recusa da Microsoft pelo link do Teams

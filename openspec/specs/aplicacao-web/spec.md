@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define como o frontend do FiscoProjects é entregue pela própria aplicação e as regras comuns a todas as telas: textos vindos dos arquivos de tradução e tipos da API gerados do contrato (ADR-0013, ADR-0047, ADR-0049, ADR-0061).
+Define como o frontend do GerenWare é entregue pela própria aplicação e as regras comuns a todas as telas: textos vindos dos arquivos de tradução e tipos da API gerados do contrato (ADR-0013, ADR-0047, ADR-0049, ADR-0061).
 
 ## Requirements
 

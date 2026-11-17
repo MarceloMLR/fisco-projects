@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define o tema visual comum a todas as telas do FiscoProjects (cores, fontes e temas claro e escuro, vindos do design system aprovado) e a estrutura que envolve cada tela no computador e no celular (ADR-0011, ADR-0012, ADR-0014, ADR-0050, ADR-0062 a ADR-0067).
+Define o tema visual comum a todas as telas do GerenWare (cores, fontes e temas claro e escuro, vindos do design system aprovado) e a estrutura que envolve cada tela no computador e no celular (ADR-0011, ADR-0012, ADR-0014, ADR-0050, ADR-0062 a ADR-0067).
 
 ## Requirements
 

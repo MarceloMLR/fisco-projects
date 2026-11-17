@@ -906,7 +906,7 @@ Quem cria projetos MUST poder ler um XML do MS Project numa prévia, sem guardar
 - **WHEN** a gerente cria um projeto com o cronograma da prévia, o início em 09/10/2026 (uma sexta-feira, antes do feriado de 12/10/2026) e o recurso Carla ligado à Carla como Colaboradora
 - **THEN** o projeto nasce com a fase, a tarefa de 09/10/2026 a 14/10/2026 a 40% com a Carla responsável e o marco no fim dela, e a Carla entra no projeto como Colaboradora
 
-#### Scenario: O que não cabe no FiscoProjects
+#### Scenario: O que não cabe no GerenWare
 - **WHEN** o arquivo tem uma tarefa no nível 4, uma tarefa solta no nível 1, uma dependência "começa, então termina", outra com o intervalo em porcentagem e outra de uma tarefa-resumo
 - **THEN** a prévia traz a tarefa do nível 4 como subtarefa, a solta numa fase com o título do projeto, a "começa, então termina" como "termina, então começa", o intervalo em dias úteis, a da tarefa-resumo fora, e um aviso de cada ajuste com os nomes
 

@@ -128,7 +128,7 @@ public sealed class MsProjectImportTests
         schedule.Counts.Should().Be(new MsProjectCounts(FileTasks: 3, Tasks: 3, FileResources: 1, Resources: 1));
     }
 
-    [Fact(DisplayName = "Conversão do que não cabe no FiscoProjects")]
+    [Fact(DisplayName = "Conversão do que não cabe no GerenWare")]
     public void Convert_MovesTheLevels_AndDropsTheDependenciesTheScheduleHasNot_WithAWarningForEach()
     {
         var schedule = Converted(Project(

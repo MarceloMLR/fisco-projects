@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define o comportamento comum da API HTTP do FiscoProjects, que vale para todos os módulos: como saber se a aplicação está no ar, em que formato os erros chegam, onde fica o contrato da API e sob qual caminho ficam as rotas (ADR-0057, ADR-0061).
+Define o comportamento comum da API HTTP do GerenWare, que vale para todos os módulos: como saber se a aplicação está no ar, em que formato os erros chegam, onde fica o contrato da API e sob qual caminho ficam as rotas (ADR-0057, ADR-0061).
 
 ## Requirements
 

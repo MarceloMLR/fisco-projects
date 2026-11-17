@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define como os módulos do FiscoProjects guardam dados no banco da instalação: cada módulo no próprio schema, com migrações próprias aplicadas de forma controlada, datas em UTC e identificadores gerados pela aplicação (ADR-0047, ADR-0048, ADR-0013, ADR-0061).
+Define como os módulos do GerenWare guardam dados no banco da instalação: cada módulo no próprio schema, com migrações próprias aplicadas de forma controlada, datas em UTC e identificadores gerados pela aplicação (ADR-0047, ADR-0048, ADR-0013, ADR-0061).
 
 ## Requirements
 

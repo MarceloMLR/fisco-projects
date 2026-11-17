@@ -52,7 +52,7 @@ Ao enviar um arquivo com o nome de outro que já está na pasta, quem envia MUST
 
 ### Requirement: Excluir arquivos e pastas
 
-Excluir um arquivo MUST excluir também as versões anteriores. Uma pasta MUST ser excluída só quando estiver vazia, para nunca apagar o que não foi criado pelo FiscoProjects (ADR-0041).
+Excluir um arquivo MUST excluir também as versões anteriores. Uma pasta MUST ser excluída só quando estiver vazia, para nunca apagar o que não foi criado pelo GerenWare (ADR-0041).
 
 #### Scenario: Excluir um arquivo
 - **WHEN** um módulo exclui um arquivo que tem versões anteriores
