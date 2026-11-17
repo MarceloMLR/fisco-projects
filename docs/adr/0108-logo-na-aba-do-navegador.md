@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (ícone sem logo substituído pelo ADR-0160)
 date: 2026-10-21
 decision-makers: Marcelo Ribeiro
 ---
@@ -26,7 +26,7 @@ A aba do navegador mostra o nome da instalação, mas nenhum ícone. Marcelo ped
 
 ## Resultado da decisão
 
-Opção 1. A tela põe no `<link rel="icon">` o endereço do logo (o mesmo da barra lateral, que muda quando o logo muda) e, sem logo, o selo da barra lateral: o ícone da linha do tempo na cor `on-action`, sobre a cor principal da instalação (`action`), com os cantos do selo, num endereço `data:` em SVG. O ícone só entra depois de a marca chegar, para o selo não aparecer antes do logo. O logo para o tema escuro não vai para a aba, porque a cor da aba é a do sistema, não a do tema da aplicação.
+Opção 1. A tela põe no `<link rel="icon">` o endereço do logo (o mesmo da barra lateral, que muda quando o logo muda) e, sem logo, o selo da barra lateral: o ícone da linha do tempo na cor `on-action`, sobre a cor principal da instalação (`action`), com os cantos do selo, num endereço `data:` em SVG. O ícone só entra depois de a marca chegar, para o selo não aparecer antes do logo. O logo para o tema escuro não vai para a aba, porque a cor da aba é a do sistema, não a do tema da aplicação. Substituído pelo ADR-0160 só no ícone sem logo: o símbolo da GerenWare, em arquivo.
 
 ### Consequências
 

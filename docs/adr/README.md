@@ -170,7 +170,7 @@ Regras:
 | [0105](0105-voltar-do-navegador.md) | O que entra no histórico do navegador | aceita | 2026-10-21 |
 | [0106](0106-primeira-carga-mais-rapida.md) | Primeira abertura das telas mais rápida: aquecimento da API, leituras antes e o código da Linha do tempo carregado antes | aceita | 2026-10-21 |
 | [0107](0107-mencionar-ao-digitar.md) | Mencionar ao digitar "@" no editor dos chamados | aceita | 2026-10-21 |
-| [0108](0108-logo-na-aba-do-navegador.md) | Logo da instalação na aba do navegador | aceita | 2026-10-21 |
+| [0108](0108-logo-na-aba-do-navegador.md) | Logo da instalação na aba do navegador | aceita (ícone sem logo substituído pelo ADR-0160) | 2026-10-21 |
 | [0109](0109-confirmacoes-no-alto-da-tela.md) | Confirmações no alto da tela, no meio | aceita | 2026-10-21 |
 | [0110](0110-anonimizacao-na-pratica.md) | Como a anonimização e o prazo da auditoria funcionam | aceita | 2026-10-21 |
 | [0111](0111-exclusao-de-projeto-na-pratica.md) | Como a exclusão de um projeto funciona | aceita | 2026-10-21 |
@@ -222,3 +222,4 @@ Regras:
 | [0157](0157-comentarios-da-tarefa.md) | Comentários da tarefa, com menções e avisos na hora | aceita | 2026-11-10 |
 | [0158](0158-pagina-minhas-tarefas.md) | Página Minhas tarefas, com as tarefas da pessoa de todos os projetos | aceita | 2026-11-11 |
 | [0159](0159-marca-gerenware.md) | Marca GerenWare, com o caminho em G, grafite e esmeralda | aceita | 2026-11-17 |
+| [0160](0160-logo-gerenware-sem-logo-da-instalacao.md) | Logo GerenWare onde a instalação não tem logo | aceita | 2026-11-17 |
