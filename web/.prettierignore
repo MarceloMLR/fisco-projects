@@ -1,3 +1,7 @@
 # Generated from the API contract (npm run api:update).
 src/api/openapi.json
 src/api/schema.ts
+
+# Copies of the brand files of docs/marca, kept byte for byte (ADR-0160).
+public/
+src/assets/brand/
