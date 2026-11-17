@@ -934,7 +934,7 @@ export function auditPage(entries: readonly AuditEntryResponse[], url: URL) {
 
 /** The brand of the simulated installation: the name nobody changed yet, and no logo. */
 export const defaultInstallation: Installation = {
-  name: 'FiscoProjects',
+  name: 'GerenWare',
   logoUrl: null,
   mainColor: null,
   darkLogoUrl: null,

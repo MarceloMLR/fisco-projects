@@ -27,7 +27,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Spec: avisos, requirements "Página do FiscoProjects no Teams" and "Token do Teams só na memória da página" (ADR-0152).
+// Spec: avisos, requirements "Página do GerenWare no Teams" and "Token do Teams só na memória da página" (ADR-0152).
 describe('Teams em volta da página', () => {
   it('Fora do Teams, sem pedir token', async () => {
     // Outside Teams, nobody answers the library.

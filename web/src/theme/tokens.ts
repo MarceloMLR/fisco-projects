@@ -1,6 +1,6 @@
 import tokens from './tokens.json';
 
-// tokens.json is an exact copy of project/tokens.json of the FiscoProjects design system
+// tokens.json is an exact copy of project/tokens.json of the GerenWare design system
 // (version 1792263038-205c, v3.1, 17/10/2026). To update it, copy the file again; never edit values here.
 
 export type ColorScheme = 'light' | 'dark';

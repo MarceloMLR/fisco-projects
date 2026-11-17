@@ -97,7 +97,7 @@ function FileLabel({ file }: { file: { name: string; size: number; contentType: 
 
 /**
  * A file of the conversation only by its name, which opens nowhere: in the page of Teams, where the files open only in
- * FiscoProjects (ADR-0152).
+ * GerenWare (ADR-0152).
  */
 export function FileNameChip({
   file,

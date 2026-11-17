@@ -346,7 +346,7 @@ function PickerBody({
 }
 
 /**
- * The color picker of FiscoProjects (ADR-0146): a popover under the swatch on the computer and a sheet that rises from
+ * The color picker of GerenWare (ADR-0146): a popover under the swatch on the computer and a sheet that rises from
  * the foot of the screen on narrow screens. Esc, a click outside and "Cancelar" give back the color of before; the
  * colors chosen on the way go to onChange, for the preview.
  */

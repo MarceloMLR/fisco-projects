@@ -183,7 +183,7 @@ describe('Configurações na auditoria', () => {
         changes: [
           {
             field: 'Name',
-            before: 'FiscoProjects',
+            before: 'GerenWare',
             after: 'Consultoria Fictícia',
             secret: false,
             reference: null,
@@ -215,7 +215,7 @@ describe('Configurações na auditoria', () => {
     ).toBeInTheDocument();
     expect(
       within(grid).getByText(
-        `${ptBR.audit.fields.InstallationSettings.Name.toLowerCase()} FiscoProjects → Consultoria Fictícia`,
+        `${ptBR.audit.fields.InstallationSettings.Name.toLowerCase()} GerenWare → Consultoria Fictícia`,
       ),
     ).toBeInTheDocument();
   });

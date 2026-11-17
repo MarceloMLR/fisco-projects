@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "FiscoProjects"
+    "name": "GerenWare"
   },
   "shell": {
     "mainNavigation": "Navegação principal",
@@ -249,7 +249,7 @@
       "nowHelp": "Menções, respostas, pedidos de informação, chamados atribuídos a você e prazos vencendo.",
       "byEmail": "Por e-mail",
       "byTeams": "Pelo Teams",
-      "teamsHelp": "Só chegam com o aplicativo do FiscoProjects no seu Teams.",
+      "teamsHelp": "Só chegam com o aplicativo do GerenWare no seu Teams.",
       "onlyInBell": "Sem e-mail nem Teams, esses avisos ficam só no sino e no Meu trabalho.",
       "channelFailed": "Não foi possível salvar por onde chegam os avisos. Tente de novo.",
       "failed": "Não foi possível salvar o resumo diário. Tente de novo."
@@ -3886,7 +3886,7 @@
     }
   },
   "visual": {
-    "subtitle": "A marca e as cores que todas as pessoas veem nesta instalação: na barra lateral, nas telas e na página de entrada. As cores são opcionais: sem elas, valem as do FiscoProjects.",
+    "subtitle": "A marca e as cores que todas as pessoas veem nesta instalação: na barra lateral, nas telas e na página de entrada. As cores são opcionais: sem elas, valem as do GerenWare.",
     "formLabel": "Visual da instalação",
     "colors": "Cores",
     "discard": "Descartar",

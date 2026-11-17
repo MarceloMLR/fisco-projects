@@ -9,7 +9,7 @@ export function ticketNumberOf(path: string): number | null {
 }
 
 /**
- * What the page in Teams shows (ADR-0152): the page of always (the brand and "Abrir no FiscoProjects"), with the
+ * What the page in Teams shows (ADR-0152): the page of always (the brand and "Abrir no GerenWare"), with the
  * sentence that the ticket could not be shown when its reading failed; the ticket while it is read; the ticket; or that
  * the person does not see it.
  */
