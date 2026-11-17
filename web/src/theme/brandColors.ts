@@ -3,8 +3,10 @@ import { color, type ColorScheme, colorSchemes } from './tokens';
 // The colors of the installation (ADR-0082, ADR-0146): the main one, the secondary one and the one of the sidebar, each
 // optional. Any color is accepted: the text over it is white or dark, whichever reads, and only what is text or an
 // outline moves its lightness until the contrast of WCAG AA. The tokens that are no color of the installation start
-// from their value in the design system, with the hue and the chroma of the color, in OKLCH. Without any color, every
-// token keeps its value in the design system, and the status colors never change.
+// from their lightness in the design system, with the hue of the color and a share of its chroma, in OKLCH: the design
+// system is graphite where an installation shows its color (the panel and the background of the sign-in page,
+// ADR-0159), so the chroma comes from the color chosen, not from the token. Without any color, every token keeps its
+// value in the design system, and the status colors never change.
 
 /** The tokens the colors of the installation change (design system, "Marca da instalação", and ADR-0146). */
 export const brandTokenNames = [
@@ -36,6 +38,37 @@ export const brandTokenNames = [
 ] as const;
 
 export type BrandTokenName = (typeof brandTokenNames)[number];
+
+/** The tokens that take the hue of a color of the installation, keeping their lightness in the design system. */
+type TintedTokenName =
+  | 'bg-selected'
+  | 'sidebar-active-bg'
+  | 'sidebar-text-active'
+  | 'brand-panel-bg'
+  | 'brand-panel-bg-2'
+  | 'brand-panel-muted'
+  | 'brand-panel-accent'
+  | 'signin-bg'
+  | 'signin-glow';
+
+/**
+ * The share of the chroma of the color chosen that each of those tokens takes, in each theme: a tinted surface takes a
+ * little, a text or an accent nearly all of it.
+ */
+const chromaShares: Record<TintedTokenName, Record<ColorScheme, number>> = {
+  'bg-selected': { light: 0.1, dark: 0.27 },
+  'sidebar-active-bg': { light: 0.12, dark: 0.27 },
+  'sidebar-text-active': { light: 0.8, dark: 0.48 },
+  'brand-panel-bg': { light: 0.43, dark: 0.25 },
+  'brand-panel-bg-2': { light: 1, dark: 0.8 },
+  'brand-panel-muted': { light: 0.22, dark: 0.21 },
+  'brand-panel-accent': { light: 0.94, dark: 0.98 },
+  'signin-bg': { light: 0.33, dark: 0.03 },
+  'signin-glow': { light: 0.81, dark: 0.41 },
+};
+
+/** The most chroma of the selected row, in each theme, so it stays a surface under any color. */
+const selectedChroma: Record<ColorScheme, number> = { light: 0.027, dark: 0.07 };
 export type BrandTokens = Record<BrandTokenName, string>;
 
 /** The three colors of the installation, each #RRGGBB (any case, with or without #) or null for the default one. */
@@ -115,6 +148,11 @@ function oklchOf(hex: string): Oklch {
   const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
   const hue = (Math.atan2(bb, a) * 180) / Math.PI;
   return { l: lightness, c: Math.hypot(a, bb), h: hue < 0 ? hue + 360 : hue };
+}
+
+/** The hue of a color in OKLCH, in degrees from 0 to 360. */
+export function hueOf(hex: string): number {
+  return oklchOf(hex).h;
 }
 
 /** Linear sRGB of an OKLCH color, possibly outside the sRGB gamut. */
@@ -225,15 +263,19 @@ export function textOn(background: string): string {
 }
 
 /**
- * A token of the design system with the hue of a color and its chroma, scaled by the chroma of the default main
- * color (at most 1.6 times, so a light surface stays light); the lightness of the token stays.
+ * A token of the design system with the hue of a color and the share of its chroma that the token takes in the theme
+ * (at most the limit, so a light surface stays light); the lightness of the token stays.
  */
-function recolored(token: string, chosen: string, limit = Number.POSITIVE_INFINITY): string {
-  const base = oklchOf(defaultMainColor());
-  const value = oklchOf(token);
+function recolored(
+  name: TintedTokenName,
+  chosen: string,
+  scheme: ColorScheme,
+  limit = Number.POSITIVE_INFINITY,
+): string {
+  const value = oklchOf(designTokens(scheme)[name]);
   const target = oklchOf(chosen);
-  const ratio = base.c > 0 ? Math.min(limit, target.c / base.c) : 0;
-  return hexOfOklch({ l: value.l, c: value.c * ratio, h: value.h + (target.h - base.h) });
+  const chroma = Math.min(limit, target.c * chromaShares[name][scheme]);
+  return hexOfOklch({ l: value.l, c: chroma, h: target.h });
 }
 
 /** The tokens of a theme in the design system, as they are with no color chosen. */
@@ -262,7 +304,7 @@ function applyMain(tokens: BrandTokens, main: string, scheme: ColorScheme) {
     'signin-bg',
     'signin-glow',
   ] as const) {
-    tokens[name] = recolored(design[name], main);
+    tokens[name] = recolored(name, main, scheme);
   }
   const surfaces = [color('bg-surface', scheme), color('bg-page', scheme)];
   const action =
@@ -297,16 +339,15 @@ function applyMain(tokens: BrandTokens, main: string, scheme: ColorScheme) {
  * background of the sign-in page.
  */
 function applySecondary(tokens: BrandTokens, secondary: string, scheme: ColorScheme) {
-  const design = designTokens(scheme);
-  tokens['bg-selected'] = recolored(design['bg-selected'], secondary, 1.6);
-  tokens['brand-panel-bg'] = recolored(design['brand-panel-bg'], secondary);
+  tokens['bg-selected'] = recolored('bg-selected', secondary, scheme, selectedChroma[scheme]);
+  tokens['brand-panel-bg'] = recolored('brand-panel-bg', secondary, scheme);
   tokens['brand-panel-bg-2'] =
-    scheme === 'light' ? secondary : recolored(design['brand-panel-bg-2'], secondary);
-  tokens['brand-panel-muted'] = recolored(design['brand-panel-muted'], secondary);
-  tokens['brand-panel-accent'] = recolored(design['brand-panel-accent'], secondary);
+    scheme === 'light' ? secondary : recolored('brand-panel-bg-2', secondary, scheme);
+  tokens['brand-panel-muted'] = recolored('brand-panel-muted', secondary, scheme);
+  tokens['brand-panel-accent'] = recolored('brand-panel-accent', secondary, scheme);
   // The background of the sign-in page around the panel keeps its darkness, with the hue of the color.
-  tokens['signin-bg'] = recolored(design['signin-bg'], secondary);
-  tokens['signin-glow'] = recolored(design['signin-glow'], secondary);
+  tokens['signin-bg'] = recolored('signin-bg', secondary, scheme);
+  tokens['signin-glow'] = recolored('signin-glow', secondary, scheme);
 }
 
 /** The color of the sidebar (ADR-0146): the background, and the texts, the hover and the dividers that follow it. */
@@ -342,7 +383,7 @@ function applySidebar(tokens: BrandTokens, sidebar: string, scheme: ColorScheme)
     dark ? 0.22 : 0.12,
   );
   tokens['sidebar-text-active'] = dark
-    ? recolored(like['sidebar-text-active'], tokens.action)
+    ? recolored('sidebar-text-active', tokens.action, 'dark')
     : tokens['action-text'];
   return withContrast(color('text', dark ? 'dark' : 'light'), [background], textContrast);
 }

@@ -276,6 +276,18 @@ describe('Cor secundária', () => {
     }
   });
 
+  it('Sem nenhuma cor', () => {
+    // The panel and the background of the sign-in page are the graphite of the design system (ADR-0159).
+    for (const scheme of colorSchemes) {
+      const brand = brandTokens(defaultColors)[scheme];
+      for (const name of ['brand-panel-bg', 'brand-panel-bg-2', 'signin-bg'] as const) {
+        expect(brand[name], `${scheme} ${name}`).toBe(color(name, scheme));
+        const { r, g, b } = channelsOf(brand[name]);
+        expect(Math.max(r, g, b) - Math.min(r, g, b), `${scheme} ${name}`).toBeLessThan(16);
+      }
+    }
+  });
+
   it('Trocar a cor secundária', () => {
     const { light, dark } = brandTokens(choice(null, 'C0395A'));
 
