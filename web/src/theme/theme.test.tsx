@@ -7,6 +7,7 @@ import mainSource from '../main.tsx?raw';
 import { describe, expect, it } from 'vitest';
 import { Button } from '../components/Button';
 import ptBR from '../locales/pt-BR.json';
+import { hueOf } from './brandColors';
 import { theme } from './theme';
 import { color, colorSchemes, colorTokenNames, cssVariables, fontFamilies } from './tokens';
 
@@ -48,6 +49,121 @@ describe('Cores e fontes do design system', () => {
           4.5,
         );
       }
+    }
+  });
+
+  it('Paleta da marca', () => {
+    // The values of the brand (ADR-0159), written without "#" because colors in the code come only from tokens.json.
+    const brand: [string, string, string][] = [
+      ['action', '047857', '047857'],
+      ['action-hover', '065f46', '065f46'],
+      ['action-pressed', '064e3b', '064e3b'],
+      ['on-action', 'ffffff', 'ffffff'],
+      ['action-text', '047857', '6ee7b7'],
+      ['bg-page', 'ffffff', '17191d'],
+      ['bg-surface', 'ffffff', '1c1f24'],
+      ['bg-elevated', 'ffffff', '23272d'],
+      ['sidebar-bg', 'f6f7f9', '121417'],
+      ['border', 'e1e4e8', '2b3038'],
+      ['border-control', '868d97', '6b727d'],
+      ['text', '1c1f24', 'e1e4e8'],
+      ['text-secondary', '4b525c', 'aeb4bc'],
+      ['status-success-text', '047857', '6ee7b7'],
+      ['status-success-bg', 'e3f5ec', '16332d'],
+      ['success', '059669', '10b981'],
+      ['status-info-text', '0369a1', '7dd3fc'],
+      ['status-info-bg', 'e3f2fb', '1c3340'],
+      ['signin-bg', '121417', '0c0d0f'],
+      ['brand-panel-bg', '1c1f24', '17191d'],
+    ];
+
+    for (const [name, light, dark] of brand) {
+      expect(color(name, 'light'), `${name} in the light theme`).toBe(`#${light}`);
+      expect(color(name, 'dark'), `${name} in the dark theme`).toBe(`#${dark}`);
+    }
+  });
+
+  it('Contraste dos status e dos papéis', () => {
+    const grounds = [
+      'bg-page',
+      'bg-surface',
+      'bg-subtle',
+      'bg-hover',
+      'bg-selected',
+      'bg-elevated',
+    ];
+    const statuses = ['neutral', 'info', 'warning', 'success', 'danger'];
+    const roles = ['requester', 'owner', 'manager', 'techlead', 'dev', 'functional'];
+    const pairs: [string, string, number][] = [
+      ...statuses.flatMap((status): [string, string, number][] => [
+        [`status-${status}-text`, `status-${status}-bg`, 4.5],
+        ...grounds.map((ground): [string, string, number] => [
+          `status-${status}-text`,
+          ground,
+          4.5,
+        ]),
+      ]),
+      ...roles.flatMap((role): [string, string, number][] => [
+        [`role-${role}-text`, `role-${role}-bg`, 4.5],
+        [`role-${role}-text`, `msg-${role}-bg`, 4.5],
+        ['text', `msg-${role}-bg`, 4.5],
+        ['text-secondary', `msg-${role}-bg`, 4.5],
+        ['on-avatar-role', `avatar-${role}`, 4.5],
+      ]),
+      ...grounds.flatMap((ground): [string, string, number][] => [
+        ['text', ground, 4.5],
+        ['text-secondary', ground, 4.5],
+        ['action-text', ground, 4.5],
+      ]),
+      ['on-action', 'action-hover', 4.5],
+      ['on-action', 'action-pressed', 4.5],
+      ['text-placeholder', 'bg-surface', 4.5],
+      ['text-placeholder', 'bg-elevated', 4.5],
+      ['text-inverse', 'bg-inverse', 4.5],
+      ['action-inverse', 'bg-inverse', 4.5],
+      ['brand-panel-text', 'brand-panel-bg', 4.5],
+      ['brand-panel-text', 'brand-panel-bg-2', 4.5],
+      ['brand-panel-muted', 'brand-panel-bg', 4.5],
+      ['brand-panel-muted', 'brand-panel-bg-2', 4.5],
+      ['brand-panel-accent', 'brand-panel-bg', 4.5],
+      ['avatar-text', 'avatar-bg', 4.5],
+      // Shapes and outlines: 3:1.
+      ['success', 'progress-track', 3],
+      ['success', 'bg-surface', 3],
+      ['gantt-progress', 'gantt-bar', 3],
+      ['gantt-bar-border', 'bg-surface', 3],
+      ['border-control', 'bg-surface', 3],
+      ['border-control', 'bg-page', 3],
+      ['control-selected', 'bg-surface', 3],
+      ['focus-ring', 'bg-page', 3],
+      ['action', 'bg-page', 3],
+    ];
+
+    for (const scheme of colorSchemes) {
+      for (const [foreground, background, minimum] of pairs) {
+        const ratio = contrast(color(foreground, scheme), color(background, scheme));
+        expect(ratio, `${foreground} on ${background}, ${scheme} theme`).toBeGreaterThanOrEqual(
+          minimum,
+        );
+      }
+    }
+  });
+
+  it('Papéis da conversa em cores diferentes', () => {
+    const roles = ['requester', 'owner', 'manager', 'techlead', 'dev', 'functional'];
+
+    for (const scheme of colorSchemes) {
+      const hues = roles.map((role) => hueOf(color(`avatar-${role}`, scheme)));
+      hues.forEach((hue, index) => {
+        hues.slice(index + 1).forEach((other, offset) => {
+          const apart = Math.min(Math.abs(hue - other), 360 - Math.abs(hue - other));
+          const pair = [roles[index] ?? '', roles[index + 1 + offset] ?? ''];
+          // The owner speaks in the emerald of the brand: the others stay further from it.
+          expect(apart, `${pair.join(' and ')}, ${scheme} theme`).toBeGreaterThanOrEqual(
+            pair.includes('owner') ? 40 : 25,
+          );
+        });
+      });
     }
   });
 
