@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,7 +10,9 @@ import { z } from 'zod';
 import { api, signInProblems } from '../api/client';
 import { Alert } from '../components/Alert';
 import { TextField } from '../components/TextField';
+import { showsProductLogo } from '../installation/brand';
 import { InstallationLogo } from '../installation/InstallationLogo';
+import { ProductMark } from '../installation/ProductMark';
 import { useInstallation } from '../installation/useInstallation';
 import { SessionPending } from '../session/RequireSession';
 import { type SignInState, useSession } from '../session/SessionContext';
@@ -278,21 +279,8 @@ function SignInScreen() {
             }}
           >
             {installation.logoUrl === null ? (
-              <Box
-                component="span"
-                aria-hidden="true"
-                sx={{
-                  display: 'inline-grid',
-                  placeItems: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--brand-panel-text)',
-                  color: 'var(--brand-panel-bg)',
-                }}
-              >
-                <ViewTimelineOutlined sx={{ fontSize: 'var(--icon-md)' }} />
-              </Box>
+              // The panel is always dark: the logo made for a dark background.
+              <ProductMark name={installation.name} dark height={32} />
             ) : (
               // The panel is always dark; a light tile keeps a dark logo visible, at the height of the badge.
               <Box
@@ -310,7 +298,7 @@ function SignInScreen() {
                 <InstallationLogo src={installation.logoUrl} maxHeight={24} maxWidth={148} />
               </Box>
             )}
-            {installation.name}
+            {!showsProductLogo(installation.name, installation.logoUrl) && installation.name}
           </Box>
           <Box
             component="p"
