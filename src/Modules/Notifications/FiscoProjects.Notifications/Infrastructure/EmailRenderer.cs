@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using FiscoProjects.Notifications.Application;
+using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Notifications.Infrastructure;
 
@@ -17,6 +18,9 @@ internal sealed partial class EmailRenderer(string? siteUrl) : IEmailRenderer
     private static readonly Lazy<JsonElement> Texts = new(() => Load("FiscoProjects.Notifications.Emails.pt-BR.json"));
     private static readonly Lazy<IReadOnlyDictionary<string, string>> Tokens = new(LoadTokens);
     private static readonly CultureInfo Brazil = CultureInfo.GetCultureInfo("pt-BR");
+
+    /// <summary>The height of the logo at the top, in px: above the 24 px the brand asks for the horizontal logo.</summary>
+    private const int LogoHeight = 28;
 
     public RenderedEmail Render(EmailContent content, string installationName)
     {
@@ -36,7 +40,7 @@ internal sealed partial class EmailRenderer(string? siteUrl) : IEmailRenderer
         var hint = Text("layout.linkHint", values);
         return new RenderedEmail(
             subject,
-            Html(subject, installationName, paragraphs, sections, action, url, hint, note, footer),
+            Html(subject, Header(installationName), paragraphs, sections, action, url, hint, note, footer),
             Plain(paragraphs, sections, action, url, note, footer));
     }
 
@@ -97,9 +101,23 @@ internal sealed partial class EmailRenderer(string? siteUrl) : IEmailRenderer
     private string? UrlOf(string? path) =>
         path is not null && !string.IsNullOrWhiteSpace(siteUrl) ? siteUrl.TrimEnd('/') + path : null;
 
+    /// <summary>
+    /// The top of the e-mail (ADR-0160): the logo of the product when the installation keeps its name and the site has
+    /// an address to serve the image from, with the name as the text of who does not load images; otherwise the name.
+    /// </summary>
+    private string Header(string installationName)
+    {
+        if (installationName != Product.Name || UrlOf(Product.LogoPath) is not { } logo)
+        {
+            return Encode(installationName);
+        }
+
+        return $"<img src=\"{Encode(logo)}\" alt=\"{Encode(installationName)}\" height=\"{LogoHeight}\" style=\"display:block;height:{LogoHeight}px;width:auto;border:0;\">";
+    }
+
     private static string Html(
         string subject,
-        string installation,
+        string header,
         IReadOnlyList<string> paragraphs,
         IReadOnlyList<Section> sections,
         string? action,
@@ -118,7 +136,7 @@ internal sealed partial class EmailRenderer(string? siteUrl) : IEmailRenderer
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{token["bg-subtle"]};padding:{token["space-6"]} {token["space-3"]};">
             <tr><td align="center">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:{token["bg-surface"]};border:1px solid {token["border"]};border-radius:{token["radius-lg"]};">
-            <tr><td style="padding:{token["space-4"]} {token["space-6"]};border-bottom:1px solid {token["border"]};font-size:14px;line-height:20px;font-weight:500;color:{token["text"]};">{Encode(installation)}</td></tr>
+            <tr><td style="padding:{token["space-4"]} {token["space-6"]};border-bottom:1px solid {token["border"]};font-size:14px;line-height:20px;font-weight:500;color:{token["text"]};">{header}</td></tr>
             <tr><td style="padding:{token["space-6"]};font-size:15px;line-height:24px;color:{token["text"]};">
             """);
         foreach (var paragraph in paragraphs)

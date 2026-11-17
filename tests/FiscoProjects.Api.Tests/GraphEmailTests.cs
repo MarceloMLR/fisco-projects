@@ -37,7 +37,7 @@ public sealed class GraphEmailTests(SqlServerFixture sqlServer) : IDisposable
         mail.Mailbox.Should().Be(Mailbox);
         mail.ToAddress.Should().Be("paulo.nogueira@empresa.example");
         mail.ToName.Should().Be("Paulo Nogueira");
-        mail.Subject.Should().Be("Teste de envio do FiscoProjects");
+        mail.Subject.Should().Be("Teste de envio do GerenWare");
         mail.ContentType.Should().Be("HTML");
         mail.Content.Should().Contain("<html");
         mail.SaveToSentItems.Should().BeTrue();

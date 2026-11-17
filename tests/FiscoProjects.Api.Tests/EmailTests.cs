@@ -55,7 +55,7 @@ public sealed class EmailTests(SqlServerFixture sqlServer) : IDisposable
         status.GetProperty("lastTest").GetProperty("status").GetString().Should().Be("Sent");
         var sent = app.Emails.Sent.Should().ContainSingle().Subject;
         sent.ToAddress.Should().Be("paulo.nogueira@empresa.example");
-        sent.Subject.Should().Be("Teste de envio do FiscoProjects");
+        sent.Subject.Should().Be("Teste de envio do GerenWare");
         sent.TextBody.Should().Contain("https://projetos.empresa.example/admin/settings");
     }
 

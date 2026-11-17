@@ -1,6 +1,6 @@
 {
   "layout": {
-    "footer": "Este e-mail foi enviado automaticamente pelo {{installation}}. As respostas a ele não são lidas pelo sistema.",
+    "footer": "Este e-mail foi enviado automaticamente pelo {{installation}}. As respostas a ele não são lidas pelo sistema. Para mudar os seus avisos, acesse Meu perfil.",
     "linkHint": "Se o botão não abrir, copie este endereço no navegador:"
   },
   "test": {
