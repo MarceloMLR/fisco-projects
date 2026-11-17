@@ -188,7 +188,7 @@ describe('Horas dos projetos pela tela', () => {
     expect(bars[0]?.firstElementChild).toHaveStyle({ backgroundColor: 'var(--danger)' });
     expect(bars[1]?.firstElementChild).toHaveStyle({ backgroundColor: 'var(--warning)' });
     expect(bars[2]?.firstElementChild).toHaveStyle({
-      backgroundColor: 'var(--control-selected)',
+      backgroundColor: 'var(--text-secondary)',
     });
 
     fireEvent.click(screen.getByRole('radio', { name: text.views.All }));

@@ -3,7 +3,8 @@ import Box from '@mui/material/Box';
 /** The colors of the done part, as the fp-progress modifiers of the design system. */
 const fills = {
   success: 'var(--success)',
-  info: 'var(--control-selected)',
+  // Graphite: with the emerald action, the brand color would read as the done part (ADR-0159).
+  info: 'var(--text-secondary)',
   warning: 'var(--warning)',
   danger: 'var(--danger)',
 } as const;
