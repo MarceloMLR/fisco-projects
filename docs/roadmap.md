@@ -1,6 +1,6 @@
 # Roadmap
 
-As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15 e as tarefas no grupo 16. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15, as tarefas no grupo 16 e o rebranding para GerenWare no grupo 17. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -45,6 +45,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 03/11/2026, ao testar o chamado no Teams, Marcelo perguntou se a pessoa não poderia ficar conectada para "Responder no FiscoProjects" abrir direto o chamado; das três saídas, escolheu o link do Teams ir direto à entrada da Microsoft quando não há sessão, salvo depois de Sair (Avisos-6.1, `entrada-direta-pelo-teams`, ADR-0153), com a proposta aprovada por ele antes da implementação.
 - Em 05/11/2026, ao pensar num cliente em produção hospedado na nuvem do fornecedor, Marcelo perguntou como está o backup do banco num incidente e pediu a trava contra exclusão, o primeiro teste de restauração e a proposta de uma cópia fora da assinatura (Operação-4.1, `protecao-do-banco`, ADR-0154).
 - Em 10/11/2026, ao comparar o FiscoProjects com o Jira e o monday.com, Marcelo pediu o quadro das tarefas, os avisos das tarefas também pelo Teams e os comentários na tarefa, que formam o grupo 16, com a proposta de cada change aprovada por ele antes da implementação, como no resto da v2; a Tarefas-1 foi implementada junto com a proposta, e ele aceitou revisá-la no PR.
+- Em 17/11/2026, com a marca GerenWare escolhida e o manual de identidade visual aprovado em 16/11/2026, Marcelo pediu o rebranding: o nome GerenWare no lugar de FiscoProjects nas telas, no código, na infraestrutura, no GitHub e nas documentações, e o visual inteiro na paleta grafite e esmeralda. Forma o grupo 17, com a proposta de cada change aprovada por ele antes da implementação. Como só há dados de demonstração, Marcelo autorizou trocar também o que guarda dados: os recursos do Azure são destruídos e recriados com os nomes novos, o nome usado na proteção das senhas dos acessos também muda, e a demonstração é carregada de novo. O histórico (ADRs aceitos, changes arquivadas e os registros acima) continua como foi escrito.
 
 ## Marcos
 
@@ -66,7 +67,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
 | 16. Tarefas (v2) | 4 | 4 |
-| **Total** | **133** | **133** |
+| 17. Rebranding GerenWare (v2) | 8 | 0 |
+| **Total** | **141** | **133** |
 
 ## 1. Fundação
 
@@ -290,3 +292,18 @@ Changes da v2, a partir de 31/10/2026, com as propostas aprovadas por Marcelo an
 | Tarefas-2 | `aviso-de-tarefa-atribuida` | O aviso na hora a quem passa a ser responsável por uma tarefa, por e-mail, pelo Teams e no sino, como o do chamado atribuído | 0037, 0038, 0149, 0151, 0156 | Concluída em 10/11/2026 ([#154](https://github.com/MarceloMLR/fisco-projects/pull/154)) |
 | Tarefas-3 | `comentarios-da-tarefa` | Comentários em cada tarefa e marco, com menções, e o aviso na hora a quem foi mencionado e ao responsável, também pelo Teams | 0026, 0069, 0149, 0157 | Concluída em 11/11/2026 ([#156](https://github.com/MarceloMLR/fisco-projects/pull/156)) |
 | Tarefas-4 | `minhas-tarefas` | A página Minhas tarefas: todas as tarefas da pessoa nos projetos em aberto, agrupadas por projeto ou por data, em Lista e Quadro, com o detalhe na própria página | 0043, 0096, 0155, 0157, 0158 | Concluída em 11/11/2026 (#157) |
+
+## 17. Rebranding GerenWare
+
+Referência visual: o manual de identidade visual da GerenWare (https://claude.ai/artifact/PQ5uaEs2VTiMBz9X2B2s5M) e o pacote `gerenware-marca` (SVG, PNG e favicons).
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Marca-1 | `marca-gerenware` | O ADR da marca GerenWare (nome, símbolo, paleta grafite e esmeralda e a Figtree só no nome), que substitui as cores e a identidade dos ADRs anteriores, com os arquivos da marca no repositório e o manual como referência visual | 0062, 0063, 0064, 0065, 0067, 0146 | Planejada |
+| Marca-2 | `visual-grafite-e-esmeralda` | Os tokens nos dois temas, na paleta do manual: ação em esmeralda, neutros grafite, concluído em esmeralda, "em andamento" em azul-céu, entrada em grafite e o líder técnico em outra cor (hoje quase igual à esmeralda), com o contraste AA conferido em todas as telas e o design system no Claude Design atualizado | 0050, 0065, 0067, 0069, 0082, 0104, 0146, 0147 | Planejada |
+| Marca-3 | `logo-e-entrada-gerenware` | A logo GerenWare onde a instalação não tem logo próprio (barra lateral, aba e celular), a página de entrada como no manual (painel grafite, frase, anéis, pontos e cartões em camadas) e os ícones do navegador e do celular | 0009, 0100, 0108, 0146, 0147 | Planejada |
+| Marca-4 | `nome-gerenware-nas-telas` | O nome GerenWare nos textos das telas, nos e-mails (com o cabeçalho e o rodapé do manual), no aplicativo e na página do Teams, nas exportações e no nome padrão da instalação, com as specs e os testes que citam o nome | 0013, 0037, 0149, 0152 | Planejada |
+| Marca-5 | `codigo-gerenware` | A solução, os projetos, os namespaces e os pacotes de `FiscoProjects` para `GerenWare`, com os tipos de erro da API, as métricas, a chave da conexão, a pasta de arquivos do sistema e o nome usado na proteção das senhas dos acessos; as senhas da demonstração no `dev` são gravadas de novo | 0033, 0047, 0057, 0061, 0089 | Planejada |
+| Marca-6 | `infraestrutura-gerenware` | Os recursos do Azure do `dev` e do `prod` destruídos e recriados com o prefixo `gerenware`, inclusive o estado do Terraform, com os nomes de exibição, as marcas e os textos do Terraform e dos scripts (registro no Entra, alertas, caixa de e-mail padrão e pacote da versão), as permissões no SharePoint e na caixa compartilhada concedidas ao registro novo, o aplicativo do Teams gerado de novo e a demonstração carregada de novo | 0052, 0053, 0089, 0112, 0127, 0149 | Planejada |
+| Marca-7 | `repositorio-gerenware` | O repositório no GitHub renomeado para `gerenware`, com a credencial federada do deploy, o ambiente do GitHub e o Codespaces atualizados | 0055, 0113, 0115 | Planejada |
+| Marca-8 | `documentacao-gerenware` | README, discovery, apresentação, guias de instalação e de demonstração, glossário, custos, `CLAUDE.md` e `openspec/config.yaml` com o nome e o visual novos; o histórico fica com o nome antigo | 0001 | Planejada |
