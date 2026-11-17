@@ -3,10 +3,11 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TeamsApp } from '../api/client';
 import ptBR from '../locales/pt-BR.json';
-import { brandTokens } from '../theme/brandColors';
+import { productSymbolFull, productSymbolWhite } from '../installation/brand';
 import { renderApp } from '../test/renderApp';
 import { defaultInstallation, problem, server, signedInAs } from '../test/server';
 import { bytesOf, unzip } from '../test/unzip';
+import { iconSourceOf } from './teamsPackage';
 
 const saved = vi.hoisted(() => ({ files: [] as { content: Blob; name: string }[] }));
 
@@ -26,13 +27,28 @@ let turns: boolean[];
 let packages: string[];
 /** What each canvas drew: its size and the calls to draw an image, a path or a rectangle. */
 let drawn: { size: number; images: number; paths: number; fills: string[] }[];
+let loaded: string[];
 
 beforeEach(() => {
   app = { available: true, noticesOn: false, version: null };
   turns = [];
   packages = [];
   drawn = [];
+  loaded = [];
   saved.files.length = 0;
+  // jsdom does not load images: one that is ready as soon as it has its address.
+  vi.stubGlobal(
+    'Image',
+    class {
+      naturalWidth = 300;
+      naturalHeight = 100;
+      onload: (() => void) | null = null;
+      set src(address: string) {
+        loaded.push(address);
+        queueMicrotask(() => this.onload?.());
+      }
+    },
+  );
   signedInAs('Administrator');
   // jsdom does not draw: a canvas that keeps what it was asked and gives the bytes of its size.
   vi.stubGlobal(
@@ -112,8 +128,8 @@ describe('Aplicativo do Teams', () => {
     expect(
       await screen.findByText(text.downloaded.replace('{{version}}', '1.0.1')),
     ).toBeInTheDocument();
-    // Without a logo, the icons show the badge in the main color (the one of the design system here).
-    expect(packages).toEqual([brandTokens(null).light.action]);
+    // Without a logo, the icons show the symbol of the product, from the files of the brand (ADR-0160).
+    expect(packages).toEqual([iconSourceOf({ logoUrl: null })]);
     expect(saved.files.map(({ name }) => name)).toEqual([
       text.fileName.replace('{{version}}', '1.0.1'),
     ]);
@@ -123,9 +139,10 @@ describe('Aplicativo do Teams', () => {
     expect(files.get('color.png')).toBe('png 192');
     expect(files.get('outline.png')).toBe('png 32');
     expect(drawn).toEqual([
-      { size: 192, images: 0, paths: 2, fills: [brandTokens(null).light.action] },
-      { size: 32, images: 0, paths: 2, fills: [] },
+      { size: 192, images: 1, paths: 0, fills: [] },
+      { size: 32, images: 1, paths: 0, fills: [] },
     ]);
+    expect(loaded).toEqual([productSymbolWhite, productSymbolFull]);
     await waitFor(() => {
       expect(within(section).getByRole('textbox', { name: text.package })).toHaveValue(
         text.version.replace('{{version}}', '1.0.1'),
@@ -133,22 +150,27 @@ describe('Aplicativo do Teams', () => {
     });
   });
 
+  it('Ícones da marca no pacote', async () => {
+    const section = await openSection();
+
+    fireEvent.click(await within(section).findByRole('button', { name: text.download }));
+
+    await waitFor(() => {
+      expect(saved.files).toHaveLength(1);
+    });
+    // Without a logo: the symbol with the full square in color and the white symbol as the outline, both drawn from
+    // the files of the brand (ADR-0160).
+    expect(loaded).toEqual([productSymbolWhite, productSymbolFull]);
+    expect(drawn.map(({ size, images, paths }) => ({ size, images, paths }))).toEqual([
+      { size: 192, images: 1, paths: 0 },
+      { size: 32, images: 1, paths: 0 },
+    ]);
+  });
+
   it('Ícone com o logo da instalação', async () => {
     const logoUrl = '/api/installation/logo?v=3';
     server.use(
       http.get('/api/installation', () => HttpResponse.json({ ...defaultInstallation, logoUrl })),
-    );
-    // jsdom does not load images: one that is ready as soon as it has its address.
-    vi.stubGlobal(
-      'Image',
-      class {
-        naturalWidth = 300;
-        naturalHeight = 100;
-        onload: (() => void) | null = null;
-        set src(_: string) {
-          queueMicrotask(() => this.onload?.());
-        }
-      },
     );
     const section = await openSection();
 
@@ -157,8 +179,11 @@ describe('Aplicativo do Teams', () => {
     await waitFor(() => {
       expect(saved.files).toHaveLength(1);
     });
-    expect(packages).toEqual([logoUrl]);
+    expect(packages).toEqual([iconSourceOf({ logoUrl })]);
+    // The logo on white, and the outline still the symbol of the product.
     expect(drawn[0]).toMatchObject({ size: 192, images: 1, paths: 0 });
+    expect(drawn[0]?.fills).toHaveLength(1);
+    expect(loaded).toEqual([productSymbolWhite, logoUrl]);
   });
 
   it('Pacote sem o Teams na instalação', async () => {

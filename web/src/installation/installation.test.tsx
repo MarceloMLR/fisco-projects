@@ -39,9 +39,12 @@ describe('Marca da instalação', () => {
   it('Nome padrão', async () => {
     await renderApp('/');
 
-    expect(await sidebarBrand('FiscoProjects')).toHaveAttribute('href', '/');
+    // The name of the product: the whole logo says it, with no text beside it (ADR-0160).
+    const sidebar = screen.getByRole('navigation', { name: navigationName });
+    const logo = await within(sidebar).findByRole('img', { name: productName });
+    expect(logo.closest('a')).toHaveAttribute('href', '/');
     await waitFor(() => {
-      expect(document.title).toBe('FiscoProjects');
+      expect(document.title).toBe(productName);
     });
   });
 
@@ -51,7 +54,7 @@ describe('Marca da instalação', () => {
     await renderApp('/');
 
     expect(await sidebarBrand('Consultoria Fictícia')).toBeInTheDocument();
-    expect(screen.queryByText('FiscoProjects')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: productName })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(document.title).toBe('Consultoria Fictícia');
     });
@@ -132,7 +135,7 @@ describe('Marca da instalação', () => {
 
     await renderApp('/sign-in');
 
-    expect(await screen.findByText(ptBR.app.name)).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: ptBR.app.name })).toBeInTheDocument();
   });
 });
 
@@ -156,7 +159,7 @@ describe('Cor principal da instalação', () => {
   it('Cor padrão', async () => {
     await renderApp('/');
 
-    expect(await screen.findByText('FiscoProjects')).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: productName })).toBeInTheDocument();
     expect(brandRules()).toBe('');
   });
 

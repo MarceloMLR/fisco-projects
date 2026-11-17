@@ -64,7 +64,6 @@ export function TeamsSettings() {
     mutationFn: async () => {
       const brand = {
         logoUrl: installation?.logoUrl ?? null,
-        mainColor: installation?.mainColor ?? null,
       };
       const { data, error, response } = await api.POST('/api/admin/teams-app/package', {
         body: { iconSource: iconSourceOf(brand) },

@@ -474,7 +474,7 @@ public sealed class TeamsTests(SqlServerFixture sqlServer)
         types.Select(type => type.GetProperty("type").GetString()).Should().HaveCount(EmailChannel.Immediate.Count).And.Contain("ticketAssigned");
         types.Single(type => type.GetProperty("type").GetString() == "ticketAssigned").GetProperty("templateText").GetString()
             .Should().Be("{person} atribuiu o chamado {ticket} a você");
-        manifest.GetProperty("name").GetProperty("short").GetString().Should().Be("FiscoProjects");
+        manifest.GetProperty("name").GetProperty("short").GetString().Should().Be("GerenWare");
     }
 
     [Theory(DisplayName = "Pacote de outro papel")]

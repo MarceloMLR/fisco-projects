@@ -1,3 +1,5 @@
+import symbolWhite from '../assets/brand/gerenware-icone-branca.svg';
+import symbolFull from '../assets/brand/gerenware-icone-quadrado-cheio.svg';
 import symbol from '../assets/brand/gerenware-icone.svg';
 import logoOnDark from '../assets/brand/gerenware-horizontal-fundo-escuro.svg';
 import logoOnLight from '../assets/brand/gerenware-horizontal-fundo-claro.svg';
@@ -10,6 +12,12 @@ export const productName = 'GerenWare';
 
 /** The symbol (the G path), for any background. */
 export const productSymbol = symbol;
+
+/** The symbol with the full square, for where the system rounds the corners itself (the icon of Teams). */
+export const productSymbolFull = symbolFull;
+
+/** The symbol in white on transparent, for an outline icon. */
+export const productSymbolWhite = symbolWhite;
 
 /** The horizontal logo, for a light or a dark background. */
 export function productLogo(dark: boolean): string {

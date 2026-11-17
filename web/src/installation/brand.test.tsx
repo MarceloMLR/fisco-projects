@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import indexHtml from '../../index.html?raw';
+import ptBR from '../locales/pt-BR.json';
 import { productFavicon, productLogo, productName, productSymbol, showsProductLogo } from './brand';
 import { ProductMark } from './ProductMark';
 
@@ -15,6 +16,8 @@ describe('Marca do produto sem logo da instalação', () => {
   it('Arquivos iguais aos da marca', () => {
     for (const name of [
       'gerenware-icone.svg',
+      'gerenware-icone-branca.svg',
+      'gerenware-icone-quadrado-cheio.svg',
       'gerenware-horizontal-fundo-claro.svg',
       'gerenware-horizontal-fundo-escuro.svg',
     ]) {
@@ -23,6 +26,12 @@ describe('Marca do produto sem logo da instalação', () => {
         name,
       ).toBe(true);
     }
+    // The logo of the top of the e-mails, which the API points to by Product.LogoPath.
+    expect(
+      fileOf('public/gerenware-horizontal-fundo-claro-64px.png').equals(
+        fileOf(`${brandFolder}/png/gerenware-horizontal-fundo-claro-64px.png`),
+      ),
+    ).toBe(true);
     for (const name of [
       'favicon.svg',
       'favicon.ico',
@@ -41,6 +50,9 @@ describe('Marca do produto sem logo da instalação', () => {
   });
 
   it('Logo inteira com o nome do produto', () => {
+    // The name the screens write when the brand does not come is the one of the product.
+    expect(ptBR.app.name).toBe(productName);
+
     render(<ProductMark name={productName} dark={false} height={28} />);
 
     const logo = screen.getByRole('img', { name: productName });
