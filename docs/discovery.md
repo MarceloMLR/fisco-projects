@@ -179,7 +179,7 @@ Uso esperado: 5 a 6 pessoas por instalação, não simultâneas, em horário com
 | CI/CD | GitHub Actions chamando scripts do repositório, pronto para migrar ao Azure DevOps | 0055 |
 | Monitoramento | OpenTelemetry exportando para o Application Insights | 0057 |
 | Testes | xUnit, AwesomeAssertions, NSubstitute, Testcontainers, NetArchTest ou ArchUnitNET, Vitest, Testing Library, MSW, Playwright | 0056 |
-| Visual | Direção sóbria, azul corporativo, IBM Plex Sans servida pela aplicação, status por ícone, cor e texto | 0062 a 0067 |
+| Visual | Direção sóbria, IBM Plex Sans servida pela aplicação, status por ícone, cor e texto; desde 17/11/2026, a marca GerenWare, em grafite e esmeralda, no lugar do azul corporativo | 0062 a 0067, 0159 |
 
 Regra de dependência:
 
@@ -277,7 +277,7 @@ Ler antes de implementar a área:
 | --- | --- |
 | Qualquer mudança | `CLAUDE.md`, `openspec/config.yaml`, ADR-0001 a 0004, ADR-0047, ADR-0061 |
 | Entrada, sessão e usuários | ADR-0005 a 0009, 0054 |
-| Telas, navegação e visual | ADR-0011 a 0014, 0062 a 0067, design system e canvas de telas |
+| Telas, navegação e visual | ADR-0011 a 0014, 0062 a 0067, 0159, design system, canvas de telas e `docs/marca/` |
 | Projetos e clientes | ADR-0015, 0016, 0041, 0072, 0073 |
 | Cronograma | ADR-0017 a 0021, 0051, 0071, 0088, 0134, 0135 |
 | Chamados | ADR-0022 a 0029, 0044, 0068, 0069 |
@@ -317,7 +317,7 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 
 | Item | Definição |
 | --- | --- |
-| Nome do produto | FiscoProjects (substitui o provisório "Marco") |
+| Nome do produto | FiscoProjects (substitui o provisório "Marco"). Substituído pelo ADR-0159: GerenWare, aplicado pelas changes do grupo 17 do roadmap |
 | Repositório e pasta | `fisco-projects`, em `C:\workspaces\projects\fisco-projects` |
 | Namespaces .NET | `FiscoProjects.*` |
 | O que vira ADR | Decisões com alternativas. Números de versão e convenções de estilo ficam nos arquivos do projeto (`global.json`, `.nvmrc`, `.editorconfig`, `CLAUDE.md`); valores exatos do visual ficam no design system |
@@ -325,7 +325,6 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 ## Pendências
 
 - Telas ainda não desenhadas: cadastros da Administração (Fornecedores, Prazos dos chamados, Pastas padrão, Categorias de links e Modelos de projeto). Calendário e feriados foi desenhada e aprovada em 19/10/2026. Seguem o padrão das telas de Usuários e Clientes, ou são desenhadas antes da change correspondente.
-- Divergência a corrigir: o ADR-0065 cita "Material Symbols", mas o design system usa Material Icons no estilo Outlined (variantes `…Outlined` do `@mui/icons-material`).
 - Levar os tokens do design system para o repositório na change do tema do MUI.
 - Exigir as verificações do CI na regra "Protect main" quando os workflows existirem (ADR-0055).
 - Reconsultar os preços do Azure antes de apresentar os custos.

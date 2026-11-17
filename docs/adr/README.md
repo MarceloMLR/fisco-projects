@@ -115,18 +115,18 @@ Regras:
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
 | [0062](0062-direcao-visual-profissional-e-sobria.md) | Direção visual profissional e sóbria | aceita | 2026-10-16 |
-| [0063](0063-cores-azul-corporativo-com-marinho.md) | Cores: azul corporativo de ação, neutros frios e barra lateral marinho | aceita (barra lateral marinho substituída pelo ADR-0067) | 2026-10-16 |
-| [0064](0064-tipografia-ibm-plex-sans.md) | Tipografia com IBM Plex Sans, servida pela própria aplicação | aceita | 2026-10-16 |
-| [0065](0065-forma-sobria-com-status-por-icone-cor-e-texto.md) | Forma sóbria e confortável, com status por ícone, cor e texto | aceita (cantos substituídos pelo ADR-0067) | 2026-10-16 |
+| [0063](0063-cores-azul-corporativo-com-marinho.md) | Cores: azul corporativo de ação, neutros frios e barra lateral marinho | aceita (barra lateral marinho substituída pelo ADR-0067; azul de ação, verde e azul de status e valores dos neutros substituídos pelo ADR-0159) | 2026-10-16 |
+| [0064](0064-tipografia-ibm-plex-sans.md) | Tipografia com IBM Plex Sans, servida pela própria aplicação | aceita (complementada pelo ADR-0159: Figtree só no nome da logo) | 2026-10-16 |
+| [0065](0065-forma-sobria-com-status-por-icone-cor-e-texto.md) | Forma sóbria e confortável, com status por ícone, cor e texto | aceita (cantos substituídos pelo ADR-0067; nome do conjunto de ícones e canto das etiquetas de status substituídos pelo ADR-0159) | 2026-10-16 |
 | [0066](0066-estrutura-das-telas.md) | Estrutura das telas, com barra lateral de altura total, cabeçalho invisível e conteúdo na altura da janela | aceita | 2026-10-17 |
-| [0067](0067-identidade-visual-revisada.md) | Identidade visual revisada, com estrutura clara, marinho só na entrada, verde no concluído e cantos por tamanho | aceita | 2026-10-17 |
+| [0067](0067-identidade-visual-revisada.md) | Identidade visual revisada, com estrutura clara, marinho só na entrada, verde no concluído e cantos por tamanho | aceita (marinho da entrada, verde do concluído e canto das etiquetas de status substituídos pelo ADR-0159) | 2026-10-17 |
 
 ## Revisão do design (17/10/2026)
 
 | ADR | Título | Status | Data |
 | --- | --- | --- | --- |
 | [0068](0068-times-dos-chamados-e-responsavel.md) | Chamados só para os times Funcional e Desenvolvimento, sem filas, com o responsável definido pela primeira resposta e trocado só pelos gestores | aceita | 2026-10-17 |
-| [0069](0069-conversa-do-chamado.md) | Conversa do chamado com cores por papel, rolagem própria e interações antigas recolhidas | aceita (cor do solicitante substituída pelo ADR-0104) | 2026-10-17 |
+| [0069](0069-conversa-do-chamado.md) | Conversa do chamado com cores por papel, rolagem própria e interações antigas recolhidas | aceita (cor do solicitante substituída pelo ADR-0104; cor do líder técnico substituída pelo ADR-0159) | 2026-10-17 |
 | [0070](0070-meu-trabalho-fila-por-urgencia.md) | Meu trabalho como fila única por urgência, com a saúde dos projetos e os próximos marcos | aceita | 2026-10-17 |
 | [0071](0071-cronograma-na-tela.md) | Cronograma na tela, com Linha do tempo que se ajusta ao espaço, Expandir e faixa de fases nos projetos | aceita | 2026-10-17 |
 | [0072](0072-gerente-e-lider-tecnico-na-criacao.md) | Gerente e líder técnico definidos na criação do projeto e mostrados no cabeçalho | aceita | 2026-10-17 |
@@ -221,3 +221,4 @@ Regras:
 | [0156](0156-aviso-na-hora-da-tarefa-atribuida.md) | Aviso na hora da tarefa atribuída | aceita | 2026-11-10 |
 | [0157](0157-comentarios-da-tarefa.md) | Comentários da tarefa, com menções e avisos na hora | aceita | 2026-11-10 |
 | [0158](0158-pagina-minhas-tarefas.md) | Página Minhas tarefas, com as tarefas da pessoa de todos os projetos | aceita | 2026-11-11 |
+| [0159](0159-marca-gerenware.md) | Marca GerenWare, com o caminho em G, grafite e esmeralda | aceita | 2026-11-17 |

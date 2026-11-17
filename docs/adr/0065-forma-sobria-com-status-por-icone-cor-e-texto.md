@@ -1,5 +1,5 @@
 ---
-status: aceita (cantos substituídos pelo ADR-0067)
+status: aceita (cantos substituídos pelo ADR-0067; nome do conjunto de ícones e canto das etiquetas de status substituídos pelo ADR-0159)
 date: 2026-10-16
 decision-makers: Marcelo Ribeiro
 ---
@@ -35,9 +35,9 @@ Regras:
 | --- | --- |
 | Cantos | Pequenos (cerca de 4 px) em botões, campos, cartões e etiquetas. Substituído pelo ADR-0067: cantos que crescem com a peça (3, 6, 10 e 12 px) |
 | Separação | Bordas finas em vez de sombras; sombra só em menus, diálogos e no Gantt ao arrastar |
-| Status | Etiqueta retangular suave (fundo levemente tingido) com ícone, cor e texto; nunca só cor |
+| Status | Etiqueta retangular suave (fundo levemente tingido) com ícone, cor e texto; nunca só cor. O canto da etiqueta é o do ADR-0159: 3 px |
 | Densidade | Confortável por padrão; tabelas podem ser compactadas pelo controle de densidade |
-| Ícones | Material Symbols no estilo contornado (outlined), do `@mui/icons-material` |
+| Ícones | Material Symbols no estilo contornado (outlined), do `@mui/icons-material`. Substituído pelo ADR-0159: Material Icons no estilo Outlined, o conjunto que o pacote traz |
 | Botões | Texto em minúsculas com inicial maiúscula, sem sombra |
 
 ### Consequências

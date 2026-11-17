@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (complementada pelo ADR-0159: Figtree só no nome da logo)
 date: 2026-10-16
 decision-makers: Marcelo Ribeiro
 ---

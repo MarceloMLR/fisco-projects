@@ -1,5 +1,5 @@
 ---
-status: aceita (cor do solicitante substituída pelo ADR-0104)
+status: aceita (cor do solicitante substituída pelo ADR-0104; cor do líder técnico substituída pelo ADR-0159)
 date: 2026-10-17
 decision-makers: Marcelo Ribeiro
 ---
@@ -33,7 +33,7 @@ Regras:
 | Item | Definição |
 | --- | --- |
 | Posição | Solicitante à esquerda; todas as outras pessoas à direita |
-| Cores por papel | Solicitante em cinza; responsável pelo chamado no azul da marca, mesmo sendo de um dos times; gerente do projeto em violeta; líder técnico em verde-azulado; time de Desenvolvimento em ocre; time Funcional em oliva. Valores no design system, com contraste AA nos dois temas |
+| Cores por papel | Solicitante em cinza; responsável pelo chamado no azul da marca, mesmo sendo de um dos times; gerente do projeto em violeta; líder técnico em verde-azulado (substituído pelo ADR-0159: azul); time de Desenvolvimento em ocre; time Funcional em oliva. Valores no design system, com contraste AA nos dois temas |
 | Identificação | Cada mensagem traz nome, selo com o papel e "(você)" na própria pessoa; o painel "Pessoas" do chamado repete as cores nos avatares e serve de legenda |
 | Rolagem | A conversa rola por dentro, entre o cabeçalho do chamado e a caixa de resposta, que fica fixa embaixo; a página não rola (ADR-0066) |
 | Interações antigas | Acima de 10 interações, as antigas ficam recolhidas em "Mostrar N interações anteriores", com o número de mensagens e de eventos |

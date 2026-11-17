@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (marinho da entrada, verde do concluído e canto das etiquetas de status substituídos pelo ADR-0159)
 date: 2026-10-17
 decision-makers: Marcelo Ribeiro
 ---
@@ -33,10 +33,10 @@ Regras:
 | Item | Definição |
 | --- | --- |
 | Estrutura | Barra lateral em cinza levíssimo e cabeçalho na cor do conteúdo; nenhuma área grande em marinho dentro do produto. A cor da marca continua só em ações, item ativo e links (ADR-0062) |
-| Página de entrada | Único lugar com o marinho inteiro: cartão dividido com sombra sobre fundo marinho profundo; painel com degradê e formas geométricas discretas (anéis, pontos e cartões em camadas). É também o único lugar com degradê |
-| Concluído | Verde (o mesmo do status "sucesso") na parte concluída das barras de progresso, da faixa de fases e das tarefas do cronograma, inclusive no caminho crítico, que mantém o contorno e o restante em vermelho |
+| Página de entrada | Único lugar com o marinho inteiro: cartão dividido com sombra sobre fundo marinho profundo; painel com degradê e formas geométricas discretas (anéis, pontos e cartões em camadas). É também o único lugar com degradê. Substituído pelo ADR-0159 só na cor: grafite no lugar do marinho |
+| Concluído | Verde (o mesmo do status "sucesso") na parte concluída das barras de progresso, da faixa de fases e das tarefas do cronograma, inclusive no caminho crítico, que mantém o contorno e o restante em vermelho. Substituído pelo ADR-0159 só no tom: esmeralda |
 | Vermelho | Reservado a notificações não lidas, atraso e perigo |
-| Cantos | Crescem com a peça: cerca de 3 px em barras e etiquetas de papel, 6 px em botões e campos, 10 px em cartões, tabelas e diálogos, 12 px no cartão da entrada; valores exatos no design system |
+| Cantos | Crescem com a peça: cerca de 3 px em barras e etiquetas de papel, 6 px em botões e campos, 10 px em cartões, tabelas e diálogos, 12 px no cartão da entrada; valores exatos no design system. As etiquetas de status ficam com 3 px (ADR-0159) |
 | Troca da cor principal | Acompanham a nova cor o item ativo da barra lateral e o painel da entrada; a barra lateral continua clara |
 
 Continuam valendo as demais regras dos ADR-0063 (azul de ação, neutros frios, escuro em grafite, status independentes da marca, contraste AA) e ADR-0065 (status por ícone, cor e texto; bordas em vez de sombras; densidade confortável).
