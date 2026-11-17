@@ -14,7 +14,6 @@ import { useInstallation } from './useInstallation';
 export function InstallationRoot() {
   const { name, logoUrl } = useInstallation();
   const { data: installation } = useQuery(installationQuery());
-  const mainColor = installation?.mainColor ?? null;
   const loaded = installation !== undefined;
 
   useEffect(() => {
@@ -23,12 +22,12 @@ export function InstallationRoot() {
     }
   }, [name]);
 
-  // Once the brand is known, so the badge never flashes before the logo.
+  // Once the brand is known: until then the tab keeps the symbol of the product the page starts with.
   useEffect(() => {
     if (loaded) {
-      showFavicon(faviconOf(logoUrl, mainColor));
+      showFavicon(faviconOf(logoUrl));
     }
-  }, [loaded, logoUrl, mainColor]);
+  }, [loaded, logoUrl]);
 
   return (
     <NoticeProvider>

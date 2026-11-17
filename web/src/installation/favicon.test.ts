@@ -1,25 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { brandTokens } from '../theme/brandColors';
-import { color } from '../theme/tokens';
-import { badgeIcon, faviconOf } from './favicon';
+import { productFavicon } from './brand';
+import { faviconOf, showFavicon } from './favicon';
 
-// A color as the Administrator types it, without "#": colors in the code come only from tokens.json.
-const typed = (value: string) => `#${value.toLowerCase()}`;
+// Spec: configuracao-da-instalacao, requirement "Ícone da aba do navegador" (ADR-0108, ADR-0160).
+describe('Ícone da aba do navegador', () => {
+  it('Símbolo na aba sem logo', () => {
+    expect(faviconOf(null)).toBe(productFavicon);
+    expect(faviconOf('/api/installation/logo?v=1')).toBe('/api/installation/logo?v=1');
+  });
 
-// Spec: configuracao-da-instalacao, requirement "Logo na aba do navegador" (ADR-0108).
-describe('Logo na aba do navegador', () => {
-  it('Selo na cor principal', () => {
-    const icon = decodeURIComponent(badgeIcon(typed('0F766E')));
+  it('Logo no lugar do ícone da página', () => {
+    document.head.innerHTML = '<link rel="icon" href="/favicon.svg" type="image/svg+xml" />';
 
-    expect(icon).toContain(`fill="${brandTokens(typed('0F766E')).light.action}"`);
-    expect(icon).toContain(`fill="${color('on-action', 'light')}"`);
-    expect(faviconOf('/api/installation/logo?v=1', null)).toBe('/api/installation/logo?v=1');
-    expect(faviconOf(null, null)).toBe(badgeIcon(null));
+    showFavicon('/api/installation/logo?v=1');
 
-    // Over a light color, the icon is dark, as the text of the buttons (ADR-0146).
-    const light = decodeURIComponent(badgeIcon(typed('F5C400')));
-    expect(light).toContain(`fill="${typed('F5C400')}"`);
-    expect(light).toContain(`fill="${brandTokens(typed('F5C400')).light['on-action']}"`);
-    expect(light).not.toContain(`fill="${color('on-action', 'light')}"`);
+    const links = document.head.querySelectorAll('link[rel="icon"]');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.getAttribute('href')).toBe('/api/installation/logo?v=1');
+    // The logo may be a PNG: the type of the symbol does not stay.
+    expect(links[0]?.hasAttribute('type')).toBe(false);
   });
 });
