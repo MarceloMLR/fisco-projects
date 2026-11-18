@@ -5,9 +5,10 @@ import Box from '@mui/material/Box';
 import type { ReactNode } from 'react';
 
 const tones = {
+  // Graphite: the sky blue of the "in progress" status means only that (ADR-0159).
   info: {
-    background: 'var(--status-info-bg)',
-    accent: 'var(--status-info-text)',
+    background: 'var(--status-neutral-bg)',
+    accent: 'var(--status-neutral-text)',
     Icon: InfoOutlined,
   },
   warning: {

@@ -229,7 +229,7 @@ export function ColorField({
             {notes.map((note) => (
               <Note
                 key={note}
-                tone="var(--status-info-text)"
+                tone="var(--text-secondary)"
                 icon={InfoOutlined}
                 text={t(`colors.notes.${note}`)}
               />

@@ -34,7 +34,7 @@ export function StatusBadge({
         boxSizing: 'border-box',
         height: 24,
         padding: '0 var(--space-2) 0 6px',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--radius-sm)',
         backgroundColor: background,
         color,
         fontSize: 12,
