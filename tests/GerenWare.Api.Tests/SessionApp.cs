@@ -1,0 +1,292 @@
+using GerenWare.Notifications.Application;
+using GerenWare.Testing;
+using GerenWare.Users.Application;
+using GerenWare.Users.Contracts;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing.Handlers;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
+
+namespace GerenWare.Api.Tests;
+
+/// <summary>
+/// The API composed as the host does, on a migrated database of its own, with a clock the test controls and
+/// test-only routes: one that opens a session for a user, and a protected API route that counts its changes.
+/// </summary>
+internal sealed class SessionApp : IAsyncDisposable
+{
+    public const string ProtectedRoute = "/api/test/protected";
+    public const string SessionCookie = "__Host-gerenware-session";
+
+    private readonly WebApplication _app;
+    private readonly string _connectionString;
+
+    private SessionApp(
+        WebApplication app, string connectionString, FakeTimeProvider clock, RecordingEmailSender emails, RecordingTeamsSender teams)
+    {
+        _app = app;
+        _connectionString = connectionString;
+        Clock = clock;
+        Emails = emails;
+        Teams = teams;
+    }
+
+    public FakeTimeProvider Clock { get; }
+
+    /// <summary>The e-mails the queue sent, kept in memory instead of leaving (ADR-0036).</summary>
+    public RecordingEmailSender Emails { get; }
+
+    /// <summary>The notices the queue of Teams sent, kept in memory instead of leaving (ADR-0149).</summary>
+    public RecordingTeamsSender Teams { get; }
+
+    public IServiceProvider Services => _app.Services;
+
+    /// <summary>The connection string of the database of the test, to look at it straight.</summary>
+    public string ConnectionString => _connectionString;
+
+    public int Changes { get; private set; }
+
+    /// <summary>
+    /// The application on a database of its own; without <paramref name="recordEmails"/>, the e-mails leave by the sending
+    /// the configuration chooses, as the one of Microsoft Graph simulated by a test; the same for the notices of Teams
+    /// without <paramref name="recordTeams"/>.
+    /// </summary>
+    public static async Task<SessionApp> StartAsync(
+        SqlServerFixture sqlServer, Action<WebApplicationBuilder>? configure = null, bool recordEmails = true, bool recordTeams = true)
+    {
+        var connectionString = sqlServer.NewDatabase();
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero));
+        var emails = new RecordingEmailSender();
+        var teams = new RecordingTeamsSender();
+        SessionApp? session = null;
+
+        // Development, so the API creates the database and applies the migrations when it starts.
+        var app = await TestApp.ComposedAsync(TestApp.Development, testApp =>
+        {
+            testApp.MapPost("/test/sign-in/{userId:guid}", async (Guid userId, HttpContext http) =>
+            {
+                await http.SignInAsync(UserSession.For(userId));
+                return Results.NoContent();
+            });
+
+            var api = testApp.MapApiGroup();
+            api.MapGet("/test/protected", () => Results.Text("ok"));
+            api.MapMethods("/test/protected", [HttpMethods.Post, HttpMethods.Put, HttpMethods.Patch, HttpMethods.Delete], () =>
+            {
+                session!.Changes++;
+                return Results.Text("changed");
+            });
+        }, builder =>
+        {
+            builder.Configuration[TestApp.ConnectionStringKey] = connectionString;
+            builder.Services.AddSingleton<TimeProvider>(clock);
+            configure?.Invoke(builder);
+            if (recordEmails)
+            {
+                builder.Services.TryAddSingleton<IEmailSender>(emails);
+            }
+
+            if (recordTeams)
+            {
+                builder.Services.TryAddSingleton<ITeamsSender>(teams);
+            }
+        });
+
+        session = new SessionApp(app, connectionString, clock, emails, teams);
+        return session;
+    }
+
+    /// <summary>A browser-like client: https, so the Secure cookie goes back, and with its own cookie jar.</summary>
+    public HttpClient NewClient() =>
+        new(new CookieContainerHandler { InnerHandler = _app.GetTestServer().CreateHandler() })
+        {
+            BaseAddress = new Uri("https://localhost"),
+        };
+
+    public async Task<Guid> CreateUserAsync(string name, string email)
+    {
+        await using var scope = _app.Services.CreateAsyncScope();
+        var result = await scope.ServiceProvider.GetRequiredService<SignInWithIdentity>()
+            .ExecuteAsync(new ProviderIdentity("local", email, name, email), TestContext.Current.CancellationToken);
+        return ((SignInResult.SignedIn)result).UserId;
+    }
+
+    /// <summary>A client with a session open for a new user.</summary>
+    public Task<(HttpClient Client, Guid UserId)> SignedInClientAsync() =>
+        SignedInClientAsync("Marina Costa", SystemRole.User);
+
+    /// <summary>A client with a session open for a new user with the given role.</summary>
+    public async Task<(HttpClient Client, Guid UserId)> SignedInClientAsync(string name, SystemRole role)
+    {
+        var userId = await CreateUserAsync(name, role);
+        return (await SignInAsync(userId), userId);
+    }
+
+    /// <summary>A new user, with an e-mail made from the name, and the given role.</summary>
+    public async Task<Guid> CreateUserAsync(string name, SystemRole role)
+    {
+        var email = $"{name.ToLowerInvariant().Replace(' ', '.')}@empresa.example";
+        var userId = await CreateUserAsync(name, email);
+        await ExecuteAsync("UPDATE [users].[users] SET Role = @role WHERE Id = @id", ("@role", role.ToString()), ("@id", userId));
+        return userId;
+    }
+
+    /// <summary>A client with a session open for an existing user.</summary>
+    public async Task<HttpClient> SignInAsync(Guid userId)
+    {
+        var client = NewClient();
+        var response = await client.PostAsync($"/test/sign-in/{userId}", null, TestContext.Current.CancellationToken);
+        response.EnsureSuccessStatusCode();
+        return client;
+    }
+
+    /// <summary>Puts a person in a project with a role, straight in the database, to set up a scene.</summary>
+    public Task AddProjectMemberAsync(Guid projectId, Guid userId, string role) =>
+        ExecuteAsync(
+            "INSERT INTO [projects].[project_members] (Id, ProjectId, UserId, Role, AddedAt) VALUES (@id, @project, @user, @role, @at)",
+            ("@id", Guid.CreateVersion7()),
+            ("@project", projectId),
+            ("@user", userId),
+            ("@role", role),
+            ("@at", Clock.GetUtcNow().UtcDateTime));
+
+    public Task DeactivateAsync(Guid userId) =>
+        ExecuteAsync("UPDATE [users].[users] SET IsActive = 0 WHERE Id = @id", ("@id", userId));
+
+    /// <summary>Role and situation of a user, read straight from the database.</summary>
+    public async Task<(SystemRole Role, bool IsActive)> StateOfAsync(Guid userId)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Role, IsActive FROM [users].[users] WHERE Id = @id";
+        command.Parameters.AddWithValue("@id", userId);
+        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        await reader.ReadAsync(TestContext.Current.CancellationToken);
+        return (Enum.Parse<SystemRole>(reader.GetString(0)), reader.GetBoolean(1));
+    }
+
+    public async Task<int> CountAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
+        return Convert.ToInt32(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Runs a command straight in the database, to set up a scene.</summary>
+    public async Task ExecuteAsync(string sql, params (string Name, object Value)[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
+        await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// The e-mails sent so far, once the queue sent the ones waiting; with a condition, waits up to 30 seconds for the
+    /// e-mails that the background processes, woken by the clock, put in the queue.
+    /// </summary>
+    public async Task<IReadOnlyList<EmailMessage>> EmailsAsync(Func<IReadOnlyList<EmailMessage>, bool>? until = null)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (true)
+        {
+            await using (var scope = _app.Services.CreateAsyncScope())
+            {
+                await scope.ServiceProvider.GetRequiredService<DispatchEmails>().ExecuteAsync(TestContext.Current.CancellationToken);
+            }
+
+            var sent = Emails.Sent;
+            if (until is null || until(sent) || DateTime.UtcNow > deadline)
+            {
+                return sent;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Moves the clock to 07:31 of the next morning in America/Sao_Paulo, the time zone of the installation, past the time
+    /// of the daily summary (07:30), waits for the summary of the day, sent in the background, and returns the e-mails
+    /// sent so far.
+    /// </summary>
+    public async Task<IReadOnlyList<EmailMessage>> DailySummaryAsync()
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var local = TimeZoneInfo.ConvertTimeFromUtc(Clock.GetUtcNow().UtcDateTime, zone);
+        var target = local.Date + new TimeSpan(7, 31, 0);
+        if (target <= local)
+        {
+            target = target.AddDays(1);
+        }
+
+        Clock.Advance(TimeZoneInfo.ConvertTimeToUtc(target, zone) - Clock.GetUtcNow().UtcDateTime);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (await CountAsync(
+                   "SELECT COUNT(*) FROM [notifications].[daily_summaries] WHERE Day = @day AND FinishedAt IS NOT NULL",
+                   ("@day", target.Date)) == 0
+               && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+
+        return await EmailsAsync();
+    }
+
+    /// <summary>
+    /// The notices of Teams sent so far, once the queue of Teams sent the ones waiting; with a condition, waits up to 30
+    /// seconds for the ones that the background process, woken by the clock, may be sending.
+    /// </summary>
+    public async Task<IReadOnlyList<TeamsDelivery>> TeamsAsync(Func<IReadOnlyList<TeamsDelivery>, bool>? until = null)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (true)
+        {
+            await using (var scope = _app.Services.CreateAsyncScope())
+            {
+                await scope.ServiceProvider.GetRequiredService<DispatchTeamsNotices>().ExecuteAsync(TestContext.Current.CancellationToken);
+            }
+
+            var sent = Teams.Sent;
+            if (until is null || until(sent) || DateTime.UtcNow > deadline)
+            {
+                return sent;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+        }
+    }
+
+    /// <summary>Turns the notices of Teams of the installation on, straight in the database, to set up a scene.</summary>
+    public Task TurnTeamsOnAsync() => ExecuteAsync("UPDATE [notifications].[teams_app] SET NoticesOn = 1");
+
+    /// <summary>Turns the channels of the notices sent now of a person on or off in the database, out of the audit (ADR-0151).</summary>
+    public Task ChooseNoticesAsync(Guid userId, bool email, bool teams) => ExecuteAsync(
+        "INSERT INTO [notifications].[notice_preferences] (Id, UserId, ByEmail, ByTeams) VALUES (@id, @user, @email, @teams)",
+        ("@id", Guid.CreateVersion7()), ("@user", userId), ("@email", email), ("@teams", teams));
+
+    /// <summary>The e-mails sent to the address.</summary>
+    public async Task<IReadOnlyList<EmailMessage>> EmailsToAsync(string address) =>
+        [.. (await EmailsAsync()).Where(email => email.ToAddress == address)];
+
+    public ValueTask DisposeAsync() => _app.DisposeAsync();
+}

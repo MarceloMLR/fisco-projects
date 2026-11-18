@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <ProjectReference Include="../../../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../../Administration/GerenWare.Administration.Contracts/GerenWare.Administration.Contracts.csproj" />
+    <ProjectReference Include="../../Calendar/GerenWare.Calendar.Contracts/GerenWare.Calendar.Contracts.csproj" />
+    <ProjectReference Include="../../Projects/GerenWare.Projects.Contracts/GerenWare.Projects.Contracts.csproj" />
+    <ProjectReference Include="../../Users/GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+    <ProjectReference Include="../GerenWare.Notifications.Contracts/GerenWare.Notifications.Contracts.csproj" />
+  </ItemGroup>
+
+  <!-- The texts of the e-mails (ADR-0013) and the colors of the design system, the same file the screens use. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Infrastructure/Emails/pt-BR.json" LogicalName="GerenWare.Notifications.Emails.pt-BR.json" />
+    <EmbeddedResource Include="../../../../web/src/theme/tokens.json" LogicalName="GerenWare.Notifications.Emails.tokens.json" Link="Infrastructure/Emails/tokens.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GerenWare.Notifications.Tests" />
+  </ItemGroup>
+
+</Project>

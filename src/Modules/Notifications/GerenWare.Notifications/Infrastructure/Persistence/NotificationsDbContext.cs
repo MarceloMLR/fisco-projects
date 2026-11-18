@@ -1,0 +1,34 @@
+using GerenWare.Notifications.Domain;
+using GerenWare.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace GerenWare.Notifications.Infrastructure.Persistence;
+
+internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbContext> options)
+    : ModuleDbContext<NotificationsDbContext>(options), IModuleSchema
+{
+    public static string Schema => "notifications";
+
+    public DbSet<OutboxEmail> OutboxEmails => Set<OutboxEmail>();
+
+    public DbSet<DigestItem> DigestItems => Set<DigestItem>();
+
+    public DbSet<DailySummaryRun> DailySummaries => Set<DailySummaryRun>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    public DbSet<TeamsNotice> TeamsNotices => Set<TeamsNotice>();
+
+    public DbSet<TeamsApp> TeamsApps => Set<TeamsApp>();
+
+    public DbSet<NoticePreference> NoticePreferences => Set<NoticePreference>();
+
+    protected override void ConfigureModel(ModelBuilder modelBuilder) =>
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationsDbContext).Assembly);
+}
+
+// For dotnet ef to create the context without starting the API.
+internal sealed class NotificationsDbContextFactory : ModuleDesignTimeDbContextFactory<NotificationsDbContext>
+{
+    protected override NotificationsDbContext CreateContext(DbContextOptions<NotificationsDbContext> options) => new(options);
+}

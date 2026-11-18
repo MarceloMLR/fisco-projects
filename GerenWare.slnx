@@ -1,0 +1,74 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GerenWare.Api/GerenWare.Api.csproj" />
+    <Project Path="src/GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <Project Path="src/GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Administration/">
+    <Project Path="src/Modules/Administration/GerenWare.Administration.Contracts/GerenWare.Administration.Contracts.csproj" />
+    <Project Path="src/Modules/Administration/GerenWare.Administration/GerenWare.Administration.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Audit/">
+    <Project Path="src/Modules/Audit/GerenWare.Audit.Contracts/GerenWare.Audit.Contracts.csproj" />
+    <Project Path="src/Modules/Audit/GerenWare.Audit/GerenWare.Audit.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Calendar/">
+    <Project Path="src/Modules/Calendar/GerenWare.Calendar.Contracts/GerenWare.Calendar.Contracts.csproj" />
+    <Project Path="src/Modules/Calendar/GerenWare.Calendar/GerenWare.Calendar.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Credentials/">
+    <Project Path="src/Modules/Credentials/GerenWare.Credentials/GerenWare.Credentials.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Documents/">
+    <Project Path="src/Modules/Documents/GerenWare.Documents.Contracts/GerenWare.Documents.Contracts.csproj" />
+    <Project Path="src/Modules/Documents/GerenWare.Documents/GerenWare.Documents.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Files/">
+    <Project Path="src/Modules/Files/GerenWare.Files.Contracts/GerenWare.Files.Contracts.csproj" />
+    <Project Path="src/Modules/Files/GerenWare.Files/GerenWare.Files.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/MyWork/">
+    <Project Path="src/Modules/MyWork/GerenWare.MyWork.Contracts/GerenWare.MyWork.Contracts.csproj" />
+    <Project Path="src/Modules/MyWork/GerenWare.MyWork/GerenWare.MyWork.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/GerenWare.Notifications.Contracts/GerenWare.Notifications.Contracts.csproj" />
+    <Project Path="src/Modules/Notifications/GerenWare.Notifications/GerenWare.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Projects/">
+    <Project Path="src/Modules/Projects/GerenWare.Projects.Contracts/GerenWare.Projects.Contracts.csproj" />
+    <Project Path="src/Modules/Projects/GerenWare.Projects/GerenWare.Projects.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Tickets/">
+    <Project Path="src/Modules/Tickets/GerenWare.Tickets.Contracts/GerenWare.Tickets.Contracts.csproj" />
+    <Project Path="src/Modules/Tickets/GerenWare.Tickets/GerenWare.Tickets.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/TimeTracking/">
+    <Project Path="src/Modules/TimeTracking/GerenWare.TimeTracking/GerenWare.TimeTracking.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Users/">
+    <Project Path="src/Modules/Users/GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+    <Project Path="src/Modules/Users/GerenWare.Users/GerenWare.Users.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GerenWare.Administration.Tests/GerenWare.Administration.Tests.csproj" />
+    <Project Path="tests/GerenWare.Api.Tests/GerenWare.Api.Tests.csproj" />
+    <Project Path="tests/GerenWare.Architecture.Tests/GerenWare.Architecture.Tests.csproj" />
+    <Project Path="tests/GerenWare.Audit.Tests/GerenWare.Audit.Tests.csproj" />
+    <Project Path="tests/GerenWare.Calendar.Tests/GerenWare.Calendar.Tests.csproj" />
+    <Project Path="tests/GerenWare.Credentials.Tests/GerenWare.Credentials.Tests.csproj" />
+    <Project Path="tests/GerenWare.Documents.Tests/GerenWare.Documents.Tests.csproj" />
+    <Project Path="tests/GerenWare.Files.Tests/GerenWare.Files.Tests.csproj" />
+    <Project Path="tests/GerenWare.MyWork.Tests/GerenWare.MyWork.Tests.csproj" />
+    <Project Path="tests/GerenWare.Notifications.Tests/GerenWare.Notifications.Tests.csproj" />
+    <Project Path="tests/GerenWare.Persistence.Tests/GerenWare.Persistence.Tests.csproj" />
+    <Project Path="tests/GerenWare.Pipeline.Tests/GerenWare.Pipeline.Tests.csproj" />
+    <Project Path="tests/GerenWare.Projects.Tests/GerenWare.Projects.Tests.csproj" />
+    <Project Path="tests/GerenWare.SharedKernel.Tests/GerenWare.SharedKernel.Tests.csproj" />
+    <Project Path="tests/GerenWare.Testing/GerenWare.Testing.csproj" />
+    <Project Path="tests/GerenWare.Tickets.Tests/GerenWare.Tickets.Tests.csproj" />
+    <Project Path="tests/GerenWare.TimeTracking.Tests/GerenWare.TimeTracking.Tests.csproj" />
+    <Project Path="tests/GerenWare.Users.Tests/GerenWare.Users.Tests.csproj" />
+  </Folder>
+</Solution>

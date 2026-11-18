@@ -1,0 +1,96 @@
+using GerenWare.Persistence;
+using GerenWare.SharedKernel;
+using GerenWare.Users.Application;
+using GerenWare.Users.Contracts;
+using GerenWare.Users.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+
+namespace GerenWare.Users.Infrastructure;
+
+/// <summary>Services of the Users module: people, their identity links, the local sign-in and the sign-in through Entra ID.</summary>
+public static class UsersModule
+{
+    public static IServiceCollection AddUsersModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddModuleDbContext<UsersDbContext>(configuration);
+        services.AddScoped<UserStore>();
+        services.AddScoped<IUserStore>(provider => provider.GetRequiredService<UserStore>());
+        services.AddScoped<IUserAccess>(provider => provider.GetRequiredService<UserStore>());
+        services.AddScoped<IUserDirectory>(provider => provider.GetRequiredService<UserStore>());
+        services.AddScoped<IAuditReferenceNames, UserReferenceNames>();
+        services.AddScoped<SignInWithIdentity>();
+        services.AddScoped<GetSignedInUser>();
+        services.AddScoped<ChangeSystemRole>();
+        services.AddScoped<DeactivateUser>();
+        services.AddScoped<ReactivateUser>();
+        services.AddScoped<AnonymizeUser>();
+        services.AddScoped<ListUsers>();
+        services.AddScoped<ListPeople>();
+        services.AddScoped<GetPerson>();
+        // The photos of Microsoft 365, kept only in the memory (ADR-0124).
+        services.AddScoped<GetPersonPhoto>();
+        services.AddSingleton<PersonPhotoCache>();
+        services.AddScoped<IPersonPhotos, GraphPersonPhotos>();
+        // The company directory: the demo one of the local sign-in and the one of Microsoft Graph (ADR-0119).
+        services.AddScoped<IProviderDirectory, LocalPeopleDirectory>();
+        services.AddScoped<IProviderDirectory, GraphPeopleDirectory>();
+        services.AddScoped<IPeopleDirectory, CompanyDirectory>();
+        services.AddHttpClient(MicrosoftGraph.ClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
+        services.AddScoped<IUserProvisioning, UserFromDirectory>();
+        services.AddScoped<IPeopleLookup, PeopleLookup>();
+        services.AddScoped<GetProfile>();
+        services.AddScoped<ChooseTheme>();
+        services.AddScoped<ChooseDailySummary>();
+
+        services.AddScoped<IAuthorizationHandler, SystemRoleHandler>();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(SystemPolicies.Administrator, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator)))
+            .AddPolicy(SystemPolicies.ProjectCreators, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new SystemRoleRequirement(SystemRole.Administrator, SystemRole.ProjectManager)))
+            // The readings of the page in Teams: only the token of Teams, never the session cookie (ADR-0152).
+            .AddPolicy(TeamsAccess.Policy, policy => policy
+                .AddAuthenticationSchemes(TeamsAccess.Scheme)
+                .RequireAuthenticatedUser());
+
+        services.AddOptions<FirstAdministratorOptions>()
+            .Bind(configuration.GetSection(FirstAdministratorOptions.Section))
+            .Validate(
+                options => options.IsConfigured
+                    || (string.IsNullOrWhiteSpace(options.Provider) && string.IsNullOrWhiteSpace(options.ExternalId)),
+                "Users:FirstAdministrator needs both Provider and ExternalId, or neither.")
+            .ValidateOnStart();
+
+        services.AddOptions<AnonymizationOptions>()
+            .Bind(configuration.GetSection(AnonymizationOptions.Section))
+            .Validate(options => options.IsValid, "Users:AnonymousName needs the identifier of an anonymized person, with {0} for its number.")
+            .ValidateOnStart();
+
+        services.AddOptions<LocalSignInOptions>()
+            .Bind(configuration.GetSection(LocalSignInOptions.Section))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<LocalSignInOptions>, LocalSignInValidation>();
+        services.AddScoped<SignInLocally>();
+
+        // The sign-in through Entra ID (ADR-0117); the scheme itself is added with the session (AddEntraSignIn).
+        services.AddOptions<EntraSignInOptions>()
+            .Bind(configuration.GetSection(EntraSignInOptions.Section))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<EntraSignInOptions>, EntraSignInValidation>();
+        services.TryAddSingleton<IEntraClientAssertion, ManagedIdentityClientAssertion>();
+        services.TryAddSingleton<IGraphTokens, ClientAssertionGraphTokens>();
+        services.AddScoped<SignInWithEntra>();
+        // The token of Teams, for the readings of the page in Teams (ADR-0152); the scheme is added with the session.
+        services.AddScoped<SignInFromTeams>();
+        // The main reads, once after the API starts (ADR-0106).
+        services.AddScoped<IWarmUp, UsersWarmUp>();
+        return services;
+    }
+}
