@@ -1,4 +1,4 @@
-# FiscoProjects
+# <img src="docs/marca/svg/gerenware-horizontal-fundo-claro.svg" alt="GerenWare" height="48">
 
 Projetos, cronogramas e chamados da equipe em um só lugar, apoiado no Microsoft 365 da empresa.
 
@@ -11,6 +11,7 @@ O repositório está na fase de preparação para Spec-Driven Development com Op
 - [Decisões (ADR)](docs/adr/README.md): os ADRs do projeto, com o [glossário português–inglês](docs/glossario.md) dos nomes de código.
 - [Roadmap](docs/roadmap.md): as 49 changes da v1, em 10 grupos, com o status de cada uma.
 - [Requisitos de instalação](docs/instalacao.md) e [custos estimados](docs/custos-estimados.md).
+- [Marca](docs/marca/README.md): os arquivos da logo GerenWare e o resumo das cores, com o manual de identidade visual.
 - [CLAUDE.md](CLAUDE.md) e [openspec/config.yaml](openspec/config.yaml): convenções para o agente de código.
 
 Projeto pessoal de Marcelo Ribeiro (ADR-0002).
