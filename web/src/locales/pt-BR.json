@@ -121,8 +121,8 @@
     }
   },
   "signIn": {
-    "lead": "Projetos, cronogramas e chamados da equipe em um só lugar.",
-    "sub": "Acompanhe prazos em dias úteis, responda chamados e registre aceites sem trocar de ferramenta.",
+    "lead": "Implantação e suporte dos seus clientes em um só lugar.",
+    "sub": "Cronogramas, chamados e aceites, do primeiro dia do projeto ao suporte depois da entrada em produção.",
     "title": "Entrar",
     "hint": "Use o e-mail da empresa.",
     "hintLocal": "Use o e-mail de uma pessoa da demonstração.",

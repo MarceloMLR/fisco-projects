@@ -1,5 +1,4 @@
-import { brandTokens } from '../theme/brandColors';
-import { length } from '../theme/tokens';
+import { productFavicon } from './brand';
 
 /** The two paths of the icon of the timeline (ViewTimelineOutlined of the Material Icons), in a box of 24. */
 export const timelinePaths = [
@@ -7,33 +6,12 @@ export const timelinePaths = [
   'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 16H5V5h14z',
 ];
 
-/** The badge of the sidebar: 28px with the icon of 18px, drawn here in a box of 24 (ADR-0108). */
-const badgeSize = 28;
-const iconSize = 18;
-
 /**
- * The badge of the product as the icon of the tab of the browser (ADR-0108): the icon of the timeline in the color of
- * the text over the action, white or dark, whichever reads (ADR-0146), on the main color of the installation (or the
- * one of the design system), with the corners of the badge of the sidebar. A data address, so it needs no file.
+ * The icon of the tab of the browser (ADR-0108, ADR-0160): the logo of the installation, when it has one; otherwise
+ * the symbol of the product, which is also the icon the page starts with.
  */
-export function badgeIcon(mainColor: string | null): string {
-  const { action, 'on-action': onAction } = brandTokens(mainColor).light;
-  const radius = (Number.parseFloat(length('radius-md')) * 24) / badgeSize;
-  const scale = iconSize / badgeSize;
-  const offset = (24 - 24 * scale) / 2;
-  const svg = [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">',
-    `<rect width="24" height="24" rx="${radius.toFixed(2)}" fill="${action}"/>`,
-    `<g transform="translate(${offset.toFixed(2)} ${offset.toFixed(2)}) scale(${scale.toFixed(4)})" fill="${onAction}">`,
-    ...timelinePaths.map((path) => `<path d="${path}"/>`),
-    '</g></svg>',
-  ].join('');
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
-/** The icon of the tab of the browser: the logo of the installation, when it has one; otherwise the badge. */
-export function faviconOf(logoUrl: string | null, mainColor: string | null): string {
-  return logoUrl ?? badgeIcon(mainColor);
+export function faviconOf(logoUrl: string | null): string {
+  return logoUrl ?? productFavicon;
 }
 
 /** Puts the icon in the head of the page, in the one link of the icon. */
@@ -44,5 +22,7 @@ export function showFavicon(href: string): void {
     link.rel = 'icon';
     document.head.append(link);
   }
+  // The logo of an installation may be a PNG: the type of the first icon no longer says it.
+  link.removeAttribute('type');
   link.href = href;
 }

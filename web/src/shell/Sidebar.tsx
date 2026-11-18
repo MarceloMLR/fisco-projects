@@ -1,5 +1,4 @@
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
-import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { useColorScheme } from '@mui/material/styles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router';
 import { prefetchProject } from '../api/prefetch';
 import { installationQuery, myProjectsQuery } from '../api/queries';
+import { showsProductLogo } from '../installation/brand';
 import { InstallationLogo } from '../installation/InstallationLogo';
+import { ProductMark } from '../installation/ProductMark';
 import { useInstallation } from '../installation/useInstallation';
 import { colorsOf, sidebarIsDark } from '../theme/brandColors';
 import { useMainNavigation } from './pages';
@@ -92,40 +93,27 @@ export function Sidebar({
           }}
         >
           {logoUrl === null ? (
-            <Box
-              component="span"
-              aria-hidden="true"
-              sx={{
-                display: 'inline-grid',
-                placeItems: 'center',
-                flex: 'none',
-                width: 28,
-                height: 28,
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--action)',
-                color: 'var(--on-action)',
-              }}
-            >
-              <ViewTimelineOutlined sx={{ fontSize: 18 }} />
-            </Box>
+            <ProductMark name={installation.name} dark={dark} height={28} />
           ) : (
             <InstallationLogo src={logoUrl} maxHeight={28} />
           )}
-          <Box
-            component="span"
-            sx={{
-              minWidth: 0,
-              fontSize: 16,
-              lineHeight: '24px',
-              fontWeight: 500,
-              letterSpacing: '-0.01em',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {installation.name}
-          </Box>
+          {!showsProductLogo(installation.name, logoUrl) && (
+            <Box
+              component="span"
+              sx={{
+                minWidth: 0,
+                fontSize: 16,
+                lineHeight: '24px',
+                fontWeight: 500,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {installation.name}
+            </Box>
+          )}
         </Box>
       )}
       <Box

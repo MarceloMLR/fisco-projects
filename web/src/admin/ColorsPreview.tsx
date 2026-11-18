@@ -4,14 +4,15 @@ import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import NotificationsNoneOutlined from '@mui/icons-material/NotificationsNoneOutlined';
 import ScheduleOutlined from '@mui/icons-material/ScheduleOutlined';
 import SupportAgentOutlined from '@mui/icons-material/SupportAgentOutlined';
-import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import type SvgIcon from '@mui/material/SvgIcon';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { initials } from '../components/initials';
+import { showsProductLogo } from '../installation/brand';
 import { InstallationLogo } from '../installation/InstallationLogo';
+import { ProductMark } from '../installation/ProductMark';
 import { type BrandColorChoice, brandVariables, sidebarIsDark } from '../theme/brandColors';
 import type ptBR from '../locales/pt-BR.json';
 import type { ColorScheme } from '../theme/tokens';
@@ -294,25 +295,11 @@ export function ColorsPreview({
             }}
           >
             {sidebarLogo === null ? (
-              <Box
-                component="span"
-                sx={{
-                  display: 'inline-grid',
-                  placeItems: 'center',
-                  width: 24,
-                  height: 24,
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--action)',
-                  color: 'var(--on-action)',
-                  '& > svg': { fontSize: 16 },
-                }}
-              >
-                <ViewTimelineOutlined />
-              </Box>
+              <ProductMark name={name} dark={sidebarIsDark(colors, scheme)} height={24} />
             ) : (
               <InstallationLogo src={sidebarLogo} maxHeight={24} />
             )}
-            {name === '' ? p('company') : name}
+            {!showsProductLogo(name, sidebarLogo) && (name === '' ? p('company') : name)}
           </Box>
           <NavItem icon={HomeOutlined} text={p('home')} />
           <NavItem icon={FolderOutlined} text={p('projects')} state="active" />

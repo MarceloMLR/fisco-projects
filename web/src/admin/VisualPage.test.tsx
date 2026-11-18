@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type Installation, installationProblems } from '../api/client';
+import { productSymbol } from '../installation/brand';
 import ptBR from '../locales/pt-BR.json';
 import { expectBusy, heldAnswer, untilIdle } from '../test/busy';
 import { phoneWidth, renderApp } from '../test/renderApp';
@@ -245,7 +246,7 @@ describe('Tela Visual', () => {
     expect(previewSidebar()).toHaveTextContent('Projetos da Empresa');
     // The rest of the application changes only after saving.
     expect(sidebarBrand()).toHaveTextContent('Consultoria Fictícia');
-    expect(sidebarBrand().querySelector('img')).toBeNull();
+    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', productSymbol);
     expect(requests).toEqual([]);
     expect(saveButton()).toBeEnabled();
   });
@@ -592,7 +593,7 @@ describe('Nome e logo em Visual', () => {
     expect(await screen.findByText(visual.saved)).toBeInTheDocument();
     expect(requests).toEqual(['DELETE logo']);
     await waitFor(() => {
-      expect(sidebarBrand().querySelector('img')).toBeNull();
+      expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', productSymbol);
     });
   });
 
@@ -621,7 +622,7 @@ describe('Nome e logo em Visual', () => {
     fireEvent.click(saveButton());
 
     expect(await screen.findByText(brand.errors.logoUnsafe)).toBeInTheDocument();
-    expect(sidebarBrand().querySelector('img')).toBeNull();
+    expect(sidebarBrand().querySelector('img')).toHaveAttribute('src', productSymbol);
     expect(screen.queryByText(visual.saved)).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { productFavicon, productLogo, productName, productSymbol } from './brand';
 import ptBR from '../locales/pt-BR.json';
 import { renderApp } from '../test/renderApp';
 import { server } from '../test/server';
@@ -68,14 +69,27 @@ describe('Marca da instalação', () => {
     expect(brand.querySelector('svg')).toBeNull();
   });
 
-  it('Selo sem logo', async () => {
+  it('Símbolo ao lado de outro nome', async () => {
     installation('Consultoria Fictícia');
 
     await renderApp('/');
 
+    // The symbol of the product in the place of the logo, as decoration beside the name (ADR-0160).
     const brand = await sidebarBrand('Consultoria Fictícia');
-    expect(brand.querySelector('img')).toBeNull();
-    expect(brand.querySelector('svg')).not.toBeNull();
+    expect(brand.querySelector('img')).toHaveAttribute('src', productSymbol);
+    expect(brand.querySelector('img')).toHaveAttribute('alt', '');
+    expect(brand.querySelector('svg')).toBeNull();
+  });
+
+  it('Logo inteira com o nome do produto', async () => {
+    installation(productName);
+
+    await renderApp('/');
+
+    // The whole logo says the name: it is not written beside it.
+    const logo = await screen.findByRole('img', { name: productName });
+    expect(logo).toHaveAttribute('src', productLogo(false));
+    expect(logo.closest('a')).toHaveTextContent('');
   });
 
   it('Marca na página de entrada', async () => {
@@ -95,6 +109,21 @@ describe('Marca da instalação', () => {
     await waitFor(() => {
       expect(document.title).toBe('Consultoria Fictícia');
     });
+  });
+
+  it('Frase da página de entrada', async () => {
+    signedOut();
+    installation(productName);
+
+    await renderApp('/sign-in');
+
+    expect(
+      await screen.findByText('Implantação e suporte dos seus clientes em um só lugar.'),
+    ).toBeInTheDocument();
+    // The panel is always dark: the whole logo made for a dark background, with no name beside it.
+    const logo = await screen.findByRole('img', { name: productName });
+    expect(logo).toHaveAttribute('src', productLogo(true));
+    expect(screen.queryByText(productName)).toBeNull();
   });
 
   it('Nome do produto se a marca não chega', async () => {
@@ -214,8 +243,8 @@ function favicon() {
   return document.head.querySelector<HTMLLinkElement>('link[rel="icon"]')?.getAttribute('href');
 }
 
-// Spec: configuracao-da-instalacao, requirement "Logo na aba do navegador" (ADR-0108).
-describe('Logo na aba do navegador', () => {
+// Spec: configuracao-da-instalacao, requirement "Ícone da aba do navegador" (ADR-0108).
+describe('Ícone da aba do navegador', () => {
   beforeEach(() => {
     document.head.querySelector('link[rel="icon"]')?.remove();
   });
@@ -230,16 +259,15 @@ describe('Logo na aba do navegador', () => {
     });
   });
 
-  it('Selo na aba sem logo', async () => {
+  it('Símbolo na aba sem logo', async () => {
     signedOut();
     installation('Consultoria Fictícia');
 
     await renderApp('/sign-in');
 
-    // The badge of the sidebar, drawn on the main color.
+    // The symbol of the product, the icon the page starts with (ADR-0160).
     await waitFor(() => {
-      expect(favicon()).toMatch(/^data:image\/svg\+xml,/);
+      expect(favicon()).toBe(productFavicon);
     });
-    expect(decodeURIComponent(favicon() ?? '')).toContain(`fill="${color('action', 'light')}"`);
   });
 });
