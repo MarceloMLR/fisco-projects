@@ -1,4 +1,4 @@
-# FiscoProjects: custos estimados no Azure
+# GerenWare: custos estimados no Azure
 
 Registro para consulta e para a apresentação do projeto (pedido de Marcelo em 2026-10-15).
 
@@ -15,7 +15,7 @@ Registro para consulta e para a apresentação do projeto (pedido de Marcelo em 
 
 - 5 a 6 pessoas usando, não simultaneamente, em horário comercial.
 - Frontend (React) e backend (ASP.NET Core) no mesmo App Service.
-- Microsoft 365 (Entra ID, SharePoint e Exchange Online) já existente na empresa, sem custo adicional para o FiscoProjects.
+- Microsoft 365 (Entra ID, SharePoint e Exchange Online) já existente na empresa, sem custo adicional para o GerenWare.
 - Domínio próprio não incluído.
 - Banco Azure SQL (ADR-0048).
 
@@ -72,4 +72,4 @@ Por que não serverless em produção: com uso em horário comercial o banco fic
 
 ## Frase para a apresentação
 
-Operar o FiscoProjects para uma equipe de 5 a 6 pessoas custa cerca de R$ 220 por mês no Azure, com o monitoramento (ou cerca de R$ 157 na configuração econômica), aproveitando o Microsoft 365 que a empresa já tem.
+Operar o GerenWare para uma equipe de 5 a 6 pessoas custa cerca de R$ 220 por mês no Azure, com o monitoramento (ou cerca de R$ 157 na configuração econômica), aproveitando o Microsoft 365 que a empresa já tem.

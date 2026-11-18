@@ -1,4 +1,4 @@
-# FiscoProjects: discovery
+# GerenWare: discovery
 
 Referência textual do discovery, feito de 13 a 17/10/2026 por Marcelo Ribeiro com o Claude. Cada decisão tem um ADR em [`docs/adr/`](adr/README.md); este documento resume e aponta para eles. Em caso de divergência, vale o ADR mais recente.
 
@@ -13,7 +13,7 @@ Outros documentos do discovery:
 
 ## Pitch
 
-Projetos, cronogramas e chamados da equipe em um só lugar. O FiscoProjects reúne, para cada projeto, o cronograma, os chamados, os documentos, os links, os acessos a portais e os termos de aceite, apoiado no Microsoft 365 que a empresa já usa.
+Projetos, cronogramas e chamados da equipe em um só lugar. O GerenWare reúne, para cada projeto, o cronograma, os chamados, os documentos, os links, os acessos a portais e os termos de aceite, apoiado no Microsoft 365 que a empresa já usa.
 
 ## Problema
 
@@ -34,7 +34,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 
 | Capacidade | O que cobre | Organização no código | ADRs |
 | --- | --- | --- | --- |
-| Entrada e acesso | Página de entrada própria, login pelo Entra ID, criação do usuário no primeiro login, recusa de convidados e desativados, sessão de 8 h, "Sair" só do FiscoProjects | Módulo de identidade e host da API (BFF com cookie) | 0004, 0005, 0007, 0009, 0054 |
+| Entrada e acesso | Página de entrada própria, login pelo Entra ID, criação do usuário no primeiro login, recusa de convidados e desativados, sessão de 8 h, "Sair" só do GerenWare | Módulo de identidade e host da API (BFF com cookie) | 0004, 0005, 0007, 0009, 0054 |
 | Meu trabalho | Fila única por urgência (chamados, tarefas, aceites), saúde dos projetos e próximos marcos | Tela do frontend que consome os contratos dos módulos | 0010, 0070 |
 | Projetos e clientes | Código, nome, cliente opcional, status, datas e progresso calculados, gerente e líder técnico na criação, exclusão só pelo administrador | Módulo Projetos | 0015, 0016, 0041, 0072, 0073 |
 | Cronograma | Fases, tarefas e marcos, com subtarefas em um nível, dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto e, na v2, Novo projeto a partir do XML do MS Project | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071, 0088, 0135 |
@@ -61,7 +61,7 @@ Fora do produto:
 - Orçamento, custos, horas em reais e campos personalizados (ADR-0016, ADR-0128).
 - Dependências entre projetos diferentes (ADR-0019).
 - Gerar ou ler arquivo `.mpp` nativo; o XML do MS Project basta para ir e voltar (ADR-0021, ADR-0135).
-- Senha da conta Microsoft digitada no FiscoProjects (ADR-0009).
+- Senha da conta Microsoft digitada no GerenWare (ADR-0009).
 - Barra lateral recolhível, personalização do painel, gerador de senhas, exportação de acessos (ADR-0011, ADR-0010, ADR-0034).
 - Aplicativo instalável e notificações push no celular (ADR-0012).
 
@@ -100,7 +100,7 @@ Metas de negócio, adotadas como padrão inicial em 17/10/2026 e revistas depois
 
 | Meta | Alvo | Como medir |
 | --- | --- | --- |
-| Projetos ativos com cronograma no FiscoProjects | 100% em até 3 meses de uso | Projetos em andamento com cronograma, sobre o total em andamento |
+| Projetos ativos com cronograma no GerenWare | 100% em até 3 meses de uso | Projetos em andamento com cronograma, sobre o total em andamento |
 | Planilha de acessos substituída | 100% dos acessos dos projetos ativos no sistema em até 1 mês | Acessos importados (ADR-0034) e a planilha deixada de lado |
 | Uso semanal | Pelo menos 80% das pessoas ativas entram ao menos uma vez por semana | Eventos de entrada na auditoria (ADR-0039) |
 | Primeira resposta dos chamados no prazo | Pelo menos 90% | Prazo de primeira resposta da prioridade (ADR-0025) |
@@ -144,7 +144,7 @@ Uso esperado: 5 a 6 pessoas por instalação, não simultâneas, em horário com
 
 | Termo | Definição |
 | --- | --- |
-| Instalação | Uma cópia do FiscoProjects para uma única empresa, com banco, configuração e marca próprios (ADR-0003) |
+| Instalação | Uma cópia do GerenWare para uma única empresa, com banco, configuração e marca próprios (ADR-0003) |
 | Projeto | Unidade de trabalho com código curto (ex.: ERP-FIN), cliente opcional, cronograma, chamados e documentos (ADR-0016) |
 | Cronograma | Fases, tarefas e marcos do projeto, em dias úteis; datas e progresso do projeto vêm dele (ADR-0016, ADR-0019) |
 | Linha do tempo | Nome, na tela, da visualização gráfica do cronograma; a palavra "Gantt" não aparece para o usuário (ADR-0071) |
@@ -198,7 +198,7 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 ### Regulatório e legal
 
 - LGPD: dados pessoais com anonimização a pedido e prazos de retenção configuráveis (ADR-0058). Os prazos padrão precisam ser validados por cada empresa com a assessoria jurídica.
-- Lei do Software (Lei nº 9.609/1998): o FiscoProjects é projeto pessoal, sem recursos do empregador (ADR-0002). Antes de oferecer o código a qualquer empresa, um advogado analisa o contrato de trabalho.
+- Lei do Software (Lei nº 9.609/1998): o GerenWare é projeto pessoal, sem recursos do empregador (ADR-0002). Antes de oferecer o código a qualquer empresa, um advogado analisa o contrato de trabalho.
 - Validade jurídica das assinaturas dos termos de aceite: a confirmar com advogado (ADR-0035, ADR-0129).
 
 ### Dados sensíveis e retenção
@@ -243,12 +243,12 @@ A pessoa da empresa entra com a conta Microsoft e cai em Meu trabalho, que mostr
 | Dado | Fonte da verdade |
 | --- | --- |
 | Quem pode entrar, nome e e-mail das pessoas | Entra ID da empresa (ADR-0005, ADR-0008) |
-| Papéis e permissões | Banco do FiscoProjects, nunca App Roles do Entra (ADR-0006) |
+| Papéis e permissões | Banco do GerenWare, nunca App Roles do Entra (ADR-0006) |
 | Arquivos | SharePoint da empresa, no local configurado; o banco registra o que o sistema enviou (ADR-0030) |
 | Feriados nacionais | Calculados pelo próprio sistema (datas fixas e móveis pela Páscoa); feriados locais cadastrados (ADR-0018) |
 | Datas do cronograma | Calculadas no servidor (ADR-0051) |
 | Regras de negócio | ADRs em `docs/adr/` e, a partir da primeira change, as specs em `openspec/specs/` |
-| Valores visuais (cores, tipografia, espaço, cantos, sombras) | [Design system FiscoProjects no Claude Design](https://claude.ai/artifact/CymvW4j1dqVrX3KVN13Jt7), aprovado em 17/10/2026 |
+| Valores visuais (cores, tipografia, espaço, cantos, sombras) | [Design system GerenWare no Claude Design](https://claude.ai/artifact/CymvW4j1dqVrX3KVN13Jt7), aprovado em 17/10/2026 |
 | Telas | [Canvas de telas no Claude Design](https://claude.ai/artifact/WoMTFZKZXEpXzmPCCU4xfV), com 51 telas aprovadas em 17/10/2026 |
 
 Regras:

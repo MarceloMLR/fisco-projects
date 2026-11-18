@@ -1,6 +1,6 @@
 # Demonstração no Codespaces
 
-Como pôr a demonstração do FiscoProjects no ar pelo GitHub Codespaces, de qualquer computador, só com o navegador (ADR-0113). Os dados são os fictícios de `npm run demo:data` (ADR-0089).
+Como pôr a demonstração do GerenWare no ar pelo GitHub Codespaces, de qualquer computador, só com o navegador (ADR-0113). Os dados são os fictícios de `npm run demo:data` (ADR-0089).
 
 ## Uma vez só, na sua conta
 

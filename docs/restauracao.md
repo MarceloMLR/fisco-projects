@@ -1,6 +1,6 @@
 # Roteiro de restauração
 
-Como recuperar o FiscoProjects de uma perda de dados e como testar a restauração a cada 3 meses (ADR-0059). Vale para a instalação no Azure (ADR-0052); os nomes entre `< >` vêm do `.tfvars` da instalação (ADR-0053).
+Como recuperar o GerenWare de uma perda de dados e como testar a restauração a cada 3 meses (ADR-0059). Vale para a instalação no Azure (ADR-0052); os nomes entre `< >` vêm do `.tfvars` da instalação (ADR-0053).
 
 Metas: perder no máximo alguns minutos de dados e voltar ao ar em até 4 horas.
 
@@ -22,7 +22,7 @@ As chaves que cifram as senhas dos acessos ficam no próprio banco (`credentials
 
 - Quem restaura: o responsável pela instalação, com acesso de colaborador ao grupo de recursos e ao Key Vault. Tirar e pôr a trava do banco (Cenário 2) pede o papel de Proprietário ou de Administrador de Acesso do Usuário.
 - Ferramentas: Azure CLI (`az login` e `az account set --subscription <assinatura>`) ou o portal do Azure.
-- Anote a hora (em UTC) do ponto que quer recuperar: o último momento em que os dados estavam certos. A Auditoria do FiscoProjects ajuda a achar quando a mudança errada aconteceu.
+- Anote a hora (em UTC) do ponto que quer recuperar: o último momento em que os dados estavam certos. A Auditoria do GerenWare ajuda a achar quando a mudança errada aconteceu.
 - Avise as pessoas: durante a troca do banco, a aplicação fica fora do ar.
 
 ## Cenário 1: dados apagados ou alterados por engano
@@ -98,7 +98,7 @@ Use quando a aplicação está no ar e só parte dos dados se perdeu, como um pr
 ## Cenário 3: arquivo apagado ou alterado no SharePoint
 
 1. Na biblioteca da instalação, abra a lixeira do site e restaure o arquivo, ou abra o histórico de versões do arquivo e restaure a versão certa.
-2. Abra o documento ou o anexo pelo FiscoProjects para conferir. Se o sistema não encontrar o arquivo restaurado, envie-o de novo pela tela.
+2. Abra o documento ou o anexo pelo GerenWare para conferir. Se o sistema não encontrar o arquivo restaurado, envie-o de novo pela tela.
 
 O prazo da lixeira e do histórico segue a política de retenção do Microsoft 365 da empresa (ADR-0059).
 
