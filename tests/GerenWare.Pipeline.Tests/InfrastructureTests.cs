@@ -167,8 +167,8 @@ public sealed partial class InfrastructureTests
         Read("main.tf").Should().Contain("resource_group_id  = azurerm_resource_group.main.id");
         // The container of the state has the names of the script that creates it.
         var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
-        script.Should().Contain("$group = \"rg-fiscoprojects-$Installation-tfstate\"").And.Contain("$account = \"stfp${Installation}tfstate\"");
-        Read("main.tf").Should().Contain("resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate\"\n")
+        script.Should().Contain("$group = \"rg-gerenware-$Installation-tfstate\"").And.Contain("$account = \"stgw${Installation}tfstate\"");
+        Read("main.tf").Should().Contain("resourceGroups/rg-gerenware-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stgw${var.installation}tfstate\"\n")
             .And.Contain("state_container_id = \"${local.state_account_id}/blobServices/default/containers/tfstate\"");
         Regex.Match(Read("variables.tf"), "variable \"alert_email\" \\{[^}]*sensitive   = true", RegexOptions.Singleline).Success
             .Should().BeTrue("the plans are shown in public logs");
@@ -456,7 +456,7 @@ public sealed partial class InfrastructureTests
         Regex.Matches(production, "^\\w+ *=", RegexOptions.Multiline).Select(match => match.Value.Split(' ')[0])
             .Should().Equal(["installation", "environment", "github_repository"], "the rest are the defaults of production");
         Read("environments", "prod.backend.hcl").Should().Contain("key                  = \"prod.tfstate\"")
-            .And.Contain("storage_account_name = \"stfpmlrtfstate\"");
+            .And.Contain("storage_account_name = \"stgwmlrtfstate\"");
     }
 
     private static string Read(params string[] relativePath) => File.ReadAllText(Path.Combine([Folder, .. relativePath]));

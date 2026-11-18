@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Makes the package of a version published on GitHub (ADR-0127), fiscoprojects-vX.Y.Z.zip, and attaches it to the
+# Makes the package of a version published on GitHub (ADR-0127), gerenware-vX.Y.Z.zip, and attaches it to the
 # version: the application (artifacts/app.zip, from scripts/cd/publish.sh), the file VERSION, the Terraform without the
 # parameters of the environments of this repository, the scripts of infra/scripts and the guides. Everything but the
 # application comes from the commit in Git, so nothing local goes along (local.auto.tfvars, the state, .terraform). The
@@ -27,10 +27,10 @@ git archive --format=tar HEAD -- \
 cp "$artifacts/app.zip" "$staging/app.zip"
 echo "$version" > "$staging/VERSION"
 
-package="$artifacts/fiscoprojects-$version.zip"
+package="$artifacts/gerenware-$version.zip"
 rm -f "$package"
 (cd "$staging" && zip -q -r - .) > "$package"
 echo "Package: $package ($(du -h "$package" | cut -f1))"
 
 gh release upload "$version" "$package" --clobber --repo "$GITHUB_REPOSITORY"
-echo "Pacote da versão anexado: \`fiscoprojects-$version.zip\`" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+echo "Pacote da versão anexado: \`gerenware-$version.zip\`" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"

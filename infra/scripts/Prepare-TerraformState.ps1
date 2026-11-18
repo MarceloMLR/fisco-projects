@@ -23,8 +23,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-$group = "rg-fiscoprojects-$Installation-tfstate"
-$account = "stfp${Installation}tfstate"
+$group = "rg-gerenware-$Installation-tfstate"
+$account = "stgw${Installation}tfstate"
 $container = 'tfstate'
 $tags = @('aplicacao=GerenWare', "instalacao=$Installation", 'uso=estado-do-terraform')
 

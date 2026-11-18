@@ -12,10 +12,10 @@ tfvars="infra/terraform/environments/$environment.tfvars"
 installation=$(sed -n 's/^installation *= *"\([^"]*\)".*/\1/p' "$tfvars")
 aspnetcore=$(sed -n 's/^aspnetcore_environment *= *"\([^"]*\)".*/\1/p' "$tfvars")
 # The names of infra/terraform/main.tf.
-name="fiscoprojects-$installation-$environment"
+name="gerenware-$installation-$environment"
 app="app-$name"
 server="sql-$name.database.windows.net"
-database="sqldb-fiscoprojects"
+database="sqldb-gerenware"
 
 principal=$(az webapp identity show --resource-group "rg-$name" --name "$app" --query principalId --output tsv)
 if [ -z "$principal" ]; then

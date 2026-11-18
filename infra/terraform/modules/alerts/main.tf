@@ -74,7 +74,7 @@ locals {
 resource "azurerm_monitor_action_group" "admin" {
   name                = var.action_group_name
   resource_group_name = var.resource_group_name
-  short_name          = "fiscoproj"
+  short_name          = "gerenware"
   tags                = var.tags
 
   email_receiver {

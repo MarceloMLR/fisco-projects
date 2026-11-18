@@ -3,7 +3,7 @@
 Publishes the version of this package in an installation updated outside the pipeline of the repository (ADR-0127).
 
 .DESCRIPTION
-Runs from the folder of the package of a version (fiscoprojects-vX.Y.Z.zip, unzipped), after the terraform apply of the
+Runs from the folder of the package of a version (gerenware-vX.Y.Z.zip, unzipped), after the terraform apply of the
 version, with the Azure CLI signed in to the subscription of the installation as one of its operators
 (operator_object_ids), who administer the database. The names come from installation and environment in
 infra/terraform/local.auto.tfvars, as in infra/terraform/main.tf. It:
@@ -55,7 +55,7 @@ if (-not $installation -or -not $environment) {
 }
 
 # The names of infra/terraform/main.tf.
-$name = "fiscoprojects-$installation-$environment"
+$name = "gerenware-$installation-$environment"
 $group = "rg-$name"
 $app = "app-$name"
 $server = "sql-$name"
@@ -75,10 +75,10 @@ if ($aspnetcore -ne 'Development') {
         $ClientAddress = (Invoke-RestMethod -Uri 'https://api.ipify.org').ToString().Trim()
     }
     $rule = 'publicacao-temporaria'
-    $folder = Join-Path ([IO.Path]::GetTempPath()) "fiscoprojects-$([IO.Path]::GetRandomFileName())"
+    $folder = Join-Path ([IO.Path]::GetTempPath()) "gerenware-$([IO.Path]::GetRandomFileName())"
     $variables = @{
         ASPNETCORE_ENVIRONMENT            = $aspnetcore
-        ConnectionStrings__GerenWare  = "Server=tcp:$server.database.windows.net,1433;Database=sqldb-fiscoprojects;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
+        ConnectionStrings__GerenWare  = "Server=tcp:$server.database.windows.net,1433;Database=sqldb-gerenware;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
         Database__AppIdentity__Name       = $app
         Database__AppIdentity__ObjectId   = $principal
         # Only the account of the Azure CLI, never another one signed in to Visual Studio on this computer.

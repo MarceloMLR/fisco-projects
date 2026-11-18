@@ -2,7 +2,7 @@
 # database, the Key Vault, the monitoring and the application in Entra ID, all in one resource group.
 
 locals {
-  name  = "fiscoprojects-${var.installation}-${var.environment}"
+  name  = "gerenware-${var.installation}-${var.environment}"
   short = "fp${var.installation}${var.environment}"
   # Names are fixed here, so that a resource can point to another before it exists (the address of the application,
   # the database in the connection of the application).
@@ -11,7 +11,7 @@ locals {
     plan           = "asp-${local.name}"
     app            = "app-${local.name}"
     sql_server     = "sql-${local.name}"
-    database       = "sqldb-fiscoprojects"
+    database       = "sqldb-gerenware"
     key_vault      = "kv-${local.short}"
     log            = "log-${local.name}"
     insights       = "appi-${local.name}"
@@ -132,7 +132,7 @@ module "monitoring" {
 
 # The state stays in the storage account of infra/scripts/Prepare-TerraformState.ps1, with the same names.
 locals {
-  state_account_id   = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate"
+  state_account_id   = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-gerenware-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stgw${var.installation}tfstate"
   state_container_id = "${local.state_account_id}/blobServices/default/containers/tfstate"
 }
 

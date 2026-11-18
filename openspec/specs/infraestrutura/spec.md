@@ -11,7 +11,7 @@ O Terraform de `infra/terraform` MUST criar uma instalação inteira num grupo d
 
 #### Scenario: Ambiente criado pelo Terraform
 - **WHEN** quem opera a instalação aplica o Terraform com os parâmetros de um ambiente
-- **THEN** a instalação inteira é criada no grupo de recursos daquele ambiente, com o endereço `https://app-fiscoprojects-<instalação>-<ambiente>.azurewebsites.net`
+- **THEN** a instalação inteira é criada no grupo de recursos daquele ambiente, com o endereço `https://app-gerenware-<instalação>-<ambiente>.azurewebsites.net`
 
 ### Requirement: Instalação sem senhas
 

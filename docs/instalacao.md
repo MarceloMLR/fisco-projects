@@ -10,7 +10,7 @@ As partes "Antes de começar" a "Atualizar para uma versão nova" são o passo a
 
 - O tenant do Microsoft 365, com o Entra ID, o Exchange Online e o SharePoint Online. Só as pessoas da empresa (membros do tenant) entram; convidados são recusados (ADR-0007).
 - Uma assinatura do Azure, de preferência só para o FiscoProjects, para separar custos e acessos. Os recursos ficam na Brazil South (ADR-0052); os valores estão em [custos estimados](custos-estimados.md).
-- O código da instalação, de 2 a 6 letras minúsculas ou números (por exemplo, as iniciais da empresa). Ele entra no nome de todos os recursos e no endereço `https://app-fiscoprojects-<código>-prod.azurewebsites.net`, e precisa ser único entre as instalações do FiscoProjects, porque o endereço, o servidor do banco, o Key Vault e a conta do estado têm nomes únicos no Azure inteiro. O nome do Key Vault fica reservado por 90 dias depois de apagada uma instalação.
+- O código da instalação, de 2 a 6 letras minúsculas ou números (por exemplo, as iniciais da empresa). Ele entra no nome de todos os recursos e no endereço `https://app-gerenware-<código>-prod.azurewebsites.net`, e precisa ser único entre as instalações do FiscoProjects, porque o endereço, o servidor do banco, o Key Vault e a conta do estado têm nomes únicos no Azure inteiro. O nome do Key Vault fica reservado por 90 dias depois de apagada uma instalação.
 - O site do SharePoint dos arquivos e, se quiser, a biblioteca e uma pasta dentro dela (veja SharePoint, na Referência).
 - A caixa dos e-mails do sistema: uma que a empresa já tem, como um projetos@ que a equipe lê, ou uma compartilhada que o script do Exchange cria (veja Exchange Online, na Referência).
 - Quem será o primeiro administrador do FiscoProjects e o e-mail que recebe os alertas da instalação.
@@ -52,12 +52,12 @@ A TI da empresa faz os mesmos passos com as próprias contas e os mesmos papéis
 Em qualquer caso, quem opera a instalação entra em `operator_object_ids`: fica dono dos objetos do Entra ID e administrador do banco e do Key Vault. O acesso ao estado do Terraform é à parte: o `Prepare-TerraformState.ps1` o dá a quem o roda, e cada pessoa que passar a operar depois ganha o papel na conta do estado, dado por quem já opera:
 
 ```powershell
-az role assignment create --assignee <id da pessoa> --role 'Storage Blob Data Contributor' --scope (az storage account show --name stfp<código>tfstate --query id -o tsv)
+az role assignment create --assignee <id da pessoa> --role 'Storage Blob Data Contributor' --scope (az storage account show --name stgw<código>tfstate --query id -o tsv)
 ```
 
 ## Pacote da versão
 
-Cada versão do FiscoProjects tem um número (`v1.2.0`) e um pacote, `fiscoprojects-v1.2.0.zip`, anexado à página da versão no GitHub (Releases) ou enviado pelo fornecedor (ADR-0127). O pacote tem:
+Cada versão do FiscoProjects tem um número (`v1.2.0`) e um pacote, `gerenware-v1.2.0.zip`, anexado à página da versão no GitHub (Releases) ou enviado pelo fornecedor (ADR-0127). O pacote tem:
 
 - `app.zip`: a aplicação, pronta para o App Service.
 - `VERSION`: o número da versão.
@@ -65,7 +65,7 @@ Cada versão do FiscoProjects tem um número (`v1.2.0`) e um pacote, `fiscoproje
 - `infra/scripts`: os scripts de quem opera.
 - `docs`: este guia, o [roteiro de restauração](restauracao.md) e os [custos estimados](custos-estimados.md).
 
-Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão para o repositório nem para o pacote: o `local.auto.tfvars`, com todos os valores da instalação, e o `backend.hcl`, que diz onde está o estado do Terraform. Eles trazem o nome do tenant, e-mails e identificadores de pessoas, então ficam numa pasta privada de quem opera, com backup. A cada versão, descompacte o pacote numa pasta nova (por exemplo, `fiscoprojects-v1.2.0`) e copie os dois arquivos para `infra/terraform/` dela. Os comandos deste guia rodam na pasta do pacote, no PowerShell 7. No Windows, desbloqueie antes os scripts baixados da internet, que o PowerShell recusa por não terem assinatura: `Get-ChildItem -Recurse | Unblock-File`, na pasta do pacote.
+Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão para o repositório nem para o pacote: o `local.auto.tfvars`, com todos os valores da instalação, e o `backend.hcl`, que diz onde está o estado do Terraform. Eles trazem o nome do tenant, e-mails e identificadores de pessoas, então ficam numa pasta privada de quem opera, com backup. A cada versão, descompacte o pacote numa pasta nova (por exemplo, `gerenware-v1.2.0`) e copie os dois arquivos para `infra/terraform/` dela. Os comandos deste guia rodam na pasta do pacote, no PowerShell 7. No Windows, desbloqueie antes os scripts baixados da internet, que o PowerShell recusa por não terem assinatura: `Get-ChildItem -Recurse | Unblock-File`, na pasta do pacote.
 
 ## Instalar
 
@@ -74,8 +74,8 @@ Os parâmetros da instalação ficam em dois arquivos privados, que nunca vão p
 2. **Prepare o estado do Terraform**, uma vez por instalação: `./infra/scripts/Prepare-TerraformState.ps1 -Installation <código>`. Depois, crie o `infra/terraform/backend.hcl`:
 
    ```hcl
-   resource_group_name  = "rg-fiscoprojects-<código>-tfstate"
-   storage_account_name = "stfp<código>tfstate"
+   resource_group_name  = "rg-gerenware-<código>-tfstate"
+   storage_account_name = "stgw<código>tfstate"
    container_name       = "tfstate"
    key                  = "prod.tfstate"
    ```
@@ -199,7 +199,7 @@ terraform -chdir=infra/terraform init -backend-config=backend.hcl
 terraform -chdir=infra/terraform destroy
 ```
 
-O `destroy` tira a trava do banco antes de apagá-lo; pelo portal ou pelo `az group delete`, o grupo de recursos não é apagado enquanto ela existir. O Key Vault fica recuperável pelo prazo da exclusão reversível (90 dias na produção), sem custo parado, e os backups mensais do banco continuam cobrados até vencerem. A conta do estado sobra e custa centavos por mês; apagado o último ambiente desta instalação, saia com `az group delete --name rg-fiscoprojects-<código>-tfstate`.
+O `destroy` tira a trava do banco antes de apagá-lo; pelo portal ou pelo `az group delete`, o grupo de recursos não é apagado enquanto ela existir. O Key Vault fica recuperável pelo prazo da exclusão reversível (90 dias na produção), sem custo parado, e os backups mensais do banco continuam cobrados até vencerem. A conta do estado sobra e custa centavos por mês; apagado o último ambiente desta instalação, saia com `az group delete --name rg-gerenware-<código>-tfstate`.
 
 O `destroy` não alcança o que os scripts fizeram fora do Azure, que os administradores da empresa apagam: no Exchange Online, a atribuição do papel "Application Mail.Send", o escopo `FiscoProjects - caixa de envio` e a entidade de serviço do aplicativo (`Remove-ManagementRoleAssignment`, `Remove-ManagementScope` e `Remove-ServicePrincipal`) e a caixa, se foi criada pelo script; no SharePoint, a permissão do aplicativo no site, que deixa de valer com o aplicativo apagado, e os arquivos, que ficam no site; no Teams, o aplicativo do FiscoProjects, excluído em Gerenciar aplicativos (Ações → Excluir) e tirado das políticas de configuração.
 
@@ -245,7 +245,7 @@ Para apagar um ambiente: `terraform -chdir=infra/terraform destroy -var-file=env
 - Depois do `apply`, prepare o environment do GitHub com `./infra/scripts/Set-GitHubEnvironment.ps1 -Environment <ambiente>`, com o GitHub CLI na conta dona do repositório e o Terraform iniciado no estado do ambiente. O script grava as variáveis `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` e `OPERATOR_OBJECT_IDS`, nenhuma segredo. No `dev`, o environment aceita só a `main`; no `prod`, só as tags das versões (`v*`), e cada publicação espera a aprovação de quem rodou o script (ADR-0125).
 - Os logs do GitHub Actions são públicos e mostram as variáveis do workflow: nada pessoal vai nelas. O e-mail dos alertas fica só no `local.auto.tfvars` de quem opera; o pipeline o lê do grupo de ações da instalação e o mascara (ADR-0116). Por isso, as instalações das empresas não são publicadas por este pipeline enquanto o repositório for público (ADR-0127).
 - A cada merge na `main`, o workflow `deploy-dev` monta o pacote, publica no App Service, espera o `/health`, carrega os dados de demonstração que faltam (no ambiente em `Development`) e roda o `terraform plan`. Uma diferença na infraestrutura aparece como aviso no resumo da execução: aplique o plano à mão, como em "Criar ou atualizar a infraestrutura" (ADR-0115). Para publicar de novo sem merge, rode o workflow pela aba Actions.
-- Versões (ADR-0127): marque a versão na `main` e publique-a no GitHub, por exemplo com `gh release create v1.0.0 --target main --generate-notes`. O workflow `release` monta o pacote `fiscoprojects-v1.0.0.zip` e o anexa à versão, para as instalações das empresas.
+- Versões (ADR-0127): marque a versão na `main` e publique-a no GitHub, por exemplo com `gh release create v1.0.0 --target main --generate-notes`. O workflow `release` monta o pacote `gerenware-v1.0.0.zip` e o anexa à versão, para as instalações das empresas.
 - Produção (ADR-0125): o workflow `deploy-prod` só roda à mão. Para publicar uma versão:
   1. Publique a versão no GitHub, como acima.
   2. Em Actions, abra `deploy-prod`, escolha a tag em "Use workflow from" e rode. Rodado fora de uma tag de versão, ele para.
