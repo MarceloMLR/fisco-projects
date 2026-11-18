@@ -22,7 +22,7 @@ beforeEach(() => {
       const body = (await request.json()) as Pick<LinkCategory, 'name'>;
       requests.push(`POST ${body.name}`);
       if (categories.some((category) => category.name.toLowerCase() === body.name.toLowerCase())) {
-        return problem(409, 'urn:fiscoprojects:problem:link-category-name-in-use');
+        return problem(409, 'urn:gerenware:problem:link-category-name-in-use');
       }
       const id = '0199f5a2-7c1e-7d40-9a1b-c00000000009';
       categories = [...categories, { id, name: body.name, isActive: true }].sort((a, b) =>

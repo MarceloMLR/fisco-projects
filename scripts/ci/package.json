@@ -1,5 +1,5 @@
 {
-  "name": "fisco-projects-ci-tools",
+  "name": "gerenware-ci-tools",
   "private": true,
   "description": "Node tools used by the scripts in scripts/ci, pinned with the lockfile.",
   "devDependencies": {

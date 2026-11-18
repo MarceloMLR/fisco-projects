@@ -21,7 +21,7 @@ beforeEach(() => {
       const body = (await request.json()) as Pick<Vendor, 'name' | 'portalUrl'>;
       requests.push(`POST ${body.name} ${String(body.portalUrl)}`);
       if (vendors.some((vendor) => vendor.name.toLowerCase() === body.name.toLowerCase())) {
-        return problem(409, 'urn:fiscoprojects:problem:vendor-name-in-use');
+        return problem(409, 'urn:gerenware:problem:vendor-name-in-use');
       }
       const id = '0199f5a2-7c1e-7d40-9a1b-900000000009';
       vendors = [...vendors, { id, ...body, isActive: true }].sort((a, b) =>

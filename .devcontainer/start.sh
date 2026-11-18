@@ -13,8 +13,8 @@ fi
 
 echo "Subindo o banco, a API e os dados de demonstração. Leva alguns minutos..."
 docker compose up -d --wait
-log="${TMPDIR:-/tmp}/fiscoprojects-api.log"
-dotnet run --project src/FiscoProjects.Api > "$log" 2>&1 &
+log="${TMPDIR:-/tmp}/gerenware-api.log"
+dotnet run --project src/GerenWare.Api > "$log" 2>&1 &
 api=$!
 until curl -fsS -o /dev/null http://localhost:5175/health 2> /dev/null; do
   if ! kill -0 "$api" 2> /dev/null; then
@@ -33,7 +33,7 @@ fi
 cat << EOF
 
 ==================================================================
- FiscoProjects no ar: $address
+ GerenWare no ar: $address
  $shared
  Entre com paulo.nogueira@empresa.example (administrador)
  ou marina.costa@empresa.example (gerente), sem senha.

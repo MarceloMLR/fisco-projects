@@ -132,7 +132,7 @@ resource "azurerm_linux_web_app" "main" {
 
   # No password: the application signs in to the database with its managed identity (ADR-0052).
   connection_string {
-    name  = "FiscoProjects"
+    name  = "GerenWare"
     type  = "SQLAzure"
     value = "Server=tcp:${var.database_server},1433;Database=${var.database_name};Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False"
   }

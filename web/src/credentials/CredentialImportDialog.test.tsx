@@ -255,7 +255,7 @@ describe('Importação dos acessos', () => {
         HttpResponse.json(
           {
             status: 400,
-            type: 'urn:fiscoprojects:problem:credential-import-refused',
+            type: 'urn:gerenware:problem:credential-import-refused',
             reason: 'Unreadable',
           },
           { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
@@ -278,7 +278,7 @@ describe('Importação dos acessos', () => {
         HttpResponse.json(
           {
             status: 400,
-            type: 'urn:fiscoprojects:problem:credential-import-invalid',
+            type: 'urn:gerenware:problem:credential-import-invalid',
             rows: [{ row: 3, fields: ['username'] }],
           },
           { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
@@ -309,7 +309,7 @@ describe('Importação dos acessos', () => {
   it('Projeto encerrado ao importar pela tela', async () => {
     server.use(
       http.post('/api/projects/:id/credentials/import', () =>
-        problem(409, 'urn:fiscoprojects:problem:project-closed'),
+        problem(409, 'urn:gerenware:problem:project-closed'),
       ),
     );
     const dialog = await openImport();

@@ -8,7 +8,7 @@ import type { PersonChoice } from '../components/PersonField';
 import { problemText, problemType } from './projectForm';
 
 /** The problem type of a file the preview does not read (ADR-0135). */
-export const msProjectRefused = 'urn:fiscoprojects:problem:ms-project-file-refused';
+export const msProjectRefused = 'urn:gerenware:problem:ms-project-file-refused';
 
 /** Why the API did not read the file, as it says in the extension reason. */
 export const msProjectRefusals = [

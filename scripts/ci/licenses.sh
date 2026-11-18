@@ -40,7 +40,7 @@ while read -r id version; do
     echo "$id $version: license ${license:-without an SPDX expression} is not allowed" >&2
     failed=1
   fi
-done < <(dotnet list FiscoProjects.slnx package --include-transitive --format json \
+done < <(dotnet list GerenWare.slnx package --include-transitive --format json \
   | jq -r '[.projects[].frameworks[]? | (.topLevelPackages[]?, .transitivePackages[]?) | "\(.id) \(.resolvedVersion)"] | unique[]')
 
 if [ "$failed" -eq 0 ]; then

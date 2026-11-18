@@ -23,7 +23,7 @@ beforeEach(() => {
       const body = (await request.json()) as Pick<DefaultFolder, 'name' | 'visibleTo'>;
       requests.push(`POST ${body.name} ${body.visibleTo.join(',')}`);
       if (folders.some((folder) => folder.name.toLowerCase() === body.name.toLowerCase())) {
-        return problem(409, 'urn:fiscoprojects:problem:document-folder-name-in-use');
+        return problem(409, 'urn:gerenware:problem:document-folder-name-in-use');
       }
       const id = '0199f5a2-7c1e-7d40-9a1b-b00000000009';
       folders = [

@@ -287,7 +287,7 @@ describe('Links do projeto', () => {
   it('Projeto encerrado ao excluir pela tela', async () => {
     server.use(
       http.delete('/api/projects/:id/links/:linkId', () =>
-        problem(409, 'urn:fiscoprojects:problem:project-closed'),
+        problem(409, 'urn:gerenware:problem:project-closed'),
       ),
     );
     await openLinks();

@@ -1,5 +1,5 @@
 {
-  "name": "FiscoProjects (demonstração)",
+  "name": "GerenWare (demonstração)",
   "image": "mcr.microsoft.com/devcontainers/dotnet:2-10.0",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
@@ -14,7 +14,7 @@
   "forwardPorts": [5175],
   "portsAttributes": {
     "5175": {
-      "label": "FiscoProjects",
+      "label": "GerenWare",
       "onAutoForward": "openBrowser"
     }
   },

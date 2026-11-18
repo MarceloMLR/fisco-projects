@@ -26,7 +26,7 @@ $PSNativeCommandUseErrorActionPreference = $true
 $group = "rg-fiscoprojects-$Installation-tfstate"
 $account = "stfp${Installation}tfstate"
 $container = 'tfstate'
-$tags = @('aplicacao=FiscoProjects', "instalacao=$Installation", 'uso=estado-do-terraform')
+$tags = @('aplicacao=GerenWare', "instalacao=$Installation", 'uso=estado-do-terraform')
 
 Write-Host "Assinatura: $(az account show --query name -o tsv)"
 az provider register --namespace Microsoft.Storage --wait | Out-Null

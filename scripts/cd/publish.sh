@@ -7,6 +7,6 @@ cd "$(dirname "$0")/../.."
 rm -rf artifacts
 mkdir -p artifacts
 (cd web && npm ci --no-audit --no-fund && npm run build)
-dotnet publish src/FiscoProjects.Api/FiscoProjects.Api.csproj --configuration Release --output artifacts/app
+dotnet publish src/GerenWare.Api/GerenWare.Api.csproj --configuration Release --output artifacts/app
 (cd artifacts/app && zip -q -r ../app.zip .)
 echo "Package: artifacts/app.zip ($(du -h artifacts/app.zip | cut -f1))"

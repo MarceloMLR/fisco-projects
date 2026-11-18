@@ -77,8 +77,8 @@ resource "azuread_application" "main" {
       value                      = local.teams_scope
       type                       = "Admin"
       enabled                    = true
-      admin_consent_display_name = "Ler o FiscoProjects pelo Teams"
-      admin_consent_description  = "Permite que a página do FiscoProjects no Teams leia, como a pessoa, o que ela vê."
+      admin_consent_display_name = "Ler o GerenWare pelo Teams"
+      admin_consent_description  = "Permite que a página do GerenWare no Teams leia, como a pessoa, o que ela vê."
     }
   }
 

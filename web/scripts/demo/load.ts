@@ -155,7 +155,7 @@ export async function loadDemo(
       `Os dados de demonstração já estão carregados (${mainProject} e os demais projetos do plano existem). Nada mudou.`,
     );
     log(
-      'Para carregar de novo, apague o banco local (docker compose down -v e docker compose up -d --wait) e os arquivos de src/FiscoProjects.Api/App_Data, suba a API e rode npm run demo:data.',
+      'Para carregar de novo, apague o banco local (docker compose down -v e docker compose up -d --wait) e os arquivos de src/GerenWare.Api/App_Data, suba a API e rode npm run demo:data.',
     );
     log(screensLine);
     return { loaded: false, reason: 'already-loaded' };

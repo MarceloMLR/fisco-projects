@@ -198,7 +198,7 @@ describe('Aplicativo do Teams', () => {
   it('Pacote recusado pela API', async () => {
     server.use(
       http.post('/api/admin/teams-app/package', () =>
-        problem(409, 'urn:fiscoprojects:problem:teams-unavailable'),
+        problem(409, 'urn:gerenware:problem:teams-unavailable'),
       ),
     );
     const section = await openSection();

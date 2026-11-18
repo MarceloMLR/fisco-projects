@@ -259,98 +259,98 @@ export const systemRoles = [
 
 /** Problem types the API returns when it refuses a sign-in (SignInProblems in the Users module). */
 export const signInProblems = {
-  notInDirectory: 'urn:fiscoprojects:problem:not-in-demo-directory',
-  inactive: 'urn:fiscoprojects:problem:user-inactive',
+  notInDirectory: 'urn:gerenware:problem:not-in-demo-directory',
+  inactive: 'urn:gerenware:problem:user-inactive',
 } as const;
 
 /** Problem types of a refused logo (InstallationProblems in the Administration module). */
 export const installationProblems = {
-  logoFormat: 'urn:fiscoprojects:problem:logo-format',
-  logoTooLarge: 'urn:fiscoprojects:problem:logo-too-large',
-  logoUnsafe: 'urn:fiscoprojects:problem:logo-unsafe',
+  logoFormat: 'urn:gerenware:problem:logo-format',
+  logoTooLarge: 'urn:gerenware:problem:logo-too-large',
+  logoUnsafe: 'urn:gerenware:problem:logo-unsafe',
 } as const;
 
 /** Problem types of the clients (ClientProblems in the Projects module). */
 export const clientProblems = {
-  cnpjInUse: 'urn:fiscoprojects:problem:client-cnpj-in-use',
-  logoFormat: 'urn:fiscoprojects:problem:client-logo-format',
-  logoTooLarge: 'urn:fiscoprojects:problem:client-logo-too-large',
-  hasProjects: 'urn:fiscoprojects:problem:client-has-projects',
+  cnpjInUse: 'urn:gerenware:problem:client-cnpj-in-use',
+  logoFormat: 'urn:gerenware:problem:client-logo-format',
+  logoTooLarge: 'urn:gerenware:problem:client-logo-too-large',
+  hasProjects: 'urn:gerenware:problem:client-has-projects',
 } as const;
 
 /** Problem types of the projects (ProjectProblems in the Projects module). */
 export const projectProblems = {
-  codeInUse: 'urn:fiscoprojects:problem:project-code-in-use',
-  closed: 'urn:fiscoprojects:problem:project-closed',
-  memberExists: 'urn:fiscoprojects:problem:project-member-exists',
-  lastManager: 'urn:fiscoprojects:problem:project-last-manager',
-  scheduleCycle: 'urn:fiscoprojects:problem:schedule-cycle',
-  scheduleNothingToUndo: 'urn:fiscoprojects:problem:schedule-nothing-to-undo',
-  scheduleUndoBlocked: 'urn:fiscoprojects:problem:schedule-undo-blocked',
-  templateNameInUse: 'urn:fiscoprojects:problem:template-name-in-use',
-  hasOpenTickets: 'urn:fiscoprojects:problem:project-has-open-tickets',
-  ticketsChanged: 'urn:fiscoprojects:problem:project-tickets-changed',
-  hasFiles: 'urn:fiscoprojects:problem:project-has-files',
-  absenceOverlap: 'urn:fiscoprojects:problem:absence-overlap',
-  commentMentionRefused: 'urn:fiscoprojects:problem:comment-mention-refused',
+  codeInUse: 'urn:gerenware:problem:project-code-in-use',
+  closed: 'urn:gerenware:problem:project-closed',
+  memberExists: 'urn:gerenware:problem:project-member-exists',
+  lastManager: 'urn:gerenware:problem:project-last-manager',
+  scheduleCycle: 'urn:gerenware:problem:schedule-cycle',
+  scheduleNothingToUndo: 'urn:gerenware:problem:schedule-nothing-to-undo',
+  scheduleUndoBlocked: 'urn:gerenware:problem:schedule-undo-blocked',
+  templateNameInUse: 'urn:gerenware:problem:template-name-in-use',
+  hasOpenTickets: 'urn:gerenware:problem:project-has-open-tickets',
+  ticketsChanged: 'urn:gerenware:problem:project-tickets-changed',
+  hasFiles: 'urn:gerenware:problem:project-has-files',
+  absenceOverlap: 'urn:gerenware:problem:absence-overlap',
+  commentMentionRefused: 'urn:gerenware:problem:comment-mention-refused',
 } as const;
 
 /** Problem types of the tickets (TicketProblems in the Tickets module). */
 /** The problem of an export of the audit with more records than a spreadsheet takes (ADR-0099), with the total. */
 export const auditProblems = {
-  exportTooLarge: 'urn:fiscoprojects:problem:audit-export-too-large',
+  exportTooLarge: 'urn:gerenware:problem:audit-export-too-large',
 } as const;
 
 export const ticketProblems = {
-  mentionRefused: 'urn:fiscoprojects:problem:ticket-mention-refused',
-  attachmentRefused: 'urn:fiscoprojects:problem:ticket-attachment-refused',
-  ticketClosed: 'urn:fiscoprojects:problem:ticket-closed',
-  actionNotAllowedNow: 'urn:fiscoprojects:problem:ticket-action-not-allowed-now',
-  ticketChanged: 'urn:fiscoprojects:problem:ticket-changed',
-  personRefused: 'urn:fiscoprojects:problem:ticket-person-refused',
-  ticketFinished: 'urn:fiscoprojects:problem:ticket-finished',
-  vendorNameInUse: 'urn:fiscoprojects:problem:vendor-name-in-use',
+  mentionRefused: 'urn:gerenware:problem:ticket-mention-refused',
+  attachmentRefused: 'urn:gerenware:problem:ticket-attachment-refused',
+  ticketClosed: 'urn:gerenware:problem:ticket-closed',
+  actionNotAllowedNow: 'urn:gerenware:problem:ticket-action-not-allowed-now',
+  ticketChanged: 'urn:gerenware:problem:ticket-changed',
+  personRefused: 'urn:gerenware:problem:ticket-person-refused',
+  ticketFinished: 'urn:gerenware:problem:ticket-finished',
+  vendorNameInUse: 'urn:gerenware:problem:vendor-name-in-use',
 } as const;
 
 /** Problem types of the documents (DocumentProblems in the Documents module). */
 export const documentProblems = {
-  projectClosed: 'urn:fiscoprojects:problem:project-closed',
-  documentRefused: 'urn:fiscoprojects:problem:document-refused',
-  acceptanceFolderReadOnly: 'urn:fiscoprojects:problem:acceptance-folder-read-only',
-  documentChanged: 'urn:fiscoprojects:problem:document-changed',
-  folderNameInUse: 'urn:fiscoprojects:problem:document-folder-name-in-use',
+  projectClosed: 'urn:gerenware:problem:project-closed',
+  documentRefused: 'urn:gerenware:problem:document-refused',
+  acceptanceFolderReadOnly: 'urn:gerenware:problem:acceptance-folder-read-only',
+  documentChanged: 'urn:gerenware:problem:document-changed',
+  folderNameInUse: 'urn:gerenware:problem:document-folder-name-in-use',
 } as const;
 
 /** Problem types of the credentials (CredentialProblems in the Credentials module). */
 export const credentialProblems = {
-  projectClosed: 'urn:fiscoprojects:problem:project-closed',
+  projectClosed: 'urn:gerenware:problem:project-closed',
 } as const;
 
 /** Problem types of the hours (TimeEntryProblems in the TimeTracking module). */
 export const timeEntryProblems = {
-  projectClosed: 'urn:fiscoprojects:problem:project-closed',
+  projectClosed: 'urn:gerenware:problem:project-closed',
 } as const;
 
 /** Problem types of the acceptance terms (AcceptanceProblems in the Documents module). */
 export const acceptanceProblems = {
-  projectClosed: 'urn:fiscoprojects:problem:project-closed',
-  answered: 'urn:fiscoprojects:problem:acceptance-answered',
-  fileRefused: 'urn:fiscoprojects:problem:acceptance-file-refused',
-  noProvider: 'urn:fiscoprojects:problem:signature-provider-missing',
-  providerFailed: 'urn:fiscoprojects:problem:signature-provider-failed',
-  remindedRecently: 'urn:fiscoprojects:problem:signature-reminded-recently',
+  projectClosed: 'urn:gerenware:problem:project-closed',
+  answered: 'urn:gerenware:problem:acceptance-answered',
+  fileRefused: 'urn:gerenware:problem:acceptance-file-refused',
+  noProvider: 'urn:gerenware:problem:signature-provider-missing',
+  providerFailed: 'urn:gerenware:problem:signature-provider-failed',
+  remindedRecently: 'urn:gerenware:problem:signature-reminded-recently',
 } as const;
 
 /** Problem types of the links (LinkProblems in the Documents module). */
 export const linkProblems = {
-  categoryNameInUse: 'urn:fiscoprojects:problem:link-category-name-in-use',
+  categoryNameInUse: 'urn:gerenware:problem:link-category-name-in-use',
 } as const;
 
 /** Problem types of the user administration (UserProblems in the Users module). */
 export const userProblems = {
-  lastAdministrator: 'urn:fiscoprojects:problem:last-administrator',
-  anonymized: 'urn:fiscoprojects:problem:user-anonymized',
-  active: 'urn:fiscoprojects:problem:user-active',
+  lastAdministrator: 'urn:gerenware:problem:last-administrator',
+  anonymized: 'urn:gerenware:problem:user-anonymized',
+  active: 'urn:gerenware:problem:user-active',
 } as const;
 
 type Listener = () => void;

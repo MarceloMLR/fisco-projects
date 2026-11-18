@@ -3,4 +3,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-dotnet build FiscoProjects.slnx -warnaserror
+dotnet build GerenWare.slnx -warnaserror

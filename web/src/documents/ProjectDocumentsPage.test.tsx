@@ -199,7 +199,7 @@ describe('Documentos', () => {
           {
             status: 400,
             title: 'Document refused',
-            type: 'urn:fiscoprojects:problem:document-refused',
+            type: 'urn:gerenware:problem:document-refused',
             reason: 'Dangerous',
           },
           { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
