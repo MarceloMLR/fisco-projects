@@ -103,11 +103,11 @@ A produção MUST ser publicada só pelo workflow `deploy-prod`, acionado à mã
 
 ### Requirement: Pacote da versão
 
-Cada versão publicada no GitHub numa tag `vX.Y.Z` MUST ganhar, pelo workflow `release`, o pacote `fiscoprojects-vX.Y.Z.zip`, anexado à versão, com a aplicação (`app.zip`), o Terraform sem os parâmetros dos ambientes deste repositório, os scripts de `infra/scripts` e os guias, tirados só do Git. O workflow MUST NOT alcançar o Azure, e uma tag fora de `vX.Y.Z` MUST NOT ganhar pacote (ADR-0127).
+Cada versão publicada no GitHub numa tag `vX.Y.Z` MUST ganhar, pelo workflow `release`, o pacote `gerenware-vX.Y.Z.zip`, anexado à versão, com a aplicação (`app.zip`), o Terraform sem os parâmetros dos ambientes deste repositório, os scripts de `infra/scripts` e os guias, tirados só do Git. O workflow MUST NOT alcançar o Azure, e uma tag fora de `vX.Y.Z` MUST NOT ganhar pacote (ADR-0127).
 
 #### Scenario: Pacote anexado à versão
 - **WHEN** Marcelo publica no GitHub a versão `v1.2.3`
-- **THEN** o workflow `release` monta a aplicação e anexa à versão o `fiscoprojects-v1.2.3.zip`, com o `app.zip`, o arquivo `VERSION`, o Terraform, os scripts e os guias
+- **THEN** o workflow `release` monta a aplicação e anexa à versão o `gerenware-v1.2.3.zip`, com o `app.zip`, o arquivo `VERSION`, o Terraform, os scripts e os guias
 
 #### Scenario: Pacote só de versão
 - **WHEN** a versão é publicada numa tag que não é `vX.Y.Z`

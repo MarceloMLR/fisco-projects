@@ -12,7 +12,7 @@ Metas: perder no máximo alguns minutos de dados e voltar ao ar em até 4 horas.
 | Arquivos (anexos, documentos, termos, logos) | SharePoint da empresa, na pasta da instalação (ADR-0030) | Histórico de versões e lixeira do Microsoft 365 |
 | Segredos e certificados (chave da Autentique, certificado das chaves dos acessos) | Key Vault, com exclusão reversível e proteção contra exclusão definitiva | Recuperar o item excluído |
 | Infraestrutura e configuração | Terraform, com o estado versionado, e os arquivos privados da instalação (ADR-0053, ADR-0127) | `terraform apply` com os parâmetros da instalação |
-| Versão da aplicação | Pacote da versão (`fiscoprojects-vX.Y.Z.zip`), na página da versão no GitHub | Nova publicação pelo `Publish-Version.ps1` ou pelo workflow de produção (ADR-0055, ADR-0127) |
+| Versão da aplicação | Pacote da versão (`gerenware-vX.Y.Z.zip`), na página da versão no GitHub | Nova publicação pelo `Publish-Version.ps1` ou pelo workflow de produção (ADR-0055, ADR-0127) |
 
 A trava contra exclusão fica no banco (Operação-4.1): enquanto ela existe, o Azure recusa apagar o banco, o servidor e o grupo de recursos, pelo portal, pela CLI ou por um script, e apagar o servidor levaria junto a restauração a qualquer ponto. Ela não impede restaurar num banco novo nem apagar esse banco depois, e não protege os dados dentro do banco, que voltam pela restauração. Só o Cenário 2 a tira, e o `terraform apply` a põe de volta.
 
