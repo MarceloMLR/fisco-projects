@@ -28,11 +28,11 @@ Só o administrador MUST poder alterar as configurações da instalação e abri
 
 ### Requirement: Nome da instalação
 
-O administrador MUST poder trocar o nome exibido da instalação, obrigatório e com até 60 caracteres, sem os espaços das pontas. Enquanto ninguém o troca, o nome MUST ser "FiscoProjects". O nome MUST aparecer no topo da barra lateral, no painel da página de entrada e no título da aba do navegador (ADR-0003, ADR-0009).
+O administrador MUST poder trocar o nome exibido da instalação, obrigatório e com até 60 caracteres, sem os espaços das pontas. Enquanto ninguém o troca, o nome MUST ser "GerenWare", o do produto, também na instalação que ainda mostrava o nome antigo dele. O nome MUST aparecer no topo da barra lateral, no painel da página de entrada e no título da aba do navegador, escrito ou na logo (ADR-0003, ADR-0009, ADR-0159, ADR-0160).
 
 #### Scenario: Nome padrão
 - **WHEN** ninguém trocou o nome da instalação
-- **THEN** a barra lateral, a página de entrada e o título da aba mostram "FiscoProjects"
+- **THEN** a barra lateral e a página de entrada mostram a logo GerenWare, e o título da aba mostra "GerenWare"
 
 #### Scenario: Trocar o nome
 - **WHEN** o administrador troca o nome exibido e salva
@@ -42,17 +42,25 @@ O administrador MUST poder trocar o nome exibido da instalação, obrigatório e
 - **WHEN** o nome fica vazio ou passa de 60 caracteres
 - **THEN** o campo mostra o motivo, a API recusa com 400 e nada muda
 
+#### Scenario: Nome antigo do produto
+- **WHEN** a instalação ainda mostra "FiscoProjects" e a versão nova é instalada
+- **THEN** ela passa a mostrar "GerenWare"
+
+#### Scenario: Nome escolhido continua
+- **WHEN** a instalação tem um nome escolhido pelo administrador e a versão nova é instalada
+- **THEN** o nome dela continua o mesmo
+
 ### Requirement: Logo da instalação
 
-O administrador MUST poder enviar, trocar e remover o logo da instalação, um PNG ou SVG de até 1 MB. Com logo, ele MUST tomar o lugar do selo no topo da barra lateral, com até 28 px de altura, e no painel da página de entrada; sem logo, aparece o selo. Arquivo de outro formato, acima de 1 MB ou SVG com script MUST ser recusado. O logo MUST ser servido de forma que um SVG nunca execute scripts (ADR-0003, ADR-0030).
+O administrador MUST poder enviar, trocar e remover o logo da instalação, um PNG ou SVG de até 1 MB. Com logo, ele MUST tomar o lugar da marca do produto no topo da barra lateral, com até 28 px de altura, e no painel da página de entrada; sem logo, aparece a marca do produto (ADR-0160). Arquivo de outro formato, acima de 1 MB ou SVG com script MUST ser recusado. O logo MUST ser servido de forma que um SVG nunca execute scripts (ADR-0003, ADR-0030).
 
 #### Scenario: Enviar o logo
 - **WHEN** o administrador envia um logo PNG e salva
-- **THEN** a barra lateral e a página de entrada mostram o logo no lugar do selo
+- **THEN** a barra lateral e a página de entrada mostram o logo no lugar da marca do produto
 
 #### Scenario: Remover o logo
 - **WHEN** o administrador remove o logo e salva
-- **THEN** a barra lateral e a página de entrada voltam a mostrar o selo
+- **THEN** a barra lateral e a página de entrada voltam a mostrar a marca do produto
 
 #### Scenario: Logo recusado
 - **WHEN** o administrador envia um JPG, um arquivo acima de 1 MB ou um SVG com script
@@ -136,7 +144,7 @@ O administrador MUST poder escolher o fuso horário da instalação entre os fus
 
 ### Requirement: Cor principal
 
-O administrador MUST poder trocar a cor principal da instalação por qualquer cor em hexadecimal, ou voltar à cor padrão do design system. Com a nova cor MUST mudar, nos temas claro e escuro, o botão principal, os links, as abas, os controles marcados, o anel de foco, o item ativo da barra lateral, o avatar do responsável e o selo; as cores de status MUST NOT mudar. Nenhuma cor MUST ser recusada pelo contraste (ADR-0146).
+O administrador MUST poder trocar a cor principal da instalação por qualquer cor em hexadecimal, ou voltar à cor padrão do design system. Com a nova cor MUST mudar, nos temas claro e escuro, o botão principal, os links, as abas, os controles marcados, o anel de foco, o item ativo da barra lateral e o avatar do responsável; as cores de status MUST NOT mudar. Nenhuma cor MUST ser recusada pelo contraste (ADR-0146).
 
 #### Scenario: Cor padrão
 - **WHEN** ninguém trocou a cor principal, a secundária nem a da barra lateral
@@ -144,7 +152,7 @@ O administrador MUST poder trocar a cor principal da instalação por qualquer c
 
 #### Scenario: Trocar a cor principal
 - **WHEN** o administrador escolhe outra cor e salva
-- **THEN** o botão principal, os links, o item ativo da barra lateral e o selo passam a usar a nova cor, nos dois temas, e as cores de status continuam as mesmas
+- **THEN** o botão principal, os links e o item ativo da barra lateral passam a usar a nova cor, nos dois temas, e as cores de status continuam as mesmas
 
 #### Scenario: Contraste nos dois temas
 - **WHEN** a instalação tem qualquer cor principal
@@ -188,7 +196,7 @@ O administrador MUST poder escolher, nas Regras gerais das Configurações gerai
 
 ### Requirement: Logo para o tema escuro
 
-O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, opcional, com as regras do logo. A barra lateral escura (a do tema escuro, ou a do tema claro com uma cor da barra lateral escura) MUST mostrar o logo escuro, quando há; sem ele, o logo. A barra lateral clara MUST mostrar o logo. O selo do painel da entrada MUST continuar com o logo (ADR-0100, ADR-0146).
+O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, opcional, com as regras do logo. A barra lateral escura (a do tema escuro, ou a do tema claro com uma cor da barra lateral escura) MUST mostrar o logo escuro, quando há; sem ele, o logo. A barra lateral clara MUST mostrar o logo. O painel da entrada MUST continuar com o logo (ADR-0100, ADR-0146).
 
 #### Scenario: Logo para o tema escuro pela API
 - **WHEN** o administrador envia o logo para o tema escuro e depois o remove
@@ -200,7 +208,7 @@ O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, 
 
 #### Scenario: Logo escuro na barra lateral escura
 - **WHEN** a barra lateral é escura e a instalação tem o logo escuro
-- **THEN** a barra lateral e a prévia mostram o logo escuro, e o selo da entrada mostra o logo
+- **THEN** a barra lateral e a prévia mostram o logo escuro, e o painel da entrada mostra o logo
 
 #### Scenario: Logo claro na barra lateral clara
 - **WHEN** o tema é o claro, a barra lateral é clara e a instalação tem os dois logos
@@ -246,22 +254,6 @@ Clicar na amostra de uma cor MUST abrir o seletor do GerenWare, com a área de s
 - **WHEN** o administrador abre o seletor numa tela estreita
 - **THEN** o seletor sobe como uma folha do pé da tela, por cima de um fundo escurecido
 
-### Requirement: Logo na aba do navegador
-
-A aba do navegador MUST mostrar o logo da instalação, quando há; sem logo, MUST mostrar o selo da barra lateral (o ícone da linha do tempo sobre a cor principal). O ícone MUST mudar quando o logo ou a cor principal muda, e MUST entrar só depois de a marca chegar (ADR-0108).
-
-#### Scenario: Logo na aba
-- **WHEN** a instalação tem logo e alguém abre uma tela
-- **THEN** a aba do navegador mostra o logo
-
-#### Scenario: Selo na aba sem logo
-- **WHEN** a instalação não tem logo e alguém abre a página de entrada
-- **THEN** a aba mostra o selo, na cor principal
-
-#### Scenario: Selo na cor principal
-- **WHEN** a instalação escolheu uma cor principal e não tem logo
-- **THEN** o selo da aba usa a cor principal, com o ícone branco ou escuro, o que tiver contraste sobre ela
-
 ### Requirement: Pasta dos projetos
 
 O administrador MUST poder escolher, em Pastas padrão, a pasta dos projetos: o caminho, dentro da raiz do armazenamento, onde as pastas dos projetos são criadas, com as pastas separadas por "/". Vazia, que é o padrão, elas MUST ficar na própria raiz. A pasta MUST ser criada quando faltar e valer só para os projetos que ainda não têm pasta. Um caminho que o armazenamento não aceita MUST ser recusado, e a mudança MUST entrar na auditoria (ADR-0003, ADR-0030, ADR-0121, ADR-0150).
@@ -304,11 +296,15 @@ O administrador MUST poder escolher, nas Regras gerais das Configurações gerai
 
 ### Requirement: Cor secundária
 
-O administrador MUST poder escolher uma cor secundária, opcional, em hexadecimal, ou voltar ao padrão. Com ela MUST mudar, nos dois temas, a linha selecionada, a notificação não lida, a menção e o painel e o fundo da página de entrada. Sem ela, esses destaques MUST ficar os do design system, e o painel e o fundo da entrada MUST seguir a cor principal (ADR-0146, ADR-0147).
+O administrador MUST poder escolher uma cor secundária, opcional, em hexadecimal, ou voltar ao padrão. Com ela MUST mudar, nos dois temas, a linha selecionada, a notificação não lida, a menção e o painel e o fundo da página de entrada. Sem ela, esses destaques MUST ficar os do design system, e o painel e o fundo da entrada MUST seguir a cor principal ou, sem cor principal, ficar no grafite do design system (ADR-0146, ADR-0147, ADR-0159).
 
 #### Scenario: Sem cor secundária
 - **WHEN** a instalação não tem cor secundária
 - **THEN** a linha selecionada, a notificação não lida e a menção usam as cores do design system, e o painel e o fundo da entrada usam a cor principal
+
+#### Scenario: Sem nenhuma cor
+- **WHEN** a instalação não tem cor principal nem secundária
+- **THEN** o painel e o fundo da entrada ficam no grafite do design system
 
 #### Scenario: Trocar a cor secundária
 - **WHEN** o administrador escolhe uma cor secundária e salva
@@ -320,7 +316,7 @@ O administrador MUST poder escolher uma cor secundária, opcional, em hexadecima
 
 #### Scenario: Fundo da entrada na cor secundária
 - **WHEN** o administrador escolhe uma cor secundária e salva
-- **THEN** o fundo da página de entrada, atrás do cartão e do painel, fica num tom escuro do matiz dela, nos dois temas, no lugar do azul do design system
+- **THEN** o fundo da página de entrada, atrás do cartão e do painel, fica num tom escuro do matiz dela, nos dois temas, no lugar do grafite do design system
 
 ### Requirement: Cor da barra lateral
 
@@ -424,7 +420,7 @@ A seção Instalação da coluna da Administração MUST ter Visual, logo depois
 
 ### Requirement: Aplicativo do Teams
 
-Só o administrador MUST baixar o pacote do aplicativo do Teams da instalação, na seção Microsoft 365 das Configurações gerais. O pacote MUST trazer o nome da instalação, o ícone (o logo ou, sem ele, o selo na cor principal), uma identificação que não muda, o aplicativo do Entra, o endereço das telas, os tipos de aviso na hora e as permissões do próprio aplicativo. A versão MUST subir quando o conteúdo muda (ADR-0003, ADR-0149).
+Só o administrador MUST baixar o pacote do aplicativo do Teams da instalação, nas Configurações gerais. O pacote MUST trazer o nome da instalação, os ícones (o colorido, com o logo ou o símbolo da GerenWare, e o de contorno), uma identificação que não muda, o aplicativo do Entra, o endereço das telas, os tipos de aviso na hora e as permissões do próprio aplicativo. A versão MUST subir quando o conteúdo muda (ADR-0003, ADR-0149, ADR-0160).
 
 #### Scenario: Pacote do administrador
 - **WHEN** o administrador escolhe "Baixar pacote do Teams"
@@ -445,6 +441,10 @@ Só o administrador MUST baixar o pacote do aplicativo do Teams da instalação,
 #### Scenario: Pacote sem o Teams na instalação
 - **WHEN** o administrador pede o pacote com o envio pelo Teams desligado na configuração da aplicação
 - **THEN** a API responde 409, e a seção diz que o Teams não está disponível nesta instalação
+
+#### Scenario: Ícones da marca no pacote
+- **WHEN** o administrador baixa o pacote numa instalação sem logo
+- **THEN** o ícone colorido é o símbolo da GerenWare com o quadrado cheio, e o de contorno, o símbolo em branco, os dois desenhados dos arquivos da marca
 
 ### Requirement: Avisar pelo Teams
 
@@ -477,3 +477,47 @@ Cada tela das configurações MUST gravar só o que mostra: as Regras gerais sem
 #### Scenario: Pasta dos projetos sem mudar o resto
 - **WHEN** o administrador troca a pasta dos projetos
 - **THEN** o nome exibido e as Regras gerais ficam como estavam
+
+### Requirement: Marca do produto sem logo da instalação
+
+Sem logo da instalação, a barra lateral, o painel da página de entrada e a prévia das cores MUST mostrar a marca do produto, dos arquivos de `docs/marca/`, sem redesenho: a logo GerenWare no lugar do nome, quando a instalação tem o nome do produto, ou o símbolo ao lado do nome. A marca MUST NOT mudar com as cores da instalação, e a página MUST trazer os ícones e o manifesto da marca (ADR-0159, ADR-0160).
+
+#### Scenario: Arquivos iguais aos da marca
+- **WHEN** um arquivo da marca usado pelas telas fica diferente do de `docs/marca/`
+- **THEN** os testes do frontend falham e dizem qual
+
+#### Scenario: Logo inteira com o nome do produto
+- **WHEN** a instalação não tem logo e se chama GerenWare
+- **THEN** a barra lateral e o painel da entrada mostram a logo GerenWare, sem o nome escrito ao lado, e quem usa leitor de tela ouve o nome
+
+#### Scenario: Símbolo ao lado de outro nome
+- **WHEN** a instalação não tem logo e tem outro nome
+- **THEN** a barra lateral e o painel da entrada mostram o símbolo da GerenWare e, ao lado, o nome da instalação
+
+#### Scenario: Logo para o fundo escuro
+- **WHEN** a barra lateral é escura, pelo tema ou pela cor da instalação, e a instalação não tem logo e se chama GerenWare
+- **THEN** a barra lateral mostra a logo feita para fundo escuro, e a clara mostra a de fundo claro
+
+#### Scenario: Ícones do navegador e do celular
+- **WHEN** alguém abre a página antes de qualquer resposta da API
+- **THEN** a página já aponta o ícone da aba, o ícone para a tela do celular e o manifesto, todos da marca
+
+#### Scenario: Frase da página de entrada
+- **WHEN** alguém abre a página de entrada
+- **THEN** o painel mostra, embaixo da marca, a frase "Implantação e suporte dos seus clientes em um só lugar." e o texto de apoio do manual
+
+### Requirement: Ícone da aba do navegador
+
+A aba do navegador MUST mostrar o logo da instalação, quando há; sem logo, MUST mostrar o símbolo da GerenWare, que a página já traz antes de a marca chegar. O ícone MUST mudar quando o logo muda, e o logo MUST entrar só depois de a marca chegar (ADR-0108, ADR-0160).
+
+#### Scenario: Logo na aba
+- **WHEN** a instalação tem logo e alguém abre uma tela
+- **THEN** a aba do navegador mostra o logo
+
+#### Scenario: Símbolo na aba sem logo
+- **WHEN** a instalação não tem logo e alguém abre a página de entrada
+- **THEN** a aba mostra o símbolo da GerenWare, com qualquer cor principal
+
+#### Scenario: Logo no lugar do ícone da página
+- **WHEN** a marca da instalação chega com um logo
+- **THEN** a aba passa a ter um ícone só, o logo, no lugar do símbolo
