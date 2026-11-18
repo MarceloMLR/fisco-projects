@@ -115,11 +115,11 @@ public sealed partial class DeploymentTests : IDisposable
 
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
-            "az webapp identity show --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --query principalId --output tsv",
+            "az webapp identity show --resource-group rg-gerenware-mlr-prod --name app-gerenware-mlr-prod --query principalId --output tsv",
             "dotnet artifacts/app/GerenWare.Api.dll migrate",
             "environment Production",
-            "connection Server=tcp:sql-fiscoprojects-mlr-prod.database.windows.net,1433;Database=sqldb-fiscoprojects;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False",
-            "identity app-fiscoprojects-mlr-prod 7f3e2d1c-0b9a-4876-9543-210fedcba987");
+            "connection Server=tcp:sql-gerenware-mlr-prod.database.windows.net,1433;Database=sqldb-gerenware;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False",
+            "identity app-gerenware-mlr-prod 7f3e2d1c-0b9a-4876-9543-210fedcba987");
 
         Fake("az", "true");
         var withoutIdentity = Run("migrate", "prod");
@@ -140,9 +140,9 @@ public sealed partial class DeploymentTests : IDisposable
 
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
-            "az webapp deploy --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --src-path artifacts/app.zip --type zip --track-status false --output none",
-            "az webapp restart --resource-group rg-fiscoprojects-mlr-prod --name app-fiscoprojects-mlr-prod --output none",
-            "curl https://app-fiscoprojects-mlr-prod.azurewebsites.net/health");
+            "az webapp deploy --resource-group rg-gerenware-mlr-prod --name app-gerenware-mlr-prod --src-path artifacts/app.zip --type zip --track-status false --output none",
+            "az webapp restart --resource-group rg-gerenware-mlr-prod --name app-gerenware-mlr-prod --output none",
+            "curl https://app-gerenware-mlr-prod.azurewebsites.net/health");
     }
 
     [Fact(DisplayName = "Produção com aprovação")]
@@ -171,10 +171,10 @@ public sealed partial class DeploymentTests : IDisposable
 
         result.ExitCode.Should().Be(0, result.Errors);
         Calls().Should().Equal(
-            "az webapp deploy --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --src-path artifacts/app.zip --type zip --track-status false --output none",
-            "az webapp restart --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --output none",
-            "curl https://app-fiscoprojects-mlr-dev.azurewebsites.net/health",
-            "npm run demo:data -- https://app-fiscoprojects-mlr-dev.azurewebsites.net (web)");
+            "az webapp deploy --resource-group rg-gerenware-mlr-dev --name app-gerenware-mlr-dev --src-path artifacts/app.zip --type zip --track-status false --output none",
+            "az webapp restart --resource-group rg-gerenware-mlr-dev --name app-gerenware-mlr-dev --output none",
+            "curl https://app-gerenware-mlr-dev.azurewebsites.net/health",
+            "npm run demo:data -- https://app-gerenware-mlr-dev.azurewebsites.net (web)");
     }
 
     [Fact(DisplayName = "Reinício depois da publicação")]
@@ -268,7 +268,7 @@ public sealed partial class DeploymentTests : IDisposable
         result.ExitCode.Should().Be(0, result.Errors);
         result.Output.Split('\n')[0].Should().Be("::add-mask::alertas@empresa.example", "the e-mail is masked before anything is written");
         Calls().Should().ContainInOrder(
-            "az monitor action-group show --resource-group rg-fiscoprojects-mlr-dev --name ag-fiscoprojects-mlr-dev --query emailReceivers[0].emailAddress --output tsv",
+            "az monitor action-group show --resource-group rg-gerenware-mlr-dev --name ag-gerenware-mlr-dev --query emailReceivers[0].emailAddress --output tsv",
             "terraform sees the alert e-mail alertas@empresa.example");
 
         FakePlan(planExit: 0, planOutput: "No changes.", alertEmail: "");
@@ -292,7 +292,7 @@ public sealed partial class DeploymentTests : IDisposable
         result.Output.Split('\n').Take(2).Should().Equal(
             "::add-mask::alertas@empresa.example", "::add-mask::https://empresa.sharepoint.example/sites/Projetos");
         Calls().Should().ContainInOrder(
-            "az webapp config appsettings list --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --query [?name=='FileStorage__SharePoint__SiteUrl'].value | [0] --output tsv",
+            "az webapp config appsettings list --resource-group rg-gerenware-mlr-dev --name app-gerenware-mlr-dev --query [?name=='FileStorage__SharePoint__SiteUrl'].value | [0] --output tsv",
             "terraform sees the site https://empresa.sharepoint.example/sites/Projetos");
 
         File.Delete(Path.Combine(_fakes, "calls"));
@@ -317,7 +317,7 @@ public sealed partial class DeploymentTests : IDisposable
         result.Output.Split('\n').Take(2).Should().Equal(
             "::add-mask::alertas@empresa.example", "::add-mask::gerenware@empresa.example");
         Calls().Should().ContainInOrder(
-            "az webapp config appsettings list --resource-group rg-fiscoprojects-mlr-dev --name app-fiscoprojects-mlr-dev --query [?name=='Email__Mailbox'].value | [0] --output tsv",
+            "az webapp config appsettings list --resource-group rg-gerenware-mlr-dev --name app-gerenware-mlr-dev --query [?name=='Email__Mailbox'].value | [0] --output tsv",
             "terraform sees the mailbox gerenware@empresa.example");
 
         File.Delete(Path.Combine(_fakes, "calls"));

@@ -10,7 +10,7 @@ cd "$(dirname "$0")/../.."
 environment=${ENVIRONMENT:?Set ENVIRONMENT to an environment of infra/terraform/environments, as dev.}
 summary=${GITHUB_STEP_SUMMARY:-/dev/null}
 installation=$(sed -n 's/^installation *= *"\([^"]*\)".*/\1/p' "infra/terraform/environments/$environment.tfvars")
-name="fiscoprojects-$installation-$environment"
+name="gerenware-$installation-$environment"
 
 # The e-mail of the alerts is personal, and the logs of the repository are public (ADR-0116): it is not a variable of
 # the workflow, whose values GitHub shows in every step, but read here from the action group of the installation, which

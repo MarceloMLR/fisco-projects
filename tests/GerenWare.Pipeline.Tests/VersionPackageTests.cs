@@ -37,7 +37,7 @@ public sealed partial class VersionPackageTests : IDisposable
         var result = Release("v1.2.3");
 
         result.ExitCode.Should().Be(0, result.Errors);
-        var package = Path.Combine(Artifacts, "fiscoprojects-v1.2.3.zip");
+        var package = Path.Combine(Artifacts, "gerenware-v1.2.3.zip");
         File.ReadAllLines(Calls).Should().Equal($"gh release upload v1.2.3 {package} --clobber --repo MarceloMLR/fisco-projects");
         using var zip = ZipFile.OpenRead(package);
         var entries = zip.Entries.Select(entry => entry.FullName).ToList();
@@ -49,7 +49,7 @@ public sealed partial class VersionPackageTests : IDisposable
             version.ReadToEnd().Trim().Should().Be("v1.2.3");
         }
 
-        File.ReadAllText(Path.Combine(_folder, "summary")).Should().Contain("fiscoprojects-v1.2.3.zip");
+        File.ReadAllText(Path.Combine(_folder, "summary")).Should().Contain("gerenware-v1.2.3.zip");
     }
 
     [Fact(DisplayName = "Pacote só de versão")]
@@ -66,7 +66,7 @@ public sealed partial class VersionPackageTests : IDisposable
         }
 
         File.Exists(Calls).Should().BeFalse("nothing reaches GitHub");
-        Directory.GetFiles(Artifacts, "fiscoprojects-*").Should().BeEmpty();
+        Directory.GetFiles(Artifacts, "gerenware-*").Should().BeEmpty();
     }
 
     [Fact(DisplayName = "Pacote sem os ambientes")]
@@ -76,7 +76,7 @@ public sealed partial class VersionPackageTests : IDisposable
 
         Release("v2.0.0").ExitCode.Should().Be(0);
 
-        using var zip = ZipFile.OpenRead(Path.Combine(Artifacts, "fiscoprojects-v2.0.0.zip"));
+        using var zip = ZipFile.OpenRead(Path.Combine(Artifacts, "gerenware-v2.0.0.zip"));
         zip.Entries.Select(entry => entry.FullName).Should().NotContain(entry =>
             entry.Contains("/environments/", StringComparison.Ordinal)
             || entry.EndsWith(".tfvars", StringComparison.Ordinal)
@@ -93,14 +93,14 @@ public sealed partial class VersionPackageTests : IDisposable
         result.ExitCode.Should().Be(0, result.Output + result.Errors);
         var calls = File.ReadAllLines(Calls);
         calls.Should().HaveCount(7);
-        calls[0].Should().Be("az webapp identity show --resource-group rg-fiscoprojects-cli-prod --name app-fiscoprojects-cli-prod --query principalId --output tsv");
-        calls[1].Should().Be("az sql server firewall-rule create --resource-group rg-fiscoprojects-cli-prod --server sql-fiscoprojects-cli-prod --name publicacao-temporaria --start-ip-address 198.51.100.7 --end-ip-address 198.51.100.7 --output none");
+        calls[0].Should().Be("az webapp identity show --resource-group rg-gerenware-cli-prod --name app-gerenware-cli-prod --query principalId --output tsv");
+        calls[1].Should().Be("az sql server firewall-rule create --resource-group rg-gerenware-cli-prod --server sql-gerenware-cli-prod --name publicacao-temporaria --start-ip-address 198.51.100.7 --end-ip-address 198.51.100.7 --output none");
         calls[2].Should().MatchRegex(@"^dotnet .+GerenWare\.Api\.dll migrate$");
-        calls[3].Should().Be("environment Production | credential AzureCliCredential | identity app-fiscoprojects-cli-prod 7f3e2d1c-0b9a-4876-9543-210fedcba987");
-        calls[4].Should().Be("az sql server firewall-rule delete --resource-group rg-fiscoprojects-cli-prod --server sql-fiscoprojects-cli-prod --name publicacao-temporaria --output none");
-        calls[5].Should().MatchRegex(@"^az webapp deploy --resource-group rg-fiscoprojects-cli-prod --name app-fiscoprojects-cli-prod --src-path .+app\.zip --type zip --track-status false --output none$");
-        calls[6].Should().Be("health https://app-fiscoprojects-cli-prod.azurewebsites.net/health");
-        result.Output.Should().Contain("Versão v1.2.3 na instalação fiscoprojects-cli-prod");
+        calls[3].Should().Be("environment Production | credential AzureCliCredential | identity app-gerenware-cli-prod 7f3e2d1c-0b9a-4876-9543-210fedcba987");
+        calls[4].Should().Be("az sql server firewall-rule delete --resource-group rg-gerenware-cli-prod --server sql-gerenware-cli-prod --name publicacao-temporaria --output none");
+        calls[5].Should().MatchRegex(@"^az webapp deploy --resource-group rg-gerenware-cli-prod --name app-gerenware-cli-prod --src-path .+app\.zip --type zip --track-status false --output none$");
+        calls[6].Should().Be("health https://app-gerenware-cli-prod.azurewebsites.net/health");
+        result.Output.Should().Contain("Versão v1.2.3 na instalação gerenware-cli-prod");
     }
 
     [Fact(DisplayName = "Firewall aberto só nas migrações")]
@@ -109,7 +109,7 @@ public sealed partial class VersionPackageTests : IDisposable
         var result = PublishVersion(migrationsFail: true);
 
         result.ExitCode.Should().Be(1);
-        result.Output.Should().Contain("As migrações falharam em sql-fiscoprojects-cli-prod; nada foi publicado.");
+        result.Output.Should().Contain("As migrações falharam em sql-gerenware-cli-prod; nada foi publicado.");
         var calls = File.ReadAllLines(Calls);
         calls.Count(call => call.StartsWith("dotnet ", StringComparison.Ordinal)).Should().Be(3, "the rule may take a moment to hold");
         calls[^1].Should().StartWith("az sql server firewall-rule delete ", "the rule is removed even when the migrations fail");
