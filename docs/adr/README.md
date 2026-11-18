@@ -223,3 +223,4 @@ Regras:
 | [0158](0158-pagina-minhas-tarefas.md) | Página Minhas tarefas, com as tarefas da pessoa de todos os projetos | aceita | 2026-11-11 |
 | [0159](0159-marca-gerenware.md) | Marca GerenWare, com o caminho em G, grafite e esmeralda | aceita | 2026-11-17 |
 | [0160](0160-logo-gerenware-sem-logo-da-instalacao.md) | Logo GerenWare onde a instalação não tem logo | aceita | 2026-11-17 |
+| [0161](0161-nomes-do-codigo-em-gerenware.md) | Nomes do código em GerenWare, inclusive o da proteção das senhas | aceita | 2026-11-17 |
