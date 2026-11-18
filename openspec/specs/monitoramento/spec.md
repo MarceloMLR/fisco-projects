@@ -15,7 +15,7 @@ Com a conexão do Application Insights configurada, a aplicação MUST enviar re
 
 #### Scenario: Com a conexão
 - **WHEN** a aplicação sobe com a conexão do Application Insights
-- **THEN** os traces, as métricas e os logs são coletados, com os medidores do FiscoProjects, e o `/health` fica de fora das requisições
+- **THEN** os traces, as métricas e os logs são coletados, com os medidores do GerenWare, e o `/health` fica de fora das requisições
 
 ### Requirement: Nada sensível nos logs
 
