@@ -225,3 +225,4 @@ Regras:
 | [0160](0160-logo-gerenware-sem-logo-da-instalacao.md) | Logo GerenWare onde a instalação não tem logo | aceita | 2026-11-17 |
 | [0161](0161-nomes-do-codigo-em-gerenware.md) | Nomes do código em GerenWare, inclusive o da proteção das senhas | aceita | 2026-11-17 |
 | [0162](0162-recursos-do-azure-recriados-com-o-prefixo-gerenware.md) | Recursos do Azure recriados com o prefixo gerenware | aceita | 2026-11-17 |
+| [0163](0163-repositorio-gerenware.md) | Repositório renomeado para gerenware | aceita | 2026-11-17 |

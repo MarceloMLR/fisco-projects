@@ -7,4 +7,4 @@ environment  = "prod"
 
 # The pipeline of this repository publishes the versions by hand, from the GitHub environment "prod" (ADR-0125), named
 # by the ids that GitHub puts in the subject of its tokens (ADR-0116).
-github_repository = "MarceloMLR@106113485/fisco-projects@1423675463"
+github_repository = "MarceloMLR@106113485/gerenware@1423675463"

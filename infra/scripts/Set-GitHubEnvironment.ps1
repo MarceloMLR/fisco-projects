@@ -22,7 +22,7 @@ param(
     [ValidateSet('dev', 'prod')]
     [string] $Environment,
 
-    [string] $Repository = 'MarceloMLR/fisco-projects'
+    [string] $Repository = 'MarceloMLR/gerenware'
 )
 
 $ErrorActionPreference = 'Stop'
