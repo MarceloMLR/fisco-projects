@@ -295,7 +295,7 @@ describe('Tela Usuários', () => {
   it('Recusa do último administrador na tela', async () => {
     server.use(
       http.put('/api/users/:id/role', () =>
-        problem(409, 'urn:fiscoprojects:problem:last-administrator'),
+        problem(409, 'urn:gerenware:problem:last-administrator'),
       ),
     );
     await openUsers();
@@ -380,7 +380,7 @@ describe('Anonimizar uma pessoa', () => {
   it('Anonimização definitiva', async () => {
     server.use(
       http.post('/api/users/:id/anonymization', () =>
-        problem(409, 'urn:fiscoprojects:problem:user-anonymized'),
+        problem(409, 'urn:gerenware:problem:user-anonymized'),
       ),
     );
     await openUsers();

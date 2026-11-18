@@ -342,7 +342,7 @@ describe('Acessos do projeto', () => {
   it('Projeto encerrado ao incluir pela tela', async () => {
     server.use(
       http.post('/api/projects/:id/credentials', () =>
-        problem(409, 'urn:fiscoprojects:problem:project-closed'),
+        problem(409, 'urn:gerenware:problem:project-closed'),
       ),
     );
     await openCredentials();

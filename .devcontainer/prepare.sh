@@ -11,12 +11,12 @@ fi
 set -a
 . ./.env
 set +a
-dotnet user-secrets set "ConnectionStrings:FiscoProjects" \
-  "Server=localhost,1433;Database=FiscoProjects;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True" \
-  --project src/FiscoProjects.Api > /dev/null
+dotnet user-secrets set "ConnectionStrings:GerenWare" \
+  "Server=localhost,1433;Database=GerenWare;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True" \
+  --project src/GerenWare.Api > /dev/null
 
 (cd web && npm ci && npm run build)
-dotnet build src/FiscoProjects.Api
+dotnet build src/GerenWare.Api
 
 for _ in $(seq 1 60); do
   docker info > /dev/null 2>&1 && break

@@ -24,8 +24,8 @@ if [ -z "$principal" ]; then
 fi
 
 ASPNETCORE_ENVIRONMENT="${aspnetcore:-Production}" \
-ConnectionStrings__FiscoProjects="Server=tcp:$server,1433;Database=$database;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False" \
+ConnectionStrings__GerenWare="Server=tcp:$server,1433;Database=$database;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False" \
 Database__AppIdentity__Name="$app" \
 Database__AppIdentity__ObjectId="$principal" \
-  dotnet artifacts/app/FiscoProjects.Api.dll migrate
+  dotnet artifacts/app/GerenWare.Api.dll migrate
 echo "Migrations applied in $server."

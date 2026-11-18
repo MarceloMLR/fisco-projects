@@ -319,7 +319,7 @@ Variação por cliente: uma instalação por empresa (single-tenant). O que muda
 | --- | --- |
 | Nome do produto | FiscoProjects (substitui o provisório "Marco"). Substituído pelo ADR-0159: GerenWare, aplicado pelas changes do grupo 17 do roadmap |
 | Repositório e pasta | `fisco-projects`, em `C:\workspaces\projects\fisco-projects` |
-| Namespaces .NET | `FiscoProjects.*` |
+| Namespaces .NET | `GerenWare.*` |
 | O que vira ADR | Decisões com alternativas. Números de versão e convenções de estilo ficam nos arquivos do projeto (`global.json`, `.nvmrc`, `.editorconfig`, `CLAUDE.md`); valores exatos do visual ficam no design system |
 
 ## Pendências

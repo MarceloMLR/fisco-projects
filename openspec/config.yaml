@@ -31,9 +31,9 @@ context: |
   infra/terraform; GitHub Actions chamando scripts do repositório. Node 24 até 28/10/2026, depois Node 26.
 
   Arquitetura: monolito modular com Clean Architecture em cada módulo (ADR-0047). Estrutura:
-  src/FiscoProjects.Api (host; serve a API e o build do React), src/FiscoProjects.SharedKernel,
-  src/Modules/<Modulo>/FiscoProjects.<Modulo>/{Domain,Application,Infrastructure,Endpoints} e
-  FiscoProjects.<Modulo>.Contracts; web/ (React); tests/; infra/terraform; infra/scripts.
+  src/GerenWare.Api (host; serve a API e o build do React), src/GerenWare.SharedKernel,
+  src/Modules/<Modulo>/GerenWare.<Modulo>/{Domain,Application,Infrastructure,Endpoints} e
+  GerenWare.<Modulo>.Contracts; web/ (React); tests/; infra/terraform; infra/scripts.
   Regra de dependência: Domain não depende de nada externo; Application depende só de Domain;
   Infrastructure e Endpoints dependem das internas. Entre módulos, só Contracts ou eventos internos;
   cada módulo é dono das próprias tabelas num schema próprio, sem ler tabelas de outro.

@@ -374,7 +374,7 @@ describe('Encerramento pela tela', () => {
           {
             status: 409,
             title: 'Open tickets',
-            type: 'urn:fiscoprojects:problem:project-has-open-tickets',
+            type: 'urn:gerenware:problem:project-has-open-tickets',
             openTickets: 1,
           },
           { status: 409, headers: { 'Content-Type': 'application/problem+json' } },

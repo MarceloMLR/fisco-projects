@@ -286,7 +286,7 @@ describe('Fornecedores pela tela', () => {
   it('Chamado fechado no meio do registro', async () => {
     server.use(
       http.post('/api/tickets/1/vendor-tickets', () =>
-        problem(409, 'urn:fiscoprojects:problem:ticket-closed'),
+        problem(409, 'urn:gerenware:problem:ticket-closed'),
       ),
     );
     const section = await openTicket();

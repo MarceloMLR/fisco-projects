@@ -7,7 +7,7 @@ export function safeItemPath(item: string | null): string {
   if (item === null || !item.startsWith('/') || item.startsWith('//') || item.includes('\\')) {
     return '/';
   }
-  const origin = 'https://fiscoprojects.invalid';
+  const origin = 'https://gerenware.invalid';
   try {
     const address = new URL(item, origin);
     return address.origin === origin && !address.pathname.startsWith('//')

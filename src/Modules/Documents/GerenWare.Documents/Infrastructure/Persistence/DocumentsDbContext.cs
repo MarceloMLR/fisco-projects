@@ -1,0 +1,38 @@
+using GerenWare.Documents.Domain;
+using GerenWare.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace GerenWare.Documents.Infrastructure.Persistence;
+
+internal sealed class DocumentsDbContext(DbContextOptions<DocumentsDbContext> options)
+    : ModuleDbContext<DocumentsDbContext>(options), IModuleSchema
+{
+    public static string Schema => "documents";
+
+    public DbSet<DefaultFolder> DefaultFolders => Set<DefaultFolder>();
+
+    public DbSet<DocumentFolder> Folders => Set<DocumentFolder>();
+
+    public DbSet<Document> Documents => Set<Document>();
+
+    public DbSet<DocumentVersion> DocumentVersions => Set<DocumentVersion>();
+
+    public DbSet<LinkCategory> LinkCategories => Set<LinkCategory>();
+
+    public DbSet<ProjectLink> Links => Set<ProjectLink>();
+
+    public DbSet<AcceptanceTerm> AcceptanceTerms => Set<AcceptanceTerm>();
+
+    public DbSet<AcceptanceSigner> AcceptanceSigners => Set<AcceptanceSigner>();
+
+    public DbSet<AcceptanceEvent> AcceptanceEvents => Set<AcceptanceEvent>();
+
+    protected override void ConfigureModel(ModelBuilder modelBuilder) =>
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(DocumentsDbContext).Assembly);
+}
+
+// For dotnet ef to create the context without starting the API.
+internal sealed class DocumentsDbContextFactory : ModuleDesignTimeDbContextFactory<DocumentsDbContext>
+{
+    protected override DocumentsDbContext CreateContext(DbContextOptions<DocumentsDbContext> options) => new(options);
+}

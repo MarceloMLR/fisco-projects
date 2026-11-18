@@ -321,7 +321,7 @@ describe('Histórico na conversa', () => {
   it('Status mudou antes da ação', async () => {
     server.use(
       http.post('/api/tickets/1/transitions', () =>
-        problem(409, 'urn:fiscoprojects:problem:ticket-action-not-allowed-now'),
+        problem(409, 'urn:gerenware:problem:ticket-action-not-allowed-now'),
       ),
     );
     await openTicket();

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <ProjectReference Include="../../../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../../Files/GerenWare.Files.Contracts/GerenWare.Files.Contracts.csproj" />
+    <ProjectReference Include="../../Users/GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+    <ProjectReference Include="../GerenWare.Administration.Contracts/GerenWare.Administration.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GerenWare.Administration.Tests" />
+  </ItemGroup>
+
+</Project>

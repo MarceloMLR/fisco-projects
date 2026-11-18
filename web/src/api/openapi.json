@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "FiscoProjects.Api | v1",
+    "title": "GerenWare.Api | v1",
     "version": "1.0.0"
   },
   "paths": {
@@ -18409,7 +18409,7 @@
             "type": "string"
           }
         },
-        "description": "A file of the conversation in Teams, only by the name: it opens only in FiscoProjects (ADR-0152)."
+        "description": "A file of the conversation in Teams, only by the name: it opens only in GerenWare (ADR-0152)."
       },
       "TeamsTicketConversationResponse": {
         "required": [
@@ -18425,7 +18425,7 @@
         "properties": {
           "earlier": {
             "type": "integer",
-            "description": "How many interactions came before the ones shown, which stay in FiscoProjects.",
+            "description": "How many interactions came before the ones shown, which stay in GerenWare.",
             "format": "int32"
           },
           "description": {
@@ -18596,7 +18596,7 @@
             "$ref": "#/components/schemas/TeamsTicketConversationResponse"
           }
         },
-        "description": "A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152): the header, the people, the\ndeadlines, how many attachments it has and the last interactions; no e-mails, no permissions."
+        "description": "A ticket as the page of GerenWare in Teams shows it, only to read (ADR-0152): the header, the people, the\ndeadlines, how many attachments it has and the last interactions; no e-mails, no permissions."
       },
       "TeamsTicketVendorResponse": {
         "required": [

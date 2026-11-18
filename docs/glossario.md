@@ -325,7 +325,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Resumo da exclusão | GetProjectDeletion (`GET /api/projects/{id}/deletion`), ProjectItemKind | Chamados, documentos, links, acessos, termos de aceite, tarefas e marcos e pessoas |
 | Apagar o que é do projeto | IProjectDeletion, ProjectItemCount | Cada módulo: conta, apaga os arquivos e apaga as linhas na transação da exclusão |
 | Remoção do que foi guardado | StoredFilesRemoval, `IFileStorage.FolderOfAsync` | Os arquivos registrados e as pastas que ficaram vazias, até a pasta do projeto ou a raiz |
-| Monitoramento | Monitoring (`AddFiscoProjectsMonitoring`), Application Insights | OpenTelemetry pela distribuição do Azure Monitor, só com `APPLICATIONINSIGHTS_CONNECTION_STRING` (ADR-0057, ADR-0112) |
+| Monitoramento | Monitoring (`AddGerenWareMonitoring`), Application Insights | OpenTelemetry pela distribuição do Azure Monitor, só com `APPLICATIONINSIGHTS_CONNECTION_STRING` (ADR-0057, ADR-0112) |
 | Código da instalação | installation (Terraform) | De 2 a 6 letras ou números, parte do nome de todo recurso do Azure, como `app-fiscoprojects-mlr-dev` (ADR-0114) |
 | Ambiente | environment (Terraform) | `prod` ou `dev` (desenvolvimento e demonstração); parâmetros em `infra/terraform/environments/` (ADR-0052, ADR-0114) |
 | Estado do Terraform | Terraform state | Guardado numa conta de armazenamento por instalação, criada pelo `Prepare-TerraformState.ps1` (ADR-0053) |
@@ -336,7 +336,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Pacote da versão | `fiscoprojects-vX.Y.Z.zip`, `release` (workflow) | A aplicação, o Terraform, os scripts de quem opera e os guias, anexados a cada versão publicada no GitHub, de onde as instalações das empresas são feitas e atualizadas (ADR-0127) |
 | Arquivos privados da instalação | `local.auto.tfvars`, `backend.hcl` | Os parâmetros de uma instalação feita pelo pacote, guardados só com quem opera e copiados para cada versão (ADR-0127) |
 | Publicar uma versão à mão | `Publish-Version.ps1` | Migrações e publicação do pacote numa instalação fora do pipeline do repositório (ADR-0127) |
-| Métricas da fila de e-mails | EmailQueueMetrics, EmailQueueState | `fiscoprojects.emails.waiting`, `.oldest_waiting`, `.sent` e `.failed`, para o alerta de fila parada |
+| Métricas da fila de e-mails | EmailQueueMetrics, EmailQueueState | `gerenware.emails.waiting`, `.oldest_waiting`, `.sent` e `.failed`, para o alerta de fila parada |
 
 ## Horas do projeto
 

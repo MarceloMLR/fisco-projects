@@ -4665,7 +4665,7 @@ export interface components {
             manifest: string;
             version: string;
         };
-        /** @description A file of the conversation in Teams, only by the name: it opens only in FiscoProjects (ADR-0152). */
+        /** @description A file of the conversation in Teams, only by the name: it opens only in GerenWare (ADR-0152). */
         TeamsTicketAttachmentResponse: {
             /**
              * Format: uuid
@@ -4681,7 +4681,7 @@ export interface components {
         TeamsTicketConversationResponse: {
             /**
              * Format: int32
-             * @description How many interactions came before the ones shown, which stay in FiscoProjects.
+             * @description How many interactions came before the ones shown, which stay in GerenWare.
              */
             earlier: number;
             description: null | components["schemas"]["TeamsTicketDescriptionResponse"];
@@ -4705,7 +4705,7 @@ export interface components {
             role: components["schemas"]["TicketParticipantRole"];
         };
         /**
-         * @description A ticket as the page of FiscoProjects in Teams shows it, only to read (ADR-0152): the header, the people, the
+         * @description A ticket as the page of GerenWare in Teams shows it, only to read (ADR-0152): the header, the people, the
          *     deadlines, how many attachments it has and the last interactions; no e-mails, no permissions.
          */
         TeamsTicketResponse: {

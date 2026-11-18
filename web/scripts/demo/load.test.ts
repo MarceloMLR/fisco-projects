@@ -19,7 +19,7 @@ import {
  * call is kept as "person METHOD path", so the tests see who did what.
  */
 const base = 'http://api.test';
-const cookieName = '__Host-fiscoprojects-session';
+const cookieName = '__Host-gerenware-session';
 const calls: string[] = [];
 const bodies = new Map<string, unknown[]>();
 let localSignIn = true;

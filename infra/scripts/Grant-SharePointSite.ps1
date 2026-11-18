@@ -24,7 +24,7 @@ is.
 #>
 [CmdletBinding()]
 param(
-    [string] $ApplicationName = 'FiscoProjects',
+    [string] $ApplicationName = 'GerenWare',
     # The application of the installation in Entra ID; read from terraform output entra_client_id when not given.
     [string] $ClientId,
     # The SharePoint site of the files; read from sharepoint_site_url in local.auto.tfvars when not given.

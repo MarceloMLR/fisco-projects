@@ -1,5 +1,5 @@
 # Local SQL Server for development. Tests start their own container (Testcontainers) with the same image.
-name: fisco-projects
+name: gerenware
 
 services:
   sqlserver:

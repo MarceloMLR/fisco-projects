@@ -10,7 +10,7 @@ import { safeItemPath } from './teamsPage';
 
 /** The parts of a path of the application, as the sign-in page takes the screen to go back to. */
 function partsOf(path: string): SignInState['from'] {
-  const address = new URL(path, 'https://fiscoprojects.invalid');
+  const address = new URL(path, 'https://gerenware.invalid');
   return { pathname: address.pathname, search: address.search, hash: address.hash };
 }
 

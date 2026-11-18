@@ -408,7 +408,7 @@ describe('Relatório pela tela', () => {
   it('Muitos registros para a planilha', async () => {
     server.use(
       http.post('/api/audit/exports', () =>
-        problem(400, 'urn:fiscoprojects:problem:audit-export-too-large', {
+        problem(400, 'urn:gerenware:problem:audit-export-too-large', {
           total: 12345,
           limit: 10000,
         }),

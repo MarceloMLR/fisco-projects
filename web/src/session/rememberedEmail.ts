@@ -1,6 +1,6 @@
 // The last e-mail used to sign in, kept in the browser (ADR-0009). Nothing of the session goes here.
 // The storage may be missing or blocked (private window, blocked site data), so every access is guarded.
-const key = 'fiscoProjects.signInEmail';
+const key = 'gerenWare.signInEmail';
 
 export function rememberedEmail(): string {
   try {

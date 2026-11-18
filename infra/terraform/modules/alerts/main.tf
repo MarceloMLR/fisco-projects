@@ -114,7 +114,7 @@ resource "azurerm_monitor_metric_alert" "down" {
   name                = "alert-${var.name_prefix}-fora-do-ar"
   resource_group_name = var.resource_group_name
   scopes              = [azurerm_application_insights_standard_web_test.health[0].id, var.insights_id]
-  description         = "O FiscoProjects não respondeu ao teste de disponibilidade."
+  description         = "O GerenWare não respondeu ao teste de disponibilidade."
   severity            = 1
   frequency           = "PT1M"
   window_size         = local.availability_window
@@ -175,7 +175,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "queue_stopped" {
   criteria {
     query                   = <<-QUERY
       AppMetrics
-      | where Name == "fiscoprojects.emails.oldest_waiting"
+      | where Name == "gerenware.emails.oldest_waiting"
       | summarize Oldest = max(Max)
     QUERY
     time_aggregation_method = "Maximum"

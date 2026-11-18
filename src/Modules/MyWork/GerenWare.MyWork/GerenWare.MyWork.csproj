@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../GerenWare.MyWork.Contracts/GerenWare.MyWork.Contracts.csproj" />
+    <ProjectReference Include="../../Administration/GerenWare.Administration.Contracts/GerenWare.Administration.Contracts.csproj" />
+    <ProjectReference Include="../../Calendar/GerenWare.Calendar.Contracts/GerenWare.Calendar.Contracts.csproj" />
+    <ProjectReference Include="../../Users/GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GerenWare.MyWork.Tests" />
+  </ItemGroup>
+
+</Project>

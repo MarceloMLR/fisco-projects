@@ -1,0 +1,350 @@
+using GerenWare.Administration.Application;
+using GerenWare.Administration.Contracts;
+using GerenWare.Administration.Domain;
+using GerenWare.Testing;
+using Microsoft.EntityFrameworkCore;
+
+namespace GerenWare.Administration.Tests;
+
+// Spec: configuracao-da-instalacao, requirements "Nome da instalação" and "Logo da instalação" (module side).
+public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
+{
+    private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
+
+    [Fact(DisplayName = "Nome padrão")]
+    public async Task NewInstallation_IsCalledGerenWare_WithoutALogo()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
+        var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
+
+        installation.Should().Be(new Installation("GerenWare", null, null));
+        info.Should().Be(new InstallationInfo("GerenWare", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
+    }
+
+    [Fact(DisplayName = "Fuso padrão")]
+    public async Task NewInstallation_ShowsDatesInTheTimeZoneOfBrasilia()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var rules = await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation));
+
+        rules.Should().Be(new GeneralRules("America/Sao_Paulo", new TimeOnly(7, 30), 90, 5, string.Empty, 8m));
+    }
+
+    [Fact(DisplayName = "Trocar o nome e o fuso")]
+    public async Task Update_KeepsTheNameWithoutTheSpacesAtTheEnds_AndTheTimeZone()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var renamed = await RenameAsync(database, "  Consultoria Fictícia ");
+        var invalid = await UpdateAsync(database, "America/Manaus");
+
+        renamed.Should().BeTrue();
+        invalid.Should().BeEmpty();
+        var settings = await SettingsAsync(database);
+        settings.Name.Should().Be("Consultoria Fictícia");
+        settings.TimeZone.Should().Be("America/Manaus");
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .Should().Be(new InstallationInfo("Consultoria Fictícia", "America/Manaus", new TimeOnly(7, 30), 90));
+    }
+
+    [Fact(DisplayName = "Horário padrão")]
+    public async Task NewInstallation_SendsTheDailySummaryAtHalfPastSeven()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var settings = await SettingsAsync(database);
+
+        settings.DailySummaryAt.Should().Be(new TimeOnly(7, 30));
+    }
+
+    [Fact(DisplayName = "Trocar o horário")]
+    public async Task Update_KeepsTheTimeOfTheDailySummary_WithoutSeconds()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, "America/Sao_Paulo", dailySummaryAt: new TimeOnly(8, 0, 42));
+
+        invalid.Should().BeEmpty();
+        (await SettingsAsync(database)).DailySummaryAt.Should().Be(new TimeOnly(8, 0));
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .DailySummaryAt.Should().Be(new TimeOnly(8, 0));
+    }
+
+    [Fact(DisplayName = "Horário inválido")]
+    public async Task UpdateWithoutTheTime_ChangesNothing()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", null, 90), Cancellation));
+
+        invalid.Should().Equal(InstallationField.DailySummaryAt);
+        (await SettingsAsync(database)).Name.Should().Be("GerenWare");
+    }
+
+    [Fact(DisplayName = "Guarda padrão")]
+    public async Task NewInstallation_KeepsTheNotificationsForNinetyDays()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await SettingsAsync(database)).NotificationRetentionDays.Should().Be(90);
+    }
+
+    [Theory(DisplayName = "Guarda inválida")]
+    [InlineData(0)]
+    [InlineData(366)]
+    [InlineData(null)]
+    public async Task RetentionOutOfRange_ChangesNothing(int? days)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), days), Cancellation));
+
+        invalid.Should().Equal(InstallationField.NotificationRetentionDays);
+        (await SettingsAsync(database)).Name.Should().Be("GerenWare");
+    }
+
+    // Spec: configuracao-da-instalacao, requirement "Horas por dia de trabalho" (ADR-0142).
+    [Fact(DisplayName = "Horas por dia padrão")]
+    public async Task NewInstallation_HasEightHoursInAWorkingDay()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await SettingsAsync(database)).WorkHoursPerDay.Should().Be(8m);
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(8m);
+    }
+
+    [Fact(DisplayName = "Trocar as horas por dia")]
+    public async Task Update_KeepsTheHoursOfAWorkingDay_AndNoneKeepsThem()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(
+                new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: 7.5m),
+                Cancellation));
+        await UpdateAsync(database, "America/Sao_Paulo");
+
+        invalid.Should().BeEmpty();
+        (await database.RunAsync<IInstallationSettings, InstallationInfo>(get => get.GetAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(7.5m);
+        (await database.RunAsync<GetGeneralRules, GeneralRules>(get => get.ExecuteAsync(Cancellation)))
+            .WorkHoursPerDay.Should().Be(7.5m);
+    }
+
+    [Theory(DisplayName = "Horas por dia inválidas")]
+    [InlineData(0.5)]
+    [InlineData(12.5)]
+    [InlineData(7.3)]
+    [InlineData(0)]
+    public async Task WorkHoursOutOfRange_ChangesNothing(double hours)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(
+                new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), 90, WorkHoursPerDay: (decimal)hours),
+                Cancellation));
+
+        invalid.Should().Equal(InstallationField.WorkHoursPerDay);
+        var settings = await SettingsAsync(database);
+        (settings.Name, settings.WorkHoursPerDay).Should().Be(("GerenWare", 8m));
+    }
+
+    [Theory(DisplayName = "Nome inválido")]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("Nome com mais de sessenta caracteres para passar do limite aceito")]
+    public async Task InvalidName_ChangesNothing(string name)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var renamed = await RenameAsync(database, name);
+
+        renamed.Should().BeFalse();
+        var settings = await SettingsAsync(database);
+        settings.Name.Should().Be(InstallationSettings.DefaultName);
+        settings.TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
+    }
+
+    [Theory(DisplayName = "Fuso inválido")]
+    [InlineData("Mars/Olympus_Mons")]
+    [InlineData("E. South America Standard Time")]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task InvalidTimeZone_ChangesNothing(string? timeZone)
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await UpdateAsync(database, timeZone);
+
+        invalid.Should().Equal(InstallationField.TimeZone);
+        (await SettingsAsync(database)).TimeZone.Should().Be(InstallationSettings.DefaultTimeZone);
+    }
+
+    [Fact(DisplayName = "Salvar as cores")]
+    public async Task Colors_AreKeptInCapitals_AndBackToTheDefault()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await ColorsAsync(database, "#0f766e", "#14b8a6", "#1f2933")).Should().BeEmpty();
+        var settings = await SettingsAsync(database);
+        (settings.MainColor, settings.SecondaryColor, settings.SidebarColor).Should().Be(("#0F766E", "#14B8A6", "#1F2933"));
+        var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
+        (installation.MainColor, installation.SecondaryColor, installation.SidebarColor)
+            .Should().Be(("#0F766E", "#14B8A6", "#1F2933"));
+
+        (await ColorsAsync(database, null, "", "  ")).Should().BeEmpty();
+        settings = await SettingsAsync(database);
+        (settings.MainColor, settings.SecondaryColor, settings.SidebarColor).Should().Be(((string?)null, (string?)null, (string?)null));
+    }
+
+    [Fact(DisplayName = "Cor sem contraste")]
+    public async Task LightColor_IsKept()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        (await ColorsAsync(database, "#F5C400", "#FFFFFF", "#FFFFFF")).Should().BeEmpty();
+
+        (await SettingsAsync(database)).MainColor.Should().Be("#F5C400");
+    }
+
+    [Fact(DisplayName = "Cor fora do formato pela API")]
+    public async Task MalformedColors_ChangeNothing()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var invalid = await ColorsAsync(database, "#0F766E", "0F766E", "azul");
+
+        invalid.Should().Equal(InstallationColorField.Secondary, InstallationColorField.Sidebar);
+        (await SettingsAsync(database)).MainColor.Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Enviar o logo")]
+    public async Task ReplaceLogo_StoresTheFileInTheFolderOfTheSystem_AndRecordsIt()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+
+        var refusal = await SendAsync(database, "Marca Fictícia.png", Logos.Png());
+
+        refusal.Should().BeNull();
+        var settings = await SettingsAsync(database);
+        settings.LogoFileName.Should().Be("Marca Fictícia.png");
+        settings.LogoContentType.Should().Be("image/png");
+        settings.LogoChangedAt.Should().Be(new DateTime(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc));
+        var file = database.Files.Files[settings.LogoFileId!];
+        file.Name.Should().Be("installation-logo.png");
+        file.Content.Should().Equal(Logos.Png());
+        database.Files.FolderNameOf(settings.LogoFileId!).Should().Be("GerenWare");
+
+        var logo = await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(Cancellation));
+        await using var logoFile = logo!.File;
+        logo.ContentType.Should().Be("image/png");
+        (await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation)))
+            .LogoChangedAt.Should().Be(settings.LogoChangedAt);
+    }
+
+    [Fact(DisplayName = "Trocar PNG por SVG")]
+    public async Task ReplacingAPngByAnSvg_RemovesThePng()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        await SendAsync(database, "marca.png", Logos.Png());
+        database.Clock.Advance(TimeSpan.FromMinutes(5));
+
+        await SendAsync(database, "marca.svg", Logos.Svg());
+
+        var settings = await SettingsAsync(database);
+        settings.LogoContentType.Should().Be("image/svg+xml");
+        settings.LogoChangedAt.Should().Be(new DateTime(2026, 10, 19, 12, 5, 0, DateTimeKind.Utc));
+        database.Files.Files.Values.Select(file => file.Name).Should().Equal("installation-logo.svg");
+    }
+
+    [Fact(DisplayName = "Logo recusado")]
+    public async Task RefusedLogo_KeepsThePreviousOne()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        await SendAsync(database, "marca.png", Logos.Png());
+        var before = await SettingsAsync(database);
+
+        (await SendAsync(database, "foto.jpg", Logos.Jpg())).Should().Be(LogoRefusal.Format);
+        (await SendAsync(database, "grande.png", Logos.Png(LogoFile.MaxBytes + 1))).Should().Be(LogoRefusal.TooLarge);
+        (await SendAsync(database, "marca.svg", Logos.Svg("<script>alert(1)</script>"))).Should().Be(LogoRefusal.Unsafe);
+
+        var after = await SettingsAsync(database);
+        after.LogoFileName.Should().Be(before.LogoFileName);
+        after.LogoChangedAt.Should().Be(before.LogoChangedAt);
+        database.Files.Files.Should().ContainSingle().Which.Value.Content.Should().Equal(Logos.Png());
+    }
+
+    [Fact(DisplayName = "Remover o logo")]
+    public async Task RemoveLogo_ClearsTheRecordAndTheFile()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        await SendAsync(database, "marca.png", Logos.Png());
+
+        await database.RunAsync<RemoveInstallationLogo>(remove => remove.ExecuteAsync(Cancellation));
+
+        var settings = await SettingsAsync(database);
+        settings.HasLogo.Should().BeFalse();
+        settings.LogoFileName.Should().BeNull();
+        settings.LogoChangedAt.Should().BeNull();
+        database.Files.Files.Should().BeEmpty();
+        (await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(Cancellation))).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "Enviar o logo para o tema escuro")]
+    public async Task DarkLogo_IsAFileOfItsOwn_BesideTheLogo()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        await SendAsync(database, "marca.png", Logos.Png());
+
+        var refusal = await database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>
+            replace.ExecuteAsync("marca-escura.svg", new MemoryStream(Logos.Svg()), LogoTheme.Dark, Cancellation));
+
+        refusal.Should().BeNull();
+        var settings = await SettingsAsync(database);
+        settings.LogoFileName.Should().Be("marca.png");
+        settings.DarkLogoFileName.Should().Be("marca-escura.svg");
+        settings.DarkLogoContentType.Should().Be("image/svg+xml");
+        database.Files.Files[settings.DarkLogoFileId!].Name.Should().Be("installation-logo-dark.svg");
+        var dark = await database.RunAsync<GetInstallationLogo, InstallationLogo?>(get => get.ExecuteAsync(LogoTheme.Dark, Cancellation));
+        await using var darkFile = dark!.File;
+        dark.ContentType.Should().Be("image/svg+xml");
+
+        await database.RunAsync<RemoveInstallationLogo>(remove => remove.ExecuteAsync(LogoTheme.Dark, Cancellation));
+
+        settings = await SettingsAsync(database);
+        settings.HasDarkLogo.Should().BeFalse();
+        settings.HasLogo.Should().BeTrue();
+        database.Files.Files.Values.Select(file => file.Name).Should().Equal("installation-logo.png");
+    }
+
+    private static Task<IReadOnlyList<InstallationField>> UpdateAsync(
+        AdministrationDatabase database, string? timeZone, TimeOnly? dailySummaryAt = null) =>
+        database.RunAsync<UpdateInstallation, IReadOnlyList<InstallationField>>(update =>
+            update.ExecuteAsync(
+                new InstallationChanges(timeZone, dailySummaryAt ?? new TimeOnly(7, 30), 90), Cancellation));
+
+    private static Task<bool> RenameAsync(AdministrationDatabase database, string? name) =>
+        database.RunAsync<RenameInstallation, bool>(rename => rename.ExecuteAsync(name, Cancellation));
+
+    private static Task<IReadOnlyList<InstallationColorField>> ColorsAsync(
+        AdministrationDatabase database, string? main, string? secondary, string? sidebar) =>
+        database.RunAsync<ChangeInstallationColors, IReadOnlyList<InstallationColorField>>(change =>
+            change.ExecuteAsync(new InstallationColors(main, secondary, sidebar), Cancellation));
+
+    private static Task<LogoRefusal?> SendAsync(AdministrationDatabase database, string fileName, byte[] content) =>
+        database.RunAsync<ReplaceInstallationLogo, LogoRefusal?>(replace =>
+            replace.ExecuteAsync(fileName, new MemoryStream(content), Cancellation));
+
+    private static async Task<InstallationSettings> SettingsAsync(AdministrationDatabase database)
+    {
+        await using var db = database.NewContext();
+        return await db.InstallationSettings.AsNoTracking().SingleAsync(Cancellation);
+    }
+}

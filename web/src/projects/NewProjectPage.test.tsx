@@ -832,7 +832,7 @@ describe('Novo projeto a partir do MS Project', () => {
         HttpResponse.json(
           {
             status: 400,
-            type: 'urn:fiscoprojects:problem:ms-project-file-refused',
+            type: 'urn:gerenware:problem:ms-project-file-refused',
             reason: 'NotMsProjectXml',
           },
           { status: 400, headers: { 'Content-Type': 'application/problem+json' } },

@@ -236,7 +236,7 @@ describe('Conta no cabeçalho', () => {
 
     // Only the mark that the person left, never a token, until the next sign-in.
     expect(signedOutHere()).toBe(true);
-    expect(Object.keys(localStorage)).toEqual(['fiscoProjects.signedOut']);
+    expect(Object.keys(localStorage)).toEqual(['gerenWare.signedOut']);
     server.use(
       http.post('/api/session/local', () => new HttpResponse(null, { status: 204 })),
       http.get('/api/session', () => HttpResponse.json(marina)),

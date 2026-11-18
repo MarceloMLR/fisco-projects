@@ -78,7 +78,7 @@ if ($aspnetcore -ne 'Development') {
     $folder = Join-Path ([IO.Path]::GetTempPath()) "fiscoprojects-$([IO.Path]::GetRandomFileName())"
     $variables = @{
         ASPNETCORE_ENVIRONMENT            = $aspnetcore
-        ConnectionStrings__FiscoProjects  = "Server=tcp:$server.database.windows.net,1433;Database=sqldb-fiscoprojects;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
+        ConnectionStrings__GerenWare  = "Server=tcp:$server.database.windows.net,1433;Database=sqldb-fiscoprojects;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False"
         Database__AppIdentity__Name       = $app
         Database__AppIdentity__ObjectId   = $principal
         # Only the account of the Azure CLI, never another one signed in to Visual Studio on this computer.
@@ -95,7 +95,7 @@ if ($aspnetcore -ne 'Development') {
         # A new rule of the firewall may take a moment to hold; the migrations change nothing when run again.
         for ($attempt = 1; $attempt -le 3; $attempt++) {
             $PSNativeCommandUseErrorActionPreference = $false
-            dotnet (Join-Path $folder 'FiscoProjects.Api.dll') migrate
+            dotnet (Join-Path $folder 'GerenWare.Api.dll') migrate
             $migrated = $LASTEXITCODE -eq 0
             $PSNativeCommandUseErrorActionPreference = $true
             if ($migrated) {

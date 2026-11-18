@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>gerenware-api</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- The API contract the frontend types come from (ADR-0076), written to web/src/api/openapi.json.
+       Generated only on request, by `npm run api:update` in web/; the tests flag a stale contract. -->
+  <PropertyGroup>
+    <OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../web/src/api</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name openapi</OpenApiGenerateDocumentsOptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <ProjectReference Include="../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../Modules/Administration/GerenWare.Administration/GerenWare.Administration.csproj" />
+    <ProjectReference Include="../Modules/Audit/GerenWare.Audit/GerenWare.Audit.csproj" />
+    <ProjectReference Include="../Modules/Calendar/GerenWare.Calendar/GerenWare.Calendar.csproj" />
+    <ProjectReference Include="../Modules/Credentials/GerenWare.Credentials/GerenWare.Credentials.csproj" />
+    <ProjectReference Include="../Modules/MyWork/GerenWare.MyWork/GerenWare.MyWork.csproj" />
+    <ProjectReference Include="../Modules/Documents/GerenWare.Documents/GerenWare.Documents.csproj" />
+    <ProjectReference Include="../Modules/Files/GerenWare.Files/GerenWare.Files.csproj" />
+    <ProjectReference Include="../Modules/Notifications/GerenWare.Notifications/GerenWare.Notifications.csproj" />
+    <ProjectReference Include="../Modules/Projects/GerenWare.Projects/GerenWare.Projects.csproj" />
+    <ProjectReference Include="../Modules/Tickets/GerenWare.Tickets/GerenWare.Tickets.csproj" />
+    <ProjectReference Include="../Modules/TimeTracking/GerenWare.TimeTracking/GerenWare.TimeTracking.csproj" />
+    <ProjectReference Include="../Modules/Users/GerenWare.Users/GerenWare.Users.csproj" />
+  </ItemGroup>
+
+</Project>

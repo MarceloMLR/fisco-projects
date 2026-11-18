@@ -291,7 +291,7 @@ describe('Aba dos termos da gestão', () => {
   it('Provedor fora do ar ao pedir pela tela', async () => {
     server.use(
       http.post('/api/projects/:id/acceptances', () =>
-        problem(502, 'urn:fiscoprojects:problem:signature-provider-failed'),
+        problem(502, 'urn:gerenware:problem:signature-provider-failed'),
       ),
     );
     await renderApp(path);
@@ -467,7 +467,7 @@ describe('Gaveta do termo com os signatários', () => {
   it('Lembrete logo depois do envio', async () => {
     server.use(
       http.post('/api/projects/:id/acceptances/:termId/reminder', () =>
-        problem(409, 'urn:fiscoprojects:problem:signature-reminded-recently'),
+        problem(409, 'urn:gerenware:problem:signature-reminded-recently'),
       ),
     );
     const drawer = await openTerm();
@@ -544,7 +544,7 @@ describe('Gaveta do termo com os signatários', () => {
   it('Projeto encerrado ao anexar pela tela', async () => {
     server.use(
       http.post('/api/projects/:id/acceptances/:termId/attached', () =>
-        problem(409, 'urn:fiscoprojects:problem:project-closed'),
+        problem(409, 'urn:gerenware:problem:project-closed'),
       ),
     );
     const drawer = await openTerm();

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <ProjectReference Include="../../../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../../Administration/GerenWare.Administration.Contracts/GerenWare.Administration.Contracts.csproj" />
+    <ProjectReference Include="../../Calendar/GerenWare.Calendar.Contracts/GerenWare.Calendar.Contracts.csproj" />
+    <ProjectReference Include="../../Files/GerenWare.Files.Contracts/GerenWare.Files.Contracts.csproj" />
+    <ProjectReference Include="../../MyWork/GerenWare.MyWork.Contracts/GerenWare.MyWork.Contracts.csproj" />
+    <ProjectReference Include="../../Notifications/GerenWare.Notifications.Contracts/GerenWare.Notifications.Contracts.csproj" />
+    <ProjectReference Include="../../Projects/GerenWare.Projects.Contracts/GerenWare.Projects.Contracts.csproj" />
+    <ProjectReference Include="../../Users/GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+    <ProjectReference Include="../GerenWare.Tickets.Contracts/GerenWare.Tickets.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GerenWare.Tickets.Tests" />
+  </ItemGroup>
+
+</Project>

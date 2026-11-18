@@ -1,4 +1,4 @@
-# An installation of the FiscoProjects in Azure (ADR-0052, ADR-0053, ADR-0114): the application in the App Service, the
+# An installation of the GerenWare in Azure (ADR-0052, ADR-0053, ADR-0114): the application in the App Service, the
 # database, the Key Vault, the monitoring and the application in Entra ID, all in one resource group.
 
 locals {
@@ -21,7 +21,7 @@ locals {
   # The application and the database stay together, for the latency of the queries.
   app_location = coalesce(var.app_location, var.location)
   tags = {
-    aplicacao  = "FiscoProjects"
+    aplicacao  = "GerenWare"
     instalacao = var.installation
     ambiente   = var.environment
   }
@@ -38,7 +38,7 @@ resource "azurerm_resource_group" "main" {
 module "entra" {
   source = "./modules/entra"
 
-  display_name              = "FiscoProjects (${var.installation} ${var.environment})"
+  display_name              = "GerenWare (${var.installation} ${var.environment})"
   owners                    = var.operator_object_ids
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   redirect_uri              = "https://${local.host}/signin-oidc"
@@ -95,7 +95,7 @@ module "database" {
   location              = local.app_location
   server_name           = local.names.sql_server
   database_name         = local.names.database
-  admins_group_name     = "FiscoProjects ${var.installation} ${var.environment} - administradores do banco"
+  admins_group_name     = "GerenWare ${var.installation} ${var.environment} - administradores do banco"
   operator_object_ids   = var.operator_object_ids
   sku                   = var.database_sku
   max_size_gb           = var.database_max_size_gb
@@ -140,7 +140,7 @@ module "ci" {
   source = "./modules/ci"
   count  = var.github_repository == null ? 0 : 1
 
-  display_name       = "FiscoProjects pipeline (${var.installation} ${var.environment})"
+  display_name       = "GerenWare pipeline (${var.installation} ${var.environment})"
   owners             = var.operator_object_ids
   repository         = var.github_repository
   environment        = var.environment

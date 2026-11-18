@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <!-- The sign-in through Entra ID, with the managed identity as the credential (ADR-0117). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <!-- The token Teams gives the page of GerenWare in Teams, only for its readings (ADR-0152). -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Azure.Identity" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../GerenWare.Persistence/GerenWare.Persistence.csproj" />
+    <ProjectReference Include="../../../GerenWare.SharedKernel/GerenWare.SharedKernel.csproj" />
+    <ProjectReference Include="../../Audit/GerenWare.Audit.Contracts/GerenWare.Audit.Contracts.csproj" />
+    <ProjectReference Include="../GerenWare.Users.Contracts/GerenWare.Users.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GerenWare.Users.Tests" />
+  </ItemGroup>
+
+</Project>

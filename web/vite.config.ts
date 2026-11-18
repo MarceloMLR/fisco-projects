@@ -1,14 +1,14 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-// Where the API runs in development (src/FiscoProjects.Api/Properties/launchSettings.json).
+// Where the API runs in development (src/GerenWare.Api/Properties/launchSettings.json).
 const api = 'http://localhost:5175';
 
 export default defineConfig({
   plugins: [react()],
   build: {
     // The API host serves the build from its static files folder (ADR-0047).
-    outDir: '../src/FiscoProjects.Api/wwwroot',
+    outDir: '../src/GerenWare.Api/wwwroot',
     emptyOutDir: true,
   },
   server: {

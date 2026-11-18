@@ -1,0 +1,491 @@
+using System.Text.RegularExpressions;
+using GerenWare.Testing;
+
+namespace GerenWare.Pipeline.Tests;
+
+// Spec: infraestrutura (ADR-0053, ADR-0114). The Terraform code is read as text; the CI also formats and validates it
+// with Terraform itself (scripts/ci/infra.sh).
+public sealed partial class InfrastructureTests
+{
+    private static readonly string Folder = RepositoryFiles.PathOf("infra", "terraform");
+
+    private static readonly string[] Modules = ["alerts", "app", "ci", "database", "entra", "key-vault", "monitoring"];
+
+    [Fact(DisplayName = "Ambiente criado pelo Terraform")]
+    public void Terraform_DescribesTheWholeInstallation_WithPinnedVersions()
+    {
+        var main = Read("main.tf");
+
+        Directory.GetDirectories(Path.Combine(Folder, "modules")).Select(Path.GetFileName).Order().Should().Equal(Modules);
+        foreach (var module in Modules)
+        {
+            main.Should().Contain($"source = \"./modules/{module}\"");
+        }
+
+        var versions = Read("versions.tf");
+        var terraform = RequiredTerraform().Match(versions).Groups["version"].Value;
+        terraform.Should().NotBeEmpty();
+        Repository.Read("scripts", "ci", "terraform.sh").Should().Contain($"version={terraform}\n", "the CI checks with the same Terraform");
+        ProviderVersions().Matches(versions).Should().HaveCount(2).And.AllSatisfy(match => match.Groups["version"].Value.Should().MatchRegex(@"^\d+\.\d+\.\d+$"));
+        File.Exists(Path.Combine(Folder, ".terraform.lock.hcl")).Should().BeTrue("the providers are checked by their hashes");
+        Read("environments", "dev.tfvars").Should().Contain("installation = \"").And.Contain("environment  = \"dev\"");
+    }
+
+    [Fact(DisplayName = "Banco sem senha")]
+    public void Database_HasNoPassword_AndTheApplicationUsesItsIdentity()
+    {
+        var code = AllCode();
+        var app = Read("modules", "app", "main.tf");
+
+        code.Should().NotContain("administrator_login_password");
+        Read("modules", "database", "main.tf").Should().Contain("azuread_authentication_only = true");
+        app.Should().Contain("Authentication=Active Directory Managed Identity").And.NotContain("Password=");
+        app.Should().Contain("type = \"SystemAssigned\"").And.Contain("role_definition_name = \"Key Vault Secrets User\"");
+    }
+
+    [Fact(DisplayName = "Segredos fora do Terraform")]
+    public void Terraform_CreatesNoSecret_AndKeepsPersonalValuesOutOfTheRepository()
+    {
+        var code = AllCode();
+
+        foreach (var resource in new[] { "azurerm_key_vault_secret", "azurerm_key_vault_certificate", "azurerm_key_vault_key", "random_password", "azuread_application_password", "azuread_service_principal_password" })
+        {
+            code.Should().NotContain($"resource \"{resource}\"");
+        }
+
+        Read("modules", "app", "main.tf").Should().Contain("@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})");
+        var ignored = Repository.Read(".gitignore").Split('\n');
+        ignored.Should().Contain(".terraform/").And.Contain("*.tfstate").And.Contain("*.tfstate.*").And.Contain("*.auto.tfvars");
+        foreach (var file in Directory.GetFiles(Path.Combine(Folder, "environments")))
+        {
+            var lines = File.ReadAllLines(file);
+            lines.Should().NotContain(line => PersonalValue().IsMatch(line), "the operators and the e-mail of the alerts are personal");
+            lines.Should().NotContain(line => EmailAddress().IsMatch(line));
+        }
+    }
+
+    [Fact(DisplayName = "Backups da produção")]
+    public void Defaults_AreThoseOfProduction()
+    {
+        var variables = Read("variables.tf");
+
+        Default(variables, "database_sku").Should().Be("\"S0\"");
+        Default(variables, "database_restore_days").Should().Be("14");
+        Default(variables, "database_monthly_backup_months").Should().Be("12");
+        Default(variables, "database_backup_redundancy").Should().Be("\"Zone\"");
+        Default(variables, "aspnetcore_environment").Should().Be("\"Production\"");
+        Default(variables, "app_is_database_admin").Should().Be("false");
+        Default(variables, "location").Should().Be("\"brazilsouth\"");
+        Default(variables, "app_location").Should().Be("null", "the application and the database stay in the region of the installation");
+        Read("modules", "key-vault", "main.tf").Should().Contain("purge_protection_enabled   = true");
+        Read("modules", "app", "main.tf").Should().Contain("https_only                                     = true");
+    }
+
+    [Fact(DisplayName = "Ambiente de desenvolvimento apagado sem custos")]
+    public void DevelopmentEnvironment_KeepsNothingBilledAfterDestroy()
+    {
+        var dev = Read("environments", "dev.tfvars");
+
+        dev.Should().Contain("database_monthly_backup_months = 0").And.Contain("database_sku                   = \"Basic\"");
+        Read("modules", "database", "main.tf").Should().Contain("for_each = var.monthly_backup_months > 0 ? [var.monthly_backup_months] : []");
+    }
+
+    // Spec: infraestrutura, requirement "Banco protegido contra exclusão" (Operação-4.1).
+    [Fact(DisplayName = "Banco travado por padrão")]
+    public void Database_IsLockedAgainstDeletionByDefault()
+    {
+        Default(Read("variables.tf"), "database_delete_lock").Should().Be("true");
+        Read("main.tf").Should().Contain("delete_lock           = var.database_delete_lock");
+        Read("environments", "dev.tfvars").Should().NotContain("database_delete_lock", "the dev keeps the default of production");
+        var module = Read("modules", "database", "main.tf");
+        module.Should().Contain("resource \"azurerm_management_lock\" \"database\"")
+            .And.Contain("lock_level = \"CanNotDelete\"")
+            .And.Contain("count      = var.delete_lock ? 1 : 0");
+    }
+
+    [Fact(DisplayName = "Destroy com a trava")]
+    public void DatabaseLock_DependsOnTheDatabase()
+    {
+        // The lock is on the database itself, so Terraform destroys it before the database, and the test database of
+        // the restore guide, a sibling in the same server, stays deletable.
+        var module = Read("modules", "database", "main.tf");
+        module.Should().Contain("scope      = azurerm_mssql_database.main.id");
+        module.Should().NotContain("scope      = azurerm_mssql_server.main.id");
+        Repository.Read("docs", "restauracao.md").Should().Contain("az lock delete");
+    }
+
+    [Fact(DisplayName = "Alertas da instalação")]
+    public void Alerts_CoverDownErrorsQueueAndDatabase()
+    {
+        var alerts = Read("modules", "alerts", "main.tf");
+
+        alerts.Should().Contain("resource \"azurerm_application_insights_standard_web_test\" \"health\"")
+            .And.Contain("application_insights_web_test_location_availability_criteria")
+            .And.Contain("metric_name      = \"requests/failed\"")
+            .And.Contain("Name == \"gerenware.emails.oldest_waiting\"")
+            .And.Contain("queue_stopped_after = 900")
+            .And.Contain("metric_name      = \"storage_percent\"")
+            .And.Contain("threshold        = 80")
+            .And.Contain("email_address           = var.alert_email");
+        Read("main.tf").Should().Contain("health_url                = \"https://${local.host}/health\"");
+    }
+
+    [Fact(DisplayName = "Estado do Terraform")]
+    public void State_IsKeptInAProtectedStorageAccount()
+    {
+        var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
+
+        Read("versions.tf").Should().Contain("backend \"azurerm\" {\n    use_azuread_auth = true\n  }");
+        script.Should().Contain("--allow-shared-key-access false")
+            .And.Contain("--allow-blob-public-access false")
+            .And.Contain("--enable-versioning true")
+            .And.Contain("--enable-delete-retention true")
+            .And.Contain("--enable-container-delete-retention true")
+            .And.Contain("$ErrorActionPreference = 'Stop'");
+        Read("environments", "dev.backend.hcl").Should().Contain("container_name       = \"tfstate\"");
+    }
+
+    [Fact(DisplayName = "Identidade do pipeline com poder limitado")]
+    public void PipelineIdentity_PublishesAndReads_WithoutGivingRolesOrChangingEntra()
+    {
+        var ci = Read("modules", "ci", "main.tf");
+
+        ci.Should().Contain("issuer         = \"https://token.actions.githubusercontent.com\"")
+            .And.Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"")
+            .And.Contain("role_definition_name = \"Contributor\"\n  principal_id")
+            .And.Contain("role_definition_name = \"Storage Blob Data Contributor\"")
+            .And.Contain("scope                = var.state_account_id\n  role_definition_name = \"Reader\"")
+            .And.Contain("app_role_ids[\"Directory.Read.All\"]")
+            .And.Contain("app_role_ids[\"Application.Read.All\"]");
+        ci.Should().NotContain("Owner").And.NotContain("User Access Administrator").And.NotContain("ReadWrite")
+            .And.NotContain("azuread_application_password");
+        Regex.Matches(ci, "resource \"azurerm_role_assignment\"").Should().HaveCount(3);
+        Regex.Matches(ci, "resource \"azuread_app_role_assignment\"").Should().HaveCount(2);
+        // Only where the application does not apply the migrations itself, as production (ADR-0125).
+        ci.Should().Contain("resource \"azuread_group_member\" \"database_admin\" {\n  count = var.database_admin ? 1 : 0\n\n  group_object_id  = var.database_admins_group\n  member_object_id = azuread_service_principal.main.object_id");
+        Read("main.tf").Should().Contain("database_admin        = !var.app_is_database_admin\n  database_admins_group = module.database.admins_group_object_id");
+        Read("main.tf").Should().Contain("resource_group_id  = azurerm_resource_group.main.id");
+        // The container of the state has the names of the script that creates it.
+        var script = Repository.Read("infra", "scripts", "Prepare-TerraformState.ps1");
+        script.Should().Contain("$group = \"rg-fiscoprojects-$Installation-tfstate\"").And.Contain("$account = \"stfp${Installation}tfstate\"");
+        Read("main.tf").Should().Contain("resourceGroups/rg-fiscoprojects-${var.installation}-tfstate/providers/Microsoft.Storage/storageAccounts/stfp${var.installation}tfstate\"\n")
+            .And.Contain("state_container_id = \"${local.state_account_id}/blobServices/default/containers/tfstate\"");
+        Regex.Match(Read("variables.tf"), "variable \"alert_email\" \\{[^}]*sensitive   = true", RegexOptions.Singleline).Success
+            .Should().BeTrue("the plans are shown in public logs");
+    }
+
+    [Fact(DisplayName = "Aplicativo do Entra para a entrada")]
+    public void EntraApplication_IsReadyForTheSignIn()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+        var main = Read("main.tf");
+
+        entra.Should().Contain("redirect_uris = [var.redirect_uri]")
+            .And.Contain("id_token_issuance_enabled     = false")
+            .And.Contain("name = \"acct\"").And.Contain("name = \"email\"")
+            .And.Contain("sign_in_scopes = [\"openid\", \"profile\", \"email\"]")
+            .And.Contain("claim_values                         = local.sign_in_scopes")
+            .And.Contain("app_role_assignment_required = var.assignment_required")
+            .And.Contain("feature_tags {\n    enterprise = true\n  }");
+        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "only Microsoft Graph");
+        main.Should().Contain("redirect_uri              = \"https://${local.host}/signin-oidc\"")
+            .And.Contain("app_identity_principal_id = module.app.principal_id")
+            .And.Contain("EntraSignIn__TenantId = data.azurerm_client_config.current.tenant_id")
+            .And.Contain("EntraSignIn__ClientId = module.entra.client_id")
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)");
+        Read("modules", "app", "main.tf").Should().Contain("ASPNETCORE_FORWARDEDHEADERS_ENABLED = \"true\"");
+        var variables = Read("variables.tf");
+        Default(variables, "entra_sign_in").Should().Be("true");
+        Default(variables, "entra_assignment_required").Should().Be("true", "only the people assigned sign in (ADR-0005)");
+        Default(variables, "first_administrator_object_id").Should().Be("null");
+    }
+
+    [Fact(DisplayName = "Permissão para ler o diretório")]
+    public void EntraApplication_ReadsTheDirectory_AndWritesOnlyInTheSitesGiven()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        entra.Should().Contain("directory_role = \"User.Read.All\"")
+            .And.Contain("sites_role     = \"Sites.Selected\"")
+            .And.Contain("id   = data.azuread_service_principal.graph.app_role_ids[local.directory_role]\n      type = \"Role\"")
+            .And.Contain("id   = data.azuread_service_principal.graph.app_role_ids[local.sites_role]\n      type = \"Role\"")
+            .And.Contain("app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.directory_role]")
+            .And.Contain("app_role_id         = data.azuread_service_principal.graph.app_role_ids[local.sites_role]")
+            .And.Contain("principal_object_id = azuread_service_principal.main.object_id");
+        Regex.Matches(entra, "type = \"Role\"").Should().HaveCount(2, "no other permission of the application (ADR-0119, ADR-0120)");
+        Regex.Matches(entra, "resource \"azuread_app_role_assignment\"").Should().HaveCount(2);
+        entra.Should().NotContain("Mail.Send").And.NotContain("Sites.ReadWrite").And.NotContain("Sites.FullControl")
+            .And.NotContain("Files.").And.NotContain("ReadWrite");
+    }
+
+    // Spec: infraestrutura, requirement "Aplicativo do Entra pronto para o Teams" (ADR-0117, ADR-0152).
+    [Fact(DisplayName = "Aplicativo do Entra para o Teams")]
+    public void EntraApplication_ExposesItsApiToTheSingleSignOnOfTeams()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        entra.Should().Contain("requested_access_token_version = 2")
+            .And.Contain("teams_scope    = \"access_as_user\"")
+            .And.MatchRegex("teams_scope_id = \"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"")
+            .And.Contain("value                      = local.teams_scope")
+            .And.Contain("type                       = \"Admin\"")
+            .And.Contain("identifier_uri = \"api://${var.site_host}/${azuread_application.main.client_id}\"")
+            .And.Contain("ignore_changes = [identifier_uris]")
+            .And.Contain("desktop_and_mobile = \"1fec8e78-bce4-4aaf-ab1b-5451cc387264\"")
+            .And.Contain("web                = \"5e3ce6c0-2b1f-4285-8d4b-75ee78787346\"")
+            .And.Contain("authorized_client_id = each.value")
+            .And.Contain("permission_ids       = [local.teams_scope_id]")
+            .And.Contain("access_token {\n      name = \"acct\"\n    }");
+        Regex.Matches(entra, "resource \"azuread_application_pre_authorized\"").Should().HaveCount(1);
+        Regex.Matches(entra, "required_resource_access \\{").Should().HaveCount(1, "no new permission of Microsoft Graph");
+        Read("main.tf").Should().Contain("site_host                 = local.host");
+        // The resource of the package of Teams is the same identifier, with the host of the address of the screens.
+        Read("..", "..", "src", "Modules", "Notifications", "GerenWare.Notifications", "Infrastructure", "TeamsTexts.cs")
+            .Should().Contain("[\"resource\"] = $\"api://{host}/{settings.EntraClientId}\"");
+    }
+
+    // Spec: infraestrutura, requirement "Arquivos no site do SharePoint" (ADR-0120).
+    [Fact(DisplayName = "Arquivos no site do SharePoint")]
+    public void SharePointSite_IsPersonal_AndGivenOnlyToWrite()
+    {
+        var main = Read("main.tf");
+        var variables = Read("variables.tf");
+        var script = Repository.Read("infra", "scripts", "Grant-SharePointSite.ps1");
+
+        main.Should().Contain("FileStorage__Provider            = \"SharePoint\"")
+            .And.Contain("FileStorage__SharePoint__SiteUrl = var.sharepoint_site_url")
+            .And.Contain("app_settings           = merge(var.app_settings, local.entra_settings, local.storage_settings, local.email_settings, local.signature_settings)");
+        Default(variables, "sharepoint_site_url").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
+        Default(variables, "sharepoint_root_folder").Should().Be("null", "the library itself, in a site only for the system");
+        Read("environments", "dev.tfvars").Should().NotContain("sharepoint_site_url");
+        script.Should().Contain("roles               = @('write')").And.Contain("-Scopes 'Sites.FullControl.All'")
+            .And.NotContain("'owner'").And.NotContain("'fullcontrol'");
+    }
+
+    // Spec: infraestrutura, requirement "E-mails pela caixa compartilhada" (ADR-0036, ADR-0123).
+    [Fact(DisplayName = "Caixa de envio pelo Terraform")]
+    public void SharedMailbox_IsPersonal_AndTheOnlyOneTheApplicationSendsFrom()
+    {
+        var main = Read("main.tf");
+        var variables = Read("variables.tf");
+        var script = Repository.Read("infra", "scripts", "Grant-ExchangeMailbox.ps1");
+
+        main.Should().Contain("Email__Provider = \"Graph\"").And.Contain("Email__Mailbox  = var.email_mailbox");
+        Default(variables, "email_mailbox").Should().Be("null", "the address names the tenant and stays in local.auto.tfvars");
+        Read("environments", "dev.tfvars").Should().NotContain("email_mailbox");
+        Read("modules", "entra", "main.tf").Should().NotContain("Mail.", "the role to send comes from Exchange, only for the mailbox");
+        script.Should().Contain("New-Mailbox -Shared")
+            .And.Contain("--account-enabled false")
+            .And.Contain("$recipient.RecipientTypeDetails -notin 'SharedMailbox', 'UserMailbox'")
+            .And.Contain("$enabled = if ($recipient) { 'kept' } else { $null }")
+            .And.Contain("\"$($_.InScope)\" -eq 'True'")
+            .And.Contain("Enable-OrganizationCustomization")
+            .And.Contain("New-ServicePrincipal -AppId $clientId")
+            .And.Contain("-RecipientRestrictionFilter $filter")
+            .And.Contain("$filter = \"PrimarySmtpAddress -eq '$Mailbox'\"")
+            .And.Contain("-Role 'Application Mail.Send'")
+            .And.Contain("-CustomResourceScope $scopeName")
+            .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $Mailbox")
+            .And.Contain("Test-ServicePrincipalAuthorization -Identity $clientId -Resource $me")
+            .And.NotContain("Application Mail Full Access").And.NotContain("Application Exchange Full Access");
+    }
+
+    // Spec: infraestrutura, requirement "Avisos pelo Teams na instalação" (ADR-0149).
+    [Fact(DisplayName = "Teams pelo Terraform")]
+    public void Teams_GoesByGraphWithTheSignIn_WithoutAPermissionOfEntra()
+    {
+        var main = Read("main.tf");
+        var entraSettings = main[main.IndexOf("entra_settings = var.entra_sign_in ?", StringComparison.Ordinal)..];
+        entraSettings = entraSettings[..entraSettings.IndexOf("}) : {}", StringComparison.Ordinal)];
+
+        entraSettings.Should().Contain("Teams__Provider       = \"Graph\"", "the notices by Teams need the application of Entra");
+        AllCode().Should().NotContain("TeamsActivity").And.NotContain("TeamsAppInstallation")
+            .And.NotContain("Teams__Provider       = \"Local\"");
+        // The permissions to send come from the package of Teams, for the person; the application of Entra only exposes its
+        // API to the single sign-on of Teams (ADR-0152), with no permission of Teams.
+        Regex.IsMatch(Read("modules", "entra", "main.tf"), @"Teams\w*\.\w+").Should()
+            .BeFalse("the permissions come from the package of Teams, for the person");
+    }
+
+    [Fact(DisplayName = "Caixa que a empresa já tem")]
+    public void ExchangeScript_UsesTheMailboxTheCompanyHas_AsItIs()
+    {
+        var script = Repository.Read("infra", "scripts", "Grant-ExchangeMailbox.ps1");
+        var existing = script[script.IndexOf("if ($recipient) {", StringComparison.Ordinal)..script.IndexOf("else {", script.IndexOf("if ($recipient) {", StringComparison.Ordinal), StringComparison.Ordinal)];
+
+        existing.Should().Contain("sem mudar nada nela").And.NotContain("Set-").And.NotContain("az ad user update");
+        script.Should().Contain("Get-EXORecipient -Identity $Mailbox");
+    }
+
+    // Spec: infraestrutura, requirement "Guia de instalação" (ADR-0127).
+    [Fact(DisplayName = "Cada script no guia")]
+    public void Guide_CitesEveryScriptOfWhoOperates_AndOnlyScriptsThatExist()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+        var scripts = Directory.GetFiles(RepositoryFiles.PathOf("infra", "scripts")).Select(Path.GetFileName).ToList();
+
+        scripts.Should().NotBeEmpty().And.AllSatisfy(script => guide.Should().Contain($"./infra/scripts/{script}"));
+        GuideScript().Matches(guide).Select(match => match.Groups["script"].Value).Distinct()
+            .Should().AllSatisfy(script => scripts.Should().Contain(script, "the guide cites only scripts that exist"));
+    }
+
+    [Fact(DisplayName = "Guia do começo ao fim")]
+    public void Guide_GoesFromWhatTheCompanyProvides_ToTheUpdates()
+    {
+        var headings = Repository.Read("docs", "instalacao.md").Split('\n')
+            .Where(line => line.StartsWith("## ", StringComparison.Ordinal))
+            .Select(line => line[3..].Trim())
+            .ToList();
+
+        string[] parts = ["Antes de começar", "Quem instala", "Pacote da versão", "Instalar", "Atualizar para uma versão nova"];
+        var positions = parts.Select(part => headings.IndexOf(part)).ToList();
+        positions.Should().NotContain(-1, $"the guide has the parts {string.Join(", ", parts)}").And.BeInAscendingOrder();
+    }
+
+    [Fact(DisplayName = "Passo do Teams no guia")]
+    public void Guide_TeachesTheApplicationOfTeams_AfterTheMailbox()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+        var exchange = guide.IndexOf("**Prepare a caixa dos e-mails**", StringComparison.Ordinal);
+        var teams = guide.IndexOf("**Instale o aplicativo do Teams**", StringComparison.Ordinal);
+
+        exchange.Should().BePositive();
+        teams.Should().BeGreaterThan(exchange, "the step of Teams comes after the one of Exchange");
+        var step = guide[teams..guide.IndexOf("**Combine a rotina**", teams, StringComparison.Ordinal)];
+        step.Should().Contain("Administrador do Teams")
+            .And.Contain("\"Baixar pacote do Teams\"")
+            .And.Contain("Carregar novo aplicativo")
+            .And.Contain("Políticas de configuração")
+            .And.Contain("\"Avisar pelo Teams\"");
+        step.IndexOf("Políticas de configuração", StringComparison.Ordinal)
+            .Should().BeLessThan(step.IndexOf("\"Avisar pelo Teams\"", StringComparison.Ordinal), "the notices are turned on after the installation");
+        guide.Should().Contain("| Subir e instalar o aplicativo do Teams, para os avisos no Teams | Administrador do Teams");
+    }
+
+    [Fact(DisplayName = "E-mails da demonstração no ambiente dev")]
+    public void DevEnvironment_KeepsTheEmailsOfTheDemonstrationInTheFolder()
+    {
+        var dev = Read("environments", "dev.tfvars");
+
+        dev.Should().Contain("Email__Graph__LocalDomains__0 = \"empresa.example\"")
+            .And.Contain("Email__Local__Folder         = \"/home/data/emails\"");
+    }
+
+    // Spec: infraestrutura, requirement "Assinatura pela Autentique na instalação" (ADR-0130).
+    [Fact(DisplayName = "Autentique pelo Terraform")]
+    public void Autentique_ReadsItsSecrets_OnlyFromTheKeyVault()
+    {
+        var main = Read("main.tf");
+
+        Default(Read("variables.tf"), "autentique").Should().Be("null", "without the Autentique, the terms are only attached");
+        main.Should().Contain("Signature__Provider            = \"Autentique\"")
+            .And.Contain("Signature__Autentique__Sandbox = tostring(var.autentique.sandbox)")
+            .And.Contain("{ Signature__Autentique__ApiKey = \"Signature--Autentique--ApiKey\" }")
+            .And.Contain("{ Signature__Autentique__WebhookSecret = \"Signature--Autentique--WebhookSecret\" }")
+            .And.Contain("{ Signature__CheckMinutes = \"60\" }")
+            .And.Contain("vault_settings         = local.signature_secrets");
+        Read("modules", "app", "main.tf").Should().Contain(
+            "for setting, secret in var.vault_settings : setting => \"@Microsoft.KeyVault(VaultName=${var.key_vault_name};SecretName=${secret})\"");
+        AllCode().Should().NotContain("Signature__Autentique__ApiKey = var.").And.NotContain("Signature__Autentique__WebhookSecret = var.");
+    }
+
+    [Fact(DisplayName = "Sandbox no ambiente dev")]
+    public void DevEnvironment_UsesTheSandbox_AndKeepsTheSignersOfTheDemonstrationLocal()
+    {
+        var dev = Read("environments", "dev.tfvars");
+
+        dev.Should().Contain("autentique = {\n  sandbox = true\n  webhook = true\n}")
+            .And.Contain("Signature__LocalDomains__0 = \"cliente.example\"")
+            .And.Contain("Signature__Local__Folder   = \"/home/data/signatures\"");
+        Read("environments", "prod.tfvars").Should().NotContain("sandbox");
+    }
+
+    [Fact(DisplayName = "Autentique no guia")]
+    public void Guide_TeachesTheSecretsAndTheNoticeOfTheAutentique()
+    {
+        var guide = Repository.Read("docs", "instalacao.md");
+
+        guide.Should().Contain("--name Signature--Autentique--ApiKey")
+            .And.Contain("--name Signature--Autentique--WebhookSecret")
+            .And.Contain("https://<endereço da instalação>/signature-notices")
+            .And.Contain("do tipo Assinatura, com os eventos `signature.accepted` e `signature.rejected`")
+            .And.Contain("autentique = { webhook = true }");
+    }
+
+    // Spec: cronograma, requirement "Linha do tempo sem licença de terceiros" (ADR-0134).
+    [Fact(DisplayName = "Instalação que não guarda a chave")]
+    public void Installation_NeitherAsksNorKeepsTheKeyOfTheTimeline()
+    {
+        var terraform = AllCode() + string.Join('\n', Directory.GetFiles(Path.Combine(Folder, "environments")).Select(File.ReadAllText));
+        terraform.Should().NotContainEquivalentOf("syncfusion");
+
+        // The guide names the old key only to say how to remove it from an installation that still keeps it.
+        var sections = Repository.Read("docs", "instalacao.md").Split("\n## ");
+        sections.Where(section => !section.StartsWith("Atualizar para uma versão nova", StringComparison.Ordinal))
+            .Should().AllSatisfy(section => section.Should().NotContainEquivalentOf("syncfusion"));
+        sections.Single(section => section.StartsWith("Atualizar para uma versão nova", StringComparison.Ordinal))
+            .Should().Contain("az keyvault secret delete").And.Contain("--name Syncfusion--LicenseKey");
+    }
+
+    [Fact(DisplayName = "Aplicativo do Entra sem segredo")]
+    public void EntraApplication_TrustsOnlyTheManagedIdentity()
+    {
+        var entra = Read("modules", "entra", "main.tf");
+
+        Regex.Matches(entra, "resource \"azuread_application_federated_identity_credential\"").Should().HaveCount(1);
+        entra.Should().Contain("audiences      = [\"api://AzureADTokenExchange\"]")
+            .And.Contain("issuer         = \"https://login.microsoftonline.com/${var.tenant_id}/v2.0\"")
+            .And.Contain("subject        = var.app_identity_principal_id")
+            .And.NotContain("azuread_application_password").And.NotContain("azuread_application_certificate")
+            .And.NotContain("azuread_service_principal_password").And.NotContain("azuread_service_principal_certificate");
+    }
+
+    [Fact(DisplayName = "Federação pelos números do repositório")]
+    public void PipelineIdentity_TrustsTheImmutableSubjectOfGitHub()
+    {
+        // GitHub names the repository by the ids of the owner and of the repository in the subject of its tokens, so
+        // that a renamed or recreated repository with the same name does not get the identity (ADR-0116).
+        var validation = Regex.Match(Read("variables.tf"), "variable \"github_repository\" \\{.*?\\n\\}", RegexOptions.Singleline).Value;
+        validation.Should().Contain("can(regex(\"^[^@/]+@[0-9]+/[^@/]+@[0-9]+$\", var.github_repository))");
+        Read("environments", "dev.tfvars").Should().Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+        Read("modules", "ci", "main.tf").Should().Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"");
+        // The production of the installation: the defaults of production, its own state, and nothing personal (ADR-0125).
+        var production = Read("environments", "prod.tfvars");
+        production.Should().Contain("installation = \"mlr\"").And.Contain("environment  = \"prod\"")
+            .And.Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+        Regex.Matches(production, "^\\w+ *=", RegexOptions.Multiline).Select(match => match.Value.Split(' ')[0])
+            .Should().Equal(["installation", "environment", "github_repository"], "the rest are the defaults of production");
+        Read("environments", "prod.backend.hcl").Should().Contain("key                  = \"prod.tfstate\"")
+            .And.Contain("storage_account_name = \"stfpmlrtfstate\"");
+    }
+
+    private static string Read(params string[] relativePath) => File.ReadAllText(Path.Combine([Folder, .. relativePath]));
+
+    private static string AllCode() =>
+        string.Join('\n', Directory.GetFiles(Folder, "*.tf", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}.terraform{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Select(File.ReadAllText));
+
+    /// <summary>The default of a variable, as written.</summary>
+    private static string Default(string variables, string name)
+    {
+        var block = Regex.Match(variables, $"variable \"{name}\" \\{{(?<body>.*?)\\n\\}}", RegexOptions.Singleline);
+        block.Success.Should().BeTrue($"the variable {name} exists");
+        return Regex.Match(block.Groups["body"].Value, @"\n\s*default\s*=\s*(?<value>[^\n]+)").Groups["value"].Value.Trim();
+    }
+
+    [GeneratedRegex("required_version = \"~> (?<version>[0-9.]+)\"")]
+    private static partial Regex RequiredTerraform();
+
+    [GeneratedRegex("version = \"= (?<version>[^\"]+)\"")]
+    private static partial Regex ProviderVersions();
+
+    [GeneratedRegex(@"^\s*(alert_email|operator_object_ids|first_administrator_object_id)\s*=")]
+    private static partial Regex PersonalValue();
+
+    [GeneratedRegex(@"[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}", RegexOptions.IgnoreCase)]
+    private static partial Regex EmailAddress();
+
+    [GeneratedRegex(@"infra/scripts/(?<script>[\w-]+\.ps1)")]
+    private static partial Regex GuideScript();
+}
