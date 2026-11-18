@@ -8,8 +8,9 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | --- | --- | --- |
 | Instalação | Installation | Uma cópia do sistema para uma empresa (ADR-0003) |
 | Configurações gerais | InstallationSettings (`SettingsPage`) | As configurações da instalação, numa linha só do módulo `Administration`; a tela `/admin/settings` tem as Regras gerais e o Microsoft 365 (ADR-0150) |
-| Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "FiscoProjects" |
-| Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar do selo |
+| Nome exibido | InstallationSettings.Name | Nome da instalação na barra lateral, na entrada e na aba; padrão "GerenWare" |
+| Logo da instalação | Logo (`LogoFile`) | PNG ou SVG de até 1 MB, no lugar da marca do produto |
+| Marca do produto | Product (`Product.Name`), ProductMark | O nome GerenWare e a logo ou o símbolo que aparecem onde a instalação não tem logo (ADR-0159, ADR-0160) |
 | Visual | VisualPage (`/admin/visual`) | Seção da Administração com a marca (nome e logos), as três cores da instalação e a prévia; antes, Cores (ADR-0146, ADR-0150) |
 | Cor principal | MainColor | Cor dos botões, links, abas e seleções, em `#RRGGBB`, vazia para a do design system; qualquer cor é aceita, com o texto sobre ela calculado (ADR-0082, ADR-0146) |
 | Cor secundária | SecondaryColor | Cor da linha selecionada, da notificação não lida, da menção e do painel e do fundo da entrada; sem ela, o painel e o fundo seguem a principal (ADR-0146, ADR-0147) |
@@ -287,7 +288,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Avisar pelo Teams | TeamsApp.NoticesOn (`notifications.teams_app`) | Opção do administrador na seção Microsoft 365 das Configurações gerais, desligada de início |
 | Aplicativo do Teams, pacote do Teams | TeamsApp (`TeamsAppManifest`, `PackageTeamsApp`) | O `.zip` com o manifesto e os ícones da instalação, que o Administrador do Teams sobe; a versão sobe quando o conteúdo muda |
 | Aviso do Teams | TeamsNotice (`notifications.teams_notices`, `DispatchTeamsNotices`) | Fila dos avisos da aba Atividade, com novas tentativas; volta ao e-mail para quem escolheu só o Teams |
-| Página do FiscoProjects no Teams | TeamsPage (`/teams`) | Abre o item do aviso no navegador, sem sessão |
+| Página do GerenWare no Teams | TeamsPage (`/teams`) | Abre o item do aviso no navegador, sem sessão |
 | Resumo diário | DailySummary (`SendDailySummaries`, `DigestItem`) | Um e-mail por dia com o restante e as tarefas que vencem; a pessoa desliga em Meu perfil (`ReceivesDailySummary`) |
 | Horário do resumo diário | InstallationSettings.DailySummaryAt | Padrão 07:30, no fuso da instalação |
 | Alerta de prazo | TicketDeadlineAlert (`AlertTicketDeadlines`) | Prazo de chamado vencendo (hoje ou no próximo dia útil) ou vencido, uma vez por estado |
@@ -329,7 +330,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Código da instalação | installation (Terraform) | De 2 a 6 letras ou números, parte do nome de todo recurso do Azure, como `app-gerenware-mlr-dev` (ADR-0114) |
 | Ambiente | environment (Terraform) | `prod` ou `dev` (desenvolvimento e demonstração); parâmetros em `infra/terraform/environments/` (ADR-0052, ADR-0114) |
 | Estado do Terraform | Terraform state | Guardado numa conta de armazenamento por instalação, criada pelo `Prepare-TerraformState.ps1` (ADR-0053) |
-| Administradores do banco | grupo "FiscoProjects <instalação> <ambiente> - administradores do banco" | Grupo do Entra ID que administra o Azure SQL, que aceita só o Entra ID (ADR-0114) |
+| Administradores do banco | grupo "GerenWare <instalação> <ambiente> - administradores do banco" | Grupo do Entra ID que administra o Azure SQL, que aceita só o Entra ID (ADR-0114) |
 | Identidade gerenciada | managed identity (App Service) | Como a aplicação entra no banco e no Key Vault, sem senha (ADR-0052) |
 | Identidade do pipeline | módulo `ci` (Terraform), environment do GitHub | Aplicativo do Entra ID que o GitHub Actions alcança por federação para publicar e conferir um ambiente (ADR-0115) |
 | Publicação | `deploy-dev` (workflow), `scripts/cd` | Pacote, publicação no App Service e conferência da infraestrutura a cada merge (ADR-0115) |

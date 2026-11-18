@@ -1,5 +1,7 @@
 # Design v3: estrutura clara e telas na altura da janela
 
+> Desde 17/11/2026, o produto se chama GerenWare e a paleta é a da marca, em grafite e esmeralda (ADR-0159). Este documento fica como foi escrito em 17/10/2026, com o nome e as cores de então.
+
 Data: 17/10/2026. Esta versão substitui a v2 ("moldura e folha") e responde aos ajustes do Marcelo. O canvas de telas e o design system FiscoProjects estão publicados com a v3. Nenhum ADR muda antes da aprovação.
 
 ## O que mudou desde a v2
