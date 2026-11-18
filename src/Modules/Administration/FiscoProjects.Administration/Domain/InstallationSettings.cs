@@ -19,7 +19,7 @@ public enum LogoTheme
 public sealed partial class InstallationSettings : Entity
 {
     /// <summary>The name shown while nobody changes it: the product name, not the name of a company.</summary>
-    public const string DefaultName = "FiscoProjects";
+    public const string DefaultName = Product.Name;
 
     public const int NameMaxLength = 60;
 

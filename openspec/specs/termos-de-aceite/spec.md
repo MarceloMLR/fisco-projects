@@ -200,11 +200,11 @@ A gaveta de um termo (ADR-0081) MUST mostrar o marco, o pedido, a mensagem, o te
 
 ### Requirement: Assinatura pela Autentique
 
-Com o provedor `Autentique`, o sistema MUST mandar o termo à Autentique pela API dela, com a chave da instalação e cada signatário pelo nome e pelo e-mail; o signatário recebe o link por e-mail da Autentique, e o FiscoProjects MUST NOT mandar e-mail a ele. O cancelamento MUST bloquear o documento na Autentique. A chave e o e-mail dos signatários MUST NOT aparecer nos logs nem nos erros (ADR-0057, ADR-0129, ADR-0130).
+Com o provedor `Autentique`, o sistema MUST mandar o termo à Autentique pela API dela, com a chave da instalação e cada signatário pelo nome e pelo e-mail; o signatário recebe o link por e-mail da Autentique, e o GerenWare MUST NOT mandar e-mail a ele. O cancelamento MUST bloquear o documento na Autentique. A chave e o e-mail dos signatários MUST NOT aparecer nos logs nem nos erros (ADR-0057, ADR-0129, ADR-0130).
 
 #### Scenario: Pedido pela Autentique
 - **WHEN** a gerente pede a assinatura de um termo a dois signatários com a Autentique configurada
-- **THEN** a Autentique recebe o termo com o título, a mensagem e os dois signatários por e-mail, com a recusa permitida, o pedido fica Pendente com o documento da Autentique, e o FiscoProjects não manda e-mail
+- **THEN** a Autentique recebe o termo com o título, a mensagem e os dois signatários por e-mail, com a recusa permitida, o pedido fica Pendente com o documento da Autentique, e o GerenWare não manda e-mail
 
 #### Scenario: Termo assinado pela Autentique
 - **WHEN** os dois signatários assinam na Autentique e a conferência roda

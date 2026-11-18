@@ -12,15 +12,15 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
     [Fact(DisplayName = "Nome padrão")]
-    public async Task NewInstallation_IsCalledFiscoProjects_WithoutALogo()
+    public async Task NewInstallation_IsCalledGerenWare_WithoutALogo()
     {
         await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
 
         var installation = await database.RunAsync<GetInstallation, Installation>(get => get.ExecuteAsync(Cancellation));
         var info = await database.RunAsync<IInstallationSettings, InstallationInfo>(settings => settings.GetAsync(Cancellation));
 
-        installation.Should().Be(new Installation("FiscoProjects", null, null));
-        info.Should().Be(new InstallationInfo("FiscoProjects", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
+        installation.Should().Be(new Installation("GerenWare", null, null));
+        info.Should().Be(new InstallationInfo("GerenWare", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
     }
 
     [Fact(DisplayName = "Fuso padrão")]
@@ -82,7 +82,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
             update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", null, 90), Cancellation));
 
         invalid.Should().Equal(InstallationField.DailySummaryAt);
-        (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
+        (await SettingsAsync(database)).Name.Should().Be("GerenWare");
     }
 
     [Fact(DisplayName = "Guarda padrão")]
@@ -105,7 +105,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
             update.ExecuteAsync(new InstallationChanges("America/Sao_Paulo", new TimeOnly(7, 30), days), Cancellation));
 
         invalid.Should().Equal(InstallationField.NotificationRetentionDays);
-        (await SettingsAsync(database)).Name.Should().Be("FiscoProjects");
+        (await SettingsAsync(database)).Name.Should().Be("GerenWare");
     }
 
     // Spec: configuracao-da-instalacao, requirement "Horas por dia de trabalho" (ADR-0142).
@@ -153,7 +153,7 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
 
         invalid.Should().Equal(InstallationField.WorkHoursPerDay);
         var settings = await SettingsAsync(database);
-        (settings.Name, settings.WorkHoursPerDay).Should().Be(("FiscoProjects", 8m));
+        (settings.Name, settings.WorkHoursPerDay).Should().Be(("GerenWare", 8m));
     }
 
     [Theory(DisplayName = "Nome inválido")]

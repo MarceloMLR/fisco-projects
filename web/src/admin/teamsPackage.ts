@@ -1,12 +1,10 @@
 import { zip } from '../format/xlsx';
-import { timelinePaths } from '../installation/favicon';
-import { brandTokens } from '../theme/brandColors';
+import { productSymbolFull, productSymbolWhite } from '../installation/brand';
 import { color } from '../theme/tokens';
 
-/** The brand the icons of the package show: the logo of the installation or, without it, its main color. */
+/** The brand the icons of the package show: the logo of the installation or, without it, the symbol of the product. */
 export interface TeamsIconBrand {
   logoUrl: string | null;
-  mainColor: string | null;
 }
 
 /** The names of the files of the package, the ones the manifest gives (TeamsAppManifest, ADR-0149). */
@@ -19,32 +17,36 @@ export const teamsPackageFiles = {
 /** The color icon, full-bleed, and the outline icon, as Teams asks for them. */
 const colorSize = 192;
 const outlineSize = 32;
-/** The logo fits a box with a margin of 24 px; the icon of the timeline fits the safe area of 120 px in the middle. */
+/** The logo fits a box with a margin of 24 px. */
 const logoBox = 144;
-const glyphBox = 160;
+
+/** What the icons show without a logo: the symbol of the product, in the version of its files. */
+const symbolSource = 'gerenware-symbol-1';
 
 /**
  * What the icons show, sent with the request of the package so the version goes up when it changes (ADR-0149): the
- * address of the logo, which has its version, or the color of the badge.
+ * address of the logo, which has its version, or the symbol of the product; and the outline, which is the symbol for
+ * every installation.
  */
 export function iconSourceOf(brand: TeamsIconBrand): string {
-  return brand.logoUrl ?? brandTokens(brand.mainColor).light.action;
+  return `${brand.logoUrl ?? symbolSource} ${symbolSource}`;
 }
 
 /**
- * The package of the application of Teams of the installation, as a .zip (ADR-0149): the manifest the server made,
- * the color icon (the logo on white or, without it, the badge in the main color, as the tab of the browser shows it)
- * and the outline icon (the icon of the timeline in white on transparent), drawn on the screen.
+ * The package of the application of Teams of the installation, as a .zip (ADR-0149, ADR-0160): the manifest the
+ * server made, the color icon (the logo on white or, without it, the symbol of the product with the full square, as
+ * Teams rounds the corners itself) and the outline icon (the symbol in white on transparent), drawn on the screen from
+ * the files of the brand, never redrawn.
  */
 export async function teamsPackage(manifest: string, brand: TeamsIconBrand): Promise<Blob> {
+  const outline = await imageOf(productSymbolWhite);
   const files: [string, Uint8Array<ArrayBuffer>][] = [
     [teamsPackageFiles.manifest, new TextEncoder().encode(manifest)],
     [teamsPackageFiles.color, await colorIcon(brand)],
     [
       teamsPackageFiles.outline,
-      // The box of 24 of the icon already has its margin of 3.
       pngOf(outlineSize, (context) => {
-        glyph(context, 0, outlineSize, white());
+        context.drawImage(outline, 0, 0, outlineSize, outlineSize);
       }),
     ],
   ];
@@ -52,47 +54,32 @@ export async function teamsPackage(manifest: string, brand: TeamsIconBrand): Pro
 }
 
 async function colorIcon(brand: TeamsIconBrand): Promise<Uint8Array<ArrayBuffer>> {
-  if (brand.logoUrl !== null) {
-    const logo = await imageOf(brand.logoUrl);
+  if (brand.logoUrl === null) {
+    const symbol = await imageOf(productSymbolFull);
     return pngOf(colorSize, (context) => {
-      context.fillStyle = white();
-      context.fillRect(0, 0, colorSize, colorSize);
-      const width = logo.naturalWidth || logoBox;
-      const height = logo.naturalHeight || logoBox;
-      const scale = Math.min(logoBox / width, logoBox / height);
-      const drawnWidth = width * scale;
-      const drawnHeight = height * scale;
-      context.drawImage(
-        logo,
-        (colorSize - drawnWidth) / 2,
-        (colorSize - drawnHeight) / 2,
-        drawnWidth,
-        drawnHeight,
-      );
+      context.drawImage(symbol, 0, 0, colorSize, colorSize);
     });
   }
-
-  const { action, 'on-action': onAction } = brandTokens(brand.mainColor).light;
+  const logo = await imageOf(brand.logoUrl);
   return pngOf(colorSize, (context) => {
-    context.fillStyle = action;
+    context.fillStyle = white();
     context.fillRect(0, 0, colorSize, colorSize);
-    glyph(context, (colorSize - glyphBox) / 2, glyphBox, onAction);
+    const width = logo.naturalWidth || logoBox;
+    const height = logo.naturalHeight || logoBox;
+    const scale = Math.min(logoBox / width, logoBox / height);
+    const drawnWidth = width * scale;
+    const drawnHeight = height * scale;
+    context.drawImage(
+      logo,
+      (colorSize - drawnWidth) / 2,
+      (colorSize - drawnHeight) / 2,
+      drawnWidth,
+      drawnHeight,
+    );
   });
 }
 
-/** The icon of the timeline, drawn from its box of 24 into a square of the size, at the offset from the corner. */
-function glyph(context: CanvasRenderingContext2D, offset: number, size: number, fill: string) {
-  context.save();
-  context.translate(offset, offset);
-  context.scale(size / 24, size / 24);
-  context.fillStyle = fill;
-  for (const path of timelinePaths) {
-    context.fill(new Path2D(path));
-  }
-  context.restore();
-}
-
-/** White, as Teams asks for the outline and behind a logo: the surface of the light theme. */
+/** White, as Teams asks behind a logo: the surface of the light theme. */
 function white(): string {
   return color('bg-surface', 'light');
 }
@@ -119,7 +106,7 @@ function pngOf(
   return bytes;
 }
 
-/** The logo of the installation, loaded from its address in the application, to draw. */
+/** An image of the application (the logo of the installation or a file of the brand), loaded to draw. */
 function imageOf(address: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -127,7 +114,7 @@ function imageOf(address: string): Promise<HTMLImageElement> {
       resolve(image);
     };
     image.onerror = () => {
-      reject(new Error('The logo of the installation could not be loaded.'));
+      reject(new Error('The image of the icon could not be loaded.'));
     };
     image.src = address;
   });

@@ -64,7 +64,7 @@ export interface ScheduleGanttHandle {
 }
 
 /**
- * The Linha do tempo of a schedule (ADR-0071, ADR-0134), drawn by FiscoProjects from the Gantt of the design system:
+ * The Linha do tempo of a schedule (ADR-0071, ADR-0134), drawn by GerenWare from the Gantt of the design system:
  * the table as a tree on the left, the chart on the right, scrolling together up and down, and only the chart sideways.
  * It draws the dates the API computed and never moves anything itself: a drag, a pulled edge or a link becomes an
  * event, and the schedule that comes back from the API is drawn again.

@@ -220,7 +220,7 @@ O administrador MUST poder enviar, trocar e remover um logo para o tema escuro, 
 
 ### Requirement: Seletor de cores
 
-Clicar na amostra de uma cor MUST abrir o seletor do FiscoProjects, com a área de saturação e brilho, a barra de matiz, a cor atual ao lado da nova, o formato do valor (HEX, RGB ou HSL), o campo do valor, "Cancelar" e "Usar esta cor". O seletor MUST funcionar pelo ponteiro e pelo teclado, e a cor MUST ser guardada em `#RRGGBB` (ADR-0146).
+Clicar na amostra de uma cor MUST abrir o seletor do GerenWare, com a área de saturação e brilho, a barra de matiz, a cor atual ao lado da nova, o formato do valor (HEX, RGB ou HSL), o campo do valor, "Cancelar" e "Usar esta cor". O seletor MUST funcionar pelo ponteiro e pelo teclado, e a cor MUST ser guardada em `#RRGGBB` (ADR-0146).
 
 #### Scenario: Escolher a cor pelo seletor
 - **WHEN** o administrador arrasta na área de cor ou na barra de matiz e escolhe "Usar esta cor"

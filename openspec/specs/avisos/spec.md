@@ -64,7 +64,7 @@ O administrador MUST ver nas Configurações gerais a caixa de envio e o resulta
 
 ### Requirement: Quem recebe os avisos
 
-Os módulos MUST avisar pelo contrato dos avisos, sem conhecer os canais (ADR-0038). Um aviso MUST NOT chegar a quem fez a ação, a quem está desativado nem a quem não vê mais o projeto do item. Cada pessoa MUST receber no máximo um aviso por ação, e todo e-mail MUST levar ao item no FiscoProjects (ADR-0037).
+Os módulos MUST avisar pelo contrato dos avisos, sem conhecer os canais (ADR-0038). Um aviso MUST NOT chegar a quem fez a ação, a quem está desativado nem a quem não vê mais o projeto do item. Cada pessoa MUST receber no máximo um aviso por ação, e todo e-mail MUST levar ao item no GerenWare (ADR-0037).
 
 #### Scenario: Quem fez a ação não recebe
 - **WHEN** o solicitante manda uma mensagem num chamado que ele acompanha
@@ -236,15 +236,15 @@ As notificações mais antigas que o prazo da instalação MUST ser apagadas, li
 
 ### Requirement: Avisos dos termos de aceite
 
-O pedido de assinatura e o lembrete MUST NOT gerar e-mail do FiscoProjects: o provedor manda o link a cada signatário. O resumo diário MUST NOT trazer pedidos de aceite para a pessoa responder. O termo assinado, inclusive o anexado pela gestão, e a recusa MUST avisar quem pediu e o gerente do projeto pelo sino e pelo resumo diário. Nenhum aviso MUST levar o termo, o e-mail dos signatários nem o motivo da recusa por e-mail; o aviso leva ao termo no FiscoProjects (ADR-0037, ADR-0038, ADR-0129).
+O pedido de assinatura e o lembrete MUST NOT gerar e-mail do GerenWare: o provedor manda o link a cada signatário. O resumo diário MUST NOT trazer pedidos de aceite para a pessoa responder. O termo assinado, inclusive o anexado pela gestão, e a recusa MUST avisar quem pediu e o gerente do projeto pelo sino e pelo resumo diário. Nenhum aviso MUST levar o termo, o e-mail dos signatários nem o motivo da recusa por e-mail; o aviso leva ao termo no GerenWare (ADR-0037, ADR-0038, ADR-0129).
 
 #### Scenario: Pedido de aceite por e-mail
 - **WHEN** a gerente pede a assinatura a dois signatários
-- **THEN** nenhum e-mail sai da fila do FiscoProjects para eles, e o provedor recebe o termo com os dois
+- **THEN** nenhum e-mail sai da fila do GerenWare para eles, e o provedor recebe o termo com os dois
 
 #### Scenario: Lembrete do pedido
 - **WHEN** a gerente lembra os signatários de um pedido pendente
-- **THEN** nenhum e-mail sai da fila do FiscoProjects, e o provedor manda o link de novo a quem não assinou
+- **THEN** nenhum e-mail sai da fila do GerenWare, e o provedor manda o link de novo a quem não assinou
 
 #### Scenario: Termo assinado avisa a gestão
 - **WHEN** o último signatário assina o termo
@@ -340,7 +340,7 @@ Cada pessoa MUST receber os avisos na hora pelos canais que ligou, o e-mail e o 
 
 #### Scenario: Sino com qualquer canal
 - **WHEN** um chamado é atribuído a uma pessoa com o Teams ligado e o e-mail desligado
-- **THEN** a notificação também aparece no sino do FiscoProjects
+- **THEN** a notificação também aparece no sino do GerenWare
 
 #### Scenario: Canais de quem nunca escolheu
 - **WHEN** um chamado é atribuído, com os avisos pelo Teams ligados, a uma pessoa que nunca escolheu os canais
@@ -380,7 +380,7 @@ Os avisos do Teams MUST entrar numa fila no banco, gravada junto com a ação qu
 
 ### Requirement: Aviso na aba Atividade
 
-O aviso no Teams MUST dizer o que aconteceu e quem fez, pelo nome atual. Embaixo, MUST vir o código do projeto e o título do item, com os textos dos arquivos de tradução. O clique MUST abrir a página do FiscoProjects no Teams com o caminho do item. O aviso MUST NOT levar senhas nem tokens (ADR-0013, ADR-0149).
+O aviso no Teams MUST dizer o que aconteceu e quem fez, pelo nome atual. Embaixo, MUST vir o código do projeto e o título do item, com os textos dos arquivos de tradução. O clique MUST abrir a página do GerenWare no Teams com o caminho do item. O aviso MUST NOT levar senhas nem tokens (ADR-0013, ADR-0149).
 
 #### Scenario: Texto do aviso
 - **WHEN** Marina Costa atribui o chamado #104 do ERP-FIN a uma pessoa que tem o Teams no canal
@@ -388,31 +388,31 @@ O aviso no Teams MUST dizer o que aconteceu e quem fez, pelo nome atual. Embaixo
 
 #### Scenario: Link do aviso
 - **WHEN** sai o aviso de um chamado pelo Teams
-- **THEN** o clique leva à página do FiscoProjects no Teams com o caminho da página do chamado
+- **THEN** o clique leva à página do GerenWare no Teams com o caminho da página do chamado
 
-### Requirement: Página do FiscoProjects no Teams
+### Requirement: Página do GerenWare no Teams
 
-A página do FiscoProjects no Teams MUST abrir sem sessão. Com o aviso de um chamado e a entrada pelo Teams, MUST mostrar o chamado. Nos outros casos (fora do Teams, sem a entrada pelo Teams, outro item ou sem item), MUST mostrar só a marca da instalação e "Abrir no FiscoProjects", que MUST levar ao item no navegador, ou ao Início sem item, pela entrada direta do link do Teams (ADR-0153). A página MUST aceitar só caminhos do próprio FiscoProjects (ADR-0149, ADR-0152, ADR-0153).
+A página do GerenWare no Teams MUST abrir sem sessão. Com o aviso de um chamado e a entrada pelo Teams, MUST mostrar o chamado. Nos outros casos (fora do Teams, sem a entrada pelo Teams, outro item ou sem item), MUST mostrar só a marca da instalação e "Abrir no GerenWare", que MUST levar ao item no navegador, ou ao Início sem item, pela entrada direta do link do Teams (ADR-0153). A página MUST aceitar só caminhos do próprio GerenWare (ADR-0149, ADR-0152, ADR-0153).
 
 #### Scenario: Abrir o item no navegador
-- **WHEN** a entrada pelo Teams falha no aviso do chamado #104 e a pessoa escolhe "Abrir no FiscoProjects"
+- **WHEN** a entrada pelo Teams falha no aviso do chamado #104 e a pessoa escolhe "Abrir no GerenWare"
 - **THEN** a página do chamado #104 abre no navegador, no endereço da instalação
 
 #### Scenario: Página sem item
-- **WHEN** a pessoa abre o FiscoProjects pela barra do Teams
-- **THEN** "Abrir no FiscoProjects" leva ao Início
+- **WHEN** a pessoa abre o GerenWare pela barra do Teams
+- **THEN** "Abrir no GerenWare" leva ao Início
 
 #### Scenario: Endereço de fora recusado
 - **WHEN** a página do Teams recebe o endereço de outro site no lugar do caminho do item
-- **THEN** "Abrir no FiscoProjects" leva ao Início, e não ao outro site
+- **THEN** "Abrir no GerenWare" leva ao Início, e não ao outro site
 
 #### Scenario: Aviso de outro item no Teams
 - **WHEN** a pessoa escolhe no Teams o aviso de uma tarefa do cronograma
-- **THEN** a página mostra a marca e "Abrir no FiscoProjects", que abre a tarefa no navegador
+- **THEN** a página mostra a marca e "Abrir no GerenWare", que abre a tarefa no navegador
 
 #### Scenario: Página do Teams fora do Teams
 - **WHEN** a página do Teams é aberta no navegador, fora do Teams, com o caminho de um chamado
-- **THEN** a página mostra a marca e "Abrir no FiscoProjects", sem pedir token
+- **THEN** a página mostra a marca e "Abrir no GerenWare", sem pedir token
 
 ### Requirement: Implementação local do Teams
 
@@ -436,7 +436,7 @@ A aplicação MUST NOT subir com o envio pelo Teams pelo Graph sem a entrada pel
 
 ### Requirement: Chamado na página do Teams
 
-Com o aviso de um chamado e a entrada pelo Teams, a página do Teams MUST mostrar o chamado só para ler, no tema do Teams (ADR-0152): o projeto, o número, o título, o status, a prioridade e o prazo de resolução; as últimas interações da conversa, com as menções destacadas e quantas vieram antes; as pessoas, os prazos, o time, a abertura e quantos anexos há. "Responder no FiscoProjects" MUST abrir o chamado no navegador. Na largura do celular, tudo MUST ficar numa coluna, com o botão no pé.
+Com o aviso de um chamado e a entrada pelo Teams, a página do Teams MUST mostrar o chamado só para ler, no tema do Teams (ADR-0152): o projeto, o número, o título, o status, a prioridade e o prazo de resolução; as últimas interações da conversa, com as menções destacadas e quantas vieram antes; as pessoas, os prazos, o time, a abertura e quantos anexos há. "Responder no GerenWare" MUST abrir o chamado no navegador. Na largura do celular, tudo MUST ficar numa coluna, com o botão no pé.
 
 #### Scenario: Chamado do aviso no Teams
 - **WHEN** Diego escolhe no Teams o aviso de que foi mencionado no chamado #6
@@ -448,35 +448,35 @@ Com o aviso de um chamado e a entrada pelo Teams, a página do Teams MUST mostra
 
 #### Scenario: Interações anteriores no Teams
 - **WHEN** o chamado tem mais interações do que a página mostra
-- **THEN** a conversa começa dizendo quantas interações anteriores estão no FiscoProjects
+- **THEN** a conversa começa dizendo quantas interações anteriores estão no GerenWare
 
-#### Scenario: Responder no FiscoProjects
-- **WHEN** a pessoa escolhe "Responder no FiscoProjects" na página do chamado #6 no Teams
+#### Scenario: Responder no GerenWare
+- **WHEN** a pessoa escolhe "Responder no GerenWare" na página do chamado #6 no Teams
 - **THEN** a página do chamado #6 abre no navegador, no endereço da instalação
 
 #### Scenario: Chamado no Teams do celular
 - **WHEN** a página do chamado abre na largura do celular
-- **THEN** o cabeçalho, as pessoas e a conversa ficam numa coluna, e "Responder no FiscoProjects" fica no pé, na largura toda
+- **THEN** o cabeçalho, as pessoas e a conversa ficam numa coluna, e "Responder no GerenWare" fica no pé, na largura toda
 
 #### Scenario: Tema escuro do Teams no chamado
 - **WHEN** a página do chamado abre com o Teams no tema escuro
-- **THEN** o chamado aparece no tema escuro do FiscoProjects
+- **THEN** o chamado aparece no tema escuro do GerenWare
 
 ### Requirement: Chamado que a pessoa não vê no Teams
 
-Quando a leitura do chamado responde 404, a página do Teams MUST dizer "Você não vê este chamado", sem nada do chamado, com "Abrir no FiscoProjects". Uma falha da leitura que não seja 404 nem 401 MUST levar à marca e "Abrir no FiscoProjects", com a frase de que não foi possível mostrar o chamado no Teams (ADR-0044, ADR-0152).
+Quando a leitura do chamado responde 404, a página do Teams MUST dizer "Você não vê este chamado", sem nada do chamado, com "Abrir no GerenWare". Uma falha da leitura que não seja 404 nem 401 MUST levar à marca e "Abrir no GerenWare", com a frase de que não foi possível mostrar o chamado no Teams (ADR-0044, ADR-0152).
 
 #### Scenario: Chamado de outro projeto no Teams
 - **WHEN** a página do Teams abre o aviso de um chamado de um projeto em que a pessoa não está
-- **THEN** a página diz "Você não vê este chamado" e mostra "Abrir no FiscoProjects", sem o título nem a conversa
+- **THEN** a página diz "Você não vê este chamado" e mostra "Abrir no GerenWare", sem o título nem a conversa
 
 #### Scenario: Falha ao ler o chamado no Teams
 - **WHEN** a leitura do chamado falha por um erro do servidor
-- **THEN** a página diz que não foi possível mostrar o chamado no Teams e mostra a marca e "Abrir no FiscoProjects"
+- **THEN** a página diz que não foi possível mostrar o chamado no Teams e mostra a marca e "Abrir no GerenWare"
 
 ### Requirement: Token do Teams só na memória da página
 
-A página do Teams MUST pedir o token ao Teams só para ler o chamado, MUST mandá-lo só no cabeçalho de autorização das rotas do Teams e MUST NOT guardá-lo no navegador, em cookie, no cache das consultas nem no endereço (ADR-0054, ADR-0152). Com o token recusado (401), a página MUST pedir um token novo uma vez e, se for recusado de novo, mostrar a marca e "Abrir no FiscoProjects".
+A página do Teams MUST pedir o token ao Teams só para ler o chamado, MUST mandá-lo só no cabeçalho de autorização das rotas do Teams e MUST NOT guardá-lo no navegador, em cookie, no cache das consultas nem no endereço (ADR-0054, ADR-0152). Com o token recusado (401), a página MUST pedir um token novo uma vez e, se for recusado de novo, mostrar a marca e "Abrir no GerenWare".
 
 #### Scenario: Token só na memória da página
 - **WHEN** a página do Teams mostra um chamado
@@ -488,7 +488,7 @@ A página do Teams MUST pedir o token ao Teams só para ler o chamado, MUST mand
 
 #### Scenario: Token recusado de novo
 - **WHEN** a leitura do chamado recebe 401 também com o token novo
-- **THEN** a página mostra a marca e "Abrir no FiscoProjects"
+- **THEN** a página mostra a marca e "Abrir no GerenWare"
 
 ### Requirement: Aviso de tarefa atribuída
 

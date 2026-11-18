@@ -21,7 +21,7 @@ public sealed class DispatchEmailsTests(SqlServerFixture sqlServer)
         result.Sent.Should().Be(1);
         var sent = database.Sender.Sent.Should().ContainSingle().Subject;
         sent.ToAddress.Should().Be("marina.costa@empresa.example");
-        sent.Subject.Should().Be("Teste de envio do FiscoProjects");
+        sent.Subject.Should().Be("Teste de envio do GerenWare");
         sent.TextBody.Should().Contain("Olá, Marina Costa.");
         var email = await database.NewContext().OutboxEmails.SingleAsync(TestContext.Current.CancellationToken);
         email.Status.Should().Be(OutboxEmailStatus.Sent);

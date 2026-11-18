@@ -54,7 +54,7 @@ function itemsOf(ticket: Ticket): Item[] {
 const keyOf = (item: Item) =>
   item.kind === 'message' ? item.message.id : item.kind === 'event' ? item.event.id : item.kind;
 
-/** "Responder no FiscoProjects": the ticket in the browser, where the person answers (ADR-0152). */
+/** "Responder no GerenWare": the ticket in the browser, where the person answers (ADR-0152). */
 function ReplyButton({
   number,
   name,
@@ -80,7 +80,7 @@ function ReplyButton({
   );
 }
 
-/** The last interactions of the conversation, with how many stay in FiscoProjects (Message.Gap, Message.Timeline). */
+/** The last interactions of the conversation, with how many stay in GerenWare (Message.Gap, Message.Timeline). */
 function TeamsConversation({
   ticket,
   name,
@@ -326,7 +326,7 @@ function Deadlines({ ticket }: { ticket: Ticket }) {
 
 /**
  * The ticket of the notice in the page of Teams, only to read (canvas "Chamado no Teams", ADR-0152): on the computer, the
- * header with "Responder no FiscoProjects", the last interactions and the column with the people, the deadlines and the
+ * header with "Responder no GerenWare", the last interactions and the column with the people, the deadlines and the
  * ticket; up to 600px, one column, with the button at the foot. The page does not scroll; its parts do (ADR-0066).
  */
 export function TeamsTicketView({ ticket, name }: { ticket: Ticket; name: string }) {

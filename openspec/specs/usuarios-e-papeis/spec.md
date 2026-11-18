@@ -180,7 +180,7 @@ Com a entrada pelo Entra ligada, a busca de pessoas MUST trazer também os membr
 
 #### Scenario: Diretório da Microsoft fora do ar
 - **WHEN** o Graph não responde durante uma busca de pessoas
-- **THEN** a busca traz os usuários do FiscoProjects, sem erro
+- **THEN** a busca traz os usuários do GerenWare, sem erro
 
 ### Requirement: E-mail na escolha de pessoa
 

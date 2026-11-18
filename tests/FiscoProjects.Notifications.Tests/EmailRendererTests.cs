@@ -1,5 +1,6 @@
 using FiscoProjects.Notifications.Application;
 using FiscoProjects.Notifications.Infrastructure;
+using FiscoProjects.SharedKernel;
 
 namespace FiscoProjects.Notifications.Tests;
 
@@ -53,6 +54,44 @@ public sealed class EmailRendererTests
 
         render.Should().Throw<KeyNotFoundException>();
     }
+
+    // Spec: avisos, requirement "Marca nos e-mails" (ADR-0160).
+    [Fact(DisplayName = "Logo no topo do e-mail")]
+    public void TheLogoStandsForTheNameOfTheProduct()
+    {
+        var email = new EmailRenderer("https://projetos.empresa.example/").Render(Content, Product.Name);
+
+        email.HtmlBody.Should()
+            .Contain("<img src=\"https://projetos.empresa.example/gerenware-horizontal-fundo-claro-64px.png\" alt=\"GerenWare\" height=\"28\"");
+        email.Subject.Should().Be("Teste de envio do GerenWare");
+    }
+
+    [Fact(DisplayName = "Nome da instalação no topo do e-mail")]
+    public void AnotherNameIsWrittenAtTheTop()
+    {
+        var email = new EmailRenderer("https://projetos.empresa.example/").Render(Content, "Projetos da Empresa");
+
+        email.HtmlBody.Should().Contain(">Projetos da Empresa</td>").And.NotContain("<img");
+    }
+
+    [Fact(DisplayName = "E-mail sem o endereço do site")]
+    public void WithoutTheSiteAddressTheNameIsWritten()
+    {
+        var email = new EmailRenderer(null).Render(Content, Product.Name);
+
+        email.HtmlBody.Should().Contain(">GerenWare</td>").And.NotContain("<img");
+    }
+
+    [Fact(DisplayName = "Rodapé do e-mail")]
+    public void TheFooterSaysWhereToChangeTheNotices()
+    {
+        var email = new EmailRenderer("https://projetos.empresa.example/").Render(Content, Product.Name);
+
+        const string Footer = "Este e-mail foi enviado automaticamente pelo GerenWare. As respostas a ele não são lidas pelo sistema. "
+            + "Para mudar os seus avisos, acesse Meu perfil.";
+        email.HtmlBody.Should().Contain(Footer);
+        email.TextBody.Should().Contain(Footer);
+    }
 }
 
 public sealed class NoticeEmailTests
@@ -77,7 +116,7 @@ public sealed class NoticeEmailTests
             });
 
         var email = new EmailRenderer("https://projetos.empresa.example")
-            .Render(NoticeEmails.ContentOf(notice, "Diego Torres", null), "FiscoProjects");
+            .Render(NoticeEmails.ContentOf(notice, "Diego Torres", null), "GerenWare");
 
         email.Subject.Should().Be("Prazo vencendo no chamado #7: Erro no DIFAL");
         email.TextBody.Should().Contain("Olá, Diego Torres.")
@@ -94,7 +133,7 @@ public sealed class NoticeEmailTests
             var notice = new FiscoProjects.Notifications.Contracts.Notice(
                 kind, [Guid.NewGuid()], Guid.NewGuid(), null, "/tickets/1", new Dictionary<string, string>());
 
-            var render = () => renderer.Render(NoticeEmails.ContentOf(notice, "Carla Mendes", "Diego Torres"), "FiscoProjects");
+            var render = () => renderer.Render(NoticeEmails.ContentOf(notice, "Carla Mendes", "Diego Torres"), "GerenWare");
 
             render.Should().NotThrow($"{kind} has a subject, a body and an action");
         }
@@ -118,7 +157,7 @@ public sealed class NoticeEmailTests
             NoteKey = "summary.note",
         };
 
-        var email = new EmailRenderer("https://projetos.empresa.example").Render(content, "FiscoProjects");
+        var email = new EmailRenderer("https://projetos.empresa.example").Render(content, "GerenWare");
 
         email.TextBody.Should().Contain("Chamados que você acompanha\n- #1 Rejeição 539: Aberto → Em triagem, por Rafael Souza: https://projetos.empresa.example/tickets/1");
         email.HtmlBody.Should().Contain("<a href=\"https://projetos.empresa.example/tickets/1\"");

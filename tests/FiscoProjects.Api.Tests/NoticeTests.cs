@@ -429,7 +429,7 @@ public sealed class NoticeTests(SqlServerFixture sqlServer)
         var sent = await scene.App.DailySummaryAsync();
 
         var summary = sent.Single(email => email.ToAddress == CarlaEmail && IsSummary(email));
-        summary.Subject.Should().Be("Seu resumo do dia no FiscoProjects");
+        summary.Subject.Should().Be("Seu resumo do dia no GerenWare");
         summary.HtmlBody.Should().Contain("href=\"http://localhost:5173/tickets/1\"");
         summary.TextBody.Should().Contain("Para não receber mais o resumo, desligue em Meu perfil");
     }

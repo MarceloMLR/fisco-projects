@@ -103,7 +103,7 @@ function BrandCard({ path, status }: { path: string; status: string | null }) {
 /**
  * The page of the installation in Teams (ADR-0149, ADR-0152), outside the structure of the screens and without a
  * session. With the notice of a ticket, inside Teams, it shows the ticket only to read, as the person of the token
- * Teams gives the page, with "Responder no FiscoProjects"; the ticket the person does not see says so. Otherwise (outside
+ * Teams gives the page, with "Responder no GerenWare"; the ticket the person does not see says so. Otherwise (outside
  * Teams, another item, no item, the token refused or a failure), the brand and "Abrir no {name}", which opens the item
  * (the path in "item", only of the application itself) or the home page in the browser. The theme follows the one of
  * Teams, from "theme" and from Teams itself.

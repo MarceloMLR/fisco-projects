@@ -8,7 +8,7 @@ interface PackageFile {
   devDependencies?: Record<string, string>;
 }
 
-// ADR-0134: the timeline is drawn by FiscoProjects, with no Syncfusion in the project.
+// ADR-0134: the timeline is drawn by GerenWare, with no Syncfusion in the project.
 describe('Linha do tempo sem licença de terceiros', () => {
   it('Sem Syncfusion no projeto', { timeout: 60_000 }, async () => {
     const file = JSON.parse(

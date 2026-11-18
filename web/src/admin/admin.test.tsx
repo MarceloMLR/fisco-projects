@@ -6,11 +6,12 @@ import { defaultInstallation, signedInAs } from '../test/server';
 
 const navigationName = ptBR.shell.mainNavigation;
 
+/** The items of the sidebar by what they say: the text or, for the logo of the product, its name (ADR-0160). */
 function sidebarItems() {
   const sidebar = screen.getByRole('navigation', { name: navigationName });
   return within(sidebar)
     .getAllByRole('link')
-    .map((link) => link.textContent);
+    .map((link) => link.textContent || link.querySelector('img')?.alt);
 }
 
 // Spec: estrutura-das-telas.

@@ -1,7 +1,7 @@
 # infraestrutura Specification
 
 ## Purpose
-Define como cada instalação do FiscoProjects é criada no Azure pelo Terraform: os recursos, o acesso sem senhas, os padrões da produção, o ambiente de desenvolvimento, o monitoramento e o estado protegido (ADR-0052, ADR-0053, ADR-0114).
+Define como cada instalação do GerenWare é criada no Azure pelo Terraform: os recursos, o acesso sem senhas, os padrões da produção, o ambiente de desenvolvimento, o monitoramento e o estado protegido (ADR-0052, ADR-0053, ADR-0114).
 
 ## Requirements
 

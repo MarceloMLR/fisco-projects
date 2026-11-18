@@ -15,7 +15,7 @@ vi.mock('./teamsHost', async (importOriginal) => ({
   connectToTeams: () => Promise.resolve(teams.host),
 }));
 
-const open = ptBR.teamsPage.open.replace('{{name}}', 'FiscoProjects');
+const open = ptBR.teamsPage.open.replace('{{name}}', 'GerenWare');
 
 beforeEach(() => {
   // Teams opens the page in its own frame, with no session of the application.
@@ -28,15 +28,15 @@ async function openLink(path: string, width?: number) {
   return screen.findByRole('link', { name: open });
 }
 
-// Spec: avisos, requirement "Página do FiscoProjects no Teams".
-describe('Página do FiscoProjects no Teams', () => {
+// Spec: avisos, requirement "Página do GerenWare no Teams".
+describe('Página do GerenWare no Teams', () => {
   it('Abrir o item no navegador', async () => {
     const link = await openLink(`/teams?item=${encodeURIComponent('/tickets/104')}&theme=default`);
 
     expect(link).toHaveAttribute('href', teamsOpenPath('/tickets/104'));
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(screen.getByRole('heading', { level: 1, name: 'FiscoProjects' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'GerenWare' })).toBeInTheDocument();
   });
 
   it('Página sem item', async () => {
@@ -130,9 +130,9 @@ async function openTicket(width?: number) {
   return screen.findByRole('heading', { level: 1, name: /Importar XML de entrada/ });
 }
 
-const reply = ptBR.teamsPage.ticket.reply.replace('{{name}}', 'FiscoProjects');
+const reply = ptBR.teamsPage.ticket.reply.replace('{{name}}', 'GerenWare');
 
-// Spec: avisos, requirement "Página do FiscoProjects no Teams" (ADR-0149, ADR-0152).
+// Spec: avisos, requirement "Página do GerenWare no Teams" (ADR-0149, ADR-0152).
 describe('Página do Teams sem o chamado', () => {
   it('Aviso de outro item no Teams', async () => {
     const token = insideTeams();
@@ -209,11 +209,11 @@ describe('Chamado na página do Teams', () => {
     const conversation = screen.getByRole('list', { name: text.ticket.conversation });
 
     expect(within(conversation).getAllByRole('listitem')[0]).toHaveTextContent(
-      text.ticket.earlier_other.replace('{{count}}', '10').replace('{{name}}', 'FiscoProjects'),
+      text.ticket.earlier_other.replace('{{count}}', '10').replace('{{name}}', 'GerenWare'),
     );
   });
 
-  it('Responder no FiscoProjects', async () => {
+  it('Responder no GerenWare', async () => {
     insideTeams();
     ticketFor('token-1');
     await openTicket();

@@ -153,7 +153,7 @@ public sealed class MsProjectImportTests(SqlServerFixture sqlServer)
         WarningNames(preview, "SeveralResources").Should().Equal("Treinar usuários");
     }
 
-    [Fact(DisplayName = "O que não cabe no FiscoProjects")]
+    [Fact(DisplayName = "O que não cabe no GerenWare")]
     public async Task Preview_TellsEveryChangeOfTheConversion_WithTheNames()
     {
         var scene = await StartAsync();

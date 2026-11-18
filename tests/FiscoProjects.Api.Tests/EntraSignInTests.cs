@@ -72,7 +72,7 @@ public sealed class EntraSignInTests(SqlServerFixture sqlServer)
         (await SessionPersonAsync(again)).GetProperty("id").GetString().Should().Be(person.GetProperty("id").GetString());
     }
 
-    [Fact(DisplayName = "Volta só para dentro do FiscoProjects")]
+    [Fact(DisplayName = "Volta só para dentro do GerenWare")]
     public async Task ReturnToAnotherSite_GoesHome()
     {
         var entra = new FakeEntra();

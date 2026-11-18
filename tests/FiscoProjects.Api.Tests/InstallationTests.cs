@@ -93,7 +93,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         folder.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         logo.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         remove.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        (await BrandAsync(anonymous)).Should().Be(("FiscoProjects", null));
+        (await BrandAsync(anonymous)).Should().Be(("GerenWare", null));
     }
 
     [Fact(DisplayName = "Nome inválido")]
@@ -112,7 +112,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             problem.GetProperty("errors").TryGetProperty("name", out _).Should().BeTrue();
         }
 
-        (await BrandAsync(admin)).Name.Should().Be("FiscoProjects");
+        (await BrandAsync(admin)).Name.Should().Be("GerenWare");
     }
 
     [Fact(DisplayName = "Fuso inválido")]
@@ -131,7 +131,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).Should().Equal("timeZone");
         }
 
-        (await BrandAsync(admin)).Name.Should().Be("FiscoProjects");
+        (await BrandAsync(admin)).Name.Should().Be("GerenWare");
         (await RulesAsync(admin)).Should().Be("America/Sao_Paulo");
     }
 
@@ -170,7 +170,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         var (admin, _) = await app.SignedInClientAsync("Paulo Nogueira", SystemRole.Administrator);
         using var _admin = admin;
         using var anonymous = app.NewClient();
-        (await BrandAsync(anonymous)).Should().Be(("FiscoProjects", null));
+        (await BrandAsync(anonymous)).Should().Be(("GerenWare", null));
 
         await RenameAsync(admin, NewName);
         await SendLogoAsync(admin, Png, "marca.png");
@@ -504,7 +504,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             entry.GetProperty("action").GetString().Should().Be("Updated");
             entry.GetProperty("actor").GetProperty("id").GetString().Should().Be(adminId.ToString());
         });
-        Fields(entries[1]).Should().Equal(("Name", "FiscoProjects", NewName));
+        Fields(entries[1]).Should().Equal(("Name", "GerenWare", NewName));
         Fields(entries[0]).Should().Equal(("LogoFileName", null, "marca.png"));
     }
 
@@ -552,7 +552,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
         (await BrandAsync(admin)).Name.Should().Be(NewName);
         (await admin.GetStringAsync("/api/installation/rules", Cancellation)).Should().Be(before);
         var page = await admin.GetFromJsonAsync<JsonElement>("/api/audit?itemType=InstallationSettings&pageSize=1", Cancellation);
-        Fields(page.GetProperty("items")[0]).Should().Equal(("Name", "FiscoProjects", NewName));
+        Fields(page.GetProperty("items")[0]).Should().Equal(("Name", "GerenWare", NewName));
     }
 
     [Fact(DisplayName = "Pasta dos projetos sem mudar o resto")]
@@ -608,7 +608,7 @@ public sealed class InstallationTests(SqlServerFixture sqlServer) : IDisposable
             response.StatusCode.Should().Be(allowed ? row.Allowed : HttpStatusCode.Forbidden, $"{role}: {row.Action}");
         }
 
-        (await BrandAsync(client)).Name.Should().Be(role == SystemRole.Administrator ? NewName : "FiscoProjects");
+        (await BrandAsync(client)).Name.Should().Be(role == SystemRole.Administrator ? NewName : "GerenWare");
     }
 
     /// <summary>The General rules (ADR-0150), with the default time zone unless another is given.</summary>
