@@ -1,5 +1,5 @@
 ---
-status: aceita (barra lateral marinho substituída pelo ADR-0067)
+status: aceita (barra lateral marinho substituída pelo ADR-0067; azul de ação, verde e azul de status e valores dos neutros substituídos pelo ADR-0159)
 date: 2026-10-16
 decision-makers: Marcelo Ribeiro
 ---
@@ -30,11 +30,11 @@ Opção escolhida: **C1. Azul corporativo de ação, neutros frios e barra later
 
 Regras:
 
-- Azul corporativo como cor de ação (botão principal, item ativo, links), mais saturado no tema escuro, sem tons pastel.
-- Neutros frios (cinza-grafite) para fundos, bordas e textos.
+- Azul corporativo como cor de ação (botão principal, item ativo, links), mais saturado no tema escuro, sem tons pastel. Substituída pelo ADR-0159: esmeralda como cor de ação.
+- Neutros frios (cinza-grafite) para fundos, bordas e textos. Os valores passam a ser os da escala grafite do ADR-0159.
 - Tema claro: barra lateral marinho como assinatura de marca (ADR-0011). Substituída pelo ADR-0067: barra lateral clara e marinho só na página de entrada.
 - Tema escuro: fundos em grafite neutro, sem tom azulado.
-- Cores de status independentes da marca: verde (resolvido), âmbar (aguardando), vermelho (atrasado) e azul (em andamento).
+- Cores de status independentes da marca: verde (resolvido), âmbar (aguardando), vermelho (atrasado) e azul (em andamento). Substituída pelo ADR-0159: concluído em esmeralda, separado da ação pela forma, e "em andamento" em azul-céu.
 - Contraste mínimo AA (WCAG) em textos e controles, nos dois temas.
 
 ### Consequências
