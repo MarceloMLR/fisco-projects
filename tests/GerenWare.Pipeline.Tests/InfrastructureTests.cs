@@ -447,12 +447,12 @@ public sealed partial class InfrastructureTests
         // that a renamed or recreated repository with the same name does not get the identity (ADR-0116).
         var validation = Regex.Match(Read("variables.tf"), "variable \"github_repository\" \\{.*?\\n\\}", RegexOptions.Singleline).Value;
         validation.Should().Contain("can(regex(\"^[^@/]+@[0-9]+/[^@/]+@[0-9]+$\", var.github_repository))");
-        Read("environments", "dev.tfvars").Should().Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+        Read("environments", "dev.tfvars").Should().Contain("github_repository = \"MarceloMLR@106113485/gerenware@1423675463\"");
         Read("modules", "ci", "main.tf").Should().Contain("subject        = \"repo:${var.repository}:environment:${var.environment}\"");
         // The production of the installation: the defaults of production, its own state, and nothing personal (ADR-0125).
         var production = Read("environments", "prod.tfvars");
         production.Should().Contain("installation = \"mlr\"").And.Contain("environment  = \"prod\"")
-            .And.Contain("github_repository = \"MarceloMLR@106113485/fisco-projects@1423675463\"");
+            .And.Contain("github_repository = \"MarceloMLR@106113485/gerenware@1423675463\"");
         Regex.Matches(production, "^\\w+ *=", RegexOptions.Multiline).Select(match => match.Value.Split(' ')[0])
             .Should().Equal(["installation", "environment", "github_repository"], "the rest are the defaults of production");
         Read("environments", "prod.backend.hcl").Should().Contain("key                  = \"prod.tfstate\"")

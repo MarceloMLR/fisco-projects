@@ -38,7 +38,7 @@ public sealed partial class VersionPackageTests : IDisposable
 
         result.ExitCode.Should().Be(0, result.Errors);
         var package = Path.Combine(Artifacts, "gerenware-v1.2.3.zip");
-        File.ReadAllLines(Calls).Should().Equal($"gh release upload v1.2.3 {package} --clobber --repo MarceloMLR/fisco-projects");
+        File.ReadAllLines(Calls).Should().Equal($"gh release upload v1.2.3 {package} --clobber --repo MarceloMLR/gerenware");
         using var zip = ZipFile.OpenRead(package);
         var entries = zip.Entries.Select(entry => entry.FullName).ToList();
         entries.Should().Contain(["app.zip", "VERSION", "infra/terraform/main.tf", "infra/terraform/variables.tf", "infra/terraform/.terraform.lock.hcl",
@@ -141,7 +141,7 @@ public sealed partial class VersionPackageTests : IDisposable
             ["ARTIFACTS"] = Artifacts,
             ["GITHUB_REF_TYPE"] = type,
             ["GITHUB_REF_NAME"] = name,
-            ["GITHUB_REPOSITORY"] = "MarceloMLR/fisco-projects",
+            ["GITHUB_REPOSITORY"] = "MarceloMLR/gerenware",
             ["GITHUB_STEP_SUMMARY"] = Path.Combine(_folder, "summary"),
         }, "bash", Path.Combine("scripts", "cd", "release.sh"));
     }

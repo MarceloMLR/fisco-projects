@@ -48,7 +48,7 @@ availability_test_frequency = 900
 
 # The pipeline of this repository publishes the environment after each merge (ADR-0115), named by the ids that GitHub
 # puts in the subject of its tokens (ADR-0116).
-github_repository = "MarceloMLR@106113485/fisco-projects@1423675463"
+github_repository = "MarceloMLR@106113485/gerenware@1423675463"
 
 # On since the Fundação-7 publishes the application.
 alerts_enabled = true
