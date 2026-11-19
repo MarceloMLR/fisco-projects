@@ -68,8 +68,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 14. Aprimoramento do Gantt 1 (v2) | 6 | 6 |
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
 | 16. Tarefas (v2) | 4 | 4 |
-| 17. Rebranding GerenWare (v2) | 8 | 8 |
-| **Total** | **141** | **141** |
+| 17. Rebranding GerenWare (v2) | 9 | 8 |
+| **Total** | **142** | **141** |
 
 ## 1. Fundação
 
@@ -306,5 +306,6 @@ Referência visual: o manual de identidade visual da GerenWare (https://claude.a
 | Marca-4 | `nome-gerenware-nas-telas` | O nome GerenWare nos textos das telas, nos e-mails (com o cabeçalho e o rodapé do manual), no aplicativo e na página do Teams, nas exportações e no nome padrão da instalação, com as specs e os testes que citam o nome | 0013, 0037, 0149, 0152 | Concluída |
 | Marca-5 | `codigo-gerenware` | A solução, os projetos, os namespaces e os pacotes de `FiscoProjects` para `GerenWare`, com os tipos de erro da API, as métricas, a chave da conexão, a pasta de arquivos do sistema e o nome usado na proteção das senhas dos acessos; as senhas da demonstração no `dev` são gravadas de novo. Leva também os nomes de exibição e a marca `aplicacao` do Terraform, que os testes do pipeline leem junto com o código | 0033, 0047, 0057, 0061, 0089, 0161 | Concluída |
 | Marca-6 | `infraestrutura-gerenware` | Os recursos do Azure do `dev` e do `prod` destruídos e recriados com o prefixo `gerenware`, inclusive o estado do Terraform, com os nomes de exibição, as marcas e os textos do Terraform e dos scripts (registro no Entra, alertas, caixa de e-mail padrão e pacote da versão), as permissões no SharePoint e na caixa compartilhada concedidas ao registro novo, o aplicativo do Teams gerado de novo e a demonstração carregada de novo | 0052, 0053, 0089, 0112, 0127, 0149, 0162 | Concluída (falta recriar os ambientes no Azure, pelo roteiro da change) |
+| Marca-6.1 | `nome-do-cofre-gerenware` | O nome curto do Terraform com `gw`, como a conta do estado: o Key Vault de cada ambiente passa a ser `kv-gw<instalação><ambiente>`, que a recriação do `dev` pede porque o cofre antigo, `kv-fpmlrdev`, fica 7 dias na exclusão reversível | 0053, 0162 | PR aberto |
 | Marca-7 | `repositorio-gerenware` | O repositório no GitHub renomeado para `gerenware`, com a credencial federada do deploy, o ambiente do GitHub e o Codespaces atualizados | 0055, 0113, 0115, 0163 | Concluída (falta renomear o repositório no GitHub) |
 | Marca-8 | `documentacao-gerenware` | README, discovery, apresentação, guias de instalação e de demonstração, glossário, custos, `CLAUDE.md` e `openspec/config.yaml` com o nome e o visual novos; o histórico fica com o nome antigo | 0001, 0159 | Concluída |
