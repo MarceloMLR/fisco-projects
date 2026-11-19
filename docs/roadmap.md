@@ -1,6 +1,6 @@
 # Roadmap
 
-As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15, as tarefas no grupo 16 e o rebranding para GerenWare no grupo 17. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
+As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são feitas. Aprovado por Marcelo em 17/10/2026. Depois vêm os acréscimos que fecham a v1 (grupos 11 e 12) e a v2, a partir do grupo 13, com os aprimoramentos do Gantt nos grupos 14 e 15, as tarefas no grupo 16, o rebranding para GerenWare no grupo 17 e o status do projeto no grupo 18. Não há dependência circular entre grupos: cada grupo usa só o que os anteriores entregaram.
 
 ## Como funciona
 
@@ -47,6 +47,7 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 - Em 10/11/2026, ao comparar o FiscoProjects com o Jira e o monday.com, Marcelo pediu o quadro das tarefas, os avisos das tarefas também pelo Teams e os comentários na tarefa, que formam o grupo 16, com a proposta de cada change aprovada por ele antes da implementação, como no resto da v2; a Tarefas-1 foi implementada junto com a proposta, e ele aceitou revisá-la no PR.
 - Em 17/11/2026, com a marca GerenWare escolhida e o manual de identidade visual aprovado em 16/11/2026, Marcelo pediu o rebranding: o nome GerenWare no lugar de FiscoProjects nas telas, no código, na infraestrutura, no GitHub e nas documentações, e o visual inteiro na paleta grafite e esmeralda. Forma o grupo 17, com a proposta de cada change aprovada por ele antes da implementação. Como só há dados de demonstração, Marcelo autorizou trocar também o que guarda dados: os recursos do Azure são destruídos e recriados com os nomes novos, o nome usado na proteção das senhas dos acessos também muda, e a demonstração é carregada de novo. O histórico (ADRs aceitos, changes arquivadas e os registros acima) continua como foi escrito.
 - Em 17/11/2026, depois do grupo 17 entrar no roadmap, Marcelo pediu que as oito changes da marca sejam feitas em sequência, sem parar entre elas: cada uma abre o seu PR, e ele aprova depois. Enquanto os PRs anteriores não entram na `main`, a branch de cada change parte da branch da anterior, e os PRs são aprovados e entram na ordem.
+- Em 19/11/2026, Marcelo trouxe o pedido de um gerente de projetos e um status report de exemplo, usado só pela estrutura (o arquivo tem dados reais e não entra no repositório): o relatório de status em PowerPoint ou PDF, para o cliente, num modelo padrão que a empresa edita no PowerPoint e sobe, gerado só pelo administrador e pelo gerente, com a opção "Mostrar horas"; o fim previsto e o real lado a lado, como no MS Project; e o que cada chamado e cada tarefa atrasada impacta no cronograma ("esse chamado impacta no go-live"). Formam o grupo 18, na ordem em que uma usa a outra: primeiro o que ameaça o cronograma, depois o relatório, que já nasce com os riscos (ADR-0164, ADR-0165, ADR-0166, propostos). Como no resto da v2, a proposta de cada change é aprovada por ele antes da implementação, que começa depois de o rebranding entrar na `main`.
 
 ## Marcos
 
@@ -69,7 +70,8 @@ As 50 changes do OpenSpec que constroem a v1, em 10 grupos, na ordem em que são
 | 15. Aprimoramento do Gantt 2 (v2) | 6 | 6 |
 | 16. Tarefas (v2) | 4 | 4 |
 | 17. Rebranding GerenWare (v2) | 8 | 0 |
-| **Total** | **141** | **133** |
+| 18. Status do projeto (v2) | 6 | 0 |
+| **Total** | **147** | **133** |
 
 ## 1. Fundação
 
@@ -308,3 +310,16 @@ Referência visual: o manual de identidade visual da GerenWare (https://claude.a
 | Marca-6 | `infraestrutura-gerenware` | Os recursos do Azure do `dev` e do `prod` destruídos e recriados com o prefixo `gerenware`, inclusive o estado do Terraform, com os nomes de exibição, as marcas e os textos do Terraform e dos scripts (registro no Entra, alertas, caixa de e-mail padrão e pacote da versão), as permissões no SharePoint e na caixa compartilhada concedidas ao registro novo, o aplicativo do Teams gerado de novo e a demonstração carregada de novo | 0052, 0053, 0089, 0112, 0127, 0149, 0162 | PR aberto (a operação nos ambientes fica para depois do merge, pelo roteiro da change) |
 | Marca-7 | `repositorio-gerenware` | O repositório no GitHub renomeado para `gerenware`, com a credencial federada do deploy, o ambiente do GitHub e o Codespaces atualizados | 0055, 0113, 0115, 0163 | PR aberto (a renomeação no GitHub é de Marcelo, depois do merge) |
 | Marca-8 | `documentacao-gerenware` | README, discovery, apresentação, guias de instalação e de demonstração, glossário, custos, `CLAUDE.md` e `openspec/config.yaml` com o nome e o visual novos; o histórico fica com o nome antigo | 0001, 0159 | PR aberto |
+
+## 18. Status do projeto
+
+Referência: o status report de exemplo trazido por Marcelo em 19/11/2026, só pela estrutura (o andamento, os marcos, a previsão do fim e um slide por risco, com o chamado no fornecedor e as etapas que dependem dele). Os dados de demonstração e os testes usam só os projetos fictícios.
+
+| ID | Change | Objetivo | ADRs | Status |
+| --- | --- | --- | --- | --- |
+| Status-1 | `chamado-no-cronograma` | O chamado ligado às tarefas e aos marcos que ele impacta, por quem atende, com os marcos ameaçados pelas dependências e o aviso do caminho crítico, no painel do chamado, no cronograma e em "Precisa de atenção" | 0022, 0028, 0043, 0044, 0073, 0137, 0164 | Proposta no PR (rascunho), aguardando a aprovação de Marcelo |
+| Status-2 | `projecao-do-atraso` | O que uma tarefa atrasada empurra: a projeção das datas pelas dependências até os marcos e o fim do projeto, sem gravar nada, no detalhe da tarefa e em "Precisa de atenção" | 0020, 0051, 0073, 0137, 0140, 0164 | Planejada |
+| Status-3 | `fim-previsto-e-real` | O fim previsto, da linha de base, e o fim real, da conclusão, lado a lado na Lista, no Expandir e no Excel, como o MS Project | 0020, 0021, 0071 | Planejada |
+| Status-4 | `relatorio-de-status` | O relatório de status em PowerPoint, no modelo padrão com o logo e as cores da instalação e o logo do cliente, gerado pelo administrador e pelo gerente, com os textos do gerente, os riscos escolhidos e "Mostrar horas", guardado nos documentos do projeto | 0073, 0092, 0128, 0144, 0148, 0164, 0165, 0166 | Planejada |
+| Status-5 | `relatorio-em-pdf` | O relatório também em PDF, convertido pelo Microsoft 365 do PowerPoint guardado no SharePoint, depois do teste da conversão com a permissão do aplicativo | 0030, 0120, 0165 | Planejada |
+| Status-6 | `modelo-do-relatorio` | O modelo da empresa: o administrador baixa o padrão e a lista dos campos, edita no PowerPoint, sobe e o sistema confere os campos antes de aceitar, com "Voltar ao padrão" | 0003, 0046, 0146, 0165 | Planejada |
