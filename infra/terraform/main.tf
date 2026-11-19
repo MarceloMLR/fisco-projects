@@ -3,7 +3,7 @@
 
 locals {
   name  = "gerenware-${var.installation}-${var.environment}"
-  short = "fp${var.installation}${var.environment}"
+  short = "gw${var.installation}${var.environment}"
   # Names are fixed here, so that a resource can point to another before it exists (the address of the application,
   # the database in the connection of the application).
   names = {
