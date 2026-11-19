@@ -317,6 +317,9 @@ namespace GerenWare.Tickets.Infrastructure.Persistence.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("nvarchar(24)");
 
+                    b.PrimitiveCollection<string>("LinkedItems")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -342,6 +345,9 @@ namespace GerenWare.Tickets.Infrastructure.Persistence.Migrations
                     b.Property<string>("ToVendorStatus")
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
+
+                    b.PrimitiveCollection<string>("UnlinkedItems")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("VendorTicketId")
                         .HasColumnType("uniqueidentifier");
@@ -379,6 +385,38 @@ namespace GerenWare.Tickets.Infrastructure.Persistence.Migrations
                     b.ToTable("ticket_followers", "tickets");
 
                     b.HasAnnotation("GerenWare:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("GerenWare.Tickets.Domain.TicketImpact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("GerenWare:Audit:Context", true)
+                        .HasAnnotation("GerenWare:Audit:Reference", "Project");
+
+                    b.Property<Guid>("ScheduleItemId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("GerenWare:Audit:Reference", "ScheduleItem");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasAnnotation("GerenWare:Audit:Reference", "Ticket");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("TicketId", "ScheduleItemId")
+                        .IsUnique();
+
+                    b.ToTable("ticket_impacts", "tickets");
+
+                    b
+                        .HasAnnotation("GerenWare:Audit:Label", "TicketId")
+                        .HasAnnotation("GerenWare:Audit:LabelReference", "Ticket");
                 });
 
             modelBuilder.Entity("GerenWare.Tickets.Domain.TicketMessage", b =>
@@ -684,6 +722,15 @@ namespace GerenWare.Tickets.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("GerenWare.Tickets.Domain.TicketFollower", b =>
+                {
+                    b.HasOne("GerenWare.Tickets.Domain.Ticket", null)
+                        .WithMany()
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GerenWare.Tickets.Domain.TicketImpact", b =>
                 {
                     b.HasOne("GerenWare.Tickets.Domain.Ticket", null)
                         .WithMany()

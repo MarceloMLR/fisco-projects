@@ -111,6 +111,25 @@ internal sealed class VendorTicketConfiguration : IEntityTypeConfiguration<Vendo
     }
 }
 
+// The items of the schedule a ticket impacts (ADR-0164): without a foreign key to the item, of another module, so the link
+// stays while the item is removed and comes back with the undo (ADR-0091). In the audit by the current name of the ticket,
+// with the item by its current name and the project in every record (ADR-0084).
+internal sealed class TicketImpactConfiguration : IEntityTypeConfiguration<TicketImpact>
+{
+    public void Configure(EntityTypeBuilder<TicketImpact> impact)
+    {
+        impact.ToTable("ticket_impacts");
+        impact.HasOne<Ticket>().WithMany().HasForeignKey(i => i.TicketId).OnDelete(DeleteBehavior.Cascade);
+        impact.HasIndex(i => new { i.TicketId, i.ScheduleItemId }).IsUnique();
+        // The schedule reads the links of a project.
+        impact.HasIndex(i => i.ProjectId);
+        impact.HasAuditLabelReference(i => i.TicketId, TicketsAudit.TicketReference);
+        impact.Property(i => i.TicketId).IsAuditReference(TicketsAudit.TicketReference);
+        impact.Property(i => i.ScheduleItemId).IsAuditReference(ProjectsAudit.ScheduleItemReference);
+        impact.Property(i => i.ProjectId).IsAuditReference(ProjectsAudit.ProjectReference).IsAuditContext();
+    }
+}
+
 // The deadlines of each priority (ADR-0025): the table starts with the ones of the MVP, and the Administrator changes
 // them, with the change in the audit (ADR-0039, ADR-0046).
 internal sealed class TicketDeadlineSettingConfiguration : IEntityTypeConfiguration<TicketDeadlineSetting>

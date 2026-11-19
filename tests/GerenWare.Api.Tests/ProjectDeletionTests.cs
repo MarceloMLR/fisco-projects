@@ -9,7 +9,7 @@ using Microsoft.Data.SqlClient;
 namespace GerenWare.Api.Tests;
 
 // Spec: projetos, requirements "Excluir projeto", "Arquivos do projeto excluído", "Resumo da exclusão" and "Exclusão
-// na auditoria" (ADR-0041, ADR-0111).
+// na auditoria" (ADR-0041, ADR-0111); chamados, "Ligação na conversa e na auditoria" (ADR-0164).
 public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 {
     private const string ErpFolder = "ERP-FIN - Implantação do ERP financeiro";
@@ -46,6 +46,19 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
         Directory.GetFiles(team.Files, "*", SearchOption.AllDirectories)
             .Where(file => !file.Contains(".gerenware", StringComparison.Ordinal))
             .Should().BeEmpty("only the project deleted had files");
+    }
+
+    [Fact(DisplayName = "Projeto excluído com ligações")]
+    public async Task TheLinksOfTheTicketsToTheSchedule_LeaveWithTheProject()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        await SceneAsync(team);
+        const string Links = "SELECT COUNT(*) FROM [tickets].[ticket_impacts] WHERE ProjectId = @id";
+        (await team.App.CountAsync(Links, ("@id", team.Erp))).Should().Be(2);
+
+        (await DeleteAsync(team, "ERP-FIN")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await team.App.CountAsync(Links, ("@id", team.Erp))).Should().Be(0);
     }
 
     [Fact(DisplayName = "Arquivo de fora fica")]
@@ -174,7 +187,7 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 
     /// <summary>
     /// ERP-FIN with a phase, a task and a milestone with a dependency and the baseline; a ticket with an attachment, a
-    /// message and a follower; a document; a link; a credential; a request of signature to a signer of the client, with its PDF; and hours
+    /// message and a follower, linked to the task and the milestone; a document; a link; a credential; a request of signature to a signer of the client, with its PDF; and hours
     /// Carla logged on the task.
     /// </summary>
     private static async Task<Scene> SceneAsync(ProjectTeam team)
@@ -207,6 +220,8 @@ public sealed class ProjectDeletionTests(SqlServerFixture sqlServer)
 
         var number = await OpenTicketAsync(team, team.Erp, "Rejeição 539 na emissão");
         var ticket = (await team.Admin.GetFromJsonAsync<JsonElement>($"/api/tickets/{number}", Cancellation)).GetProperty("id").GetGuid();
+        (await SendAsync(team.Admin, HttpMethod.Put, $"/api/tickets/{number}/impacts", new { itemIds = new[] { task, milestone } }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
         var rafael = await team.ClientOfAsync(team.Rafael);
         var sent = await PostFormAsync(rafael, $"/api/tickets/{number}/messages", new Dictionary<string, string?>
         {

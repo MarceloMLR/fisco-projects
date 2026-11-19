@@ -157,11 +157,19 @@ public static class TicketAccess
         role is ProjectMemberRole.Manager or ProjectMemberRole.TechLead or ProjectMemberRole.Contributor or ProjectMemberRole.Developer;
 
     /// <summary>Transfers the ticket to the other team (ADR-0044): who serves it, as the flow says it.</summary>
-    public static bool MayTransfer(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
-        (ActorsOf(viewer, role, ticket) & TicketActors.Attendant) != 0;
+    public static bool MayTransfer(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) => Attends(viewer, role, ticket);
 
     /// <summary>Registers and updates the tickets at vendors in the ticket (ADR-0028, ADR-0044): who serves it.</summary>
-    public static bool MayRegisterAtVendor(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
+    public static bool MayRegisterAtVendor(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) => Attends(viewer, role, ticket);
+
+    /// <summary>
+    /// Links the ticket to the tasks and milestones of the schedule it impacts (ADR-0164): who serves it, as the
+    /// registration at vendors.
+    /// </summary>
+    public static bool MayLinkToSchedule(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) => Attends(viewer, role, ticket);
+
+    /// <summary>Who serves the ticket: the Administrator, the managers and who serves its team (ADR-0044, ADR-0068).</summary>
+    private static bool Attends(TicketViewer viewer, ProjectMemberRole? role, Ticket ticket) =>
         (ActorsOf(viewer, role, ticket) & TicketActors.Attendant) != 0;
 
     /// <summary>

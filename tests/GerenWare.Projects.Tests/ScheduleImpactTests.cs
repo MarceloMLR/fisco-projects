@@ -46,7 +46,8 @@ public sealed class ScheduleImpactTests
         var reach = ScheduleImpacts.Of(schedule, [tests.Id], Critical(schedule));
 
         reach.Items.Should().ContainSingle().Which.Should().Be(tests);
-        reach.Milestones.Should().BeEquivalentTo([acceptance, goLive]);
+        // By the day and, on the same day, the nearest first.
+        reach.Milestones.Should().Equal(acceptance, goLive);
         reach.Milestones.Select(milestone => milestone.Start).Should().BeInAscendingOrder();
     }
 

@@ -3,7 +3,7 @@ namespace GerenWare.Projects.Domain;
 /// <summary>
 /// What the items linked to a ticket reach in the schedule (ADR-0164): the linked tasks and milestones that still exist,
 /// in the order of the schedule; the milestones not reached that come after them through the dependencies, by their
-/// day; and whether one of them is on the critical path, when a delay in it moves the end of the project.
+/// day and, on the same day, the nearest first; and whether one of them is on the critical path, when a delay in it moves the end of the project.
 /// </summary>
 public sealed record ScheduleReach(IReadOnlyList<ScheduleItem> Items, IReadOnlyList<ScheduleItem> Milestones, bool OnCriticalPath)
 {
@@ -38,8 +38,9 @@ public static class ScheduleImpacts
         var after = After(schedule, starts);
         var milestones = schedule.Items
             .Where(item => item.Kind == ScheduleItemKind.Milestone && item.ReachedOn is null
-                && after.Contains(item.Id) && !wanted.Contains(item.Id))
+                && after.ContainsKey(item.Id) && !wanted.Contains(item.Id))
             .OrderBy(item => item.Start)
+            .ThenBy(item => after[item.Id])
             .ThenBy(item => item.Name, StringComparer.CurrentCulture)
             .ToList();
         return new ScheduleReach(items, milestones, starts.Any(critical.Contains));
@@ -57,7 +58,7 @@ public static class ScheduleImpacts
         var after = After(schedule, [.. OwnDated(schedule, item)]);
         return schedule.Items
             .Where(other => other.Kind == ScheduleItemKind.Milestone && other.ReachedOn is null
-                && other.Id != itemId && after.Contains(other.Id))
+                && other.Id != itemId && after.ContainsKey(other.Id))
             .Select(other => other.Id)
             .ToHashSet();
     }
@@ -69,24 +70,31 @@ public static class ScheduleImpacts
         return subtasks.Count == 0 ? [item.Id] : subtasks.Select(subtask => subtask.Id);
     }
 
-    /// <summary>Every item that comes after the ones given through the dependencies, without them.</summary>
-    private static HashSet<Guid> After(Schedule schedule, IReadOnlyCollection<Guid> starts)
+    /// <summary>
+    /// Every item that comes after the ones given through the dependencies, without them, with the fewest dependencies
+    /// that lead to it.
+    /// </summary>
+    private static Dictionary<Guid, int> After(Schedule schedule, IReadOnlyCollection<Guid> starts)
     {
         var successors = schedule.Dependencies.ToLookup(dependency => dependency.PredecessorId, dependency => dependency.SuccessorId);
-        var reached = new HashSet<Guid>();
+        var reached = starts.ToDictionary(id => id, _ => 0);
         var next = new Queue<Guid>(starts);
         while (next.TryDequeue(out var id))
         {
             foreach (var successor in successors[id])
             {
-                if (reached.Add(successor))
+                if (reached.TryAdd(successor, reached[id] + 1))
                 {
                     next.Enqueue(successor);
                 }
             }
         }
 
-        reached.ExceptWith(starts);
+        foreach (var start in starts)
+        {
+            reached.Remove(start);
+        }
+
         return reached;
     }
 

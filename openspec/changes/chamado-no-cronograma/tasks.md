@@ -9,11 +9,11 @@
 
 ## 3. A ligação no chamado
 
-- [ ] 3.1 `TicketImpact`, a tabela `tickets.ticket_impacts` na auditoria (o chamado como rótulo, o item como referência e o projeto como contexto) e a migração do `Tickets`, com `dotnet build -warnaserror` limpo
-- [ ] 3.2 `TicketAccess.MayLinkToSchedule`, com a matriz de quem atende por papel e por time coberta no teste de permissões
-- [ ] 3.3 `ChangeTicketImpacts`, a rota `PUT /api/tickets/{number}/impacts` e o evento `ImpactsChanged`, com os testes da API dos cenários de "Chamado no cronograma", "Quem liga o chamado ao cronograma" e "Itens que podem ser ligados"
-- [ ] 3.4 A seção `schedule` no `GET /api/tickets/{number}`, pelo `IScheduleImpacts`, com os testes dos cenários "O que depende do chamado" (marcos pelas dependências, marco atingido, caminho crítico, tarefa-resumo, item excluído e desfeito)
-- [ ] 3.5 As ligações na exclusão do projeto (`TicketProjectDeletion`) e na auditoria pelo nome atual, com os testes dos cenários "Ligação na conversa e na auditoria"
+- [x] 3.1 `TicketImpact`, a tabela `tickets.ticket_impacts` na auditoria (o chamado como rótulo, o item como referência e o projeto como contexto) e a migração do `Tickets`, com `dotnet build -warnaserror` limpo
+- [x] 3.2 `TicketAccess.MayLinkToSchedule`, com a matriz de quem atende por papel e por time coberta no teste de permissões
+- [x] 3.3 `ChangeTicketImpacts`, a rota `PUT /api/tickets/{number}/impacts` e o evento `ImpactsChanged`, com os testes da API dos cenários de "Chamado no cronograma", "Quem liga o chamado ao cronograma" e "Itens que podem ser ligados"
+- [x] 3.4 A seção `schedule` no `GET /api/tickets/{number}`, pelo `IScheduleImpacts`, com os testes dos cenários "O que depende do chamado" (marcos pelas dependências, marco atingido, caminho crítico, tarefa-resumo, item excluído e desfeito)
+- [x] 3.5 As ligações na exclusão do projeto (`TicketProjectDeletion`) e na auditoria pelo nome atual, com os testes dos cenários "Ligação na conversa e na auditoria"
 
 ## 4. Chamados no cronograma e na Visão geral
 

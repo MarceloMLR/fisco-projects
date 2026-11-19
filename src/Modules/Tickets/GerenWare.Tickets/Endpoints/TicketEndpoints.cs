@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO.Compression;
 using GerenWare.Files.Contracts;
+using GerenWare.Projects.Contracts;
 using GerenWare.Tickets.Application;
 using GerenWare.Tickets.Domain;
 using GerenWare.Users.Contracts;
@@ -82,6 +83,31 @@ public sealed record NewVendorRequest(string? Name, string? PortalUrl = null);
 public sealed record VendorRequest(string? Name, string? PortalUrl, bool IsActive);
 
 public sealed record VendorCreatedResponse(Guid Id);
+
+/// <summary>The tasks and milestones of the schedule of the project that the ticket impacts, the whole list (ADR-0164).</summary>
+public sealed record TicketImpactsRequest(
+    [property: Description("From none to 10 tasks (also summaries and subtasks) or milestones of the project, none repeated.")] IReadOnlyList<Guid>? ItemIds);
+
+/// <summary>
+/// A task or milestone linked to the ticket, as the schedule has it now (ADR-0164): its dates (a milestone starts and
+/// ends on its day), the progress, whether it is done and the business days it is late.
+/// </summary>
+public sealed record TicketScheduleItemResponse(
+    Guid Id, ScheduleItemType Type, string Name, DateOnly Start, DateOnly End, int Progress, bool IsDone, int LateDays);
+
+/// <summary>A milestone not reached that comes after the items linked through the dependencies, with its day and delay.</summary>
+public sealed record TicketThreatenedMilestoneResponse(Guid Id, string Name, DateOnly Day, int LateDays);
+
+/// <summary>
+/// What the ticket reaches in the schedule (ADR-0164): the items linked that still exist, in the order of the schedule,
+/// the milestones after them, by the day, whether one of them is on the critical path, and whether the person may
+/// change the items.
+/// </summary>
+public sealed record TicketScheduleResponse(
+    IReadOnlyList<TicketScheduleItemResponse> Items,
+    IReadOnlyList<TicketThreatenedMilestoneResponse> Milestones,
+    [property: Description("An item linked, or a subtask of a summary linked, is on the critical path: its delay delays the end of the project.")] bool OnCriticalPath,
+    [property: Description("Who serves the ticket, until it is closed.")] bool CanChange);
 
 public sealed record TicketPageResponse(IReadOnlyList<TicketListItemResponse> Items, int Total);
 
@@ -193,6 +219,8 @@ public sealed record TicketEventResponse(
     VendorTicketStatus? FromVendorStatus,
     VendorTicketStatus? ToVendorStatus,
     [property: Description("The note of the update at the vendor.")] string? Note,
+    [property: Description("The names of the items of the schedule linked, as they were then (ADR-0164).")] IReadOnlyList<string>? LinkedItems,
+    [property: Description("The names of the items of the schedule unlinked, as they were then.")] IReadOnlyList<string>? UnlinkedItems,
     DateTime At);
 
 /// <summary>An action of the flow taken in a ticket, with the message when the action needs one.</summary>
@@ -246,7 +274,8 @@ public sealed record TicketResponse(
     TicketConversationPermissionsResponse Permissions,
     bool Following,
     TicketDeadlinesResponse? Deadlines,
-    IReadOnlyList<VendorTicketResponse> VendorTickets);
+    IReadOnlyList<VendorTicketResponse> VendorTickets,
+    TicketScheduleResponse Schedule);
 
 /// <summary>Problem types of the tickets, so the screen can tell the reason.</summary>
 public static class TicketProblems
@@ -283,6 +312,12 @@ public static class TicketProblems
 
     /// <summary>Another vendor has the name (ADR-0028); status 409.</summary>
     public const string VendorNameInUse = "urn:gerenware:problem:vendor-name-in-use";
+
+    /// <summary>
+    /// An item chosen is not a task or milestone of the schedule of the project, one is repeated, or there are more than
+    /// 10 (ADR-0164); status 400, with the error in the field itemIds.
+    /// </summary>
+    public const string ImpactRefused = "urn:gerenware:problem:ticket-impact-refused";
 }
 
 /// <summary>
@@ -314,6 +349,11 @@ public static class TicketEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
         tickets.MapPut("/{number:int}/vendor-tickets/{id:guid}", UpdateVendorTicketAsync).WithName("UpdateVendorTicket")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+        tickets.MapPut("/{number:int}/impacts", ChangeImpactsAsync).WithName("ChangeTicketImpacts")
+            .WithDescription("The tasks and milestones of the schedule the ticket impacts, by who serves it (ADR-0164).")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
@@ -543,7 +583,46 @@ public static class TicketEndpoints
                 details.Permissions.CanRegisterVendorTicket),
             details.Following,
             details.Deadlines is { } figures ? DeadlinesOf(figures) : null,
-            [.. details.VendorTickets.Select(VendorTicketOf)]));
+            [.. details.VendorTickets.Select(VendorTicketOf)],
+            ScheduleOf(details.Schedule)));
+    }
+
+    private static TicketScheduleResponse ScheduleOf(TicketSchedule schedule) =>
+        new(
+            [.. schedule.Impact.Items.Select(item => new TicketScheduleItemResponse(
+                item.Id, item.Type, item.Name, item.Start, item.End, item.Progress, item.IsDone, item.LateDays))],
+            [.. schedule.Impact.Milestones.Select(milestone =>
+                new TicketThreatenedMilestoneResponse(milestone.Id, milestone.Name, milestone.Day, milestone.LateDays))],
+            schedule.Impact.OnCriticalPath,
+            schedule.CanChange);
+
+    private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> ChangeImpactsAsync(
+        int number, TicketImpactsRequest request, HttpContext http, IUserAccess access, ChangeTicketImpacts change, CancellationToken cancellationToken)
+    {
+        var viewer = await ViewerOfAsync(http, access, cancellationToken);
+        return await change.ExecuteAsync(number, request.ItemIds, viewer, cancellationToken) switch
+        {
+            ImpactChangeOutcome.Done => TypedResults.NoContent(),
+            ImpactChangeOutcome.NotFound => TypedResults.NotFound(),
+            ImpactChangeOutcome.Forbidden => TypedResults.Forbid(),
+            ImpactChangeOutcome.Invalid => TypedResults.ValidationProblem(
+                new Dictionary<string, string[]>
+                {
+                    ["itemIds"] = [$"From none to {TicketImpact.MaxItems} different tasks or milestones of the schedule of the project."],
+                },
+                title: "Items refused",
+                type: TicketProblems.ImpactRefused),
+            ImpactChangeOutcome.Closed => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket closed",
+                detail: "A closed ticket keeps the items of the schedule it was linked to.",
+                type: TicketProblems.TicketClosed),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Ticket changed",
+                detail: "Someone changed the ticket at the same time; nothing was saved.",
+                type: TicketProblems.TicketChanged),
+        };
     }
 
     private static async Task<Results<NoContent, ValidationProblem, NotFound, ForbidHttpResult, ProblemHttpResult>> AssignAsync(
@@ -1089,6 +1168,8 @@ public static class TicketEndpoints
             item.FromVendorStatus,
             item.ToVendorStatus,
             item.Note,
+            item.LinkedItems,
+            item.UnlinkedItems,
             item.At);
 
     private static ValidationProblem Invalid(IReadOnlyList<TicketField> fields) =>
