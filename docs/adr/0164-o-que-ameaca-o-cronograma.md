@@ -1,12 +1,12 @@
 ---
-status: proposta
+status: aceita
 date: 2026-11-19
 decision-makers: Marcelo Ribeiro
 ---
 
 # ADR-0164: O que ameaça o cronograma: chamados ligados a tarefas e marcos, e a projeção do atraso
 
-Completa o ADR-0022 (chamado sempre num projeto), o ADR-0028 (chamados em fornecedores), o ADR-0073 (visão geral do projeto) e a folga das tarefas (GanttB-1), sem mudar o ADR-0051: o servidor continua a fonte das datas, e nada aqui muda uma data sozinho. Proposta aberta para a decisão de Marcelo, porque cria uma relação nova entre chamados e cronograma.
+Completa o ADR-0022 (chamado sempre num projeto), o ADR-0028 (chamados em fornecedores), o ADR-0073 (visão geral do projeto) e a folga das tarefas (GanttB-1), sem mudar o ADR-0051: o servidor continua a fonte das datas, e nada aqui muda uma data sozinho. Aprovado por Marcelo em 19/11/2026.
 
 ## Contexto e problema
 
@@ -38,7 +38,7 @@ Tarefa atrasada:
 
 ## Resultado da decisão
 
-Opções propostas: **A1** e **B1**. A2 misturaria o prazo de atendimento com o plano e mudaria datas sem ninguém editar; A3 não liga nada e não aparece no cronograma. B2 mudaria o cronograma sem a decisão de quem o edita, fora do desfazer de alguém; B1 mostra a consequência e deixa a decisão com quem edita, que já pode mover a tarefa ou o cronograma inteiro (ADR-0140). B3 é o que existe e não responde a pergunta.
+Opções escolhidas: **A1** e **B1**, aprovadas por Marcelo. A2 misturaria o prazo de atendimento com o plano e mudaria datas sem ninguém editar; A3 não liga nada e não aparece no cronograma. B2 mudaria o cronograma sem a decisão de quem o edita, fora do desfazer de alguém; B1 mostra a consequência e deixa a decisão com quem edita, que já pode mover a tarefa ou o cronograma inteiro (ADR-0140). B3 é o que existe e não responde a pergunta.
 
 Regras do chamado ligado ao cronograma (Status-1):
 

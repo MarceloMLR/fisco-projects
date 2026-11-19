@@ -1,12 +1,12 @@
 ---
-status: proposta
+status: aceita
 date: 2026-11-19
 decision-makers: Marcelo Ribeiro
 ---
 
 # ADR-0166: Horas do projeto no relatório de status
 
-Substitui, no ADR-0128, a linha "Horas que o gerente vê ou cadastra" (fora) só para o relatório de status (ADR-0165), e, no ADR-0144, a regra de que o saldo do projeto continua só do administrador, também só para o relatório. O resto continua: só o administrador cadastra as horas contratadas, as adicionais e as previstas, e as horas de cada pessoa continuam só dela e do administrador. Proposta aberta para a decisão de Marcelo.
+Substitui, no ADR-0128, a linha "Horas que o gerente vê ou cadastra" (fora) só para o relatório de status (ADR-0165), e, no ADR-0144, a regra de que o saldo do projeto continua só do administrador, também só para o relatório. O resto continua: só o administrador cadastra as horas contratadas, as adicionais e as previstas, e as horas de cada pessoa continuam só dela e do administrador. Aprovado por Marcelo em 19/11/2026.
 
 ## Contexto e problema
 
@@ -26,7 +26,7 @@ O saldo de horas do projeto (as contratadas e as adicionais contra as apontadas)
 
 ## Resultado da decisão
 
-Opção proposta: **H1**, pela decisão de Marcelo. H2 abre uma tela nova sem pedido; H3 contraria o que ele decidiu.
+Opção escolhida: **H1**, pela decisão de Marcelo. H2 abre uma tela nova sem pedido; H3 contraria o que ele decidiu.
 
 Regras:
 

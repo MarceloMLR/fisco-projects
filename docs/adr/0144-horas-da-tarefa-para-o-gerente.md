@@ -1,5 +1,5 @@
 ---
-status: aceita
+status: aceita (o saldo do projeto no relatório de status pelo ADR-0166)
 date: 2026-11-01
 decision-makers: Marcelo Ribeiro
 ---

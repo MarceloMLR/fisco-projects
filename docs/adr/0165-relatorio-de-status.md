@@ -1,12 +1,12 @@
 ---
-status: proposta
+status: aceita
 date: 2026-11-19
 decision-makers: Marcelo Ribeiro
 ---
 
 # ADR-0165: Relatório de status em PowerPoint e PDF, num modelo que a empresa edita
 
-Completa o ADR-0073 (visão geral do projeto), cujos números o relatório reaproveita, o ADR-0092 (documentos do projeto), onde o relatório fica guardado, e o ADR-0164 (o que ameaça o cronograma), de onde vêm os riscos. A regra das horas no relatório fica no ADR-0166. Proposta aberta para a decisão de Marcelo, porque escolhe como gerar arquivos do Office e muda o que a empresa configura.
+Completa o ADR-0073 (visão geral do projeto), cujos números o relatório reaproveita, o ADR-0092 (documentos do projeto), onde o relatório fica guardado, e o ADR-0164 (o que ameaça o cronograma), de onde vêm os riscos. A regra das horas no relatório fica no ADR-0166. Aprovado por Marcelo em 19/11/2026.
 
 ## Contexto e problema
 
@@ -44,7 +44,7 @@ O modelo da empresa:
 
 ## Resultado da decisão
 
-Opções propostas: **G1**, **P1** e **M1**, com o modelo padrão de início. G2 não abre o modelo da empresa; G3 custa licença por desenvolvedor e pede um ADR de licença comercial (ADR-0050). P2 pede centenas de megabytes e um contêiner; P3 desenharia o relatório duas vezes e ignoraria o modelo da empresa. M2 é um produto à parte; M3 não atende o pedido de Marcelo.
+Opções escolhidas: **G1**, **P1** e **M1**, com o modelo padrão de início, aprovadas por Marcelo. G2 não abre o modelo da empresa; G3 custa licença por desenvolvedor e pede um ADR de licença comercial (ADR-0050). P2 pede centenas de megabytes e um contêiner; P3 desenharia o relatório duas vezes e ignoraria o modelo da empresa. M2 é um produto à parte; M3 não atende o pedido de Marcelo.
 
 Regras:
 

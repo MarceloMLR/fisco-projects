@@ -190,7 +190,7 @@ Regras:
 | [0125](0125-publicacao-em-producao.md) | Publicação em produção por versão, com aprovação e migrações pelo pipeline | aceita | 2026-10-28 |
 | [0126](0126-recalculo-das-datas-pelo-calendario.md) | Recálculo das datas dos cronogramas pelo calendário, pedido pelo administrador | aceita | 2026-10-28 |
 | [0127](0127-instalacao-a-partir-do-pacote-da-versao.md) | Instalação na nuvem do cliente a partir do pacote da versão | aceita | 2026-10-29 |
-| [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita (item "Horas planejadas por tarefa" substituído pelo ADR-0138; apontamentos da tarefa para o gerente pelo ADR-0144) | 2026-10-29 |
+| [0128](0128-horas-do-projeto.md) | Horas do projeto: apontamento de cada pessoa e saldo contra as horas contratadas, só em horas | aceita (item "Horas planejadas por tarefa" substituído pelo ADR-0138; apontamentos da tarefa para o gerente pelo ADR-0144; horas no relatório de status pelo ADR-0166) | 2026-10-29 |
 | [0129](0129-assinatura-eletronica-dos-termos.md) | Termos de aceite assinados por um provedor de assinatura eletrônica trocável, só da gestão | aceita | 2026-10-30 |
 | [0130](0130-assinatura-pela-autentique-na-pratica.md) | Como os termos são assinados pela Autentique | aceita | 2026-10-30 |
 | [0131](0131-botoes-em-andamento.md) | Botões em andamento, com o ícone de carregamento no lugar do ícone | aceita | 2026-10-30 |
@@ -206,7 +206,7 @@ Regras:
 | [0141](0141-ausencias-das-pessoas.md) | Ausências das pessoas, cadastradas pela gestão, só com as datas | aceita | 2026-11-01 |
 | [0142](0142-carga-da-equipe.md) | Carga da equipe por semana, pelas horas previstas e pelas ausências | aceita | 2026-11-01 |
 | [0143](0143-edicao-do-cronograma-na-lista.md) | Edição do cronograma na Lista, num modo de edição pelo teclado | aceita | 2026-11-01 |
-| [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita | 2026-11-01 |
+| [0144](0144-horas-da-tarefa-para-o-gerente.md) | Horas das tarefas também para o gerente do projeto, com os apontamentos de cada tarefa | aceita (o saldo do projeto no relatório de status pelo ADR-0166) | 2026-11-01 |
 | [0145](0145-fim-digitado-no-detalhe-da-tarefa.md) | Fim digitado no detalhe da tarefa, calculado pelo servidor | aceita | 2026-11-01 |
 | [0146](0146-cores-da-instalacao-sem-limite-de-contraste.md) | Cores da instalação numa seção própria, com a principal, a secundária e a da barra lateral, sem limite de contraste | aceita (fundo da entrada substituído pelo ADR-0147; tela Cores substituída pelo ADR-0150) | 2026-11-01 |
 | [0147](0147-fundo-da-entrada-na-cor-secundaria.md) | Fundo da página de entrada na cor secundária | aceita | 2026-11-02 |
@@ -226,6 +226,6 @@ Regras:
 | [0161](0161-nomes-do-codigo-em-gerenware.md) | Nomes do código em GerenWare, inclusive o da proteção das senhas | aceita | 2026-11-17 |
 | [0162](0162-recursos-do-azure-recriados-com-o-prefixo-gerenware.md) | Recursos do Azure recriados com o prefixo gerenware | aceita | 2026-11-17 |
 | [0163](0163-repositorio-gerenware.md) | Repositório renomeado para gerenware | aceita | 2026-11-17 |
-| [0164](0164-o-que-ameaca-o-cronograma.md) | O que ameaça o cronograma: chamados ligados a tarefas e marcos, e a projeção do atraso | proposta | 2026-11-19 |
-| [0165](0165-relatorio-de-status.md) | Relatório de status em PowerPoint e PDF, num modelo que a empresa edita | proposta | 2026-11-19 |
-| [0166](0166-horas-no-relatorio-de-status.md) | Horas do projeto no relatório de status | proposta | 2026-11-19 |
+| [0164](0164-o-que-ameaca-o-cronograma.md) | O que ameaça o cronograma: chamados ligados a tarefas e marcos, e a projeção do atraso | aceita | 2026-11-19 |
+| [0165](0165-relatorio-de-status.md) | Relatório de status em PowerPoint e PDF, num modelo que a empresa edita | aceita | 2026-11-19 |
+| [0166](0166-horas-no-relatorio-de-status.md) | Horas do projeto no relatório de status | aceita | 2026-11-19 |
