@@ -17,9 +17,9 @@
 
 ## 4. Chamados no cronograma e na Visão geral
 
-- [ ] 4.1 `IProjectTickets.ImpactsAsync` implementado pelo `Tickets` (só os chamados em aberto, com o prazo do `TicketDueNow`), com o teste do resolvido e do fechado fora
-- [ ] 4.2 `tickets` em cada item e `threats` em cada marco não atingido no `GET /schedule`, e o Minhas tarefas com o mapa vazio, com os testes da API dos cenários "Chamados do item"
-- [ ] 4.3 `threats` em "Precisa de atenção" da visão geral, com o chamado uma vez só, com os testes da API dos cenários de "Precisa de atenção"
+- [x] 4.1 `IProjectTickets.ImpactsAsync` implementado pelo `Tickets` (só os chamados em aberto, com o prazo do `TicketDueNow`), com o teste do resolvido e do fechado fora
+- [x] 4.2 `tickets` em cada item e `threats` em cada marco não atingido no `GET /schedule`, e o Minhas tarefas com o mapa vazio, com os testes da API dos cenários "Chamados do item"
+- [x] 4.3 `threats` em "Precisa de atenção" da visão geral, com o chamado uma vez só, com os testes da API dos cenários de "Precisa de atenção"
 
 ## 5. Tela
 

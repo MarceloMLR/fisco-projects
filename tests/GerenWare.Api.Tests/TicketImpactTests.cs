@@ -7,7 +7,8 @@ using static GerenWare.Api.Tests.ProjectTeam;
 namespace GerenWare.Api.Tests;
 
 // Spec: chamados (API side), requirements "Chamado no cronograma", "Quem liga o chamado ao cronograma", "Itens que podem
-// ser ligados", "O que depende do chamado" and "Ligação na conversa e na auditoria" (ADR-0044, ADR-0164).
+// ser ligados", "O que depende do chamado" and "Ligação na conversa e na auditoria"; cronograma, "Chamados do item"
+// (ADR-0043, ADR-0044, ADR-0164).
 public sealed class TicketImpactTests(SqlServerFixture sqlServer)
 {
     /// <summary>
@@ -84,6 +85,16 @@ public sealed class TicketImpactTests(SqlServerFixture sqlServer)
 
     private static IEnumerable<string?> NamesOf(JsonElement schedule, string list) =>
         schedule.GetProperty(list).EnumerateArray().Select(item => item.GetProperty("name").GetString());
+
+    /// <summary>A task or milestone of the schedule, as the person reads it.</summary>
+    private static async Task<JsonElement> ItemAsync(HttpClient client, Scene scene, Guid id) =>
+        (await client.GetFromJsonAsync<JsonElement>(scene.Schedule, Cancellation)).GetProperty("phases").EnumerateArray()
+            .SelectMany(phase => phase.GetProperty("items").EnumerateArray())
+            .Single(item => item.GetProperty("id").GetGuid() == id);
+
+    private static IEnumerable<int> NumbersOf(JsonElement item, string list) =>
+        item.GetProperty(list).EnumerateArray()
+            .Select(ticket => (list == "threats" ? ticket.GetProperty("ticket") : ticket).GetProperty("number").GetInt32());
 
     /// <summary>The start and the end of each task and milestone of the schedule, in its order.</summary>
     private static async Task<IReadOnlyList<(Guid Id, string? Start, string? End)>> DatesAsync(HttpClient client, Scene scene) =>
@@ -383,5 +394,84 @@ public sealed class TicketImpactTests(SqlServerFixture sqlServer)
         var fields = created.GetProperty("changes").EnumerateArray().ToDictionary(field => field.GetProperty("field").GetString()!);
         fields["ScheduleItemId"].GetProperty("after").GetString().Should().Be("Treinamento dos usuários");
         created.GetProperty("actor").GetProperty("id").GetGuid().Should().Be(scene.Team.Diego);
+    }
+
+    [Fact(DisplayName = "Chamados ligados ao item")]
+    public async Task TheItem_BringsTheOpenTicketsLinkedToIt()
+    {
+        await using var scene = await StartAsync();
+        var first = await OpenAsync(scene.Team);
+        var second = await OpenAsync(scene.Team);
+        var diego = await scene.Team.ClientOfAsync(scene.Team.Diego);
+        await LinkedAsync(diego, second, scene.Training);
+        await LinkedAsync(diego, first, scene.Training, scene.Tests);
+
+        var training = await ItemAsync(diego, scene, scene.Training);
+
+        NumbersOf(training, "tickets").Should().Equal(first, second);
+        var ticket = training.GetProperty("tickets")[0];
+        (ticket.GetProperty("title").GetString(), ticket.GetProperty("deadline").GetString(), ticket.GetProperty("dueState").GetString())
+            .Should().Be(("Rejeição 539 ao emitir nota de devolução", "FirstResponse", "Soon"));
+        ticket.GetProperty("dueOn").GetString().Should().NotBeNull();
+        training.GetProperty("threats").GetArrayLength().Should().Be(0, "a task is threatened by no ticket");
+        NumbersOf(await ItemAsync(diego, scene, scene.Tests), "tickets").Should().Equal(first);
+    }
+
+    [Fact(DisplayName = "Chamado que ameaça o marco")]
+    public async Task TheMilestone_BringsTheTicketsThatThreatenIt()
+    {
+        await using var scene = await StartAsync();
+        var number = await OpenAsync(scene.Team);
+        var other = await OpenAsync(scene.Team);
+        var diego = await scene.Team.ClientOfAsync(scene.Team.Diego);
+        await LinkedAsync(diego, number, scene.Tests);
+        // A milestone linked to a ticket has it among its tickets, not among its threats.
+        await LinkedAsync(diego, other, scene.Tests, scene.GoLive);
+
+        var goLive = await ItemAsync(diego, scene, scene.GoLive);
+
+        var threat = goLive.GetProperty("threats").EnumerateArray().Single();
+        threat.GetProperty("ticket").GetProperty("number").GetInt32().Should().Be(number);
+        threat.GetProperty("through").EnumerateArray()
+            .Select(item => (item.GetProperty("id").GetGuid(), item.GetProperty("name").GetString()))
+            .Should().Equal((scene.Tests, "Testes integrados"));
+        NumbersOf(goLive, "tickets").Should().Equal(other);
+        NumbersOf(await ItemAsync(diego, scene, scene.Acceptance), "threats").Should().Equal(number, other);
+    }
+
+    [Fact(DisplayName = "Chamado resolvido não aparece")]
+    public async Task ResolvedAndClosedTickets_LeaveTheSchedule()
+    {
+        await using var scene = await StartAsync();
+        var number = await OpenAsync(scene.Team);
+        var cancelled = await OpenAsync(scene.Team);
+        var diego = await scene.Team.ClientOfAsync(scene.Team.Diego);
+        await LinkedAsync(diego, number, scene.Tests);
+        await LinkedAsync(diego, cancelled, scene.Tests);
+
+        foreach (var action in new[] { "StartTriage", "StartWork", "Resolve" })
+        {
+            (await SendAsync(diego, HttpMethod.Post, $"/api/tickets/{number}/transitions", new { action }))
+                .StatusCode.Should().Be(HttpStatusCode.NoContent, action);
+        }
+
+        var body = JsonSerializer.Serialize(new { type = "doc", content = new[] { new { type = "paragraph", content = new[] { new { type = "text", text = "Aberto por engano." } } } } });
+        (await SendAsync(await scene.Team.ClientOfAsync(scene.Team.Carla), HttpMethod.Post, $"/api/tickets/{cancelled}/transitions", new { action = "Cancel", body }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await ItemAsync(diego, scene, scene.Tests)).GetProperty("tickets").GetArrayLength().Should().Be(0);
+        (await ItemAsync(diego, scene, scene.GoLive)).GetProperty("threats").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Leitor vê os chamados do item")]
+    public async Task Viewer_SeesTheTicketsOfTheItem()
+    {
+        await using var scene = await StartAsync();
+        var number = await OpenAsync(scene.Team);
+        await LinkedAsync(await scene.Team.ClientOfAsync(scene.Team.Diego), number, scene.Training);
+
+        var training = await ItemAsync(await scene.Team.ClientOfAsync(scene.Team.Lucas), scene, scene.Training);
+
+        NumbersOf(training, "tickets").Should().Equal(number);
     }
 }

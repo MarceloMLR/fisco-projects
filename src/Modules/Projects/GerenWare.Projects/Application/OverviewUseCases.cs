@@ -49,6 +49,22 @@ public sealed record OverviewLateTask(
 public sealed record OverviewMissedDeadline(Guid Id, ScheduleItemKind Kind, string Name, DateOnly Deadline, int DaysPast);
 
 /// <summary>
+/// An open ticket that threatens milestones not reached through the items linked to it (ADR-0164): the nearest
+/// milestone, its day, how many other milestones it threatens, and the deadline of the ticket that counts now.
+/// </summary>
+public sealed record OverviewThreat(
+    int Number,
+    string Title,
+    Guid MilestoneId,
+    string Milestone,
+    DateOnly Day,
+    int OtherMilestones,
+    ProjectTicketDeadline? Deadline,
+    ProjectTicketDueState? DueState,
+    DateOnly? DueOn,
+    int? DaysLate);
+
+/// <summary>
 /// A pending request of acceptance, for who manages the terms (ADR-0129): the signers, or the person a request was asked
 /// of before, with the milestone and its day.
 /// </summary>
@@ -83,6 +99,9 @@ public sealed record ProjectOverview(
     IReadOnlyList<OverviewTeamPeople> Teams,
     IReadOnlyDictionary<Guid, string> Names)
 {
+    /// <summary>The open tickets that threaten milestones (ADR-0164), which are left out of the tickets of the attention.</summary>
+    public IReadOnlyList<OverviewThreat> Threats { get; init; } = [];
+
     public string NameOf(Guid id) => Names.TryGetValue(id, out var name) ? name : string.Empty;
 }
 
@@ -90,7 +109,8 @@ public sealed record ProjectOverview(
 /// The overview of a project, which answers "está no prazo?" (ADR-0073), for whom sees the project (ADR-0043): the
 /// progress against the planned one (<see cref="SchedulePlan"/>), the end against the baseline, the tickets
 /// (<see cref="IProjectTickets"/>), the next milestone, the phases and the milestones, the late tasks, the items past
-/// their deadline, the pending requests of acceptance the person sees (<see cref="IProjectAcceptances"/>) and the team.
+/// their deadline, the open tickets that threaten milestones (ADR-0164), the pending requests of acceptance the person
+/// sees (<see cref="IProjectAcceptances"/>) and the team.
 /// </summary>
 public sealed class GetProjectOverview(
     IProjectStore projects,
@@ -120,6 +140,14 @@ public sealed class GetProjectOverview(
         {
             ticketOverview = await module.OverviewAsync(projectId, cancellationToken);
         }
+
+        // A ticket that threatens a milestone is told once, in the line of the threat, with its deadline (ADR-0164).
+        var threats = ThreatsOf(schedule, await ScheduleTickets.ImpactsAsync(tickets, projectId, cancellationToken));
+        var threatening = threats.Select(threat => threat.Number).ToHashSet();
+        ticketOverview = ticketOverview with
+        {
+            Attention = [.. ticketOverview.Attention.Where(ticket => !threatening.Contains(ticket.Number))],
+        };
 
         var pending = new List<PendingProjectAcceptance>();
         foreach (var module in acceptances)
@@ -165,8 +193,41 @@ public sealed class GetProjectOverview(
             {
                 People = [.. team.People.Select(person => person with { Name = PeopleNames.NameOf(names, person.Id) })],
             })],
-            names);
+            names)
+        {
+            Threats = threats,
+        };
     }
+
+    /// <summary>
+    /// The open tickets with milestones not reached after the items linked to them (<see cref="ScheduleImpacts"/>), by
+    /// the day of the nearest milestone, then by the deadline.
+    /// </summary>
+    private static List<OverviewThreat> ThreatsOf(Schedule schedule, IReadOnlyList<ProjectTicketImpact> impacts) =>
+    [
+        .. impacts
+            .Select(impact => (Impact: impact, Reach: ScheduleImpacts.Of(schedule, impact.ItemIds, new HashSet<Guid>())))
+            .Where(entry => entry.Reach.Milestones.Count > 0)
+            .Select(entry =>
+            {
+                var (impact, reach) = entry;
+                var nearest = reach.Milestones[0];
+                return new OverviewThreat(
+                    impact.Number,
+                    impact.Title,
+                    nearest.Id,
+                    nearest.Name,
+                    nearest.Start,
+                    reach.Milestones.Count - 1,
+                    impact.Deadline,
+                    impact.DueState,
+                    impact.DueOn,
+                    impact.DaysLate);
+            })
+            .OrderBy(threat => threat.Day)
+            .ThenBy(threat => threat.DueOn ?? DateOnly.MaxValue)
+            .ThenBy(threat => threat.Number),
+    ];
 
     /// <summary>
     /// The first milestone not reached by its day, a late one first: the business days left until it, from the day

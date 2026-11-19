@@ -92,7 +92,8 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
 /// it (GanttA-2), the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137), the
 /// float of each item with dates of its own (GanttB-1) and, for each open task with dates of its own and a person in
-/// charge, the absences of the person on its days (ADR-0141).
+/// charge, the absences of the person on its days (ADR-0141), and the open tickets linked to each item and threatening
+/// each milestone (ADR-0164).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -110,7 +111,8 @@ public sealed record ScheduleView(
     IReadOnlyDictionary<Guid, IReadOnlyList<ScheduleLink>>? Links = null,
     IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null,
     IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>? OwnerAbsences = null,
-    IReadOnlyDictionary<Guid, int>? CommentCounts = null);
+    IReadOnlyDictionary<Guid, int>? CommentCounts = null,
+    ScheduleTickets? Tickets = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -120,7 +122,8 @@ public sealed class GetSchedule(
     IWorkCalendar calendar,
     InstallationClock clock,
     IAbsenceStore absences,
-    IScheduleCommentStore comments)
+    IScheduleCommentStore comments,
+    IEnumerable<IProjectTickets> tickets)
 {
     /// <returns>The schedule, empty while the project has none, or null when the project does not exist for the person.</returns>
     public async Task<ScheduleView?> ExecuteAsync(Guid projectId, ProjectViewer viewer, CancellationToken cancellationToken)
@@ -178,7 +181,11 @@ public sealed class GetSchedule(
             analysis?.Slack,
             ownerAbsences,
             // How many comments each item has, for the Lista and the Quadro (ADR-0157).
-            schedule.Items.Count == 0 ? null : await comments.CountsAsync(projectId, cancellationToken));
+            schedule.Items.Count == 0 ? null : await comments.CountsAsync(projectId, cancellationToken),
+            // The open tickets on the items and the milestones they threaten, for everyone who sees the schedule (ADR-0164).
+            schedule.Items.Count == 0
+                ? null
+                : ScheduleTickets.Of(schedule, await ScheduleTickets.ImpactsAsync(tickets, projectId, cancellationToken)));
     }
 
     /// <summary>

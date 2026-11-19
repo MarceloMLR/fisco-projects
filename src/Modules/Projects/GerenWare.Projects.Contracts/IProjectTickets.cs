@@ -58,9 +58,27 @@ public sealed record ProjectTicketOverview(
     public static ProjectTicketOverview None { get; } = new(0, 0, 0, 0, 0, 0, [], []);
 }
 
-/// <summary>The tickets of a project, for its overview (ADR-0073); the Tickets module implements it.</summary>
+/// <summary>
+/// An open ticket (neither resolved nor closed) of the project linked to tasks and milestones of its schedule (ADR-0164):
+/// its number, its title, the deadline that counts now with its state on the day of the installation, and the items.
+/// </summary>
+public sealed record ProjectTicketImpact(
+    int Number,
+    string Title,
+    ProjectTicketDeadline? Deadline,
+    ProjectTicketDueState? DueState,
+    DateOnly? DueOn,
+    int? DaysLate,
+    IReadOnlyList<Guid> ItemIds);
+
+/// <summary>
+/// The tickets of a project, for its overview (ADR-0073) and its schedule (ADR-0164); the Tickets module implements it.
+/// </summary>
 public interface IProjectTickets
 {
     /// <summary>The numbers and the attention of the tickets of the project, on the day of the installation.</summary>
     Task<ProjectTicketOverview> OverviewAsync(Guid projectId, CancellationToken cancellationToken);
+
+    /// <summary>The open tickets of the project linked to items of its schedule, by the number.</summary>
+    Task<IReadOnlyList<ProjectTicketImpact>> ImpactsAsync(Guid projectId, CancellationToken cancellationToken);
 }

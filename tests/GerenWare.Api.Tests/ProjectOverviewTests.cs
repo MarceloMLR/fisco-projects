@@ -257,6 +257,35 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
         (item.GetProperty("deadline").GetString(), item.GetProperty("daysPast").GetInt32()).Should().Be(("2026-10-30", 1));
     }
 
+    // Spec: visao-geral-do-projeto, "Precisa de atenção" with the tickets that threaten a milestone (ADR-0164).
+    [Fact(DisplayName = "Chamado que ameaça um marco na atenção")]
+    public async Task TicketThatThreatensAMilestone_IsToldOnce_WithTheNearestMilestone()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        var phase = await PhaseAsync(team, team.Erp, "Homologação");
+        var tests = await ItemAsync(team, team.Erp, phase, "Task", "Testes integrados", "2026-10-26", 5);
+        var acceptance = await ItemAsync(team, team.Erp, phase, "Milestone", "Homologação concluída", "2026-10-26", after: [tests]);
+        await ItemAsync(team, team.Erp, phase, "Milestone", "Go-live", "2026-10-26", after: [acceptance]);
+        var carla = await team.ClientOfAsync(team.Carla);
+        var threatening = await OpenTicketAsync(carla, team.Erp, "Rejeição 539 ao emitir nota de devolução", priority: "High");
+        var other = await OpenTicketAsync(carla, team.Erp, "Relatório de notas", priority: "High");
+        var linked = await SendAsync(await team.ClientOfAsync(team.Diego), HttpMethod.Put, $"/api/tickets/{threatening}/impacts", new { itemIds = new[] { tests } });
+        linked.StatusCode.Should().Be(HttpStatusCode.NoContent, await linked.Content.ReadAsStringAsync(Cancellation));
+        // Thursday, 22/10: the first answer of both tickets is overdue.
+        team.App.Clock.Advance(TimeSpan.FromDays(3));
+
+        var overview = await OverviewAsync(await team.ClientOfAsync(team.Lucas), team.Erp);
+
+        var attention = overview.GetProperty("attention");
+        var threat = attention.GetProperty("threats").EnumerateArray().Single();
+        (threat.GetProperty("number").GetInt32(), threat.GetProperty("milestoneId").GetGuid(), threat.GetProperty("milestone").GetString(),
+                threat.GetProperty("otherMilestones").GetInt32(), threat.GetProperty("dueState").GetString())
+            .Should().Be((threatening, acceptance, "Homologação concluída", 1, "Overdue"));
+        threat.GetProperty("day").GetString().Should().Be("2026-10-30");
+        attention.GetProperty("tickets").EnumerateArray().Select(ticket => ticket.GetProperty("number").GetInt32())
+            .Should().Equal(other);
+    }
+
     [Fact(DisplayName = "Chamados na atenção")]
     public async Task Tickets_DueSoon_OrWithoutAnAssignee_NeedAttention()
     {

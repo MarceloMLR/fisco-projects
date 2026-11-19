@@ -62,6 +62,22 @@ public sealed record OverviewTicketResponse(
     int? DaysLate);
 
 /// <summary>
+/// An open ticket that threatens milestones not reached (ADR-0164): the nearest milestone, its day, how many others, and
+/// the deadline of the ticket that counts now.
+/// </summary>
+public sealed record OverviewThreatResponse(
+    int Number,
+    string Title,
+    Guid MilestoneId,
+    string Milestone,
+    DateOnly Day,
+    int OtherMilestones,
+    ProjectTicketDeadline? Deadline,
+    ProjectTicketDueState? DueState,
+    DateOnly? DueOn,
+    int? DaysLate);
+
+/// <summary>
 /// A pending request of acceptance, for who manages the terms: the names of the signers or, in a request asked before,
 /// the person of the project (ADR-0129).
 /// </summary>
@@ -77,10 +93,14 @@ public sealed record OverviewAcceptanceResponse(
 /// <summary>A ticket at a vendor without an update for the business days of the setting (ADR-0028).</summary>
 public sealed record OverviewVendorTicketResponse(int TicketNumber, string Vendor, string Code, int StaleDays);
 
-/// <summary>What needs attention (ADR-0073), in the order of the list.</summary>
+/// <summary>
+/// What needs attention (ADR-0073), in the order of the list; a ticket that threatens a milestone is in the threats and
+/// not in the tickets (ADR-0164).
+/// </summary>
 public sealed record OverviewAttentionResponse(
     IReadOnlyList<OverviewLateTaskResponse> Tasks,
     IReadOnlyList<OverviewMissedDeadlineResponse> Deadlines,
+    IReadOnlyList<OverviewThreatResponse> Threats,
     IReadOnlyList<OverviewTicketResponse> Tickets,
     IReadOnlyList<OverviewAcceptanceResponse> Acceptances,
     IReadOnlyList<OverviewVendorTicketResponse> Vendors);
@@ -150,6 +170,17 @@ internal static class OverviewEndpoints
                     task.Blocks))],
                 [.. result.MissedDeadlines.Select(item => new OverviewMissedDeadlineResponse(
                     item.Id, item.Kind, item.Name, item.Deadline, item.DaysPast))],
+                [.. result.Threats.Select(threat => new OverviewThreatResponse(
+                    threat.Number,
+                    threat.Title,
+                    threat.MilestoneId,
+                    threat.Milestone,
+                    threat.Day,
+                    threat.OtherMilestones,
+                    threat.Deadline,
+                    threat.DueState,
+                    threat.DueOn,
+                    threat.DaysLate))],
                 [.. tickets.Attention.Select(ticket => new OverviewTicketResponse(
                     ticket.Number,
                     ticket.Title,
