@@ -29,6 +29,10 @@ public sealed partial class InfrastructureTests
         ProviderVersions().Matches(versions).Should().HaveCount(2).And.AllSatisfy(match => match.Groups["version"].Value.Should().MatchRegex(@"^\d+\.\d+\.\d+$"));
         File.Exists(Path.Combine(Folder, ".terraform.lock.hcl")).Should().BeTrue("the providers are checked by their hashes");
         Read("environments", "dev.tfvars").Should().Contain("installation = \"").And.Contain("environment  = \"dev\"");
+        // Every name has the product, the Key Vault too, whose name is short (ADR-0162).
+        main.Should().Contain("name  = \"gerenware-${var.installation}-${var.environment}\"")
+            .And.Contain("short = \"gw${var.installation}${var.environment}\"")
+            .And.Contain("key_vault      = \"kv-${local.short}\"");
     }
 
     [Fact(DisplayName = "Banco sem senha")]
