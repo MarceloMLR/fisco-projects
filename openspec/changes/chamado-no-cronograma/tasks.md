@@ -1,11 +1,11 @@
 ## 1. Decisão e roadmap
 
-- [ ] 1.1 ADR-0164 aceito (depois da aprovação de Marcelo) e Status-1 "Em andamento" no roadmap, conferidos no `docs/adr/README.md` e no `docs/roadmap.md`
+- [x] 1.1 ADR-0164 aceito (depois da aprovação de Marcelo) e Status-1 "Em andamento" no roadmap, conferidos no `docs/adr/README.md` e no `docs/roadmap.md`
 
 ## 2. O que depende, no domínio do cronograma
 
-- [ ] 2.1 `ScheduleImpacts` no domínio do `Projects`: a troca da tarefa-resumo pelas subtarefas, os sucessores pelas dependências de qualquer tipo, os marcos não atingidos na ordem do dia e o caminho crítico, com os testes do domínio (os três tipos de dependência, a tarefa-resumo, o marco atingido fora, o item no caminho crítico e o item que não existe)
-- [ ] 2.2 Contrato `IScheduleImpacts` no `Projects.Contracts`, implementado pelo `Projects` com o cronograma lido sem rastreio, com o teste de integração dos itens, dos marcos e do atraso
+- [x] 2.1 `ScheduleImpacts` no domínio do `Projects`: a troca da tarefa-resumo pelas subtarefas, os sucessores pelas dependências de qualquer tipo, os marcos não atingidos na ordem do dia e o caminho crítico, com os testes do domínio (os três tipos de dependência, a tarefa-resumo, o marco atingido fora, o item no caminho crítico e o item que não existe)
+- [x] 2.2 Contrato `IScheduleImpacts` no `Projects.Contracts`, implementado pelo `Projects` com o cronograma lido sem rastreio, com o teste de integração dos itens, dos marcos e do atraso
 
 ## 3. A ligação no chamado
 

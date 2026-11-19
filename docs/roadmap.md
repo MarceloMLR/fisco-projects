@@ -318,7 +318,7 @@ Referência: o status report de exemplo trazido por Marcelo em 19/11/2026, só p
 
 | ID | Change | Objetivo | ADRs | Status |
 | --- | --- | --- | --- | --- |
-| Status-1 | `chamado-no-cronograma` | O chamado ligado às tarefas e aos marcos que ele impacta, por quem atende, com os marcos ameaçados pelas dependências e o aviso do caminho crítico, no painel do chamado, no cronograma e em "Precisa de atenção" | 0022, 0028, 0043, 0044, 0073, 0137, 0164 | Proposta aprovada em 19/11/2026; a implementação começa depois de o rebranding entrar na `main` |
+| Status-1 | `chamado-no-cronograma` | O chamado ligado às tarefas e aos marcos que ele impacta, por quem atende, com os marcos ameaçados pelas dependências e o aviso do caminho crítico, no painel do chamado, no cronograma e em "Precisa de atenção" | 0022, 0028, 0043, 0044, 0073, 0137, 0164 | Em andamento (proposta aprovada em 19/11/2026) |
 | Status-2 | `projecao-do-atraso` | O que uma tarefa atrasada empurra: a projeção das datas pelas dependências até os marcos e o fim do projeto, sem gravar nada, no detalhe da tarefa e em "Precisa de atenção" | 0020, 0051, 0073, 0137, 0140, 0164 | Planejada |
 | Status-3 | `fim-previsto-e-real` | O fim previsto, da linha de base, e o fim real, da conclusão, lado a lado na Lista, no Expandir e no Excel, como o MS Project | 0020, 0021, 0071 | Planejada |
 | Status-4 | `relatorio-de-status` | O relatório de status em PowerPoint, no modelo padrão com o logo e as cores da instalação e o logo do cliente, gerado pelo administrador e pelo gerente, com os textos do gerente, os riscos escolhidos e "Mostrar horas", guardado nos documentos do projeto | 0073, 0092, 0128, 0144, 0148, 0164, 0165, 0166 | Planejada |
