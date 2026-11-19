@@ -102,6 +102,39 @@ public sealed class ProjectContractTests(SqlServerFixture sqlServer)
         schedule!.Undo!.Action.Should().Be(ScheduleAction.TaskAdded, "the milestone reached is of no person (ADR-0091)");
     }
 
+    // Spec: chamados, requirement "O que depende do chamado" (ADR-0164).
+    [Fact(DisplayName = "O que os itens de um chamado alcançam no cronograma")]
+    public async Task ScheduleImpact_TellsTheItems_TheMilestonesAfter_AndTheCriticalPath()
+    {
+        await using var database = await ProjectsDatabase.CreateAsync(sqlServer);
+        var marina = database.People.Add("Marina Costa", SystemRole.ProjectManager);
+        var viewer = new ProjectViewer(marina, IsAdministrator: false);
+        var project = (await database.RunAsync<CreateProject, ProjectSaveResult>(create => create.ExecuteAsync(
+            new NewProject("ERP-FIN", "Implantação do ERP financeiro", null, null, null, null), marina, Cancellation))).Id!.Value;
+        var phase = (await database.RunAsync<AddSchedulePhase, ScheduleResult>(add =>
+            add.ExecuteAsync(project, "Testes", viewer, Cancellation))).Id!.Value;
+        // Today is Monday 19/10/2026: the tests ended on Thursday 15/10, below 100%.
+        var tests = await AddAsync(
+            database, project, ScheduleItemKind.Task, new ScheduleItemForm(phase, "Testes integrados", new DateOnly(2026, 10, 13), 3, null, 40, []), viewer);
+        var acceptance = await AddAsync(
+            database, project, ScheduleItemKind.Milestone, new ScheduleItemForm(phase, "Aceite da homologação", new DateOnly(2026, 10, 13), 0, null, 0, [tests]), viewer);
+        var goLive = await AddAsync(
+            database, project, ScheduleItemKind.Milestone, new ScheduleItemForm(phase, "Virada para produção", new DateOnly(2026, 10, 13), 0, null, 0, [acceptance]), viewer);
+
+        var impact = await database.RunAsync<IScheduleImpacts, ScheduleImpact>(impacts =>
+            impacts.ImpactOfAsync(project, [tests, Guid.CreateVersion7()], Cancellation));
+        var none = await database.RunAsync<IScheduleImpacts, ScheduleImpact>(impacts =>
+            impacts.ImpactOfAsync(project, [phase], Cancellation));
+
+        var item = impact.Items.Should().ContainSingle().Subject;
+        (item.Id, item.Type, item.Name, item.Start, item.End, item.Progress, item.IsDone)
+            .Should().Be((tests, ScheduleItemType.Task, "Testes integrados", new DateOnly(2026, 10, 13), new DateOnly(2026, 10, 15), 40, false));
+        item.LateDays.Should().BePositive();
+        impact.Milestones.Select(milestone => milestone.Id).Should().Equal(acceptance, goLive);
+        impact.OnCriticalPath.Should().BeTrue();
+        none.Should().Be(ScheduleImpact.None, "a phase is no task nor milestone");
+    }
+
     private static async Task<Guid> AddAsync(
         ProjectsDatabase database, Guid project, ScheduleItemKind kind, ScheduleItemForm form, ProjectViewer viewer) =>
         (await database.RunAsync<AddScheduleItem, ScheduleResult>(add => add.ExecuteAsync(project, kind, form, viewer, Cancellation))).Id!.Value;

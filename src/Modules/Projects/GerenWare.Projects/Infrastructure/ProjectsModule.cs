@@ -70,6 +70,8 @@ public static class ProjectsModule
         services.AddScoped<ListUpcomingMilestones>();
         services.AddScoped<ListMyTasks>();
         services.AddScoped<IScheduleItems, ScheduleItemDirectory>();
+        // What the items linked to a ticket reach in the schedule (ADR-0164).
+        services.AddScoped<IScheduleImpacts, ScheduleImpactDirectory>();
         // The milestones reached by the signed acceptance terms (ADR-0035).
         services.AddScoped<IScheduleMilestones, ScheduleMilestones>();
         services.AddScoped<IProjectSetupNotices, ProjectSetupNotices>();
