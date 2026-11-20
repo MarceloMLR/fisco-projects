@@ -39,6 +39,7 @@ public static class TimeTrackingModule
         services.AddScoped<ChangeAdditionalHours>();
         services.AddScoped<DeleteAdditionalHours>();
         services.AddScoped<GetTaskHours>();
+        services.AddScoped<IProjectReportHours, ReportHoursSource>();
         services.AddScoped<ListTaskTimeEntries>();
         services.AddScoped<ChangePlannedHours>();
         services.AddScoped<GetTeamLoad>();

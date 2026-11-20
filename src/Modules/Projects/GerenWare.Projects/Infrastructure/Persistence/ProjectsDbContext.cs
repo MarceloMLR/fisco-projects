@@ -33,6 +33,8 @@ internal sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> opti
 
     public DbSet<ScheduleComment> ScheduleComments => Set<ScheduleComment>();
 
+    public DbSet<StatusReportNotes> StatusReportNotes => Set<StatusReportNotes>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProjectsDbContext).Assembly);
 }

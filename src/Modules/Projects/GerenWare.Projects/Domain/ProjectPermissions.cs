@@ -75,6 +75,12 @@ public sealed record ProjectPermissions(
     }
 
     /// <summary>
+    /// Generates the status report of the project, also of a closed one: the Administrator and the manager, the same
+    /// people who export the schedule (ADR-0136, ADR-0165).
+    /// </summary>
+    public bool CanGenerateStatusReport => CanExportSchedule;
+
+    /// <summary>
     /// Whether the person may include (no current role), change or remove (no new role) a person of the project: the
     /// tech lead does it with everyone but the managers, and never makes someone a manager (ADR-0042).
     /// </summary>

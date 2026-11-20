@@ -5,7 +5,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Infrastructure/StatusReports/pt-BR.json" LogicalName="GerenWare.Projects.StatusReports.pt-BR.json" />
+    <EmbeddedResource Include="../../../../web/src/theme/tokens.json" LogicalName="GerenWare.Projects.StatusReports.tokens.json" Link="Infrastructure/StatusReports/tokens.json" />
   </ItemGroup>
 
   <ItemGroup>

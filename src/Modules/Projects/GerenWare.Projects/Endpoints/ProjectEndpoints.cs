@@ -76,7 +76,8 @@ public sealed record ProjectPermissionsResponse(
     bool CanEditSchedule,
     [property: Description("Deletes the project for good, with everything in it: only the Administrator (ADR-0041).")] bool CanDelete,
     [property: Description("Chooses the folder of the project in the file storage, while it has no files: the Administrator and the manager of an open project (ADR-0122).")] bool CanChooseFolder,
-    [property: Description("Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136).")] bool CanExportSchedule);
+    [property: Description("Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136).")] bool CanExportSchedule,
+    [property: Description("Generates the status report of the project, also of a closed one: the Administrator and the manager (ADR-0165).")] bool CanGenerateStatusReport);
 
 /// <summary>
 /// A project as its page shows it, with the people in it, what the person may do and the dates of the schedule (none
@@ -257,6 +258,7 @@ internal static class ProjectEndpoints
         projects.MapScheduleEndpoints();
         projects.MapScheduleCommentEndpoints();
         projects.MapOverviewEndpoints();
+        projects.MapStatusReportEndpoints();
     }
 
     private static async Task<Results<Ok<ProjectPageResponse>, ValidationProblem>> ListAsync(
@@ -378,7 +380,8 @@ internal static class ProjectEndpoints
                 CanEditSchedule: details.Permissions.CanEditSchedule && !project.IsClosed,
                 CanDelete: details.Permissions.CanDelete,
                 CanChooseFolder: details.Permissions.CanChooseFolder && !project.IsClosed,
-                CanExportSchedule: details.Permissions.CanExportSchedule),
+                CanExportSchedule: details.Permissions.CanExportSchedule,
+                CanGenerateStatusReport: details.Permissions.CanGenerateStatusReport),
             details.Schedule?.Start,
             details.Schedule?.End));
     }

@@ -1184,6 +1184,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{id}/status-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The draft of a new status report of the project: the last texts, the open tickets and the risks suggested (ADR-0165). */
+        get: operations["GetStatusReportDraft"];
+        put?: never;
+        /** @description Generates the status report of the project in PowerPoint and keeps it in the folder of the status reports, in any status of the project (ADR-0165, ADR-0166). */
+        post: operations["GenerateStatusReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/project-folders": {
         parameters: {
             query?: never;
@@ -2893,8 +2911,9 @@ export interface components {
             visibleTo?: null | components["schemas"]["FolderRole"][];
         };
         /**
-         * @description A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles
-         *     that see it in the new projects, besides the Administrator and the manager (ADR-0148).
+         * @description A default folder: the name, whether it is the folder of the acceptance terms or the one of the status reports
+         *     (ADR-0165), whether it is active, and the roles that see it in the new projects, besides the Administrator and the
+         *     manager (ADR-0148).
          */
         DefaultFolderResponse: {
             /** Format: uuid */
@@ -2903,6 +2922,7 @@ export interface components {
             isAcceptance: boolean;
             isActive: boolean;
             visibleTo: components["schemas"]["FolderRole"][];
+            isStatusReport: boolean;
         };
         /** @description The code of the project, typed by the Administrator to confirm the deletion (ADR-0041). */
         DeleteProjectRequest: {
@@ -2940,6 +2960,7 @@ export interface components {
             /** Format: int32 */
             count: number;
             visibleTo: components["schemas"]["FolderRole"][];
+            isStatusReport: boolean;
         };
         /**
          * @description The folders the person sees, the total for the tab, the permissions, the size a file may have and whether the person
@@ -4208,6 +4229,8 @@ export interface components {
             canChooseFolder: boolean;
             /** @description Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136). */
             canExportSchedule: boolean;
+            /** @description Generates the status report of the project, also of a closed one: the Administrator and the manager (ADR-0165). */
+            canGenerateStatusReport: boolean;
         };
         /** @description A person in a project, with the role in it. */
         ProjectPersonResponse: {
@@ -4329,6 +4352,16 @@ export interface components {
         RenameInstallationRequest: {
             name: null | string;
         };
+        /**
+         * @description The status of an open ticket (ADR-0024), as the status report shows it: never resolved nor closed.
+         * @enum {unknown}
+         */
+        ReportTicketStatus: "Open" | "Triage" | "InProgress" | "WaitingForRequester";
+        /**
+         * @description How serious a risk of the status report is, as the manager classifies it (ADR-0165).
+         * @enum {unknown}
+         */
+        RiskLevel: "High" | "Medium" | "Low";
         /**
          * @description The kind of a change of the schedule, for the screen to say what undoing or redoing it does (ADR-0091).
          * @enum {unknown}
@@ -4723,6 +4756,76 @@ export interface components {
             /** Format: int32 */
             number: number;
             cells: string[];
+        };
+        /**
+         * @description The draft of a new status report (ADR-0165): the last report, its four texts, the open tickets of the project and
+         *     the risks suggested, the ones of the last report still open and the tickets that threaten milestones.
+         */
+        StatusReportDraftResponse: {
+            last: null | components["schemas"]["StatusReportLastResponse"];
+            summary: string;
+            focus: string;
+            nextSteps: string;
+            clientNeeds: string;
+            tickets: components["schemas"]["StatusReportTicketResponse"][];
+            risks: components["schemas"]["StatusReportRiskResponse"][];
+        };
+        /** @description When and by whom the last report of the project was generated. */
+        StatusReportLastResponse: {
+            /** Format: date-time */
+            generatedAt: string;
+            generatedBy: components["schemas"]["OverviewPersonResponse"];
+        };
+        /** @description What the person wrote and chose to generate a status report (ADR-0165, ADR-0166). */
+        StatusReportRequest: {
+            /** @description The summary of the period, up to 1,000 characters. */
+            summary: null | string;
+            /** @description The current focus, up to 1,000 characters. */
+            focus: null | string;
+            /** @description The next steps, up to 1,000 characters. */
+            nextSteps: null | string;
+            /** @description What the client must do, up to 1,000 characters. */
+            clientNeeds: null | string;
+            /** @description From 0 to 10 open tickets of the project, without repeating, each with its level. */
+            risks: null | components["schemas"]["StatusReportRiskRequest"][];
+            /**
+             * @description Whether the hours of the project go in, only the totals (ADR-0166).
+             * @default false
+             */
+            showHours: boolean;
+        };
+        /** @description The report kept in the documents of the project: the document, its folder, its name and its version. */
+        StatusReportResponse: {
+            /** Format: uuid */
+            documentId: string;
+            /** Format: uuid */
+            folderId: string;
+            folderName: string;
+            name: string;
+            /** Format: int32 */
+            version: number;
+        };
+        /** @description A risk chosen: the number of an open ticket of the project, its level and a point of attention up to 500 characters. */
+        StatusReportRiskRequest: {
+            /** Format: int32 */
+            number: number;
+            level: null | components["schemas"]["RiskLevel"];
+            attention: null | string;
+        };
+        /** @description A risk of the report: the ticket, its level and the point of attention. */
+        StatusReportRiskResponse: {
+            /** Format: int32 */
+            number: number;
+            level: components["schemas"]["RiskLevel"];
+            attention: string;
+        };
+        /** @description An open ticket of the project that may go in as a risk, and whether it threatens milestones (ADR-0164). */
+        StatusReportTicketResponse: {
+            /** Format: int32 */
+            number: number;
+            title: string;
+            status: components["schemas"]["ReportTicketStatus"];
+            threatens: boolean;
         };
         /**
          * @description Role of a person in the whole system (ADR-0040). The numbering starts at 1, so an unset value is never a
@@ -10056,6 +10159,117 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetStatusReportDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusReportDraftResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GenerateStatusReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusReportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusReportResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -54,6 +54,10 @@ internal sealed class ProjectDeletionStore(
         await db.ScheduleBaselines.Where(baseline => baseline.Id == id).ExecuteDeleteAsync(cancellationToken);
         await db.ScheduleChanges.Where(change => change.ProjectId == id).ExecuteDeleteAsync(cancellationToken);
         await db.ScheduleComments.Where(comment => comment.ProjectId == id).ExecuteDeleteAsync(cancellationToken);
+        await db.Set<StatusReportRiskNote>()
+            .Where(risk => db.StatusReportNotes.Any(notes => notes.Id == risk.NotesId && notes.ProjectId == id))
+            .ExecuteDeleteAsync(cancellationToken);
+        await db.StatusReportNotes.Where(notes => notes.ProjectId == id).ExecuteDeleteAsync(cancellationToken);
         var items = await db.ScheduleItems.Where(item => item.ProjectId == id).ExecuteDeleteAsync(cancellationToken);
         await db.SchedulePhases.Where(phase => phase.ProjectId == id).ExecuteDeleteAsync(cancellationToken);
         await db.Schedules.Where(schedule => schedule.Id == id).ExecuteDeleteAsync(cancellationToken);

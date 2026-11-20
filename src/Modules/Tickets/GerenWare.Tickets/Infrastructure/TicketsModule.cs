@@ -52,6 +52,7 @@ public static class TicketsModule
         services.AddScoped<IMyWorkSource, TicketWorkSource>();
         // The tickets of a project in its overview (ADR-0073).
         services.AddScoped<IProjectTickets, TicketProjectOverview>();
+        services.AddScoped<IProjectReportTickets, TicketReportSource>();
         // The tickets of a project for the hours worked on one (ADR-0128).
         services.AddScoped<IProjectTicketList, TicketList>();
         services.AddScoped<ChangeTicketPriority>();

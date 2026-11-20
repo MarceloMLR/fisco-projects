@@ -71,6 +71,13 @@ public static class TimeEntryAccess
         return viewer.IsAdministrator || project.Role == ProjectMemberRole.Manager;
     }
 
+    /// <summary>
+    /// The totals of the hours of a project in the status report, with "Mostrar horas" (ADR-0166): who generates the
+    /// report, the Administrator and the manager of the project, the same people who see the hours of the tasks. Never
+    /// the hours of each person.
+    /// </summary>
+    public static bool ShowsHoursInReport(TimeEntryViewer viewer, ProjectAccess project) => SeesTaskHours(viewer, project);
+
     /// <summary>The planned hours of the tasks are put, changed and taken out only by the Administrator (ADR-0138).</summary>
     public static bool ChangesPlannedHours(TimeEntryViewer viewer)
     {

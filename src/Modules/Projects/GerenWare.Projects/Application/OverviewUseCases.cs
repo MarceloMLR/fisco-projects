@@ -242,17 +242,7 @@ public sealed class GetProjectOverview(
     /// after today (none on the day itself), or the business days it is late (ADR-0086).
     /// </summary>
     private static OverviewMilestone? NextMilestoneOf(Schedule schedule, DateOnly today, IBusinessDays days) =>
-        schedule.Items
-            .Where(item => item.Kind == ScheduleItemKind.Milestone && item.ReachedOn is null)
-            .OrderBy(item => item.Start)
-            .ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
-            .Select(item => new OverviewMilestone(
-                item.Id,
-                item.Name,
-                item.Start,
-                item.Start > today ? days.CountBusinessDays(today.AddDays(1), item.Start) : 0,
-                item.IsLate(today) ? item.DaysLate(today, days) : null))
-            .FirstOrDefault();
+        OpenMilestones.Of(schedule, today, days).FirstOrDefault();
 
     /// <summary>
     /// The late tasks with dates of their own and the ones that should have started and are at 0% (the ones with a
@@ -369,4 +359,27 @@ public sealed class GetProjectOverview(
             new(OverviewTeam.Development, With(ProjectRole.TechLead, ProjectRole.Developer), tickets.OpenDevelopment),
         ];
     }
+}
+
+/// <summary>
+/// The milestones not reached, in one place, for the overview and the status report (ADR-0073, ADR-0165): by their day,
+/// a late one first, with the business days left until it, from the day after today (none on the day itself), or the
+/// business days it is late (ADR-0086).
+/// </summary>
+internal static class OpenMilestones
+{
+    public static IEnumerable<OverviewMilestone> Of(Schedule schedule, DateOnly today, IBusinessDays days) =>
+        schedule.Items
+            .Where(item => item.Kind == ScheduleItemKind.Milestone && item.ReachedOn is null)
+            .OrderBy(item => item.Start)
+            .ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(item => MilestoneOf(item, today, days));
+
+    public static OverviewMilestone MilestoneOf(ScheduleItem milestone, DateOnly today, IBusinessDays days) =>
+        new(
+            milestone.Id,
+            milestone.Name,
+            milestone.Start,
+            milestone.Start > today ? days.CountBusinessDays(today.AddDays(1), milestone.Start) : 0,
+            milestone.IsLate(today) ? milestone.DaysLate(today, days) : null);
 }
