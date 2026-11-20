@@ -2,7 +2,7 @@
 
 ### Requirement: Precisa de atenção
 
-A visão geral MUST listar o que precisa de atenção no projeto: as tarefas atrasadas, com o responsável, o progresso e o que depende delas; os itens que passaram da data-limite; os chamados em aberto que ameaçam um marco não atingido, com o marco mais próximo, o dia dele e o prazo do chamado (ADR-0164); os chamados abertos vencidos, que vencem até o próximo dia útil ou sem responsável; os pedidos de aceite pendentes que a pessoa vê (ADR-0045); e os chamados em fornecedores sem atualização há 5 dias úteis ou mais (ADR-0028). O chamado que ameaça um marco MUST aparecer uma vez só, na linha da ameaça, com o prazo. Só itens do projeto (ADR-0073).
+A visão geral MUST listar o que precisa de atenção no projeto: as tarefas atrasadas, com o responsável, o progresso e o que depende delas; os itens além da data-limite; os chamados em aberto que ameaçam um marco, uma vez só, com o marco mais próximo e o prazo (ADR-0164); os chamados vencidos, que vencem até o próximo dia útil ou sem responsável; os aceites pendentes que a pessoa vê (ADR-0045); e os chamados em fornecedores parados há 5 dias úteis (ADR-0028). Só itens do projeto (ADR-0073).
 
 #### Scenario: Tarefa atrasada na atenção
 - **WHEN** a tarefa Validar cadastro de produtos, de Diego, em 80%, venceu e Configurar plano de contas depende dela
