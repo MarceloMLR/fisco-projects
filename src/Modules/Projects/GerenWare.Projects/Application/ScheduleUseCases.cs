@@ -92,8 +92,8 @@ public sealed class InstallationClock(IInstallationSettings settings, TimeProvid
 /// do (ADR-0091), and how far each item with a deadline went past it or is before it, with how many open items missed
 /// it (GanttA-2), the kind and the lag of each dependency, in the order of the items it depends on (ADR-0137), the
 /// float of each item with dates of its own (GanttB-1) and, for each open task with dates of its own and a person in
-/// charge, the absences of the person on its days (ADR-0141), and the open tickets linked to each item and threatening
-/// each milestone (ADR-0164).
+/// charge, the absences of the person on its days (ADR-0141), the open tickets linked to each item and threatening
+/// each milestone (ADR-0164) and, while the project is open, the projection of each late task (ADR-0164).
 /// </summary>
 public sealed record ScheduleView(
     ScheduleFigures Figures,
@@ -112,7 +112,8 @@ public sealed record ScheduleView(
     IReadOnlyDictionary<Guid, ScheduleSlack>? Slack = null,
     IReadOnlyDictionary<Guid, IReadOnlyList<AbsencePeriod>>? OwnerAbsences = null,
     IReadOnlyDictionary<Guid, int>? CommentCounts = null,
-    ScheduleTickets? Tickets = null);
+    ScheduleTickets? Tickets = null,
+    IReadOnlyDictionary<Guid, ScheduleProjection>? Projections = null);
 
 /// <summary>The schedule of a project, for the people in it and the Administrator (ADR-0043).</summary>
 public sealed class GetSchedule(
@@ -185,7 +186,9 @@ public sealed class GetSchedule(
             // The open tickets on the items and the milestones they threaten, for everyone who sees the schedule (ADR-0164).
             schedule.Items.Count == 0
                 ? null
-                : ScheduleTickets.Of(schedule, await ScheduleTickets.ImpactsAsync(tickets, projectId, cancellationToken)));
+                : ScheduleTickets.Of(schedule, await ScheduleTickets.ImpactsAsync(tickets, projectId, cancellationToken)),
+            // What each late task would push, without saving; a closed project does not move any more (ADR-0164).
+            days is null || project.IsClosed ? null : ScheduleProjections.AllOf(schedule, today, days));
     }
 
     /// <summary>

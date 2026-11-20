@@ -1,15 +1,15 @@
 ## 1. Roadmap
 
-- [ ] 1.1 Status-2 "Em andamento" no `docs/roadmap.md`
+- [x] 1.1 Status-2 "Em andamento" no `docs/roadmap.md`
 
 ## 2. A projeção no domínio do cronograma
 
-- [ ] 2.1 `ScheduleProjections` no domínio do `Projects`: quem tem projeção (`IsBehind`), a tarefa projetada a partir de hoje ou do próximo dia útil, o empurrão dos itens que vêm depois em cópias, com o concluído parado, e o resultado (o fim e os dias úteis, os marcos e o fim do projeto), com os testes do domínio dos cenários de "Tarefa atrasada para a projeção", "Projeção do atraso" e "O que a tarefa atrasada empurra" (também "começa junto" e "termina junto")
+- [x] 2.1 `ScheduleProjections` no domínio do `Projects`: quem tem projeção (`IsBehind`), a tarefa projetada a partir de hoje ou do próximo dia útil, o empurrão dos itens que vêm depois em cópias, com o concluído parado, e o resultado (o fim e os dias úteis, os marcos e o fim do projeto), com os testes do domínio dos cenários de "Tarefa atrasada para a projeção", "Projeção do atraso" e "O que a tarefa atrasada empurra" (também "começa junto" e "termina junto")
 
 ## 3. A projeção na API
 
-- [ ] 3.1 `ScheduleView.Projections` no `GetSchedule`, fora do projeto encerrado, e `projection` em cada item do `GET /schedule`, com os testes da API dos cenários "Projeção pela API" e "Projeto encerrado não projeta"
-- [ ] 3.2 A atenção da visão geral com as tarefas atrasadas e as que têm projeção, cada uma com `start` e `projection` no lugar de `blocks`, com os testes da API dos cenários "Tarefa atrasada na atenção" e "Tarefa que devia ter começado na atenção"
+- [x] 3.1 `ScheduleView.Projections` no `GetSchedule`, fora do projeto encerrado, e `projection` em cada item do `GET /schedule`, com os testes da API dos cenários "Projeção pela API" e "Projeto encerrado não projeta"
+- [x] 3.2 A atenção da visão geral com as tarefas atrasadas e as que têm projeção, cada uma com `start` e `projection` no lugar de `blocks`, com os testes da API dos cenários "Tarefa atrasada na atenção" e "Tarefa que devia ter começado na atenção"
 
 ## 4. Tela
 

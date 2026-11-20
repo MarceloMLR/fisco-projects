@@ -56,7 +56,21 @@ public sealed record ScheduleItemResponse(
     [property: Description("The absences of the person in charge of the open task that fall on its days; the dates do not change (ADR-0141).")] IReadOnlyList<AbsencePeriodResponse> OwnerAbsences,
     [property: Description("How many comments the item has (ADR-0157).")] int CommentCount,
     [property: Description("The open tickets linked to the item, by the number (ADR-0164).")] IReadOnlyList<ScheduleTicketResponse> Tickets,
-    [property: Description("The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164).")] IReadOnlyList<ScheduleThreatResponse> Threats);
+    [property: Description("The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164).")] IReadOnlyList<ScheduleThreatResponse> Threats,
+    [property: Description("What the late task would push if what is left of it took the planned pace from today, without saving; null for the other items and in a closed project (ADR-0164).")] ScheduleProjectionResponse? Projection);
+
+/// <summary>A milestone not reached the projection moves: its day now, the projected one and the business days it moves.</summary>
+public sealed record ProjectedMilestoneResponse(Guid Id, string Name, DateOnly Day, DateOnly ProjectedDay, int Days);
+
+/// <summary>The end of the project now, the projected one and the business days it moves.</summary>
+public sealed record ProjectedEndResponse(DateOnly End, DateOnly ProjectedEnd, int Days);
+
+/// <summary>
+/// The projection of a late task (ADR-0164): its projected start and end, the business days its end goes past the
+/// planned one, the milestones not reached that would move, by their day, and the end of the project, when it moves.
+/// </summary>
+public sealed record ScheduleProjectionResponse(
+    DateOnly Start, DateOnly End, int Days, IReadOnlyList<ProjectedMilestoneResponse> Milestones, ProjectedEndResponse? ProjectEnd);
 
 /// <summary>
 /// An open ticket on the schedule (ADR-0164): its number, its title and the deadline that counts now (ADR-0025), with
@@ -615,8 +629,20 @@ internal static class ScheduleEndpoints
             view.Tickets is not null && item.ReachedOn is null && view.Tickets.Threats.TryGetValue(item.Id, out var threats)
                 ? [.. threats.Select(threat => new ScheduleThreatResponse(
                     TicketOf(threat.Ticket), [.. threat.Through.Select(through => new ScheduleThreatItemResponse(through.Id, through.Name))]))]
-                : []);
+                : [],
+            ProjectionOf(view.Projections?.GetValueOrDefault(item.Id)));
     }
+
+    internal static ScheduleProjectionResponse? ProjectionOf(ScheduleProjection? projection) =>
+        projection is null
+            ? null
+            : new(
+                projection.Start,
+                projection.End,
+                projection.Days,
+                [.. projection.Milestones.Select(milestone => new ProjectedMilestoneResponse(
+                    milestone.Id, milestone.Name, milestone.Day, milestone.ProjectedDay, milestone.Days))],
+                projection.ProjectEnd is { } end ? new ProjectedEndResponse(end.End, end.ProjectedEnd, end.Days) : null);
 
     internal static ScheduleTicketResponse TicketOf(ProjectTicketImpact ticket) =>
         new(ticket.Number, ticket.Title, ticket.Deadline, ticket.DueState, ticket.DueOn, ticket.DaysLate);

@@ -221,12 +221,15 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
             tickets.GetProperty("waitingForRequester").GetInt32()).Should().Be((7, 9, 1, 2));
     }
 
+    // Spec: visao-geral-do-projeto, "Precisa de atenção" with what each late task pushes (ADR-0164).
     [Fact(DisplayName = "Tarefa atrasada na atenção")]
-    public async Task LateTask_HasTheOwner_TheProgress_AndWhatDependsOnIt()
+    public async Task LateTask_HasTheOwner_TheProgress_AndWhatItPushes()
     {
         await using var team = await ProjectTeam.StartAsync(sqlServer);
         var phase = await PhaseAsync(team, team.Erp);
+        // 14/10 to 16/10, at 80%: one business day left, today, and the milestone after it goes from 16/10 to 19/10.
         var validar = await ItemAsync(team, team.Erp, phase, "Task", "Validar cadastro de produtos", "2026-10-14", 3, team.Diego, 80);
+        var validated = await ItemAsync(team, team.Erp, phase, "Milestone", "Cadastro validado", "2026-10-16", after: [validar]);
         await ItemAsync(team, team.Erp, phase, "Task", "Configurar plano de contas", "2026-10-19", 5, team.Carla, after: [validar]);
 
         var task = (await OverviewAsync(await team.ClientOfAsync(team.Marina), team.Erp))
@@ -234,7 +237,35 @@ public sealed class ProjectOverviewTests(SqlServerFixture sqlServer)
 
         (task.GetProperty("owner").GetProperty("name").GetString(), task.GetProperty("progress").GetInt32(), task.GetProperty("daysLate").GetInt32())
             .Should().Be(("Diego Torres", 80, 1));
-        task.GetProperty("blocks").EnumerateArray().Select(name => name.GetString()).Should().Equal("Configurar plano de contas");
+        (task.GetProperty("start").GetString(), task.GetProperty("end").GetString()).Should().Be(("2026-10-14", "2026-10-16"));
+        var projection = task.GetProperty("projection");
+        var milestone = projection.GetProperty("milestones").EnumerateArray().Should().ContainSingle().Subject;
+        (milestone.GetProperty("id").GetGuid(), milestone.GetProperty("name").GetString(), milestone.GetProperty("days").GetInt32())
+            .Should().Be((validated, "Cadastro validado", 1));
+        // Configurar plano de contas starts a day later, and so does the end of the project.
+        projection.GetProperty("projectEnd").GetProperty("days").GetInt32().Should().Be(1);
+        task.TryGetProperty("blocks", out _).Should().BeFalse();
+    }
+
+    // Spec: visao-geral-do-projeto, "Projeção do atraso na atenção" (ADR-0164).
+    [Fact(DisplayName = "Tarefa que devia ter começado na atenção")]
+    public async Task TaskThatShouldHaveStarted_AtZero_NeedsAttention_WithWhatItPushes()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        var phase = await PhaseAsync(team, team.Erp);
+        var tests = await ItemAsync(team, team.Erp, phase, "Task", "Testes integrados", "2026-10-13", 9, team.Rafael);
+        await ItemAsync(team, team.Erp, phase, "Task", "Configurar plano de contas", "2026-10-13", 9, team.Carla, 30);
+        await ItemAsync(team, team.Erp, phase, "Task", "Treinar usuários", "2026-10-19", 3, team.Marina);
+
+        var task = (await OverviewAsync(await team.ClientOfAsync(team.Marina), team.Erp))
+            .GetProperty("attention").GetProperty("tasks").EnumerateArray().Should().ContainSingle().Subject;
+
+        (task.GetProperty("id").GetGuid(), task.GetProperty("start").GetString(), task.GetProperty("end").GetString(), task.GetProperty("daysLate").GetInt32())
+            .Should().Be((tests, "2026-10-13", "2026-10-23", 0));
+        // Started today, it ends on 29/10, four business days later, and so does the project.
+        var projection = task.GetProperty("projection");
+        (projection.GetProperty("end").GetString(), projection.GetProperty("days").GetInt32()).Should().Be(("2026-10-29", 4));
+        projection.GetProperty("projectEnd").GetProperty("projectedEnd").GetString().Should().Be("2026-10-29");
     }
 
     [Fact(DisplayName = "Data-limite na atenção")]

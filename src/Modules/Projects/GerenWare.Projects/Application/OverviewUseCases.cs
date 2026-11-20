@@ -41,9 +41,12 @@ public sealed record OverviewRow(
 /// <summary>The period of the schedule, its non-business days and its phases and milestones in order.</summary>
 public sealed record OverviewTimeline(DateOnly Start, DateOnly End, IReadOnlyList<DateOnly> NonWorkingDays, IReadOnlyList<OverviewRow> Rows);
 
-/// <summary>A late task: its owner, progress, end, business days of delay and the names of the items that depend on it.</summary>
+/// <summary>
+/// A late task (ADR-0020), or one that should have started and is at 0% (ADR-0164): its owner, progress, dates, business
+/// days of delay and what its projection pushes (none in a closed project).
+/// </summary>
 public sealed record OverviewLateTask(
-    Guid Id, string Name, Guid? OwnerId, int Progress, DateOnly End, int DaysLate, IReadOnlyList<string> Blocks);
+    Guid Id, string Name, Guid? OwnerId, int Progress, DateOnly Start, DateOnly End, int DaysLate, ScheduleProjection? Projection);
 
 /// <summary>A task or milestone still open that went past its deadline, by how many business days (GanttA-2).</summary>
 public sealed record OverviewMissedDeadline(Guid Id, ScheduleItemKind Kind, string Name, DateOnly Deadline, int DaysPast);
@@ -156,7 +159,12 @@ public sealed class GetProjectOverview(
         }
 
         var items = schedule.Items.ToDictionary(item => item.Id);
-        var lateTasks = LateTasksOf(schedule, figures, today, days);
+        var lateTasks = LateTasksOf(
+            schedule,
+            figures,
+            today,
+            days,
+            project.IsClosed ? new Dictionary<Guid, ScheduleProjection>() : ScheduleProjections.AllOf(schedule, today, days));
         var teams = TeamsOf(project, ticketOverview);
         var people = lateTasks.Where(task => task.OwnerId is not null).Select(task => task.OwnerId!.Value)
             .Concat(ticketOverview.Attention.Where(ticket => ticket.AssigneeId is not null).Select(ticket => ticket.AssigneeId!.Value))
@@ -246,28 +254,33 @@ public sealed class GetProjectOverview(
                 item.IsLate(today) ? item.DaysLate(today, days) : null))
             .FirstOrDefault();
 
-    /// <summary>The late tasks with dates of their own, the most late first, with the names of what depends on them.</summary>
-    private static List<OverviewLateTask> LateTasksOf(Schedule schedule, ScheduleFigures figures, DateOnly today, IBusinessDays days)
-    {
-        var names = schedule.Items.ToDictionary(item => item.Id, item => item.Name);
-        var successors = schedule.Dependencies.ToLookup(dependency => dependency.PredecessorId, dependency => dependency.SuccessorId);
-        return
-        [
-            .. schedule.Items
-                .Where(item => item.Kind == ScheduleItemKind.Task && !figures.Summaries.Contains(item.Id) && item.IsLate(today))
-                .Select(item => new OverviewLateTask(
-                    item.Id,
-                    item.Name,
-                    item.OwnerId,
-                    item.Progress,
-                    item.End,
-                    item.DaysLate(today, days),
-                    [.. successors[item.Id].Where(names.ContainsKey).Select(id => names[id])]))
-                .OrderByDescending(task => task.DaysLate)
-                .ThenBy(task => task.End)
-                .ThenBy(task => task.Name, StringComparer.CurrentCultureIgnoreCase),
-        ];
-    }
+    /// <summary>
+    /// The late tasks with dates of their own and the ones that should have started and are at 0% (the ones with a
+    /// projection, ADR-0164), the most late first, with what each one pushes.
+    /// </summary>
+    private static List<OverviewLateTask> LateTasksOf(
+        Schedule schedule,
+        ScheduleFigures figures,
+        DateOnly today,
+        IBusinessDays days,
+        IReadOnlyDictionary<Guid, ScheduleProjection> projections) =>
+    [
+        .. schedule.Items
+            .Where(item => item.Kind == ScheduleItemKind.Task && !figures.Summaries.Contains(item.Id)
+                && (item.IsLate(today) || projections.ContainsKey(item.Id)))
+            .Select(item => new OverviewLateTask(
+                item.Id,
+                item.Name,
+                item.OwnerId,
+                item.Progress,
+                item.Start,
+                item.End,
+                item.DaysLate(today, days),
+                projections.GetValueOrDefault(item.Id)))
+            .OrderByDescending(task => task.DaysLate)
+            .ThenBy(task => task.End)
+            .ThenBy(task => task.Name, StringComparer.CurrentCultureIgnoreCase),
+    ];
 
     /// <summary>The open items past their deadline, the furthest first (<see cref="ScheduleItem.MissesDeadline"/>).</summary>
     private static List<OverviewMissedDeadline> MissedDeadlinesOf(Schedule schedule, DateOnly today, IBusinessDays days) =>

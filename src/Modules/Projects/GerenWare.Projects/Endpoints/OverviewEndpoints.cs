@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using GerenWare.Projects.Application;
 using GerenWare.Projects.Contracts;
 using GerenWare.Projects.Domain;
@@ -42,9 +43,19 @@ public sealed record OverviewRowResponse(
 public sealed record OverviewTimelineResponse(
     DateOnly Start, DateOnly End, IReadOnlyList<DateOnly> NonWorkingDays, IReadOnlyList<OverviewRowResponse> Rows);
 
-/// <summary>A late task: its owner, progress, end, business days of delay and what depends on it.</summary>
+/// <summary>
+/// A late task, or one that should have started and is at 0% (ADR-0164): its owner, progress, dates, business days of
+/// delay and what it pushes.
+/// </summary>
 public sealed record OverviewLateTaskResponse(
-    Guid Id, string Name, OverviewPersonResponse? Owner, int Progress, DateOnly End, int DaysLate, IReadOnlyList<string> Blocks);
+    Guid Id,
+    string Name,
+    OverviewPersonResponse? Owner,
+    int Progress,
+    DateOnly Start,
+    DateOnly End,
+    int DaysLate,
+    [property: Description("What the task would push if what is left of it took the planned pace from today; null in a closed project (ADR-0164).")] ScheduleProjectionResponse? Projection);
 
 /// <summary>A task or milestone still open past its deadline, by how many business days (GanttA-2).</summary>
 public sealed record OverviewMissedDeadlineResponse(Guid Id, ScheduleItemKind Kind, string Name, DateOnly Deadline, int DaysPast);
@@ -165,9 +176,10 @@ internal static class OverviewEndpoints
                     task.Name,
                     task.OwnerId is { } owner ? Person(owner) : null,
                     task.Progress,
+                    task.Start,
                     task.End,
                     task.DaysLate,
-                    task.Blocks))],
+                    ScheduleEndpoints.ProjectionOf(task.Projection)))],
                 [.. result.MissedDeadlines.Select(item => new OverviewMissedDeadlineResponse(
                     item.Id, item.Kind, item.Name, item.Deadline, item.DaysPast))],
                 [.. result.Threats.Select(threat => new OverviewThreatResponse(
