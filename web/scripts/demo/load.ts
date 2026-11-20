@@ -756,6 +756,16 @@ async function loadProject(
             `Atualização do chamado ${step.code} no fornecedor`,
           );
           break;
+        case 'impacts':
+          // The tasks and milestones the ticket impacts, by who serves it (ADR-0164).
+          done(
+            await api.PUT('/api/tickets/{number}/impacts', {
+              ...path,
+              body: { itemIds: step.items.map((item) => idOf(item, 'Chamado no cronograma')) },
+            }),
+            `Cronograma do chamado ${ticket.title}`,
+          );
+          break;
       }
     }
   }

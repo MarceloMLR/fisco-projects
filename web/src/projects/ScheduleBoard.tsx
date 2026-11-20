@@ -33,7 +33,7 @@ import {
   progressOf,
 } from './scheduleBoard';
 import { ProgressDialog } from './ScheduleItemProgress';
-import { CommentCount, NoteMark, OwnerAway } from './ScheduleStatus';
+import { CommentCount, NoteMark, OwnerAway, TicketCount } from './ScheduleStatus';
 import { saveTaskProgress } from './scheduleProgress';
 
 /** The icon and the tone of each column, the same meanings as the statuses of the product (ADR-0065, ADR-0155). */
@@ -552,6 +552,7 @@ function BoardCardView({
         >
           <NoteMark note={item.note} />
           <CommentCount count={item.commentCount} />
+          <TicketCount count={item.tickets.length} />
         </Box>
         {item.canUpdateProgress && (
           <IconButton

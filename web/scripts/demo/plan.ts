@@ -186,7 +186,8 @@ export interface DemoComment extends Omit<DemoMessage, 'file'> {
  * - a new priority, by who serves the ticket (ADR-0025);
  * - a person who starts following it (ADR-0026);
  * - the assignee chosen by the manager or the tech lead, or the ticket sent to the other team (ADR-0068);
- * - a ticket opened at a vendor, registered on the day the data is loaded, and its updates there (ADR-0028).
+ * - a ticket opened at a vendor, registered on the day the data is loaded, and its updates there (ADR-0028);
+ * - the tasks and milestones of the schedule of the project the ticket impacts, by name, by who serves it (ADR-0164).
  */
 export type DemoTicketStep =
   | ({ kind: 'message' } & DemoMessage)
@@ -210,7 +211,8 @@ export type DemoTicketStep =
       code: string;
       status: VendorTicketStatus;
       note: string;
-    };
+    }
+  | { kind: 'impacts'; by: DemoPerson; items: readonly string[] };
 
 /** A ticket opened by a person of the project, in the order of the plan (ADR-0029, ADR-0068). */
 export interface DemoTicket {
@@ -737,6 +739,8 @@ export const demoProjects: readonly DemoProject[] = [
             link: 'https://suporte.emissor.example/chamados/FX-20931',
             note: 'Aberto com o XML da nota 3381 e o retorno da SEFAZ.',
           },
+          // The rejection holds the tests, and with them the acceptance and the go-live (ADR-0164).
+          { kind: 'impacts', by: 'rafael', items: ['Executar testes'] },
           say('carla', 'segue a nota emitida com a natureza "Devolução de venda". Funcionou.', {
             mention: 'diego',
             file: {

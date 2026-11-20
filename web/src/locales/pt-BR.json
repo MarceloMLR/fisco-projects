@@ -303,6 +303,7 @@
       "TicketDeadlineSetting": "Prazos dos chamados",
       "Vendor": "Fornecedores",
       "VendorTicket": "Chamados em fornecedores",
+      "TicketImpact": "Chamados no cronograma",
       "DefaultFolder": "Pastas padrão",
       "DocumentFolder": "Pastas dos projetos",
       "Document": "Documentos",
@@ -436,6 +437,11 @@
         "Updated": "Atualizou um chamado no fornecedor",
         "Deleted": "Excluiu um chamado no fornecedor"
       },
+      "TicketImpact": {
+        "Created": "Ligou o chamado ao cronograma",
+        "Updated": "Mudou a ligação do chamado com o cronograma",
+        "Deleted": "Desligou o chamado do cronograma"
+      },
       "DefaultFolder": {
         "Created": "Incluiu uma pasta padrão",
         "Updated": "Alterou uma pasta padrão",
@@ -552,6 +558,7 @@
         "TicketDeadlineSetting": "Prioridade",
         "Vendor": "Fornecedor",
         "VendorTicket": "Chamado no fornecedor",
+        "TicketImpact": "Chamado",
         "DefaultFolder": "Pasta",
         "DocumentFolder": "Pasta",
         "Document": "Documento",
@@ -701,6 +708,11 @@
         "Link": "Link",
         "Note": "Observação",
         "RegisteredById": "Registrado por"
+      },
+      "TicketImpact": {
+        "TicketId": "Chamado",
+        "ScheduleItemId": "Tarefa ou marco",
+        "ProjectId": "Projeto"
       },
       "DefaultFolder": {
         "Name": "Nome",
@@ -1430,6 +1442,9 @@
         },
         "deadlinePast_one": "{{count}} dia útil depois da data-limite",
         "deadlinePast_other": "{{count}} dias úteis depois da data-limite",
+        "threat": "Ameaça {{name}} · {{day}}",
+        "threatMore_one": "Ameaça {{name}} · {{day}} · e mais {{count}} marco",
+        "threatMore_other": "Ameaça {{name}} · {{day}} · e mais {{count}} marcos",
         "stale_one": "Sem retorno há {{count}} dia útil",
         "stale_other": "Sem retorno há {{count}} dias úteis"
       },
@@ -1803,6 +1818,15 @@
         "closed": "O projeto está encerrado: os comentários ficam como estão.",
         "failed": "Não foi possível salvar. Tente de novo.",
         "loadFailed": "Não foi possível carregar os comentários."
+      },
+      "tickets": {
+        "title": "Chamados",
+        "count_one": "{{count}} chamado em aberto",
+        "count_other": "{{count}} chamados em aberto",
+        "list": "Chamados de {{name}}",
+        "ticket": "#{{number}} {{title}}",
+        "threatenedBy": "Ameaçado por",
+        "through": "Por {{items}}"
       }
     },
     "timeline": {
@@ -2526,7 +2550,10 @@
       "vendorRegistered": "registrou o chamado {{code}} no fornecedor {{vendor}}",
       "vendorUpdated": "atualizou o chamado {{code}} no {{vendor}} · {{from}} → {{to}}",
       "vendorUpdatedSame": "atualizou o chamado {{code}} no {{vendor}} · {{status}}",
-      "closedWithProject": "fechou o chamado · projeto cancelado · {{from}} → {{to}}"
+      "closedWithProject": "fechou o chamado · projeto cancelado · {{from}} → {{to}}",
+      "impactsLinked": "ligou o chamado ao cronograma · {{items}}",
+      "impactsUnlinked": "desligou o chamado do cronograma · {{items}}",
+      "impactsChanged": "mudou a ligação com o cronograma · ligou {{linked}} · desligou {{unlinked}}"
     },
     "flow": {
       "link": "Fluxo de chamados",
@@ -2697,6 +2724,42 @@
         "forbidden": "Só quem atende o chamado registra no fornecedor.",
         "failed": "Não foi possível salvar. Tente de novo.",
         "loadFailed": "Não foi possível carregar os fornecedores. Tente de novo."
+      }
+    },
+    "schedule": {
+      "title": "No cronograma",
+      "none": "Sem ligação com o cronograma.",
+      "link": "Ligar ao cronograma",
+      "change": "Alterar",
+      "items": "Tarefas e marcos ligados ao chamado",
+      "kinds": {
+        "Task": "Tarefa",
+        "Milestone": "Marco"
+      },
+      "milestoneDay": "Marco em {{day}}",
+      "done": "Concluída",
+      "reached": "Atingido",
+      "threatens": "Ameaça",
+      "critical": "No caminho crítico: um atraso aqui atrasa o fim do projeto.",
+      "dialog": {
+        "title": "Ligar ao cronograma",
+        "subtitle": "Chamado #{{number}}",
+        "items": "Tarefas e marcos",
+        "help": "Até {{count}} tarefas ou marcos que o chamado impacta. As datas do cronograma não mudam.",
+        "tooMany": "Escolha até {{count}} tarefas ou marcos.",
+        "noItems": "Nenhuma tarefa ou marco no cronograma do projeto.",
+        "cancel": "Cancelar",
+        "confirm": "Salvar"
+      },
+      "messages": {
+        "saved": "Chamado #{{number}} ligado ao cronograma.",
+        "unlinked": "Chamado #{{number}} desligado do cronograma.",
+        "refused": "Escolha só tarefas e marcos do cronograma deste projeto, até 10.",
+        "closed": "O chamado está fechado e mantém a ligação com o cronograma.",
+        "changed": "Alguém mudou o chamado ao mesmo tempo. Confira e tente de novo.",
+        "forbidden": "Só quem atende o chamado o liga ao cronograma.",
+        "failed": "Não foi possível salvar. Tente de novo.",
+        "loadFailed": "Não foi possível carregar o cronograma. Tente de novo."
       }
     }
   },

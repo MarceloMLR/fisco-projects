@@ -53,7 +53,7 @@ export function milestoneText(milestone: Milestone, t: TFunction): string {
 /** A line of "Precisa de atenção": what it is, where it leads, its detail and its deadline. */
 export interface AttentionLine {
   key: string;
-  kind: 'task' | 'deadline' | 'ticket' | 'unassigned' | 'acceptance' | 'vendor';
+  kind: 'task' | 'deadline' | 'threat' | 'ticket' | 'unassigned' | 'acceptance' | 'vendor';
   title: string;
   path: string;
   meta: string;
@@ -67,9 +67,31 @@ const late = (daysLate: number, day: DayValue, first: boolean, t: TFunction): st
         day: formatShortWeekdayText(day),
       });
 
+/** The deadline of a ticket that counts now, in words (ADR-0025): paused, late, due soon or on track. */
+function ticketDue(
+  ticket: Pick<Attention['tickets'][number], 'deadline' | 'dueState' | 'dueOn' | 'daysLate'>,
+  today: DayValue,
+  t: TFunction,
+): Due {
+  const first = ticket.deadline === 'FirstResponse';
+  if (ticket.dueOn === null || ticket.dueState === null) {
+    return { state: 'paused', text: t('myWork.due.paused') };
+  }
+  if (ticket.dueState === 'Overdue') {
+    return { state: 'overdue', text: late(ticket.daysLate ?? 0, ticket.dueOn, first, t) };
+  }
+  return {
+    state: ticket.dueState === 'Soon' ? 'soon' : 'onTrack',
+    text: t(first ? 'myWork.due.firstResponse' : 'myWork.due.on', {
+      day: dayWord(ticket.dueOn, today, t),
+    }),
+  };
+}
+
 /**
  * What needs attention in the project (ADR-0073), in the order of the API: the late tasks, the items past their
- * deadline (GanttA-2), the tickets, the pending requests of acceptance and the stale tickets at vendors.
+ * deadline (GanttA-2), the tickets that threaten milestones (ADR-0164), the other tickets, the pending requests of
+ * acceptance and the stale tickets at vendors.
  */
 export function attentionLines(
   projectId: string,
@@ -112,22 +134,27 @@ export function attentionLines(
       text: t('projects.overview.attention.deadlinePast', { count: item.daysPast }),
     },
   }));
+  // A ticket that threatens a milestone comes once, here, with its deadline (ADR-0164).
+  const threats = attention.threats.map((threat): AttentionLine => {
+    const values = { name: threat.milestone, day: formatDayMonthText(threat.day) };
+    return {
+      key: `threat-${String(threat.number)}`,
+      kind: 'threat',
+      title: `#${String(threat.number)} ${threat.title}`,
+      path: `/tickets/${String(threat.number)}`,
+      meta:
+        threat.otherMilestones === 0
+          ? t('projects.overview.attention.threat', values)
+          : t('projects.overview.attention.threatMore', {
+              ...values,
+              count: threat.otherMilestones,
+            }),
+      due: ticketDue(threat, today, t),
+    };
+  });
   const tickets = attention.tickets.map((ticket): AttentionLine => {
     const team = t(`tickets.teams.${ticket.team}`);
-    const first = ticket.deadline === 'FirstResponse';
-    let due: Due;
-    if (ticket.dueOn === null || ticket.dueState === null) {
-      due = { state: 'paused', text: t('myWork.due.paused') };
-    } else if (ticket.dueState === 'Overdue') {
-      due = { state: 'overdue', text: late(ticket.daysLate ?? 0, ticket.dueOn, first, t) };
-    } else {
-      due = {
-        state: ticket.dueState === 'Soon' ? 'soon' : 'onTrack',
-        text: t(first ? 'myWork.due.firstResponse' : 'myWork.due.on', {
-          day: dayWord(ticket.dueOn, today, t),
-        }),
-      };
-    }
+    const due = ticketDue(ticket, today, t);
     return {
       key: `ticket-${String(ticket.number)}`,
       kind: ticket.assignee === null ? 'unassigned' : 'ticket',
@@ -179,5 +206,5 @@ export function attentionLines(
       text: t('projects.overview.attention.stale', { count: vendor.staleDays }),
     },
   }));
-  return [...tasks, ...deadlines, ...tickets, ...acceptances, ...vendors];
+  return [...tasks, ...deadlines, ...threats, ...tickets, ...acceptances, ...vendors];
 }

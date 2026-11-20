@@ -1023,6 +1023,55 @@ describe('Mudanças do cronograma na auditoria', () => {
     ]);
   });
 
+  // Spec: chamados, requirement "Ligação na conversa e na auditoria" (ADR-0164).
+  it('Ligação na auditoria pelo nome atual', () => {
+    const field = (name: string, before: string | null, after: string | null) => ({
+      field: name,
+      before,
+      after,
+      secret: false,
+      reference: null,
+    });
+    const linked = describeAuditEntry(
+      entry({
+        action: 'Created',
+        itemType: 'TicketImpact',
+        itemLabel: '#1 Rejeição 539 ao emitir nota de devolução',
+        changes: [
+          field('TicketId', null, '#1 Rejeição 539 ao emitir nota de devolução'),
+          field('ScheduleItemId', null, 'Executar testes'),
+          field('ProjectId', null, 'Implantação do ERP financeiro'),
+        ],
+      }),
+      t,
+    );
+    const unlinked = describeAuditEntry(
+      entry({
+        action: 'Deleted',
+        itemType: 'TicketImpact',
+        itemLabel: '#1 Rejeição 539 ao emitir nota de devolução',
+        changes: [
+          field('TicketId', '#1 Rejeição 539 ao emitir nota de devolução', null),
+          field('ScheduleItemId', 'Executar testes', null),
+          field('ProjectId', 'Implantação do ERP financeiro', null),
+        ],
+      }),
+      t,
+    );
+
+    expect(linked.title).toBe('Ligou o chamado ao cronograma');
+    expect(linked.summary).toBe(
+      '#1 Rejeição 539 ao emitir nota de devolução · Executar testes · Implantação do ERP financeiro',
+    );
+    expect(linked.properties).toEqual([
+      { label: 'Chamado', value: '#1 Rejeição 539 ao emitir nota de devolução' },
+      { label: 'Tarefa ou marco', value: 'Executar testes' },
+      { label: 'Projeto', value: 'Implantação do ERP financeiro' },
+    ]);
+    expect(unlinked.title).toBe('Desligou o chamado do cronograma');
+    expect(unlinked.summary).toBe(linked.summary);
+  });
+
   it('Documento enviado e nova versão na auditoria', () => {
     const project = {
       field: 'ProjectId',

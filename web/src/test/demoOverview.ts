@@ -106,6 +106,8 @@ export function demoOverview(): ProjectOverview {
           blocks: ['Configurar plano de contas'],
         },
       ],
+      // The tickets that threaten a milestone (ADR-0164): none unless a screen looks at them.
+      threats: [],
       deadlines: [
         {
           id: demoOverviewDeadlineId,
@@ -201,7 +203,7 @@ export const emptyOverview: ProjectOverview = {
   tickets: { open: 0, total: 0, overdue: 0, waitingForRequester: 0 },
   nextMilestone: null,
   timeline: null,
-  attention: { tasks: [], deadlines: [], tickets: [], acceptances: [], vendors: [] },
+  attention: { tasks: [], deadlines: [], threats: [], tickets: [], acceptances: [], vendors: [] },
   teams: [
     { team: 'Management', people: [], openTickets: null },
     { team: 'Functional', people: [], openTickets: 0 },

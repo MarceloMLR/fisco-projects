@@ -169,6 +169,62 @@ describe('Visão geral pela tela', () => {
   });
 });
 
+// Spec: visao-geral-do-projeto, requirement "Precisa de atenção" (ADR-0164).
+describe('Precisa de atenção', () => {
+  it('Chamado que ameaça um marco na atenção', async () => {
+    const rejection = overview.attention.tickets.find((item) => item.number === 104);
+    if (rejection === undefined) {
+      throw new Error('No ticket 104.');
+    }
+    overview = {
+      ...overview,
+      attention: {
+        ...overview.attention,
+        threats: [
+          {
+            number: 104,
+            title: rejection.title,
+            milestoneId: '0199f5a2-7c1e-7d40-9a1b-500000000008',
+            milestone: 'Aceite da homologação',
+            day: '2026-11-03',
+            otherMilestones: 1,
+            deadline: rejection.deadline,
+            dueState: rejection.dueState,
+            dueOn: rejection.dueOn,
+            daysLate: rejection.daysLate,
+          },
+        ],
+        // The API tells a ticket that threatens a milestone only among the threats.
+        tickets: overview.attention.tickets.filter((item) => item.number !== 104),
+      },
+    };
+
+    await openOverview();
+
+    const list = attention();
+    const links = within(list).getAllByRole('link', {
+      name: `${ticket(104)} Rejeição 539 ao emitir nota de devolução`,
+    });
+    expect(links).toHaveLength(1);
+    const line = links[0]?.closest('li');
+    expect(line).toHaveTextContent(
+      text.attention.threatMore_one
+        .replace('{{name}}', 'Aceite da homologação')
+        .replace('{{day}}', '03/11')
+        .replace('{{count}}', '1'),
+    );
+    // With the deadline of the ticket.
+    expect(line).toHaveTextContent('Vence segunda');
+    // The threats come after the items past their deadline and before the other tickets.
+    const titles = within(list)
+      .getAllByRole('link')
+      .map((link) => link.textContent);
+    expect(titles.indexOf(`${ticket(104)} Rejeição 539 ao emitir nota de devolução`)).toBe(
+      titles.indexOf('Validar cadastro de produtos') + 2,
+    );
+  });
+});
+
 // Spec: visao-geral-do-projeto, requirement "Prazo final contra a linha de base".
 describe('Prazo final contra a linha de base', () => {
   it('Desvio do prazo final', async () => {

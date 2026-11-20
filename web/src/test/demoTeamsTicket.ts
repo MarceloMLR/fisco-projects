@@ -31,6 +31,8 @@ const noEvent = {
   fromVendorStatus: null,
   toVendorStatus: null,
   note: null,
+  linkedItems: null,
+  unlinkedItems: null,
 } as const;
 
 export const demoTeamsTicket: TeamsTicket = {

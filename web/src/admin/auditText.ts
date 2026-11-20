@@ -284,6 +284,15 @@ const vendorTicketFields: readonly string[] = [
 ] satisfies VendorTicketField[];
 const isVendorTicketField = (field: string): field is VendorTicketField =>
   vendorTicketFields.includes(field);
+// A ticket linked to a task or milestone of the schedule of its project (ADR-0164).
+type TicketImpactField = 'TicketId' | 'ScheduleItemId' | 'ProjectId';
+const ticketImpactFields: readonly string[] = [
+  'TicketId',
+  'ScheduleItemId',
+  'ProjectId',
+] satisfies TicketImpactField[];
+const isTicketImpactField = (field: string): field is TicketImpactField =>
+  ticketImpactFields.includes(field);
 const isVendorTicketStatus = (value: string): value is VendorTicketStatus =>
   vendorTicketStatuses.some((status) => status === value);
 
@@ -694,6 +703,9 @@ function fieldLabel(entry: AuditEntry, field: string, t: TFunction): string {
   if (entry.itemType === 'VendorTicket' && isVendorTicketField(field)) {
     return t(`audit.fields.VendorTicket.${field}`);
   }
+  if (entry.itemType === 'TicketImpact' && isTicketImpactField(field)) {
+    return t(`audit.fields.TicketImpact.${field}`);
+  }
   if (entry.itemType === 'DefaultFolder' && isDefaultFolderField(field)) {
     return t(`audit.fields.DefaultFolder.${field}`);
   }
@@ -854,6 +866,12 @@ function titleOf(entry: AuditEntry, t: TFunction): string {
   if (entry.itemType === 'VendorTicket') {
     return t(
       `audit.actions.VendorTicket.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
+    );
+  }
+  // A ticket linked to and unlinked from an item of the schedule (ADR-0164).
+  if (entry.itemType === 'TicketImpact') {
+    return t(
+      `audit.actions.TicketImpact.${entry.action === 'Created' || entry.action === 'Deleted' ? entry.action : 'Updated'}`,
     );
   }
   if (entry.itemType === 'ProjectMember') {
@@ -1062,6 +1080,12 @@ function projectOfMember(entry: AuditEntry): string {
   return project?.after ?? project?.before ?? '';
 }
 
+/** The task or milestone of a link of a ticket to the schedule, by its current name (ADR-0164). */
+function scheduleItemOf(entry: AuditEntry): string {
+  const item = changeOf(entry, 'ScheduleItemId');
+  return item?.after ?? item?.before ?? '';
+}
+
 /** The term of a signer, by its title (IsAuditContext in the API). */
 function termOf(entry: AuditEntry): string {
   const term = changeOf(entry, 'TermId');
@@ -1166,6 +1190,10 @@ function summaryOf(entry: AuditEntry, t: TFunction): string {
   // A registration at a vendor says the ticket, the number and the vendor: the ticket · "FX-20931 no Emissor Exemplo".
   if (entry.itemType === 'VendorTicket' && entry.action !== 'Updated') {
     return join(ticketOf(entry), t('audit.vendorTicket', { code: label, vendor: vendorOf(entry) }));
+  }
+  // A link to the schedule says the ticket, the task or milestone and the project.
+  if (entry.itemType === 'TicketImpact') {
+    return join(label, scheduleItemOf(entry), projectOfMember(entry));
   }
   if (entry.itemType === 'Vendor' && changeOf(entry, 'IsActive') !== undefined) {
     return label;
@@ -1336,6 +1364,13 @@ function propertiesOf(entry: AuditEntry, t: TFunction): AuditDescription['proper
       { label: t('audit.details.item.VendorTicket'), value: label },
       { label: t('audit.fields.VendorTicket.VendorId'), value: vendorOf(entry) },
       { label: t('audit.fields.VendorTicket.TicketId'), value: ticketOf(entry) },
+    ];
+  }
+  if (entry.itemType === 'TicketImpact') {
+    return [
+      { label: t('audit.details.item.TicketImpact'), value: label },
+      { label: t('audit.fields.TicketImpact.ScheduleItemId'), value: scheduleItemOf(entry) },
+      { label: t('audit.fields.ProjectMember.ProjectId'), value: projectOfMember(entry) },
     ];
   }
   if (entry.itemType === 'DefaultFolder') {

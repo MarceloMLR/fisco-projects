@@ -150,6 +150,8 @@ describe('Prazos pela tela', () => {
           fromVendorStatus: null,
           toVendorStatus: null,
           note: null,
+          linkedItems: null,
+          unlinkedItems: null,
           at: '2026-10-19T13:00:00Z',
         },
         {
@@ -170,6 +172,8 @@ describe('Prazos pela tela', () => {
           fromVendorStatus: null,
           toVendorStatus: null,
           note: null,
+          linkedItems: null,
+          unlinkedItems: null,
           at: '2026-10-19T14:00:00Z',
         },
       ],

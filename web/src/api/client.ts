@@ -203,6 +203,7 @@ export const auditItemTypes = [
   'TicketDeadlineSetting',
   'Vendor',
   'VendorTicket',
+  'TicketImpact',
   'DefaultFolder',
   'DocumentFolder',
   'Document',
@@ -310,6 +311,7 @@ export const ticketProblems = {
   personRefused: 'urn:gerenware:problem:ticket-person-refused',
   ticketFinished: 'urn:gerenware:problem:ticket-finished',
   vendorNameInUse: 'urn:gerenware:problem:vendor-name-in-use',
+  impactRefused: 'urn:gerenware:problem:ticket-impact-refused',
 } as const;
 
 /** Problem types of the documents (DocumentProblems in the Documents module). */

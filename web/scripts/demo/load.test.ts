@@ -590,6 +590,8 @@ function expectedCalls(ticket: DemoTicket, number: number): string[] {
           return [`${step.by} POST ${base}/vendor-tickets`];
         case 'vendorUpdate':
           return [`${step.by} PUT ${base}/vendor-tickets/id`];
+        case 'impacts':
+          return [`${step.by} PUT ${base}/impacts`];
       }
     }),
   ];
@@ -842,6 +844,22 @@ describe('Fornecedores na demonstração', () => {
         link: 'https://suporte.emissor.example/chamados/FX-20931',
       }),
     ]);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Chamado no cronograma na demonstração" (ADR-0164).
+describe('Chamado no cronograma na demonstração', () => {
+  it('Chamado no cronograma na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    // Rafael, who serves the ticket, links it after he registers it at the vendor, to the task created for it.
+    expect(callsBy(/\/impacts$/)).toEqual(['rafael PUT /api/tickets/1/impacts']);
+    expect(calls.indexOf('rafael PUT /api/tickets/1/impacts')).toBeGreaterThan(
+      calls.indexOf('rafael POST /api/tickets/1/vendor-tickets'),
+    );
+    const [linked] = (bodies.get('/api/tickets/1/impacts') ?? []) as { itemIds: string[] }[];
+    expect(linked?.itemIds).toHaveLength(1);
+    expect(linked?.itemIds[0]).toMatch(/^0199f5a2-1111-/);
   });
 });
 
