@@ -26,13 +26,13 @@
 - [x] 5.1 Seção "No cronograma" no painel do chamado e o diálogo de ligar, com o `MultiSelect` até 10 itens, nos temas claro e escuro, no computador e no celular, com os testes de tela dos cenários de "Seção No cronograma" e "Ligar pela tela"
 - [x] 5.2 Marca `TicketCount` na Lista e no cartão do Quadro e a seção "Chamados" no detalhe da tarefa e do marco, com "Ameaçado por", com os testes de tela dos cenários "Chamados do item pela tela"
 - [x] 5.3 Linha da ameaça em "Precisa de atenção", o evento na conversa e na página do Teams e a ligação na Auditoria (`describeAuditEntry`), com os testes de tela
-- [ ] 5.4 Contrato da API atualizado (`npm run api:update`) e `npm run lint`, `npm run typecheck` e `npm test` limpos
+- [x] 5.4 Contrato da API atualizado (`npm run api:update`) e `npm run lint`, `npm run typecheck` e `npm test` limpos
 
 ## 6. Demonstração e documentação
 
 - [x] 6.1 Passo `impacts` no plano da demonstração, com o chamado da rejeição 539 ligado a Executar testes, e os testes de `web/scripts/demo`
 - [x] 6.2 `CLAUDE.md`, `docs/glossario.md` e `docs/discovery.md` com a ligação do chamado ao cronograma, e `openspec validate --all --strict` limpo
-- [ ] 6.3 Verificação completa: `dotnet test GerenWare.slnx`, `dotnet format GerenWare.slnx --verify-no-changes` e a demonstração carregada mostrando o chamado no cronograma, na Lista e na Visão geral
+- [x] 6.3 Verificação completa: `dotnet test GerenWare.slnx`, `dotnet format GerenWare.slnx --verify-no-changes` e a demonstração carregada mostrando o chamado no cronograma, na Lista e na Visão geral
 
 ## Workflow follow-up
 
