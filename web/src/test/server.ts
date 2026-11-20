@@ -377,6 +377,9 @@ export function demoItem(
     ownerAbsences: [],
     // How many comments each item has (ADR-0157); none in the screens that do not look at them.
     commentCount: 0,
+    // The open tickets on the item and the ones that threaten the milestone (ADR-0164); none unless a screen looks at them.
+    tickets: [],
+    threats: [],
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,
@@ -1333,6 +1336,8 @@ export function demoTicket(row: TicketRow): Ticket {
       pausedDays: 0,
     },
     vendorTickets: [],
+    // What the ticket reaches in the schedule (ADR-0164): nothing linked, as who does not serve it sees it.
+    schedule: { items: [], milestones: [], onCriticalPath: false, canChange: false },
   };
 }
 

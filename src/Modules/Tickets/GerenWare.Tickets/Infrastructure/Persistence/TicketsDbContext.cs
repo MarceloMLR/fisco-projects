@@ -32,6 +32,8 @@ internal sealed class TicketsDbContext(DbContextOptions<TicketsDbContext> option
 
     public DbSet<VendorTicket> VendorTickets => Set<VendorTicket>();
 
+    public DbSet<TicketImpact> TicketImpacts => Set<TicketImpact>();
+
     protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
         modelBuilder.HasSequence<int>(NumberSequence).StartsAt(1).IncrementsBy(1);

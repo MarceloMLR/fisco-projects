@@ -8,8 +8,8 @@ namespace GerenWare.Tickets.Infrastructure;
 
 /// <summary>
 /// The tickets of a project being deleted (ADR-0041, ADR-0111): the attachments and the folders of the tickets in the
-/// storage, then the tickets with their messages, attachments, events, followers, deadline alerts and registrations at
-/// vendors. The numbers are not given again: they come from the sequence (ADR-0029).
+/// storage, then the tickets with their messages, attachments, events, followers, deadline alerts, registrations at
+/// vendors and links to the schedule (ADR-0164). The numbers are not given again: they come from the sequence (ADR-0029).
 /// </summary>
 internal sealed class TicketProjectDeletion(TicketsDbContext db, IFileStorage files) : IProjectDeletion
 {
@@ -47,6 +47,7 @@ internal sealed class TicketProjectDeletion(TicketsDbContext db, IFileStorage fi
         await tickets.TicketFollowers.Where(item => ids.Contains(item.TicketId)).ExecuteDeleteAsync(cancellationToken);
         await tickets.TicketDeadlineAlerts.Where(item => ids.Contains(item.TicketId)).ExecuteDeleteAsync(cancellationToken);
         await tickets.VendorTickets.Where(item => ids.Contains(item.TicketId)).ExecuteDeleteAsync(cancellationToken);
+        await tickets.TicketImpacts.Where(item => ids.Contains(item.TicketId)).ExecuteDeleteAsync(cancellationToken);
         var removed = await tickets.Tickets.Where(ticket => ticket.ProjectId == projectId).ExecuteDeleteAsync(cancellationToken);
         return [new(ProjectItemKind.Tickets, removed)];
     }

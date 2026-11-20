@@ -167,6 +167,9 @@ public enum TicketEventKind
 
     /// <summary>The project was cancelled and closed the ticket, from the status it was in (ADR-0043).</summary>
     ClosedWithProject = 9,
+
+    /// <summary>Who serves the ticket changed the items of the schedule it impacts (ADR-0164).</summary>
+    ImpactsChanged = 10,
 }
 
 /// <summary>An event of the conversation: who did it (none for the system), what and when.</summary>
@@ -222,6 +225,12 @@ public sealed class TicketEvent : Entity
     /// <summary>The note of the update at the vendor.</summary>
     public string? Note { get; private init; }
 
+    /// <summary>The names of the items of the schedule linked, as they were then (ADR-0164).</summary>
+    public string[]? LinkedItems { get; private init; }
+
+    /// <summary>The names of the items of the schedule unlinked, as they were then.</summary>
+    public string[]? UnlinkedItems { get; private init; }
+
     public DateTime At { get; private init; }
 
     public static TicketEvent StatusChanged(Guid ticketId, Guid? actorId, TicketTransition transition, DateTime at)
@@ -268,6 +277,14 @@ public sealed class TicketEvent : Entity
             FromVendorStatus = from,
             ToVendorStatus = to,
             Note = note,
+        };
+
+    public static TicketEvent ImpactsChanged(
+        Guid ticketId, Guid actorId, IReadOnlyList<string> linked, IReadOnlyList<string> unlinked, DateTime at) =>
+        new(ticketId, actorId, TicketEventKind.ImpactsChanged, at)
+        {
+            LinkedItems = [.. linked],
+            UnlinkedItems = [.. unlinked],
         };
 
     public static TicketEvent AssigneeSet(Guid ticketId, Guid actorId, Guid assigneeId, DateTime at) =>

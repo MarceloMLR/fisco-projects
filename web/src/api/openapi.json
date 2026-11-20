@@ -6123,6 +6123,84 @@
         }
       }
     },
+    "/api/tickets/{number}/impacts": {
+      "put": {
+        "tags": [
+          "Tickets"
+        ],
+        "description": "The tasks and milestones of the schedule the ticket impacts, by who serves it (ADR-0164).",
+        "operationId": "ChangeTicketImpacts",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketImpactsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tickets/assignee": {
       "put": {
         "tags": [
@@ -15580,6 +15658,7 @@
         "required": [
           "tasks",
           "deadlines",
+          "threats",
           "tickets",
           "acceptances",
           "vendors"
@@ -15596,6 +15675,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OverviewMissedDeadlineResponse"
+            }
+          },
+          "threats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OverviewThreatResponse"
             }
           },
           "tickets": {
@@ -15617,7 +15702,7 @@
             }
           }
         },
-        "description": "What needs attention (ADR-0073), in the order of the list."
+        "description": "What needs attention (ADR-0073), in the order of the list; a ticket that threatens a milestone is in the threats and\nnot in the tickets (ADR-0164)."
       },
       "OverviewDeadlineResponse": {
         "required": [
@@ -15911,6 +15996,80 @@
           }
         },
         "description": "A team of the project with its people and, for the teams that serve tickets, the open tickets."
+      },
+      "OverviewThreatResponse": {
+        "required": [
+          "number",
+          "title",
+          "milestoneId",
+          "milestone",
+          "day",
+          "otherMilestones",
+          "deadline",
+          "dueState",
+          "dueOn",
+          "daysLate"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "milestoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "milestone": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "otherMilestones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deadline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDeadline"
+              }
+            ]
+          },
+          "dueState": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDueState"
+              }
+            ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "An open ticket that threatens milestones not reached (ADR-0164): the nearest milestone, its day, how many others, and\nthe deadline of the ticket that counts now."
       },
       "OverviewTicketResponse": {
         "required": [
@@ -17591,7 +17750,9 @@
           "latestEnd",
           "note",
           "ownerAbsences",
-          "commentCount"
+          "commentCount",
+          "tickets",
+          "threats"
         ],
         "type": "object",
         "properties": {
@@ -17761,6 +17922,20 @@
             "type": "integer",
             "description": "How many comments the item has (ADR-0157).",
             "format": "int32"
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleTicketResponse"
+            },
+            "description": "The open tickets linked to the item, by the number (ADR-0164)."
+          },
+          "threats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleThreatResponse"
+            },
+            "description": "The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164)."
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."
@@ -18109,6 +18284,97 @@
           }
         },
         "description": "A change of the schedule the person made (ADR-0091): its kind and the name of the phase or item, as what undoing or\nredoing does, or did."
+      },
+      "ScheduleThreatItemResponse": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "An item linked to a ticket, by which the ticket reaches a milestone."
+      },
+      "ScheduleThreatResponse": {
+        "required": [
+          "ticket",
+          "through"
+        ],
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/ScheduleTicketResponse"
+          },
+          "through": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleThreatItemResponse"
+            }
+          }
+        },
+        "description": "A ticket that threatens a milestone (ADR-0164), through the items linked to it, in the order of their start."
+      },
+      "ScheduleTicketResponse": {
+        "required": [
+          "number",
+          "title",
+          "deadline",
+          "dueState",
+          "dueOn",
+          "daysLate"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "deadline": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDeadline"
+              }
+            ]
+          },
+          "dueState": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectTicketDueState"
+              }
+            ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "daysLate": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "An open ticket on the schedule (ADR-0164): its number, its title and the deadline that counts now (ADR-0025), with\nits state, the day it is due and, when overdue, by how many business days; the deadline is null when none runs."
       },
       "SessionUserResponse": {
         "required": [
@@ -19133,7 +19399,8 @@
           "TeamChanged",
           "VendorTicketRegistered",
           "VendorStatusChanged",
-          "ClosedWithProject"
+          "ClosedWithProject",
+          "ImpactsChanged"
         ],
         "description": "What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set."
       },
@@ -19156,6 +19423,8 @@
           "fromVendorStatus",
           "toVendorStatus",
           "note",
+          "linkedItems",
+          "unlinkedItems",
           "at"
         ],
         "type": "object",
@@ -19302,6 +19571,26 @@
             ],
             "description": "The note of the update at the vendor."
           },
+          "linkedItems": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The names of the items of the schedule linked, as they were then (ADR-0164)."
+          },
+          "unlinkedItems": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The names of the items of the schedule unlinked, as they were then."
+          },
           "at": {
             "type": "string",
             "format": "date-time"
@@ -19335,6 +19624,26 @@
           }
         },
         "description": "The flow of the tickets, read from its table, with the statuses in their order and after how many business days a\nresolved ticket without an answer closes."
+      },
+      "TicketImpactsRequest": {
+        "required": [
+          "itemIds"
+        ],
+        "type": "object",
+        "properties": {
+          "itemIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "From none to 10 tasks (also summaries and subtasks) or milestones of the project, none repeated."
+          }
+        },
+        "description": "The tasks and milestones of the schedule of the project that the ticket impacts, the whole list (ADR-0164)."
       },
       "TicketListItemResponse": {
         "required": [
@@ -19705,7 +20014,8 @@
           "permissions",
           "following",
           "deadlines",
-          "vendorTickets"
+          "vendorTickets",
+          "schedule"
         ],
         "type": "object",
         "properties": {
@@ -19834,9 +20144,89 @@
             "items": {
               "$ref": "#/components/schemas/VendorTicketResponse"
             }
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/TicketScheduleResponse"
           }
         },
         "description": "A ticket as its page shows it, with the people: the requester, the assignee, the managers and the tech leads of the\nproject; and its conversation (ADR-0026, ADR-0069): the messages, the attachments, who follows it, who may be\nmentioned, the parts of the people who appear in it and what the person may do."
+      },
+      "TicketScheduleItemResponse": {
+        "required": [
+          "id",
+          "type",
+          "name",
+          "start",
+          "end",
+          "progress",
+          "isDone",
+          "lateDays"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ScheduleItemType"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isDone": {
+            "type": "boolean"
+          },
+          "lateDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A task or milestone linked to the ticket, as the schedule has it now (ADR-0164): its dates (a milestone starts and\nends on its day), the progress, whether it is done and the business days it is late."
+      },
+      "TicketScheduleResponse": {
+        "required": [
+          "items",
+          "milestones",
+          "onCriticalPath",
+          "canChange"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketScheduleItemResponse"
+            }
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketThreatenedMilestoneResponse"
+            }
+          },
+          "onCriticalPath": {
+            "type": "boolean",
+            "description": "An item linked, or a subtask of a summary linked, is on the critical path: its delay delays the end of the project."
+          },
+          "canChange": {
+            "type": "boolean",
+            "description": "Who serves the ticket, until it is closed."
+          }
+        },
+        "description": "What the ticket reaches in the schedule (ADR-0164): the items linked that still exist, in the order of the schedule,\nthe milestones after them, by the day, whether one of them is on the critical path, and whether the person may\nchange the items."
       },
       "TicketSituation": {
         "enum": [
@@ -19889,6 +20279,33 @@
           }
         },
         "description": "The other team for the ticket (ADR-0068)."
+      },
+      "TicketThreatenedMilestoneResponse": {
+        "required": [
+          "id",
+          "name",
+          "day",
+          "lateDays"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "lateDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A milestone not reached that comes after the items linked through the dependencies, with its day and delay."
       },
       "TicketTransitionRequest": {
         "required": [

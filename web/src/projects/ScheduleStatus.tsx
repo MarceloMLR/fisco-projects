@@ -1,4 +1,5 @@
 import ChatBubbleOutlineOutlined from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
 import StickyNote2Outlined from '@mui/icons-material/StickyNote2Outlined';
 import Box from '@mui/material/Box';
@@ -149,6 +150,38 @@ export function CommentCount({ count }: { count: number }) {
       }}
     >
       <ChatBubbleOutlineOutlined aria-hidden sx={{ fontSize: 16 }} />
+      <span aria-hidden>{count}</span>
+    </Box>
+  );
+}
+
+/**
+ * How many open tickets are linked to the item (ADR-0164): the icon of the tickets and the number, with "2 chamados em
+ * aberto" on hover and for who reads the screen, in the Lista and on the card of the Quadro; nothing without tickets.
+ */
+export function TicketCount({ count }: { count: number }) {
+  const { t } = useTranslation();
+  if (count === 0) {
+    return null;
+  }
+  const text = t('projects.schedule.tickets.count', { count });
+  return (
+    <Box
+      component="span"
+      role="img"
+      aria-label={text}
+      title={text}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '2px',
+        flex: 'none',
+        fontSize: 12,
+        lineHeight: '16px',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      <ConfirmationNumberOutlined aria-hidden sx={{ fontSize: 16 }} />
       <span aria-hidden>{count}</span>
     </Box>
   );

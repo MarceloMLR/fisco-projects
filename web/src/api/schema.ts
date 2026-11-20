@@ -1362,6 +1362,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/{number}/impacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description The tasks and milestones of the schedule the ticket impacts, by who serves it (ADR-0164). */
+        put: operations["ChangeTicketImpacts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/assignee": {
         parameters: {
             query?: never;
@@ -3709,10 +3726,14 @@ export interface components {
             /** Format: date */
             milestoneDay: null | string;
         };
-        /** @description What needs attention (ADR-0073), in the order of the list. */
+        /**
+         * @description What needs attention (ADR-0073), in the order of the list; a ticket that threatens a milestone is in the threats and
+         *     not in the tickets (ADR-0164).
+         */
         OverviewAttentionResponse: {
             tasks: components["schemas"]["OverviewLateTaskResponse"][];
             deadlines: components["schemas"]["OverviewMissedDeadlineResponse"][];
+            threats: components["schemas"]["OverviewThreatResponse"][];
             tickets: components["schemas"]["OverviewTicketResponse"][];
             acceptances: components["schemas"]["OverviewAcceptanceResponse"][];
             vendors: components["schemas"]["OverviewVendorTicketResponse"][];
@@ -3813,6 +3834,28 @@ export interface components {
             people: components["schemas"]["ProjectPersonResponse"][];
             /** Format: int32 */
             openTickets: null | number;
+        };
+        /**
+         * @description An open ticket that threatens milestones not reached (ADR-0164): the nearest milestone, its day, how many others, and
+         *     the deadline of the ticket that counts now.
+         */
+        OverviewThreatResponse: {
+            /** Format: int32 */
+            number: number;
+            title: string;
+            /** Format: uuid */
+            milestoneId: string;
+            milestone: string;
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            otherMilestones: number;
+            deadline: null | components["schemas"]["ProjectTicketDeadline"];
+            dueState: null | components["schemas"]["ProjectTicketDueState"];
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: int32 */
+            daysLate: null | number;
         };
         /** @description A ticket that needs attention: late, due up to the next business day or without an assignee. */
         OverviewTicketResponse: {
@@ -4440,6 +4483,10 @@ export interface components {
              * @description How many comments the item has (ADR-0157).
              */
             commentCount: number;
+            /** @description The open tickets linked to the item, by the number (ADR-0164). */
+            tickets: components["schemas"]["ScheduleTicketResponse"][];
+            /** @description The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164). */
+            threats: components["schemas"]["ScheduleThreatResponse"][];
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
@@ -4571,6 +4618,32 @@ export interface components {
         ScheduleStepResponse: {
             action: components["schemas"]["ScheduleAction"];
             name: string;
+        };
+        /** @description An item linked to a ticket, by which the ticket reaches a milestone. */
+        ScheduleThreatItemResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        /** @description A ticket that threatens a milestone (ADR-0164), through the items linked to it, in the order of their start. */
+        ScheduleThreatResponse: {
+            ticket: components["schemas"]["ScheduleTicketResponse"];
+            through: components["schemas"]["ScheduleThreatItemResponse"][];
+        };
+        /**
+         * @description An open ticket on the schedule (ADR-0164): its number, its title and the deadline that counts now (ADR-0025), with
+         *     its state, the day it is due and, when overdue, by how many business days; the deadline is null when none runs.
+         */
+        ScheduleTicketResponse: {
+            /** Format: int32 */
+            number: number;
+            title: string;
+            deadline: null | components["schemas"]["ProjectTicketDeadline"];
+            dueState: null | components["schemas"]["ProjectTicketDueState"];
+            /** Format: date */
+            dueOn: null | string;
+            /** Format: int32 */
+            daysLate: null | number;
         };
         /** @description The person in the session, with the role in the system and the theme of their screens. */
         SessionUserResponse: {
@@ -4905,7 +4978,7 @@ export interface components {
          * @description What happened in a ticket besides the messages (ADR-0069): a change of status or the assignee set.
          * @enum {unknown}
          */
-        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged" | "VendorTicketRegistered" | "VendorStatusChanged" | "ClosedWithProject";
+        TicketEventKind: "StatusChanged" | "AssigneeSet" | "PriorityChanged" | "AssigneeCleared" | "RequesterChanged" | "TeamChanged" | "VendorTicketRegistered" | "VendorStatusChanged" | "ClosedWithProject" | "ImpactsChanged";
         /**
          * @description An event of the conversation (ADR-0069): a change of status, with the action, or the assignee set; the actor is
          *     null when the system did it.
@@ -4944,6 +5017,10 @@ export interface components {
             toVendorStatus: null | components["schemas"]["VendorTicketStatus"];
             /** @description The note of the update at the vendor. */
             note: null | string;
+            /** @description The names of the items of the schedule linked, as they were then (ADR-0164). */
+            linkedItems: null | string[];
+            /** @description The names of the items of the schedule unlinked, as they were then. */
+            unlinkedItems: null | string[];
             /** Format: date-time */
             at: string;
         };
@@ -4956,6 +5033,11 @@ export interface components {
             transitions: components["schemas"]["TicketTransitionResponse"][];
             /** Format: int32 */
             autoCloseBusinessDays: number;
+        };
+        /** @description The tasks and milestones of the schedule of the project that the ticket impacts, the whole list (ADR-0164). */
+        TicketImpactsRequest: {
+            /** @description From none to 10 tasks (also summaries and subtasks) or milestones of the project, none repeated. */
+            itemIds: null | string[];
         };
         /** @description A ticket of a list; without an assignee until someone of the team answers it (ADR-0068). */
         TicketListItemResponse: {
@@ -5103,6 +5185,39 @@ export interface components {
             following: boolean;
             deadlines: null | components["schemas"]["TicketDeadlinesResponse"];
             vendorTickets: components["schemas"]["VendorTicketResponse"][];
+            schedule: components["schemas"]["TicketScheduleResponse"];
+        };
+        /**
+         * @description A task or milestone linked to the ticket, as the schedule has it now (ADR-0164): its dates (a milestone starts and
+         *     ends on its day), the progress, whether it is done and the business days it is late.
+         */
+        TicketScheduleItemResponse: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["ScheduleItemType"];
+            name: string;
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            progress: number;
+            isDone: boolean;
+            /** Format: int32 */
+            lateDays: number;
+        };
+        /**
+         * @description What the ticket reaches in the schedule (ADR-0164): the items linked that still exist, in the order of the schedule,
+         *     the milestones after them, by the day, whether one of them is on the critical path, and whether the person may
+         *     change the items.
+         */
+        TicketScheduleResponse: {
+            items: components["schemas"]["TicketScheduleItemResponse"][];
+            milestones: components["schemas"]["TicketThreatenedMilestoneResponse"][];
+            /** @description An item linked, or a subtask of a summary linked, is on the critical path: its delay delays the end of the project. */
+            onCriticalPath: boolean;
+            /** @description Who serves the ticket, until it is closed. */
+            canChange: boolean;
         };
         /**
          * @description Which tickets a list shows by status: the ones still in progress, the resolved and closed ones, or all.
@@ -5127,6 +5242,16 @@ export interface components {
         /** @description The other team for the ticket (ADR-0068). */
         TicketTeamRequest: {
             team: null | components["schemas"]["TicketTeam"];
+        };
+        /** @description A milestone not reached that comes after the items linked through the dependencies, with its day and delay. */
+        TicketThreatenedMilestoneResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            day: string;
+            /** Format: int32 */
+            lateDays: number;
         };
         /** @description An action of the flow taken in a ticket, with the message when the action needs one. */
         TicketTransitionRequest: {
@@ -10461,6 +10586,73 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VendorTicketUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ChangeTicketImpacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketImpactsRequest"];
             };
         };
         responses: {

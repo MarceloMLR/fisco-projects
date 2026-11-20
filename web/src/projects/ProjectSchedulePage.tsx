@@ -92,7 +92,9 @@ import {
   NoteMark,
   OwnerAway,
   OwnerAwayLine,
+  TicketCount,
 } from './ScheduleStatus';
+import { ItemTickets } from './ScheduleTickets';
 import { ScheduleBoard } from './ScheduleBoard';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import {
@@ -335,6 +337,7 @@ export function ProjectSchedulePage() {
               </Box>
               <NoteMark note={row.item.note} />
               <CommentCount count={row.item.commentCount} />
+              <TicketCount count={row.item.tickets.length} />
             </Box>
           ),
       },
@@ -1406,6 +1409,7 @@ function ItemEditor({
           </Button>
         </Box>
       </Form>
+      <ItemTickets item={item} />
       <CommentSection project={project} item={item} />
       <Dialog
         open={removing}
@@ -1602,6 +1606,7 @@ function ItemDetails({
           </>
         )}
       </Box>
+      <ItemTickets item={item} />
       <CommentSection project={project} item={item} />
     </Box>
   );

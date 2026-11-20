@@ -426,6 +426,9 @@ public sealed record TicketDetails(
 
     /// <summary>The tickets registered at vendors, in the order they were registered (ADR-0028).</summary>
     public IReadOnlyList<TicketVendorTicket> VendorTickets { get; init; } = [];
+
+    /// <summary>What the ticket reaches in the schedule of its project (ADR-0164).</summary>
+    public TicketSchedule Schedule { get; init; } = new(ScheduleImpact.None, false);
 }
 
 /// <summary>A ticket by its number, for everyone in its project and the Administrator (ADR-0044); null for anyone else.</summary>
@@ -435,7 +438,9 @@ public sealed class GetTicket(
     IUserDirectory users,
     TicketDeadlines deadlines,
     IVendorStore vendors,
-    VendorStaleSettings stale)
+    VendorStaleSettings stale,
+    ITicketImpactStore impacts,
+    IScheduleImpacts schedule)
 {
     public async Task<TicketDetails?> ExecuteAsync(int number, TicketViewer viewer, CancellationToken cancellationToken)
     {
@@ -458,6 +463,9 @@ public sealed class GetTicket(
         var attachments = await store.AttachmentsAsync(ticket.Id, cancellationToken);
         var followers = await store.FollowersAsync(ticket.Id, cancellationToken);
         var atVendors = await vendors.TicketsOfAsync([ticket.Id], cancellationToken);
+        var linked = await impacts.OfTicketAsync(ticket.Id, cancellationToken);
+        var reach = await schedule.ImpactOfAsync(
+            ticket.ProjectId, [.. linked.Select(link => link.ScheduleItemId)], cancellationToken);
         var mentionable = TicketAccess.Mentionable(ticket, members);
         List<Guid> people =
         [
@@ -520,6 +528,8 @@ public sealed class GetTicket(
         {
             Deadlines = TicketDeadlines.FiguresOf(ticket, day),
             VendorTickets = [.. atVendors.Select(row => VendorTickets.Of(row, day, stale))],
+            Schedule = new TicketSchedule(
+                reach, ticket.Status != TicketStatus.Closed && TicketAccess.MayLinkToSchedule(viewer, project.Role, ticket)),
         };
     }
 }

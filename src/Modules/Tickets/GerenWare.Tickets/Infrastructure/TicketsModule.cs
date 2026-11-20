@@ -75,6 +75,9 @@ public static class TicketsModule
         services.AddScoped<ChangeVendor>();
         services.AddScoped<RegisterVendorTicket>();
         services.AddScoped<UpdateVendorTicket>();
+        // The items of the schedule each ticket impacts (ADR-0164).
+        services.AddScoped<ITicketImpactStore, TicketImpactStore>();
+        services.AddScoped<ChangeTicketImpacts>();
         services.AddScoped<IAuditReferenceNames, TicketReferenceNames>();
         services.AddScoped<IAuditReferenceNames, VendorReferenceNames>();
         // LGPD (ADR-0110): the mentions of an anonymized person.

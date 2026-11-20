@@ -21,6 +21,7 @@ import { TicketReply } from './TicketReply';
 import { PriorityTag, TicketPersonTag, TicketStatusBadge } from './TicketTags';
 import { ticketNumberOf } from './tickets';
 import { TicketDue } from './TicketDue';
+import { ScheduleSection } from './TicketSchedule';
 import { VendorSection } from './TicketVendors';
 import { Button } from '../components/Button';
 import { useNotify } from '../notices/notify';
@@ -278,6 +279,7 @@ function SidePanel({ ticket }: { ticket: Ticket }) {
       </Box>
       <DeadlinesSection ticket={ticket} />
       <VendorSection ticket={ticket} />
+      <ScheduleSection ticket={ticket} />
       <Box
         component="section"
         aria-labelledby="ticket-attachments"

@@ -2,6 +2,7 @@ import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined';
 import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import ConfirmationNumberOutlined from '@mui/icons-material/ConfirmationNumberOutlined';
 import EventBusyOutlined from '@mui/icons-material/EventBusyOutlined';
+import FlagOutlined from '@mui/icons-material/FlagOutlined';
 import InboxOutlined from '@mui/icons-material/InboxOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
@@ -275,6 +276,7 @@ function Numbers({ overview }: { overview: Overview }) {
 const icons = {
   task: ViewTimelineOutlined,
   deadline: EventBusyOutlined,
+  threat: FlagOutlined,
   ticket: ConfirmationNumberOutlined,
   unassigned: InboxOutlined,
   acceptance: TaskAltOutlined,

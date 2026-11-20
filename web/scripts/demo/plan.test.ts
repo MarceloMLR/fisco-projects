@@ -304,6 +304,51 @@ describe('Comentários na demonstração', () => {
   });
 });
 
+// Spec: dados-de-demonstracao, requirement "Chamado no cronograma na demonstração" (ADR-0164).
+describe('Chamado no cronograma na demonstração', () => {
+  it('Chamado no cronograma na demonstração', () => {
+    const main = demoProjects.find((project) => project.code === mainProject);
+    if (main === undefined) {
+      throw new Error('No main project.');
+    }
+    // The ticket of the main project registered at a vendor, linked by who registered it, and never resolved.
+    const ticket = (main.tickets ?? []).find((item) =>
+      (item.steps ?? []).some((step) => step.kind === 'vendor'),
+    );
+    const steps = ticket?.steps ?? [];
+    const vendor = steps.find((step) => step.kind === 'vendor');
+    const impacts = steps.find((step) => step.kind === 'impacts');
+    if (vendor === undefined || impacts?.kind !== 'impacts') {
+      throw new Error('No ticket linked to the schedule.');
+    }
+    expect(impacts.by).toBe(vendor.by);
+    expect(steps.indexOf(impacts)).toBeGreaterThan(steps.indexOf(vendor));
+    expect(
+      steps.some(
+        (step) => step.kind === 'action' && (step.action === 'Resolve' || step.action === 'Cancel'),
+      ),
+    ).toBe(false);
+    // A task of the tests that the acceptance and the go-live depend on, through the dependencies.
+    const items = main.phases.flatMap((phase) => phase.items);
+    expect(impacts.items).toEqual(['Executar testes']);
+    const after = new Set<string>(impacts.items);
+    let grew = true;
+    while (grew) {
+      const before = after.size;
+      for (const item of items) {
+        if ((item.after ?? []).some((name) => after.has(name))) {
+          after.add(item.name);
+        }
+      }
+      grew = after.size > before;
+    }
+    const milestones = items.filter((item) => item.kind === 'Milestone' && after.has(item.name));
+    expect(milestones.map((item) => item.name)).toEqual(
+      expect.arrayContaining(['Aceite da homologação', 'Virada para produção']),
+    );
+  });
+});
+
 // Spec: dados-de-demonstracao, requirement "Carga na demonstração" (ADR-0142).
 describe('Carga na demonstração', () => {
   it('Carga na demonstração', () => {

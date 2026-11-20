@@ -6,6 +6,7 @@ import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
+import ViewTimelineOutlined from '@mui/icons-material/ViewTimelineOutlined';
 import Box from '@mui/material/Box';
 import { Fragment, type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -240,7 +241,9 @@ export function EventLine({
           ? FlagOutlined
           : event.kind === 'VendorTicketRegistered' || event.kind === 'VendorStatusChanged'
             ? LinkOutlined
-            : AutorenewOutlined;
+            : event.kind === 'ImpactsChanged'
+              ? ViewTimelineOutlined
+              : AutorenewOutlined;
   const atVendor = vendorTickets.find((record) => record.id === event.vendorTicketId);
   const vendorStatus = (status: TicketEvent['toVendorStatus']) =>
     status === null ? '' : t(`tickets.vendors.statuses.${status}`);
@@ -263,6 +266,16 @@ export function EventLine({
             from: vendorStatus(event.fromVendorStatus),
             to: vendorStatus(event.toVendorStatus),
           });
+  // The items of the schedule linked and unlinked, by the names of then (ADR-0164).
+  const impactsText = () => {
+    const linked = (event.linkedItems ?? []).join(', ');
+    const unlinked = (event.unlinkedItems ?? []).join(', ');
+    return linked === ''
+      ? t('tickets.events.impactsUnlinked', { items: unlinked })
+      : unlinked === ''
+        ? t('tickets.events.impactsLinked', { items: linked })
+        : t('tickets.events.impactsChanged', { linked, unlinked });
+  };
   const changed = () => {
     const text = t('tickets.events.changed', {
       action: event.action === null ? '' : t(`tickets.events.verbs.${event.action}`),
@@ -310,7 +323,9 @@ export function EventLine({
                       from: event.from === null ? '' : t(`tickets.statuses.${event.from}`),
                       to: event.to === null ? '' : t(`tickets.statuses.${event.to}`),
                     })
-                  : changed();
+                  : event.kind === 'ImpactsChanged'
+                    ? impactsText()
+                    : changed();
   return (
     <Box
       component="li"

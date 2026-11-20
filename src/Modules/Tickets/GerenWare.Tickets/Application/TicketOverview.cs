@@ -10,8 +10,30 @@ namespace GerenWare.Tickets.Application;
 /// is stale (ADR-0028).
 /// </summary>
 public sealed class TicketProjectOverview(
-    ITicketStore store, IVendorStore vendors, TicketDeadlines deadlines, VendorStaleSettings stale) : IProjectTickets
+    ITicketStore store, IVendorStore vendors, TicketDeadlines deadlines, VendorStaleSettings stale, ITicketImpactStore impacts)
+    : IProjectTickets
 {
+    /// <summary>
+    /// The open tickets of the project linked to items of the schedule (ADR-0164), with the deadline that counts now
+    /// (<see cref="TicketDueNow"/>), for everyone who sees the schedule.
+    /// </summary>
+    public async Task<IReadOnlyList<ProjectTicketImpact>> ImpactsAsync(Guid projectId, CancellationToken cancellationToken)
+    {
+        var linked = await impacts.OpenOfProjectAsync(projectId, cancellationToken);
+        if (linked.Count == 0)
+        {
+            return [];
+        }
+
+        var day = await deadlines.TodayAsync(cancellationToken);
+        return [.. linked.Select(item =>
+        {
+            var (deadline, due) = TicketDueNow.Of(TicketDeadlines.FiguresOf(item.Ticket, day));
+            return new ProjectTicketImpact(
+                item.Ticket.Number, item.Ticket.Title, DeadlineOf(deadline), DueStateOf(due), due?.DueOn, due?.DaysLate, item.ItemIds);
+        })];
+    }
+
     public async Task<ProjectTicketOverview> OverviewAsync(Guid projectId, CancellationToken cancellationToken)
     {
         var all = await store.OfProjectAsync(projectId, cancellationToken);
@@ -51,19 +73,8 @@ public sealed class TicketProjectOverview(
                 ticket.Team == TicketTeam.Functional ? ProjectTicketTeam.Functional : ProjectTicketTeam.Development,
                 ticket.AssigneeId,
                 interactions.TryGetValue(ticket.Id, out var count) ? count : 0,
-                deadline switch
-                {
-                    TicketDeadline.FirstResponse => ProjectTicketDeadline.FirstResponse,
-                    TicketDeadline.Resolution => ProjectTicketDeadline.Resolution,
-                    _ => null,
-                },
-                due?.State switch
-                {
-                    TicketDueState.Overdue => ProjectTicketDueState.Overdue,
-                    TicketDueState.Soon => ProjectTicketDueState.Soon,
-                    TicketDueState.OnTrack => ProjectTicketDueState.OnTrack,
-                    _ => null,
-                },
+                DeadlineOf(deadline),
+                DueStateOf(due),
                 due?.DueOn,
                 due?.DaysLate), order));
         }
@@ -90,4 +101,19 @@ public sealed class TicketProjectOverview(
                 .Select(entry => entry.Item)],
             atVendors);
     }
+
+    private static ProjectTicketDeadline? DeadlineOf(TicketDeadline? deadline) => deadline switch
+    {
+        TicketDeadline.FirstResponse => ProjectTicketDeadline.FirstResponse,
+        TicketDeadline.Resolution => ProjectTicketDeadline.Resolution,
+        _ => null,
+    };
+
+    private static ProjectTicketDueState? DueStateOf(TicketDue? due) => due?.State switch
+    {
+        TicketDueState.Overdue => ProjectTicketDueState.Overdue,
+        TicketDueState.Soon => ProjectTicketDueState.Soon,
+        TicketDueState.OnTrack => ProjectTicketDueState.OnTrack,
+        _ => null,
+    };
 }
