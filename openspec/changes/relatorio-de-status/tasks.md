@@ -48,16 +48,16 @@
 ## 7. A tela
 
 - [x] 7.1 "Gerar relatório de status" em "Ações do projeto" e o `StatusReportDialog`: o rascunho, os riscos com a classificação e o ponto de atenção, "Mostrar horas", o envio, o download e o aviso, com os textos em `pt-BR.json`. Testes de tela dos cenários de "Gerar o relatório pela tela"
-- [ ] 7.2 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
+- [x] 7.2 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
 
 ## 8. Demonstração, documentação e verificação
 
-- [ ] 8.1 O `statusReport` do plano no ERP-FIN e a carga pela gerente, uma vez só, com os testes de `web/scripts/demo` dos cenários de "Relatório de status na demonstração"
-- [ ] 8.2 Documentação e specs:
+- [x] 8.1 O `statusReport` do plano no ERP-FIN e a carga pela gerente, uma vez só, com os testes de `web/scripts/demo` dos cenários de "Relatório de status na demonstração"
+- [x] 8.2 Documentação e specs:
   - `CLAUDE.md`, nas seções do mapa e da tela;
   - `docs/glossario.md`: relatório de status, risco, classificação e ponto de atenção;
   - `openspec validate --all --strict` limpo.
-- [ ] 8.3 Verificação:
+- [x] 8.3 Verificação:
   - `dotnet build -warnaserror`, `dotnet test` e `dotnet format`;
   - os testes do frontend;
   - a demonstração carregada, com o relatório aberto e conferido nos slides.
