@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { risksAfter, statusReportSchema, ticketOptions, valuesOf } from './statusReport';
 
+const ticket = (number: number) => `#${String(number)}`;
+
 const tickets = [
   {
     number: 545,
@@ -36,8 +38,8 @@ describe('Rascunho do relatório na tela', () => {
 
   it('lists the tickets that threaten milestones first', () => {
     expect(ticketOptions(tickets, { threatens: 'Ameaçam', others: 'Outros' })).toEqual([
-      { value: '539', label: '#539 · Rejeição na emissão', group: 'Ameaçam' },
-      { value: '545', label: '#545 · Dúvida sobre o relatório fiscal', group: 'Outros' },
+      { value: '539', label: `${ticket(539)} · Rejeição na emissão`, group: 'Ameaçam' },
+      { value: '545', label: `${ticket(545)} · Dúvida sobre o relatório fiscal`, group: 'Outros' },
     ]);
   });
 

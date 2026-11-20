@@ -14,6 +14,7 @@ import {
 } from '../test/server';
 
 const text = ptBR.projects.statusReport;
+const ticket = (number: number) => `#${String(number)}`;
 
 let project: DemoProject;
 let draft: StatusReportDraft;
@@ -150,7 +151,9 @@ describe('Gerar o relatório pela tela', () => {
         text.last.replace('{{day}}', '13/10/2026').replace('{{name}}', 'Marina Costa'),
       ),
     ).toBeVisible();
-    const risk = within(dialog).getByRole('region', { name: '#539 · Rejeição na emissão' });
+    const risk = within(dialog).getByRole('region', {
+      name: `${ticket(539)} · Rejeição na emissão`,
+    });
     expect(within(risk).getByRole('radio', { name: text.levels.Medium })).toBeChecked();
     expect(within(risk).getByLabelText(text.attention)).toHaveValue('');
 

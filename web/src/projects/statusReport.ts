@@ -57,7 +57,7 @@ export function valuesOf(draft: StatusReportDraft): StatusReportValues {
   };
 }
 
-/** The open tickets to choose as risks, the ones that threaten milestones first, each as "#539 · título". */
+/** The open tickets to choose as risks, the ones that threaten milestones first, each as "#" and the number, then the title. */
 export function ticketOptions(
   tickets: readonly StatusReportTicket[],
   groups: { threatens: string; others: string },
