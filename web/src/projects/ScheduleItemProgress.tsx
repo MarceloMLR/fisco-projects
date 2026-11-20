@@ -3,7 +3,7 @@ import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import Box from '@mui/material/Box';
 import { useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useId, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { api, type Project, type ScheduleItem } from '../api/client';
 import { queryKeys } from '../api/queries';
@@ -12,9 +12,13 @@ import { Dialog } from '../components/Dialog';
 import { DueDate } from '../components/DueDate';
 import { ProgressBar } from '../components/ProgressBar';
 import { TextField } from '../components/TextField';
-import { formatDayText } from '../format/dates';
+import { formatDayText, parseTypedDay } from '../format/dates';
+import { useDates } from '../format/useDates';
 import { invalidFields } from './projectForm';
 import {
+  completesTask,
+  doneDaySchema,
+  type DoneDayValues,
   failureOf,
   isScheduleItemError,
   progressSchema,
@@ -88,6 +92,7 @@ export function TaskProgress({
   const { t } = useTranslation();
   const refresh = useRefresh();
   const [asking, setAsking] = useState(false);
+  const [changingDay, setChangingDay] = useState(false);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string>();
 
@@ -150,9 +155,34 @@ export function TaskProgress({
               {t('projects.schedule.progressActions.complete')}
             </Button>
           )}
+          {item.completedOn !== null && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setChangingDay(true);
+              }}
+            >
+              {t('projects.schedule.progressActions.changeDay')}
+            </Button>
+          )}
         </Box>
       )}
       {failure !== undefined && <Alert tone="danger">{failure}</Alert>}
+      {changingDay && (
+        <DoneDayDialog
+          projectId={project.id}
+          item={item}
+          onClose={() => {
+            setChangingDay(false);
+          }}
+          onSaved={(message) => {
+            setChangingDay(false);
+            refresh();
+            onDone(message);
+          }}
+        />
+      )}
       {asking && (
         <ProgressDialog
           projectId={project.id}
@@ -182,11 +212,12 @@ export function ProgressDialog({
   onSaved,
 }: {
   projectId: string;
-  item: Pick<ScheduleItem, 'id' | 'name' | 'progress'>;
+  item: Pick<ScheduleItem, 'id' | 'name' | 'progress'> & { completedOn?: string | null };
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
   const { t } = useTranslation();
+  const dates = useDates();
   const starting = item.progress === 0;
   const {
     control,
@@ -195,24 +226,35 @@ export function ProgressDialog({
     formState: { errors },
   } = useForm<ProgressValues>({
     resolver: zodResolver(progressSchema),
-    defaultValues: { progress: starting ? '' : String(item.progress) },
+    defaultValues: {
+      progress: starting ? '' : String(item.progress),
+      // The day it was completed, or today (ADR-0167).
+      completedOn: formatDayText(item.completedOn ?? dates.toDayValue(new Date())),
+    },
   });
+  const completes = completesTask(useWatch({ control, name: 'progress' }));
   const errorText = (message: string | undefined) =>
     isScheduleItemError(message) ? t(message) : undefined;
 
   const save = handleSubmit(async (values) => {
     const progress = Number(values.progress.trim());
+    const completedOn = progress === 100 ? parseTypedDay(values.completedOn) : undefined;
     try {
       const { error, response } = await api.PUT(
         '/api/projects/{id}/schedule/items/{itemId}/progress',
-        { params: { path: { id: projectId, itemId: item.id } }, body: { progress } },
+        { params: { path: { id: projectId, itemId: item.id } }, body: { progress, completedOn } },
       );
       if (response.ok) {
         onSaved(t('projects.schedule.messages.progressUpdated', { name: item.name, progress }));
         return;
       }
-      if (invalidFields(error).includes('progress')) {
+      const fields = invalidFields(error);
+      if (fields.includes('progress')) {
         setError('progress', { message: scheduleItemErrors.progressInvalid });
+        return;
+      }
+      if (fields.includes('completedOn')) {
+        setError('completedOn', { message: scheduleItemErrors.doneDayInvalid });
         return;
       }
       setError('root', { message: failureOf(error, response.status, t) });
@@ -257,6 +299,135 @@ export function ProgressDialog({
             />
           )}
         />
+        {completes && (
+          <Controller
+            control={control}
+            name="completedOn"
+            render={({ field }) => (
+              <TextField
+                label={t('projects.schedule.progressDialog.completedOn')}
+                inputMode="numeric"
+                error={errorText(errors.completedOn?.message)}
+                helper={t('projects.schedule.progressDialog.completedOnHelp')}
+                {...field}
+              />
+            )}
+          />
+        )}
+        {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
+      </Box>
+    </Dialog>
+  );
+}
+
+/**
+ * The day a task was completed or a milestone reached, typed (ADR-0167): "Alterar dia" in the details of a task at
+ * 100%, for who updates its progress, and of a milestone reached, for who edits the schedule. The day comes typed
+ * as it is; the API says whether it is up to today.
+ */
+export function DoneDayDialog({
+  projectId,
+  item,
+  onClose,
+  onSaved,
+}: {
+  projectId: string;
+  item: Pick<ScheduleItem, 'id' | 'name' | 'kind' | 'completedOn' | 'reachedOn'>;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
+  const { t } = useTranslation();
+  const milestone = item.kind === 'Milestone';
+  const done = milestone ? item.reachedOn : item.completedOn;
+  const {
+    control,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<DoneDayValues>({
+    resolver: zodResolver(doneDaySchema),
+    defaultValues: { day: done === null ? '' : formatDayText(done) },
+  });
+
+  const save = handleSubmit(async (values) => {
+    const day = parseTypedDay(values.day) ?? '';
+    const path = { id: projectId, itemId: item.id };
+    try {
+      const { error, response } = milestone
+        ? await api.PUT('/api/projects/{id}/schedule/items/{itemId}/reached', {
+            params: { path },
+            body: { reached: true, reachedOn: day },
+          })
+        : await api.PUT('/api/projects/{id}/schedule/items/{itemId}/progress', {
+            params: { path },
+            body: { progress: 100, completedOn: day },
+          });
+      if (response.ok) {
+        onSaved(
+          t(
+            milestone
+              ? 'projects.schedule.messages.reachedOnChanged'
+              : 'projects.schedule.messages.completedOnChanged',
+            { name: item.name, day: formatDayText(day) },
+          ),
+        );
+        return;
+      }
+      if (invalidFields(error).some((field) => field === 'completedOn' || field === 'reachedOn')) {
+        setError('day', { message: scheduleItemErrors.doneDayInvalid });
+        return;
+      }
+      setError('root', { message: failureOf(error, response.status, t) });
+    } catch {
+      setError('root', { message: t('projects.schedule.messages.failed') });
+    }
+  });
+
+  return (
+    <Dialog
+      open
+      title={t(
+        milestone
+          ? 'projects.schedule.doneDayDialog.milestoneTitle'
+          : 'projects.schedule.doneDayDialog.taskTitle',
+      )}
+      onClose={onClose}
+      onSubmit={(event) => save(event)}
+      actions={
+        <>
+          <Button variant="outlined" onClick={onClose}>
+            {t('projects.schedule.form.cancel')}
+          </Button>
+          <Button type="submit" variant="contained">
+            {t('projects.schedule.form.save')}
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <Controller
+          control={control}
+          name="day"
+          render={({ field }) => (
+            <TextField
+              label={t(
+                milestone
+                  ? 'projects.schedule.doneDayDialog.reachedOn'
+                  : 'projects.schedule.doneDayDialog.completedOn',
+              )}
+              inputMode="numeric"
+              autoFocus
+              error={isScheduleItemError(errors.day?.message) ? t(errors.day.message) : undefined}
+              helper={t(
+                milestone
+                  ? 'projects.schedule.doneDayDialog.milestoneHelp'
+                  : 'projects.schedule.doneDayDialog.taskHelp',
+                { name: item.name },
+              )}
+              {...field}
+            />
+          )}
+        />
         {errors.root?.message !== undefined && <Alert tone="danger">{errors.root.message}</Alert>}
       </Box>
     </Dialog>
@@ -281,6 +452,7 @@ export function MilestoneState({
   const { t } = useTranslation();
   const refresh = useRefresh();
   const [pending, setPending] = useState(false);
+  const [changingDay, setChangingDay] = useState(false);
   const [failure, setFailure] = useState<string>();
   const reached = item.reachedOn !== null;
 
@@ -316,21 +488,48 @@ export function MilestoneState({
     <DetailsSection title={t('projects.schedule.details.state')}>
       <MilestoneStatus item={item} withYear />
       {canEdit && (
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={reached ? undefined : <CheckOutlined />}
-          loading={pending}
-          onClick={() => toggle()}
-        >
-          {t(
-            reached
-              ? 'projects.schedule.milestoneActions.unmark'
-              : 'projects.schedule.milestoneActions.markReached',
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={reached ? undefined : <CheckOutlined />}
+            loading={pending}
+            onClick={() => toggle()}
+          >
+            {t(
+              reached
+                ? 'projects.schedule.milestoneActions.unmark'
+                : 'projects.schedule.milestoneActions.markReached',
+            )}
+          </Button>
+          {reached && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => {
+                setChangingDay(true);
+              }}
+            >
+              {t('projects.schedule.milestoneActions.changeDay')}
+            </Button>
           )}
-        </Button>
+        </Box>
       )}
       {failure !== undefined && <Alert tone="danger">{failure}</Alert>}
+      {changingDay && (
+        <DoneDayDialog
+          projectId={project.id}
+          item={item}
+          onClose={() => {
+            setChangingDay(false);
+          }}
+          onSaved={(message) => {
+            setChangingDay(false);
+            refresh();
+            onDone(message);
+          }}
+        />
+      )}
     </DetailsSection>
   );
 }

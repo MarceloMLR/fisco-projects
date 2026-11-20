@@ -106,6 +106,12 @@ public sealed class Schedule : Entity
 
     public static bool IsValidDay(DateOnly day) => day >= FirstDay && day <= LastDay;
 
+    /// <summary>
+    /// A day a task was completed or a milestone reached, as who completes it informs it (ADR-0167): from the first day
+    /// the schedule takes up to today, in the time zone of the installation; never in the future.
+    /// </summary>
+    public static bool IsValidDoneDay(DateOnly day, DateOnly today) => day >= FirstDay && day <= today;
+
     /// <summary>A task lasts from 1 to 999 business days; a milestone has no duration.</summary>
     public static bool IsValidDuration(ScheduleItemKind kind, int duration) =>
         kind == ScheduleItemKind.Milestone ? duration == 0 : duration is >= 1 and <= MaxDuration;
@@ -386,13 +392,15 @@ public sealed class Schedule : Entity
     }
 
     /// <summary>
-    /// Updates the progress of a task (ADR-0020): at 100% it keeps today as the day it was completed, below it the day
-    /// goes away. False when the item is not in the schedule.
+    /// Updates the progress of a task (ADR-0020): at 100% it keeps the day informed as the day it was completed or, without
+    /// one, today (the day it already had, when it was at 100%); below it the day goes away (ADR-0167). False when the
+    /// item is not in the schedule.
     /// </summary>
     /// <exception cref="ArgumentException">
-    /// The item is a milestone or a task with subtasks (ADR-0088), or the progress is not from 0 to 100.
+    /// The item is a milestone or a task with subtasks (ADR-0088), the progress is not from 0 to 100, or a day is
+    /// informed below 100% or not valid (<see cref="IsValidDoneDay"/>).
     /// </exception>
-    public bool UpdateProgress(Guid itemId, int progress, DateOnly today)
+    public bool UpdateProgress(Guid itemId, int progress, DateOnly today, DateOnly? completedOn = null)
     {
         if (ItemOf(itemId) is not { } item)
         {
@@ -404,17 +412,25 @@ public sealed class Schedule : Entity
             throw new ArgumentException("Only a task without subtasks has a progress of its own, from 0 to 100.", nameof(progress));
         }
 
-        item.SetProgress(progress, today);
+        if (completedOn is { } day && (progress < 100 || !IsValidDoneDay(day, today)))
+        {
+            throw new ArgumentException("A task is completed on a day up to today, at 100%.", nameof(completedOn));
+        }
+
+        item.SetProgress(progress, today, completedOn);
         SummarizeProgress();
         return true;
     }
 
     /// <summary>
-    /// Marks a milestone as reached, keeping the day it was first reached, or as not reached, without the day (ADR-0020,
-    /// ADR-0086). False when the item is not in the schedule.
+    /// Marks a milestone as reached on the day informed or, without one, keeping the day it was first reached (today, the
+    /// first time), or as not reached, without the day (ADR-0020, ADR-0086, ADR-0167). False when the item is not in
+    /// the schedule.
     /// </summary>
-    /// <exception cref="ArgumentException">The item is a task.</exception>
-    public bool SetReached(Guid itemId, bool reached, DateOnly today)
+    /// <exception cref="ArgumentException">
+    /// The item is a task, or a day is informed for a milestone not reached or is not valid (<see cref="IsValidDoneDay"/>).
+    /// </exception>
+    public bool SetReached(Guid itemId, bool reached, DateOnly today, DateOnly? reachedOn = null)
     {
         if (ItemOf(itemId) is not { } item)
         {
@@ -426,7 +442,12 @@ public sealed class Schedule : Entity
             throw new ArgumentException("Only a milestone is reached.", nameof(itemId));
         }
 
-        item.SetReached(reached, today);
+        if (reachedOn is { } day && (!reached || !IsValidDoneDay(day, today)))
+        {
+            throw new ArgumentException("A milestone is reached on a day up to today.", nameof(reachedOn));
+        }
+
+        item.SetReached(reached, today, reachedOn);
         SummarizeProgress();
         return true;
     }
@@ -1288,9 +1309,13 @@ public sealed class ScheduleItem : Entity
         CompletedOn = completedOn;
     }
 
-    internal void SetProgress(int progress, DateOnly today)
+    internal void SetProgress(int progress, DateOnly today, DateOnly? completedOn = null)
     {
-        if (progress == 100 && (Progress < 100 || CompletedOn is null))
+        if (progress == 100 && completedOn is { } day)
+        {
+            CompletedOn = day;
+        }
+        else if (progress == 100 && (Progress < 100 || CompletedOn is null))
         {
             CompletedOn = today;
         }
@@ -1311,7 +1336,8 @@ public sealed class ScheduleItem : Entity
 
     internal void Unassign() => OwnerId = null;
 
-    internal void SetReached(bool reached, DateOnly today) => ReachedOn = reached ? ReachedOn ?? today : null;
+    internal void SetReached(bool reached, DateOnly today, DateOnly? reachedOn = null) =>
+        ReachedOn = reached ? reachedOn ?? ReachedOn ?? today : null;
 
     internal ItemState State() =>
         new(Id, PhaseId, ParentId, Kind, Name, Start, Duration, End, Progress, OwnerId, CompletedOn, ReachedOn, OwnedByClient, Deadline, Note);

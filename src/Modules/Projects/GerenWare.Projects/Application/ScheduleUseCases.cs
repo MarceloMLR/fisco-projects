@@ -275,6 +275,12 @@ public enum ScheduleField
 
     /// <summary>A move is from 1 to 999 business days, keeping every open item from 2000 to 2099 (ADR-0140).</summary>
     Move = 15,
+
+    /// <summary>The day a task was completed: up to today, only at 100% (ADR-0167).</summary>
+    CompletedOn = 16,
+
+    /// <summary>The day a milestone was reached: up to today, only marking it reached (ADR-0167).</summary>
+    ReachedOn = 17,
 }
 
 /// <summary>What happened to a change: the id of what was created, how many items were pushed, or the invalid fields.</summary>
@@ -798,13 +804,17 @@ public sealed class ChangeScheduleItem(
 
 /// <summary>
 /// Updates the progress of a task (ADR-0020): the Administrator and the manager of any task, the tech lead, the
-/// contributor and the developer of the ones they are in charge of (ADR-0043). At 100% the task keeps today as the day
-/// it was completed; below it, the day goes away.
+/// contributor and the developer of the ones they are in charge of (ADR-0043). At 100% the task keeps the day informed,
+/// up to today, as the day it was completed or, without one, today; below it, the day goes away (ADR-0167).
 /// </summary>
 public sealed class UpdateScheduleItemProgress(IProjectStore projects, IScheduleStore schedules, InstallationClock clock)
 {
+    public Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, int progress, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ExecuteAsync(projectId, itemId, progress, null, viewer, cancellationToken);
+
     public async Task<ScheduleResult> ExecuteAsync(
-        Guid projectId, Guid itemId, int progress, ProjectViewer viewer, CancellationToken cancellationToken)
+        Guid projectId, Guid itemId, int progress, DateOnly? completedOn, ProjectViewer viewer, CancellationToken cancellationToken)
     {
         var today = await clock.TodayAsync(cancellationToken);
         return await ScheduleEditing.RunAsync(
@@ -828,7 +838,12 @@ public sealed class UpdateScheduleItemProgress(IProjectStore projects, ISchedule
                     return ScheduleResult.InvalidFields([ScheduleField.Progress]);
                 }
 
-                schedule.UpdateProgress(itemId, progress, today);
+                if (completedOn is { } day && (progress < 100 || !Schedule.IsValidDoneDay(day, today)))
+                {
+                    return ScheduleResult.InvalidFields([ScheduleField.CompletedOn]);
+                }
+
+                schedule.UpdateProgress(itemId, progress, today, completedOn);
                 return ScheduleResult.Done().Labeled(ScheduleAction.ProgressUpdated, item.Name);
             },
             cancellationToken);
@@ -836,13 +851,17 @@ public sealed class UpdateScheduleItemProgress(IProjectStore projects, ISchedule
 }
 
 /// <summary>
-/// Marks a milestone as reached, keeping today as the day, or as not reached (ADR-0020, ADR-0086); only the
-/// Administrator and the manager do it (ADR-0043).
+/// Marks a milestone as reached, on the day informed, up to today, or, without one, today, or as not reached (ADR-0020,
+/// ADR-0086, ADR-0167); only the Administrator and the manager do it (ADR-0043).
 /// </summary>
 public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore schedules, InstallationClock clock)
 {
+    public Task<ScheduleResult> ExecuteAsync(
+        Guid projectId, Guid itemId, bool reached, ProjectViewer viewer, CancellationToken cancellationToken) =>
+        ExecuteAsync(projectId, itemId, reached, null, viewer, cancellationToken);
+
     public async Task<ScheduleResult> ExecuteAsync(
-        Guid projectId, Guid itemId, bool reached, ProjectViewer viewer, CancellationToken cancellationToken)
+        Guid projectId, Guid itemId, bool reached, DateOnly? reachedOn, ProjectViewer viewer, CancellationToken cancellationToken)
     {
         var today = await clock.TodayAsync(cancellationToken);
         return await ScheduleEditing.RunAsync(projects, schedules, projectId, viewer, (_, schedule) =>
@@ -857,7 +876,12 @@ public sealed class SetMilestoneReached(IProjectStore projects, IScheduleStore s
                 return ScheduleResult.InvalidFields([ScheduleField.Reached]);
             }
 
-            schedule.SetReached(itemId, reached, today);
+            if (reachedOn is { } day && (!reached || !Schedule.IsValidDoneDay(day, today)))
+            {
+                return ScheduleResult.InvalidFields([ScheduleField.ReachedOn]);
+            }
+
+            schedule.SetReached(itemId, reached, today, reachedOn);
             return ScheduleResult.Done()
                 .Labeled(reached ? ScheduleAction.MilestoneReached : ScheduleAction.MilestoneUnmarked, item.Name);
         }, cancellationToken);

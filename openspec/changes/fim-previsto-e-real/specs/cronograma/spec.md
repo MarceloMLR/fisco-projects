@@ -41,12 +41,12 @@ A Lista MUST mostrar, logo depois de "Fim", as colunas "Fim previsto", só com a
 O diálogo do progresso MUST pedir "Concluída em" quando o progresso digitado é 100%, com o dia de hoje ou o da conclusão já guardada. No detalhe, a tarefa concluída, para quem atualiza o progresso dela, e o marco atingido, para quem edita o cronograma, MUST ter "Alterar dia", com o dia guardado. O dia recusado pela API MUST voltar ao campo, e "Concluir" e "Marcar como atingido" continuam com o dia de hoje (ADR-0086, ADR-0167).
 
 #### Scenario: Concluir num dia pela tela
-- **WHEN** o responsável abre "Atualizar progresso" de uma tarefa a 80%, digita 100 e escolhe a conclusão em 16/10
-- **THEN** a tarefa passa a 100% com a conclusão em 16/10
+- **WHEN** o gerente abre "Atualizar progresso" de uma tarefa em andamento, digita 100 e escolhe a conclusão em 16/10/2026
+- **THEN** a tarefa passa a 100% com a conclusão em 16/10/2026, e o dia só é pedido a 100%
 
 #### Scenario: Alterar o dia do marco pela tela
-- **WHEN** o gerente escolhe "Alterar dia" num marco atingido em 22/10 e digita 21/10
-- **THEN** o detalhe mostra o marco atingido em 21/10
+- **WHEN** o gerente escolhe "Alterar dia" num marco atingido em 16/10/2026 e digita 15/10/2026
+- **THEN** a tela avisa que o marco foi atingido em 15/10/2026
 
 #### Scenario: Dia no futuro pela tela
 - **WHEN** o gerente escolhe "Alterar dia" numa tarefa concluída e digita um dia depois de hoje

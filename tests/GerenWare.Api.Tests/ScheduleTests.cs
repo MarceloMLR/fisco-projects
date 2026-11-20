@@ -235,6 +235,53 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         Values(entry, "Kind").Should().Be(("Milestone", "Milestone"));
     }
 
+    // ADR-0167: the day informed by who completes the task or marks the milestone.
+    [Fact(DisplayName = "Concluir num dia informado")]
+    public async Task Task_IsCompletedOnTheDayInformed_ByWhoUpdatesItsProgress()
+    {
+        var scene = await StartAsync(carlasRole: "Developer");
+        await using var app = scene.App;
+        using var carla = await app.SignInAsync(scene.Carla);
+        var own = await AddTaskAsync(scene, "Integrar NF-e", scene.Carla);
+
+        (await ProgressAsync(carla, scene, own, 100, "2026-10-16")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ItemAsync(scene, own)).GetProperty("completedOn").GetString().Should().Be("2026-10-16");
+        (await ProgressAsync(scene.Admin, scene, own, 100, "2026-10-15")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var task = await ItemAsync(scene, own);
+        (task.GetProperty("progress").GetInt32(), task.GetProperty("completedOn").GetString()).Should().Be((100, "2026-10-15"));
+    }
+
+    [Fact(DisplayName = "Dia da conclusão recusado")]
+    public async Task CompletionDay_InTheFuture_OrBelow100_GetsA400()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+
+        var future = await ProgressAsync(scene.Admin, scene, scene.Task, 100, "2026-10-20");
+        var below = await ProgressAsync(scene.Admin, scene, scene.Task, 80, "2026-10-16");
+
+        (future.StatusCode, below.StatusCode).Should().Be((HttpStatusCode.BadRequest, HttpStatusCode.BadRequest));
+        (await ErrorFieldsAsync(future)).Should().Equal("completedOn");
+        (await ErrorFieldsAsync(below)).Should().Equal("completedOn");
+        (await ItemAsync(scene, scene.Task)).GetProperty("progress").GetInt32().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Marco atingido num dia informado")]
+    public async Task Milestone_IsReachedOnTheDayInformed_AndNotInTheFuture()
+    {
+        var scene = await StartAsync();
+        await using var app = scene.App;
+        using var marina = await app.SignInAsync(scene.Marina);
+
+        (await ReachedAsync(marina, scene, scene.Milestone, true, "2026-10-16")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var future = await ReachedAsync(marina, scene, scene.Milestone, true, "2026-10-20");
+
+        future.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorFieldsAsync(future)).Should().Equal("reachedOn");
+        (await ItemAsync(scene, scene.Milestone)).GetProperty("reachedOn").GetString().Should().Be("2026-10-16");
+    }
+
     [Fact(DisplayName = "Desmarcar marco")]
     public async Task UnmarkedMilestone_IsPendingAgain()
     {
@@ -1212,11 +1259,11 @@ public sealed class ScheduleTests(SqlServerFixture sqlServer)
         }
     }
 
-    private static Task<HttpResponseMessage> ProgressAsync(HttpClient client, Scene scene, Guid itemId, int progress) =>
-        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/progress", new { progress });
+    private static Task<HttpResponseMessage> ProgressAsync(HttpClient client, Scene scene, Guid itemId, int progress, string? completedOn = null) =>
+        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/progress", new { progress, completedOn });
 
-    private static Task<HttpResponseMessage> ReachedAsync(HttpClient client, Scene scene, Guid itemId, bool reached) =>
-        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/reached", new { reached });
+    private static Task<HttpResponseMessage> ReachedAsync(HttpClient client, Scene scene, Guid itemId, bool reached, string? reachedOn = null) =>
+        SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/reached", new { reached, reachedOn });
 
     private static Task<HttpResponseMessage> DatesAsync(HttpClient client, Scene scene, Guid itemId, string start, string? end = null) =>
         SendAsync(client, HttpMethod.Put, $"{scene.Path}/items/{itemId}/dates", new { start, end });
