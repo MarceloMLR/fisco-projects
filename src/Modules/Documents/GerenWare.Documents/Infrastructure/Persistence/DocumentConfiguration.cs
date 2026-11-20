@@ -37,10 +37,28 @@ internal sealed class DefaultFolderConfiguration : IEntityTypeConfiguration<Defa
             Id = Guid.Parse($"019a0a10-0000-7000-8000-{index + 1:D12}"),
             Name = name,
             IsAcceptance = index == Seed.Length - 1,
+            IsStatusReport = false,
             IsActive = true,
             VisibleTo = index == Seed.Length - 1 ? FolderViewers.None : FolderViewers.Everyone,
         }));
+        // The folder of the status reports (ADR-0165), only of the managers at first (ADR-0148); the migration marks a
+        // folder that already has the name instead of making another one.
+        folder.HasData(new
+        {
+            Id = StatusReportsId,
+            Name = StatusReportsName,
+            IsAcceptance = false,
+            IsStatusReport = true,
+            IsActive = true,
+            VisibleTo = FolderViewers.None,
+        });
     }
+
+    /// <summary>The id of the default folder of the status reports made by the migration.</summary>
+    public static readonly Guid StatusReportsId = Guid.Parse("019a0a10-0000-7000-8000-000000000007");
+
+    /// <summary>The name the migration gives the default folder of the status reports; the Administrator renames it.</summary>
+    public const string StatusReportsName = "Relatórios de status";
 }
 
 // The folders of each project, copies of the default folders: technical, out of the automatic audit; the change of who

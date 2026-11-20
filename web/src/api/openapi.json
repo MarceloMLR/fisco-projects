@@ -5355,6 +5355,148 @@
         }
       }
     },
+    "/api/projects/{id}/status-report": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "The draft of a new status report of the project: the last texts, the open tickets and the risks suggested (ADR-0165).",
+        "operationId": "GetStatusReportDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusReportDraftResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "description": "Generates the status report of the project in PowerPoint and keeps it in the folder of the status reports, in any status of the project (ADR-0165, ADR-0166).",
+        "operationId": "GenerateStatusReport",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusReportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/project-folders": {
       "get": {
         "tags": [
@@ -13018,7 +13160,8 @@
           "name",
           "isAcceptance",
           "isActive",
-          "visibleTo"
+          "visibleTo",
+          "isStatusReport"
         ],
         "type": "object",
         "properties": {
@@ -13040,9 +13183,12 @@
             "items": {
               "$ref": "#/components/schemas/FolderRole"
             }
+          },
+          "isStatusReport": {
+            "type": "boolean"
           }
         },
-        "description": "A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles\nthat see it in the new projects, besides the Administrator and the manager (ADR-0148)."
+        "description": "A default folder: the name, whether it is the folder of the acceptance terms or the one of the status reports\n(ADR-0165), whether it is active, and the roles that see it in the new projects, besides the Administrator and the\nmanager (ADR-0148)."
       },
       "DeleteProjectRequest": {
         "required": [
@@ -13127,7 +13273,8 @@
           "name",
           "isAcceptance",
           "count",
-          "visibleTo"
+          "visibleTo",
+          "isStatusReport"
         ],
         "type": "object",
         "properties": {
@@ -13150,6 +13297,9 @@
             "items": {
               "$ref": "#/components/schemas/FolderRole"
             }
+          },
+          "isStatusReport": {
+            "type": "boolean"
           }
         },
         "description": "A folder of the project with how many documents not obsolete it has and the roles that see it, besides the\nAdministrator and the manager (ADR-0148)."
@@ -17142,7 +17292,8 @@
           "canEditSchedule",
           "canDelete",
           "canChooseFolder",
-          "canExportSchedule"
+          "canExportSchedule",
+          "canGenerateStatusReport"
         ],
         "type": "object",
         "properties": {
@@ -17172,6 +17323,10 @@
           "canExportSchedule": {
             "type": "boolean",
             "description": "Downloads the schedule in the XML of the MS Project, with the e-mails of the people in charge, also of a closed project: the Administrator and the manager (ADR-0136)."
+          },
+          "canGenerateStatusReport": {
+            "type": "boolean",
+            "description": "Generates the status report of the project, also of a closed one: the Administrator and the manager (ADR-0165)."
           }
         },
         "description": "What the person may do in the project (ADR-0043): change the data, only while the project is open; change the\nstatus, including reopening it; and, while the project is open, include, change and remove people, do it also with\nthe managers (ADR-0042), and change the schedule."
@@ -17521,6 +17676,23 @@
           }
         },
         "description": "The name shown of the installation, in the Brand of Visual (ADR-0150): up to 60 characters."
+      },
+      "ReportTicketStatus": {
+        "enum": [
+          "Open",
+          "Triage",
+          "InProgress",
+          "WaitingForRequester"
+        ],
+        "description": "The status of an open ticket (ADR-0024), as the status report shows it: never resolved nor closed."
+      },
+      "RiskLevel": {
+        "enum": [
+          "High",
+          "Medium",
+          "Low"
+        ],
+        "description": "How serious a risk of the status report is, as the manager classifies it (ADR-0165)."
       },
       "ScheduleAction": {
         "enum": [
@@ -18608,6 +18780,236 @@
           }
         },
         "description": "A line of the spreadsheet: its number in the spreadsheet and the text of each column."
+      },
+      "StatusReportDraftResponse": {
+        "required": [
+          "last",
+          "summary",
+          "focus",
+          "nextSteps",
+          "clientNeeds",
+          "tickets",
+          "risks"
+        ],
+        "type": "object",
+        "properties": {
+          "last": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StatusReportLastResponse"
+              }
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "focus": {
+            "type": "string"
+          },
+          "nextSteps": {
+            "type": "string"
+          },
+          "clientNeeds": {
+            "type": "string"
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusReportTicketResponse"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusReportRiskResponse"
+            }
+          }
+        },
+        "description": "The draft of a new status report (ADR-0165): the last report, its four texts, the open tickets of the project and\nthe risks suggested, the ones of the last report still open and the tickets that threaten milestones."
+      },
+      "StatusReportLastResponse": {
+        "required": [
+          "generatedAt",
+          "generatedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generatedBy": {
+            "$ref": "#/components/schemas/OverviewPersonResponse"
+          }
+        },
+        "description": "When and by whom the last report of the project was generated."
+      },
+      "StatusReportRequest": {
+        "required": [
+          "summary",
+          "focus",
+          "nextSteps",
+          "clientNeeds",
+          "risks"
+        ],
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The summary of the period, up to 1,000 characters."
+          },
+          "focus": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The current focus, up to 1,000 characters."
+          },
+          "nextSteps": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The next steps, up to 1,000 characters."
+          },
+          "clientNeeds": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the client must do, up to 1,000 characters."
+          },
+          "risks": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StatusReportRiskRequest"
+            },
+            "description": "From 0 to 10 open tickets of the project, without repeating, each with its level."
+          },
+          "showHours": {
+            "type": "boolean",
+            "description": "Whether the hours of the project go in, only the totals (ADR-0166).",
+            "default": false
+          }
+        },
+        "description": "What the person wrote and chose to generate a status report (ADR-0165, ADR-0166)."
+      },
+      "StatusReportResponse": {
+        "required": [
+          "documentId",
+          "folderId",
+          "folderName",
+          "name",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folderName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The report kept in the documents of the project: the document, its folder, its name and its version."
+      },
+      "StatusReportRiskRequest": {
+        "required": [
+          "number",
+          "level",
+          "attention"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "level": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RiskLevel"
+              }
+            ]
+          },
+          "attention": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A risk chosen: the number of an open ticket of the project, its level and a point of attention up to 500 characters."
+      },
+      "StatusReportRiskResponse": {
+        "required": [
+          "number",
+          "level",
+          "attention"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "level": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "attention": {
+            "type": "string"
+          }
+        },
+        "description": "A risk of the report: the ticket, its level and the point of attention."
+      },
+      "StatusReportTicketResponse": {
+        "required": [
+          "number",
+          "title",
+          "status",
+          "threatens"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportTicketStatus"
+          },
+          "threatens": {
+            "type": "boolean"
+          }
+        },
+        "description": "An open ticket of the project that may go in as a risk, and whether it threatens milestones (ADR-0164)."
       },
       "SystemRole": {
         "enum": [

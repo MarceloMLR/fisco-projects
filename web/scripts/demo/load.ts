@@ -14,6 +14,7 @@ import {
   type DemoPerson,
   demoPeople,
   type DemoProject,
+  type DemoStatusReport,
   demoProjects,
   demoVendors,
   fallbackCategory,
@@ -649,8 +650,9 @@ async function loadProject(
     );
   }
 
-  // The ids of the tickets by title, for the hours worked on them (ADR-0128).
+  // The ids of the tickets by title, for the hours worked on them (ADR-0128), and their numbers, for the risks.
   const ticketIds = new Map<string, string>();
+  const ticketNumbers = new Map<string, number>();
   // Each ticket opened by its person, while the project is open (ADR-0022), then what happens to it, in order.
   for (const ticket of project.tickets ?? []) {
     const opened = must(
@@ -666,6 +668,7 @@ async function loadProject(
       `Chamado ${ticket.title}`,
     );
     ticketIds.set(ticket.title, opened.id);
+    ticketNumbers.set(ticket.title, opened.number);
     const path = { params: { path: { number: opened.number } } };
     // The files of the description, by who opened it, before any message (ADR-0026).
     if ((ticket.files ?? []).length > 0) {
@@ -826,7 +829,54 @@ async function loadProject(
       `Status de ${project.code}`,
     );
   }
+
+  // Last, so the report has the status of the project (ADR-0165).
+  if (project.statusReport !== undefined) {
+    await loadStatusReport(project, project.statusReport, id, ticketNumbers, builder, log);
+  }
   return ids.size;
+}
+
+/**
+ * The status report of the project, by the manager, after the tickets, the hours and the status (ADR-0165): only when the project
+ * has no report yet, so loading again keeps one.
+ */
+async function loadStatusReport(
+  project: DemoProject,
+  report: DemoStatusReport,
+  id: string,
+  ticketNumbers: ReadonlyMap<string, number>,
+  builder: Api,
+  log: (line: string) => void,
+): Promise<void> {
+  const draft = must(
+    await builder.GET('/api/projects/{id}/status-report', { params: { path: { id } } }),
+    `Rascunho do relatório de status de ${project.code}`,
+  );
+  if (draft.last !== null) {
+    return;
+  }
+  const generated = must(
+    await builder.POST('/api/projects/{id}/status-report', {
+      params: { path: { id } },
+      body: {
+        summary: report.summary,
+        focus: report.focus,
+        nextSteps: report.nextSteps,
+        clientNeeds: report.clientNeeds,
+        showHours: report.showHours,
+        risks: report.risks.map((risk) => {
+          const number = ticketNumbers.get(risk.ticket);
+          if (number === undefined) {
+            throw new Error(`O risco ${risk.ticket} não é um chamado de ${project.code}.`);
+          }
+          return { number, level: risk.level, attention: risk.attention };
+        }),
+      },
+    }),
+    `Relatório de status de ${project.code}`,
+  );
+  log(`Relatório de status de ${project.code}: ${generated.name}`);
 }
 
 /** The content of a document of the plan: a PDF with the lines, or the lines as text (CSV, TXT). */

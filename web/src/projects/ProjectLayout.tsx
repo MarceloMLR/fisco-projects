@@ -1,6 +1,7 @@
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
+import SummarizeOutlined from '@mui/icons-material/SummarizeOutlined';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import ListSubheader from '@mui/material/ListSubheader';
@@ -18,7 +19,7 @@ import {
   projectProblems,
   type ProjectStatus,
 } from '../api/client';
-import { prefetchProject } from '../api/prefetch';
+import { prefetchProject, prefetchStatusReportDraft } from '../api/prefetch';
 import { ApiError, projectClosingQuery, projectQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
 import { Dialog } from '../components/Dialog';
@@ -26,6 +27,7 @@ import { Page } from '../shell/Page';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { ProjectDialog } from './ProjectDialog';
 import { ProjectHeader } from './ProjectHeader';
+import { StatusReportDialog } from './StatusReportDialog';
 import type { ProjectOutlet } from './projectOutlet';
 import { projectTabs } from './projectTabs';
 import { projectStatusLook } from './projectStatus';
@@ -84,6 +86,7 @@ export function ProjectLayout() {
   const [menu, setMenu] = useState<HTMLElement>();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [confirming, setConfirming] = useState<'Completed' | 'Cancelled'>();
   // The tickets not closed the API found when it refused to complete the project (ADR-0043).
   const [refusedTickets, setRefusedTickets] = useState<number>();
@@ -160,7 +163,11 @@ export function ProjectLayout() {
 
   const { permissions } = project;
   const closed = isClosedStatus(project.status);
-  const hasActions = permissions.canEdit || permissions.canChangeStatus || permissions.canDelete;
+  const hasActions =
+    permissions.canEdit ||
+    permissions.canGenerateStatusReport ||
+    permissions.canChangeStatus ||
+    permissions.canDelete;
   // The tickets not closed keep the project from being completed; the cancellation closes them (ADR-0043).
   const openTickets = refusedTickets ?? closing?.openTickets ?? 0;
   const blocked = confirming === 'Completed' && openTickets > 0;
@@ -183,6 +190,10 @@ export function ProjectLayout() {
           hasActions
             ? (event) => {
                 setMenu(event.currentTarget);
+                // The draft of the status report, read ahead, so its dialog opens with it (ADR-0106).
+                if (permissions.canGenerateStatusReport) {
+                  prefetchStatusReportDraft(queryClient, project.id);
+                }
               }
             : undefined
         }
@@ -236,9 +247,19 @@ export function ProjectLayout() {
             {t('projects.actions.edit')}
           </MenuItem>
         )}
-        {permissions.canEdit && permissions.canChangeStatus && (
-          <Divider sx={{ margin: 'var(--space-1) 0' }} />
+        {permissions.canGenerateStatusReport && (
+          <MenuItem
+            onClick={() => {
+              setMenu(undefined);
+              setReporting(true);
+            }}
+          >
+            <SummarizeOutlined aria-hidden />
+            {t('projects.statusReport.action')}
+          </MenuItem>
         )}
+        {(permissions.canEdit || permissions.canGenerateStatusReport) &&
+          permissions.canChangeStatus && <Divider sx={{ margin: 'var(--space-1) 0' }} />}
         {permissions.canChangeStatus && closed && (
           <MenuItem
             onClick={() => {
@@ -317,6 +338,14 @@ export function ProjectLayout() {
           </MenuItem>
         )}
       </Menu>
+      {reporting && (
+        <StatusReportDialog
+          project={project}
+          onClose={() => {
+            setReporting(false);
+          }}
+        />
+      )}
       {editing && (
         <ProjectDialog
           project={project}

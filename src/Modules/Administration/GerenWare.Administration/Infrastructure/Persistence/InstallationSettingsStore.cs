@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GerenWare.Administration.Infrastructure.Persistence;
 
-internal sealed class InstallationSettingsStore(AdministrationDbContext db) : IInstallationSettingsStore, IInstallationSettings
+internal sealed class InstallationSettingsStore(AdministrationDbContext db)
+    : IInstallationSettingsStore, IInstallationSettings, IInstallationBrand
 {
     public Task<InstallationSettings> GetAsync(CancellationToken cancellationToken) =>
         db.InstallationSettings.SingleAsync(settings => settings.Id == InstallationSettings.SingleId, cancellationToken);
@@ -23,5 +24,12 @@ internal sealed class InstallationSettingsStore(AdministrationDbContext db) : II
                 settings.AuditRetentionYears,
                 settings.ProjectsFolder,
                 settings.WorkHoursPerDay))
+            .SingleAsync(cancellationToken);
+
+    Task<InstallationBrand> IInstallationBrand.GetAsync(CancellationToken cancellationToken) =>
+        db.InstallationSettings.AsNoTracking()
+            .Where(settings => settings.Id == InstallationSettings.SingleId)
+            .Select(settings => new InstallationBrand(
+                settings.Name, settings.LogoFileId, settings.LogoContentType, settings.MainColor, settings.SecondaryColor))
             .SingleAsync(cancellationToken);
 }

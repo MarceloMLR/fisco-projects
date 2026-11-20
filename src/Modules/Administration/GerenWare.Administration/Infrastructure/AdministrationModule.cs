@@ -19,6 +19,7 @@ public static class AdministrationModule
         services.AddScoped<InstallationSettingsStore>();
         services.AddScoped<IInstallationSettingsStore>(provider => provider.GetRequiredService<InstallationSettingsStore>());
         services.AddScoped<IInstallationSettings>(provider => provider.GetRequiredService<InstallationSettingsStore>());
+        services.AddScoped<IInstallationBrand>(provider => provider.GetRequiredService<InstallationSettingsStore>());
         services.AddScoped<GetInstallation>();
         services.AddScoped<GetInstallationLogo>();
         services.AddScoped<GetGeneralRules>();

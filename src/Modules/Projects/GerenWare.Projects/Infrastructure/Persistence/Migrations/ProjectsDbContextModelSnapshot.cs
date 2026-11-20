@@ -622,6 +622,83 @@ namespace GerenWare.Projects.Infrastructure.Persistence.Migrations
                     b.HasAnnotation("GerenWare:Audit:Label", "Name");
                 });
 
+            modelBuilder.Entity("GerenWare.Projects.Domain.StatusReportNotes", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClientNeeds")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Focus")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("GeneratedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NextSteps")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique();
+
+                    b.ToTable("status_report_notes", "projects");
+
+                    b.HasAnnotation("GerenWare:Audit:Excluded", true);
+                });
+
+            modelBuilder.Entity("GerenWare.Projects.Domain.StatusReportRiskNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Attention")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("NotesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TicketNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotesId");
+
+                    b.ToTable("status_report_risks", "projects");
+
+                    b.HasAnnotation("GerenWare:Audit:Excluded", true);
+                });
+
             modelBuilder.Entity("GerenWare.Projects.Domain.Project", b =>
                 {
                     b.HasOne("GerenWare.Projects.Domain.Client", null)
@@ -761,6 +838,24 @@ namespace GerenWare.Projects.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GerenWare.Projects.Domain.StatusReportNotes", b =>
+                {
+                    b.HasOne("GerenWare.Projects.Domain.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GerenWare.Projects.Domain.StatusReportRiskNote", b =>
+                {
+                    b.HasOne("GerenWare.Projects.Domain.StatusReportNotes", null)
+                        .WithMany("Risks")
+                        .HasForeignKey("NotesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("GerenWare.Projects.Domain.Project", b =>
                 {
                     b.Navigation("Members");
@@ -789,6 +884,11 @@ namespace GerenWare.Projects.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("GerenWare.Projects.Domain.ScheduleBaseline", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("GerenWare.Projects.Domain.StatusReportNotes", b =>
+                {
+                    b.Navigation("Risks");
                 });
 #pragma warning restore 612, 618
         }

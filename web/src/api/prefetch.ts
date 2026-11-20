@@ -5,6 +5,7 @@ import {
   projectOverviewQuery,
   projectQuery,
   projectScheduleQuery,
+  statusReportDraftQuery,
   ticketQuery,
 } from './queries';
 
@@ -48,4 +49,12 @@ export function prefetchTicket(queryClient: QueryClient, number: number): void {
 /** The hours of a project the Administrator is about to open in Horas dos projetos (ADR-0128). */
 export function prefetchProjectHours(queryClient: QueryClient, projectId: string): void {
   ahead(queryClient.query({ ...projectHoursDetailQuery(projectId), staleTime: 'static' }));
+}
+
+/**
+ * The draft of the status report of a project, read again each time the actions of the project open, so its dialog
+ * opens with the texts of the last report (ADR-0165).
+ */
+export function prefetchStatusReportDraft(queryClient: QueryClient, projectId: string): void {
+  ahead(queryClient.query(statusReportDraftQuery(projectId)));
 }

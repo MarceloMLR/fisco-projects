@@ -116,6 +116,12 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Folga | Float, ScheduleSlack, `float` | Dias úteis que uma tarefa ou marco pode terminar depois sem mudar o fim do projeto (GanttB-1) |
 | Fim previsto | Planned end, `plannedEndOf` | O fim de uma tarefa ou marco na linha de base (Status-3) |
 | Fim real | Actual end, `actualEndOf`, `completedOn`, `reachedOn` | O dia em que a tarefa chegou a 100% ou o marco foi atingido, informado por quem conclui ou o dia de hoje (ADR-0167) |
+| Relatório de status | StatusReport, `GenerateStatusReport`, `status-report` | O PowerPoint do status do projeto para o cliente, gerado pelo administrador e pelo gerente e guardado na pasta dos relatórios (ADR-0165) |
+| Risco (do relatório) | StatusReportRisk | Um chamado em aberto do projeto com um slide no relatório, com a classificação e o ponto de atenção (ADR-0165) |
+| Classificação do risco: Alta, Média, Baixa | RiskLevel: High, Medium, Low | Escolhida por quem gera o relatório; a sugerida pela primeira vez é Média (ADR-0165) |
+| Ponto de atenção | Attention | O texto de cada risco no relatório, até 500 caracteres (ADR-0165) |
+| Pasta dos relatórios | IsStatusReport | A pasta padrão "Relatórios de status", onde cada relatório gerado fica; nunca é desativada (ADR-0165) |
+| Mostrar horas | ShowHours, IProjectReportHours | A opção do relatório com os totais das horas do projeto e das tarefas, nunca as horas de cada pessoa (ADR-0166) |
 | Projeção do atraso | ScheduleProjection, `projection` | O que uma tarefa atrasada empurra se o que falta seguir o ritmo planejado a partir de hoje: o novo fim, os marcos e o fim do projeto, sem gravar nada (ADR-0164) |
 | Tipo da dependência | ScheduleLinkType | "Termina, então começa" (FinishToStart), "Começa junto" (StartToStart) e "Termina junto" (FinishToFinish) (ADR-0137) |
 | Intervalo da dependência | Lag | Dias úteis de espera (positivo) ou de adiantamento (negativo), de -99 a 999 (ADR-0137) |

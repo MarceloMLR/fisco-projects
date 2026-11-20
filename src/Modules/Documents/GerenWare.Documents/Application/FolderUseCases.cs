@@ -50,7 +50,8 @@ public enum FolderOutcome
     NotFound = 2,
     Invalid = 3,
     NameInUse = 4,
-    AcceptanceAlwaysActive = 5,
+    /// <summary>The folder of the acceptance terms or the one of the status reports, which are never deactivated.</summary>
+    AlwaysActive = 5,
     AcceptanceVisibilityFixed = 6,
 }
 
@@ -139,7 +140,7 @@ public sealed class ChangeDefaultFolder(IFolderStore folders)
 
         return folder.Change(valid, isActive)
             ? await AddDefaultFolder.SaveAsync(folders, id, cancellationToken)
-            : new(FolderOutcome.AcceptanceAlwaysActive);
+            : new(FolderOutcome.AlwaysActive);
     }
 }
 

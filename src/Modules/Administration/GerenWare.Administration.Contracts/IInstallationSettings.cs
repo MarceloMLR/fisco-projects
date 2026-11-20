@@ -45,3 +45,17 @@ public interface IInstallationSettings
 {
     Task<InstallationInfo> GetAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// The brand of the installation for what other modules make, such as the status report (ADR-0165): the name, the logo
+/// for light backgrounds (its id in the file storage and its type, PNG or SVG; null without one) and the main and
+/// secondary colors, as <c>#RRGGBB</c> or null when the Administrator chose none (ADR-0146).
+/// </summary>
+public sealed record InstallationBrand(
+    string Name, string? LogoFileId, string? LogoContentType, string? MainColor, string? SecondaryColor);
+
+/// <summary>The brand of the installation, kept by the Administration module (ADR-0082, ADR-0146).</summary>
+public interface IInstallationBrand
+{
+    Task<InstallationBrand> GetAsync(CancellationToken cancellationToken);
+}

@@ -2239,6 +2239,44 @@
       "move": "Mover {{name}}",
       "moveTo": "Mover para {{column}}",
       "restarted": "Tarefa {{name}} voltou para A fazer."
+    },
+    "statusReport": {
+      "action": "Gerar relatório de status",
+      "title": "Relatório de status",
+      "intro": "O relatório do {{code}} sai em PowerPoint, com os números de hoje do cronograma e dos chamados, e fica guardado nos documentos do projeto.",
+      "last": "Último relatório: {{day}}, por {{name}}. Os textos e os riscos vêm dele.",
+      "loading": "Carregando o rascunho…",
+      "loadFailed": "Não foi possível carregar o rascunho. Tente de novo.",
+      "summary": "Resumo do período",
+      "focus": "Foco atual",
+      "nextSteps": "Próximos passos",
+      "clientNeeds": "O que precisa do cliente",
+      "textHelp_one": "Resta {{count}} caractere.",
+      "textHelp_other": "Restam {{count}} caracteres.",
+      "risks": "Riscos",
+      "risksHelp": "Até 10 chamados em aberto, cada um num slide. Os que ameaçam marcos vêm sugeridos.",
+      "noTickets": "Nenhum chamado em aberto no projeto.",
+      "threatens": "Ameaçam marcos",
+      "others": "Outros chamados em aberto",
+      "level": "Classificação",
+      "levels": {
+        "High": "Alta",
+        "Medium": "Média",
+        "Low": "Baixa"
+      },
+      "attention": "Ponto de atenção",
+      "showHours": "Mostrar horas",
+      "showHoursHelp": "As horas contratadas, as adicionais, as apontadas e o saldo do projeto, e as horas de cada tarefa. As horas de cada pessoa nunca entram.",
+      "generate": "Gerar relatório",
+      "cancel": "Cancelar",
+      "saved": "Relatório guardado em {{folder}}.",
+      "openDocuments": "Abrir documentos",
+      "failed": "Não foi possível gerar o relatório. Tente de novo.",
+      "errors": {
+        "textTooLong": "Até 1.000 caracteres.",
+        "attentionTooLong": "Até 500 caracteres.",
+        "risks": "Escolha até 10 chamados em aberto do projeto, cada um com a classificação."
+      }
     }
   },
   "templates": {
@@ -3338,6 +3376,7 @@
       "actions": "Ações"
     },
     "acceptance": "Termos de aceite",
+    "statusReports": "Relatórios de status",
     "regular": "Documentos",
     "total_zero": "Nenhuma pasta",
     "total_one": "{{count}} pasta",

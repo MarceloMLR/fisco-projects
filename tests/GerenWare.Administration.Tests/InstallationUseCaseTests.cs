@@ -23,6 +23,24 @@ public sealed class InstallationUseCaseTests(SqlServerFixture sqlServer)
         info.Should().Be(new InstallationInfo("GerenWare", "America/Sao_Paulo", new TimeOnly(7, 30), 90));
     }
 
+    // Spec: relatorio-de-status, requirement "Modelo padrão do relatório": the brand other modules read (ADR-0165).
+    [Fact]
+    public async Task Brand_GivesTheNameTheLightLogoAndTheColors()
+    {
+        await using var database = await AdministrationDatabase.CreateAsync(sqlServer);
+        var none = await database.RunAsync<IInstallationBrand, InstallationBrand>(brand => brand.GetAsync(Cancellation));
+        await RenameAsync(database, "Consultoria Fictícia");
+        await ColorsAsync(database, "#0F766E", "#E6F4ED", null);
+        (await SendAsync(database, "marca.png", Logos.Png())).Should().BeNull();
+
+        var brand = await database.RunAsync<IInstallationBrand, InstallationBrand>(get => get.GetAsync(Cancellation));
+
+        none.Should().Be(new InstallationBrand("GerenWare", null, null, null, null));
+        brand.Name.Should().Be("Consultoria Fictícia");
+        brand.LogoFileId.Should().Be((await SettingsAsync(database)).LogoFileId).And.NotBeNull();
+        (brand.LogoContentType, brand.MainColor, brand.SecondaryColor).Should().Be(("image/png", "#0F766E", "#E6F4ED"));
+    }
+
     [Fact(DisplayName = "Fuso padrão")]
     public async Task NewInstallation_ShowsDatesInTheTimeZoneOfBrasilia()
     {

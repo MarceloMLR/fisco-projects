@@ -4,6 +4,7 @@ using GerenWare.Persistence.PersonalData;
 using GerenWare.Projects.Application;
 using GerenWare.Projects.Contracts;
 using GerenWare.Projects.Infrastructure.Persistence;
+using GerenWare.Projects.Infrastructure.StatusReports;
 using GerenWare.SharedKernel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,10 @@ public static class ProjectsModule
         services.AddScoped<GetProjectDeletion>();
         services.AddScoped<DeleteProject>();
         services.AddScoped<GetProjectOverview>();
+        services.AddScoped<IStatusReportStore, StatusReportStore>();
+        services.AddSingleton<IStatusReportRenderer, PptxStatusReportRenderer>();
+        services.AddScoped<GetStatusReportDraft>();
+        services.AddScoped<GenerateStatusReport>();
         services.AddScoped<ListProjectMembers>();
         // The absences of the people (ADR-0141): kept for a year after their end and erased with the anonymization.
         services.AddScoped<IAbsenceStore, AbsenceStore>();

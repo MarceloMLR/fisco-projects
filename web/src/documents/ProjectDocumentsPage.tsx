@@ -8,6 +8,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type DragEvent, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 import type { DocumentFolder, DocumentRow, DocumentStatusFilter } from '../api/client';
 import { documentFoldersQuery, documentsQuery, queryKeys } from '../api/queries';
 import { Alert } from '../components/Alert';
@@ -60,7 +61,11 @@ export function ProjectDocumentsPage() {
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const { data: area, error } = useQuery(documentFoldersQuery(project.id));
   const folders = area?.folders ?? noFolders;
-  const [chosenFolder, setChosenFolder] = useState<string>();
+  const [searchParams] = useSearchParams();
+  // A notice may open a folder, such as the one of the status reports (ADR-0165).
+  const [chosenFolder, setChosenFolder] = useState<string | undefined>(
+    searchParams.get('folder') ?? undefined,
+  );
   // The first folder that takes documents, until the person chooses another.
   const folder =
     folders.find((item) => item.id === chosenFolder) ??

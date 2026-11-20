@@ -117,3 +117,65 @@ public sealed class TicketProjectOverview(
         _ => null,
     };
 }
+
+/// <summary>
+/// The open tickets of a project for the status report (ADR-0165): the status and the priority, whether the deadline
+/// that counts now is late (<see cref="TicketDueNow"/>), the ticket at a vendor a list shows
+/// (<see cref="VendorTickets.ShownIn"/>) and the items of the schedule they are linked to (ADR-0164).
+/// </summary>
+public sealed class TicketReportSource(ITicketStore store, IVendorStore vendors, TicketDeadlines deadlines, ITicketImpactStore impacts)
+    : IProjectReportTickets
+{
+    public async Task<IReadOnlyList<ReportTicket>> OpenAsync(Guid projectId, CancellationToken cancellationToken)
+    {
+        var open = (await store.OfProjectAsync(projectId, cancellationToken)).Where(ticket => ticket.IsOpen).ToList();
+        if (open.Count == 0)
+        {
+            return [];
+        }
+
+        var day = await deadlines.TodayAsync(cancellationToken);
+        var atVendors = VendorTickets.ShownIn(await vendors.TicketsOfAsync([.. open.Select(ticket => ticket.Id)], cancellationToken));
+        var linked = (await impacts.OpenOfProjectAsync(projectId, cancellationToken))
+            .ToDictionary(item => item.Ticket.Id, item => item.ItemIds);
+        return [.. open.OrderBy(ticket => ticket.Number).Select(ticket =>
+        {
+            var (_, due) = TicketDueNow.Of(TicketDeadlines.FiguresOf(ticket, day));
+            return new ReportTicket(
+                ticket.Number,
+                ticket.Title,
+                StatusOf(ticket.Status),
+                PriorityOf(ticket.Priority),
+                due?.State == TicketDueState.Overdue,
+                atVendors.TryGetValue(ticket.Id, out var row)
+                    ? new ReportVendorTicket(row.VendorName, row.Record.Code, VendorStatusOf(row.Record.Status))
+                    : null,
+                linked.TryGetValue(ticket.Id, out var items) ? items : []);
+        })];
+    }
+
+    private static ReportTicketStatus StatusOf(TicketStatus status) => status switch
+    {
+        TicketStatus.Triage => ReportTicketStatus.Triage,
+        TicketStatus.InProgress => ReportTicketStatus.InProgress,
+        TicketStatus.WaitingForRequester => ReportTicketStatus.WaitingForRequester,
+        _ => ReportTicketStatus.Open,
+    };
+
+    private static ReportTicketPriority PriorityOf(TicketPriority priority) => priority switch
+    {
+        TicketPriority.Low => ReportTicketPriority.Low,
+        TicketPriority.High => ReportTicketPriority.High,
+        TicketPriority.Critical => ReportTicketPriority.Critical,
+        _ => ReportTicketPriority.Medium,
+    };
+
+    private static ReportVendorStatus VendorStatusOf(VendorTicketStatus status) => status switch
+    {
+        VendorTicketStatus.InAnalysis => ReportVendorStatus.InAnalysis,
+        VendorTicketStatus.WaitingForUs => ReportVendorStatus.WaitingForUs,
+        VendorTicketStatus.Resolved => ReportVendorStatus.Resolved,
+        VendorTicketStatus.Closed => ReportVendorStatus.Closed,
+        _ => ReportVendorStatus.Open,
+    };
+}

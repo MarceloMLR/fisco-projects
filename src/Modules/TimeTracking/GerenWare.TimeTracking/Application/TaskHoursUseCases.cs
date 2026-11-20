@@ -44,6 +44,17 @@ public sealed class GetTaskHours(TimeEntryProjects projects, IScheduleItems sche
             return (null, refusal);
         }
 
+        var view = await TaskHoursOf.ProjectAsync(projectId, schedule, store, cancellationToken);
+        return (new TaskHoursView(view, TimeEntryAccess.ChangesPlannedHours(viewer)), TaskHoursOutcome.Done);
+    }
+}
+
+/// <summary>The hours of the tasks of a project, in one place, for the screen and the status report (ADR-0138, ADR-0166).</summary>
+internal static class TaskHoursOf
+{
+    public static async Task<ProjectTaskHours> ProjectAsync(
+        Guid projectId, IScheduleItems schedule, IProjectHoursStore store, CancellationToken cancellationToken)
+    {
         var tasks = (await schedule.ItemsAsync(projectId, cancellationToken)).Where(item => item.Type == ScheduleItemType.Task);
         var planned = await store.PlannedOfAsync(projectId, cancellationToken);
         var logged = await store.LoggedByTaskAsync(projectId, cancellationToken);
@@ -60,9 +71,46 @@ public sealed class GetTaskHours(TimeEntryProjects projects, IScheduleItems sche
                 task.IsDone))
             .ToList();
         var loggedInTasks = items.Sum(item => item.Logged);
-        var view = new ProjectTaskHours(
+        return new ProjectTaskHours(
             items.Sum(item => item.Planned ?? 0m), loggedInTasks, logged.Sum(row => row.Hours) - loggedInTasks, items);
-        return (new TaskHoursView(view, TimeEntryAccess.ChangesPlannedHours(viewer)), TaskHoursOutcome.Done);
+    }
+}
+
+/// <summary>
+/// The totals of the hours of a project for the status report (ADR-0166): the balance of the project
+/// (<see cref="HoursBalance"/>) and the hours of each task, for who generates the report
+/// (<see cref="TimeEntryAccess.ShowsHoursInReport"/>); never the hours of each person nor the entries.
+/// </summary>
+public sealed class ReportHoursSource(TimeEntryProjects projects, IScheduleItems schedule, IProjectHoursStore store) : IProjectReportHours
+{
+    public async Task<ReportHours?> ForReportAsync(
+        Guid projectId, Guid userId, bool isAdministrator, CancellationToken cancellationToken)
+    {
+        var viewer = new TimeEntryViewer(userId, isAdministrator);
+        if (await projects.FindAsync(projectId, viewer, cancellationToken) is not { } project
+            || !TimeEntryAccess.ShowsHoursInReport(viewer, project))
+        {
+            return null;
+        }
+
+        var tasks = await TaskHoursOf.ProjectAsync(projectId, schedule, store, cancellationToken);
+        var contracted = (await store.ContractedOfAsync(projectId, cancellationToken))?.Hours;
+        var additional = (await store.AdditionalOfAsync(projectId, cancellationToken)).Sum(item => item.Hours);
+        var balance = HoursBalance.Of(contracted, additional, tasks.Logged + tasks.Outside, project.IsClosed);
+        return new ReportHours(
+            balance.Contracted,
+            balance.Additional,
+            balance.Logged,
+            balance.Balance,
+            balance.State switch
+            {
+                HoursBalanceState.Over => ReportHoursState.Over,
+                HoursBalanceState.NearLimit => ReportHoursState.NearLimit,
+                HoursBalanceState.Within => ReportHoursState.Within,
+                _ => ReportHoursState.NoContract,
+            },
+            [.. tasks.Items.Select(item => new ReportTaskHours(item.ItemId, item.Name, item.Planned, item.Logged))],
+            tasks.Outside);
     }
 }
 
