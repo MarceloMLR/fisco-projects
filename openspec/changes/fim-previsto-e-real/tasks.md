@@ -22,7 +22,7 @@
 ## 5. Documentação e verificação
 
 - [x] 5.1 `CLAUDE.md`, `docs/glossario.md` e o ADR-0167 no índice, com o fim previsto, o fim real e o dia informado, e `openspec validate --all --strict` limpo
-- [ ] 5.2 Verificação: `dotnet test`, `dotnet format`, os testes do frontend e a demonstração carregada mostrando as colunas na Lista, no Expandir e no Excel
+- [x] 5.2 Verificação: `dotnet test`, `dotnet format`, os testes do frontend e a demonstração carregada mostrando as colunas na Lista, no Expandir e no Excel
 
 ## Workflow follow-up
 
