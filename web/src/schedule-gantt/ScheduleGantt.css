@@ -164,6 +164,15 @@
   width: 112px;
 }
 
+/* The planned end, of the baseline, and the actual end, with room for their headers (Status-3). */
+.fp-gantt__col--planned {
+  width: 80px;
+}
+
+.fp-gantt__col--actual {
+  width: 64px;
+}
+
 /* The deadline, with room for the icon of a missed one (GanttA-2). */
 .fp-gantt__col--deadline {
   width: 80px;

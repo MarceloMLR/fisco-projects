@@ -45,12 +45,15 @@ import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { theme } from '../theme/theme';
 import { useProjectOutlet } from './projectOutlet';
 import {
+  actualEndOf,
   findItem,
   fullDisplay,
   isPhaseRow,
   itemsOf,
   lateText,
   missesDeadline,
+  phaseEndsOf,
+  plannedEndOf,
   predecessorTexts,
   slackText,
   type ScheduleDisplay,
@@ -156,6 +159,9 @@ const isScale = (value: string | null): value is GanttScale =>
 const secondarySx = { color: 'var(--text-secondary)' } as const;
 const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as const;
 
+/** A day of the schedule as the Lista shows it, or nothing. */
+const dayText = (day: string | null) => (day === null ? '' : formatDayText(day));
+
 type PhaseDialogState = { phase?: SchedulePhase } | undefined;
 
 /**
@@ -213,6 +219,11 @@ export function ProjectSchedulePage() {
     enabled: seesHours,
   });
   const hoursById = useMemo(() => taskHoursById(taskHours), [taskHours]);
+  /** The planned and actual ends of each phase, from all of its items, also with a filter on (Status-3). */
+  const phaseEnds = useMemo(
+    () => new Map(schedule.phases.map((phase) => [phase.id, phaseEndsOf(phase)])),
+    [schedule],
+  );
   const filterContext = useMemo<FilterContext>(
     () => ({ today: schedule.today, me }),
     [schedule.today, me],
@@ -383,6 +394,33 @@ export function ProjectSchedulePage() {
           );
         },
       },
+      // The planned end, of the baseline, and the actual end, side by side with the end, as MS Project (Status-3).
+      ...(schedule.baseline === null
+        ? []
+        : [
+            {
+              field: 'plannedEnd',
+              headerName: t('projects.schedule.columns.plannedEnd'),
+              width: 120,
+              valueGetter: (_value, row) =>
+                dayText(
+                  row.kind === 'phase'
+                    ? (phaseEnds.get(row.phase.id)?.planned ?? null)
+                    : plannedEndOf(row.item),
+                ),
+            } satisfies DataTableColumn<ListRow>,
+          ]),
+      {
+        field: 'actualEnd',
+        headerName: t('projects.schedule.columns.actualEnd'),
+        width: 120,
+        valueGetter: (_value, row) =>
+          dayText(
+            row.kind === 'phase'
+              ? (phaseEnds.get(row.phase.id)?.actual ?? null)
+              : actualEndOf(row.item),
+          ),
+      },
       {
         field: 'deadline',
         headerName: t('projects.schedule.columns.deadline'),
@@ -531,7 +569,17 @@ export function ProjectSchedulePage() {
         },
       },
     ],
-    [t, schedule, collapsed, toggleSubtasks, project.client, seesHours, hoursById, editableColumn],
+    [
+      t,
+      schedule,
+      collapsed,
+      toggleSubtasks,
+      project.client,
+      seesHours,
+      hoursById,
+      phaseEnds,
+      editableColumn,
+    ],
   );
 
   const queryClient = useQueryClient();
@@ -971,6 +1019,7 @@ export function ProjectSchedulePage() {
             onChoose={chooseInTimeline}
             collapsed={collapsed}
             onToggle={toggleSubtasks}
+            phaseEnds={phaseEnds}
           />
         )}
       </Dialog>

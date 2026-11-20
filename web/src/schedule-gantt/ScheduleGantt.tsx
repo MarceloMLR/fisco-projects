@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Schedule } from '../api/client';
 import type { DayValue } from '../format/dates';
+import type { PhaseEnds } from '../projects/schedule';
 import { ganttPeriod, type GanttScale, ganttSpan, ganttUnitWidth } from './ganttLayout';
 import { type GanttRow, ganttRowsOf, type GanttTarget, shownRows } from './ganttRows';
 import { type TimelineAnswer, TimelineChart } from './TimelineChart';
@@ -23,7 +24,7 @@ import './ScheduleGantt.css';
 export type { TimelineAnswer } from './TimelineChart';
 
 /** The width of the table beside the timeline, before the person drags the divider (ADR-0071). */
-const listWidth = { compact: 320, detailed: 640 } as const;
+const listWidth = { compact: 320, detailed: 800 } as const;
 /** Below this width (a phone), the table keeps only the names, in less than half of the space. */
 const narrowWidth = 640;
 const narrowShare = 0.45;
@@ -56,6 +57,8 @@ export interface ScheduleGanttProps {
    */
   collapsed?: ReadonlySet<string>;
   onToggle?: (key: string) => void;
+  /** The planned and actual ends of each phase, from all of its items, also with a filter on (Status-3). */
+  phaseEnds?: ReadonlyMap<string, PhaseEnds>;
 }
 
 export interface ScheduleGanttHandle {
@@ -82,6 +85,7 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
       clientName = null,
       collapsed: collapsedOutside,
       onToggle,
+      phaseEnds,
       onChoose,
       onMove,
       onResize,
@@ -222,6 +226,8 @@ export const ScheduleGantt = forwardRef<ScheduleGanttHandle, ScheduleGanttProps>
                   rows={shown}
                   collapsed={collapsed}
                   columns={columns}
+                  showPlanned={showBaseline && schedule.baseline !== null}
+                  phaseEnds={phaseEnds}
                   clientName={clientName}
                   selectedId={selectedId}
                   active={active}

@@ -42,7 +42,7 @@ Regras:
 | --- | --- | --- | --- |
 | [0018](0018-cronograma-em-dias-uteis-com-feriados.md) | Cronograma em dias úteis, com feriados nacionais calculados e feriados locais cadastrados | aceita | 2026-10-13 |
 | [0019](0019-estrutura-do-cronograma-e-dependencias.md) | Cronograma em dois níveis, com dependências que empurram as tarefas seguintes | aceita (item "Subtarefas" substituído pelo ADR-0088; tipos e intervalo das dependências, pelo ADR-0137) | 2026-10-13 |
-| [0020](0020-progresso-e-atraso-das-tarefas.md) | Progresso das tarefas em percentual com atalhos, ponderado pela duração | aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128) | 2026-10-13 |
+| [0020](0020-progresso-e-atraso-das-tarefas.md) | Progresso das tarefas em percentual com atalhos, ponderado pela duração | aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128; dia da conclusão completado pelo ADR-0167) | 2026-10-13 |
 | [0021](0021-recursos-do-gantt-na-v1.md) | Recursos do Gantt na v1, com linha de base, caminho crítico, desfazer e exportação | aceita (apresentação na tela definida pelo ADR-0071; quem baixa o XML e o e-mail nele, pelo ADR-0136) | 2026-10-13 |
 
 ## Chamados
@@ -229,3 +229,4 @@ Regras:
 | [0164](0164-o-que-ameaca-o-cronograma.md) | O que ameaça o cronograma: chamados ligados a tarefas e marcos, e a projeção do atraso | aceita | 2026-11-19 |
 | [0165](0165-relatorio-de-status.md) | Relatório de status em PowerPoint e PDF, num modelo que a empresa edita | aceita | 2026-11-19 |
 | [0166](0166-horas-no-relatorio-de-status.md) | Horas do projeto no relatório de status | aceita | 2026-11-19 |
+| [0167](0167-dia-da-conclusao-informado.md) | Dia da conclusão e do marco atingido informado por quem conclui | aceita | 2026-11-20 |

@@ -186,11 +186,15 @@ public sealed record ScheduleItemRequest(
 /// <summary>The dates of a task before it is saved: the start on a business day, the end and the duration in business days.</summary>
 public sealed record TaskDatesResponse(DateOnly Start, DateOnly End, int Duration);
 
-/// <summary>The progress of a task, from 0 to 100.</summary>
-public sealed record ScheduleProgressRequest(int Progress);
+/// <summary>The progress of a task, from 0 to 100, and, at 100%, the day it was completed, up to today (ADR-0167).</summary>
+public sealed record ScheduleProgressRequest(
+    int Progress,
+    [property: Description("The day the task was completed, up to today, only at 100%; without it, today, or the day it already had at 100% (ADR-0167).")] DateOnly? CompletedOn = null);
 
-/// <summary>Whether a milestone was reached.</summary>
-public sealed record MilestoneReachedRequest(bool Reached);
+/// <summary>Whether a milestone was reached and, when it was, the day, up to today (ADR-0167).</summary>
+public sealed record MilestoneReachedRequest(
+    bool Reached,
+    [property: Description("The day the milestone was reached, up to today, only when reached; without it, today, or the day it already had (ADR-0167).")] DateOnly? ReachedOn = null);
 
 /// <summary>
 /// New dates from the timeline: the start alone keeps the duration; with the end, a task lasts the business days
@@ -517,7 +521,7 @@ internal static class ScheduleEndpoints
         CancellationToken cancellationToken)
     {
         var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
-        return Answer(await updateProgress.ExecuteAsync(id, itemId, request.Progress, viewer, cancellationToken));
+        return Answer(await updateProgress.ExecuteAsync(id, itemId, request.Progress, request.CompletedOn, viewer, cancellationToken));
     }
 
     private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> SetReachedAsync(
@@ -530,7 +534,7 @@ internal static class ScheduleEndpoints
         CancellationToken cancellationToken)
     {
         var viewer = await ProjectEndpoints.ViewerOfAsync(http, access, cancellationToken);
-        return Answer(await setReached.ExecuteAsync(id, itemId, request.Reached, viewer, cancellationToken));
+        return Answer(await setReached.ExecuteAsync(id, itemId, request.Reached, request.ReachedOn, viewer, cancellationToken));
     }
 
     private static async Task<Results<Ok<ScheduleItemChangedResponse>, NotFound, ForbidHttpResult, ValidationProblem, ProblemHttpResult>> RescheduleAsync(
@@ -686,6 +690,8 @@ internal static class ScheduleEndpoints
                 ScheduleField.Links => "links",
                 ScheduleField.Note => "note",
                 ScheduleField.Move => "days",
+                ScheduleField.CompletedOn => "completedOn",
+                ScheduleField.ReachedOn => "reachedOn",
                 _ => "predecessorIds",
             },
             field => new[]
@@ -706,6 +712,8 @@ internal static class ScheduleEndpoints
                     ScheduleField.Links => "Each dependency is of a known kind, with a lag from -99 to 999 business days, once per item.",
                     ScheduleField.Note => $"The note has up to {ScheduleItem.NoteMaxLength} characters, without control characters but line breaks and tabs.",
                     ScheduleField.Move => $"The move is from 1 to {Schedule.MaxMove} business days, later or earlier, keeping every open item from 2000 to 2099.",
+                    ScheduleField.CompletedOn => "The day a task was completed is from 2000 up to today, only at 100%.",
+                    ScheduleField.ReachedOn => "The day a milestone was reached is from 2000 up to today, only marking it reached.",
                     _ => "The items are tasks and milestones of the schedule with dates of their own, other than the item itself and the task it goes into.",
                 },
             }));

@@ -14,6 +14,7 @@ export const scheduleItemErrors = {
   durationInvalid: 'projects.schedule.errors.durationInvalid',
   endInvalid: 'projects.schedule.errors.endInvalid',
   progressInvalid: 'projects.schedule.errors.progressInvalid',
+  doneDayInvalid: 'projects.schedule.errors.doneDayInvalid',
   ownerInvalid: 'projects.schedule.errors.ownerInvalid',
   predecessorsInvalid: 'projects.schedule.errors.predecessorsInvalid',
   parentInvalid: 'projects.schedule.errors.parentInvalid',
@@ -125,16 +126,38 @@ export const scheduleItemSchema = z
 export type ScheduleItemValues = z.input<typeof scheduleItemSchema>;
 
 /** The progress of a task as typed in its dialog: a whole number from 0 to 100 (ADR-0020). */
-export const progressSchema = z.object({
-  progress: z
-    .string()
-    .trim()
-    .refine((value) => wholeNumber.test(value) && Number(value) <= 100, {
-      error: scheduleItemErrors.progressInvalid,
-    }),
-});
+/** Whether the progress typed is 100%, when the day of the completion is asked (ADR-0167). */
+export const completesTask = (progress: string) => progress.trim() === '100';
+
+/**
+ * The progress of a task as typed, from 0 to 100, and, at 100%, the day it was completed, typed as 16/10/2026 (ADR-0167);
+ * the API says whether the day is up to today.
+ */
+export const progressSchema = z
+  .object({
+    progress: z
+      .string()
+      .trim()
+      .refine((value) => wholeNumber.test(value) && Number(value) <= 100, {
+        error: scheduleItemErrors.progressInvalid,
+      }),
+    completedOn: z.string(),
+  })
+  .refine(
+    (values) => !completesTask(values.progress) || parseTypedDay(values.completedOn) !== undefined,
+    { error: scheduleItemErrors.doneDayInvalid, path: ['completedOn'] },
+  );
 
 export type ProgressValues = z.input<typeof progressSchema>;
+
+/** The day a task was completed or a milestone reached, typed as 16/10/2026 (ADR-0167). */
+export const doneDaySchema = z.object({
+  day: z.string().refine((value) => parseTypedDay(value) !== undefined, {
+    error: scheduleItemErrors.doneDayInvalid,
+  }),
+});
+
+export type DoneDayValues = z.input<typeof doneDaySchema>;
 
 /** The value of the owner field of a task without an owner (an empty value would show an empty select). */
 export const noOwner = 'none';

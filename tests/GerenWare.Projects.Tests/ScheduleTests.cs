@@ -269,6 +269,39 @@ public sealed class ScheduleTests
         task.Progress.Should().Be(80);
     }
 
+    // ADR-0167: the day informed by who completes the task.
+    [Fact(DisplayName = "Concluir num dia informado")]
+    public void CompletedTask_OnTheDayInformed_IsCorrectedLater()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Mapear processos", D(10, 5), 5);
+
+        schedule.UpdateProgress(task.Id, 100, D(10, 20), D(10, 16)).Should().BeTrue();
+        task.CompletedOn.Should().Be(D(10, 16));
+        schedule.UpdateProgress(task.Id, 100, D(10, 21), D(10, 15));
+        task.CompletedOn.Should().Be(D(10, 15));
+        schedule.UpdateProgress(task.Id, 100, D(10, 22));
+        task.CompletedOn.Should().Be(D(10, 15), "without a day, the one it had stays");
+        schedule.UpdateProgress(task.Id, 100, D(10, 22), D(10, 22));
+        task.CompletedOn.Should().Be(D(10, 22), "today is a day up to today");
+    }
+
+    [Fact(DisplayName = "Dia da conclusão recusado")]
+    public void CompletionDay_InTheFuture_OrBelow100_IsRefused()
+    {
+        var (schedule, phase) = NewSchedule();
+        var task = Task(schedule, phase, "Mapear processos", D(10, 5), 5);
+
+        var future = () => schedule.UpdateProgress(task.Id, 100, D(10, 20), D(10, 21));
+        var below = () => schedule.UpdateProgress(task.Id, 80, D(10, 20), D(10, 16));
+
+        future.Should().Throw<ArgumentException>();
+        below.Should().Throw<ArgumentException>();
+        (task.Progress, task.CompletedOn).Should().Be((0, (DateOnly?)null));
+        Schedule.IsValidDoneDay(new DateOnly(1999, 12, 31), D(10, 20)).Should().BeFalse();
+        Schedule.IsValidDoneDay(new DateOnly(2000, 1, 1), D(10, 20)).Should().BeTrue();
+    }
+
     [Theory(DisplayName = "Progresso fora de 0 a 100%")]
     [InlineData(ScheduleItemKind.Task, -1, false)]
     [InlineData(ScheduleItemKind.Task, 101, false)]
@@ -439,6 +472,24 @@ public sealed class ScheduleTests
         milestone.Start.Should().Be(D(10, 27));
         milestone.IsLate(D(10, 28)).Should().BeFalse();
         schedule.SetReached(Guid.CreateVersion7(), true, Today).Should().BeFalse();
+    }
+
+    [Fact(DisplayName = "Marco atingido num dia informado")]
+    public void Milestone_IsReached_OnTheDayInformed_UpToToday()
+    {
+        var (schedule, phase) = NewSchedule();
+        var milestone = Milestone(schedule, phase, "Aceite da homologação", D(10, 20));
+
+        schedule.SetReached(milestone.Id, true, D(10, 20), D(10, 16)).Should().BeTrue();
+        milestone.ReachedOn.Should().Be(D(10, 16));
+        schedule.SetReached(milestone.Id, true, D(10, 21), D(10, 19));
+        milestone.ReachedOn.Should().Be(D(10, 19), "a milestone reached takes the day informed");
+        var future = () => schedule.SetReached(milestone.Id, true, D(10, 21), D(10, 22));
+        var unmarking = () => schedule.SetReached(milestone.Id, false, D(10, 21), D(10, 16));
+
+        future.Should().Throw<ArgumentException>();
+        unmarking.Should().Throw<ArgumentException>();
+        milestone.ReachedOn.Should().Be(D(10, 19));
     }
 
     [Fact(DisplayName = "Desmarcar marco")]

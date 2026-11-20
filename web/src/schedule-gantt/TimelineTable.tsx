@@ -9,11 +9,15 @@ import { IconButton } from '../components/Button';
 import { DueDate } from '../components/DueDate';
 import { formatDayMonthText } from '../format/dates';
 import {
+  actualEndOf,
   deadlineText,
   lateText,
   milestoneStatus,
   missesDeadline,
   ownerText,
+  type PhaseEnds,
+  phaseEndsOf,
+  plannedEndOf,
 } from '../projects/schedule';
 import type { GanttRow } from './ganttRows';
 
@@ -28,6 +32,10 @@ export interface TimelineTableProps {
   rows: readonly GanttRow[];
   collapsed: ReadonlySet<string>;
   columns: TimelineColumns;
+  /** The planned end, of the baseline, in Expandir: with a baseline saved and shown in "Exibir" (Status-3). */
+  showPlanned?: boolean;
+  /** The planned and actual ends of each phase, from all of its items; without them, from the items of the line. */
+  phaseEnds?: ReadonlyMap<string, PhaseEnds>;
   clientName: string | null;
   selectedId?: string;
   /** The line the keyboard is on. */
@@ -48,6 +56,8 @@ export function TimelineTable({
   rows,
   collapsed,
   columns,
+  showPlanned = false,
+  phaseEnds,
   clientName,
   selectedId,
   active,
@@ -148,6 +158,14 @@ export function TimelineTable({
             <span role="columnheader" className="fp-gantt__col">
               {t('projects.timeline.columns.end')}
             </span>
+            {showPlanned && (
+              <span role="columnheader" className="fp-gantt__col fp-gantt__col--planned">
+                {t('projects.timeline.columns.plannedEnd')}
+              </span>
+            )}
+            <span role="columnheader" className="fp-gantt__col fp-gantt__col--actual">
+              {t('projects.timeline.columns.actualEnd')}
+            </span>
             <span role="columnheader" className="fp-gantt__col fp-gantt__col--deadline">
               {t('projects.timeline.columns.deadline')}
             </span>
@@ -169,6 +187,8 @@ export function TimelineTable({
           id={`${idPrefix}-${row.key}`}
           open={!collapsed.has(row.key)}
           columns={columns}
+          showPlanned={showPlanned}
+          phaseEnds={phaseEnds}
           clientName={clientName}
           selected={row.key === selectedId}
           active={row.key === current?.key}
@@ -191,6 +211,8 @@ function TableRow({
   id,
   open,
   columns,
+  showPlanned,
+  phaseEnds,
   clientName,
   selected,
   active,
@@ -201,6 +223,8 @@ function TableRow({
   id: string;
   open: boolean;
   columns: TimelineColumns;
+  showPlanned: boolean;
+  phaseEnds: ReadonlyMap<string, PhaseEnds> | undefined;
   clientName: string | null;
   selected: boolean;
   active: boolean;
@@ -210,6 +234,10 @@ function TableRow({
   const { t } = useTranslation();
   const target = row.target;
   const item = target.kind === 'item' ? target.item : undefined;
+  const ends: PhaseEnds =
+    target.kind === 'item'
+      ? { planned: plannedEndOf(target.item), actual: actualEndOf(target.item) }
+      : (phaseEnds?.get(target.phase.id) ?? phaseEndsOf(target.phase));
   const classes = ['fp-gantt__row'];
   if (row.shape === 'summary') {
     classes.push('fp-gantt__row--phase');
@@ -274,6 +302,14 @@ function TableRow({
           </span>
           <span role="gridcell" className="fp-gantt__col">
             {item?.kind === 'Task' ? formatDayMonthText(item.end) : ''}
+          </span>
+          {showPlanned && (
+            <span role="gridcell" className="fp-gantt__col fp-gantt__col--planned">
+              {ends.planned === null ? '' : formatDayMonthText(ends.planned)}
+            </span>
+          )}
+          <span role="gridcell" className="fp-gantt__col fp-gantt__col--actual">
+            {ends.actual === null ? '' : formatDayMonthText(ends.actual)}
           </span>
           <span role="gridcell" className="fp-gantt__col fp-gantt__col--deadline">
             {item?.deadline !== undefined && item.deadline !== null && <DeadlineCell item={item} />}

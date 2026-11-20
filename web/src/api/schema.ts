@@ -3336,9 +3336,14 @@ export interface components {
             absences: components["schemas"]["AbsenceResponse"][];
             canManage: boolean;
         };
-        /** @description Whether a milestone was reached. */
+        /** @description Whether a milestone was reached and, when it was, the day, up to today (ADR-0167). */
         MilestoneReachedRequest: {
             reached: boolean;
+            /**
+             * Format: date
+             * @description The day the milestone was reached, up to today, only when reached; without it, today, or the day it already had (ADR-0167).
+             */
+            reachedOn?: null | string;
         };
         /**
          * @description How much of the file came: its tasks (the lines with a name) and the ones brought, its resources (of any kind) and the
@@ -4594,10 +4599,15 @@ export interface components {
             progress: number;
             late: boolean;
         };
-        /** @description The progress of a task, from 0 to 100. */
+        /** @description The progress of a task, from 0 to 100, and, at 100%, the day it was completed, up to today (ADR-0167). */
         ScheduleProgressRequest: {
             /** Format: int32 */
             progress: number;
+            /**
+             * Format: date
+             * @description The day the task was completed, up to today, only at 100%; without it, today, or the day it already had at 100% (ADR-0167).
+             */
+            completedOn?: null | string;
         };
         /**
          * @description The projection of a late task (ADR-0164): its projected start and end, the business days its end goes past the
