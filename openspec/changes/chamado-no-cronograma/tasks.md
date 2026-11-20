@@ -31,7 +31,7 @@
 ## 6. Demonstração e documentação
 
 - [x] 6.1 Passo `impacts` no plano da demonstração, com o chamado da rejeição 539 ligado a Executar testes, e os testes de `web/scripts/demo`
-- [ ] 6.2 `CLAUDE.md`, `docs/glossario.md` e `docs/discovery.md` com a ligação do chamado ao cronograma, e `openspec validate --all --strict` limpo
+- [x] 6.2 `CLAUDE.md`, `docs/glossario.md` e `docs/discovery.md` com a ligação do chamado ao cronograma, e `openspec validate --all --strict` limpo
 - [ ] 6.3 Verificação completa: `dotnet test GerenWare.slnx`, `dotnet format GerenWare.slnx --verify-no-changes` e a demonstração carregada mostrando o chamado no cronograma, na Lista e na Visão geral
 
 ## Workflow follow-up

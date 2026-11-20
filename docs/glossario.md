@@ -162,7 +162,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Visão geral do projeto | ProjectOverview | A aba Visão geral, que responde "está no prazo?", montada no servidor (`GET /api/projects/{id}/overview`, ADR-0073) |
 | Andamento previsto | SchedulePlan.PlannedProgress | O que já deveria estar feito até o fim de hoje, em dias úteis, pela linha de base quando existe |
 | Desvio do prazo final | Deviation | Os dias úteis entre o fim do cronograma e o da linha de base, com sinal |
-| Precisa de atenção | Attention | As tarefas atrasadas, os chamados vencidos, por vencer ou sem responsável, os aceites pendentes e os chamados parados nos fornecedores do projeto |
+| Precisa de atenção | Attention | As tarefas atrasadas, os itens com a data-limite estourada, os chamados que ameaçam um marco, os chamados vencidos, por vencer ou sem responsável, os aceites pendentes e os chamados parados nos fornecedores do projeto |
 | Chamados do projeto na visão geral | IProjectTickets | Contrato do `Projects.Contracts`, que o `Tickets` implementa (`TicketProjectOverview`) |
 | Prazo que conta agora | TicketDueNow | O prazo de um chamado que vale hoje (primeira resposta ou resolução) e o estado dele, num lugar só |
 
@@ -190,6 +190,10 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Chamado em fornecedor | VendorTicket | Registrado no nosso chamado por quem atende, na auditoria (ADR-0028) |
 | Fornecedor | Vendor | Cadastrado pelo administrador em Administração, Fornecedores; nunca é excluído, só inativado |
 | Status no fornecedor: Aberto no fornecedor, Em análise, Aguardando nosso retorno, Resolvido, Fechado | VendorTicketStatus: Open, InAnalysis, WaitingForUs, Resolved, Closed | Qualquer status vai para qualquer outro |
+| Chamado no cronograma (ligação) | TicketImpact (`tickets.ticket_impacts`) | A tarefa ou o marco que o chamado impacta, ligado por quem atende, até 10 por chamado, sem mudar datas nem prazos (ADR-0164) |
+| No cronograma (seção do chamado) | TicketSchedule (`ScheduleSection`) | Os itens ligados, os marcos ameaçados e o aviso do caminho crítico, no painel do chamado |
+| Marco ameaçado | ThreatenedMilestone, ScheduleThreat | Marco não atingido que depende, pelas dependências de qualquer tipo, de um item ligado a um chamado em aberto (`ScheduleImpacts`) |
+| Ameaçado por | Threats | Os chamados em aberto que ameaçam um marco, com os itens por onde passam, no detalhe do marco e na Visão geral |
 | Sem retorno do fornecedor (parado) | VendorTickets.StaleDaysOf | Em aberto no fornecedor e sem atualização há `Tickets:VendorStaleBusinessDays` (5) dias úteis |
 | Com fornecedor (visão) | TicketView.WithVendor | Os chamados com registro em fornecedor |
 | Visões: Atribuídos a mim, Sem responsável nos meus times, Abertos por mim, Todos os abertos | TicketView: AssignedToMe, UnassignedInMyTeams, OpenedByMe, All | "Sem responsável" da aba do projeto é `Unassigned` (ADR-0068) |
