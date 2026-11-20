@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '../../src/test/server';
 import { loadDemo, screensAddress } from './load.ts';
 import {
+  doneDayOf,
   demoClients,
   type DemoTicket,
   demoPeople,
@@ -36,6 +37,14 @@ let numbers = 0;
 let anonymized = 0;
 /** The projects the load created, with their ids. */
 let created: { code: string; id: string }[] = [];
+/** The items of each schedule as the load created them, by project, with the end as calendar days (ADR-0167). */
+let scheduleItems = new Map<string, { id: string; end: string }[]>();
+
+const calendarEnd = (start: string, duration: number) => {
+  const day = new Date(`${start}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + Math.max(duration - 1, 0));
+  return day.toISOString().slice(0, 10);
+};
 
 const personOfEmail = (email: string) =>
   email === formerColleague.email
@@ -115,6 +124,7 @@ beforeEach(() => {
   numbers = 0;
   anonymized = 0;
   created = [];
+  scheduleItems = new Map();
   server.use(
     http.all(`${base}/api/*`, async ({ request }) => {
       await keep(request);
@@ -247,6 +257,19 @@ beforeEach(() => {
       HttpResponse.text('<Project xmlns="http://schemas.microsoft.com/project" />', {
         headers: { 'Content-Type': 'application/xml' },
       }),
+    ),
+    http.post(`${base}/api/projects/:id/schedule/items`, async ({ params, request }) => {
+      const { start, duration } = (await request.clone().json()) as {
+        start: string;
+        duration: number;
+      };
+      const item = { id: nextId(), end: calendarEnd(start, duration) };
+      const project = String(params.id);
+      scheduleItems.set(project, [...(scheduleItems.get(project) ?? []), item]);
+      return HttpResponse.json({ id: item.id }, { status: 201 });
+    }),
+    http.get(`${base}/api/projects/:id/schedule`, ({ params }) =>
+      HttpResponse.json({ phases: [{ items: scheduleItems.get(String(params.id)) ?? [] }] }),
     ),
     http.post(`${base}/api/projects/ms-project-preview`, () => HttpResponse.json(msProjectPreview)),
     http.post(`${base}/api/tickets`, () =>
@@ -507,6 +530,43 @@ describe('Linha de base na demonstração', () => {
     expect(
       main?.phases.flatMap((phase) => phase.items).filter((item) => item.movedTo !== undefined),
     ).toMatchObject([{ name: 'Parametrizar regras de ICMS', day: 8, movedTo: 10 }]);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Fim real na demonstração" (ADR-0167).
+describe('Fim real na demonstração', () => {
+  it('Fim real na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    const items = [...scheduleItems.values()].flat();
+    const endOf = (path: string) => items.find((item) => path.includes(item.id))?.end;
+    const sent = [...bodies.entries()].filter(([path]) => /\/(progress|reached)$/.test(path));
+    const done = sent.flatMap(([path, all]) =>
+      (all as { progress?: number; reached?: boolean; completedOn?: string; reachedOn?: string }[])
+        .filter((body) => body.progress === 100 || body.reached === true)
+        .map((body) => ({ path, day: body.completedOn ?? body.reachedOn })),
+    );
+    expect(done.length).toBeGreaterThan(5);
+    // Each one on the day it was planned to end, never after today, 19/10/2026.
+    for (const { path, day } of done) {
+      const planned = endOf(path);
+      expect(day, path).toBe(
+        planned !== undefined && planned < '2026-10-19' ? planned : '2026-10-19',
+      );
+    }
+    // Below 100%, no day.
+    const open = sent.flatMap(([, all]) =>
+      (all as { progress?: number; completedOn?: string }[]).filter(
+        (body) => body.progress !== undefined && body.progress < 100,
+      ),
+    );
+    expect(open.length).toBeGreaterThan(0);
+    expect(open.every((body) => body.completedOn === undefined)).toBe(true);
+  });
+
+  it('Dia da conclusão nunca depois de hoje', () => {
+    expect(doneDayOf('2026-10-09', '2026-10-19')).toBe('2026-10-09');
+    expect(doneDayOf('2026-10-23', '2026-10-19')).toBe('2026-10-19');
   });
 });
 

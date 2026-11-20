@@ -6,7 +6,7 @@
 
 - [x] 2.1 O dia informado no domínio (`SetProgress`, `SetReached`, `IsValidDoneDay`), nos casos de uso e nos pedidos do progresso e do marco, com os testes do domínio e da API dos cenários "Concluir num dia informado", "Dia da conclusão recusado" e "Marco atingido num dia informado", e o contrato da API atualizado
 - [x] 2.2 "Concluída em" no diálogo do progresso e "Alterar dia" na tarefa concluída e no marco atingido, com os testes de tela dos cenários de "Alterar o dia da conclusão pela tela"
-- [ ] 2.3 A demonstração com o dia planejado nas tarefas concluídas e nos marcos atingidos, com os testes de `web/scripts/demo` do cenário "Fim real na demonstração"
+- [x] 2.3 A demonstração com o dia planejado nas tarefas concluídas e nos marcos atingidos, com os testes de `web/scripts/demo` do cenário "Fim real na demonstração"
 
 ## 3. Regras de tela
 

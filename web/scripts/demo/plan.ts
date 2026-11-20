@@ -2531,6 +2531,14 @@ export function dayFrom(first: string, days: number): string {
   return dayText(utcOf(first) + days * dayInMilliseconds);
 }
 
+/**
+ * The day a task of the plan was completed or a milestone reached: the day it was planned to end, or today when that
+ * comes later, since nobody completes in the future (ADR-0167).
+ */
+export function doneDayOf(planned: string, today: string): string {
+  return planned < today ? planned : today;
+}
+
 /** The day some working days (Monday to Friday) before today, today itself for 0, as the hours of the plan say it. */
 export function workDaysBefore(today: string, days: number): string {
   let time = utcOf(today);

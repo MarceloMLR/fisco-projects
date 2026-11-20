@@ -5,6 +5,7 @@ import { pngOf } from './png.ts';
 import {
   administrator,
   dayFrom,
+  doneDayOf,
   demoClients,
   type DemoDocument,
   type DemoFile,
@@ -566,26 +567,46 @@ async function loadProject(
         `Item ${item.name} de ${project.code}`,
       ).id;
       ids.set(item.name, itemId);
-      if (item.progress !== undefined) {
-        // The person in charge updates the progress of the task; without one, the manager (ADR-0043).
-        const who = personOf(item.owner ?? leader).api;
-        done(
-          await who.PUT('/api/projects/{id}/schedule/items/{itemId}/progress', {
-            params: { path: { id, itemId } },
-            body: { progress: item.progress },
-          }),
-          `Progresso de ${item.name}`,
-        );
-      }
-      if (item.reached === true) {
-        done(
-          await builder.PUT('/api/projects/{id}/schedule/items/{itemId}/reached', {
-            params: { path: { id, itemId } },
-            body: { reached: true },
-          }),
-          `Marco ${item.name}`,
-        );
-      }
+    }
+  }
+
+  // The progress and the milestones reached, once the items have their dates: a task done and a milestone reached on
+  // the day they were planned, never after today, so the actual end is not the day of the load (ADR-0167).
+  const plannedItems = project.phases.flatMap((phase) => phase.items);
+  const planned = plannedItems.some((item) => item.progress === 100 || item.reached === true)
+    ? new Map(
+        must(
+          await builder.GET('/api/projects/{id}/schedule', { params: { path: { id } } }),
+          `Cronograma de ${project.code}`,
+        ).phases.flatMap((phase) => phase.items.map((item) => [item.id, item.end] as const)),
+      )
+    : new Map<string, string>();
+  for (const item of plannedItems) {
+    const itemId = idOf(item.name, 'progress');
+    const day = planned.get(itemId);
+    if (item.progress !== undefined) {
+      // The person in charge updates the progress of the task; without one, the manager (ADR-0043).
+      const who = personOf(item.owner ?? leader).api;
+      done(
+        await who.PUT('/api/projects/{id}/schedule/items/{itemId}/progress', {
+          params: { path: { id, itemId } },
+          body: {
+            progress: item.progress,
+            completedOn:
+              item.progress === 100 && day !== undefined ? doneDayOf(day, today) : undefined,
+          },
+        }),
+        `Progresso de ${item.name}`,
+      );
+    }
+    if (item.reached === true) {
+      done(
+        await builder.PUT('/api/projects/{id}/schedule/items/{itemId}/reached', {
+          params: { path: { id, itemId } },
+          body: { reached: true, reachedOn: day === undefined ? undefined : doneDayOf(day, today) },
+        }),
+        `Marco ${item.name}`,
+      );
     }
   }
 
