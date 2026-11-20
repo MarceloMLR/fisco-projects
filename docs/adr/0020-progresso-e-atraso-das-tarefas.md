@@ -1,5 +1,5 @@
 ---
-status: aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128)
+status: aceita (item "Apontamento de horas trabalhadas" substituído pelo ADR-0128; dia da conclusão completado pelo ADR-0167)
 date: 2026-10-13
 decision-makers: Marcelo Ribeiro
 ---
@@ -35,7 +35,7 @@ Escopo:
 | Marco atingido ou não, marcado pelo gestor ou por um termo de aceite (a decidir no bloco de termos) | v1 |
 | Progresso da fase e do projeto ponderado pela duração das tarefas | v1 |
 | Tarefa atrasada (prazo passou sem chegar a 100%) destacada em vermelho | v1 |
-| Data real de conclusão registrada quando a tarefa chega a 100% | v1 |
+| Data real de conclusão registrada quando a tarefa chega a 100% (completado pelo ADR-0167: quem conclui pode informar o dia, de hoje para trás) | v1 |
 | Vários responsáveis por tarefa | depois |
 | Comentários e anexos na própria tarefa | depois |
 | Apontamento de horas trabalhadas | fora |

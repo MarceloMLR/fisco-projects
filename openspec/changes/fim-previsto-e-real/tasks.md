@@ -1,22 +1,28 @@
 ## 1. Roadmap
 
-- [ ] 1.1 Status-3 "Em andamento" no `docs/roadmap.md`
+- [x] 1.1 Status-3 "Em andamento" no `docs/roadmap.md`
 
-## 2. Regras de tela
+## 2. Dia da conclusão informado
 
-- [ ] 2.1 `plannedEndOf`, `actualEndOf` e `phaseEndsOf` em `schedule.ts`, com os testes dos cenários de "Fim previsto e fim real"
+- [ ] 2.1 O dia informado no domínio (`SetProgress`, `SetReached`, `IsValidDoneDay`), nos casos de uso e nos pedidos do progresso e do marco, com os testes do domínio e da API dos cenários "Concluir num dia informado", "Dia da conclusão recusado" e "Marco atingido num dia informado", e o contrato da API atualizado
+- [ ] 2.2 "Concluída em" no diálogo do progresso e "Alterar dia" na tarefa concluída e no marco atingido, com os testes de tela dos cenários de "Alterar o dia da conclusão pela tela"
+- [ ] 2.3 A demonstração com o dia planejado nas tarefas concluídas e nos marcos atingidos, com os testes de `web/scripts/demo` do cenário "Fim real na demonstração"
 
-## 3. Lista, Expandir e Excel
+## 3. Regras de tela
 
-- [ ] 3.1 Colunas "Fim previsto" (só com a linha de base) e "Fim real" na Lista, fora da edição na tabela, com os testes de tela dos cenários de "Fim previsto e fim real na Lista"
-- [ ] 3.2 As duas colunas na tabela completa do Expandir, com o "Fim previsto" pela linha de base ligada em "Exibir", com os testes do cenário "Fim previsto e real no Expandir"
-- [ ] 3.3 "Fim previsto (linha de base)" e "Fim real" depois de "Fim" no Excel, com o teste do cenário "Fim previsto e real no Excel"
-- [ ] 3.4 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
+- [ ] 3.1 `plannedEndOf`, `actualEndOf` e `phaseEndsOf` em `schedule.ts`, com os testes dos cenários de "Fim previsto e fim real"
 
-## 4. Documentação e verificação
+## 4. Lista, Expandir e Excel
 
-- [ ] 4.1 `CLAUDE.md` e `docs/glossario.md` com o fim previsto e o fim real, e `openspec validate --all --strict` limpo
-- [ ] 4.2 Verificação: os testes do frontend e a demonstração carregada mostrando as colunas na Lista, no Expandir e no Excel
+- [ ] 4.1 Colunas "Fim previsto" (só com a linha de base) e "Fim real" na Lista, fora da edição na tabela, com os testes de tela dos cenários de "Fim previsto e fim real na Lista"
+- [ ] 4.2 As duas colunas na tabela completa do Expandir, com o "Fim previsto" pela linha de base ligada em "Exibir", com os testes do cenário "Fim previsto e real no Expandir"
+- [ ] 4.3 "Fim previsto (linha de base)" e "Fim real" depois de "Fim" no Excel, com o teste do cenário "Fim previsto e real no Excel"
+- [ ] 4.4 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
+
+## 5. Documentação e verificação
+
+- [ ] 5.1 `CLAUDE.md`, `docs/glossario.md` e o ADR-0167 no índice, com o fim previsto, o fim real e o dia informado, e `openspec validate --all --strict` limpo
+- [ ] 5.2 Verificação: `dotnet test`, `dotnet format`, os testes do frontend e a demonstração carregada mostrando as colunas na Lista, no Expandir e no Excel
 
 ## Workflow follow-up
 

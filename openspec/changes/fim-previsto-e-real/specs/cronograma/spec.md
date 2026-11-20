@@ -36,7 +36,71 @@ A Lista MUST mostrar, logo depois de "Fim", as colunas "Fim previsto", só com a
 - **WHEN** o gerente liga "Editar na tabela" e escolhe a célula do fim real
 - **THEN** a célula não entra em edição
 
+### Requirement: Alterar o dia da conclusão pela tela
+
+O diálogo do progresso MUST pedir "Concluída em" quando o progresso digitado é 100%, com o dia de hoje ou o da conclusão já guardada. No detalhe, a tarefa concluída, para quem atualiza o progresso dela, e o marco atingido, para quem edita o cronograma, MUST ter "Alterar dia", com o dia guardado. O dia recusado pela API MUST voltar ao campo, e "Concluir" e "Marcar como atingido" continuam com o dia de hoje (ADR-0086, ADR-0167).
+
+#### Scenario: Concluir num dia pela tela
+- **WHEN** o responsável abre "Atualizar progresso" de uma tarefa a 80%, digita 100 e escolhe a conclusão em 16/10
+- **THEN** a tarefa passa a 100% com a conclusão em 16/10
+
+#### Scenario: Alterar o dia do marco pela tela
+- **WHEN** o gerente escolhe "Alterar dia" num marco atingido em 22/10 e digita 21/10
+- **THEN** o detalhe mostra o marco atingido em 21/10
+
+#### Scenario: Dia no futuro pela tela
+- **WHEN** o gerente escolhe "Alterar dia" numa tarefa concluída e digita um dia depois de hoje
+- **THEN** o campo diz que o dia não pode ser depois de hoje, e nada muda
+
 ## MODIFIED Requirements
+
+### Requirement: Progresso das tarefas
+
+O progresso de uma tarefa MUST ir de 0 a 100%; fora disso, 400. Ao chegar a 100%, a tarefa MUST guardar a data real de conclusão: o dia informado por quem atualiza o progresso, de 01/01/2000 até hoje, ou o dia de hoje no fuso da instalação; já a 100%, o dia informado MUST substituir o guardado. Abaixo de 100%, a data MUST ser apagada, e o dia informado, ou um dia no futuro, MUST receber 400. Alterar os outros dados da tarefa sem informar o progresso MUST manter o progresso (ADR-0020, ADR-0167).
+
+#### Scenario: Concluir tarefa guarda a data
+- **WHEN** o gerente passa uma tarefa para 100% em 16/10/2026, no fuso da instalação
+- **THEN** a tarefa mostra a conclusão em 16/10/2026, e salvar de novo a 100% no dia seguinte mantém essa data
+
+#### Scenario: Concluir num dia informado
+- **WHEN** o responsável passa a tarefa para 100% em 20/10/2026 informando a conclusão em 16/10/2026, e depois a corrige para 15/10/2026
+- **THEN** a tarefa fica concluída em 16/10/2026 e, depois, em 15/10/2026
+
+#### Scenario: Dia da conclusão recusado
+- **WHEN** hoje é 20/10/2026 e o gerente informa a conclusão em 21/10/2026, ou informa um dia passando a tarefa para 80%
+- **THEN** a API responde 400 no campo do dia, e a tarefa continua como estava
+
+#### Scenario: Voltar abaixo de 100%
+- **WHEN** o gerente passa para 80% uma tarefa concluída
+- **THEN** a tarefa fica sem data de conclusão
+
+#### Scenario: Alterar a tarefa mantém o progresso
+- **WHEN** o responsável passa a tarefa para 60% e, depois, o gerente muda o nome dela sem informar o progresso
+- **THEN** a tarefa fica com o nome novo e continua a 60%
+
+### Requirement: Marco atingido
+
+O administrador e o gerente MUST poder marcar um marco como atingido e desmarcá-lo. Ao ser marcado, o marco MUST guardar o dia informado, de 01/01/2000 até hoje, ou o dia de hoje no fuso da instalação; já atingido, o dia informado MUST substituir o guardado; ao ser desmarcado, MUST apagá-lo, e o dia informado MUST receber 400. O líder técnico, o colaborador, o desenvolvedor e o leitor MUST receber 403; numa tarefa, 400, e num projeto encerrado, 409. Mudar a data do marco MUST NOT desmarcá-lo (ADR-0020, ADR-0043, ADR-0086, ADR-0167).
+
+#### Scenario: Marcar marco como atingido
+- **WHEN** o gerente marca como atingido, em 16/10/2026, o marco "Aceite da homologação"
+- **THEN** o marco fica atingido em 16/10/2026, e a auditoria tem "Alterou um marco" com a data antes e depois
+
+#### Scenario: Marco atingido num dia informado
+- **WHEN** o gerente marca o marco como atingido em 20/10/2026 informando 16/10/2026, e depois informa um dia depois de hoje
+- **THEN** o marco fica atingido em 16/10/2026, e a segunda vez recebe 400 no campo do dia
+
+#### Scenario: Desmarcar marco
+- **WHEN** o gerente desmarca um marco atingido
+- **THEN** o marco fica pendente, sem a data
+
+#### Scenario: Líder técnico não marca o marco
+- **WHEN** o líder técnico tenta marcar um marco como atingido
+- **THEN** a API responde 403 e o marco continua pendente
+
+#### Scenario: Atingir uma tarefa
+- **WHEN** o gerente tenta marcar uma tarefa como atingida
+- **THEN** a API responde 400
 
 ### Requirement: Expandir o cronograma
 
