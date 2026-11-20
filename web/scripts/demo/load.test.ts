@@ -220,6 +220,7 @@ beforeEach(() => {
             id: `0199f5a2-2222-7000-8000-${String(index + 1).padStart(12, '0')}`,
             name,
             isAcceptance: index === 5,
+            isStatusReport: false,
             count: 0,
           }))
           .filter((folder) => !missingFolders.includes(folder.name)),

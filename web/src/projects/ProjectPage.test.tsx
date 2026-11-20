@@ -45,6 +45,7 @@ beforeEach(() => {
     canDelete: false,
     canChooseFolder: false,
     canExportSchedule: true,
+    canGenerateStatusReport: true,
   };
   const current = projects;
   const find = (id: unknown) => current.find((project) => project.id === id);
@@ -206,6 +207,7 @@ describe('Ações do projeto', () => {
       canDelete: false,
       canChooseFolder: false,
       canExportSchedule: false,
+      canGenerateStatusReport: false,
     };
     await openProject();
 
@@ -289,7 +291,7 @@ describe('Ações do projeto', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual([text.actions.reopen]);
+    ).toEqual([text.statusReport.action, text.actions.reopen]);
     expect(requests).toEqual(['PUT status Completed']);
   });
 
@@ -329,6 +331,7 @@ describe('Ações do projeto', () => {
       canDelete: false,
       canChooseFolder: false,
       canExportSchedule: false,
+      canGenerateStatusReport: false,
     };
     await openProject();
 

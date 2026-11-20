@@ -102,6 +102,7 @@ beforeEach(() => {
           canDelete: false,
           canChooseFolder: false,
           canExportSchedule: true,
+          canGenerateStatusReport: true,
         },
         scheduleStart: null,
         scheduleEnd: null,

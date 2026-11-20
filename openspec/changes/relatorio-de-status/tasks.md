@@ -6,7 +6,7 @@
 
 - [x] 2.1 A pasta padrão e a do projeto marcadas como a dos relatórios (`IsStatusReport`), nunca desativadas. A migração do `Documents` inclui "Relatórios de status", vista só pela gestão. Testes dos cenários "Pasta dos relatórios padrão" e "Pasta dos relatórios sempre ativa", com o "Projeto novo recebe as pastas padrão" atualizado para sete pastas
 - [x] 2.2 O contrato `IStatusReportDocuments` (`Projects.Contracts`) e a implementação no `Documents`: cria a pasta que falta e guarda o arquivo como documento novo ou nova versão, em qualquer situação do projeto. Testes do módulo, com o cenário "Projeto antigo recebe a pasta dos relatórios"
-- [ ] 2.3 A marca da pasta dos relatórios em Pastas padrão, sem "Desativar", com o teste de tela
+- [x] 2.3 A marca da pasta dos relatórios em Pastas padrão, sem "Desativar", com o teste de tela
 
 ## 3. Os dados dos outros módulos
 
@@ -47,7 +47,7 @@
 
 ## 7. A tela
 
-- [ ] 7.1 "Gerar relatório de status" em "Ações do projeto" e o `StatusReportDialog`: o rascunho, os riscos com a classificação e o ponto de atenção, "Mostrar horas", o envio, o download e o aviso, com os textos em `pt-BR.json`. Testes de tela dos cenários de "Gerar o relatório pela tela"
+- [x] 7.1 "Gerar relatório de status" em "Ações do projeto" e o `StatusReportDialog`: o rascunho, os riscos com a classificação e o ponto de atenção, "Mostrar horas", o envio, o download e o aviso, com os textos em `pt-BR.json`. Testes de tela dos cenários de "Gerar o relatório pela tela"
 - [ ] 7.2 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
 
 ## 8. Demonstração, documentação e verificação

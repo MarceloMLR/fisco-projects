@@ -5,6 +5,7 @@ import EditOutlined from '@mui/icons-material/EditOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
+import SummarizeOutlined from '@mui/icons-material/SummarizeOutlined';
 import TaskAltOutlined from '@mui/icons-material/TaskAltOutlined';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -158,7 +159,7 @@ export function DefaultFoldersPage() {
         headerName: t('defaultFolders.columns.use'),
         width: 180,
         renderCell: ({ row }) =>
-          row.isAcceptance ? (
+          row.isAcceptance || row.isStatusReport ? (
             <Box
               component="span"
               sx={{
@@ -168,11 +169,18 @@ export function DefaultFoldersPage() {
                 color: 'var(--text)',
               }}
             >
-              <TaskAltOutlined
-                aria-hidden
-                sx={{ fontSize: 'var(--icon-sm)', color: 'var(--text-secondary)' }}
-              />
-              {t('defaultFolders.acceptance')}
+              {row.isAcceptance ? (
+                <TaskAltOutlined
+                  aria-hidden
+                  sx={{ fontSize: 'var(--icon-sm)', color: 'var(--text-secondary)' }}
+                />
+              ) : (
+                <SummarizeOutlined
+                  aria-hidden
+                  sx={{ fontSize: 'var(--icon-sm)', color: 'var(--text-secondary)' }}
+                />
+              )}
+              {t(row.isAcceptance ? 'defaultFolders.acceptance' : 'defaultFolders.statusReports')}
             </Box>
           ) : (
             <Box component="span" sx={{ color: 'var(--text-secondary)' }}>
@@ -355,16 +363,18 @@ export function DefaultFoldersPage() {
             {t('defaultFolders.menu.reactivate')}
           </MenuItem>
         )}
-        {menu?.folder.isActive === true && !menu.folder.isAcceptance && (
-          <MenuItem
-            onClick={() => {
-              void setActive(menu.folder, false);
-            }}
-          >
-            <BlockOutlined aria-hidden />
-            {t('defaultFolders.menu.deactivate')}
-          </MenuItem>
-        )}
+        {menu?.folder.isActive === true &&
+          !menu.folder.isAcceptance &&
+          !menu.folder.isStatusReport && (
+            <MenuItem
+              onClick={() => {
+                void setActive(menu.folder, false);
+              }}
+            >
+              <BlockOutlined aria-hidden />
+              {t('defaultFolders.menu.deactivate')}
+            </MenuItem>
+          )}
       </Menu>
       {changingProjectsFolder && rules !== undefined && (
         <ProjectsFolderDialog

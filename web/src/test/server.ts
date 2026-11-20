@@ -325,6 +325,7 @@ function demoProject(
       canDelete: false,
       canChooseFolder: false,
       canExportSchedule: true,
+      canGenerateStatusReport: true,
     },
     scheduleStart: null,
     scheduleEnd: null,
@@ -1624,6 +1625,18 @@ export const handlers = [
       : HttpResponse.json(dates);
   }),
   http.get('/api/projects/:id/overview', () => HttpResponse.json(emptyOverview)),
+  // The draft of a status report of a project without a report nor open tickets (ADR-0165).
+  http.get('/api/projects/:id/status-report', () =>
+    HttpResponse.json({
+      last: null,
+      summary: '',
+      focus: '',
+      nextSteps: '',
+      clientNeeds: '',
+      tickets: [],
+      risks: [],
+    }),
+  ),
   http.get('/api/projects/:id/closing', () =>
     HttpResponse.json({ openTickets: 0, incompleteTasks: 0, pendingAcceptances: 0 }),
   ),

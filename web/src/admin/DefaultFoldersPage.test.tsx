@@ -28,7 +28,14 @@ beforeEach(() => {
       const id = '0199f5a2-7c1e-7d40-9a1b-b00000000009';
       folders = [
         ...folders,
-        { id, name: body.name, isAcceptance: false, isActive: true, visibleTo: body.visibleTo },
+        {
+          id,
+          name: body.name,
+          isAcceptance: false,
+          isStatusReport: false,
+          isActive: true,
+          visibleTo: body.visibleTo,
+        },
       ].sort((a, b) => a.name.localeCompare(b.name));
       return HttpResponse.json({ id }, { status: 201 });
     }),
@@ -58,7 +65,7 @@ describe('Pastas padrão na Administração', () => {
   it('Pastas padrão pela tela', async () => {
     await renderApp('/admin/document-folders');
     await waitFor(() => {
-      expect(rows()).toHaveLength(6);
+      expect(rows()).toHaveLength(7);
     });
     expect(screen.getByRole('link', { name: /Pastas padrão/ })).toHaveAttribute(
       'aria-current',
@@ -67,6 +74,9 @@ describe('Pastas padrão na Administração', () => {
     expect(screen.getByText(text.note)).toBeVisible();
     expect(rows()[5]).toBe(
       `06 Termos de aceite${visibility.onlyManagement}${text.acceptance}${text.statuses.Active}`,
+    );
+    expect(rows()[6]).toBe(
+      `Relatórios de status${visibility.onlyManagement}${text.statusReports}${text.statuses.Active}`,
     );
     expect(rows()[3]).toBe(
       `04 Atas de reunião${visibility.everyone}${text.regular}${text.statuses.Inactive}`,
@@ -83,7 +93,7 @@ describe('Pastas padrão na Administração', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: text.dialog.add }));
 
     await waitFor(() => {
-      expect(rows()).toHaveLength(7);
+      expect(rows()).toHaveLength(8);
     });
     expect(requests).toEqual(['POST 05a Treinamentos TechLead,Contributor,Developer,Viewer']);
     expect(
@@ -94,7 +104,7 @@ describe('Pastas padrão na Administração', () => {
   it('Nome de pasta repetido pela tela', async () => {
     await renderApp('/admin/document-folders');
     await waitFor(() => {
-      expect(rows()).toHaveLength(6);
+      expect(rows()).toHaveLength(7);
     });
 
     fireEvent.click(screen.getByRole('button', { name: text.newFolder }));
@@ -120,7 +130,7 @@ describe('Pastas padrão na Administração', () => {
   it('Quem vê na pasta padrão pela tela', async () => {
     await renderApp('/admin/document-folders');
     await waitFor(() => {
-      expect(rows()).toHaveLength(6);
+      expect(rows()).toHaveLength(7);
     });
 
     fireEvent.click(
@@ -147,7 +157,7 @@ describe('Pastas padrão na Administração', () => {
   it('Pasta de termos com quem vê fixo pela tela', async () => {
     await renderApp('/admin/document-folders');
     await waitFor(() => {
-      expect(rows()).toHaveLength(6);
+      expect(rows()).toHaveLength(7);
     });
 
     fireEvent.click(
@@ -166,10 +176,34 @@ describe('Pastas padrão na Administração', () => {
     });
   });
 
+  // Spec: documentos, requirement "Pastas padrão" (ADR-0165).
+  it('Pasta dos relatórios sempre ativa pela tela', async () => {
+    await renderApp('/admin/document-folders');
+    await waitFor(() => {
+      expect(rows()).toHaveLength(7);
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: text.menu.button.replace('{{name}}', 'Relatórios de status'),
+      }),
+    );
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getByRole('menuitem', { name: text.menu.edit })).toBeVisible();
+    expect(
+      within(menu).queryByRole('menuitem', { name: text.menu.deactivate }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: text.menu.edit }));
+    const dialog = await screen.findByRole('dialog', { name: text.dialog.editTitle });
+    expect(
+      within(dialog).getByRole('checkbox', { name: ptBR.projects.roles.Viewer }),
+    ).not.toBeChecked();
+  });
+
   it('Pasta de termos sempre ativa pela tela', async () => {
     await renderApp('/admin/document-folders');
     await waitFor(() => {
-      expect(rows()).toHaveLength(6);
+      expect(rows()).toHaveLength(7);
     });
 
     fireEvent.click(

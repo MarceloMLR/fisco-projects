@@ -129,6 +129,9 @@ export type ProjectHoursView = components['schemas']['ProjectHoursView'];
 export type AdditionalHours = components['schemas']['AdditionalHoursResponse'];
 export type OverviewTimeline = components['schemas']['OverviewTimelineResponse'];
 export type OverviewTeam = components['schemas']['OverviewTeamResponse'];
+export type StatusReportDraft = components['schemas']['StatusReportDraftResponse'];
+export type StatusReportTicket = components['schemas']['StatusReportTicketResponse'];
+export type RiskLevel = components['schemas']['RiskLevel'];
 /** Who may take an action of the flow (TicketActors in the Tickets module). */
 export type TicketActor = 'Attendant' | 'Requester' | 'Manager' | 'Administrator' | 'System';
 

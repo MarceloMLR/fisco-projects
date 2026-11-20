@@ -143,6 +143,19 @@ export function projectClosingQuery(id: string) {
   });
 }
 
+/**
+ * The draft of a new status report of a project (ADR-0165): the texts of the last report, the open tickets and the
+ * risks suggested, asked again each time the dialog opens.
+ */
+export function statusReportDraftQuery(id: string) {
+  return queryOptions({
+    queryKey: [...queryKeys.projects, id, 'status-report'] as const,
+    queryFn: ({ signal }) =>
+      dataOf(api.GET('/api/projects/{id}/status-report', { params: { path: { id } }, signal })),
+    staleTime: 0,
+  });
+}
+
 /** The folder of a project in the file storage and whether it may still change (ADR-0122). */
 export function projectFolderQuery(id: string) {
   return queryOptions({
