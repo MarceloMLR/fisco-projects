@@ -13,13 +13,13 @@
 
 ## 4. Tela
 
-- [ ] 4.1 Seção "Projeção do atraso" nos dois detalhes da tarefa, com os textos em `schedule.ts`, nos temas claro e escuro, no computador e no celular, com os testes de tela dos cenários de "Projeção do atraso pela tela"
-- [ ] 4.2 Linha da tarefa em "Precisa de atenção" com o que ela empurra e a tarefa que devia ter começado, com os testes de `overview.ts` dos cenários de "Projeção do atraso na atenção"
-- [ ] 4.3 Contrato da API atualizado (`npm run api:update`), os simuladores dos testes de tela e `npm run lint`, `npm run typecheck` e `npm test` limpos
+- [x] 4.1 Seção "Projeção do atraso" nos dois detalhes da tarefa, com os textos em `schedule.ts`, nos temas claro e escuro, no computador e no celular, com os testes de tela dos cenários de "Projeção do atraso pela tela"
+- [x] 4.2 Linha da tarefa em "Precisa de atenção" com o que ela empurra e a tarefa que devia ter começado, com os testes de `overview.ts` dos cenários de "Projeção do atraso na atenção"
+- [x] 4.3 Contrato da API atualizado (`npm run api:update`), os simuladores dos testes de tela e `npm run lint`, `npm run typecheck` e `npm test` limpos
 
 ## 5. Documentação e verificação
 
-- [ ] 5.1 `CLAUDE.md` e `docs/glossario.md` com a projeção do atraso, e `openspec validate --all --strict` limpo
+- [x] 5.1 `CLAUDE.md` e `docs/glossario.md` com a projeção do atraso, e `openspec validate --all --strict` limpo
 - [ ] 5.2 Verificação completa: `dotnet test GerenWare.slnx`, `dotnet format GerenWare.slnx --verify-no-changes` e a demonstração carregada mostrando a projeção no detalhe e na Visão geral
 
 ## Workflow follow-up

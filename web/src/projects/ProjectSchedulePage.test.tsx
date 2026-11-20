@@ -392,6 +392,7 @@ describe('Editar o cronograma pela tela', () => {
             commentCount: 0,
             tickets: [],
             threats: [],
+            projection: null,
             duration: 3,
             progress: 0,
             completedOn: null,

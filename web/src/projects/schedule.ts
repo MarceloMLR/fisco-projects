@@ -190,6 +190,49 @@ export function slackText(item: Pick<ScheduleItem, 'float'>, t: TFunction): stri
     : t('projects.schedule.slack.none');
 }
 
+/** The projection of a late task (ADR-0164). */
+type Projection = NonNullable<ScheduleItem['projection']>;
+
+/**
+ * The projection of a late task in words (ADR-0164): the new end and the business days past the planned one ("Se
+ * começar em 19/10" for a task at 0%, which starts on the day of the projection), and what it pushes, each milestone
+ * by its day and then the end of the project, or "Não muda nenhum marco nem o fim do projeto".
+ */
+export function projectionTexts(
+  item: Pick<ScheduleItem, 'progress'> & { projection: Projection },
+  t: TFunction,
+): { summary: string; pushes: string[] } {
+  const { projection } = item;
+  const day = formatDayMonthText(projection.end);
+  const summary =
+    item.progress === 0
+      ? t('projects.schedule.projection.startsAndEnds', {
+          start: formatDayMonthText(projection.start),
+          day,
+          count: projection.days,
+        })
+      : t('projects.schedule.projection.ends', { day, count: projection.days });
+  const pushes = projection.milestones.map((milestone) =>
+    t('projects.schedule.projection.milestone', {
+      name: milestone.name,
+      count: milestone.days,
+      day: formatDayMonthText(milestone.projectedDay),
+    }),
+  );
+  if (projection.projectEnd !== null) {
+    pushes.push(
+      t('projects.schedule.projection.projectEnd', {
+        count: projection.projectEnd.days,
+        day: formatDayMonthText(projection.projectEnd.projectedEnd),
+      }),
+    );
+  }
+  return {
+    summary,
+    pushes: pushes.length === 0 ? [t('projects.schedule.projection.nothing')] : pushes,
+  };
+}
+
 /** A lag with its sign, as "+2" or "-1". */
 export const signedLag = (lag: number) => (lag > 0 ? `+${String(lag)}` : String(lag));
 

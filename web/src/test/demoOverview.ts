@@ -101,9 +101,25 @@ export function demoOverview(): ProjectOverview {
           name: 'Validar cadastro de produtos',
           owner: diego,
           progress: 80,
+          start: '2026-10-13',
           end: '2026-10-15',
           daysLate: 1,
-          blocks: ['Configurar plano de contas'],
+          // What is left ends today, and the milestone after it moves with it (ADR-0164).
+          projection: {
+            start: '2026-10-13',
+            end: '2026-10-16',
+            days: 1,
+            milestones: [
+              {
+                id: '0199f5a2-7c1e-7d40-9a1b-0000000e0001',
+                name: 'Cadastro validado',
+                day: '2026-10-15',
+                projectedDay: '2026-10-16',
+                days: 1,
+              },
+            ],
+            projectEnd: null,
+          },
         },
       ],
       // The tickets that threaten a milestone (ADR-0164): none unless a screen looks at them.

@@ -114,6 +114,7 @@ Termos do negócio, como aparecem nas specs e na interface, e o nome usado no c�
 | Linha de base | Baseline | |
 | Caminho crítico | CriticalPath | |
 | Folga | Float, ScheduleSlack, `float` | Dias úteis que uma tarefa ou marco pode terminar depois sem mudar o fim do projeto (GanttB-1) |
+| Projeção do atraso | ScheduleProjection, `projection` | O que uma tarefa atrasada empurra se o que falta seguir o ritmo planejado a partir de hoje: o novo fim, os marcos e o fim do projeto, sem gravar nada (ADR-0164) |
 | Tipo da dependência | ScheduleLinkType | "Termina, então começa" (FinishToStart), "Começa junto" (StartToStart) e "Termina junto" (FinishToFinish) (ADR-0137) |
 | Intervalo da dependência | Lag | Dias úteis de espera (positivo) ou de adiantamento (negativo), de -99 a 999 (ADR-0137) |
 | Data-limite | Deadline | Prazo de uma tarefa ou marco que não muda as datas e avisa quando o fim passa dele (GanttA-2) |

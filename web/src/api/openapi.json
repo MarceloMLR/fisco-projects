@@ -15739,9 +15739,10 @@
           "name",
           "owner",
           "progress",
+          "start",
           "end",
           "daysLate",
-          "blocks"
+          "projection"
         ],
         "type": "object",
         "properties": {
@@ -15766,6 +15767,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
           "end": {
             "type": "string",
             "format": "date"
@@ -15774,14 +15779,19 @@
             "type": "integer",
             "format": "int32"
           },
-          "blocks": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "projection": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the task would push if what is left of it took the planned pace from today; null in a closed project (ADR-0164).",
+                "$ref": "#/components/schemas/ScheduleProjectionResponse"
+              }
+            ]
           }
         },
-        "description": "A late task: its owner, progress, end, business days of delay and what depends on it."
+        "description": "A late task, or one that should have started and is at 0% (ADR-0164): its owner, progress, dates, business days of\ndelay and what it pushes."
       },
       "OverviewMilestoneResponse": {
         "required": [
@@ -16628,6 +16638,61 @@
           }
         },
         "description": "What deleting the project would remove (ADR-0041): how many items of each kind it has in every module."
+      },
+      "ProjectedEndResponse": {
+        "required": [
+          "end",
+          "projectedEnd",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "projectedEnd": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The end of the project now, the projected one and the business days it moves."
+      },
+      "ProjectedMilestoneResponse": {
+        "required": [
+          "id",
+          "name",
+          "day",
+          "projectedDay",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
+          },
+          "projectedDay": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A milestone not reached the projection moves: its day now, the projected one and the business days it moves."
       },
       "ProjectFolderChoiceResponse": {
         "required": [
@@ -17752,7 +17817,8 @@
           "ownerAbsences",
           "commentCount",
           "tickets",
-          "threats"
+          "threats",
+          "projection"
         ],
         "type": "object",
         "properties": {
@@ -17936,6 +18002,17 @@
               "$ref": "#/components/schemas/ScheduleThreatResponse"
             },
             "description": "The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164)."
+          },
+          "projection": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the late task would push if what is left of it took the planned pace from today, without saving; null for the other items and in a closed project (ADR-0164).",
+                "$ref": "#/components/schemas/ScheduleProjectionResponse"
+              }
+            ]
           }
         },
         "description": "A task or a milestone: the dates in business days of the calendar of the installation, the duration (zero for a\nmilestone), the progress (zero for a milestone), the day a task reached 100% or a milestone was reached, whether it\nis late and by how many business days (from the day after the end up to today; for a task with subtasks, the most\nof its subtasks; zero when it is not late, and while the delay began on non-business days only), whether the person\nmay update its progress now (only a task without subtasks, while the project is open), the owner, the ids of the\nitems it depends on, the task it is in and whether it has subtasks, whose dates and progress it then shows\n(ADR-0088), whether it is on the critical path (never a task with subtasks), and its start and end in the baseline\nwith the business days its end is after (positive) or before (negative) them, all null when it was not in the\nbaseline (ADR-0021)."
@@ -18150,6 +18227,47 @@
           }
         },
         "description": "The progress of a task, from 0 to 100."
+      },
+      "ScheduleProjectionResponse": {
+        "required": [
+          "start",
+          "end",
+          "days",
+          "milestones",
+          "projectEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectedMilestoneResponse"
+            }
+          },
+          "projectEnd": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProjectedEndResponse"
+              }
+            ]
+          }
+        },
+        "description": "The projection of a late task (ADR-0164): its projected start and end, the business days its end goes past the\nplanned one, the milestones not reached that would move, by their day, and the end of the project, when it moves."
       },
       "ScheduleRecalculationResponse": {
         "required": [

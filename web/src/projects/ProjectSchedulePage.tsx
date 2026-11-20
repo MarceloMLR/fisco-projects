@@ -95,6 +95,7 @@ import {
   TicketCount,
 } from './ScheduleStatus';
 import { ItemTickets } from './ScheduleTickets';
+import { ProjectionSection } from './ScheduleProjection';
 import { ScheduleBoard } from './ScheduleBoard';
 import { ScheduleTimeline } from './ScheduleTimeline';
 import {
@@ -1374,6 +1375,7 @@ function ItemEditor({
       )}
       {item.hasSubtasks && <SummaryDates item={item} />}
       <OwnerAwayLine item={item} />
+      <ProjectionSection item={item} />
       <SlackLine item={item} />
       <BaselineSection item={item} schedule={schedule} />
       {item.kind === 'Task' && <ItemHours project={project} item={item} onSaved={onSaved} />}
@@ -1557,6 +1559,7 @@ function ItemDetails({
       )}
       {subtasks > 0 && <SubtaskSection item={item} schedule={schedule} onOpen={onOpen} />}
       <OwnerAwayLine item={item} />
+      <ProjectionSection item={item} />
       <BaselineSection item={item} schedule={schedule} />
       <Box component="dl" sx={detailsListSx}>
         {parent !== undefined && (
