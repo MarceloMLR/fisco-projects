@@ -3,7 +3,15 @@ import type { Project, Schedule, ScheduleItem } from '../api/client';
 import type { Dates } from '../format/dates';
 import { buildXlsx, spreadsheetDay, type XlsxCell } from '../format/xlsx';
 import { xlsxColors } from '../format/xlsxColors';
-import { linkOf, milestoneStatus, ownerText, signedLag } from './schedule';
+import {
+  actualEndOf,
+  linkOf,
+  milestoneStatus,
+  ownerText,
+  phaseEndsOf,
+  plannedEndOf,
+  signedLag,
+} from './schedule';
 
 export interface ScheduleReport {
   project: Project;
@@ -101,6 +109,9 @@ export function scheduleReport({
     t('projects.export.excel.columns.owner'),
     t('projects.export.excel.columns.start'),
     t('projects.export.excel.columns.end'),
+    // The planned end, of the baseline, and the actual end, side by side with the end, as MS Project (Status-3).
+    t('projects.export.excel.columns.plannedEnd'),
+    t('projects.export.excel.columns.actualEnd'),
     t('projects.export.excel.columns.duration'),
     t('projects.export.excel.columns.progress'),
     t('projects.export.excel.columns.situation'),
@@ -111,12 +122,12 @@ export function scheduleReport({
     t('projects.export.excel.columns.critical'),
     t('projects.export.excel.columns.slack'),
     t('projects.export.excel.columns.baselineStart'),
-    t('projects.export.excel.columns.baselineEnd'),
     t('projects.export.excel.columns.baselineDeviation'),
     t('projects.export.excel.columns.note'),
   ];
   const rows: XlsxCell[][] = [];
   for (const phase of schedule.phases) {
+    const ends = phaseEndsOf(phase);
     rows.push([
       numbers.get(phase.id) ?? '',
       phase.name,
@@ -125,10 +136,11 @@ export function scheduleReport({
       '',
       day(phase.start),
       day(phase.end),
+      day(ends.planned),
+      day(ends.actual),
       '',
       percent(phase.progress),
       situation(workSituation(phase)),
-      '',
       '',
       '',
       '',
@@ -154,6 +166,8 @@ export function scheduleReport({
         ownerText(item, clientName, t) ?? '',
         day(item.start),
         day(milestone ? item.start : item.end),
+        day(plannedEndOf(item)),
+        day(actualEndOf(item)),
         milestone ? '' : item.duration,
         milestone ? '' : percent(item.progress),
         situation(itemSituation(item)),
@@ -165,7 +179,6 @@ export function scheduleReport({
         item.critical ? t('projects.export.excel.yes') : '',
         item.float ?? '',
         day(item.baselineStart),
-        day(item.baselineEnd),
         item.baselineDeviation ?? '',
         // The note as typed, with its line breaks (ADR-0139).
         item.note ?? '',

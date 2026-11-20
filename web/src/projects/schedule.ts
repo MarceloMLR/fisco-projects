@@ -190,6 +190,43 @@ export function slackText(item: Pick<ScheduleItem, 'float'>, t: TFunction): stri
     : t('projects.schedule.slack.none');
 }
 
+/** The end of an item in the baseline, its planned end (ADR-0021); none without a baseline or for an item added after it. */
+export const plannedEndOf = (item: Pick<ScheduleItem, 'baselineEnd'>): string | null =>
+  item.baselineEnd;
+
+/**
+ * The actual end of an item: the day a task was completed (a task with subtasks, the day of the last one) or a
+ * milestone reached (ADR-0020, ADR-0088, ADR-0167); none while it is open.
+ */
+export const actualEndOf = (
+  item: Pick<ScheduleItem, 'kind' | 'completedOn' | 'reachedOn'>,
+): string | null => (item.kind === 'Milestone' ? item.reachedOn : item.completedOn);
+
+const latestOf = (days: string[]): string | null =>
+  days.reduce<string | null>(
+    (latest, day) => (latest === null || day > latest ? day : latest),
+    null,
+  );
+
+/**
+ * The planned and actual ends of a phase, as MS Project shows a summary row: the latest planned end of its items and,
+ * with every task and milestone of it done, the latest actual end; none for a phase without items.
+ */
+export interface PhaseEnds {
+  planned: string | null;
+  actual: string | null;
+}
+
+export function phaseEndsOf(phase: Pick<SchedulePhase, 'items'>): PhaseEnds {
+  const actual = phase.items.map(actualEndOf);
+  return {
+    planned: latestOf(phase.items.map(plannedEndOf).filter((day) => day !== null)),
+    actual: actual.some((day) => day === null)
+      ? null
+      : latestOf(actual.filter((day) => day !== null)),
+  };
+}
+
 /** The projection of a late task (ADR-0164). */
 type Projection = NonNullable<ScheduleItem['projection']>;
 

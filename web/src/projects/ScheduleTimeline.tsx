@@ -9,7 +9,7 @@ import type { GanttScale } from '../schedule-gantt/ganttLayout';
 import type { GanttTarget } from '../schedule-gantt/ganttRows';
 import type { ScheduleGanttHandle } from '../schedule-gantt/ScheduleGantt';
 import { problemType } from './projectForm';
-import { findItem, itemsOf, type ScheduleDisplay } from './schedule';
+import { findItem, itemsOf, type PhaseEnds, type ScheduleDisplay } from './schedule';
 import { failureOf } from './scheduleItemValues';
 import { useNotify } from '../notices/notify';
 
@@ -37,6 +37,7 @@ export function ScheduleTimeline({
   aside,
   collapsed,
   onToggle,
+  phaseEnds,
 }: {
   project: Project;
   schedule: Schedule;
@@ -55,6 +56,8 @@ export function ScheduleTimeline({
   /** The phases and summary tasks folded, the same of the Lista, and the toggle of one (Cronograma-4.2). */
   collapsed?: ReadonlySet<string>;
   onToggle?: (key: string) => void;
+  /** The planned and actual ends of each phase, from all of its items, for the table of Expandir (Status-3). */
+  phaseEnds?: ReadonlyMap<string, PhaseEnds>;
 }) {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -222,6 +225,7 @@ export function ScheduleTimeline({
             onLink={link}
             collapsed={collapsed}
             onToggle={onToggle}
+            phaseEnds={phaseEnds}
           />
         </Suspense>
       )}

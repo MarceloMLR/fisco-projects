@@ -203,6 +203,8 @@ describe('Aba Cronograma', () => {
       'Validar cadastro de produtos',
       '13/10/2026',
       `15/10/2026${oneDayLate}`,
+      // The actual end, empty while the task is open (Status-3).
+      '',
       '',
       days(3),
       'RSRafael Souza',
@@ -214,13 +216,14 @@ describe('Aba Cronograma', () => {
     expect(within(rowOf('Validar cadastro de produtos')).getByText(oneDayLate)).toHaveStyle({
       color: 'var(--status-danger-text)',
     });
-    expect(cellsOf('Integrar emissão de NF-e')[5]).toBe(text.noOwner);
+    expect(cellsOf('Integrar emissão de NF-e')[6]).toBe(text.noOwner);
     // The milestone: its flag, its day, its state, and no end or owner of its own.
     const milestone = rowOf('Aceite da homologação');
     expect(within(milestone).getByLabelText(text.kinds.Milestone)).toBeInTheDocument();
     expect(cellsOf('Aceite da homologação')).toEqual([
       'Aceite da homologação',
       '03/11/2026',
+      '',
       '',
       '',
       text.kinds.Milestone,
@@ -272,7 +275,7 @@ describe('Aba Cronograma', () => {
     schedule = { ...schedule, lateMilestones: 1 };
     await openSchedule();
 
-    const state = (name: string) => cellsOf(name)[6];
+    const state = (name: string) => cellsOf(name)[7];
     expect(state('Processos mapeados')).toBe(text.milestone.reached.replace('{{day}}', '09/10'));
     expect(state('Aceite da homologação')).toBe(text.milestone.pending);
     expect(state('Aceite do levantamento')).toBe(text.milestone.late);
@@ -315,7 +318,7 @@ describe('Aba Cronograma', () => {
 
     expect(cellsOf('Validar cadastro de produtos')[2]).toBe(`15/10/2026${text.late}`);
     expect(cellsOf('Aceite do levantamento')[2]).toBe('');
-    expect(cellsOf('Aceite do levantamento')[6]).toBe(text.milestone.late);
+    expect(cellsOf('Aceite do levantamento')[7]).toBe(text.milestone.late);
   });
 
   it('Cronograma vazio', async () => {
@@ -465,9 +468,10 @@ describe('Editar o cronograma pela tela', () => {
       },
     ]);
     await waitFor(() => {
-      expect(cellsOf('Configurar plano de contas').slice(1, 5)).toEqual([
+      expect(cellsOf('Configurar plano de contas').slice(1, 6)).toEqual([
         '19/10/2026',
         '21/10/2026',
+        '',
         '',
         days(3),
       ]);
@@ -749,7 +753,7 @@ describe('Progresso pela tela', () => {
     });
     expect(within(drawer).getByRole('button', { name: text.progressActions.update })).toBeVisible();
     await closeDrawer(drawer);
-    expect(cellsOf('Testes integrados')[6]).toBe('30%');
+    expect(cellsOf('Testes integrados')[7]).toBe('30%');
   });
 
   it('Atualizar progresso pela tela', async () => {
@@ -880,7 +884,7 @@ describe('Marco atingido pela tela', () => {
       within(drawer).getByText(text.milestone.reached.replace('{{day}}', '16/10/2026')),
     ).toBeVisible();
     await closeDrawer(drawer);
-    expect(cellsOf('Aceite da homologação')[6]).toBe(
+    expect(cellsOf('Aceite da homologação')[7]).toBe(
       text.milestone.reached.replace('{{day}}', '16/10'),
     );
   });
@@ -901,9 +905,10 @@ describe('Subtarefas pela tela', () => {
       'Executar testes',
     ]);
     // The summary, with the dates, the duration and the progress of its subtasks.
-    expect(cellsOf('Testes integrados').slice(1, 5)).toEqual([
+    expect(cellsOf('Testes integrados').slice(1, 6)).toEqual([
       '23/10/2026',
       '29/10/2026',
+      '',
       '',
       days(5),
     ]);
@@ -918,7 +923,7 @@ describe('Subtarefas pela tela', () => {
     expect(indent('Roteiro de testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Executar testes')).toBe('calc(2 * var(--space-6))');
     expect(indent('Integrar emissão de NF-e')).toBe('var(--space-6)');
-    expect(cellsOf('Executar testes')[8]).toBe('Roteiro de testes');
+    expect(cellsOf('Executar testes')[9]).toBe('Roteiro de testes');
     // The summary has the arrow of its subtasks, shown at first; the other tasks have none.
     expect(
       within(rowOf('Testes integrados')).getByRole('button', {
@@ -1331,12 +1336,12 @@ describe('Data-limite pela tela', () => {
     await openSchedule();
 
     const pastShort = text.deadline.pastShort_one.replace('{{count}}', '1');
-    expect(cellsOf('Testes integrados')[3]).toBe(`28/10/2026${pastShort}`);
+    expect(cellsOf('Testes integrados')[4]).toBe(`28/10/2026${pastShort}`);
     expect(within(rowOf('Testes integrados')).getByText(pastShort)).toHaveStyle({
       color: 'var(--status-danger-text)',
     });
-    expect(cellsOf('Reunião de abertura')[3]).toBe('07/10/2026');
-    expect(cellsOf('Aceite da homologação')[3]).toBe('');
+    expect(cellsOf('Reunião de abertura')[4]).toBe('07/10/2026');
+    expect(cellsOf('Aceite da homologação')[4]).toBe('');
     const missed = screen.getByText(text.missedDeadlines_one.replace('{{count}}', '1'));
     expect(missed).toHaveAttribute('data-state', 'overdue');
   });
@@ -1495,7 +1500,7 @@ describe('Tipo e intervalo pela tela', () => {
     expect(sent[0]?.links).toEqual([{ predecessorId: icms.id, type: 'StartToStart', lag: 1 }]);
     await closeDrawer(drawer);
     await waitFor(() => {
-      expect(cellsOf('Testes integrados')[8]).toBe(
+      expect(cellsOf('Testes integrados')[9]).toBe(
         `Parametrizar regras de ICMS (${links.short.StartToStart}, +1)`,
       );
     });

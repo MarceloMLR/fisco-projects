@@ -469,7 +469,8 @@ describe('Expandir o cronograma', () => {
     ).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.timeline.today })).toBeVisible();
     expect(within(expanded).getByRole('button', { name: text.schedule.newItem })).toBeVisible();
-    // The full table beside the timeline: name, start, end, deadline, owner and progress.
+    // The full table beside the timeline: name, start, end, actual end, deadline, owner and progress; the planned end
+    // only with a baseline (Status-3).
     await within(expanded).findByRole('treegrid', { name: text.timeline.table });
     expect(timelineOf(expanded)).toHaveAttribute('data-detailed', 'true');
     expect(timelineOf(expanded)).toHaveAttribute('data-editable', 'true');
@@ -481,6 +482,7 @@ describe('Expandir o cronograma', () => {
       text.timeline.columns.name,
       text.timeline.columns.start,
       text.timeline.columns.end,
+      text.timeline.columns.actualEnd,
       text.timeline.columns.deadline,
       text.timeline.columns.owner,
       text.timeline.columns.progress,
@@ -497,6 +499,38 @@ describe('Expandir o cronograma', () => {
       ).not.toBeInTheDocument();
     });
     expect(timelineOf()).toHaveAttribute('data-detailed', 'false');
+  });
+
+  // With the planned and actual ends (Status-3).
+  it('Fim previsto e real no Expandir', async () => {
+    schedule = demoScheduleWithBaseline();
+    await openTimeline();
+    fireEvent.click(screen.getByRole('button', { name: text.timeline.expand }));
+    const expanded = await screen.findByRole('dialog', { name: text.timeline.expandedTitle });
+    await within(expanded).findByRole('treegrid', { name: text.timeline.table });
+    const headers = () =>
+      within(timelineTable(expanded))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent);
+
+    expect(headers().slice(2, 5)).toEqual([
+      text.timeline.columns.end,
+      text.timeline.columns.plannedEnd,
+      text.timeline.columns.actualEnd,
+    ]);
+    // Mapear processos fiscais ended on 09/10, as the baseline had it.
+    expect(timelineLine('Mapear processos fiscais', expanded).textContent).toContain(
+      '06/1009/1009/1009/10',
+    );
+
+    // "Exibir" right in the header of Expandir.
+    const display = within(expanded).getByRole('group', { name: text.baseline.displayLabel });
+    fireEvent.click(within(display).getByRole('checkbox', { name: text.baseline.show.baseline }));
+
+    await waitFor(() => {
+      expect(headers()).not.toContain(text.timeline.columns.plannedEnd);
+    });
+    expect(headers()).toContain(text.timeline.columns.actualEnd);
   });
 });
 
