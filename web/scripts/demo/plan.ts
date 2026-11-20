@@ -15,6 +15,7 @@ type TicketAction = components['schemas']['TicketAction'];
 type VendorTicketStatus = components['schemas']['VendorTicketStatus'];
 type DocumentStatus = components['schemas']['DocumentStatus'];
 type FolderRole = components['schemas']['FolderRole'];
+type RiskLevel = components['schemas']['RiskLevel'];
 
 /**
  * The people who sign in; Lucas Prado and Sofia Martins stay out, as people who never signed in (ADR-0078). Sofia
@@ -362,6 +363,26 @@ export interface DemoAbsence {
   end: number;
 }
 
+/** A risk of the status report: an open ticket of the project, by title, with its level and point of attention (ADR-0165). */
+export interface DemoRisk {
+  ticket: string;
+  level: RiskLevel;
+  attention: string;
+}
+
+/**
+ * The status report the manager generates once the project is built, with the four texts, the risks and the hours
+ * (ADR-0165, ADR-0166).
+ */
+export interface DemoStatusReport {
+  summary: string;
+  focus: string;
+  nextSteps: string;
+  clientNeeds: string;
+  risks: readonly DemoRisk[];
+  showHours: boolean;
+}
+
 export interface DemoProject {
   code: string;
   name: string;
@@ -412,6 +433,8 @@ export interface DemoProject {
   absences?: readonly DemoAbsence[];
   /** The comments on the tasks and the milestones, in order, written once the schedule is built (ADR-0157). */
   comments?: readonly DemoComment[];
+  /** The status report the manager generates last, after the tickets, the hours and the status (ADR-0165). */
+  statusReport?: DemoStatusReport;
 }
 
 /** The project whose presence says the data was already loaded. */
@@ -713,6 +736,25 @@ export const demoProjects: readonly DemoProject[] = [
       },
       { name: 'Encerramento', items: [] },
     ],
+    // The status report the manager sends to the client, with the rejection that holds the tests (ADR-0165).
+    statusReport: {
+      summary:
+        'Cadastros validados e configuração concluída. A integração com o emissor segue com um contorno para as notas de devolução.',
+      focus: 'Executar os testes integrados do faturamento e do fiscal com a equipe da filial.',
+      nextSteps:
+        'Concluir os testes integrados.\nPreparar a homologação com os usuários-chave.\nRevisar o plano de virada.',
+      clientNeeds:
+        'Validar o roteiro de testes até sexta.\nLiberar os usuários-chave para a homologação.',
+      risks: [
+        {
+          ticket: 'Rejeição 539 ao emitir nota de devolução',
+          level: 'High',
+          attention:
+            'A correção depende do fornecedor do emissor. O contorno com a natureza "Devolução de venda" mantém as devoluções, mas a homologação só fecha com a correção.',
+        },
+      ],
+      showHours: true,
+    },
     tickets: [
       {
         title: 'Rejeição 539 ao emitir nota de devolução',

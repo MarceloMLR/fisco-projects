@@ -23,6 +23,8 @@ const base = 'http://api.test';
 const cookieName = '__Host-gerenware-session';
 const calls: string[] = [];
 const bodies = new Map<string, unknown[]>();
+/** Whether the draft of the status report says the project already has a report. */
+let reportedBefore = false;
 let localSignIn = true;
 let existing: string[] = [];
 let existingClients: string[] = [];
@@ -113,6 +115,7 @@ async function keep(request: Request): Promise<void> {
 beforeEach(() => {
   calls.length = 0;
   bodies.clear();
+  reportedBefore = false;
   localSignIn = true;
   existing = [];
   existingClients = [];
@@ -275,6 +278,32 @@ beforeEach(() => {
     http.post(`${base}/api/projects/ms-project-preview`, () => HttpResponse.json(msProjectPreview)),
     http.post(`${base}/api/tickets`, () =>
       HttpResponse.json({ id: nextId(), number: ++numbers }, { status: 201 }),
+    ),
+    // The draft of the status report, with a last report only when the test says (ADR-0165).
+    http.get(`${base}/api/projects/:id/status-report`, () =>
+      HttpResponse.json({
+        last: reportedBefore
+          ? {
+              generatedAt: '2026-10-12T15:00:00Z',
+              generatedBy: { id: idOf('marina'), name: 'Marina Costa' },
+            }
+          : null,
+        summary: '',
+        focus: '',
+        nextSteps: '',
+        clientNeeds: '',
+        tickets: [],
+        risks: [],
+      }),
+    ),
+    http.post(`${base}/api/projects/:id/status-report`, () =>
+      HttpResponse.json({
+        documentId: nextId(),
+        folderId: nextId(),
+        folderName: 'Relatórios de status',
+        name: 'ERP-FIN - Relatório de status - 2026-10-19.pptx',
+        version: 1,
+      }),
     ),
     http.post(`${base}/api/*`, () => HttpResponse.json({ id: nextId() }, { status: 201 })),
     http.put(`${base}/api/*`, () => new HttpResponse(null, { status: 204 })),
@@ -1401,5 +1430,41 @@ describe('Demonstração mais rica', () => {
         (ticket) => ticket.by === 'beatriz' && finalStatus(ticket) === 'WaitingForRequester',
       ),
     ).toBe(true);
+  });
+});
+
+// Spec: dados-de-demonstracao, requirement "Relatório de status na demonstração" (ADR-0165).
+describe('Relatório de status na demonstração', () => {
+  it('Relatório de status na demonstração', async () => {
+    await loadDemo(base, () => undefined);
+
+    const main = created.find((project) => project.code === mainProject)?.id ?? '';
+    expect(callsBy(new RegExp(` POST /api/projects/${main}/status-report$`))).toEqual([
+      `marina POST /api/projects/${main}/status-report`,
+    ]);
+    const [report] = bodies.get(`/api/projects/${main}/status-report`) as {
+      summary: string;
+      risks: { number: number; level: string; attention: string }[];
+      showHours: boolean;
+    }[];
+    expect(report?.summary).toContain('Cadastros validados');
+    expect(report?.showHours).toBe(true);
+    expect(report?.risks).toHaveLength(1);
+    expect(report?.risks[0]?.level).toBe('High');
+    // The ticket of the rejection, the first opened in the main project.
+    const rejection = callsBy(/ POST \/api\/tickets$/).length;
+    expect(report?.risks[0]?.number).toBeGreaterThan(0);
+    expect(report?.risks[0]?.number).toBeLessThanOrEqual(rejection);
+    // Only the main project has a report in the plan.
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/status-report$/)).toHaveLength(1);
+  });
+
+  it('Relatório da demonstração uma vez só', async () => {
+    reportedBefore = true;
+
+    await loadDemo(base, () => undefined);
+
+    expect(callsBy(/ GET \/api\/projects\/[^/]+\/status-report$/)).toHaveLength(1);
+    expect(callsBy(/ POST \/api\/projects\/[^/]+\/status-report$/)).toEqual([]);
   });
 });

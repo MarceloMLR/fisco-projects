@@ -14,11 +14,13 @@ export function saveFile(content: Blob, name: string): void {
   }, 0);
 }
 
-/** Downloads a file the server keeps, by its address, as a download link would (ADR-0165). */
+/**
+ * Downloads a file the server keeps, by its address, as the link "Baixar" of a document does: the server sends it as an
+ * attachment, with its name, and the screen stays where it is (ADR-0165).
+ */
 export function downloadAddress(address: string): void {
   const link = document.createElement('a');
   link.href = address;
-  link.download = '';
   link.style.display = 'none';
   document.body.append(link);
   link.click();
