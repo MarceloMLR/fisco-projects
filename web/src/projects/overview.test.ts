@@ -14,6 +14,48 @@ const dates = datesIn('America/Sao_Paulo');
 const projectId = '0199f5a2-7c1e-7d40-9a1b-400000000001';
 const ticket = (number: number) => `#${String(number)}`;
 
+type Attention = ReturnType<typeof demoOverview>['attention'];
+type LateTask = Attention['tasks'][number];
+type Projection = NonNullable<LateTask['projection']>;
+
+/** A projection with the milestones and the end of the project it moves (ADR-0164). */
+const projected = (
+  milestones: [name: string, days: number][],
+  projectEnd: number | null,
+): Projection => ({
+  start: '2026-10-13',
+  end: '2026-10-20',
+  days: 3,
+  milestones: milestones.map(([name, days], index) => ({
+    id: `0199f5a2-7c1e-7d40-9a1b-0000000e100${String(index)}`,
+    name,
+    day: '2026-10-21',
+    projectedDay: '2026-10-23',
+    days,
+  })),
+  projectEnd:
+    projectEnd === null
+      ? null
+      : { end: '2026-10-19', projectedEnd: '2026-10-23', days: projectEnd },
+});
+
+/** The attention of the demonstration with only its late task, changed. */
+function withTask(task: Partial<LateTask>): Attention {
+  const attention = demoOverview().attention;
+  const [first] = attention.tasks;
+  if (first === undefined) {
+    throw new Error('No late task.');
+  }
+  return {
+    ...attention,
+    tasks: [{ ...first, ...task }],
+    deadlines: [],
+    tickets: [],
+    acceptances: [],
+    vendors: [],
+  };
+}
+
 // Spec: visao-geral-do-projeto, requirement "Prazo final contra a linha de base" (ADR-0021, ADR-0065).
 describe('Prazo final contra a linha de base', () => {
   it('Desvio do prazo final', () => {
@@ -74,26 +116,19 @@ describe('Precisa de atenção', () => {
       kind: 'task',
       title: 'Validar cadastro de produtos',
       path: `/projects/${projectId}/schedule?item=${demoOverviewTaskId}`,
-      meta: 'Tarefa de Diego Torres · 80% · bloqueia Configurar plano de contas',
+      meta: 'Tarefa de Diego Torres · 80% · empurra o marco Cadastro validado em 1 dia útil',
       due: { state: 'overdue', text: 'Venceu há 1 dia útil' },
     });
 
-    const attention = {
-      ...overview.attention,
-      tasks: [
-        {
-          id: demoOverviewTaskId,
-          name: 'Migrar saldos',
-          owner: null,
-          progress: 0,
-          end: '2026-10-15',
-          daysLate: 0,
-          blocks: ['Conferir saldos', 'Virada para produção'],
-        },
-      ],
-    };
-    const [other] = attentionLines(projectId, attention, '2026-10-16', dates, t);
-    expect(other?.meta).toBe('Tarefa sem responsável · 0% · bloqueia Conferir saldos e mais 1');
+    // A task whose delay the float absorbs says only the owner and the progress.
+    const [other] = attentionLines(
+      projectId,
+      withTask({ owner: null, progress: 0, daysLate: 0, projection: projected([], null) }),
+      '2026-10-16',
+      dates,
+      t,
+    );
+    expect(other?.meta).toBe('Tarefa sem responsável · 0%');
     expect(other?.due).toEqual({ state: 'overdue', text: 'Venceu quinta' });
   });
 
@@ -260,5 +295,65 @@ describe('Precisa de atenção', () => {
     );
     expect(past?.due).toEqual({ state: 'overdue', text: 'Marco em 14/10' });
     expect(without?.due).toEqual({ state: 'onTrack', text: 'Pedido em 15/10' });
+  });
+});
+
+// Spec: visao-geral-do-projeto, requirement "Projeção do atraso na atenção" (ADR-0164).
+describe('Projeção do atraso na atenção', () => {
+  it('Tarefa que empurra vários marcos', () => {
+    const [task] = attentionLines(
+      projectId,
+      withTask({
+        projection: projected(
+          [
+            ['Aceite da homologação', 2],
+            ['Go-live', 1],
+          ],
+          1,
+        ),
+      }),
+      '2026-10-16',
+      dates,
+      t,
+    );
+    expect(task?.meta).toBe(
+      'Tarefa de Diego Torres · 80% · empurra o marco Aceite da homologação em 2 dias úteis e mais 1 marco',
+    );
+  });
+
+  it('Tarefa que empurra o fim do projeto', () => {
+    const [task] = attentionLines(
+      projectId,
+      withTask({ projection: projected([], 4) }),
+      '2026-10-16',
+      dates,
+      t,
+    );
+    expect(task?.meta).toBe(
+      'Tarefa de Diego Torres · 80% · empurra o fim do projeto em 4 dias úteis',
+    );
+  });
+
+  it('Tarefa que devia ter começado na atenção', () => {
+    const [task] = attentionLines(
+      projectId,
+      withTask({
+        name: 'Testes integrados',
+        owner: { id: '0199f5a2-7c1e-7d40-9a1b-000000000004', name: 'Rafael Souza' },
+        progress: 0,
+        start: '2026-10-13',
+        end: '2026-10-23',
+        daysLate: 0,
+        projection: projected([['Aceite da homologação', 2]], null),
+      }),
+      '2026-10-19',
+      dates,
+      t,
+    );
+    expect(task).toMatchObject({
+      title: 'Testes integrados',
+      meta: 'Tarefa de Rafael Souza · 0% · empurra o marco Aceite da homologação em 2 dias úteis',
+      due: { state: 'overdue', text: 'Devia ter começado em 13/10' },
+    });
   });
 });

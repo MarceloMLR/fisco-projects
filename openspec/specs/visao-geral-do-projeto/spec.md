@@ -48,11 +48,11 @@ A visão geral MUST mostrar quantos chamados do projeto estão abertos, de quant
 
 ### Requirement: Precisa de atenção
 
-A visão geral MUST listar o que precisa de atenção no projeto: as tarefas atrasadas, com o responsável, o progresso e o que depende delas; os itens além da data-limite; os chamados em aberto que ameaçam um marco, uma vez só, com o marco mais próximo e o prazo (ADR-0164); os chamados vencidos, que vencem até o próximo dia útil ou sem responsável; os aceites pendentes que a pessoa vê (ADR-0045); e os chamados em fornecedores parados há 5 dias úteis (ADR-0028). Só itens do projeto (ADR-0073).
+A visão geral MUST listar o que precisa de atenção no projeto: as tarefas atrasadas, com o responsável, o progresso e o que empurram (ADR-0164); os itens além da data-limite; os chamados em aberto que ameaçam um marco, uma vez só, com o marco mais próximo e o prazo (ADR-0164); os chamados vencidos, que vencem até o próximo dia útil ou sem responsável; os aceites pendentes que a pessoa vê (ADR-0045); e os chamados em fornecedores parados há 5 dias úteis (ADR-0028). Só itens do projeto (ADR-0073).
 
 #### Scenario: Tarefa atrasada na atenção
-- **WHEN** a tarefa Validar cadastro de produtos, de Diego, em 80%, venceu e Configurar plano de contas depende dela
-- **THEN** a lista mostra a tarefa com "Tarefa de Diego Torres · 80% · bloqueia Configurar plano de contas" e o atraso
+- **WHEN** a tarefa Validar cadastro de produtos, de Diego, em 80%, venceu e a projeção do atraso empurra o marco Cadastro validado em 1 dia útil
+- **THEN** a lista mostra a tarefa com "Tarefa de Diego Torres · 80% · empurra o marco Cadastro validado em 1 dia útil" e o atraso
 
 #### Scenario: Data-limite na atenção
 - **WHEN** Testes integrados passou 1 dia útil da data-limite de 30/10/2026
@@ -113,3 +113,19 @@ A aba Visão geral MUST mostrar, como o canvas ProjetoVisaoGeral, os quatro núm
 #### Scenario: Visão geral no celular
 - **WHEN** a pessoa abre a Visão geral no celular
 - **THEN** os números, a atenção, a linha do tempo e a equipe aparecem um embaixo do outro
+
+### Requirement: Projeção do atraso na atenção
+
+Em "Precisa de atenção", cada tarefa atrasada MUST dizer, no lugar do que depende dela, o que a projeção do atraso empurra: o marco mais próximo que mudaria, com os dias úteis e quantos outros marcos mudam, ou, sem marco, o fim do projeto; sem nada, só o responsável e o progresso. A tarefa que devia ter começado e está em 0% MUST entrar na lista com o dia em que devia ter começado (ADR-0164).
+
+#### Scenario: Tarefa que empurra vários marcos
+- **WHEN** a tarefa atrasada empurra o marco Aceite da homologação em 2 dias úteis e o Go-live em 1 dia útil
+- **THEN** a linha diz "empurra o marco Aceite da homologação em 2 dias úteis e mais 1 marco"
+
+#### Scenario: Tarefa que empurra o fim do projeto
+- **WHEN** a tarefa atrasada não empurra nenhum marco, mas empurra o fim do projeto em 4 dias úteis
+- **THEN** a linha diz "empurra o fim do projeto em 4 dias úteis"
+
+#### Scenario: Tarefa que devia ter começado na atenção
+- **WHEN** hoje é 19/10/2026 e a tarefa Testes integrados, de 13/10/2026 a 23/10/2026, está em 0%
+- **THEN** a lista mostra a tarefa com "Devia ter começado em 13/10" e o que ela empurra

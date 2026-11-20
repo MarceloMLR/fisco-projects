@@ -1426,9 +1426,13 @@
         "empty": "Nada precisa de atenção agora.",
         "task": "Tarefa de {{name}} · {{progress}}%",
         "taskNoOwner": "Tarefa sem responsável · {{progress}}%",
-        "blocks": "bloqueia {{name}}",
-        "blocksMore_one": "bloqueia {{name}} e mais {{count}}",
-        "blocksMore_other": "bloqueia {{name}} e mais {{count}}",
+        "pushes_one": "empurra o marco {{name}} em {{count}} dia útil",
+        "pushes_other": "empurra o marco {{name}} em {{count}} dias úteis",
+        "pushesMore_one": "{{text}} e mais {{count}} marco",
+        "pushesMore_other": "{{text}} e mais {{count}} marcos",
+        "pushesEnd_one": "empurra o fim do projeto em {{count}} dia útil",
+        "pushesEnd_other": "empurra o fim do projeto em {{count}} dias úteis",
+        "notStarted": "Devia ter começado em {{day}}",
         "ticket_one": "{{team}} · {{name}} · {{count}} interação",
         "ticket_other": "{{team}} · {{name}} · {{count}} interações",
         "ticketNoAssignee": "{{team}} · sem responsável",
@@ -1827,6 +1831,20 @@
         "ticket": "#{{number}} {{title}}",
         "threatenedBy": "Ameaçado por",
         "through": "Por {{items}}"
+      },
+      "projection": {
+        "title": "Projeção do atraso",
+        "ends_one": "Pelo que falta, termina em {{day}}, {{count}} dia útil depois do planejado.",
+        "ends_other": "Pelo que falta, termina em {{day}}, {{count}} dias úteis depois do planejado.",
+        "startsAndEnds_one": "Se começar em {{start}}, termina em {{day}}, {{count}} dia útil depois do planejado.",
+        "startsAndEnds_other": "Se começar em {{start}}, termina em {{day}}, {{count}} dias úteis depois do planejado.",
+        "list": "O que {{name}} empurra",
+        "milestone_one": "Empurra o marco {{name}} em {{count}} dia útil, para {{day}}",
+        "milestone_other": "Empurra o marco {{name}} em {{count}} dias úteis, para {{day}}",
+        "projectEnd_one": "Empurra o fim do projeto em {{count}} dia útil, para {{day}}",
+        "projectEnd_other": "Empurra o fim do projeto em {{count}} dias úteis, para {{day}}",
+        "nothing": "Não muda nenhum marco nem o fim do projeto",
+        "help": "É uma projeção pelo ritmo planejado: as datas só mudam quando quem edita o cronograma alterar a tarefa ou mover o cronograma."
       }
     },
     "timeline": {

@@ -380,6 +380,8 @@ export function demoItem(
     // The open tickets on the item and the ones that threaten the milestone (ADR-0164); none unless a screen looks at them.
     tickets: [],
     threats: [],
+    // What a late task would push (ADR-0164); none unless a screen looks at it.
+    projection: null,
     canUpdateProgress: item.kind !== 'Milestone',
     owner: null,
     ownedByClient: false,

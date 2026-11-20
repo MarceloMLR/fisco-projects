@@ -37,7 +37,7 @@ Um MVP de demonstração serviu de referência para os fluxos (cronograma com Ga
 | Entrada e acesso | Página de entrada própria, login pelo Entra ID, criação do usuário no primeiro login, recusa de convidados e desativados, sessão de 8 h, "Sair" só do GerenWare | Módulo de identidade e host da API (BFF com cookie) | 0004, 0005, 0007, 0009, 0054 |
 | Meu trabalho | Fila única por urgência (chamados, tarefas, aceites), saúde dos projetos e próximos marcos | Tela do frontend que consome os contratos dos módulos | 0010, 0070 |
 | Projetos e clientes | Código, nome, cliente opcional, status, datas e progresso calculados, gerente e líder técnico na criação, exclusão só pelo administrador | Módulo Projetos | 0015, 0016, 0041, 0072, 0073 |
-| Cronograma | Fases, tarefas e marcos, com subtarefas em um nível, dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto e, na v2, Novo projeto a partir do XML do MS Project | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071, 0088, 0135 |
+| Cronograma | Fases, tarefas e marcos, com subtarefas em um nível, dias úteis e feriados, dependências que empurram, linha de base, caminho crítico, desfazer, exportação em PDF e XML do MS Project, modelos de projeto e, na v2, Novo projeto a partir do XML do MS Project e a projeção do que cada tarefa atrasada empurra, sem gravar | Módulo Projetos (cálculo no servidor) e componente `ScheduleGantt` no frontend | 0017, 0018, 0019, 0020, 0021, 0051, 0071, 0088, 0135, 0164 |
 | Chamados | Sempre ligados a um projeto, para os times Funcional e Desenvolvimento, fluxo de status em tabela, prazos em dias úteis, conversa com anexos e menções, troca de responsável e solicitante, chamados em fornecedores e, na v2, a ligação com as tarefas e os marcos que o chamado impacta, com os marcos ameaçados | Módulo Chamados | 0022 a 0029, 0068, 0069, 0164 |
 | Documentos | Pastas padrão configuráveis, versões, status manual, vínculo com o cronograma, visualização no navegador | Módulo Documentos, arquivos no SharePoint atrás de `IFileStorage` | 0030, 0031 |
 | Links | Links do projeto por categoria | Módulo Documentos ou Projetos (definir na change) | 0032 |
@@ -279,7 +279,7 @@ Ler antes de implementar a área:
 | Entrada, sessão e usuários | ADR-0005 a 0009, 0054 |
 | Telas, navegação e visual | ADR-0011 a 0014, 0062 a 0067, 0159, design system, canvas de telas e `docs/marca/` |
 | Projetos e clientes | ADR-0015, 0016, 0041, 0072, 0073 |
-| Cronograma | ADR-0017 a 0021, 0051, 0071, 0088, 0134, 0135 |
+| Cronograma | ADR-0017 a 0021, 0051, 0071, 0088, 0134, 0135, 0164 |
 | Chamados | ADR-0022 a 0029, 0044, 0068, 0069, 0164 |
 | Documentos, links, acessos e termos | ADR-0030 a 0035, 0045 |
 | Avisos | ADR-0036 a 0038, ADR-0149 |

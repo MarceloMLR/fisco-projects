@@ -13,6 +13,7 @@ import { dayWord } from '../my-work/myWork';
 type Deadline = NonNullable<ProjectOverview['deadline']>;
 type Milestone = NonNullable<ProjectOverview['nextMilestone']>;
 type Attention = ProjectOverview['attention'];
+type Projection = NonNullable<Attention['tasks'][number]['projection']>;
 
 /** A deadline in words, with the state of its icon and color (ADR-0065). */
 export interface Due {
@@ -89,6 +90,24 @@ function ticketDue(
 }
 
 /**
+ * What a late task pushes (ADR-0164), as a line of "Precisa de atenção" says it: the nearest milestone that would move,
+ * with the business days and how many other milestones move, or, without one, the end of the project; nothing when
+ * nothing moves.
+ */
+export function pushText(projection: Projection, t: TFunction): string | undefined {
+  const [first, ...others] = projection.milestones;
+  if (first === undefined) {
+    return projection.projectEnd === null
+      ? undefined
+      : t('projects.overview.attention.pushesEnd', { count: projection.projectEnd.days });
+  }
+  const text = t('projects.overview.attention.pushes', { name: first.name, count: first.days });
+  return others.length === 0
+    ? text
+    : t('projects.overview.attention.pushesMore', { text, count: others.length });
+}
+
+/**
  * What needs attention in the project (ADR-0073), in the order of the API: the late tasks, the items past their
  * deadline (GanttA-2), the tickets that threaten milestones (ADR-0164), the other tickets, the pending requests of
  * acceptance and the stale tickets at vendors.
@@ -101,24 +120,25 @@ export function attentionLines(
   t: TFunction,
 ): AttentionLine[] {
   const tasks = attention.tasks.map((task): AttentionLine => {
-    const [first, ...others] = task.blocks;
     const owner =
       task.owner === null
         ? t('projects.overview.attention.taskNoOwner', { progress: task.progress })
         : t('projects.overview.attention.task', { name: task.owner.name, progress: task.progress });
-    const blocks =
-      first === undefined
-        ? undefined
-        : others.length === 0
-          ? t('projects.overview.attention.blocks', { name: first })
-          : t('projects.overview.attention.blocksMore', { name: first, count: others.length });
+    const pushes = task.projection === null ? undefined : pushText(task.projection, t);
     return {
       key: `task-${task.id}`,
       kind: 'task',
       title: task.name,
       path: `/projects/${projectId}/schedule?item=${task.id}`,
-      meta: blocks === undefined ? owner : `${owner} · ${blocks}`,
-      due: { state: 'overdue', text: late(task.daysLate, task.end, false, t) },
+      meta: pushes === undefined ? owner : `${owner} · ${pushes}`,
+      // A task whose end has not come is in the list because it should have started (ADR-0164).
+      due: {
+        state: 'overdue',
+        text:
+          task.end < today
+            ? late(task.daysLate, task.end, false, t)
+            : t('projects.overview.attention.notStarted', { day: formatDayMonthText(task.start) }),
+      },
     };
   });
   const deadlines = attention.deadlines.map((item): AttentionLine => ({

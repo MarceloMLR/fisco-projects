@@ -3747,7 +3747,10 @@ export interface components {
             /** Format: int32 */
             deviation: null | number;
         };
-        /** @description A late task: its owner, progress, end, business days of delay and what depends on it. */
+        /**
+         * @description A late task, or one that should have started and is at 0% (ADR-0164): its owner, progress, dates, business days of
+         *     delay and what it pushes.
+         */
         OverviewLateTaskResponse: {
             /** Format: uuid */
             id: string;
@@ -3756,10 +3759,12 @@ export interface components {
             /** Format: int32 */
             progress: number;
             /** Format: date */
+            start: string;
+            /** Format: date */
             end: string;
             /** Format: int32 */
             daysLate: number;
-            blocks: string[];
+            projection: null | components["schemas"]["ScheduleProjectionResponse"];
         };
         /** @description The next milestone not reached: its day, the business days left, or the business days it is late. */
         OverviewMilestoneResponse: {
@@ -4040,6 +4045,27 @@ export interface components {
             members: number;
             /** Format: int32 */
             timeEntries: number;
+        };
+        /** @description The end of the project now, the projected one and the business days it moves. */
+        ProjectedEndResponse: {
+            /** Format: date */
+            end: string;
+            /** Format: date */
+            projectedEnd: string;
+            /** Format: int32 */
+            days: number;
+        };
+        /** @description A milestone not reached the projection moves: its day now, the projected one and the business days it moves. */
+        ProjectedMilestoneResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date */
+            day: string;
+            /** Format: date */
+            projectedDay: string;
+            /** Format: int32 */
+            days: number;
         };
         /**
          * @description A folder of the file storage (ADR-0122): when it may not be the folder of a project, why, and the code of the
@@ -4487,6 +4513,7 @@ export interface components {
             tickets: components["schemas"]["ScheduleTicketResponse"][];
             /** @description The open tickets that threaten the milestone not reached through the dependencies, with the items linked to them that lead here; none for a task (ADR-0164). */
             threats: components["schemas"]["ScheduleThreatResponse"][];
+            projection: null | components["schemas"]["ScheduleProjectionResponse"];
         };
         /**
          * @description What an item of a schedule is: a phase, a task (also a subtask) or a milestone.
@@ -4571,6 +4598,20 @@ export interface components {
         ScheduleProgressRequest: {
             /** Format: int32 */
             progress: number;
+        };
+        /**
+         * @description The projection of a late task (ADR-0164): its projected start and end, the business days its end goes past the
+         *     planned one, the milestones not reached that would move, by their day, and the end of the project, when it moves.
+         */
+        ScheduleProjectionResponse: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            /** Format: int32 */
+            days: number;
+            milestones: components["schemas"]["ProjectedMilestoneResponse"][];
+            projectEnd: null | components["schemas"]["ProjectedEndResponse"];
         };
         /**
          * @description The tasks and milestones of open projects that change with the calendar as it is now: how many in all, and each
