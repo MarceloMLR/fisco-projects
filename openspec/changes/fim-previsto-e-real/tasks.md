@@ -17,7 +17,7 @@
 - [x] 4.1 Colunas "Fim previsto" (só com a linha de base) e "Fim real" na Lista, fora da edição na tabela, com os testes de tela dos cenários de "Fim previsto e fim real na Lista"
 - [x] 4.2 As duas colunas na tabela completa do Expandir, com o "Fim previsto" pela linha de base ligada em "Exibir", com os testes do cenário "Fim previsto e real no Expandir"
 - [x] 4.3 "Fim previsto (linha de base)" e "Fim real" depois de "Fim" no Excel, com o teste do cenário "Fim previsto e real no Excel"
-- [ ] 4.4 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
+- [x] 4.4 Telas conferidas nos temas claro e escuro e no celular; `npm run lint`, `npm run typecheck` e `npm test` limpos
 
 ## 5. Documentação e verificação
 
