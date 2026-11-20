@@ -13,11 +13,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GerenWare.Documents.Endpoints;
 
 /// <summary>
-/// A default folder: the name, whether it is the folder of the acceptance terms, whether it is active, and the roles
-/// that see it in the new projects, besides the Administrator and the manager (ADR-0148).
+/// A default folder: the name, whether it is the folder of the acceptance terms or the one of the status reports
+/// (ADR-0165), whether it is active, and the roles that see it in the new projects, besides the Administrator and the
+/// manager (ADR-0148).
 /// </summary>
 public sealed record DefaultFolderResponse(
-    Guid Id, string Name, bool IsAcceptance, bool IsActive, IReadOnlyList<FolderRole> VisibleTo);
+    Guid Id, string Name, bool IsAcceptance, bool IsActive, IReadOnlyList<FolderRole> VisibleTo, bool IsStatusReport);
 
 /// <summary>A new default folder: the name and the roles that see it (none given: the four).</summary>
 public sealed record NewDefaultFolderRequest(string? Name, IReadOnlyList<FolderRole>? VisibleTo = null);
@@ -34,7 +35,8 @@ public sealed record DefaultFolderCreatedResponse(Guid Id);
 /// A folder of the project with how many documents not obsolete it has and the roles that see it, besides the
 /// Administrator and the manager (ADR-0148).
 /// </summary>
-public sealed record DocumentFolderResponse(Guid Id, string Name, bool IsAcceptance, int Count, IReadOnlyList<FolderRole> VisibleTo);
+public sealed record DocumentFolderResponse(
+    Guid Id, string Name, bool IsAcceptance, int Count, IReadOnlyList<FolderRole> VisibleTo, bool IsStatusReport);
 
 /// <summary>What the person may do with the documents of the project; all false in a completed or cancelled project.</summary>
 public sealed record DocumentPermissionsResponse(bool CanUpload, bool CanApprove, bool CanDelete);
@@ -190,7 +192,12 @@ public static class DocumentEndpoints
 
         return TypedResults.Ok(new DocumentFoldersResponse(
             [.. folders.Folders.Select(item => new DocumentFolderResponse(
-                item.Folder.Id, item.Folder.Name, item.Folder.IsAcceptance, item.Count, FolderVisibility.RolesOf(item.Folder.VisibleTo)))],
+                item.Folder.Id,
+                item.Folder.Name,
+                item.Folder.IsAcceptance,
+                item.Count,
+                FolderVisibility.RolesOf(item.Folder.VisibleTo),
+                item.Folder.IsStatusReport))],
             folders.Total,
             PermissionsOf(folders.Permissions, folders.IsClosed),
             folders.MaxBytes,
@@ -358,7 +365,12 @@ public static class DocumentEndpoints
         TypedResults.Ok<IReadOnlyList<DefaultFolderResponse>>(
             [.. (await list.ExecuteAsync(cancellationToken)).Select(folder =>
                 new DefaultFolderResponse(
-                    folder.Id, folder.Name, folder.IsAcceptance, folder.IsActive, FolderVisibility.RolesOf(folder.VisibleTo)))]);
+                    folder.Id,
+                    folder.Name,
+                    folder.IsAcceptance,
+                    folder.IsActive,
+                    FolderVisibility.RolesOf(folder.VisibleTo),
+                    folder.IsStatusReport))]);
 
     private static async Task<Results<Created<DefaultFolderCreatedResponse>, ValidationProblem, ProblemHttpResult>> AddDefaultFolderAsync(
         NewDefaultFolderRequest request, AddDefaultFolder add, CancellationToken cancellationToken)
@@ -381,9 +393,9 @@ public static class DocumentEndpoints
             FolderOutcome.Done => TypedResults.NoContent(),
             FolderOutcome.NotFound => TypedResults.NotFound(),
             FolderOutcome.Invalid => InvalidFolderName(),
-            FolderOutcome.AcceptanceAlwaysActive => TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            FolderOutcome.AlwaysActive => TypedResults.ValidationProblem(new Dictionary<string, string[]>
             {
-                ["isActive"] = ["The folder of the acceptance terms is always active."],
+                ["isActive"] = ["The folders of the acceptance terms and of the status reports are always active."],
             }),
             FolderOutcome.AcceptanceVisibilityFixed => AcceptanceVisibilityFixed(),
             _ => FolderNameInUse(),

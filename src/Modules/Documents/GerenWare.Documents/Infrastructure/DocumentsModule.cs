@@ -43,6 +43,7 @@ public static class DocumentsModule
         services.AddScoped<IProjectSetup, DocumentProjectSetup>();
         services.AddScoped<IProjectDeletion, DocumentProjectDeletion>();
         services.AddScoped<IProjectFolderUse, DocumentProjectFolderUse>();
+        services.AddScoped<IStatusReportDocuments, StatusReportDocuments>();
         services.AddScoped<DocumentAreas>();
         services.AddScoped<DocumentViews>();
         services.AddScoped<ListDocumentFolders>();

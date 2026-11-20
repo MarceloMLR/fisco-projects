@@ -87,8 +87,8 @@ public static class FolderVisibility
 
 /// <summary>
 /// A folder every new project gets in its documents (ADR-0031), set by the Administrator: none is fixed in the code
-/// (ADR-0003). The folder of the acceptance terms is one of them, and it is never deactivated (ADR-0093). An inactive
-/// folder is left out of the new projects; the projects that have it keep it.
+/// (ADR-0003). The folder of the acceptance terms and the one of the status reports are among them, and they are never
+/// deactivated (ADR-0093, ADR-0165). An inactive folder is left out of the new projects; the projects that have it keep it.
 /// </summary>
 public sealed class DefaultFolder : Entity
 {
@@ -109,6 +109,9 @@ public sealed class DefaultFolder : Entity
     /// <summary>The folder of the acceptance terms, with the signed terms of the project (ADR-0035, ADR-0093).</summary>
     public bool IsAcceptance { get; private init; }
 
+    /// <summary>The folder of the status reports, where each report generated is kept (ADR-0165).</summary>
+    public bool IsStatusReport { get; private init; }
+
     public bool IsActive { get; private set; }
 
     /// <summary>The roles that see the folder in the new projects (ADR-0148); none for the folder of the terms.</summary>
@@ -126,10 +129,13 @@ public sealed class DefaultFolder : Entity
         return true;
     }
 
-    /// <summary>Renames and activates or deactivates the folder; false, changing nothing, to deactivate the folder of the terms.</summary>
+    /// <summary>
+    /// Renames and activates or deactivates the folder; false, changing nothing, to deactivate the folder of the terms
+    /// or the one of the status reports.
+    /// </summary>
     public bool Change(string name, bool isActive)
     {
-        if (IsAcceptance && !isActive)
+        if ((IsAcceptance || IsStatusReport) && !isActive)
         {
             return false;
         }
@@ -151,11 +157,13 @@ public sealed class DocumentFolder : Entity
         Name = string.Empty;
     }
 
-    public DocumentFolder(Guid projectId, string name, bool isAcceptance, FolderViewers visibleTo = FolderViewers.Everyone)
+    public DocumentFolder(
+        Guid projectId, string name, bool isAcceptance, FolderViewers visibleTo = FolderViewers.Everyone, bool isStatusReport = false)
     {
         ProjectId = projectId;
         Name = name;
         IsAcceptance = isAcceptance;
+        IsStatusReport = isStatusReport && !isAcceptance;
         VisibleTo = isAcceptance ? FolderViewers.None : visibleTo;
     }
 
@@ -165,6 +173,9 @@ public sealed class DocumentFolder : Entity
 
     /// <summary>The folder of the acceptance terms: only the terms flow puts documents in it (ADR-0093).</summary>
     public bool IsAcceptance { get; private init; }
+
+    /// <summary>The folder of the status reports, where each report generated is kept (ADR-0165).</summary>
+    public bool IsStatusReport { get; private init; }
 
     /// <summary>
     /// The roles that see the folder in the project (ADR-0148), copied from the default folder; none for the folder of
@@ -196,5 +207,26 @@ public sealed class DocumentFolder : Entity
     public static IReadOnlyList<DocumentFolder> For(Guid projectId, IEnumerable<DefaultFolder> defaults) =>
         [.. defaults.Where(folder => folder.IsActive)
             .OrderBy(folder => folder.Name, StringComparer.CurrentCultureIgnoreCase)
-            .Select(folder => new DocumentFolder(projectId, folder.Name, folder.IsAcceptance, folder.VisibleTo))];
+            .Select(folder => CopyOf(projectId, folder, folder.Name))];
+
+    /// <summary>
+    /// The folder of the status reports for a project that does not have it (ADR-0165): a copy of the default one, as it
+    /// is now, with the name followed by a number when the project already has a folder with that name.
+    /// </summary>
+    public static DocumentFolder StatusReportsFor(Guid projectId, DefaultFolder reports, IEnumerable<DocumentFolder> current)
+    {
+        ArgumentNullException.ThrowIfNull(reports);
+        var taken = current.Select(folder => folder.Name).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
+        var name = reports.Name;
+        for (var number = 2; taken.Contains(name); number++)
+        {
+            var suffix = $" ({number})";
+            name = reports.Name[..Math.Min(reports.Name.Length, FolderNames.MaxLength - suffix.Length)] + suffix;
+        }
+
+        return CopyOf(projectId, reports, name);
+    }
+
+    private static DocumentFolder CopyOf(Guid projectId, DefaultFolder folder, string name) =>
+        new(projectId, name, folder.IsAcceptance, folder.VisibleTo, folder.IsStatusReport);
 }

@@ -223,6 +223,9 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsStatusReport")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -247,6 +250,7 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000001"),
                             IsAcceptance = false,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "01 Gestão do projeto",
                             VisibleTo = 15
                         },
@@ -255,6 +259,7 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000002"),
                             IsAcceptance = false,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "02 Contratos e compras",
                             VisibleTo = 15
                         },
@@ -263,6 +268,7 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000003"),
                             IsAcceptance = false,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "03 Requisitos e especificações",
                             VisibleTo = 15
                         },
@@ -271,6 +277,7 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000004"),
                             IsAcceptance = false,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "04 Atas de reunião",
                             VisibleTo = 15
                         },
@@ -279,6 +286,7 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000005"),
                             IsAcceptance = false,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "05 Entregas e manuais",
                             VisibleTo = 15
                         },
@@ -287,7 +295,17 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                             Id = new Guid("019a0a10-0000-7000-8000-000000000006"),
                             IsAcceptance = true,
                             IsActive = true,
+                            IsStatusReport = false,
                             Name = "06 Termos de aceite",
+                            VisibleTo = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("019a0a10-0000-7000-8000-000000000007"),
+                            IsAcceptance = false,
+                            IsActive = true,
+                            IsStatusReport = true,
+                            Name = "Relatórios de status",
                             VisibleTo = 0
                         });
                 });
@@ -379,6 +397,9 @@ namespace GerenWare.Documents.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsAcceptance")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStatusReport")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")

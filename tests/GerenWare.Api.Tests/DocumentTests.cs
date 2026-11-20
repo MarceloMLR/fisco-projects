@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using GerenWare.Projects.Contracts;
 using GerenWare.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GerenWare.Api.Tests;
 
@@ -14,6 +16,7 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
     private const string DefaultFolders = "/api/admin/document-folders";
     private const string Requirements = "03 Requisitos e especificações";
     private const string Terms = "06 Termos de aceite";
+    private const string Reports = "Relatórios de status";
 
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
 
@@ -73,7 +76,7 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
         var folders = await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation);
         folders.EnumerateArray().Select(folder => folder.GetProperty("name").GetString()).Should().Equal(
             "01 Gestão do projeto", "02 Contratos e compras", Requirements, "04 Atas de reunião", "05 Entregas e manuais",
-            "05a Treinamentos", Terms);
+            "05a Treinamentos", Terms, Reports);
         folders.EnumerateArray().Should().OnlyContain(folder => folder.GetProperty("isActive").GetBoolean());
         folders.EnumerateArray().Where(folder => folder.GetProperty("isAcceptance").GetBoolean())
             .Select(folder => folder.GetProperty("name").GetString()).Should().Equal(Terms);
@@ -88,7 +91,7 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
 
         added.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ProjectTeam.ProblemTypeAsync(added)).Should().Be("urn:gerenware:problem:document-folder-name-in-use");
-        (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).GetArrayLength().Should().Be(6);
+        (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).GetArrayLength().Should().Be(7);
     }
 
     [Fact(DisplayName = "Pasta de termos sempre ativa")]
@@ -107,6 +110,37 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
             .Single(folder => folder.GetProperty("id").GetGuid() == terms).GetProperty("isActive").GetBoolean().Should().BeTrue();
     }
 
+    [Fact(DisplayName = "Pasta dos relatórios padrão")]
+    public async Task StatusReportsFolder_IsADefaultFolderOfTheManagers()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+
+        var reports = (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).EnumerateArray()
+            .Single(folder => folder.GetProperty("isStatusReport").GetBoolean());
+
+        reports.GetProperty("name").GetString().Should().Be(Reports);
+        reports.GetProperty("isActive").GetBoolean().Should().BeTrue();
+        reports.GetProperty("isAcceptance").GetBoolean().Should().BeFalse();
+        reports.GetProperty("visibleTo").GetArrayLength().Should().Be(0);
+    }
+
+    [Fact(DisplayName = "Pasta dos relatórios sempre ativa")]
+    public async Task StatusReportsFolder_IsRenamedButNeverDeactivated()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        var reports = (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).EnumerateArray()
+            .Single(folder => folder.GetProperty("isStatusReport").GetBoolean()).GetProperty("id").GetGuid();
+
+        var renamed = await SendAsync(team.Admin, HttpMethod.Put, $"{DefaultFolders}/{reports}", new { name = "08 Status reports", isActive = true });
+        var deactivated = await SendAsync(team.Admin, HttpMethod.Put, $"{DefaultFolders}/{reports}", new { name = "08 Status reports", isActive = false });
+
+        renamed.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        deactivated.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var folder = (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == reports);
+        (folder.GetProperty("name").GetString(), folder.GetProperty("isActive").GetBoolean()).Should().Be(("08 Status reports", true));
+    }
+
     [Fact(DisplayName = "Pastas padrão só do administrador")]
     public async Task DefaultFolders_AreOnlyTheAdministrators()
     {
@@ -123,9 +157,9 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
         await using var team = await ProjectTeam.StartAsync(sqlServer);
 
         (await FolderNamesAsync(team.Admin, team.Erp)).Should().Equal(
-            "01 Gestão do projeto", "02 Contratos e compras", Requirements, "04 Atas de reunião", "05 Entregas e manuais", Terms);
+            "01 Gestão do projeto", "02 Contratos e compras", Requirements, "04 Atas de reunião", "05 Entregas e manuais", Terms, Reports);
         Directory.GetDirectories(System.IO.Path.Combine(team.Files, "ERP-FIN - Implantação do ERP financeiro", "Documentos"))
-            .Select(System.IO.Path.GetFileName).Should().HaveCount(6, "the folders are made in the storage with the project");
+            .Select(System.IO.Path.GetFileName).Should().HaveCount(7, "the folders are made in the storage with the project");
     }
 
     [Fact]
@@ -134,9 +168,38 @@ public sealed class DocumentTests(SqlServerFixture sqlServer)
         await using var team = await ProjectTeam.StartAsync(sqlServer);
         await team.App.CountAsync("DELETE FROM [documents].[folders] WHERE ProjectId = @project; SELECT 0", ("@project", team.Erp));
 
-        (await FolderNamesAsync(team.Admin, team.Erp)).Should().HaveCount(6);
+        (await FolderNamesAsync(team.Admin, team.Erp)).Should().HaveCount(7);
         (await team.App.CountAsync("SELECT COUNT(*) FROM [documents].[folders] WHERE ProjectId = @project", ("@project", team.Erp)))
-            .Should().Be(6);
+            .Should().Be(7);
+    }
+
+    [Fact(DisplayName = "Projeto antigo recebe a pasta dos relatórios")]
+    public async Task ProjectWithoutTheReportsFolder_GetsItWithTheFirstReport()
+    {
+        await using var team = await ProjectTeam.StartAsync(sqlServer);
+        await team.App.CountAsync(
+            "DELETE FROM [documents].[folders] WHERE ProjectId = @project AND IsStatusReport = 1; SELECT 0", ("@project", team.Erp));
+        (await FolderNamesAsync(team.Admin, team.Erp)).Should().NotContain(Reports);
+
+        var first = await SaveReportAsync(team, "ERP-FIN - Relatório de status - 2026-11-20.pptx", "primeira");
+        var again = await SaveReportAsync(team, "ERP-FIN - Relatório de status - 2026-11-20.pptx", "segunda");
+
+        (await FolderNamesAsync(team.Admin, team.Erp)).Should().HaveCount(7).And.Contain(Reports);
+        (first.FolderName, first.Version, again.Version).Should().Be((Reports, 1, 2));
+        again.DocumentId.Should().Be(first.DocumentId);
+        var marina = await team.ClientOfAsync(team.Marina);
+        var folder = await FolderAsync(marina, team.Erp, Reports);
+        (await ListAsync(marina, team.Erp, $"folderId={folder}")).Should().ContainSingle()
+            .Which.GetProperty("name").GetString().Should().Be("ERP-FIN - Relatório de status - 2026-11-20.pptx");
+        (await FolderNamesAsync(await team.ClientOfAsync(team.Carla), team.Erp)).Should().NotContain(Reports);
+    }
+
+    private static async Task<SavedStatusReport> SaveReportAsync(ProjectTeam team, string name, string text)
+    {
+        await using var scope = team.App.Services.CreateAsyncScope();
+        using var content = new MemoryStream(Encoding.UTF8.GetBytes(text));
+        return await scope.ServiceProvider.GetRequiredService<IStatusReportDocuments>()
+            .SaveAsync(team.Erp, name, content, team.Marina, Cancellation);
     }
 
     [Fact(DisplayName = "Pasta desativada fica fora dos projetos novos")]

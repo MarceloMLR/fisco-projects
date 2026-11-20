@@ -158,18 +158,20 @@ public sealed class FolderVisibilityTests(SqlServerFixture sqlServer)
     }
 
     [Fact(DisplayName = "Pastas que já existiam")]
-    public async Task TheFolders_StartSeenByTheFourRoles_AndTheTermsOnlyByTheManagement()
+    public async Task TheFolders_StartSeenByTheFourRoles_AndTheTermsAndTheReportsOnlyByTheManagement()
     {
         await using var team = await ProjectTeam.StartAsync(sqlServer);
+        static bool OfTheManagement(JsonElement folder) =>
+            folder.GetProperty("isAcceptance").GetBoolean() || folder.GetProperty("isStatusReport").GetBoolean();
 
         foreach (var folder in (await FoldersAsync(team.Admin, team.Erp)).GetProperty("folders").EnumerateArray())
         {
-            RolesOf(folder).Should().Equal(folder.GetProperty("isAcceptance").GetBoolean() ? [] : AllRoles);
+            RolesOf(folder).Should().Equal(OfTheManagement(folder) ? [] : AllRoles);
         }
 
         foreach (var folder in (await team.Admin.GetFromJsonAsync<JsonElement>(DefaultFolders, Cancellation)).EnumerateArray())
         {
-            RolesOf(folder).Should().Equal(folder.GetProperty("isAcceptance").GetBoolean() ? [] : AllRoles);
+            RolesOf(folder).Should().Equal(OfTheManagement(folder) ? [] : AllRoles);
         }
     }
 
