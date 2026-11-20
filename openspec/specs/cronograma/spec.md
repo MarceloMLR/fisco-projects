@@ -320,7 +320,7 @@ Uma tarefa MUST ficar atrasada quando o fim é anterior a hoje, no fuso da insta
 
 ### Requirement: Marco atingido
 
-O administrador e o gerente MUST poder marcar um marco como atingido e desmarcá-lo. Ao ser marcado, o marco MUST guardar o dia informado, de 01/01/2000 até hoje, ou o dia de hoje no fuso da instalação; já atingido, o dia informado MUST substituir o guardado; ao ser desmarcado, MUST apagá-lo, e o dia informado MUST receber 400. O líder técnico, o colaborador, o desenvolvedor e o leitor MUST receber 403; numa tarefa, 400, e num projeto encerrado, 409. Mudar a data do marco MUST NOT desmarcá-lo (ADR-0020, ADR-0043, ADR-0086, ADR-0167).
+O administrador e o gerente MUST poder marcar um marco como atingido e desmarcá-lo. Ao marcar, MUST guardar o dia informado, de 01/01/2000 até hoje, ou o de hoje no fuso da instalação; já atingido, o informado MUST substituir o guardado; ao desmarcar, MUST apagá-lo e recusar o dia (400). O líder técnico, o colaborador, o desenvolvedor e o leitor MUST receber 403; numa tarefa, 400, e num projeto encerrado, 409. Mudar a data do marco MUST NOT desmarcá-lo (ADR-0020, ADR-0043, ADR-0086, ADR-0167).
 
 #### Scenario: Marcar marco como atingido
 - **WHEN** o gerente marca como atingido, em 16/10/2026, o marco "Aceite da homologação"
